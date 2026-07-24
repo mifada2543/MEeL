@@ -24,17 +24,21 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 
 | Module | File | Description |
 |-------|------|-----------|
-| **Exception Classes** | `modules/exceptions/*.php` | 3 specific exception classes: ProcessException, DownloadException, TranscodeException |
-| **CommentRenderer** | `modules/CommentRenderer.php` | Comment rendering with theme support (`video`/`music`) |
+| **Exception Classes** | `modules/exceptions/*.php` | 3 specific exception classes: `ProcessException`, `DownloadException`, `TranscodeException` |
+| **Japanese Processor** | `modules/core/japanese.php` | MeCab + transliterator for Japanese text → Romaji filenames |
+| **Bootstrap** | `modules/core/bootstrap.php` | Environment detection (dev/prod), error reporting, timezone |
+| **CommentRenderer** | `modules/core/CommentRenderer.php` | Comment rendering with theme support (`video`/`music`) |
 | **SearchEngine** | `modules/media/SearchEngine.php` | FULLTEXT search engine for video & music |
-| **GarbageCollector** | `modules/GarbageCollector.php` | Auto-cleanup of temporary files, guest accounts & expired rate limit cache |
+| **GarbageCollector** | `modules/core/GarbageCollector.php` | Auto-cleanup of temporary files, guest accounts & expired rate limit cache |
+| **RateLimiter** | `modules/core/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, etc.) |
 | **WatchController** | `controllers/api/WatchController.php` | Combined Video + Music watch pages controller |
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 classes: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
 | **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v7 (idempotent) |
-| **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading via spl_autoload_register |
-| **RateLimiter** | `modules/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, etc.) |
+| **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
+| **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
+| **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
 | **Admin Activity Log** | `admin/activity_log.php` | Audit trail viewer with filter, pagination, cleanup |
 
 ---
@@ -55,7 +59,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Admin Activity Log Viewer:** `admin/activity_log.php` page for viewing, filtering, and cleaning audit trails
 - **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v7) — UNIQUE KEY username, FK constraints, FULLTEXT index
 - **Anime Module Removed:** The "Coming Soon" placeholder module has been removed from the codebase
-- **API Rate Limiting:** File-based rate limiter (`modules/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits
+- **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` now return pagination metadata (`total_pages`, `from`, `to`) — UI displays page info
 - **Admin Dashboard Charts:** Chart.js 7-Day Activity Chart — views, uploads, active users in the last 7 days
 

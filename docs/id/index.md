@@ -24,17 +24,21 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 
 | Modul | File | Deskripsi |
 |-------|------|-----------|
-| **Exception Classes** | `modules/exceptions/*.php` | 3 class exception spesifik: ProcessException, DownloadException, TranscodeException |
-| **CommentRenderer** | `modules/CommentRenderer.php` | Render komentar dengan theme support (`video`/`music`) |
+| **Exception Classes** | `modules/exceptions/*.php` | 3 class exception spesifik: `ProcessException`, `DownloadException`, `TranscodeException` |
+| **Japanese Processor** | `modules/core/japanese.php` | MeCab + transliterator untuk teks Jepang → Romaji filenames |
+| **Bootstrap** | `modules/core/bootstrap.php` | Environment detection (dev/prod), error reporting, timezone |
+| **CommentRenderer** | `modules/core/CommentRenderer.php` | Render komentar dengan theme support (`video`/`music`) |
 | **SearchEngine** | `modules/media/SearchEngine.php` | FULLTEXT search engine untuk video & music |
-| **GarbageCollector** | `modules/GarbageCollector.php` | Auto-cleanup temporary files & guest accounts |
+| **GarbageCollector** | `modules/core/GarbageCollector.php` | Auto-cleanup temporary files & guest accounts |
+| **RateLimiter** | `modules/core/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, dll.) |
 | **WatchController** | `controllers/api/WatchController.php` | Controller gabungan Video + Music watch pages |
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 class: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
 | **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v7 (idempotent) |
-| **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading via spl_autoload_register |
-| **RateLimiter** | `modules/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, dll.) |
+| **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
+| **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
+| **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
 | **Admin Activity Log** | `admin/activity_log.php` | Audit trail viewer dengan filter, pagination, cleanup |
 
 ---
@@ -55,7 +59,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 - **Admin Activity Log Viewer:** Halaman `admin/activity_log.php` untuk melihat, filter, dan cleanup trail audit
 - **Database Alignment:** `schema.sql` dan `migrate.php` tersinkronisasi (v1–v7) — UNIQUE KEY username, FK constraints, FULLTEXT index
 - **Modul Anime dihapus:** Modul placeholder "Coming Soon" yang sudah tidak relevan dihapus dari kodebase
-- **API Rate Limiting:** File-based rate limiter (`modules/RateLimiter.php`) — proteksi endpoint like, comment, upload dari abuse dengan limits per user
+- **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — proteksi endpoint like, comment, upload dari abuse dengan per-user limits dan role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` sekarang mengembalikan metadata pagination (`total_pages`, `from`, `to`) — UI menampilkan info halaman
 - **Admin Dashboard Charts:** Chart.js 7-Day Activity Chart — views, uploads, active users dalam 7 hari terakhir
 

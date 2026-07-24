@@ -404,7 +404,7 @@ Detil yang ditampilkan:
 
 ### Arsitektur
 
-`modules/RateLimiter.php` menyediakan **file-based rate limiter** yang melindungi API endpoint dari abuse:
+`modules/core/RateLimiter.php` menyediakan **file-based rate limiter** yang melindungi API endpoint dari abuse:
 
 ```
 Request → RateLimiter::check(key, endpoint)

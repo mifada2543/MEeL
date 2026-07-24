@@ -146,7 +146,7 @@ sudo killall ffmpeg
 
 **Adjust FFmpeg threads:**
 ```php
-// modules/Transcoder.php
+// modules/core/Transcoder.php
 private const FFMPEG_THREADS = 4; // Reduce from 8
 ```
 

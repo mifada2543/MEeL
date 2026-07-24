@@ -35,8 +35,8 @@ ini_set('display_errors', 1);
 
 3. **Disable HDD check for development:**
 ```php
-// modules/helpers.php - comment out:
-// if (!is_dir($hdd_check_path)) { ... }
+// modules/core/helpers.php - comment out:
+// if (!is_dir(MEEL_HDD_BASE)) { ... }
 ```
 
 4. **Recommended tools:**
@@ -277,10 +277,10 @@ main (stable)
 |------|--------|
 | `auth/config.php` | Configuration entry point |
 | `auth/auth.php` | Authentication middleware |
-| `modules/helpers.php` | Global utility functions |
-| `modules/Transcoder.php` | Main engine (most complex) |
-| `modules/Uploader.php` | File upload process |
-| `modules/System.php` | Queue & monitoring |
+| `modules/core/helpers.php` | Global utility functions |
+| `modules/core/Transcoder.php` | Main engine (most complex) |
+| `modules/core/Uploader.php` | File upload process |
+| `modules/core/System.php` | Queue & monitoring |
 | `partials/ui.php` | Overlay UI system (JS heavy) |
 
 ### Key Processes
