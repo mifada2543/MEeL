@@ -1,12 +1,13 @@
-# Security defaults for modules
+# Deny all web access — PHP include-only files
 Options -Indexes
 
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} ^(.*/)[^/]+/?$
+    RewriteRule ^ %1err/denied.php [R=303,L]
 </IfModule>
 
-<FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|cookies\.txt|auth\.php|db\.php)$">
+<IfModule !mod_rewrite.c>
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -14,4 +15,9 @@ Options -Indexes
         Order allow,deny
         Deny from all
     </IfModule>
-</FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

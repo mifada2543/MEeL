@@ -9,9 +9,13 @@ include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
 $library    = new MediaLibrary($conn);
-$limit_init = 15;
-$data       = $library->getVideos($limit_init, 0);
-$total      = $library->countVideos();
+$perPage    = 15;
+$page       = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$meta       = $library->getVideosWithMeta($page, $perPage);
+$data       = $meta['data'];
+$total      = $meta['total'];
+$page       = $meta['page'];
+$totalPages = $meta['total_pages'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -87,7 +91,12 @@ $total      = $library->countVideos();
                 <div class="text-[9px] text-gray-300 uppercase tracking-[.25em] mb-1">Library</div>
                 <div class="section-title">VIDEO</div>
             </div>
-            <span class="text-[10px] text-gray-300 uppercase tracking-widest"><?= $total ?> clips</span>
+            <span class="text-[10px] text-gray-300 uppercase tracking-widest">
+                <?= $total ?> clips
+                <?php if ($totalPages > 1): ?>
+                    <span class="text-gray-600">· Page <?= $page ?>/<?= $totalPages ?></span>
+                <?php endif; ?>
+            </span>
         </div>
 
         <!-- [FIX] offset load_more sesuai $limit_init (8), bukan 10 -->
@@ -98,15 +107,15 @@ $total      = $library->countVideos();
                 <?php endwhile; ?>
             <?php endif; ?>
 
-            <?php if ($total > $limit_init): ?>
+            <?php if ($total > $perPage): ?>
                 <button type="button" id="load-more-area"
                     class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
-                    hx-get="load_more.php?offset=<?= $limit_init ?>"
+                    hx-get="load_more.php?offset=<?= $perPage ?>&page=<?= $page ?>"
                     hx-target="#load-more-area"
                     hx-swap="outerHTML"
                     aria-label="Muat lebih banyak video">
                     <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-300 group-hover:text-red-500 transition-colors">
-                        Muat Lebih Banyak
+                        Muat Lebih Banyak · <?= $page ?>/<?= $totalPages ?>
                     </span>
                 </button>
             <?php endif; ?>

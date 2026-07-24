@@ -573,7 +573,7 @@ Demi kejujuran, berikut adalah **sebab-akibat** (trade-offs) yang perlu Anda pah
 - [📚 Index Dokumentasi](index.md) — Peta semua dokumentasi
 - [🚀 Instalasi](installation.md) — Cara install MEeL
 - [⚙️ Konfigurasi](configuration.md) — Atur path dan database
-- [🎬 Tentang MEeL](../README.md) — Ikhtisar proyek
+- [🎬 Tentang MEeL](../../README.md) — Ikhtisar proyek
 
 ---
 

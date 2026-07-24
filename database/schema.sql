@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `custom_theme` varchar(50) DEFAULT 'default',
   `last_session_id` varchar(128) DEFAULT NULL,
   `access_via` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_username_unique` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Default admin user (password: Admin#123)
@@ -186,7 +187,9 @@ CREATE TABLE IF NOT EXISTS `upload_queue` (
   `user_id` int(11) NOT NULL,
   `status` enum('processing','completed','failed') DEFAULT 'processing',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `upload_queue_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================================================================
@@ -198,7 +201,9 @@ CREATE TABLE IF NOT EXISTS `transcode_queue` (
   `user_id` int(11) NOT NULL,
   `status` enum('processing','completed','failed') DEFAULT 'processing',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `transcode_queue_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================================================================
@@ -278,7 +283,9 @@ CREATE TABLE IF NOT EXISTS `drive_files` (
   `file_type` varchar(50) DEFAULT NULL,
   `scope` enum('public','private') DEFAULT 'private',
   `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `drive_files_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================================================================

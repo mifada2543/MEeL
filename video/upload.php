@@ -6,6 +6,7 @@ ini_set('display_errors', 1);
 include '../auth/auth.php';
 include '../modules/Uploader.php';
 require_once '../modules/GarbageCollector.php';
+require_once '../modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
 set_time_limit(0);
@@ -43,6 +44,8 @@ if (isset($_POST['upload'])) {
         $status = "success";
         $today_count++;
         $total_uploads++;
+        MediaLibrary::clearCountsCache();
+        log_activity($conn, $user_id, 'upload_video', 'video', (int)($result['id'] ?? 0));
     } elseif (isset($result['alert']) && $result['alert'] == true) {
         $alert_message = $result['msg'];
     } else {

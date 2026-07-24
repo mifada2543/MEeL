@@ -293,8 +293,8 @@ if (!$is_locked && !$session_blocked) {
                         <i data-lucide="lock" class="absolute left-4 top-3.5 w-5 h-5 text-gray-300"></i>
                         <input type="password" id="password" name="password" placeholder="••••••••" required class="w-full bg-[#0b0e14] border border-gray-800 rounded-2xl py-3.5 pl-12 pr-14 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-white transition-all" title="Masukkan password minimal 8 karakter">
                         <button type="button" id="togglePassword" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-600 transition-colors" aria-label="Tampilkan atau sembunyikan password" aria-pressed="false">
-                            <i data-lucide="eye" id="iconEye" class="w-5 h-5"></i>
-                            <i data-lucide="eye-off" id="iconEyeOff" class="w-5 h-5 hidden"></i>
+                            <i data-lucide="eye" id="iconEye" class="w-5 h-5 hidden"></i>
+                            <i data-lucide="eye-off" id="iconEyeOff" class="w-5 h-5"></i>
                         </button>
                     </div>
                 </div>

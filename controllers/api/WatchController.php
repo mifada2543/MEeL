@@ -14,6 +14,7 @@
  */
 
 require_once __DIR__ . '/../../modules/helpers.php';
+require_once __DIR__ . '/../../modules/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 
 // ════════════════════════════════════════════════════════════════
@@ -48,6 +49,17 @@ class VideoWatchController
             if (!verify_csrf()) {
                 die('CSRF Token tidak valid.');
             }
+
+            // ⚡ RATE LIMIT: 10 comments per menit per user
+            $rateKey  = 'user_' . ($this->user_id ?? 0);
+            $rateRole = get_user_role($this->conn, $this->user_id ?? 0);
+            $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
+            if (!$rateCheck['allowed']) {
+                $_SESSION['error'] = 'Terlalu banyak komentar. Coba lagi dalam ' . $rateCheck['retry_after'] . ' detik.';
+                header("Location: watch.php?id={$this->id}#comment-section");
+                exit;
+            }
+
             if ($this->viewer->addComment($_POST)) {
                 header("Location: watch.php?id={$this->id}#comment-section");
                 exit;
@@ -131,6 +143,17 @@ class MusicWatchController
             if (!verify_csrf()) {
                 die('CSRF Token tidak valid.');
             }
+
+            // ⚡ RATE LIMIT: 10 comments per menit per user
+            $rateKey  = 'user_' . ($this->user_id ?? 0);
+            $rateRole = get_user_role($this->conn, $this->user_id ?? 0);
+            $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
+            if (!$rateCheck['allowed']) {
+                $_SESSION['error'] = 'Terlalu banyak komentar. Coba lagi dalam ' . $rateCheck['retry_after'] . ' detik.';
+                header("Location: watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section");
+                exit;
+            }
+
             if ($this->viewer->addComment($_POST)) {
                 header("Location: watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section");
                 exit;

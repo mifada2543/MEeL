@@ -271,7 +271,7 @@ function testFileUploadSecurity(): void {
         'video/upload.php'            => ['delegated to Uploader::processVideo()', 'Uploader|in_array'],
         'music/upload.php'            => ['delegated to Uploader::processMusic()', 'Uploader|in_array'],
         'books/upload.php'            => ['delegated to BookUploader::handleUpload()', 'BookUploader|ZipArchive'],
-        'controllers/profile_edit.php'=> ['MIME check', 'in_array.*file_type'],
+        'controllers/profile/profile_edit.php'=> ['MIME check', 'in_array.*file_type'],
         'drive/upload.php'            => ['delegated to DriveService::upload()', 'DriveStorage|validateFileByMagicBytes'],
         'modules/Uploader.php'        => ['ext + blacklist + magic bytes', 'preg_match.*php|validateVideoMagicBytes'],
     ];
@@ -301,7 +301,7 @@ function testPathTraversal(): void {
     print_header('TEST 6: Path Traversal Protection');
 
     $checks = [
-        'controllers/download_transcode.php' => ['basename', 'preg_match', 'pathinfo'],
+        'controllers/api/download_transcode.php' => ['basename', 'preg_match', 'pathinfo'],
         'drive/download.php'                 => ['basename', 'DriveStorage|getFileForDownload'],
         'drive/delete.php'                   => ['basename', 'DriveStorage|delete'],
         'music/stream.php'                   => ['getMediaData', 'basename|\(int\)'],
@@ -509,12 +509,13 @@ function testFileIntegrity(): void {
         '.htaccess', 'auth/config.php', 'auth/auth.php', 'auth/login.php',
         'auth/logout.php', 'auth/register.php', 'modules/helpers.php',
         'modules/activity_logger.php', 'modules/System.php', 'modules/Uploader.php',
-        'modules/Transcoder.php', 'modules/MediaInteraction.php', 'modules/MediaViewer.php',
-        'modules/MediaLibrary.php', 'modules/GarbageCollector.php', 'modules/japanese.php',
+        'modules/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
+        'modules/media/MediaLibrary.php', 'modules/GarbageCollector.php', 'modules/japanese.php',
         'admin/.htaccess', 'auth/.htaccess', 'data_drive/.htaccess',
-        'drive/DriveService.php', 'controllers/fun.php', 'controllers/profile_edit.php',
-        'controllers/like.php', 'controllers/delete_comment.php',
-        'controllers/download_transcode.php', 'controllers/UpdateManager.php',
+        'drive/DriveService.php', 'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
+        'controllers/profile/profile_edit.php',
+        'controllers/api/like.php', 'controllers/api/delete_comment.php',
+        'controllers/api/download_transcode.php', 'controllers/system/UpdateManager.php',
     ];
 
     $missing = [];
@@ -587,7 +588,7 @@ function run(): int {
     }
 
     // Save report
-    $reportFile = __DIR__ . '/security_report_' . date('Ymd_His') . '.log';
+    $reportFile = PROJECT_ROOT . '/logs/security_report_' . date('Ymd_His') . '.log';
     $report  = "MEeL Security Report\n";
     $report .= "Date: " . date('Y-m-d H:i:s') . "\n";
     $report .= "Score: {$score}/100 ({$p} pass, {$w} warn, {$f} fail)\n\n";

@@ -43,11 +43,22 @@ if (!$v || empty($v['filename'])) {
     exit("Data audio tidak ditemukan.");
 }
 
-$filePath = __DIR__ . "/upload/file/" . basename($v['filename']);
+// Gunakan path lokal via symlink (upload/file/ → HDD) agar cocok dengan XSendFilePath
+// di Apache. Path HDD mentah (MEEL_HDD_MUSIC_UPLOAD) TIDAK cocok dengan XSendFilePath
+// dan menyebabkan mod_xsendfile return 404.
+$filePath = __DIR__ . '/upload/file/' . basename($v['filename']);
 
 if (!file_exists($filePath)) {
-    header("HTTP/1.1 404 Not Found");
-    exit("File fisik tidak tersedia di server.");
+    // Fallback: coba HDD path langsung jika symlink tidak tersedia
+    $altPath = defined('MEEL_HDD_MUSIC_UPLOAD')
+        ? rtrim(MEEL_HDD_MUSIC_UPLOAD, '/') . '/file/' . basename($v['filename'])
+        : null;
+    if ($altPath && file_exists($altPath)) {
+        $filePath = $altPath;
+    } else {
+        header("HTTP/1.1 404 Not Found");
+        exit("File fisik tidak tersedia di server.");
+    }
 }
 
 // 3. Tentukan MIME Type yang sesuai secara dinamis

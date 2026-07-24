@@ -1,6 +1,8 @@
 <?php
 // File: auth/System.php
 
+require_once __DIR__ . '/RateLimiter.php';
+
 class System
 {
     private $conn;
@@ -68,19 +70,20 @@ class System
         return $stats;
     }
 
+    private static function getFolderSizeSys(string $path): float
+    {
+        $full_path = realpath(__DIR__ . '/../' . $path);
+        if ($full_path && file_exists($full_path)) {
+            $output = shell_exec("du -sb " . escapeshellarg($full_path) . " 2>&1");
+            if ($output && !str_contains($output, 'Permission denied')) {
+                return (float) explode("\t", $output)[0];
+            }
+        }
+        return 0;
+    }
+
     public function getStorageUsage(): array
     {
-        function get_folder_size_sys($path)
-        {
-            $full_path = realpath(__DIR__ . '/../' . $path);
-            if ($full_path && file_exists($full_path)) {
-                $output = shell_exec("du -sb " . escapeshellarg($full_path) . " 2>&1");
-                if ($output && !str_contains($output, 'Permission denied')) {
-                    return (float) explode("\t", $output)[0];
-                }
-            }
-            return 0;
-        }
 
         $ssd_free  = @disk_free_space("/") / (1024 ** 3);
         $ssd_total = @disk_total_space("/") / (1024 ** 3);
@@ -91,11 +94,11 @@ class System
         $hdd_free  = @disk_free_space($hdd_path) / (1024 ** 3);
         $hdd_total = @disk_total_space($hdd_path) / (1024 ** 3);
 
-        $sz_vid   = get_folder_size_sys('video/upload') / (1024 ** 3);
-        $sz_mus   = get_folder_size_sys('music/upload') / (1024 ** 3);
-        $sz_book  = get_folder_size_sys('books/upload') / (1024 ** 3);
-        $sz_d_pub = get_folder_size_sys('data_drive/public') / (1024 ** 3);
-        $sz_d_prv = get_folder_size_sys('data_drive/private_admins') / (1024 ** 3);
+        $sz_vid   = self::getFolderSizeSys('video/upload') / (1024 ** 3);
+        $sz_mus   = self::getFolderSizeSys('music/upload') / (1024 ** 3);
+        $sz_book  = self::getFolderSizeSys('books/upload') / (1024 ** 3);
+        $sz_d_pub = self::getFolderSizeSys('data_drive/public') / (1024 ** 3);
+        $sz_d_prv = self::getFolderSizeSys('data_drive/private_admins') / (1024 ** 3);
 
         $sz_drive_total = $sz_d_pub + $sz_d_prv;
         $p_vid   = ($hdd_total > 0) ? ($sz_vid / $hdd_total) * 100 : 0;
@@ -153,6 +156,9 @@ class System
         if ($type === 'drive_files') {
             $max_upload = 10; // Drive biasanya lebih banyak file kecil
         }
+
+        // Gunakan method pusat dari RateLimiter untuk role-based adjustment
+        $max_upload = RateLimiter::getRoleLimit($max_upload, $user_role);
 
         $sql = "SELECT upload_date FROM $type 
                 WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR 

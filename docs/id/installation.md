@@ -103,7 +103,7 @@ cd MEeL
 
 ### 3. Setup Database
 
-> **📁 File skema database sudah tersedia di [`database/schema.sql`](../database/schema.sql).**
+> **📁 File skema database sudah tersedia di [`database/schema.sql`](../../database/schema.sql).**
 > Setelah impor, jalankan migrasi untuk menyelesaikan setup.
 
 #### Opsi A — Via MySQL CLI (cepat):

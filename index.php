@@ -141,6 +141,9 @@ $counts  = $library->getCounts();
             <a href="update.php" class="bottom-link" title="Lihat perubahan terbaru dan pembaruan platform">
                 <i data-lucide="radio" class="w-3 h-3"></i> Changelog
             </a>
+            <a href="docs/index.html" class="bottom-link" title="Lihat dokumentasi platform">
+                <i data-lucide="book-open" class="w-3 h-3"></i> Documentation
+            </a>
         </div>
 
         <!-- MODE SEHAT -->

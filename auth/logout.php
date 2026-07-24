@@ -6,6 +6,8 @@ include 'config.php';
 // Reset last_session_id agar session lama tidak trigger false kick
 // saat user login lagi dengan session ID baru
 if (isset($_SESSION['user_id'])) {
+    log_activity($conn, (int)$_SESSION['user_id'], 'logout');
+
     $stmt = $conn->prepare("UPDATE users SET last_session_id = NULL WHERE id = ?");
     $stmt->bind_param("i", $_SESSION['user_id']);
     $stmt->execute();

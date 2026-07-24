@@ -1,94 +1,59 @@
-# 📚 Dokumentasi MEeL-HUB
+# 📚 MEeL-HUB Documentation
 
-Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untuk streaming video, musik, buku digital, dan cloud storage.
-
----
-
-## 📋 Peta Dokumentasi
-
-| # | Dokumen | Deskripsi |
-|---|---------|-----------|
-| 1 | [🚀 Instalasi](installation.md) | Panduan instalasi lengkap dari awal hingga aplikasi berjalan |
-| 2 | [⚙️ Konfigurasi](configuration.md) | Referensi semua file konfigurasi dan parameter |
-| 3 | [🏗️ Modul & Arsitektur](modules.md) | Penjelasan mendalam setiap modul dan class |
-| 4 | [🔌 API & Controller](api.md) | Dokumentasi semua endpoint AJAX/HTMX |
-| 5 | [🔒 Keamanan](security.md) | Sistem keamanan, RBAC, CSRF, IP Banning |
-| 6 | [🌍 Problem Solved](problem-solved.md) | Masalah dunia nyata yang melatarbelakangi MEeL |
-| 7 | [🔧 Troubleshooting](troubleshooting.md) | Solusi untuk masalah umum |
-| 8 | [👨‍💻 Panduan Development](development.md) | Standar koding, kontribusi, dan testing |
-| 9 | [📥 Troubleshooting Advanced Upload](upload_issue.md) | Penanganan masalah yt-dlp & background queue |
+**Welcome! / Selamat Datang!**
 
 ---
 
-## 📦 Daftar Modul Lengkap
+Choose your language / Pilih bahasa:
 
-| Modul | File | Deskripsi |
-|-------|------|-----------|
-| **Exception Classes** | `modules/exceptions/*.php` | 3 class exception spesifik: ProcessException, DownloadException, TranscodeException |
-| **CommentRenderer** | `modules/CommentRenderer.php` | Render komentar dengan theme support (`video`/`music`) |
-| **SearchEngine** | `modules/media/SearchEngine.php` | FULLTEXT search engine untuk video & music |
-| **GarbageCollector** | `modules/GarbageCollector.php` | Auto-cleanup temporary files & guest accounts |
-| **WatchController** | `controllers/api/WatchController.php` | Controller gabungan Video + Music watch pages |
-| **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
-| **DriveService** | `drive/DriveService.php` | 3 class: DriveUserContext, DriveStorage, DriveViewRenderer |
-| **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
-| **Migration System** | `database/migrate.php` | Versioned database schema upgrades (idempotent) |
-| **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading via spl_autoload_register |
+| 🇬🇧 **English** | 🇮🇩 **Bahasa Indonesia** |
+|:---------------:|:------------------------:|
+| [![English](https://img.shields.io/badge/EN-English-blue?style=for-the-badge)](en/index.md) | [![Indonesia](https://img.shields.io/badge/ID-Indonesia-red?style=for-the-badge)](id/index.md) |
 
 ---
 
-## 📁 File Penting Baru
+### 🇬🇧 English Documentation
 
-| File | Deskripsi |
-|------|-----------|
-| `database/schema.sql` | Skema database standalone — import langsung `mysql < database/schema.sql` |
-| `auth/config.example.php` | Template konfigurasi (copy ke `config.php`) |
+- [📖 Index](en/index.md) — Documentation map
+- [🚀 Installation](en/installation.md) — Complete installation guide
+- [⚙️ Configuration](en/configuration.md) — Configuration reference
+- [🏗️ Modules & Architecture](en/modules.md) — Module architecture & class diagrams
+- [🔌 API & Controller](en/api.md) — API endpoint documentation
+- [🔒 Security](en/security.md) — Security, RBAC, CSRF, Rate Limiting
+- [🌍 Problem Solved](en/problem-solved.md) — Real-world problems MEeL solves
+- [🔧 Troubleshooting](en/troubleshooting.md) — Common issue solutions
+- [👨‍💻 Development Guide](en/development.md) — Coding standards & contribution
+- [📥 Advanced Upload Issues](en/upload_issue.md) — yt-dlp & queue issues
+- [📋 Project Analysis](en/analysis.md) — Full project analysis & metrics
 
-## 🔧 Perubahan Terbaru
+### 🇮🇩 Dokumentasi Indonesia
 
-- **Path terpusat:** Semua path penyimpanan media (Video, Music, Books, Drive) diatur dari `MEEL_HDD_BASE` di `auth/config.php` — cukup ubah 1 baris
-- **Skema database standalone:** File `database/schema.sql` untuk import cepat
-- **Type hints:** Properti class dan parameter constructor sekarang menggunakan type hints (`\mysqli`, `int`, `string`, dll.)
-
-## 📖 Tentang Proyek
-
-**MEeL** adalah platform media hub pribadi berbasis PHP & MySQL yang berjalan di atas Apache. Platform ini menggabungkan:
-
-- **🎬 Video** — Streaming adaptif HLS dengan Plyr.js
-- **🎵 Music** — Audio streaming dengan visualizer & mini player
-- **📚 Books** — Pembaca manga/PDF digital
-- **☁️ Cloud Drive** — Penyimpanan file pribadi dengan RBAC
-- **🕹️ Arcade** — Mini-game (Dino Run, Chess)
-
-### Tech Stack Utama
-
-| Komponen | Teknologi |
-|----------|-----------|
-| Backend | PHP 8.0+, MySQL/MariaDB |
-| Frontend | TailwindCSS, HTMX, Vanilla JS |
-| Media Player | Plyr.js, HLS.js |
-| Transcoding | FFmpeg 6.0+, FFprobe |
-| Downloader | yt-dlp |
-| Server | Apache 2.4+ (mod_rewrite) |
+- [📖 Index](id/index.md) — Peta dokumentasi
+- [🚀 Instalasi](id/installation.md) — Panduan instalasi lengkap
+- [⚙️ Konfigurasi](id/configuration.md) — Referensi konfigurasi
+- [🏗️ Modul & Arsitektur](id/modules.md) — Arsitektur modul & class diagram
+- [🔌 API & Controller](id/api.md) — Dokumentasi endpoint API
+- [🔒 Keamanan](id/security.md) — Keamanan, RBAC, CSRF, Rate Limiting
+- [🌍 Problem Solved](id/problem-solved.md) — Masalah dunia nyata yang dipecahkan
+- [🔧 Troubleshooting](id/troubleshooting.md) — Solusi masalah umum
+- [👨‍💻 Panduan Development](id/development.md) — Standar koding & kontribusi
+- [📥 Advanced Upload Issues](id/upload_issue.md) — Masalah yt-dlp & queue
+- [📋 Analisis Proyek](id/deskripsi.md) — Analisis & metrik proyek
 
 ---
 
-## 🔗 Tautan Penting
+## 🔗 Quick Links / Tautan Cepat
 
-- [README.md](../README.md) — Ikhtisar proyek
-- [LICENSE](../LICENSE) — Lisensi proyek
-- [GitHub Repository](https://github.com/mifada2543/MEeL) — Repo sumber
-- [Bug Report](../.github/ISSUE_TEMPLATE/bug_report.md) — Template laporan bug
-
----
-
-## 👨‍💻 Kontak
-
-- **Email:** mifada2543@gmail.com
-- **GitHub:** [github.com/mifada2543](https://github.com/mifada2543)
+| Resource | Link |
+|----------|------|
+| Project README (ID) | [🇮🇩](../README.md) |
+| Project README (EN) | [🇬🇧](../README.en.md) |
+| GitHub Repository | [github.com/mifada2543/MEeL](https://github.com/mifada2543/MEeL) |
+| Bug Report | [📝](../.github/ISSUE_TEMPLATE/bug_report.md) |
+| License | [📄](../LICENSE) |
 
 ---
 
 <div align="center">
-  <sub>MEeL © 2026 — Mifada | Dokumentasi v2.0</sub>
+  <sub>MEeL © 2026 — Mifada | Documentation available in Indonesian and English</sub>
 </div>

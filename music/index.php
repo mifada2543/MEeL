@@ -8,13 +8,18 @@ require_once '../modules/media/MediaLibrary.php';
 $library       = new MediaLibrary($conn);
 $format_filter = $_GET['format'] ?? 'all';
 $artist_filter = $_GET['artist'] ?? 'all';
+$perPageMusic  = 10;
+$pageMusic     = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
 $artists        = $library->getArtists();
-$total_music    = $library->countMusic($format_filter, $artist_filter);
-$data_init      = $library->getMusicList($format_filter, $artist_filter, 10, 0);
+$meta_music     = $library->getMusicListWithMeta($format_filter, $artist_filter, $pageMusic, $perPageMusic);
+$total_music    = $meta_music['total'];
+$data_init      = $meta_music['data'];
+$pageMusic      = $meta_music['page'];
+$totalPagesMusic = $meta_music['total_pages'];
 $is_logged_in   = isset($_SESSION['user_id']);
 
-function renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter)
+function renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter, $totalPagesMusic = 1, $pageMusic = 1, $perPageMusic = 10)
 {
 ?>
     <!-- HEADER -->
@@ -27,6 +32,9 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
         </div>
         <span class="text-[10px] text-gray-700 uppercase tracking-widest">
             <?= $total_music ?> tracks
+            <?php if ($totalPagesMusic > 1): ?>
+                <span class="text-gray-600">· Page <?= $pageMusic ?>/<?= $totalPagesMusic ?></span>
+            <?php endif; ?>
         </span>
     </div>
 
@@ -44,14 +52,14 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
     </div>
 
     <!-- LOAD MORE (outside #music-list, never replaced, only URL updated via JS) -->
-    <?php if ($total_music > 10): ?>
+    <?php if ($total_music > $perPageMusic): ?>
         <div id="load-more-music" class="pt-6">                <button type="button" id="load-more-btn"
-                hx-get="load_more_music.php?offset=10&format=<?= $format_filter ?>&artist=<?= urlencode($artist_filter) ?>"
+                hx-get="load_more_music.php?offset=<?= $perPageMusic ?>&page=<?= $pageMusic ?>&format=<?= $format_filter ?>&artist=<?= urlencode($artist_filter) ?>"
                 hx-target="#music-list"
                 hx-swap="beforeend"
                 title="Muat lebih banyak lagu"
                 class="w-full py-4 border border-dashed border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-[.25em] text-gray-700 hover:text-orange-500 hover:border-orange-500/30 transition-all">
-                Load More
+                Load More · <?= $pageMusic ?>/<?= $totalPagesMusic ?>
             </button>
         </div>
     <?php endif; ?>
@@ -68,7 +76,7 @@ if (isset($_GET['audio_state'])) {
 }
 
 if (isset($_GET['content_only'])) {
-    renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter);
+    renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter, $totalPagesMusic, $pageMusic, $perPageMusic);
     exit;
 }
 ?>
@@ -384,7 +392,7 @@ if (isset($_GET['content_only'])) {
 
         <!-- MAIN -->
         <main class="lg:col-span-9 xl:col-span-10">
-            <?php renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter); ?>
+            <?php renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter, $totalPagesMusic, $pageMusic, $perPageMusic); ?>
         </main>
     </div>
 
@@ -1105,6 +1113,13 @@ if (isset($_GET['content_only'])) {
 
                         if (nextUrl && btn) {
                             btn.setAttribute('hx-get', nextUrl);
+                            // Update button text with current page
+                            var pg = n.getAttribute('data-page') || '';
+                            var tt = n.getAttribute('data-total') || '';
+                            if (pg && tt) {
+                                var btnText = btn.querySelector('span') || btn;
+                                btnText.textContent = 'Load More \u00b7 ' + pg + '/' + tt;
+                            }
                             if (typeof htmx !== 'undefined') htmx.process(btn);
 
                             // Auto-scroll: HANYA scroll ke BAWAH

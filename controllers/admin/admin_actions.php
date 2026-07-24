@@ -33,7 +33,9 @@ if (isset($_POST['ban_ip'])) {
 
     $stmt = $conn->prepare("INSERT IGNORE INTO ip_ban (ip_address, reason) VALUES (?, ?)");
     $stmt->bind_param("ss", $ip, $reason);
-    $stmt->execute() ? header("Location: index.php?msg=IP_Banned") : null;
+    $stmt->execute();
+    log_activity($conn, (int)$_SESSION['user_id'], 'ban_ip', 'ip', 0, $ip);
+    header("Location: index.php?msg=IP_Banned");
     exit();
 }
 
@@ -41,7 +43,9 @@ if (isset($_POST['ban_ip'])) {
 if (isset($_GET['unban_ip'])) {
     $stmt = $conn->prepare("DELETE FROM ip_ban WHERE ip_address = ?");
     $stmt->bind_param("s", $_GET['unban_ip']);
-    $stmt->execute() ? header("Location: index.php?msg=IP_Unbanned#unban") : null;
+    $stmt->execute();
+    log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0, $_GET['unban_ip']);
+    header("Location: index.php?msg=IP_Unbanned#unban");
     exit();
 }
 
@@ -96,6 +100,7 @@ if (isset($_GET['approve_id'])) {
     $stmt = $conn->prepare("UPDATE users SET is_active = 1 WHERE id = ?");
     $stmt->bind_param("i", $_GET['approve_id']);
     $stmt->execute();
+    log_activity($conn, (int)$_SESSION['user_id'], 'approve_user', 'user', (int)$_GET['approve_id']);
     header("Location: index.php?msg=Approved");
     exit();
 }
@@ -105,6 +110,7 @@ if (isset($_GET['reject_id'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND is_active = 2");
     $stmt->bind_param("i", $_GET['reject_id']);
     $stmt->execute();
+    log_activity($conn, (int)$_SESSION['user_id'], 'reject_user', 'user', (int)$_GET['reject_id']);
     header("Location: index.php?msg=Rejected");
     exit();
 }
@@ -130,7 +136,9 @@ if (isset($_GET['delete_user_id'])) {
 
     $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
     $stmt->bind_param("i", $id);
-    $stmt->execute() ? header("Location: index.php?msg=User_Deleted") : null;
+    $stmt->execute();
+    log_activity($conn, (int)$_SESSION['user_id'], 'delete_user', 'user', $id);
+    header("Location: index.php?msg=User_Deleted");
     exit();
 }
 
@@ -152,6 +160,8 @@ if (isset($_GET['kick_user'])) {
         last_activity   = DATE_SUB(NOW(), INTERVAL 10 MINUTE)
         WHERE username = ?");
     $stmt->bind_param("s", $_GET['kick_user']);
-    $stmt->execute() ? header("Location: index.php?msg=Kicked_Success#monitor") : null;
+    $stmt->execute();
+    log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0, $_GET['kick_user']);
+    header("Location: index.php?msg=Kicked_Success#monitor");
     exit();
 }

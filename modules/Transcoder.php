@@ -232,6 +232,13 @@ class Transcoder
      */
     private function renderMetadataDebug(string $url, string $cmd, int $return_var, string $output): void
     {
+        // 🔒 SECURITY: Hanya admin yang boleh melihat info debug ini
+        // Info ini mengekspos path absolut ffmpeg/ffprobe dan path sistem lainnya
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            error_log('[MEeL] Debug info attempted by non-admin');
+            return;
+        }
+
         $check_node  = trim((string)shell_exec("which node 2>/dev/null"));
         $check_ytdlp = trim((string)shell_exec("which yt-dlp 2>/dev/null"));
 

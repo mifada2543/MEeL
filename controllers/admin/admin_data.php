@@ -190,3 +190,50 @@ $result_monitor = $conn->query(
     "SELECT username, role, last_activity, last_page, user_agent, access_via, ip_address
      FROM users ORDER BY last_activity DESC LIMIT 10"
 );
+
+// ─── CHART DATA: 7-Day Activity ─────────────────────────────────────────
+$chart_activity = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $label = date('D', strtotime("-$i days"));
+
+    // Total views (video + music) per day
+    $views = __admin_get_count($conn, "
+        SELECT COALESCE(SUM(v.views), 0) + COALESCE(SUM(m.views), 0)
+        FROM (
+            SELECT SUM(views) AS views FROM video WHERE DATE(upload_date) = '$date'
+            UNION ALL
+            SELECT SUM(views) AS views FROM music WHERE DATE(upload_date) = '$date'
+        ) AS t
+    ");
+
+    // Uploads per day
+    $uploads = __admin_get_count($conn, "
+        SELECT COUNT(*) FROM (
+            SELECT id FROM video WHERE DATE(upload_date) = '$date'
+            UNION ALL
+            SELECT id FROM music WHERE DATE(upload_date) = '$date'
+            UNION ALL
+            SELECT id FROM books WHERE DATE(upload_date) = '$date'
+        ) AS u
+    ");
+
+    // Active users (activity_log entries)
+    $active_users = __admin_get_count($conn, "
+        SELECT COUNT(DISTINCT user_id) FROM activity_log WHERE DATE(created_at) = '$date'
+    ");
+
+    // New registrations per day
+    $new_users = __admin_get_count($conn, "
+        SELECT COUNT(*) FROM users WHERE DATE(created_at) = '$date' AND role != 'guest'
+    ");
+
+    $chart_activity[] = [
+        'date'  => $date,
+        'label' => $label,
+        'views' => $views,
+        'uploads' => $uploads,
+        'users' => $active_users,
+        'new_users' => $new_users,
+    ];
+}

@@ -159,7 +159,7 @@ function sortIcon(string $field): string {
     return $sort_dir === 'asc' ? '<i data-lucide="chevron-up" class="w-[10px] h-[10px] text-blue-400"></i>' : '<i data-lucide="chevron-down" class="w-[10px] h-[10px] text-blue-400"></i>';
 }
 
-// ── Query Utama ──
+// ── Query Utama (Prepared Statement) ──
 $query_media = "
     SELECT * FROM (
         SELECT id, title, 'video' AS media_type, views,
@@ -174,16 +174,39 @@ $query_media = "
     ) AS combined_media
     WHERE 1=1";
 
+$conditions = [];
+$params = [];
+$types = '';
+
 if (!empty($search)) {
-    $search_escaped = $conn->real_escape_string($search);
-    $query_media .= " AND (title LIKE '%{$search_escaped}%' OR id LIKE '%{$search_escaped}%')";
+    $conditions[] = "(title LIKE ? OR id LIKE ?)";
+    $like_param = '%' . $search . '%';
+    $params[] = $like_param;
+    $params[] = $like_param;
+    $types .= 'ss';
 }
 
 if ($type_filter !== 'all') {
-    $query_media .= " AND media_type = '" . $conn->real_escape_string($type_filter) . "'";
+    $conditions[] = "media_type = ?";
+    $params[] = $type_filter;
+    $types .= 's';
+}
+
+if (!empty($conditions)) {
+    $query_media .= " AND " . implode(' AND ', $conditions);
 }
 $query_media .= " ORDER BY $order_by";
-$result_media = $conn->query($query_media);
+
+$stmt = $conn->prepare($query_media);
+if (!$stmt) {
+    die("Database error: " . $conn->error);
+}
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result_media = $stmt->get_result();
+$stmt->close();
 
 $total_counts = ['all' => 0, 'video' => 0, 'music' => 0];
 $r = $conn->query("SELECT 'video' as t, COUNT(*) as c FROM video UNION ALL SELECT 'music', COUNT(*) FROM music");

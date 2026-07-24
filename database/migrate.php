@@ -183,6 +183,24 @@ $migrations = [
         ],
     ],
 ];
+// ═══════════════════════════════════════════════════════════════════════════
+// Catatan Sinkronisasi
+// ====================
+// schema.sql dan migrate.php telah diverifikasi selaras pada 22 Juli 2026.
+//
+// Ringkasan alignment:
+//   v1 — FULLTEXT index (video, music, books)
+//   v2 — Index upload_date (video, music, books, drive_files)
+//   v3 — db_version table (oleh runner)
+//   v4 — FK constraint (upload_queue, transcode_queue, drive_files)
+//   v5 — Ubah kolom title ke TEXT
+//   v6 — CREATE TABLE activity_log
+//   v7 — UNIQUE KEY idx_username_unique pada users.username
+//
+// Catatan: schema.sql (fresh install) sudah mencakup semua CREATE TABLE
+// dengan FK, INDEX, dan UNIQUE KEY langsung — migration ini hanya untuk
+// upgrade database yang sudah ada (existing DB).
+// ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Runner ───────────────────────────────────────────────────────────────────
 

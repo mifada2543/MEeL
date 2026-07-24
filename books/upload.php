@@ -28,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
         $_FILES
     );
     $message = $result['message'];
+    if (str_starts_with($message, 'Success')) {
+        MediaLibrary::clearCountsCache();
+        log_activity($conn, $user_id, 'upload_book', 'books');
+    }
     }
 }
 ?>

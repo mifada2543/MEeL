@@ -51,19 +51,25 @@ Dokumentasi mendalam tentang arsitektur modul, class diagram, dan business logic
 
 **Class:** `MediaLibrary`, `BookRepository`, `BookUploader`
 
-Fungsi utama query database untuk katalog media:
+Fungsi utama query database untuk katalog media — dengan **pagination metadata**:
 
 ```php
 class MediaLibrary {
+    // Pagination helper — wrap result + count jadi metadata
+    protected function paginateResult($result, int $total, int $page, int $perPage): array;
+
     // Mendapatkan jumlah total per tipe media
     public function getCounts(): array;
+    public static function clearCountsCache(): void;
     
-    // Video
+    // Video — with pagination metadata
+    public function getVideosWithMeta(int $page = 1, int $perPage = 15): array;
     public function getVideos(int $limit, int $offset);
     public function countVideos(): int;
     public function searchVideo(string $q, int $exclude, bool $sidebar, int $offset);
     
-    // Music
+    // Music — with pagination metadata
+    public function getMusicListWithMeta(string $format, string $artist, int $page = 1, int $perPage = 10): array;
     public function getMusicList(string $format, string $artist, int $limit, int $offset);
     public function countMusic(string $format, string $artist): int;
     public function getArtists();
@@ -72,26 +78,36 @@ class MediaLibrary {
 }
 ```
 
-**Method Chaining Pattern:**
-```
-getMusicList('ogg', 'Mifada', 10, 0)
-  → buildMusicWhere('ogg', 'Mifada')
-    → WHERE 1=1 AND filename LIKE '%.ogg' AND artist = 'Mifada'
-    → Prepared statement dengan parameter binding
+**Pagination Metadata Array:**
+```php
+[
+    'data'        => mysqli_result,  // Result set
+    'total'       => 100,            // Total record
+    'page'        => 1,              // Halaman saat ini (1-based)
+    'per_page'    => 15,             // Item per halaman
+    'total_pages' => 7,              // Total halaman
+    'from'        => 1,              // Item pertama di halaman ini
+    'to'          => 15,             // Item terakhir di halaman ini
+]
 ```
 
 **Class Diagram Helper:**
 ```
 MediaLibrary
   ├── getCounts()         → query UNION ALL untuk music/video/books
+  ├── getVideosWithMeta() → paginateResult(getVideos(), countVideos(), ...)
   ├── getVideos()         → ORDER BY upload_date DESC LIMIT ?
   ├── searchVideo()       → CASE WHEN ... THEN rank ... END
+  ├── getMusicListWithMeta() → paginateResult(getMusicList(), countMusic(), ...)
   ├── getMusicList()      → filter format + artist
   ├── searchMusic()       → ranked search dengan FULLTEXT-like scoring
-  └── buildMusicWhere()   → dynamic WHERE clause builder (private)
+  ├── buildMusicWhere()   → dynamic WHERE clause builder (private)
+  └── paginateResult()    → protected method untuk wrapping metadata
 
 BookRepository
-  ├── getBooks()          → filter by type (manga/pdf/all)
+  ├── getBooksPaginated() → pagination metadata wrapper
+  ├── getBooks()          → now supports LIMIT/OFFSET (backward compatible)
+  ├── countBooks()        → hitung total buku dengan filter
   ├── getBookById()       → single book by ID
   └── getUserRole()       → role check
 
@@ -332,7 +348,7 @@ function render_music_comments(int $parent_id, array $grouped, int $level = 0, i
 
 **Class:** `GarbageCollector` (static methods)
 
-Auto-cleanup untuk temporary files dan guest accounts:
+Auto-cleanup untuk temporary files, guest accounts, dan expired rate limit files:
 
 ```php
 class GarbageCollector {
@@ -343,7 +359,37 @@ class GarbageCollector {
 }
 ```
 
-### 11. Exception Classes (`modules/exceptions/`)
+> `run()` sekarang juga memanggil `RateLimiter::cleanup()` untuk membersihkan expired rate limit files.
+
+### 11. `RateLimiter.php` — NEW
+
+**Class:** `RateLimiter` (static methods)
+
+File-based rate limiter untuk proteksi endpoint API dari abuse:
+
+```php
+class RateLimiter {
+    public static function check(string $key, string $endpoint = 'api'): array;
+    public static function getRemaining(string $key, string $endpoint): int;
+    public static function cleanup(): int;
+    public static function getStats(): array;
+    public static function getLimitsConfig(): array;
+}
+```
+
+**Endpoint Limits:**
+
+| Endpoint | Max Request | Window | Diimplementasi di |
+|----------|:-----------:|:------:|-------------------|
+| `like` | 30 | 1 menit | `controllers/api/like.php` — return 429 dengan HTMX HTML snippet |
+| `comment` | 10 | 1 menit | `controllers/api/delete_comment.php`, `WatchController.php` |
+| `upload` | 3 | 1 jam | — |
+| `transcode` | 5 | 1 jam | — |
+| `api` (generic) | 60 | 1 menit | — |
+
+**Storage:** File-based di `temp/ratelimit/` dengan `flock()` untuk race condition safety.
+
+### 12. Exception Classes (`modules/exceptions/`)
 
 ```php
 class ProcessException extends \RuntimeException {     // Gagal proses eksternal (FFmpeg, yt-dlp)
@@ -364,7 +410,7 @@ class TranscodeException extends \RuntimeException {    // Gagal transcoding
 }
 ```
 
-### 12. `SearchEngine.php` (`modules/media/`)
+### 13. `SearchEngine.php` (`modules/media/`)
 
 **Class:** `SearchEngine` — FULLTEXT search dengan parameter filtering:
 
@@ -375,14 +421,14 @@ class SearchEngine {
 }
 ```
 
-### 13. Autoloader (`modules/autoload.php`)
+### 14. Autoloader (`modules/autoload.php`)
 
 PSR-4-like via `spl_autoload_register()`. Auto-load class dari:
 - `modules/`, `modules/media/`, `modules/exceptions/`
 - `controllers/`, `controllers/api/`, `controllers/admin/`, `controllers/profile/`, `controllers/system/`
 - `drive/`
 
-### 14. WatchController (`controllers/api/WatchController.php`)
+### 15. WatchController (`controllers/api/WatchController.php`)
 
 ```php
 class VideoWatchController {
@@ -394,7 +440,7 @@ class MusicWatchController {
 }
 ```
 
-### 15. Audio Helpers (di `helpers.php`)
+### 16. Audio Helpers (di `helpers.php`)
 
 Digunakan oleh `WatchController` dan `music/stream.php`:
 | Helper | Input | Output |
@@ -403,15 +449,33 @@ Digunakan oleh `WatchController` dan `music/stream.php`:
 | `get_audio_format_label()` | `'flac'` | `'FLAC'` |
 | `get_audio_format_description()` | `'opus'` | `'Opus ~160kbps'` |
 
-### 16. Migration System (`database/migrate.php`)
+### 17. Migration System (`database/migrate.php`)
 
-Versioned, idempotent database upgrades:
+Versioned, idempotent database upgrades. Aman dijalankan berulang kali (idempotent):
 ```bash
 /opt/lampp/bin/php database/migrate.php
 ```
-- v1: FULLTEXT index untuk search
-- v2: Performance index (upload_date)
-- Tracker di tabel `db_version`
+
+| Versi | Perubahan |
+|-------|-----------|
+| **v1** | FULLTEXT index untuk search video, music, books |
+| **v2** | Performance index (upload_date) untuk video, music, books, drive_files |
+| **v3** | Sinkronisasi struktural (idempotent) |
+| **v4** | Foreign key constraints: upload_queue.user_id, transcode_queue.user_id, drive_files.user_id → users.id |
+| **v5** | ALTER TABLE video/music/books: title VARCHAR → TEXT |
+| **v6** | CREATE TABLE activity_log (audit trail: user_id, action, media_type, media_id, ip_address, created_at) |
+| **v7** | UNIQUE INDEX idx_username_unique on users.username (mendukung ON DUPLICATE KEY UPDATE guest registration) |
+
+Tracker di tabel `db_version`.
+
+### Admin Activity Log Viewer
+
+Halaman khusus admin di `admin/activity_log.php` untuk melihat dan mengelola trail audit:
+- Filter berdasarkan action type, username/IP, rentang waktu
+- Pagination (50 per halaman)
+- Stats cards (7-day activity, unique users, total entries)
+- Action badges color-coded (login=blue, upload=green, ban=red, dll.)
+- Manual cleanup log lama (7–365 hari) dengan CSRF protection
 
 ---
 

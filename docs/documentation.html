@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEeL Documentation</title>
+    <meta name="description" content="MEeL Documentation Viewer — Powered by marked.js">
+    <meta name="theme-color" content="#0b0f1a">
+
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="assets/css/docs.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/MEeL.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/MEeL.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/MEeL.png">
+
+    <!-- Markdown Parser (CDN) -->
+    <script src="../assets/js/marked.min.js"></script>
+</head>
+<body>
+
+    <!-- Navbar (structure defined in JS) -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="navbar-logo">📚 MEeL <span>Docs</span></a>
+        <div id="nav-links"></div>
+        <span class="nav-spacer"></span>
+        <a id="lang-switch" href="#" class="lang-btn"></a>
+    </nav>
+
+    <!-- Loading -->
+    <div id="loading"><div class="spinner"></div>Loading documentation...</div>
+
+    <!-- Content -->
+    <main class="container">
+        <div id="content" class="content"></div>
+        <div id="error"><h2>⚠️ Document Not Found</h2><p id="errorMsg">The requested page could not be loaded.</p></div>
+    </main>
+
+    <!-- Footer (loaded from shared partial) -->
+    <div id="footer"></div>
+
+    <!-- Shared JS -->
+    <script src="assets/js/docs.js"></script>
+</body>
+</html>

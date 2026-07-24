@@ -13,9 +13,14 @@ $role  = $repo->getUserRole($u_id);
 // Sanitasi filter dari URL — hanya nilai yang diizinkan yang diteruskan
 $raw_filter = $_GET['type'] ?? 'all';
 $filter     = in_array($raw_filter, ['manga', 'pdf'], true) ? $raw_filter : 'all';
+$bookPage   = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$bookPerPage = 24;
 
-$books = $repo->getBooks($filter);
-$total = $books->num_rows;
+$meta_books  = $repo->getBooksPaginated($filter, $bookPage, $bookPerPage);
+$books       = $meta_books['data'];
+$total       = $meta_books['total'];
+$bookPage    = $meta_books['page'];
+$totalPagesBooks = $meta_books['total_pages'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -194,7 +199,12 @@ $total = $books->num_rows;
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Library</div>
                 <div class="section-title">BOOKS</div>
             </div>
-            <span class="text-[10px] text-gray-700 uppercase tracking-widest"><?= $total ?> items</span>
+            <span class="text-[10px] text-gray-700 uppercase tracking-widest">
+                <?= $total ?> items
+                <?php if ($totalPagesBooks > 1): ?>
+                    <span class="text-gray-600">· Page <?= $bookPage ?>/<?= $totalPagesBooks ?></span>
+                <?php endif; ?>
+            </span>
         </div>
 
         <!-- FILTER PILLS -->
@@ -295,6 +305,35 @@ $total = $books->num_rows;
         </div>
 
     </main>
+
+    <!-- PAGINATION -->
+    <?php if ($totalPagesBooks > 1): ?>
+        <div class="flex items-center justify-center gap-2 mt-10 mb-6">
+            <?php if ($bookPage > 1): ?>
+                <a href="index.php?type=<?= $filter ?>&page=<?= $bookPage - 1 ?>"
+                    class="px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-green-500 hover:border-green-500/30 transition-all">
+                    <i data-lucide="chevron-left" class="w-3.5 h-3.5 inline -ml-1"></i> Prev
+                </a>
+            <?php endif; ?>
+
+            <?php
+            $startPage = max(1, $bookPage - 2);
+            $endPage = min($totalPagesBooks, $bookPage + 2);
+            for ($i = $startPage; $i <= $endPage; $i++): ?>
+                <a href="index.php?type=<?= $filter ?>&page=<?= $i ?>"
+                    class="w-9 h-9 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all <?= $i === $bookPage ? 'bg-green-600 text-white shadow-lg shadow-green-900/30' : 'bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-green-500 hover:border-green-500/30' ?>">
+                    <?= $i ?>
+                </a>
+            <?php endfor; ?>
+
+            <?php if ($bookPage < $totalPagesBooks): ?>
+                <a href="index.php?type=<?= $filter ?>&page=<?= $bookPage + 1 ?>"
+                    class="px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-green-500 hover:border-green-500/30 transition-all">
+                    Next <i data-lucide="chevron-right" class="w-3.5 h-3.5 inline -mr-1"></i>
+                </a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <?php include '../partials/footer.php'; ?>
 

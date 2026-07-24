@@ -28,9 +28,10 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 | `modules/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
 | `modules/helpers.php` | HDD check path + berbagai utilitas | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, dll |
 | `modules/System.php` | Queue management | Rate limit constants |
-| `modules/GarbageCollector.php` | Auto-cleanup temp files | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
+| `modules/GarbageCollector.php` | Auto-cleanup temp files + guest + rate limit | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
+| `modules/RateLimiter.php` | **Baru!** File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, dll.) |
 | `modules/autoload.php` | PSR-4-like autoloader | Daftar direktori yang di-scan |
-| `database/migrate.php` | Database migration | Versi skema & upgrade otomatis |
+| `database/migrate.php` | Database migration v1–v7 | FULLTEXT index, FK, activity_log, UNIQUE KEY |
 
 ---
 
@@ -175,7 +176,7 @@ membaca file sama sekali.
 | RAM server per request | ~33MB | 0 bytes |
 | PHP process blocking | Ya, sampai stream selesai | Tidak, langsung exit |
 
-**Cara aktivasi:** Lihat panduan di `docs/installation.md` bagian "Aktifkan mod_xsendfile".
+**Cara aktivasi:** Lihat panduan di [`installation.md`](installation.md) bagian "Aktifkan mod_xsendfile".
 
 ### Contoh untuk Berbagai Skenario
 
@@ -336,7 +337,7 @@ $active = count($this->getActiveQueues());
 return $active >= 2; // isServerBusy()
 ```
 
-### Rate Limiting
+### Upload Rate Limiting (System.php)
 
 ```php
 // Default: 2 upload per jam (non-admin)
@@ -350,6 +351,31 @@ if ($type === 'drive_files') {
 // Admin: unlimited
 if ($user_role === 'admin') return ['allowed' => true];
 ```
+
+### API Rate Limiting (RateLimiter.php)
+
+`modules/RateLimiter.php` — file-based rate limiter untuk endpoint API:
+
+| Endpoint | Limit | Window | File |
+|----------|:-----:|:------:|------|
+| Like/Dislike | 30 | 1 menit | `controllers/api/like.php` |
+| Comment | 10 | 1 menit | `controllers/api/delete_comment.php`, `WatchController.php` |
+| Upload | 3 | 1 jam | — |
+| Transcode | 5 | 1 jam | — |
+| API Generic | 60 | 1 menit | — |
+
+**Konfigurasi:** Edit langsung di `modules/RateLimiter.php`:
+```php
+private static array $limits = [
+    'like'    => ['requests' => 30, 'window' => 60],
+    'comment' => ['requests' => 10, 'window' => 60],
+    'upload'  => ['requests' => 3,  'window' => 3600],
+    'transcode' => ['requests' => 5, 'window' => 3600],
+    'api'     => ['requests' => 60, 'window' => 60],
+];
+```
+
+**Storage:** File JSON di `temp/ratelimit/` dengan `flock()` untuk race condition safety. Auto-cleanup via `GarbageCollector::run()`.
 
 ---
 

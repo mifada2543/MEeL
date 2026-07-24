@@ -29,7 +29,7 @@ cd MEeL
 # Copy config
 cp auth/config.example.php auth/config.php
 
-# Setup database (lihat docs/installation.md)
+# Setup database (lihat installation.md)
 ```
 
 2. **Aktifkan debug mode:**
@@ -436,7 +436,7 @@ if (!$stmt) error_log("SQL Error: " . $conn->error);
 
 ### 📜 Lisensi & Kontribusi
 
-Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**. Lihat file [`LICENSE`](../LICENSE) untuk teks lengkap.
+Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**. Lihat file [`LICENSE`](../../LICENSE) untuk teks lengkap.
 
 > **Dengan mengirimkan Pull Request, Anda menyetujui bahwa kontribusi Anda akan dilisensikan di bawah GPL v3** — lihat [Pasal 10](https://www.gnu.org/licenses/gpl-3.0.html#section10) (Automatic Licensing of Downstream Recipients).
 

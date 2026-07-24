@@ -337,25 +337,51 @@ $stmt->bind_param("ss", $ip_to_ban, $reason);
 ### Logger Function
 
 ```php
-function log_activity($conn, $user_id, $action, $media_type, $media_id) {
-    // Mencatat aktivitas ke tabel activity_log
-}
+function log_activity(
+    mysqli $conn, 
+    int $user_id, 
+    string $action, 
+    string $media_type = '', 
+    ?int $media_id = null
+): void;
 ```
 
-### Yang Dicatat
+Mencatat aktivitas user ke tabel `activity_log` dengan prepared statement. Null `$media_id` ditangani dengan query terpisah agar NULL tersimpan di database (bukan 0).
 
-| Event | Aksi | Detail |
-|-------|------|--------|
-| Login | `login` | User login success |
-| Upload Video | `upload` | Video ditambahkan |
-| Upload Music | `upload` | Musik ditambahkan |
-| Download URL | `download` | URL diproses yt-dlp |
-| Comment | `comment` | Komentar ditambahkan |
-| Like/Dislike | `interaction` | Interaksi media |
+### Yang Dicatat (Terintegrasi)
+
+`log_activity()` sudah terintegrasi langsung di berbagai entry point aplikasi:
+
+| Event | Aksi | Lokasi Integrasi |
+|-------|------|------------------|
+| Login sukses | `login` | `auth/login.php` |
+| Logout | `logout` | `auth/logout.php` |
+| Upload video | `upload_video` | `video/upload.php` |
+| Upload musik | `upload_music` | `music/upload.php` |
+| Upload buku | `upload_book` | `books/upload.php` |
+| Download URL | `upload_url` | `upload_advanced.php` |
+| Ban IP | `ban_ip` | `controllers/admin/admin_actions.php` |
+| Unban IP | `unban_ip` | `controllers/admin/admin_actions.php` |
+| Approve user | `approve_user` | `controllers/admin/admin_actions.php` |
+| Reject user | `reject_user` | `controllers/admin/admin_actions.php` |
+| Delete user | `delete_user` | `controllers/admin/admin_actions.php` |
+| Kick user | `kick_user` | `controllers/admin/admin_actions.php` |
+
+### Admin Activity Log Viewer
+
+Halaman `admin/activity_log.php` menyediakan viewer khusus untuk audit trail:
+
+| Fitur | Detail |
+|-------|--------|
+| 🔍 **Filter** | By action type (dropdown), search username/IP, rentang waktu (7–365 hari) |
+| 📄 **Pagination** | 50 entry per halaman dengan navigasi prev/next |
+| 📊 **Stats Cards** | 7-day activity count, unique users, total entries, page info |
+| 🏷️ **Action Badges** | Color-coded: login/logout (blue), upload (green), ban (red), admin (purple) |
+| 🗑️ **Cleanup Manual** | Hapus log lama (>7, 14, 30, 90, 365 hari) dengan konfirmasi SweetAlert2 + CSRF |
 
 ### Live Activity Monitor
 
-Admin dapat melihat aktivitas real-time user di dashboard admin:
+Selain `activity_log`, admin dashboard juga menampilkan aktivitas user real-time via tabel `users`:
 
 ```php
 $result_monitor = $conn->query(
@@ -371,6 +397,82 @@ Detil yang ditampilkan:
 - Tipe koneksi (Local/IPv4/IPv6/Cloudflare)
 - Device type (Smartphone/PC/Mac)
 - IP Address (dengan badge tipe)
+
+---
+
+## API Rate Limiting
+
+### Arsitektur
+
+`modules/RateLimiter.php` menyediakan **file-based rate limiter** yang melindungi API endpoint dari abuse:
+
+```
+Request → RateLimiter::check(key, endpoint)
+  ↓
+Baca file cache di temp/ratelimit/{md5_hash}.cache
+  ↓
+flock(LOCK_EX) → Increment counter → ftruncate + fwrite
+  ↓
+Counter > max? → Ya → HTTP 429 Too Many Requests
+  ↓ Tidak
+Allow request
+```
+
+### Storage
+
+Menggunakan file JSON di `temp/ratelimit/` (tanpa schema DB tambahan):
+- Setiap key+endpoint punya file sendiri (`md5(key_endpoint).cache`)
+- Isi: `{"count": N, "window_start": timestamp}`
+- Auto-cleanup via `GarbageCollector::run()` setiap request
+
+### Endpoint Limits
+
+| Endpoint | Max Request | Window | Respons pada Limit |
+|----------|:-----------:|:------:|--------------------|
+| **Like/Dislike** | 30 | 1 menit | HTTP 429 + HTMX HTML snippet (badge kuning "Wait Xs" + disabled buttons) |
+| **Comment** | 10 | 1 menit | Redirect dengan flash error message |
+| **Upload** (video/music/books) | 3 | 1 jam | — |
+| **Transcode** | 5 | 1 jam | — |
+| **API Generic** | 60 | 1 menit | — |
+
+### Integrasi
+
+```php
+// controllers/api/like.php — HTMX endpoint
+$rateCheck = RateLimiter::check('user_'.$userId, 'like');
+if (!$rateCheck['allowed']) {
+    http_response_code(429);
+    header('HX-Retarget: #like-dislike-container');
+    // Return HTML dengan badge "⏱️ Wait Xs"
+    exit;
+}
+
+// controllers/api/delete_comment.php — redirect-based
+$rateCheck = RateLimiter::check('user_'.$userId, 'comment');
+if (!$rateCheck['allowed']) {
+    $_SESSION['error'] = 'Terlalu banyak request.';
+    header('Location: ' . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+// controllers/api/WatchController.php — comment rate limit
+$rateCheck = RateLimiter::check('user_'.$userId, 'comment');
+if (!$rateCheck['allowed']) {
+    $_SESSION['error'] = 'Terlalu banyak komentar.';
+    header("Location: watch.php?id={$id}#comment-section");
+    exit;
+}
+```
+
+### Admin Monitoring
+
+Rate limit status bisa dimonitor di admin dashboard:
+- **Active Keys:** Jumlah key rate limit yang sedang aktif
+- **Endpoints Protected:** 5 endpoint dengan limit berbeda
+
+### Cleanup
+
+File expired (>1 jam) otomatis dibersihkan oleh `GarbageCollector::run()` yang dipanggil di setiap request.
 
 ---
 

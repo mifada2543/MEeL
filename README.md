@@ -24,8 +24,10 @@
 - **Transcoding otomatis** menggunakan FFmpeg
 - **Integrasi yt-dlp** untuk download via URL
 - **Manajemen file** berbasis peran (RBAC)
-- **Mini-game arcade** interaktif (Dino Run & Chess)
-- **Sistem keamanan** berlapis (CSRF, IP Banning, Session Management)
+- **Mini-game arcade** interaktif (Dino Run, Snake, Chess)
+- **Sistem keamanan** berlapis (CSRF, IP Banning, Session Management, Rate Limiting)
+- **Audit Trail** aktivitas pengguna dengan admin viewer
+- **Dashboard admin** dengan grafik aktivitas 7 hari
 
 ---
 
@@ -63,7 +65,7 @@
 
 | Fitur | Detail |
 |-------|--------|
-| **Dua Scope** | Public (semua user) & Private (per-user) |
+| **Dua Scope** | Public (semua member) & Private (per-member) |
 | **Kuota Terbatas** | 20GB per member, unlimited untuk admin |
 | **Filter Tipe** | Video, Audio, Dokumen (auto-detect) |
 | **Preview In-Browser** | Video, audio, dan gambar bisa dipratinjau |
@@ -72,7 +74,7 @@
 ### 🕹️ Arcade (Mini Games)
 
 - **Dino Run** — endless runner ala Chrome Dino dengan karakter Miku & Teto
-- **Chess** — permainan catur klasik dengan mode multiplayer online(LAN)
+- **Chess** — permainan catur klasik dengan mode multiplayer online (LAN)
 - **Snake** — permainan Snake klasik yang nostalgia
 
 ### 🔧 Fungsionalitas Umum
@@ -86,16 +88,21 @@
 | **Like/Dislike** | Interaksi sosial pada konten media |
 | **Profil User** | Avatar, bio, statistik upload |
 | **Mode Sehat 20-20-20** | Notifikasi istirahat mata tiap 20 menit |
-| **Activity Logger** | Firewall internal, pelacakan aktivitas, IP banning |
-| **Autoloader PSR-4** | Auto-loading class core (`MediaLibrary`, `Uploader`, etc.) tanpa require manual |
-| **Migration System** | Database schema versioning + auto-upgrade (FULLTEXT index, performance index) |
+| **Autoloader PSR-4** | Auto-loading class core (`MediaLibrary`, `Uploader`, dll.) tanpa require manual |
+| **Migration System v1–v7** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — path konsisten di semua subdirektori |
 | **FULLTEXT Search** | Search video/music 10-100× lebih cepat via `MATCH AGAINST` (MySQL 5.7+) |
-| **Admin Panel** | Dashboard monitoring, manajemen user, queue control |
+| **Admin Panel** | Dashboard monitoring, manajemen user, queue control, activity log viewer |
 | **Role Helper** | `get_user_role()` — query role ter-cache, menghilangkan duplikasi di upload files |
-| **Redirect Guard** | Validasi URL redirect di playlist_action & delete_comment cegah open redirect |
+| **Redirect Guard** | Validasi URL redirect cegah open redirect |
+| **Activity Log Integration** | Audit trail login, logout, upload, admin actions — tabel `activity_log` |
+| **Admin Activity Log Viewer** | Halaman `admin/activity_log.php` — filter, pagination, cleanup log |
+| **API Rate Limiting** | Proteksi endpoint dari abuse (like: 30/menit, comment: 10/menit) |
+| **Pagination Metadata** | UI menampilkan info halaman (`total_pages`, `from`, `to`) |
+| **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
 
 ---
+
 ## 📸 Screenshots
 
 ### 🎬 Video Library
@@ -105,6 +112,7 @@
 ![Music Discovery](assets/img/music0.webp)
 
 > Sisanya menyusul
+
 ---
 
 ## 🛠️ Tech Stack
@@ -122,7 +130,8 @@
 | **Downloader** | yt-dlp (optional) | Download media dari URL eksternal |
 | **Transliterasi** | PHP `intl` (Transliterator) | Pembersihan nama file (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loading 10+ class core |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning + FULLTEXT/perf index |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v7 (FULLTEXT, FK, activity_log) |
+| **Rate Limiting** | `modules/RateLimiter.php` | File-based rate limiter (flock safety) |
 
 ---
 
@@ -131,33 +140,48 @@
 ```
 MEeL/
 ├── admin/                 # Panel Admin (role admin only)
-├── anime/                 # Modul Anime (Coming Soon — placeholder page)
-│   ├── sidebar.php        # (kosong — menunggu implementasi)
-│   ├── watch.php           # Redirect ke index.php
-│   └── index.php           # Halaman Coming Soon dengan progress bar
-├── arcade/                # Mini Games (Dino Run, Chess)
+│   ├── index.php          # Dashboard with Chart.js activity chart
+│   ├── activity_log.php   # Audit trail viewer
+│   ├── edit-video.php     # Edit video metadata
+│   └── edit-music.php     # Edit music metadata
+├── arcade/                # Mini Games (Dino Run, Snake, Chess)
 ├── assets/                # Aset statis (CSS, JS, font, gambar)
 ├── auth/                  # Autentikasi & manajemen sesi
 │   ├── config.php         # Konfigurasi database + path terpusat (MEEL_HDD_*)
 │   └── config.example.php # Template konfigurasi
 ├── books/                 # Modul E-Book / Komik
 ├── controllers/           # API Actions & Event Handler (AJAX/HTMX)
+│   ├── api/               # WatchController, like, comment, transcode
+│   ├── admin/             # admin_actions, admin_data
+│   └── profile/           # profile_edit, fun-manage
 ├── database/              # Skema database
 │   ├── schema.sql         # File schema standalone (16 tabel)
-│   └── migrate.php        # 🔄 Migration system — versioned schema upgrades (FULLTEXT, index)
+│   └── migrate.php        # 🔄 Migration system v1–v7 (FULLTEXT, FK, activity_log)
 ├── data_drive/            # Cloud Drive storage runtime
 ├── docs/                  # Dokumentasi proyek
 ├── drive/                 # Modul Cloud Drive
-│   ├── templates/          # Template rendering (file_grid.php)
-│   ├── DriveService.php    # OOP: DriveUserContext, DriveStorage, DriveViewRenderer
+│   ├── templates/         # Template rendering (file_grid.php)
+│   └── DriveService.php   # OOP: DriveUserContext, DriveStorage, DriveViewRenderer
 ├── err/                   # Halaman error (denied, maintenance, banned, revoked)
 ├── modules/               # Core logic & business layer (OOP)
 │   ├── helpers.php        # Fungsi bantuan: base_url(), resolve_binary(), time_ago(), dll
-│   └── autoload.php       # 🔄 Autoloader PSR-4-like (semua class core auto-load)
+│   ├── autoload.php       # 🔄 Autoloader PSR-4-like (semua class core auto-load)
+│   ├── RateLimiter.php    # ⚡ File-based API rate limiter
+│   ├── Transcoder.php     # FFmpeg HLS & yt-dlp download engine
+│   ├── Uploader.php       # Upload file & validasi
+│   ├── MediaLibrary.php   # Query database, search, pagination metadata
+│   ├── MediaViewer.php    # View tracking, komentar, rekomendasi
+│   ├── MediaInteraction.php # Like/dislike
+│   ├── System.php         # Queue management & monitoring
+│   ├── GarbageCollector.php # Auto-cleanup temp files + rate limit cache
+│   ├── CommentRenderer.php  # Render komentar nested
+│   ├── activity_logger.php  # Logging aktivitas & IP ban check
+│   ├── exceptions/        # Custom exception classes
+│   └── media/             # SearchEngine, MediaLibrary cache
 ├── music/                 # Modul pemutar musik
-├── partials/              # Reusable UI components
+├── partials/              # Reusable UI components (navbar, footer, head, nav)
 ├── profile/               # Modul profil user
-├── temp/                  # Runtime staging transcoding
+├── temp/                  # Runtime staging transcoding + rate limit cache
 ├── video/                 # Modul pemutar video
 ├── .htaccess              # Apache rewrite rules
 ├── index.php              # Homepage Hub / portal modul
@@ -167,7 +191,7 @@ MEeL/
 └── upload_advanced.php    # Advanced upload via URL (yt-dlp)
 ```
 
-> 📖 **Dokumentasi lengkap** tersedia di direktori [`docs/`](docs/).
+> 📖 **Dokumentasi lengkap** tersedia dalam dua bahasa: [🇮🇩 Indonesia](docs/id/index.md) · [🇬🇧 English](docs/en/index.md)
 
 ---
 
@@ -215,8 +239,8 @@ git clone https://github.com/mifada2543/MEeL.git MEeL
 # Buat database
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS MEeL DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 
-# Import skema (jalankan SQL dari README atau file skema)
-mysql -u root -p MEeL < schema.sql
+# Import skema
+mysql -u root -p MEeL < database/schema.sql
 ```
 
 ### 3. Konfigurasi Aplikasi
@@ -232,9 +256,11 @@ Edit `auth/config.php` dan isi kredensial database Anda.
 
 ```bash
 cd /opt/lampp/htdocs/MEeL
-mkdir -p data_drive/public data_drive/private_admins temp profile/upload
-sudo chown -R www-data:www-data data_drive temp profile/upload
-sudo chmod -R 775 data_drive temp profile/upload
+mkdir -p data_drive/public data_drive/private_admins temp profile/upload \
+         music/upload/file music/upload/thumbnail \
+         books/upload/manga books/upload/pdf books/upload/thumbnail
+sudo chown -R www-data:www-data data_drive temp profile/upload music/upload books/upload
+sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
 
 ### 5. Aktifkan mod_rewrite Apache
@@ -244,9 +270,15 @@ sudo a2enmod rewrite
 sudo systemctl restart apache2
 ```
 
+### 6. Jalankan Migration Database
+
+```bash
+/opt/lampp/bin/php database/migrate.php
+```
+
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 
-> 📖 **Instalasi detail** → [docs/installation.md](docs/installation.md)
+> 📖 **Instalasi detail** → [docs/id/installation.md](docs/id/installation.md) | [English](docs/en/installation.md)
 
 ---
 
@@ -263,6 +295,7 @@ sudo systemctl restart apache2
 | `modules/Uploader.php` | Upload file, FFmpeg |
 | `modules/helpers.php` | HDD check path (dari `MEEL_HDD_BASE`) |
 | `modules/System.php` | Queue & rate limit config |
+| `modules/RateLimiter.php` | **Baru!** API rate limiter — per-endpoint limits |
 
 ### Konfigurasi Path Terpusat
 
@@ -272,10 +305,9 @@ define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 
 // Semua modul otomatis mengikuti:
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
-define('MEEL_HDD_VIDEO_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'video/');
-define('MEEL_HDD_THUMB_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'thumbnail/');
 define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
-// ... dan seterusnya
+define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
+define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ```
 
 ### Base URL Portability
@@ -292,13 +324,24 @@ $url = base_url('/assets/css/style.css'); // → /MEeL/assets/css/style.css
 ### Migration System
 
 ```bash
-# Upgrade database ke versi terbaru (FULLTEXT index, performance index, dll)
+# Upgrade database ke versi terbaru (v1–v7)
 /opt/lampp/bin/php database/migrate.php
 ```
 
-Migration bersifat **idempotent** — aman dijalankan berulang kali. Setiap migrasi hanya dijalankan sekali berdasarkan versi yang tercatat di tabel `db_version`.
+**Riwayat Migration:**
+| Versi | Perubahan |
+|-------|-----------|
+| **v1** | FULLTEXT index untuk search video, music, books |
+| **v2** | Performance index (upload_date) untuk sorting |
+| **v3** | Sinkronisasi struktural |
+| **v4** | Foreign key constraints (upload_queue, drive_files → users) |
+| **v5** | title VARCHAR → TEXT |
+| **v6** | activity_log table untuk audit trail |
+| **v7** | UNIQUE INDEX on users.username |
 
-> 📖 **Konfigurasi lengkap** → [docs/configuration.md](docs/configuration.md)
+Migration bersifat **idempotent** — aman dijalankan berulang kali.
+
+> 📖 **Konfigurasi lengkap** → [docs/id/configuration.md](docs/id/configuration.md) | [English](docs/en/configuration.md)
 
 ---
 
@@ -306,7 +349,7 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali. Setiap migr
 
 | Role | Hak Akses |
 |------|-----------|
-| **Admin** | Kontrol penuh: semua modul, admin panel, upload advanced, transcode, manajemen user, IP banning |
+| **Admin** | Kontrol penuh: semua modul, admin panel, upload advanced, transcode, manajemen user, IP banning, activity log viewer |
 | **Member** | Semua media, komentar, like/dislike, books, Cloud Drive pribadi (quota 20GB) |
 | **User** | Semua media, komentar, like/dislike, books (tanpa Cloud Drive) |
 | **Guest** | Terbatas: hanya nonton/dengar tanpa interaksi |
@@ -315,20 +358,24 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali. Setiap migr
 
 ## 📚 Dokumentasi Lengkap
 
-Dokumentasi proyek tersedia di direktori [`docs/`](docs/):
+Dokumentasi proyek tersedia dalam dua bahasa:
 
-| Dokumen | Deskripsi |
-|---------|-----------|
-| [📖 Index](docs/index.md) | Peta dokumentasi |
-| [🚀 Instalasi](docs/installation.md) | Panduan instalasi detail |
-| [⚙️ Konfigurasi](docs/configuration.md) | Referensi konfigurasi |
-| [🏗️ Modul](docs/modules.md) | Arsitektur modul & class diagram |
-| [🔌 API](docs/api.md) | Endpoint controllers |
-| [🔒 Keamanan](docs/security.md) | Sistem keamanan & RBAC |
-| [🌍 Problem Solved](docs/problem-solved.md) | Masalah dunia nyata yang MEeL selesaikan |
-| [🔧 Troubleshooting](docs/troubleshooting.md) | Pemecahan masalah umum |
-| [👨‍💻 Development](docs/development.md) | Panduan kontribusi |
-| [📥 Advanced Upload](docs/upload_issue.md) | Penanganan masalah yt-dlp & queue |
+**🇮🇩 Bahasa Indonesia:** [`docs/id/`](docs/id/index.md)
+**🇬🇧 English:** [`docs/en/`](docs/en/index.md)
+
+| Dokumen | 🇮🇩 ID | 🇬🇧 EN |
+|---------|:-----:|:-----:|
+| 📖 Index Dokumentasi | [🇮🇩](docs/id/index.md) | [🇬🇧](docs/en/index.md) |
+| 🚀 Instalasi | [🇮🇩](docs/id/installation.md) | [🇬🇧](docs/en/installation.md) |
+| ⚙️ Konfigurasi | [🇮🇩](docs/id/configuration.md) | [🇬🇧](docs/en/configuration.md) |
+| 🏗️ Modul & Arsitektur | [🇮🇩](docs/id/modules.md) | [🇬🇧](docs/en/modules.md) |
+| 🔌 API & Controller | [🇮🇩](docs/id/api.md) | [🇬🇧](docs/en/api.md) |
+| 🔒 Keamanan | [🇮🇩](docs/id/security.md) | [🇬🇧](docs/en/security.md) |
+| 🌍 Problem Solved | [🇮🇩](docs/id/problem-solved.md) | [🇬🇧](docs/en/problem-solved.md) |
+| 🔧 Troubleshooting | [🇮🇩](docs/id/troubleshooting.md) | [🇬🇧](docs/en/troubleshooting.md) |
+| 👨‍💻 Development | [🇮🇩](docs/id/development.md) | [🇬🇧](docs/en/development.md) |
+| 📥 Advanced Upload | [🇮🇩](docs/id/upload_issue.md) | [🇬🇧](docs/en/upload_issue.md) |
+| 📋 Analisis Proyek | [🇮🇩](docs/id/deskripsi.md) | [🇬🇧](docs/en/analysis.md) |
 
 ---
 
@@ -351,26 +398,27 @@ Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**.
 ```
 
 > © 2026 Mifada. Beberapa hak dilindungi. Lihat [LICENSE](LICENSE) untuk detail.
+
 ---
+
 ## Q&A
+
 ### Q: Kenapa belum ada versi docker?
 
->A: Karena proyek ini mesih dalam tahap <strong>pengembangan</strong> dan <strong>debugging</strong>, jadi docker mesih kurang relevan untuk proyek ini
-
+> A: Karena proyek ini masih dalam tahap **pengembangan** dan **debugging**, jadi docker masih kurang relevan untuk proyek ini.
 
 ### Q: Kenapa absolut path?
 
->A: Lebih mudah dalam mengkonfigurasi jika anda menggunakan media eksternal seperti HDD(mengurangi memori system penuh)
-
+> A: Lebih mudah dalam mengkonfigurasi jika anda menggunakan media eksternal seperti HDD (mengurangi memori system penuh).
 
 ### Q: Ukuran MEeL?
 
->A: 77MB untuk source codenya, 1-2GB untuk env(ffmpeg, yt-dlp, apache, MariaDB, php, dsb).
-
+> A: 77MB untuk source codenya, 1-2GB untuk env (ffmpeg, yt-dlp, apache, MariaDB, php, dsb).
 
 ### Q: System Requirement?
 
->A: CPU 2 Core 2GHz cukup, GPU optional karena seluruh process bergantung pada CPU(anda dapat konfigurasi ulang dibagian codec jika ingin menggunakan accelerate GPU untuk transcoding), RAM 2GB cukup namun saran 4GB untuk membantu transcoding, ROM disesuaikan saja, OS ubuntu server, intinya linux dan asal ada env nya itu bisa pakai MEeL.
+> A: CPU 2 Core 2GHz cukup, GPU optional karena seluruh process bergantung pada CPU (anda dapat konfigurasi ulang dibagian codec jika ingin menggunakan accelerate GPU untuk transcoding), RAM 2GB cukup namun saran 4GB untuk membantu transcoding, ROM disesuaikan saja, OS ubuntu server, intinya linux dan asal ada env nya itu bisa pakai MEeL.
+
 ---
 
 ### ⚠️ Pernyataan Penting / Disclaimer

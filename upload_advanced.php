@@ -12,6 +12,7 @@ require_once 'auth/config.php';
 require_once 'modules/activity_logger.php';
 require_once 'modules/Transcoder.php';
 require_once 'modules/GarbageCollector.php';
+require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
 // ─── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────
@@ -74,6 +75,8 @@ $quota_music_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_mu
 
 if (isset($_GET['success'])) {
     $message = 'success';
+    MediaLibrary::clearCountsCache();
+    log_activity($conn, (int)$_SESSION['user_id'], 'upload_url', 'media');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {

@@ -146,7 +146,8 @@ Register → CSRF Check → Validasi → Insert DB (is_active=2)
 
 **Endpoint:** `controllers/like.php`  
 **Method:** POST (via HTMX)  
-**Auth:** User (non-guest, active)
+**Auth:** User (non-guest, active)  
+**Rate Limit:** 30 requests per menit per user
 
 **Request (via HTMX hx-vals):**
 ```json
@@ -174,16 +175,19 @@ Register → CSRF Check → Validasi → Insert DB (is_active=2)
 **Error Responses:**
 - `401 Unauthorized` — User tidak login
 - `403 Forbidden` — User inactive/guest
+- `429 Too Many Requests` — Rate limit exceeded (HTMX HTML snippet dengan badge "⏱️ Wait Xs" + disabled buttons)
 
 ### Delete Comment
 
 **Endpoint:** `controllers/api/delete_comment.php?id=123`  
 **Method:** GET  
-**Auth:** User (owner of comment)
+**Auth:** User (owner of comment)  
+**Rate Limit:** 10 requests per menit per user
 
 **Response:**
 - Success: Redirect ke referrer dengan flash message
 - Error: Redirect dengan error message
+- `429 Too Many Requests` — Redirect dengan `$_SESSION['error']` + CSRF flash message
 
 ### Auto Metadata
 
@@ -525,6 +529,7 @@ Endpoint admin tersebar di beberapa file:
 | 401 | Unauthorized | User belum login |
 | 403 | Forbidden | User inactive/guest, IP banned |
 | 404 | Not Found | Media/komentar tidak ditemukan |
+| 429 | Too Many Requests | Rate limit exceeded (like: 30/menit, comment: 10/menit) |
 | 500 | Server Error | Database error, FFmpeg failure |
 | 503 | Service Unavailable | HDD offline, server busy |
 

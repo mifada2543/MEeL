@@ -89,6 +89,53 @@ function get_connection_protocol()
     return 'IPv4';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. log_activity() — INSERT ke tabel activity_log untuk audit trail
+// ═══════════════════════════════════════════════════════════════════════════
+if (!function_exists('log_activity')) {
+    /**
+     * Catat aktivitas user ke tabel activity_log.
+     *
+     * @param mysqli  $conn       Koneksi database
+     * @param int     $user_id    ID user (0 untuk guest)
+     * @param string  $action     Tipe aksi (login, logout, upload_video, etc)
+     * @param string  $media_type Tipe media (video, music, books, user, dll) — opsional
+     * @param int|null $media_id  ID media terkait — opsional
+     */
+    function log_activity(mysqli $conn, int $user_id, string $action, string $media_type = '', ?int $media_id = null): void
+    {
+        $ip = '0.0.0.0';
+        if (PHP_SAPI !== 'cli' && function_exists('get_real_ip')) {
+            $ip = get_real_ip();
+        } elseif (isset($_SERVER['REMOTE_ADDR'])) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+
+        // Handle null media_id — gunakan prepared statement berbeda agar NULL dikirim, bukan 0
+        if ($media_id === null) {
+            $stmt = $conn->prepare(
+                "INSERT INTO activity_log (user_id, action, media_type, ip_address, created_at)
+                 VALUES (?, ?, ?, ?, NOW())"
+            );
+            if ($stmt) {
+                $stmt->bind_param("isss", $user_id, $action, $media_type, $ip);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } else {
+            $stmt = $conn->prepare(
+                "INSERT INTO activity_log (user_id, action, media_type, media_id, ip_address, created_at)
+                 VALUES (?, ?, ?, ?, ?, NOW())"
+            );
+            if ($stmt) {
+                $stmt->bind_param("issis", $user_id, $action, $media_type, $media_id, $ip);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+    }
+}
+
 // CLI guard — cegah warning $_SERVER undefined saat di CLI (migration, cron, dll)
 // Fungsi-fungsi di atas tetap terdefinisi, hanya LOGIC eksekusi yang di-skip
 if (PHP_SAPI === 'cli') {
@@ -212,9 +259,6 @@ if (isset($conn)) {
                 break;
             case 'books':
                 $current_page = "Browsing Books Library";
-                break;
-            case 'anime':
-                $current_page = "Browsing Anime";
                 break;
             case 'arcade':
                 $current_page = "Browsing Arcade";

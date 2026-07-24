@@ -29,11 +29,38 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 include '../../auth/config.php';
+include '../../modules/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
 // 🔒 FIX CSRF: Verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
+    exit;
+}
+
+// ⚡ RATE LIMIT: 30 likes per menit per user
+$rateKey = 'user_' . ($_SESSION['user_id'] ?? 0);
+$rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
+$rateCheck = RateLimiter::check($rateKey, 'like', $rateRole);
+if (!$rateCheck['allowed']) {
+    http_response_code(429);
+    header('HX-Retarget: #like-dislike-container');
+    header('HX-Reswap: innerHTML');
+    $media_type = isset($_POST['media_type']) ? trim($_POST['media_type']) : 'video';
+    $inactive_class = 'bg-gray-900/40 border-gray-800 text-gray-400 hover:bg-gray-800/60 hover:text-gray-300';
+    ?>
+    <div id="like-dislike-container" class="flex items-center gap-2 mt-4 sm:mt-0">
+        <div class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border border-yellow-500/30 bg-yellow-500/10 text-yellow-500">
+            ⏱️ Wait <?= $rateCheck['retry_after'] ?>s
+        </div>
+        <button class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer <?= $inactive_class ?>">
+            Like
+        </button>
+        <button class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer <?= $inactive_class ?>">
+            Dislike
+        </button>
+    </div>
+    <?php
     exit;
 }
 

@@ -8,6 +8,7 @@ include '../auth/auth.php';
 include_once '../modules/helpers.php';
 include_once '../modules/activity_logger.php';
 include_once '../modules/GarbageCollector.php';
+include_once '../modules/RateLimiter.php';
 
 if (!isset($_SESSION['user_id'])) {
     die(include '../err/denied.php');
@@ -25,6 +26,7 @@ GarbageCollector::cleanGuests($conn);
  * @var float $ssd_used
  * @var float $ssd_total
  * @var float $hdd_free
+ * @var float $hdd_total
  * @var float $p_vid
  * @var float $sz_vid
  * @var float $p_mus
@@ -34,6 +36,7 @@ GarbageCollector::cleanGuests($conn);
  * @var float $p_drive
  * @var float $sz_d_pub
  * @var float $sz_d_prv
+ * @var float $sz_drive_total
  * @var array $stats
  * @var array $orphans
  * @var float $ssd_free
@@ -43,6 +46,7 @@ GarbageCollector::cleanGuests($conn);
  * @var mysqli_result $result_monitor
  * @var mysqli_result $banned_ips
  * @var object $sys
+ * @var array $chart_activity
  */
 ?>
 
@@ -65,6 +69,7 @@ GarbageCollector::cleanGuests($conn);
     <script src="../assets/js/lucide.js"></script>
     <script src="../assets/js/sweetalert2.all.min.js"></script>
     <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/chart.umd.min.js"></script>
     <style>
         body {
             background-color: #0b0e14;
@@ -253,9 +258,24 @@ GarbageCollector::cleanGuests($conn);
                     </div>
                 </div>
 
-                <a href="cookies.php" class="block mt-6 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
+                <a href="activity_log.php" class="block mb-2 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat trail audit aktivitas pengguna">
+                    <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Activity Log
+                </a>
+                        <a href="cookies.php" class="block text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
                     Full Reports
                 </a>
+
+            </div>
+        </div>
+
+        <!-- 7-Day Activity Chart -->
+        <div class="glass p-6 rounded-3xl mb-8">
+            <div class="flex items-center gap-2 mb-4">
+                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">7-Day Activity</h3>
+            </div>
+            <div class="h-48">
+                <canvas id="activityChart"></canvas>
             </div>
         </div>
 
@@ -630,7 +650,86 @@ GarbageCollector::cleanGuests($conn);
     </div>
     <script>
         lucide.createIcons();
-        setTimeout(() => {
+
+        // ── CHART DATA ────────────────────────────────────────────────────────
+        var activityData = <?= json_encode($chart_activity) ?>;
+
+        // ── 7-DAY ACTIVITY BAR CHART ───────────────────────────────────────
+            var ctx2 = document.getElementById('activityChart');
+            if (ctx2 && activityData.length > 0) {
+                new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: activityData.map(function(d) { return d.label; }),
+                        datasets: [
+                            {
+                                label: 'Views',
+                                data: activityData.map(function(d) { return d.views; }),
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                order: 1
+                            },
+                            {
+                                label: 'Uploads',
+                                data: activityData.map(function(d) { return d.uploads; }),
+                                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                                borderColor: '#22c55e',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                order: 2
+                            },
+                            {
+                                label: 'Active Users',
+                                data: activityData.map(function(d) { return d.users; }),
+                                type: 'line',
+                                borderColor: '#a855f7',
+                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                                pointBackgroundColor: '#a855f7',
+                                pointRadius: 3,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                order: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#9ca3af',
+                                    font: { size: 9 },
+                                    boxWidth: 12,
+                                    padding: 8
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.03)' },
+                                ticks: { color: '#6b7280', font: { size: 9 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.03)' },
+                                ticks: { color: '#6b7280', font: { size: 9 } }
+                            }
+                        }
+                    }
+                });
+            }
+        
+
+        // Auto-refresh every 60 seconds
+        setTimeout(function() {
             location.reload();
         }, 60000);
     </script>

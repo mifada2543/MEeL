@@ -118,6 +118,11 @@ class GarbageCollector
             if (microtime(true) >= $timeout) break;
             self::cleanDirectory($dir);
         }
+
+        // Cleanup expired rate limit files
+        if (class_exists('RateLimiter')) {
+            RateLimiter::cleanup();
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
-# Security defaults for anime
+# Security defaults for docs
+DirectoryIndex index.php index.md
 Options -Indexes
-DirectoryIndex index.php index.html
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"

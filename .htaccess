@@ -2,8 +2,17 @@
 Options -Indexes
 DirectoryIndex index.php index.html
 
-# Custom Error Pages
-ErrorDocument 404 /MEeL/err/not_found.php
+# Custom Error Pages — RewriteRule based (adaptive to installation path)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ err/not_found.php [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    ErrorDocument 404 /err/not_found.php
+</IfModule>
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
