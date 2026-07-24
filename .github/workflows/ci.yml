@@ -1,0 +1,63 @@
+name: MEeL CI
+
+on:
+  push:
+    branches: [ "main", "master", "develop", "Experiment" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  php-tests:
+    name: PHP Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: php-lint
+
+      - name: PHP Syntax Check (php -l)
+        run: |
+          failed=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file" 2>&1; then
+              echo "❌ Syntax error in: $file"
+              failed=1
+            fi
+          done < <(find . -name '*.php' -not -path './vendor/*' -not -path './.git/*' -print0)
+          if [ $failed -eq 1 ]; then exit 1; fi
+          echo "✅ All PHP files passed syntax check."
+
+      - name: Functional Tests
+        run: |
+          if [ -f tests/functional_test.php ]; then
+            php tests/functional_test.php
+          else
+            echo "⚠️  Functional test not found, skipping."
+          fi
+
+      - name: Security Tests
+        run: |
+          if [ -f tests/security_test.php ]; then
+            php tests/security_test.php
+          else
+            echo "⚠️  Security test not found, skipping."
+          fi
+
+      - name: HTACCESS Check
+        run: |
+          echo "Checking sensitive directories have .htaccess protection..."
+          sensitive_dirs=("controllers" "modules" "logs" "tests" "database" "auth" "err" "temp")
+          missing=0
+          for dir in "${sensitive_dirs[@]}"; do
+            if [ -d "$dir" ] && [ ! -f "$dir/.htaccess" ]; then
+              echo "❌ Missing .htaccess in: $dir/"
+              missing=1
+            fi
+          done
+          if [ $missing -eq 1 ]; then exit 1; fi
+          echo "✅ All sensitive directories have .htaccess protection."

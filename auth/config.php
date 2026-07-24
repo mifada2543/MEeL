@@ -1,24 +1,12 @@
 <?php
 /**
- * MEeL-HUB — Contoh Konfigurasi Aplikasi
- * 
- * ★ PERBAIKAN v2: Autoloader terintegrasi
- *    Semua class (Uploader, Transcoder, MediaLibrary, dll) akan
- *    otomatis di-load tanpa require_once manual.
- *    Lihat modules/autoload.php untuk daftar class yang tersedia.
- * 
- * Copy file ini ke config.php dan sesuaikan dengan environment Anda:
- *   cp config.example.php config.php
- * 
- * ─── PORTABILITY TIP ───
- * Semua path penyimpanan media terpusat di konstanta MEEL_HDD_BASE.
- * Cukup ubah nilai MEEL_HDD_BASE, seluruh sistem akan mengikuti.
- * 
- * Contoh:
- *   - HDD eksternal: /media/[user]/MEeL/media
- *   - Lokal SSD:     /var/www/meel-storage/media
- *   - Docker volume: /data/media
- *   - Relative:      __DIR__ . '/../storage/media'
+ * MEeL-HUB — Konfigurasi Aplikasi
+ *
+ * ═══════════════════════════════════════════════════════════════════
+ * ★ PENTING — Jangan hapus guard !defined() di sekitar konstanta.
+ *   File ini bisa di-include dari berbagai entry point (index.php,
+ *   auth/auth.php, file admin, dll), guard mencegah redeclare error.
+ * ═══════════════════════════════════════════════════════════════════
  */
 
 // ════════════════════════════════════════════════════════════════
@@ -30,47 +18,43 @@
 require_once __DIR__ . '/../modules/core/bootstrap.php';
 
 // ════════════════════════════════════════════════════════════════
-// ENVIRONMENT (Timpa auto-detect bootstrap jika perlu)
+// ENVIRONMENT (Override auto-detect bootstrap jika perlu)
 // ════════════════════════════════════════════════════════════════
-// Uncomment salah satu baris di bawah untuk menetapkan environment secara manual:
+// Uncomment salah satu baris di bawah untuk menetapkan environment
+// secara manual (mengalahkan auto-detect dari bootstrap.php):
 // define('MEEL_ENV', 'production');
 // define('MEEL_ENV', 'development');
-// define('MEEL_ENV', 'maintenance');
 
 // ════════════════════════════════════════════════════════════════
-// DATABASE CONFIGURATION
+// DATABASE CONNECTION
 // ════════════════════════════════════════════════════════════════
-
-$server   = "localhost";     // Host database (localhost atau IP)
-$username = "root";          // Username database
-$password = "";              // Password database
-$db       = "MEeL";          // Nama database
-
-$conn = new mysqli($server, $username, $password, $db);
-if ($conn->connect_error) {
-    die("[MEeL SYSTEM ERROR]\nKoneksi ke database gagal: " . $conn->connect_error);
+// Hanya connect jika $conn belum ada — aman di-include berkali-kali
+if (!isset($conn) || $conn === null) {
+    $conn = new mysqli("localhost", "root", "", "MEeL");
+    if ($conn->connect_error) {
+        die("[MEeL SYSTEM ERROR]\nKoneksi ke database gagal: " . $conn->connect_error);
+    }
 }
 
 // ════════════════════════════════════════════════════════════════
-// BASE URL & HOST (PATH PORTABILITY & SECURITY)
+// BASE URL (PATH PORTABILITY)
 // ════════════════════════════════════════════════════════════════
-// Gunakan untuk menggantikan hardcoded /MEeL/ prefix di redirect dan link.
-// Dihitung dari lokasi file ini (auth/config.php), sehingga konsisten
-// meskipun di-include dari berbagai kedalaman direktori.
-$project_root = str_replace('\\', '/', dirname(__DIR__));
-$doc_root     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
-$relative     = substr($project_root, strlen(rtrim($doc_root, '/')));
-define('MEEL_BASE_URL', rtrim($relative, '/'));
+// Menggantikan hardcoded /MEeL/ prefix di redirect dan link.
+// Dihitung dari lokasi file ini, konsisten di semua kedalaman include.
+if (!defined('MEEL_BASE_URL')) {
+    $meel_project_root = str_replace('\\', '/', dirname(__DIR__));
+    $meel_doc_root     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
+    $meel_relative     = substr($meel_project_root, strlen(rtrim($meel_doc_root, '/')));
+    define('MEEL_BASE_URL', rtrim($meel_relative, '/'));
+}
 
 // ════════════════════════════════════════════════════════════════
 // HOST CONSTANT (CEGAH OPEN REDIRECT)
 // ════════════════════════════════════════════════════════════════
-// Gunakan untuk validasi referer/open redirect, bukan $_SERVER['HTTP_HOST']
-// yang bisa dipalsukan. Set nilai ini sesuai hostname server Anda.
-// Contoh:
-//   define('MEEL_HOST', 'meel.example.com');
-//   define('MEEL_HOST', '192.168.1.100');
-// Biarkan kosong untuk fallback ke HTTP_HOST (kurang aman, tapi kompatibel).
+// Gunakan untuk validasi referer/open redirect. Set nilai ini
+// sesuai hostname server Anda untuk keamanan lebih baik.
+// Contoh: define('MEEL_HOST', 'meel.example.com');
+// Biarkan tidak di-set untuk fallback ke HTTP_HOST.
 if (!defined('MEEL_HOST')) {
     define('MEEL_HOST', $_SERVER['HTTP_HOST'] ?? '');
 }
@@ -80,12 +64,6 @@ if (!defined('MEEL_HOST')) {
 // ════════════════════════════════════════════════════════════════
 // Set path absolut untuk mencegah binary-hijacking via PATH environment.
 // Biarkan kosong untuk auto-discovery (hanya untuk development).
-//
-// Cara setting:
-//   define('MEEL_FFMPEG_PATH', '/usr/bin/ffmpeg');
-//   define('MEEL_FFPROBE_PATH', '/usr/bin/ffprobe');
-//   define('MEEL_NODE_PATH', '/usr/bin/node');
-//   define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 if (!defined('MEEL_FFMPEG_PATH')) {
     define('MEEL_FFMPEG_PATH', '');
 }
@@ -102,61 +80,41 @@ if (!defined('MEEL_YTDLP_PATH')) {
 // ════════════════════════════════════════════════════════════════
 // MEDIA STORAGE PATHS (TERPUSAT)
 // ════════════════════════════════════════════════════════════════
-// ★ UBAH DI SINI jika ingin memindahkan lokasi penyimpanan media
-//    Semua modul (Video, Music, Books, Drive) akan mengikuti path ini
-// ★ Untuk HDD eksternal, pastikan sudah di-mount dan writable
+// Ubah hanya di sini untuk portabilitas ke server/HDD lain!
+// Cukup set MEEL_HDD_BASE, sisanya otomatis mengikuti.
+if (!defined('MEEL_HDD_BASE')) {
+    define('MEEL_HDD_BASE', '/media/muhammaddaffa/MEeL/media');
 
-define('MEEL_HDD_BASE', '/path/to/your/media');
+    // ── Path turunan (jangan diubah kecuali paham struktur folder) ──
+    define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
+    define('MEEL_HDD_VIDEO_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'video/');
+    define('MEEL_HDD_THUMB_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'thumbnail/');
+    define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
+    define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
+    define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 
-// ── Path turunan (jangan diubah kecuali paham struktur folder) ──
-define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
-define('MEEL_HDD_VIDEO_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'video/');
-define('MEEL_HDD_THUMB_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'thumbnail/');
-define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
-define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
-define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
-
-// ════════════════════════════════════════════════════════════════
-// X-SENDFILE (AKSELERASI STREAMING APACHE)
-// ════════════════════════════════════════════════════════════════
-// Aktifkan untuk streaming file besar (FLAC 33MB+, MKV 4K, dll)
-// tanpa beban PHP. Apache akan mengirim file langsung dari disk
-// menggunakan sistem call sendfile() (zero-copy ke socket).
-//
-// 🚀 Manfaat:
-//   - PHP tidak perlu baca file sama sekali → RAM server hemat
-//   - Proses PHP tidak terblokir → bisa layani request lain
-//   - File besar streaming 2-4x lebih cepat
-//   - Skalabel untuk banyak user concurrent
-//
-// 🔧 Cara aktivasi:
-//   1. Download & compile: https://github.com/nmaier/mod_xsendfile
-//   2. Copy mod_xsendfile.so ke direktori modules Apache
-//   3. Tambahkan di httpd.conf:
-//        LoadModule xsendfile_module modules/mod_xsendfile.so
-//        <IfModule xsendfile_module>
-//            XSendFile on
-//            XSendFilePath "/path/ke/music/upload/file"
-//        </IfModule>
-//   4. Restart Apache: sudo /opt/lampp/lampp restart
-//   5. Verifikasi: httpd -M | grep xsend
-//   6. Set konstanta di bawah menjadi true:
-
-define('MEEL_USE_XSENDFILE', false);
+    // Aktifkan jika mod_xsendfile sudah terinstall di Apache.
+    // 🚀 Untuk FLAC 33MB+, Apache kirim file langsung tanpa sentuh PHP.
+    define('MEEL_USE_XSENDFILE', true);
+}
 
 // ════════════════════════════════════════════════════════════════
-// SESSION & SECURITY
+// SESSION CONFIGURATION
 // ════════════════════════════════════════════════════════════════
+// Hanya set jika session belum jalan — aman dipanggil dari auth/auth.php
+if (session_status() === PHP_SESSION_NONE) {
+    $timeout = 43200; // 12 jam
+    ini_set('session.gc_maxlifetime', $timeout);
+    session_set_cookie_params($timeout, "/");
+    session_name('meel');
+    session_start();
+}
 
-$timeout = 43200; // 12 jam session lifetime
-ini_set('session.gc_maxlifetime', $timeout);
-session_set_cookie_params($timeout, "/");
-session_name('meel');
-session_start();
-
 // ════════════════════════════════════════════════════════════════
-// AUTOLOADER
+// AUTOLOADER & HELPERS
 // ════════════════════════════════════════════════════════════════
+// Semua class core (Uploader, Transcoder, MediaLibrary, dll)
+// akan otomatis di-load tanpa require_once manual.
 require_once __DIR__ . '/../modules/autoload.php';
 
 // ── Security Headers ──
@@ -169,7 +127,7 @@ if (!headers_sent()) {
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         header("Strict-Transport-Security: max-age=15552000; includeSubDomains");
     }
-    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
+    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-src 'self' blob:; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
 }
 
 // ── CSRF Token ──
@@ -190,10 +148,10 @@ if (!function_exists('verify_csrf')) {
     }
 }
 
-// ── Session Timeout Check ──
+// ── Session Timeout Check (12 jam) ──
 if (isset($_SESSION['LAST_ACTIVITY'])) {
     $elapsed_time = time() - $_SESSION['LAST_ACTIVITY'];
-    if ($elapsed_time > $timeout) {
+    if ($elapsed_time > 43200) {
         session_unset();
         session_destroy();
         header("Location: ../auth/login.php?reason=expired");
@@ -202,5 +160,7 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
 }
 $_SESSION['LAST_ACTIVITY'] = time();
 
-// ── Activity Logger ──
-include_once __DIR__ . '/../modules/core/activity_logger.php';
+// ── Activity Logger (skip di CLI — tidak ada HTTP request) ──
+if (PHP_SAPI !== 'cli') {
+    include_once __DIR__ . '/../modules/core/activity_logger.php';
+}

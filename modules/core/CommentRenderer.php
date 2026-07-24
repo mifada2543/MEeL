@@ -1,6 +1,6 @@
 <?php
 /**
- * modules/CommentRenderer.php
+ * modules/core/CommentRenderer.php
  *
  * Comment rendering helpers untuk video & music.
  * render_video_comments() dan render_music_comments() digabung menjadi

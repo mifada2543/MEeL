@@ -1,7 +1,9 @@
 <?php
 require '../../../auth/config.php';
 
-$room = strtoupper(substr(md5(time()), 0, 6));
+// Gunakan random_bytes alih-alih md5(time()) untuk mencegah prediksi/tebakan kode room
+// random_bytes(4) = 8 hex chars → potong 6 karakter pertama
+$room = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 $sql = "INSERT INTO rooms (room_code) VALUES (?)";
 $stmt = $conn->prepare($sql);
 

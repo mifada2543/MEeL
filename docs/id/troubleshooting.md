@@ -94,7 +94,7 @@ ALTER TABLE comments ADD COLUMN comment text NOT NULL;
 
 3. Untuk development/testing, nonaktifkan HDD check sementara:
    ```php
-   // modules/helpers.php - comment out the check
+   // modules/core/helpers.php - comment out the check
    // if (!is_dir($hdd_check_path)) { ... }
    ```
 
@@ -184,7 +184,7 @@ killall -9 ffmpeg
 **Optimasi:**
 ```php
 // Sesuaikan FFMPEG_THREADS dengan CPU Anda
-// Di modules/Transcoder.php
+// Di modules/core/Transcoder.php
 private const FFMPEG_THREADS = 8; // Ganti dengan jumlah core CPU Anda (nproc)
 ```
 

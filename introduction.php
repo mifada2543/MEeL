@@ -1,5 +1,5 @@
 <?php
-require_once 'modules/helpers.php';
+require_once 'modules/core/helpers.php';
 include 'auth/config.php';
 $back_url = 'index.php';
 

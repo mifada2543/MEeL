@@ -1,7 +1,7 @@
 # 📋 Analisis & Deskripsi Proyek MEeL-HUB
 
-**Versi Analisis:** 1.1  
-**Tanggal:** 22 Juli 2026  
+**Versi Analisis:** 2.0  
+**Tanggal:** 24 Juli 2026  
 **Analis:** Buffy (Freebuff AI Agent)
 
 ---
@@ -32,7 +32,7 @@
 ```
 MEeL/
 ├── auth/          → Otentikasi, session, CSRF, konfigurasi database
-├── modules/       → Core OOP: Uploader, Transcoder, MediaLibrary, RateLimiter, dll.
+├── modules/       → Core OOP (modules/core/, modules/media/, modules/exceptions/, modules/transcoder/)
 ├── controllers/   → AJAX/HTMX endpoints: like, comment, profile, transcode
 ├── video/         → Modul streaming video (HLS + MP4)
 ├── music/         → Modul streaming audio (MP3, FLAC, OGG, M4A)
@@ -53,16 +53,26 @@ MEeL/
 ### Pola Arsitektur
 
 - **Monolith PHP** — Semua logic dalam satu codebase, tanpa microservices
-- **OOP Modular** — Core business logic dipisah ke class-class di `modules/`:
-  - `Uploader` — Upload dan validasi file
-  - `Transcoder` — Transcoding HLS, ekstraksi audio
-  - `MediaLibrary` — Query database, rekomendasi, search (dengan pagination metadata)
-  - `MediaViewer` — View tracking, komentar
-  - `MediaInteraction` — Like/dislike
-  - `System` — Queue management, rate limit
-  - `GarbageCollector` — Pembersihan temporary files + expired rate limit cache
-  - `RateLimiter` — File-based API rate limiter (30 likes/min, 10 comments/min)
-  - `DriveUserContext`, `DriveStorage`, `DriveViewRenderer` — Cloud Drive OOP
+- **OOP Modular** — Core business logic dipisah ke class-class di `modules/core/`, `modules/media/`, `modules/transcoder/`, `modules/exceptions/`:
+  - `modules/core/Uploader.php` — Upload dan validasi file (dengan magic bytes, pre-flight disk space, RAM disk)
+  - `modules/core/Transcoder.php` — Transcoding HLS, ekstraksi audio, download yt-dlp
+  - `modules/core/System.php` — Queue management, storage monitoring, rate limit
+  - `modules/core/GarbageCollector.php` — Pembersihan temporary files + expired rate limit cache
+  - `modules/core/RateLimiter.php` — File-based API rate limiter (30 likes/min, 10 comments/min)
+  - `modules/core/helpers.php` — Fungsi utilitas global (resolve_binary, base_url, get_user_role, require_disk_space, dll.)
+  - `modules/core/activity_logger.php` — IP detection, session kick, guest auto-registration
+  - `modules/core/japanese.php` — MeCab + transliterator untuk filename Jepang→Romaji
+  - `modules/core/CommentRenderer.php` — Render komentar nested
+  - `modules/core/bootstrap.php` — Environment detection, error reporting, timezone
+  - `modules/media/MediaLibrary.php` — Query database, pagination metadata, cache getCounts()
+  - `modules/media/MediaViewer.php` — View tracking, komentar, rekomendasi
+  - `modules/media/MediaInteraction.php` — Like/dislike
+  - `modules/media/SearchEngine.php` — FULLTEXT search dengan parameter filtering
+  - `modules/transcoder/FfmpegUtils.php` — **Trait** bersama: probeDuration(), generateSpriteAndVTT()
+  - `modules/exceptions/ProcessException.php` — Error proses eksternal
+  - `modules/exceptions/DownloadException.php` — Error download URL
+  - `modules/exceptions/TranscodeException.php` — Error transcoding FFmpeg
+  - `drive/DriveService.php` — DriveUserContext, DriveStorage, DriveViewRenderer (Cloud Drive OOP)
 - **Autoloader PSR-4-like** — `modules/autoload.php` dengan `spl_autoload_register()`
 - **HTMX-driven** — Interaktivitas AJAX tanpa framework JavaScript berat
 - **Dark-mode first** — Tema gelap monospace dengan TailwindCSS (self-hosted, purged)
@@ -159,19 +169,21 @@ MEeL/
 
 | Sebelum | Sesudah | File |
 |---------|---------|------|
-| `resolveBinary()` ada di 2 file | 1 shared function `resolve_binary()` | `modules/helpers.php` |
-| Role check query di 3 file | 1 helper `get_user_role()` dengan static cache | `modules/helpers.php` |
+| `resolveBinary()` ada di 2 file | 1 shared function `resolve_binary()` | `modules/core/helpers.php` |
+| Role check query di 3 file | 1 helper `get_user_role()` dengan static cache | `modules/core/helpers.php` |
 | HTML string concat di DriveService | Template terpisah `drive/templates/file_grid.php` | `drive/DriveService.php` |
 
 ### Performance Improvements
 
 | Optimasi | Dampak | File |
 |----------|--------|------|
-| `LIKE` → `MATCH AGAINST` FULLTEXT | 10-100× faster search | `modules/MediaLibrary.php` |
+| `LIKE` → `MATCH AGAINST` FULLTEXT | 10-100× faster search | `modules/media/MediaLibrary.php` |
 | `session_write_close()` | No more blocked range requests | `music/stream.php`, `music/watch.php`, `video/watch.php` |
 | `PHP_BINARY` constant | Test script portable | `tests/functional_test.php` |
-| Static cache `get_user_role()` | 1 query per request (instead of per upload page) | `modules/helpers.php` |
+| Static cache `get_user_role()` | 1 query per request (instead of per upload page) | `modules/core/helpers.php` |
 | File-based cache `getCounts()` | Cache count query 60 detik, tanpa DB hit | `modules/media/MediaLibrary.php` |
+| `dir_size()` dengan cache file | 5 menit cache, tanpa `du -sb` berulang | `modules/core/helpers.php` |
+| RAM disk `/dev/shm` priority | I/O 10-100× lebih cepat untuk staging HLS | `modules/core/Uploader.php`, `modules/core/Transcoder.php` |
 
 ---
 
@@ -198,16 +210,18 @@ Tidak ada masalah medium yang tersisa.
 
 ## ✅ Ringkasan Perbaikan yang Sudah Dilakukan
 
+## ✅ Ringkasan Perbaikan yang Sudah Dilakukan
+
 ### Round 1: Bug Fixes & Security
 
 | # | File | Perubahan | Kategori |
 |---|------|-----------|----------|
-| 1 | `modules/Transcoder.php` | AND→OR fix (size/duration check) | 🐛 Bug |
+| 1 | `modules/core/Transcoder.php` | AND→OR fix (size/duration check) | 🐛 Bug |
 | 2 | `auth/register.php` | PASSWORD→password column + CSRF validation | 🐛 Bug |
 | 3 | `auth/register.php` | CSRF return check (bukan hanya call) | 🛡 Security |
-| 4 | `modules/Transcoder.php` | resolveBinary → shared function | ♻ Code |
-| 5 | `modules/Uploader.php` | resolveBinary → shared function | ♻ Code |
-| 6 | `modules/helpers.php` | `resolve_binary()` + `base_url()` functions | ✨ New |
+| 4 | `modules/core/Transcoder.php` | resolveBinary → shared function | ♻ Code |
+| 5 | `modules/core/Uploader.php` | resolveBinary → shared function | ♻ Code |
+| 6 | `modules/core/helpers.php` | `resolve_binary()` + `base_url()` functions | ✨ New |
 | 7 | `modules/autoload.php` | Autoloader PSR-4-like (new file) | ✨ New |
 | 8 | `auth/config.example.php` | Autoloader + MEEL_BASE_URL constant | 🔌 Portability |
 | 9 | `database/migrate.php` | Migration system (new file) | 🗄 Database |
@@ -219,12 +233,12 @@ Tidak ada masalah medium yang tersisa.
 
 | # | File | Perubahan | Kategori |
 |---|------|-----------|----------|
-| 13 | `modules/MediaLibrary.php` | `LIKE` → `MATCH AGAINST` FULLTEXT | ⚡ Performance |
+| 13 | `modules/media/MediaLibrary.php` | `LIKE` → `MATCH AGAINST` FULLTEXT | ⚡ Performance |
 | 14 | `video/video_card.php` | Null coalescing `?? 0` | 🛡 Stability |
 | 15 | `video/search_video.php` | Null coalescing `?? 0` | 🛡 Stability |
 | 16 | `music/search_music.php` | Null coalescing `?? 0` | 🛡 Stability |
 | 17 | `music/watch.php` | Null coalescing `?? 0` (rekomendasi) | 🛡 Stability |
-| 18 | `modules/activity_logger.php` | CLI guard + `$_SERVER` fallback | 🛡 Stability |
+| 18 | `modules/core/activity_logger.php` | CLI guard + `$_SERVER` fallback | 🛡 Stability |
 | 19 | `auth/config.php` | CLI guard activity_logger | 🛡 Stability |
 
 ### Round 2.5: Remaining Fixes
@@ -241,11 +255,11 @@ Tidak ada masalah medium yang tersisa.
 | # | File | Perubahan | Kategori |
 |---|------|-----------|----------|
 | 24 | `auth/auth.php` | Hardcoded `/MEeL/` → `base_url()` + require helpers | 🔌 Portability |
-| 25 | `controllers/delete_comment.php` | HTTP_REFERER validation + port stripping | 🛡 Security |
+| 25 | `controllers/api/delete_comment.php` | HTTP_REFERER validation + port stripping | 🛡 Security |
 | 26 | `music/playlist_action.php` | Redirect allowlist guard | 🛡 Security |
 | 27 | `drive/DriveService.php` | String concat → template include | ♻ Code |
 | 28 | `drive/templates/file_grid.php` | Template file baru | ✨ New |
-| 29 | `modules/helpers.php` | `get_user_role()` dengan static cache | ♻ Code |
+| 29 | `modules/core/helpers.php` | `get_user_role()` dengan static cache | ♻ Code |
 | 30 | `video/upload.php` | Deduplicate role check via get_user_role() | ♻ Code |
 | 31 | `music/upload.php` | Deduplicate role check via get_user_role() | ♻ Code |
 | 32 | `README.md` | Update struktur proyek + fitur baru | 📖 Docs |
@@ -254,21 +268,49 @@ Tidak ada masalah medium yang tersisa.
 
 | # | File | Perubahan | Kategori |
 |---|------|-----------|----------|
-| 33 | `modules/RateLimiter.php` | **Baru!** File-based API rate limiter | ✨ New |
+| 33 | `modules/core/RateLimiter.php` | **Baru!** File-based API rate limiter | ✨ New |
 | 34 | `controllers/api/like.php` | Rate limit 30 likes/menit dengan HTMX 429 response | 🛡 Security |
 | 35 | `controllers/api/delete_comment.php` | Rate limit 10 comments/menit | 🛡 Security |
 | 36 | `controllers/api/WatchController.php` | Rate limit komentar di watch pages | 🛡 Security |
-| 37 | `modules/GarbageCollector.php` | Auto-cleanup expired rate limit files | ♻ Code |
+| 37 | `modules/core/GarbageCollector.php` | Auto-cleanup expired rate limit files | ♻ Code |
 | 38 | `database/migrate.php` | FK constraints v4 + activity_log v6 + UNIQUE KEY v7 | 🗄 Database |
 | 39 | `database/schema.sql` | Sinkronisasi dengan migrate.php | 🗄 Database |
 | 40 | `controllers/admin/admin_data.php` | Chart data untuk 7-Day Activity | ✨ New |
 | 41 | `admin/index.php` | Dashboard charts (Chart.js) + activity log link | 📊 UI |
 | 42 | `admin/activity_log.php` | **Baru!** Admin activity log viewer | ✨ New |
-| 43 | `modules/MediaLibrary.php` | Pagination metadata (`total_pages`, `from`, `to`) | ✨ New |
+| 43 | `modules/media/MediaLibrary.php` | Pagination metadata (`total_pages`, `from`, `to`) | ✨ New |
 | 44 | `modules/media/MediaLibrary.php` | Cache untuk `getCounts()` (file-based, 60 detik) | ⚡ Performance |
-| 45 | `modules/activity_logger.php` | Integrasi `log_activity()` di login, logout, upload, admin actions | 🛡 Audit |
-| 46 | `modules/System.php` | Integrasi activity logger di queue operations | 🛡 Audit |
+| 45 | `modules/core/activity_logger.php` | Integrasi `log_activity()` di login, logout, upload, admin actions | 🛡 Audit |
+| 46 | `modules/core/System.php` | Integrasi activity logger di queue operations | 🛡 Audit |
 | 47 | `controllers/admin/admin_actions.php` | Logging ban, approve, reject, delete actions | 🛡 Audit |
+
+### Round 5: Dokumentasi & Restrukturisasi
+
+| # | File | Perubahan | Kategori |
+|---|------|-----------|----------|
+| 48 | `modules/core/japanese.php` | Restrukturisasi ke modules/core/ | ♻ Code |
+| 49 | `modules/core/bootstrap.php` | **Baru!** Bootstrap terpusat | ✨ New |
+| 50 | `modules/transcoder/FfmpegUtils.php` | **Baru!** Trait FFmpeg utilitas bersama | ✨ New |
+| 51 | `modules/exceptions/*.php` | **Baru!** 3 exception classes | ✨ New |
+| 52 | `modules/media/SearchEngine.php` | **Baru!** FULLTEXT search engine | ✨ New |
+| 53 | `modules/autoload.php` | Update mapping kelas ke path baru | ♻ Code |
+| 54 | Semua file docs | Update path ke modules/core/ + tambah modul baru | 📖 Docs |
+
+### Round 6: Uploader & Transcoder Enhancement
+
+| # | File | Perubahan | Kategori |
+|---|------|-----------|----------|
+| 55 | `modules/core/Uploader.php` | Magic bytes validation + active upload limit + pre-flight disk space | 🛡 Security |
+| 56 | `modules/core/Uploader.php` | RAM disk priority (/dev/shm) untuk staging HLS | ⚡ Performance |
+| 57 | `modules/core/Uploader.php` | Atomic DB transaction + rollback + file cleanup | 🛡 Stability |
+| 58 | `modules/core/Transcoder.php` | RAM disk priority (resolveShmPath) | ⚡ Performance |
+| 59 | `modules/core/Transcoder.php` | Cached dir_size() via helpers.php | ⚡ Performance |
+| 60 | `modules/core/Transcoder.php` | require_disk_space() pre-flight check | 🛡 Stability |
+| 61 | `modules/core/helpers.php` | `dir_size()` + `check_disk_space()` + `require_disk_space()` | ✨ New |
+| 62 | `modules/core/helpers.php` | `detectProtocol()` dengan Cloudflare support | ✨ New |
+| 63 | `modules/core/helpers.php` | `resolve_binary()` dengan MEEL_*_PATH override | 🛡 Security |
+| 64 | `modules/core/activity_logger.php` | IPv4-mapped IPv6 support + stream.php throttling | 🛡 Stability |
+| 65 | `modules/core/GarbageCollector.php` | Auto-cleanup expired rate limit via RateLimiter::cleanup() | ♻ Code |
 
 ---
 

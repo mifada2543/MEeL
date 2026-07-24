@@ -167,7 +167,7 @@ $migrations = [
                 if ($result) {
                     $row = $result->fetch_assoc();
                     $new_ai = (int)$row['new_ai'];
-                    $conn->query("ALTER TABLE users AUTO_INCREMENT = {$new_ai}");
+                    $conn->query("ALTER TABLE users AUTO_INCREMENT = " . (int)$new_ai);
                 }
             },
             function($conn) {

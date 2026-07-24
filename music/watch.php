@@ -1,13 +1,10 @@
 <?php
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 session_name('meel');
 session_start();
 
 include '../auth/config.php';
-require_once '../modules/helpers.php';
-require_once '../modules/CommentRenderer.php';
+require_once '../modules/core/helpers.php';
+require_once '../modules/core/CommentRenderer.php';
 require_once '../controllers/api/WatchController.php';
 
 $id          = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -18,7 +15,8 @@ $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
 
 // Semua variabel template diekstrak dari controller
-extract($ctrl->getViewData());
+// EXTR_SKIP mencegah overwrite variabel yang sudah ada di scope
+extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock agar range request streaming tidak terblokir
 session_write_close();

@@ -1,8 +1,4 @@
 <?php
-// Error logging diaktifkan, tapi display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Set session name & cookie params SEBELUM session_start()
 if (session_status() === PHP_SESSION_NONE) {
     $timeout = 43200; // 12 jam

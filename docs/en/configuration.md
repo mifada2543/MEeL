@@ -24,12 +24,16 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 | `auth/config.php` | Database, session, CSRF, **centralized paths** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
 | `auth/config.example.php` | Config template | Same as config.php |
 | `database/schema.sql` | Standalone database schema | — |
-| `modules/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
-| `modules/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
-| `modules/helpers.php` | HDD check path + various utilities | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, etc |
-| `modules/System.php` | Queue management | Rate limit constants |
-| `modules/GarbageCollector.php` | Auto-cleanup temp files + guests + rate limits | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
-| `modules/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, etc.) |
+| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
+| `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
+| `modules/core/helpers.php` | HDD check path + various utilities | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, `resolve_binary()`, `dir_size()`, `check_disk_space()`, etc. |
+| `modules/core/System.php` | Queue management | Rate limit constants |
+| `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guests + rate limits | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
+| `modules/core/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, etc.) |
+| `modules/core/japanese.php` | Japanese text processing (MeCab + transliterator) | `getRomajiName()`, `analyzeJapaneseText()` |
+| `modules/core/activity_logger.php` | Activity logging, IP banning, session kick | `get_real_ip()`, `log_activity()`, `validate_and_format_ip()` |
+| `modules/core/bootstrap.php` | Bootstrap (env detection, error reporting, timezone) | `MEEL_ENV`, error log config |
+| `modules/transcoder/FfmpegUtils.php` | **Trait** for FFmpeg utilities | `resolveBinary()`, `probeDuration()`, `generateSpriteAndVTT()` |
 | `modules/autoload.php` | PSR-4-like autoloader | List of scanned directories |
 | `database/migrate.php` | Database migration v1–v7 | FULLTEXT index, FK, activity_log, UNIQUE KEY |
 
@@ -155,7 +159,7 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 
 ## Transcoder Configuration
 
-### File: `modules/Transcoder.php`
+### File: `modules/core/Transcoder.php`
 
 ```php
 // ─── HARDWARE CONSTANTS ───────────────────────────────────
@@ -186,7 +190,7 @@ else                       $interval = 10;    // ≤ 5 min → every 10 seconds
 
 ## Uploader Configuration
 
-### File: `modules/Uploader.php`
+### File: `modules/core/Uploader.php`
 
 ### Upload Limits
 
@@ -210,7 +214,7 @@ $allowed_ext = ['mp3', 'opus', 'ogg', 'm4a', 'wav', 'flac'];
 
 ## System Configuration
 
-### File: `modules/System.php`
+### File: `modules/core/System.php`
 
 ```php
 // Queue Processing
@@ -223,7 +227,7 @@ return $active >= 2; // isServerBusy()
 
 ## Rate Limiting
 
-### File: `modules/RateLimiter.php`
+### File: `modules/core/RateLimiter.php`
 
 File-based rate limiter for API endpoints:
 
@@ -232,10 +236,10 @@ File-based rate limiter for API endpoints:
 | Like/Dislike | 30 | 1 minute | `controllers/api/like.php` |
 | Comment | 10 | 1 minute | `controllers/api/delete_comment.php`, `WatchController.php` |
 | Upload | 3 | 1 hour | — |
-| Transcode | 5 | 1 hour | — |
+| Transcode | 5 | 1 hour | —
 | API Generic | 60 | 1 minute | — |
 
-**Configuration:** Edit directly in `modules/RateLimiter.php`:
+**Configuration:** Edit directly in `modules/core/RateLimiter.php`:
 ```php
 private static array $limits = [
     'like'      => ['requests' => 30, 'window' => 60],

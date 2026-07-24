@@ -452,8 +452,9 @@ class BookUploader
         if (!empty($file['name'])) {
             $name = time() . '_' . bin2hex(random_bytes(4)) . '.webp';
             $target_path = $this->base_path . '/upload/thumbnail/' . $name;
+            $ffmpeg_bin = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
             // Konversi ke WebP — lebih kecil dari JPG/PNG asli
-            $cmd = "/usr/bin/ffmpeg -y -i " . escapeshellarg($file['tmp_name'])
+            $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($file['tmp_name'])
                 . " -vf \"scale='min(500,iw)':-1\" -c:v libwebp -q:v 78 "
                 . escapeshellarg($target_path) . " 2>&1";
             exec($cmd, $out, $ret);

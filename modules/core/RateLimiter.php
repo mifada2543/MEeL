@@ -1,12 +1,12 @@
 <?php
 /**
- * modules/RateLimiter.php
+ * modules/core/RateLimiter.php
  *
  * File-based rate limiter untuk proteksi endpoint dari abuse.
  * Menggunakan file storage di temp/ratelimit/ — tanpa perlu schema DB tambahan.
  *
  * Cara pakai:
- *   require_once 'modules/RateLimiter.php';
+ *   require_once 'modules/core/RateLimiter.php';
  *   $check = RateLimiter::check('user_'.$userId, 'like');
  *   if (!$check['allowed']) {
  *       http_response_code(429);
@@ -42,7 +42,7 @@ class RateLimiter
     private static function init(): void
     {
         if (self::$storageDir === '') {
-            self::$storageDir = __DIR__ . '/../temp/ratelimit/';
+            self::$storageDir = __DIR__ . '/../../temp/ratelimit/';
             if (!is_dir(self::$storageDir)) {
                 @mkdir(self::$storageDir, 0755, true);
             }

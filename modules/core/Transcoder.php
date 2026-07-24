@@ -18,10 +18,10 @@ if (!defined('MEEL_HDD_BASE')) {
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/japanese.php';
 require_once __DIR__ . '/GarbageCollector.php';
-require_once __DIR__ . '/transcoder/FfmpegUtils.php';
-require_once __DIR__ . '/exceptions/ProcessException.php';
-require_once __DIR__ . '/exceptions/DownloadException.php';
-require_once __DIR__ . '/exceptions/TranscodeException.php';
+require_once __DIR__ . '/../transcoder/FfmpegUtils.php';
+require_once __DIR__ . '/../exceptions/ProcessException.php';
+require_once __DIR__ . '/../exceptions/DownloadException.php';
+require_once __DIR__ . '/../exceptions/TranscodeException.php';
 
 class Transcoder
 {
@@ -61,8 +61,15 @@ class Transcoder
 
         $this->user_role = get_user_role($this->conn, $this->user_id);
 
+        $ytdlp_bin = defined('MEEL_YTDLP_PATH') && MEEL_YTDLP_PATH !== ''
+            ? MEEL_YTDLP_PATH
+            : $this->resolveBinary(['/usr/local/bin/yt-dlp', '/usr/bin/yt-dlp', 'yt-dlp']);
+        $node_bin  = defined('MEEL_NODE_PATH') && MEEL_NODE_PATH !== ''
+            ? MEEL_NODE_PATH
+            : '/usr/bin/node';
+
         $this->base_cmd = "export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8;"
-            . " /usr/local/bin/yt-dlp --js-runtime node:/usr/bin/node"
+            . " " . escapeshellarg($ytdlp_bin) . " --js-runtime " . escapeshellarg($node_bin)
             . " --remote-components ejs:github"
             . " --no-warnings --restrict-filenames"
             . " --user-agent "      . escapeshellarg($this->user_agent)

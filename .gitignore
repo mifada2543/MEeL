@@ -4,7 +4,6 @@
 
 # ─── SENSITIVE CONFIGURATION ───────────────────────────
 # Database credentials and local configuration
-auth/config.php
 auth/local.config.php
 .env
 .env.local

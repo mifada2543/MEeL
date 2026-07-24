@@ -1,6 +1,6 @@
 <?php
 include '../auth/config.php';
-require_once '../modules/helpers.php';
+require_once '../modules/core/helpers.php';
 require_once '../modules/media/SearchEngine.php';
 
 $engine = new SearchEngine($conn);

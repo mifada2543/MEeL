@@ -13,8 +13,8 @@
  * @package MEeL\Controllers
  */
 
-require_once __DIR__ . '/../../modules/helpers.php';
-require_once __DIR__ . '/../../modules/RateLimiter.php';
+require_once __DIR__ . '/../../modules/core/helpers.php';
+require_once __DIR__ . '/../../modules/core/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 
 // ════════════════════════════════════════════════════════════════

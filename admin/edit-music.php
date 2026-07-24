@@ -1,12 +1,8 @@
 <?php
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 include '../auth/config.php';
 include '../auth/auth.php';
-include_once '../modules/helpers.php';
-require_once '../modules/japanese.php';
+include_once '../modules/core/helpers.php';
+require_once '../modules/core/japanese.php';
 
 // Proteksi: harus login
 if (!isset($_SESSION['user_id'])) {
@@ -15,16 +11,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$query_user = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$query_user->bind_param("i", $user_id);
-$query_user->execute();
-$user_data = $query_user->get_result()->fetch_assoc();
-
-$is_admin   = ($user_data && $user_data['role'] === 'admin');
-$curr_role  = $user_data['role'] ?? 'user';
+$curr_role = get_user_role($conn, (int)$user_id);
+$is_admin   = ($curr_role === 'admin');
 
 // Tolak guest
-if (!$user_data || $curr_role === 'guest') {
+if ($curr_role === 'guest') {
     header("Location: ../index.php");
     exit();
 }
@@ -113,8 +104,9 @@ if (isset($_POST['update'])) {
                     $counter++;
                 }
                 $upload_path = $target_dir . $new_name;
+                $ffmpeg_bin = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
                 // Konversi ke WebP — 500×500 square, scale+pad agar tidak distorsi
-                $cmd = "/usr/bin/ffmpeg -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
+                $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
                     . " -vf \"scale=500:500:force_original_aspect_ratio=decrease,pad=500:500:(ow-iw)/2:(oh-ih)/2\" -c:v libwebp -q:v 78 "
                     . escapeshellarg($upload_path) . " 2>&1";
                 exec($cmd, $out, $ret);

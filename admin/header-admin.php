@@ -1,13 +1,13 @@
 <?php
-// Tentukan role admin jika belum di-set di file utama
+// Tentukan role admin menggunakan helper terpusat get_user_role()
 if (!isset($is_admin)) {
     $is_admin = false;
     if (isset($_SESSION['user_id']) && isset($conn)) {
-        $query_user = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-        $query_user->bind_param("i", $_SESSION['user_id']);
-        $query_user->execute();
-        $user_data = $query_user->get_result()->fetch_assoc();
-        $is_admin = ($user_data && $user_data['role'] === 'admin');
+        // Gunakan helper terpusat dengan session cache
+        $user_role = function_exists('get_user_role')
+            ? get_user_role($conn, (int)$_SESSION['user_id'])
+            : 'user';
+        $is_admin = ($user_role === 'admin');
     }
 }
 

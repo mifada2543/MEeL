@@ -42,7 +42,7 @@ class GarbageCollector
      */
     public static function cleanGuests(\mysqli $conn): int
     {
-        $throttleFile = dirname(__DIR__) . '/temp/gc_guest_last_run.txt';
+        $throttleFile = dirname(__DIR__, 2) . '/temp/gc_guest_last_run.txt';
 
         // Throttle: cek apakah sudah jalan dalam < interval
         if (file_exists($throttleFile)) {
@@ -88,7 +88,7 @@ class GarbageCollector
             if ($result) {
                 $row = $result->fetch_assoc();
                 $newAi = (int) $row['new_ai'];
-                $conn->query("ALTER TABLE users AUTO_INCREMENT = {$newAi}");
+                $conn->query("ALTER TABLE users AUTO_INCREMENT = " . (int)$newAi);
             }
         }
 
@@ -133,7 +133,7 @@ class GarbageCollector
         $dirs = [];
 
         // 1. Project temp/ fallback
-        $project_temp = dirname(__DIR__) . '/temp';
+        $project_temp = dirname(__DIR__, 2) . '/temp';
         if (is_dir($project_temp)) {
             $dirs[] = $project_temp;
         }

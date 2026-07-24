@@ -1,5 +1,5 @@
 <?php
-require_once 'modules/helpers.php';
+require_once 'modules/core/helpers.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ignore_user_abort(true);
@@ -9,9 +9,9 @@ putenv("PATH=/usr/local/bin:/usr/bin:/bin");
 
 require_once 'auth/auth.php';
 require_once 'auth/config.php';
-require_once 'modules/activity_logger.php';
-require_once 'modules/Transcoder.php';
-require_once 'modules/GarbageCollector.php';
+require_once 'modules/core/activity_logger.php';
+require_once 'modules/core/Transcoder.php';
+require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
@@ -38,7 +38,7 @@ $message        = "";
 $rate_limit_msg = "";
 $transcoder     = new Transcoder($conn, $_SESSION['user_id']);
 
-require_once 'modules/System.php';
+require_once 'modules/core/System.php';
 $sys     = new System($conn);
 $is_busy = $sys->isServerBusy();
 

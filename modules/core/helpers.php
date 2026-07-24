@@ -8,10 +8,38 @@
 if (!function_exists('resolve_binary')) {
     /**
      * Resolve binary path dari daftar kandidat.
-     * Cek executable path absolut dulu, lalu cari via command -v.
+     *
+     * Urutan prioritas:
+     *   1. Konstanta MEEL_FFMPEG_PATH/MEEL_FFPROBE_PATH/MEEL_NODE_PATH/MEEL_YTDLP_PATH
+     *      (path absolut dari config — cegah binary-hijacking)
+     *   2. Cek executable path absolut dari kandidat
+     *   3. Auto-discovery via command -v (development mode)
+     *
+     * @param array $candidates Daftar kandidat path binary
+     * @return string Path binary yang ditemukan
      */
     function resolve_binary(array $candidates): string
 {
+    // Level 1: Cek konstanta MEEL_*_PATH dari config (prioritas tertinggi — aman)
+    static $const_map = null;
+    if ($const_map === null) {
+        $const_map = [];
+        foreach (['ffmpeg', 'ffprobe', 'node', 'yt-dlp'] as $bin) {
+            $const = 'MEEL_' . strtoupper($bin) . '_PATH';
+            if (defined($const) && ($val = constant($const)) !== '') {
+                $const_map[$bin] = $val;
+            }
+        }
+    }
+
+    foreach ($candidates as $candidate) {
+        $base = basename($candidate);
+        if (isset($const_map[$base]) && is_executable($const_map[$base])) {
+            return $const_map[$base];
+        }
+    }
+
+    // Level 2: Cek executable path absolut
     foreach ($candidates as $candidate) {
         if (strpos($candidate, '/') !== false) {
             if (is_executable($candidate)) return $candidate;
@@ -107,7 +135,7 @@ if (!function_exists('music_thumbnail_url')) {
 function music_thumbnail_url(?string $thumbnail): string
 {
     $thumbnail = trim((string)$thumbnail);
-    $thumb_dir = __DIR__ . '/../music/upload/thumbnail/';
+    $thumb_dir = __DIR__ . '/../../music/upload/thumbnail/';
     $fallback  = '../assets/img/music0.webp';
 
     // Cache default path untuk menghindari is_file() berulang
@@ -163,7 +191,7 @@ if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
 if (!function_exists('get_user_usage')) {
 function get_user_usage(string $username): int|float
 {
-    $path = dirname(__DIR__) . "/data_drive/private_admins/" . $username;
+    $path = dirname(__DIR__, 2) . "/data_drive/private_admins/" . $username;
     if (!is_dir($path)) return 0;
 
     // Pakai du -sb (jauh lebih cepat dari RecursiveIterator untuk folder besar)
@@ -189,25 +217,63 @@ function get_user_usage(string $username): int|float
 } // end function_exists('get_user_usage')
 
 /**
- * Get user role dari database (hasil di-cache per request untuk performa).
- * Menghilangkan duplikasi query SELECT role di video/upload.php & music/upload.php.
+ * Get user role dengan cache session + static cache per request.
+ * Prioritas:
+ *   1. Static cache (per-request, tercepat)
+ *   2. $_SESSION['role'] (lintas request, mengurangi query DB)
+ *   3. Query DB (jika belum ada di cache)
+ *
+ * Setelah role diambil dari DB, simpan ke session agar request
+ * berikutnya tidak perlu query ulang.
+ *
+ * @param \mysqli $conn   Koneksi database
+ * @param int     $user_id ID user
+ * @return string Role user ('admin', 'member', 'user', 'guest')
  */
 if (!function_exists('get_user_role')) {
 function get_user_role(mysqli $conn, int $user_id): string
 {
+    // Level 1: Static cache per-request (paling cepat)
     static $cache = [];
     if (isset($cache[$user_id])) {
         return $cache[$user_id];
     }
+
+    // Level 2: Session cache (lintas request, cegah query tiap halaman)
+    if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $user_id && isset($_SESSION['role'])) {
+        $role = $_SESSION['role'];
+        $cache[$user_id] = $role;
+        return $role;
+    }
+
+    // Level 3: Query database
     $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $role = $stmt->get_result()->fetch_assoc()['role'] ?? 'user';
     $stmt->close();
+
+    // Simpan ke cache
     $cache[$user_id] = $role;
+
+    // Simpan ke session jika ini user yang sedang login
+    if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $user_id) {
+        $_SESSION['role'] = $role;
+    }
+
     return $role;
 }
 } // end function_exists('get_user_role')
+
+/**
+ * Invalidate role cache di session — panggil saat role user berubah.
+ */
+if (!function_exists('invalidate_user_role_cache')) {
+function invalidate_user_role_cache(): void
+{
+    unset($_SESSION['role']);
+}
+} // end function_exists('invalidate_user_role_cache')
 
 /**
  * Get CSRF token dari session (sudah diinisialisasi di config.php)
@@ -220,11 +286,18 @@ function get_csrf_token(): string
 } // end function_exists('get_csrf_token')
 
 /**
- * Verifikasi CSRF token (wrapper untuk verify_csrf dari config.php)
+ * Verifikasi CSRF token — fungsi terpadu.
+ * Bisa untuk GET (query string) atau POST (form body).
+ *
+ * @param string|null $token Token CSRF (opsional). Jika null, ambil dari $_POST['csrf_token']
+ * @return bool True jika token valid
  */
 if (!function_exists('verify_csrf_token')) {
-function verify_csrf_token(?string $token): bool
+function verify_csrf_token(?string $token = null): bool
 {
+    if ($token === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_POST['csrf_token'] ?? '';
+    }
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token ?? '');
 }
 } // end function_exists('verify_csrf_token')
@@ -357,12 +430,65 @@ function get_audio_format_description(string $ext): string
 /**
  * Log drive operations untuk audit trail
  */
+if (!function_exists('dir_size')) {
+/**
+ * Hitung ukuran direktori dengan cache.
+ * Menggantikan duplikasi shell_exec("du -sb ...") di helpers.php dan System.php.
+ *
+ * @param string $path       Path direktori
+ * @param int    $cache_ttl  Cache TTL dalam detik (default 300 = 5 menit)
+ * @return float Ukuran dalam bytes, atau 0 jika gagal
+ */
+function dir_size(string $path, int $cache_ttl = 300): float
+{
+    $cache_key  = 'dirsize_' . md5($path);
+    $cache_file = dirname(__DIR__, 2) . '/temp/' . $cache_key . '.cache';
+
+    // Cek cache
+    if (file_exists($cache_file)) {
+        $cached = @json_decode(@file_get_contents($cache_file), true);
+        if ($cached && isset($cached['size'], $cached['time'])) {
+            if (time() - $cached['time'] < $cache_ttl) {
+                return (float)$cached['size'];
+            }
+        }
+    }
+
+    if (!is_dir($path)) return 0.0;
+
+    // Metode 1: du -sb (cepat)
+    $output = @shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
+    if ($output && preg_match('/^(\d+)/', $output, $m)) {
+        $size = (float)$m[1];
+        // Simpan cache
+        @file_put_contents($cache_file, json_encode(['size' => $size, 'time' => time()]), LOCK_EX);
+        return $size;
+    }
+
+    // Metode 2: RecursiveIterator (fallback)
+    $size = 0.0;
+    try {
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $size += $file->getSize();
+            }
+        }
+        // Simpan cache
+        @file_put_contents($cache_file, json_encode(['size' => $size, 'time' => time()]), LOCK_EX);
+    } catch (RuntimeException $e) {
+        return 0.0;
+    }
+    return $size;
+}
+} // end function_exists('dir_size')
+
 if (!function_exists('log_drive_operation')) {
 function log_drive_operation(int $userId, string $username, string $operation, string $filename, string $type, string $scope, string $status = 'success'): void
 {
     global $conn;
     
-    $logDir = dirname(__DIR__) . '/logs';
+    $logDir = dirname(__DIR__, 2) . '/logs';
     if (!is_dir($logDir)) {
         @mkdir($logDir, 0755, true);
     }

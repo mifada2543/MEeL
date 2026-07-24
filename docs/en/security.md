@@ -240,7 +240,7 @@ Page `admin/activity_log.php` provides a dedicated audit trail viewer:
 
 ### Architecture
 
-`modules/RateLimiter.php` provides **file-based rate limiting** that protects API endpoints from abuse:
+`modules/core/RateLimiter.php` provides **file-based rate limiting** that protects API endpoints from abuse:
 
 ```
 Request → RateLimiter::check(key, endpoint)

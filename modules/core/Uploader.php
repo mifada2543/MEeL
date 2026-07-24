@@ -3,7 +3,7 @@
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/japanese.php';
 require_once __DIR__ . '/GarbageCollector.php';
-require_once __DIR__ . '/transcoder/FfmpegUtils.php';
+require_once __DIR__ . '/../transcoder/FfmpegUtils.php';
 
 class Uploader
 {

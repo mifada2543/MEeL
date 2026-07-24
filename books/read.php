@@ -1,5 +1,5 @@
 <?php
-require_once '../modules/helpers.php';
+require_once '../modules/core/helpers.php';
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php

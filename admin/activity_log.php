@@ -6,24 +6,17 @@
  * Hanya untuk admin. Query menggunakan prepared statements.
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 include '../auth/config.php';
 include '../auth/auth.php';
-include_once '../modules/helpers.php';
+include_once '../modules/core/helpers.php';
 
 if (!isset($_SESSION['user_id'])) {
     die(include '../err/denied.php');
 }
 
 // Verifikasi role admin
-$__q = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$__q->bind_param("i", $_SESSION['user_id']);
-$__q->execute();
-$__user_data = $__q->get_result()->fetch_assoc();
-
-if (!$__user_data || $__user_data['role'] !== 'admin') {
+$curr_role = get_user_role($conn, (int)$_SESSION['user_id']);
+if ($curr_role !== 'admin') {
     die(include '../err/denied.php');
 }
 
@@ -48,13 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
         $deleted = $stmt_del->affected_rows;
 
         // Reset auto-increment ke ID tertinggi yang tersisa + 1
-        // (seperti sistem guest — agar ID baru melanjutkan dari yang tertinggi)
-        $next_id = 1;
+        // (seperti sistem guest — agar ID baru melanjutkan dari yang tertinggi)            $next_id = 1;
         $max_res = $conn->query("SELECT MAX(id) AS max_id FROM activity_log");
         if ($max_res) {
             $max_row = $max_res->fetch_assoc();
             $next_id = $max_row['max_id'] ? (int)$max_row['max_id'] + 1 : 1;
-            $conn->query("ALTER TABLE activity_log AUTO_INCREMENT = {$next_id}");
+            $conn->query("ALTER TABLE activity_log AUTO_INCREMENT = " . (int)$next_id);
         }
 
         $clear_msg = "Berhasil menghapus {$deleted} log lebih dari {$clear_days} hari. Auto-increment di-reset ke {$next_id}.";

@@ -1,5 +1,5 @@
 <?php
-require_once '../modules/helpers.php';
+require_once '../modules/core/helpers.php';
 /**
  * read_pdf.php — PDF viewer dengan PWA support
  * 

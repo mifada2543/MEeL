@@ -56,7 +56,7 @@ if (isset($_POST['clear_all_guests'])) {
         $result_ai = $conn->query("SELECT COALESCE(MAX(id), 0) + 1 AS new_ai FROM users");
         if ($result_ai) {
             $new_ai = (int)$result_ai->fetch_assoc()['new_ai'];
-            $conn->query("ALTER TABLE users AUTO_INCREMENT = {$new_ai}");
+            $conn->query("ALTER TABLE users AUTO_INCREMENT = " . (int)$new_ai);
         }
         header("Location: index.php?msg=Guests_Cleared_Efficiently");
     } else {
@@ -67,7 +67,7 @@ if (isset($_POST['clear_all_guests'])) {
 
 // ─── CLEAN STUCK QUEUES ────────────────────────────────────────────────────
 if (isset($_POST['clean_stuck_queues'])) {
-    require_once __DIR__ . '/../../modules/System.php';
+    require_once __DIR__ . '/../../modules/core/System.php';
     $sys     = new System($conn);
     $cleaned = $sys->cleanStuckQueues();
     $url     = "index.php?msg=Queues_Cleaned_{$cleaned}#queues";
@@ -82,7 +82,7 @@ if (isset($_POST['clean_stuck_queues'])) {
 
 // ─── FORCE STOP QUEUE ──────────────────────────────────────────────────────
 if (isset($_POST['force_stop_queue'])) {
-    require_once __DIR__ . '/../../modules/System.php';
+    require_once __DIR__ . '/../../modules/core/System.php';
     $sys = new System($conn);
     $sys->forceStopQueue((int)$_POST['queue_id'], $_POST['task_type']);
 
@@ -101,6 +101,10 @@ if (isset($_GET['approve_id'])) {
     $stmt->bind_param("i", $_GET['approve_id']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'approve_user', 'user', (int)$_GET['approve_id']);
+    // Invalidate role cache agar session role ter-update untuk user yang di-approve
+    if (function_exists('invalidate_user_role_cache')) {
+        invalidate_user_role_cache();
+    }
     header("Location: index.php?msg=Approved");
     exit();
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * modules/japanese.php
+ * modules/core/japanese.php
  * Fungsi pemrosesan teks Jepang (MeCab + transliterasi Romaji + kamus offline JMdict).
  * Hanya di-include di halaman yang membutuhkan (upload/transcode/admin edit).
  * Tidak dibebankan ke setiap request seperti sebelumnya di config.php.

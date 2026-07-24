@@ -143,7 +143,11 @@ function testDisplayErrors(): void {
     }
 
     // stream.php uses error_reporting(0) which is acceptable
-    $enabled = array_values(array_filter($enabled, fn($f) => $f !== 'music/stream.php'));
+    // bootstrap.php uses environment detection: display_errors=1 hanya untuk dev mode
+    $enabled = array_values(array_filter($enabled, fn($f) => !in_array($f, [
+        'music/stream.php',
+        'modules/core/bootstrap.php',
+    ], true)));
 
     record("Memindai " . count($files) . " file...", true, false, "{$disabled} dimatikan, " . count($enabled) . " masih menyala");
 
@@ -273,7 +277,7 @@ function testFileUploadSecurity(): void {
         'books/upload.php'            => ['delegated to BookUploader::handleUpload()', 'BookUploader|ZipArchive'],
         'controllers/profile/profile_edit.php'=> ['MIME check', 'in_array.*file_type'],
         'drive/upload.php'            => ['delegated to DriveService::upload()', 'DriveStorage|validateFileByMagicBytes'],
-        'modules/Uploader.php'        => ['ext + blacklist + magic bytes', 'preg_match.*php|validateVideoMagicBytes'],
+        'modules/core/Uploader.php'        => ['ext + blacklist + magic bytes', 'preg_match.*php|validateVideoMagicBytes'],
     ];
 
     foreach ($uploads as $file => $info) {
@@ -330,16 +334,60 @@ function testPathTraversal(): void {
 function testHtaccessSecurity(): void {
     print_header('TEST 7: .htaccess & HTTP Security Headers');
 
+    // ── 7a: Cek semua folder sensitif wajib punya .htaccess ──
+    $sensitiveDirs = [
+        // PHP-include only folders
+        'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
+        'modules', 'modules/core', 'modules/media', 'modules/transcoder', 'modules/exceptions',
+        'partials', 'drive/templates', 'docs/partials',
+        // Auth & config
+        'auth', 'database',
+        // Error & temp
+        'err', 'temp',
+        // Logs & tests
+        'logs', 'tests',
+        // Upload dirs (harus disable PHP)
+        'data_drive', 'books/upload', 'music/upload', 'video/upload',
+    ];
+
+    $missing = [];
+    foreach ($sensitiveDirs as $dir) {
+        $htPath = PROJECT_ROOT . '/' . $dir . '/.htaccess';
+        if (!file_exists($htPath)) {
+            $missing[] = $dir;
+        }
+    }
+
+    if (empty($missing)) {
+        record("Semua " . count($sensitiveDirs) . " folder sensitif punya .htaccess", true);
+    } else {
+        foreach ($missing as $d) {
+            record("{$d}/ \u{2014} TIDAK PUNYA .htaccess!", false, false);
+        }
+    }
+
+    // ── 7b: Verifikasi directive spesifik per folder ──
     $checks = [
-        '.htaccess'                 => ['Options -Indexes', 'X-Content-Type-Options'],
+        '.htaccess'                 => ['Options -Indexes', 'X-Content-Type-Options', 'Deny from all'],
         'auth/.htaccess'            => ['Options -Indexes', 'Deny from all'],
         'admin/.htaccess'           => ['Options -Indexes', 'FilesMatch'],
         'logs/.htaccess'            => ['Options -Indexes', 'Deny from all'],
         'data_drive/.htaccess'      => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
+        'books/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
+        'music/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
+        'video/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'books/.htaccess'           => ['Options -Indexes'],
         'video/.htaccess'           => ['Options -Indexes'],
         'music/.htaccess'           => ['Options -Indexes'],
         'drive/.htaccess'           => ['Options -Indexes'],
+        'controllers/.htaccess'     => ['Deny from all'],
+        'modules/.htaccess'         => ['Deny from all'],
+        'modules/core/.htaccess'    => ['Deny from all'],
+        'modules/exceptions/.htaccess' => ['Deny from all'],
+        'partials/.htaccess'        => ['Deny from all'],
+        'docs/partials/.htaccess'   => ['Deny from all'],
+        'drive/templates/.htaccess' => ['Deny from all'],
+        'tests/.htaccess'           => ['Deny from all'],
     ];
 
     foreach ($checks as $file => $reqs) {
@@ -377,8 +425,8 @@ function testSessionSecurity(): void {
         'Password verification'            => ['auth/login.php', '/password_verify/'],
         'Brute force (login lockout)'      => ['auth/login.php', '/login_locked/'],
         'Rate limit (register)'            => ['auth/register.php', '/reg_attempts/'],
-        'IP Ban system'                    => ['modules/activity_logger.php', '/ip_ban/'],
-        'Session kick on hijack'           => ['modules/activity_logger.php', '/session_destroy/'],
+        'IP Ban system'                    => ['modules/core/activity_logger.php', '/ip_ban/'],
+        'Session kick on hijack'           => ['modules/core/activity_logger.php', '/session_destroy/'],
         'Logout proper (session destroy)'  => ['auth/logout.php', '/session_destroy/'],
         'Logout clears cookie'             => ['auth/logout.php', '/setcookie.*session/'],
     ];
@@ -441,12 +489,12 @@ function testCommandInjection(): void {
     print_header('TEST 10: Command Injection ' . chr(8212) . ' Shell Execution Safety');
 
     $risky = [
-        'modules/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
-        'modules/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/helpers.php'      => ['shell_exec'],
-        'modules/System.php'       => ['shell_exec'],
+        'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
+        'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
+        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/System.php'       => ['shell_exec'],
         'auth/config.example.php'  => ['proc_open', 'shell_exec'],
-        'modules/japanese.php'     => ['proc_open'],
+        'modules/core/japanese.php'     => ['proc_open'],
     ];
 
     foreach ($risky as $file => $funcs) {
@@ -507,10 +555,10 @@ function testFileIntegrity(): void {
 
     $critical = [
         '.htaccess', 'auth/config.php', 'auth/auth.php', 'auth/login.php',
-        'auth/logout.php', 'auth/register.php', 'modules/helpers.php',
-        'modules/activity_logger.php', 'modules/System.php', 'modules/Uploader.php',
-        'modules/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
-        'modules/media/MediaLibrary.php', 'modules/GarbageCollector.php', 'modules/japanese.php',
+        'auth/logout.php', 'auth/register.php', 'modules/core/helpers.php',
+        'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
+        'modules/core/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
+        'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php', 'modules/core/japanese.php',
         'admin/.htaccess', 'auth/.htaccess', 'data_drive/.htaccess',
         'drive/DriveService.php', 'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
         'controllers/profile/profile_edit.php',

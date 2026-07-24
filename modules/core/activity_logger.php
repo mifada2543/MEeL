@@ -167,7 +167,7 @@ if (isset($conn)) {
             // Jika bukan admin, baru di-redirect
             if ($session_role !== 'admin') {
                 $row = $ban_res->fetch_assoc();
-                $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/..'));
+                $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/../..'));
                 $doc_root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
                 $relative_base = rtrim('/' . ltrim(str_replace($doc_root, '', $root_dir), '/'), '/');
                 $banned_url = $relative_base . '/err/banned.php';
@@ -306,7 +306,7 @@ if (isset($conn)) {
                     session_unset();
                     session_destroy();
 
-                    $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/..'));
+                    $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/../..'));
                     $doc_root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
                     $relative_base = rtrim('/' . ltrim(str_replace($doc_root, '', $root_dir), '/'), '/');
                     $revoked_url = $relative_base . '/err/revoked.php';

@@ -1,11 +1,7 @@
 <?php
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require '../auth/auth.php';
 require '../auth/config.php';
-require '../modules/helpers.php';
+require '../modules/core/helpers.php';
 require __DIR__ . '/DriveService.php';
 
 $user = DriveUserContext::fromSession($_SESSION);

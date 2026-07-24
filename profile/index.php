@@ -1,18 +1,32 @@
 <?php
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php 
 $back_url = '../index.php'; 
 
+// ── Validasi Referer (Back URL) menggunakan MEEL_HOST constant ──
+// MEEL_HOST didefinisikan di auth/config.php (bisa di-hardcode untuk keamanan lebih)
+$allowed_hosts = [
+    defined('MEEL_HOST') && !empty(MEEL_HOST) ? MEEL_HOST : ($_SERVER['HTTP_HOST'] ?? ''),
+    'localhost',
+    '127.0.0.1',
+    '::1',
+];
+
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref = $_SERVER['HTTP_REFERER'];
-    $host = $_SERVER['HTTP_HOST'];
+    $ref_host = parse_url($ref, PHP_URL_HOST);
 
-    // 1. Pastikan referer berasal dari domain yang sama (MEeL Server)
-    if (parse_url($ref, PHP_URL_HOST) === $host) {
+    // Validasi host referer terhadap whitelist
+    $host_valid = false;
+    foreach ($allowed_hosts as $allowed) {
+        if ($allowed !== '' && $ref_host === $allowed) {
+            $host_valid = true;
+            break;
+        }
+    }
+
+    if ($host_valid) {
         
         // 2. Ambil hanya bagian path-nya saja (misal: /profile/edit.php)
         $ref_path = parse_url($ref, PHP_URL_PATH);
@@ -53,21 +67,19 @@ if (!$u) {
 // Sekarang $u['id'] sudah ada isinya
 $profile_id = $u['id'];
 
-// Hitung total Video (Tambahkan pengecekan agar tidak error jika query gagal)
-$q_video = $conn->query("SELECT COUNT(*) as total FROM video WHERE user_id = '$profile_id'");
-if (!$q_video) {
-    $total_video = 0;
-} else {
-    $total_video = $q_video->fetch_assoc()['total'];
-}
+// Hitung total Video (prepared statement untuk defense-in-depth)
+$stmt_vid = $conn->prepare("SELECT COUNT(*) as total FROM video WHERE user_id = ?");
+$stmt_vid->bind_param("i", $profile_id);
+$stmt_vid->execute();
+$total_video = (int)$stmt_vid->get_result()->fetch_assoc()['total'];
+$stmt_vid->close();
 
-// Hitung total Musik
-$q_music = $conn->query("SELECT COUNT(*) as total FROM music WHERE user_id = '$profile_id'");
-if (!$q_music) {
-    $total_music = 0;
-} else {
-    $total_music = $q_music->fetch_assoc()['total'];
-}
+// Hitung total Musik (prepared statement)
+$stmt_mus = $conn->prepare("SELECT COUNT(*) as total FROM music WHERE user_id = ?");
+$stmt_mus->bind_param("i", $profile_id);
+$stmt_mus->execute();
+$total_music = (int)$stmt_mus->get_result()->fetch_assoc()['total'];
+$stmt_mus->close();
 
 $total_uploads = $total_video + $total_music;
 $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
