@@ -16,20 +16,19 @@ require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
 // ─── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────
-$__csp_sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
-set_error_handler(function ($errno, $errstr, $errfile, $errline) use ($__csp_sn) {
+set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
-    echo "<script{$__csp_sn}>meelError(" . json_encode($safe_msg) . ");</script>";
+    echo "<script>meelError(" . json_encode($safe_msg) . ");</script>";
     echo str_repeat(' ', 1024);
     flush();
     return true;
 });
 
-register_shutdown_function(function () use ($__csp_sn) {
+register_shutdown_function(function () {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        echo "<script{$__csp_sn}>meelError(" . json_encode($error['message']) . ");</script>";
+        echo "<script>meelError(" . json_encode($error['message']) . ");</script>";
         echo str_repeat(' ', 1024);
         flush();
     }
@@ -97,12 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
             } catch (Exception $e) {
-                echo "<script{$__csp_sn}>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
             } catch (Throwable $e) {
-                echo "<script{$__csp_sn}>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
@@ -110,7 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
         }
     }
 }
-?><!DOCTYPE html>
+?>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -127,7 +127,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="manifest" href="assets/manifest.json">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/csp-compat.js"></script>
     <script src="assets/js/lucide.js"></script>
     <link rel="stylesheet" href="assets/css/up.css">
     <style>
@@ -626,7 +625,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
 
                         <!-- Card body / form -->
                         <div class="form-card-body">
-                            <form method="POST" data-csp-submit="startAdvancedUpload" style="display:flex;flex-direction:column;gap:1.25rem;">
+                            <form method="POST" onsubmit="return startAdvancedUpload(this)" style="display:flex;flex-direction:column;gap:1.25rem;">
                                 <?php if (isset($_SESSION['csrf_token'])): ?>
                                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <?php endif; ?>
@@ -775,7 +774,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
 
                             <?php if ($is_admin): ?>
                                 <div style="height:1px;background:var(--border);"></div>
-                                <a href="admin/index.php#queues" class="csp-hover-opacity" style="font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);text-decoration:none;display:flex;align-items:center;gap:.4rem;opacity:.8;">
+                                <a href="admin/index.php#queues" style="font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);text-decoration:none;display:flex;align-items:center;gap:.4rem;opacity:.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
                                         <polyline points="15 3 21 3 21 9" />
@@ -916,14 +915,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
 
             return true; // Biarkan form submit biasa (PHP streaming)
         }
-
-        // ── CSP-compatible hover opacity effect ──
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.csp-hover-opacity').forEach(function(el) {
-                el.addEventListener('mouseenter', function() { this.style.opacity = '1'; });
-                el.addEventListener('mouseleave', function() { this.style.opacity = '.8'; });
-            });
-        });
     </script>
 </body>
 

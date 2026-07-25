@@ -301,8 +301,7 @@ class Transcoder
 
         // Padding agar browser langsung flush dan render
         echo str_repeat(' ', 65536);
-        $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
-        echo "<script{$sn}>meelPhase('" . htmlspecialchars($initial_phase) . "');</script>";
+        echo "<script>meelPhase('" . htmlspecialchars($initial_phase) . "');</script>";
         flush();
     }
 
@@ -385,8 +384,7 @@ class Transcoder
         $this->showMEeLOverlay('download');
 
         // Kirim URL ke overlay
-        $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
-        echo "<script{$sn}>meelDlInfo(" . json_encode($url) . ");</script>";
+        echo "<script>meelDlInfo(" . json_encode($url) . ");</script>";
         flush();
 
         $error_log = "";
@@ -427,12 +425,12 @@ class Transcoder
                 $eta   = isset($m[4]) ? 'ETA ' . $m[4] : '';
                 $frag  = (isset($m[5], $m[6]) && $m[6]) ? $m[5] . ' / ' . $m[6] : '';
                 $args  = json_encode($pct) . ',' . json_encode($eta) . ',' . json_encode($speed) . ',' . json_encode($size) . ',' . json_encode($frag);
-                echo "<script{$sn}>meelDlPct($args);</script>";
+                echo "<script>meelDlPct($args);</script>";
                 flush();
             } elseif (preg_match('/\[download\]\s+(\d+(?:\.\d+)?)%/', $line, $m)) {
                 // Fallback: hanya persentase
                 $pct  = (int)$m[1];
-                echo "<script{$sn}>meelDlPct($pct);</script>";
+                echo "<script>meelDlPct($pct);</script>";
                 flush();
             }
         }
@@ -481,7 +479,6 @@ class Transcoder
         int $duration,
         string $description = 'Upload by MEeL Engine'
     ): string {
-        $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
         $found    = glob($this->getShmTempPath() . "/$temp_id.*");
         $raw_file = "";
         foreach ($found as $f) {
@@ -502,7 +499,7 @@ class Transcoder
                 'duration'    => $duration,
                 'description' => $description,
             ]);
-        echo "<script{$sn}>window.location.href = 'controllers/api/post_encode.php?$params';</script>";
+            echo "<script>window.location.href = 'controllers/api/post_encode.php?$params';</script>";
             exit;
         }
 
@@ -519,7 +516,6 @@ class Transcoder
         int    $duration,
         string $description = 'Upload by MEeL Engine'
     ): string {
-        $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
         $shm_temp     = $this->getShmTempPath();
         $staging_mp4  = "$shm_temp/{$basename}.mp4";
 
@@ -538,7 +534,7 @@ class Transcoder
             return "";
         }
 
-        echo "<script{$sn}>meelPhase('transcode');</script>";
+        echo "<script>meelPhase('transcode');</script>";
         flush();
 
         // ── Tentukan nama folder unik di HDD ──────────────────────────────────
@@ -624,7 +620,7 @@ class Transcoder
             if (preg_match('/time=((\d+):(\d+):(\d+)\.(\d+))/', $line, $m) && $file_dur > 0) {
                 $cur = ($m[2] * 3600) + ($m[3] * 60) + $m[4];
                 $pct = min(99, round(($cur / $file_dur) * 100));
-                echo "<script{$sn}>meelTcPct($pct);</script>";
+                echo "<script>meelTcPct($pct);</script>";
                 flush();
             }
         }
@@ -639,7 +635,7 @@ class Transcoder
         }
 
         // ── Sprite & VTT (DIOPTIMALKAN KE RAM DISK) ──────────────────────────
-        echo "<script{$sn}>meelPhase('sprite');meelSpPct(0,'Membuat thumbnail.vtt...');</script>";
+        echo "<script>meelPhase('sprite');meelSpPct(0,'Membuat thumbnail.vtt...');</script>";
         flush();
 
         // Buat folder kerja sementara di RAM Disk Linux (/dev/shm)
@@ -674,7 +670,7 @@ class Transcoder
         // Bersihkan RAM setelah semua file berhasil dipindahkan
         $this->cleanupDir($ram_folder);
 
-        echo "<script{$sn}>meelSpPct(100,'Sprite & VTT selesai.');</script>";
+        echo "<script>meelSpPct(100,'Sprite & VTT selesai.');</script>";
         flush();
 
         @unlink($staging_mp4);
@@ -743,7 +739,7 @@ class Transcoder
         }
         $stmt->close();
 
-        echo "<script{$sn}>meelDone(" . json_encode($title) . ", 'index.php');</script>";
+        echo "<script>meelDone(" . json_encode($title) . ", 'index.php');</script>";
         flush();
         return "";
     }
@@ -950,7 +946,6 @@ class Transcoder
 
     public function transcodeVideo(int $video_id, string $format = 'mp3'): array
     {
-        $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
         // Output hanya di RAM disk (primer) — fallback ke project temp/
         $output_dir = $this->getShmTranscodePath() . '/';
         if (!is_dir($output_dir)) mkdir($output_dir, 0755, true);
@@ -1040,8 +1035,7 @@ class Transcoder
         if (file_exists($output_path) && filesize($output_path) > 0) {
             if ($mtx_locked) { flock($mtx_fp, LOCK_UN); fclose($mtx_fp); }
             $download_link = "controllers/api/download_transcode.php?file=" . rawurlencode($output_filename);
-            $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
-            echo "<script{$sn}>meelDoneTranscode(" . json_encode($v_data['title']) . ", " . json_encode($download_link) . ");</script>";
+            echo "<script>meelDoneTranscode(" . json_encode($v_data['title']) . ", " . json_encode($download_link) . ");</script>";
             flush();
             return ['status' => 'success', 'download_link' => $download_link];
         }
@@ -1168,7 +1162,7 @@ class Transcoder
                     $pct   = min(100, round(($cur / $file_dur) * 100));
                     $fmt   = strtoupper($format);
                     $label = "$pct% — CONVERTING TO $fmt";
-                    echo "<script{$sn}>meelTcPct($pct, " . json_encode($label) . ");</script>";
+                    echo "<script>meelTcPct($pct, " . json_encode($label) . ");</script>";
                     flush();
                 }
             }
@@ -1194,7 +1188,7 @@ class Transcoder
         }
 
         $download_link = "controllers/api/download_transcode.php?file=" . rawurlencode($output_filename);
-        echo "<script{$sn}>meelDoneTranscode(" . json_encode($v_data['title']) . ", " . json_encode($download_link) . ");</script>";
+        echo "<script>meelDoneTranscode(" . json_encode($v_data['title']) . ", " . json_encode($download_link) . ");</script>";
         flush();
 
         return [
@@ -1211,8 +1205,7 @@ class Transcoder
      */
     private function jsError(string $msg): void
     {
-        $sn = defined('CSP_NONCE') ? ' nonce="' . CSP_NONCE . '"' : '';
-        echo "<script{$sn}>meelError(" . json_encode($msg) . ");</script>";
+        echo "<script>meelError(" . json_encode($msg) . ");</script>";
         flush();
     }
 
