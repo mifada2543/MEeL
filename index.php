@@ -40,7 +40,7 @@ $counts  = $library->getCounts();
             </div>
             <div class="station-id mb-5">Local Media Station</div>
             <h1 class="hero-title">MEeL <span class="accent">HUB</span></h1>
-            <p class="text-xs text-gray-400 mt-4 tracking-[.25em] uppercase">Streaming &amp; Archive Platform</p>
+            <p onclick="window.location.href='index.html'" class="text-xs text-gray-400 mt-4 tracking-[.25em] uppercase">Streaming &amp; Archive Platform</p>
         </div>
 
         <!-- MEDIA CARDS -->
@@ -156,7 +156,7 @@ $counts  = $library->getCounts();
                 OFF
             </button>
         </div>
-        <p class="text-[9px] text-gray-300 tracking-[0.6em] uppercase mt-8" onclick="window.location.href='index.html'">MEeL • 2025</p>
+        <?php include 'partials/footer.php'; ?>
     </main>
 
     <!-- DEMO TOP BANNER -->
