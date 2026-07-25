@@ -96,9 +96,9 @@ $RECYCLE.BIN/
 *.user
 
 # ─── DEPENDENCY MANAGEMENT ────────────────────────────
-# Composer
+# Composer — vendor/ is ignored (installed at deploy), but composer.lock
+# MUST be tracked for reproducible CI builds across environments.
 vendor/
-composer.lock
 composer.phar
 
 # npm (if used for frontend)
@@ -128,7 +128,10 @@ NOTES.md
 
 # ─── TESTING ──────────────────────────────────────────
 tests/coverage/
+tests/*.result
 .phpunit.result.cache
+logs/tests/
+!logs/tests/.htaccess
 
 # ─── DEPLOYMENT FILES ─────────────────────────────────
 deploy.sh
