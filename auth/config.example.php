@@ -155,9 +155,12 @@ session_name('meel');
 session_start();
 
 // ════════════════════════════════════════════════════════════════
-// AUTOLOADER
+// AUTOLOADER & HELPERS
 // ════════════════════════════════════════════════════════════════
 require_once __DIR__ . '/../modules/autoload.php';
+
+// Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
+require_once __DIR__ . '/../modules/core/helpers.php';
 
 // ── Security Headers ──
 if (!headers_sent()) {
