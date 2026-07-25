@@ -643,7 +643,13 @@ function testConfigCheck(): void {
     }
 
     // Cek apakah config memiliki nilai database yang diisi (bukan template kosong)
-    if (preg_match('/\\$server\\s*=\\s*"localhost"/', $content) || preg_match('/\\$server\\s*=\\s*"[^"]+"/', $content)) {
+    // Mendukung dua pola:
+    //   - Pola variabel: $server = "localhost" (config.example.php)
+    //   - Pola langsung: new mysqli("localhost", ...) (config.php)
+    $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
+    $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
+    
+    if ($hasServerVar || $hasDirectConn) {
         record("Database server terkonfigurasi ✓", true);
     } else {
         record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/config.php");
