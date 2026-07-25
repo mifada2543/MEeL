@@ -74,7 +74,7 @@ $session_blocked = count($_SESSION['reg_attempts']) >= $max_reg_attempts;
 
 // ─── FORM PROCESSING ───────────────────────────────────────────
 if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = "Sesi keamanan kadaluarsa. Silakan refresh halaman.";
         $msg_type = "error";
         $validation_error = true;

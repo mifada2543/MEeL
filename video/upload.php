@@ -34,7 +34,10 @@ $daily_limit = $is_admin ? '∞' : '3';
 $uploader = new Uploader($conn, $user_id, $user);
 
 if (isset($_POST['upload'])) {
-    verify_csrf();
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        http_response_code(403);
+        die('CSRF token tidak valid.');
+    }
     $result = $uploader->processVideo($_POST, $_FILES, __DIR__ . "/");
 
     if ($result['status'] === 'success') {

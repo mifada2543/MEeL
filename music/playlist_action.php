@@ -6,7 +6,7 @@ include '../auth/config.php';
 if (!isset($_SESSION['user_id'])) die('Silakan login terlebih dahulu.');
 
 // 🔒 FIX CSRF: Verifikasi token untuk semua aksi playlist
-if (!verify_csrf()) {
+if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     die('CSRF Token tidak valid.');
 }
 

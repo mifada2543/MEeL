@@ -206,8 +206,8 @@ function testFunctionExistence(): void {
         'getEnglishTranslation' => 'modules/core/japanese.php',
         // activity_logger.php — hanya di docs/security.md, belum diimplementasi
         'log_activity'          => 'modules/core/activity_logger.php',
-        // config.php (CSRF)
-        'verify_csrf'           => 'auth/config.php',
+        // helpers.php (CSRF) — verify_csrf_token is the canonical function
+        'verify_csrf_token'     => 'modules/core/helpers.php',
     ];
 
     $warning_funcs = ['log_activity']; // fungsi ini boleh warning, bukan failure
@@ -279,26 +279,26 @@ function testSecurityCsrf(): void {
     print_header('TEST 5B: Security Fix — CSRF Protection');
 
     $csrf_files = [
-        'admin/catur.php'     => ['verify_csrf', 'csrf_token'],
+        'admin/catur.php'     => ['verify_csrf_token', 'csrf_token'],
         'admin/index.php'     => ['csrf_token'],
-        'books/upload.php'    => ['verify_csrf', 'csrf_token'],
-        'controllers/api/WatchController.php' => ['verify_csrf'],
+        'books/upload.php'    => ['verify_csrf_token', 'csrf_token'],
+        'controllers/api/WatchController.php' => ['verify_csrf_token'],
         'controllers/api/like.php' => ['verify_csrf_token'],
-        'controllers/profile/profile_edit.php' => ['verify_csrf', 'csrf_token'],
-        'music/playlist_action.php' => ['verify_csrf'],
+        'controllers/profile/profile_edit.php' => ['verify_csrf_token', 'csrf_token'],
+        'music/playlist_action.php' => ['verify_csrf_token'],
         'music/view_playlist.php'   => ['csrf_token'],
         'music/watch.php'     => ['csrf_token'],
-        'transcode.php'       => ['verify_csrf', 'csrf_token'],
+        'transcode.php'       => ['verify_csrf_token', 'csrf_token'],
         'update.php'          => ['csrf_token'],
         'video/watch.php'     => ['csrf_token'],
-        'drive/upload.php'    => ['verify_csrf'],
+        'drive/upload.php'    => ['verify_csrf_token'],
         'drive/download.php'  => ['verify_csrf_token', 'csrf_token'],
-        'drive/delete.php'    => ['verify_csrf'],
-        'video/upload.php'    => ['verify_csrf', 'csrf_token'],
-        'music/upload.php'    => ['verify_csrf', 'csrf_token'],
-        'admin/edit-video.php'=> ['verify_csrf', 'csrf_token'],
-        'admin/edit-music.php'=> ['verify_csrf', 'csrf_token'],
-        'admin/cookies.php'   => ['verify_csrf', 'csrf_token'],
+        'drive/delete.php'    => ['verify_csrf_token'],
+        'video/upload.php'    => ['verify_csrf_token', 'csrf_token'],
+        'music/upload.php'    => ['verify_csrf_token', 'csrf_token'],
+        'admin/edit-video.php'=> ['verify_csrf_token', 'csrf_token'],
+        'admin/edit-music.php'=> ['verify_csrf_token', 'csrf_token'],
+        'admin/cookies.php'   => ['verify_csrf_token', 'csrf_token'],
     ];
 
     foreach ($csrf_files as $file => $patterns) {
@@ -628,7 +628,7 @@ function testConfigCheck(): void {
         'Session GC maxlifetime'         => '/session\\.gc_maxlifetime/',
         'Session cookie params'          => '/session_set_cookie_params/',
         'CSRF token generation'          => '/random_bytes.*32/',
-        'verify_csrf function'           => '/function verify_csrf/',
+        'verify_csrf_token function'     => '/function verify_csrf_token/',
         'Last activity timeout'          => '/LAST_ACTIVITY/',
         'MySQLi connection'              => '/new mysqli\\(/',
         'Activity logger include'        => '/activity_logger/',
@@ -701,7 +701,7 @@ function testModifiedFiles(): void {
     $modified_files = [
         'admin/catur.php' => [
             'role check'    => ['pattern' => '/role.*!==.*admin/', 'label' => 'Role check admin'],
-            'CSRF'          => ['pattern' => '/verify_csrf/', 'label' => 'CSRF verification'],
+            'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
             'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
         ],
         'modules/core/Uploader.php' => [

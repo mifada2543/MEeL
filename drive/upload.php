@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_upload'], $_F
 }
 
 // CSRF Token Validation
-if (!verify_csrf()) {
+if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo htmlspecialchars('CSRF token tidak valid.', ENT_QUOTES, 'UTF-8');
     exit();

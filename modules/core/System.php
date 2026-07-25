@@ -73,13 +73,12 @@ class System
     private static function getFolderSizeSys(string $path): float
     {
         $full_path = realpath(__DIR__ . '/../' . $path);
-        if ($full_path && file_exists($full_path)) {
-            $output = shell_exec("du -sb " . escapeshellarg($full_path) . " 2>&1");
-            if ($output && !str_contains($output, 'Permission denied')) {
-                return (float) explode("\t", $output)[0];
-            }
+        if (!$full_path || !file_exists($full_path)) {
+            return 0.0;
         }
-        return 0;
+        // Pastikan helpers.php termuat (dir_size sudah memiliki cache + fallback)
+        require_once __DIR__ . '/helpers.php';
+        return dir_size($full_path);
     }
 
     public function getStorageUsage(): array

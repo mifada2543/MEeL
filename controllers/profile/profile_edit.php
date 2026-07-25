@@ -13,7 +13,7 @@ $msg = "";
 
 if (isset($_POST['update_profile'])) {
     // 🔒 FIX CSRF: Verifikasi token
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $msg = 'CSRF Token tidak valid.';
     } else {
     $bio = trim($_POST['bio'] ?? '');

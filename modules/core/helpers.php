@@ -194,25 +194,8 @@ function get_user_usage(string $username): int|float
     $path = dirname(__DIR__, 2) . "/data_drive/private_admins/" . $username;
     if (!is_dir($path)) return 0;
 
-    // Pakai du -sb (jauh lebih cepat dari RecursiveIterator untuk folder besar)
-    $output = @shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
-    if ($output && preg_match('/^(\d+)/', $output, $m)) {
-        return (float)$m[1];
-    }
-
-    // Fallback: RecursiveIterator jika shell_exec tidak tersedia
-    $size = 0;
-    try {
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
-        foreach ($iterator as $file) {
-            if ($file->isFile()) {
-                $size += $file->getSize();
-            }
-        }
-    } catch (RuntimeException $e) {
-        return 0;
-    }
-    return $size;
+    // Delegasikan ke dir_size() yang sudah memiliki cache + fallback
+    return dir_size($path);
 }
 } // end function_exists('get_user_usage')
 

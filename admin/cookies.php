@@ -40,7 +40,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 // ── Handle DELETE ──
 $delete_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $delete_msg = ['type' => 'error', 'text' => 'CSRF Token tidak valid.'];
     } else {
         $del_id   = (int)($_POST['media_id'] ?? 0);

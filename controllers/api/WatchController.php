@@ -46,9 +46,9 @@ class VideoWatchController
         $this->viewer->recordView();
 
         if ($this->isLoggedIn() && isset($_POST['send'])) {
-            if (!verify_csrf()) {
-                die('CSRF Token tidak valid.');
-            }
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        die('CSRF Token tidak valid.');
+    }
 
             // ⚡ RATE LIMIT: 10 comments per menit per user
             $rateKey  = 'user_' . ($this->user_id ?? 0);
@@ -140,9 +140,9 @@ class MusicWatchController
         $this->viewer->recordView();
 
         if ($this->isLoggedIn() && isset($_POST['send'])) {
-            if (!verify_csrf()) {
-                die('CSRF Token tidak valid.');
-            }
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        die('CSRF Token tidak valid.');
+    }
 
             // ⚡ RATE LIMIT: 10 comments per menit per user
             $rateKey  = 'user_' . ($this->user_id ?? 0);

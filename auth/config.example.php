@@ -155,9 +155,12 @@ session_name('meel');
 session_start();
 
 // ════════════════════════════════════════════════════════════════
-// AUTOLOADER
+// AUTOLOADER & HELPERS
 // ════════════════════════════════════════════════════════════════
 require_once __DIR__ . '/../modules/autoload.php';
+
+// Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
+require_once __DIR__ . '/../modules/core/helpers.php';
 
 // ── Security Headers ──
 if (!headers_sent()) {
@@ -177,18 +180,8 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// ── CSRF Verification ──
-if (!function_exists('verify_csrf')) {
-    function verify_csrf()
-    {
-        // Delegasikan ke verify_csrf_token() yang menggunakan hash_equals()
-        // untuk timing-attack safety
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            return verify_csrf_token($_POST['csrf_token'] ?? '');
-        }
-        return true;
-    }
-}
+// No wrapper function needed — use verify_csrf_token() directly
+// (defined in modules/core/helpers.php with hash_equals safety)
 
 // ── Session Timeout Check ──
 if (isset($_SESSION['LAST_ACTIVITY'])) {

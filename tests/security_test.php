@@ -181,7 +181,7 @@ function testCsrfProtection(): void {
         if (!$hasForm && !$hasPost) continue;
 
         $totalForms++;
-        $hasVerify = (strpos($content, 'verify_csrf') !== false);
+        $hasVerify = (strpos($content, 'verify_csrf_token(') !== false);
         $hasToken  = (strpos($content, 'csrf_token') !== false);
 
         if ($hasVerify || $hasToken) {
@@ -201,7 +201,7 @@ function testCsrfProtection(): void {
         record("Semua form POST sudah memiliki CSRF protection", true);
     } else {
         foreach ($unprot as $f) {
-            record("{$f} \u{2014} Tidak ada CSRF token atau verify_csrf()", true, true);
+            record("{$f} \u{2014} Tidak ada CSRF token atau verify_csrf_token()", true, true);
         }
     }
 }
