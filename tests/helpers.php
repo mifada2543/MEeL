@@ -99,11 +99,38 @@ function getPhpFiles(): array {
 }
 }
 
+if (!function_exists('stripPhpComments')) {
+/**
+ * Strip PHP comments (//, #, /* * /) from code.
+ * Digunakan untuk mencegah false positive saat mencari pola kode
+ * di file yang memiliki komentar mengandung keyword yang sama.
+ *
+ * @param string $code Konten PHP source
+ * @return string Konten tanpa komentar
+ */
+function stripPhpComments(string $code): string {
+    // Hapus multi-line comment /* ... */
+    $code = preg_replace('/\/\*.*?\*\//s', '', $code);
+    // Hapus single-line comment // ... dan # ...
+    $code = preg_replace('/\/\/.*$/m', '', $code);
+    $code = preg_replace('/(?:^|\s)#.*$/m', '', $code);
+    return $code;
+}
+}
+
 if (!function_exists('countInFile')) {
 /**
- * Count occurrences of a pattern in file content.
+ * Count occurrences of a pattern in file content (excluding comments).
+ * Komentar PHP (//, #, /* * /) di-strip terlebih dahulu agar
+ * false positive dari keyword di komentar/docblock tidak terhitung.
+ *
+ * @param string $path    Path ke file
+ * @param string $pattern Regex pattern untuk dicari
+ * @return int Jumlah occurrence
  */
 function countInFile(string $path, string $pattern): int {
-    return preg_match_all($pattern, file_get_contents($path));
+    $content = file_get_contents($path);
+    $content = stripPhpComments($content);
+    return preg_match_all($pattern, $content);
 }
 }

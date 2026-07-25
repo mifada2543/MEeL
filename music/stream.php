@@ -25,7 +25,7 @@ if (!empty($referer) && !empty($currentHost)) {
 // Streaming langsung dari halaman yang sama tetap bisa jalan.
 
 include '../auth/config.php';
-require_once '../modules/helpers.php';
+require_once '../modules/core/helpers.php';
 include '../modules/media/MediaViewer.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

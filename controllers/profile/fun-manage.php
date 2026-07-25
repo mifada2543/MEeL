@@ -73,7 +73,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
     }
 
     // 5. Log aktivitas
-    include_once __DIR__ . '/../../modules/activity_logger.php';
+    include_once __DIR__ . '/../../modules/core/activity_logger.php';
     logActivity($conn, $user_id, 'delete', 'video', $id);
 
     return ['success' => true, 'message' => 'Video dihapus. File akan dibersihkan otomatis.'];
@@ -129,7 +129,7 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
     }
 
     // 5. Log aktivitas
-    include_once __DIR__ . '/../../modules/activity_logger.php';
+    include_once __DIR__ . '/../../modules/core/activity_logger.php';
     logActivity($conn, $user_id, 'delete', 'music', $id);
 
     return ['success' => true, 'message' => 'Musik dihapus. File akan dibersihkan otomatis.'];

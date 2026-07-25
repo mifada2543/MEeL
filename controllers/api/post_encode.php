@@ -20,18 +20,18 @@
  *   HTML error page pada gagal
  *
  * Dependencies:
- *   - modules/helpers.php
+ *   - modules/core/helpers.php
  *   - auth/auth.php ($_SESSION, login check)
  *   - auth/config.php ($conn)
- *   - modules/Transcoder.php
- *   - modules/GarbageCollector.php
+ *   - modules/core/Transcoder.php
+ *   - modules/core/GarbageCollector.php
  */
 
-require_once '../../modules/helpers.php';
+require_once '../../modules/core/helpers.php';
 require_once '../../auth/auth.php';
 require_once '../../auth/config.php';
-require_once '../../modules/Transcoder.php';
-require_once '../../modules/GarbageCollector.php';
+require_once '../../modules/core/Transcoder.php';
+require_once '../../modules/core/GarbageCollector.php';
 GarbageCollector::run();
 
 $temp_file   = $_GET['temp_file']   ?? '';

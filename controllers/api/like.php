@@ -21,7 +21,7 @@
  *   - modules/media/MediaInteraction.php
  */
 
-require_once '../../modules/helpers.php';
+require_once '../../modules/core/helpers.php';
 // Pastikan session sudah dimulai jika menggunakan $_SESSION
 if (session_status() === PHP_SESSION_NONE) {
     session_name('meel');
@@ -29,7 +29,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 include '../../auth/config.php';
-include '../../modules/RateLimiter.php';
+include '../../modules/core/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
 // 🔒 FIX CSRF: Verifikasi token untuk AJAX POST

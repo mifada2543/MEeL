@@ -41,8 +41,8 @@ ini_set('display_errors', 1);
 
 3. **Nonaktifkan HDD check untuk development:**
 ```php
-// modules/helpers.php - comment out baris berikut
-// if (!is_dir($hdd_check_path)) { ... }
+// modules/core/helpers.php - comment out baris berikut
+// if (!is_dir(MEEL_HDD_BASE)) { ... }
 ```
 
 4. **Path konfigurasi terpusat:**
@@ -570,10 +570,17 @@ if (!headers_sent()) {
 |------|--------|
 | `auth/config.php` | Entry point configurasi |
 | `auth/auth.php` | Authentication middleware |
-| `modules/helpers.php` | Fungsi utilitas global |
-| `modules/Transcoder.php` | Engine utama (paling kompleks) |
-| `modules/Uploader.php` | Proses upload file |
-| `modules/System.php` | Queue & monitoring |
+| `modules/core/helpers.php` | Fungsi utilitas global |
+| `modules/core/Transcoder.php` | Engine utama (paling kompleks) |
+| `modules/core/Uploader.php` | Proses upload file |
+| `modules/core/System.php` | Queue & monitoring |
+| `modules/core/RateLimiter.php` | API Rate Limiter |
+| `modules/core/GarbageCollector.php` | Auto-cleanup |
+| `modules/media/SearchEngine.php` | FULLTEXT Search engine |
+| `modules/core/japanese.php` | Japanese text processing |
+| `modules/core/bootstrap.php` | Bootstrap & environment |
+| `modules/exceptions/*.php` | Exception classes |
+| `modules/transcoder/FfmpegUtils.php` | FFmpeg utilities trait |
 | `partials/ui.php` | Overlay UI system (JS heavy) |
 
 ### Proses yang Perlu Dipahami

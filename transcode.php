@@ -1,8 +1,8 @@
 <?php
-require_once 'modules/helpers.php';
+require_once 'modules/core/helpers.php';
 require_once 'auth/auth.php';
 require_once 'auth/config.php';
-require_once 'modules/Transcoder.php';
+require_once 'modules/core/Transcoder.php';
 
 $transcoder      = new Transcoder($conn, $_SESSION['user_id']);
 $download_link   = null;
@@ -13,7 +13,7 @@ $video_title     = "";
 
 if (isset($_POST['start_transcode'])) {
     // 🔒 FIX CSRF: Verifikasi token
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF Token tidak valid.';
     } else {
     $video_id = (int)($_POST['video_id'] ?? 0);

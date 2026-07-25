@@ -1,8 +1,4 @@
 <?php
-// Error logging diaktifkan, tapi display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Set session name & cookie params SEBELUM session_start()
 if (session_status() === PHP_SESSION_NONE) {
     $timeout = 43200; // 12 jam
@@ -78,7 +74,7 @@ $session_blocked = count($_SESSION['reg_attempts']) >= $max_reg_attempts;
 
 // ─── FORM PROCESSING ───────────────────────────────────────────
 if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = "Sesi keamanan kadaluarsa. Silakan refresh halaman.";
         $msg_type = "error";
         $validation_error = true;

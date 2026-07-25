@@ -116,7 +116,7 @@ function record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout
 
 // ─── FORM PROCESSING ───────────────────────────────────────────
 if (isset($_POST['login']) && !$is_locked) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_msg = "Sesi keamanan kadaluarsa. Silakan refresh halaman dan coba lagi.";
     } else {
         $user_input = trim($_POST['username'] ?? '');

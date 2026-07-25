@@ -17,7 +17,7 @@ $message_type = 'success';
 
 // 🔒 FIX CSRF: Verifikasi token untuk semua POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = 'CSRF Token tidak valid!'; $message_type = 'error';
     } else {
     $action = $_POST['action'];

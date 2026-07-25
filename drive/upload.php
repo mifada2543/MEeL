@@ -1,11 +1,7 @@
 <?php
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require '../auth/auth.php';
 require '../auth/config.php';
-require '../modules/helpers.php';
+require '../modules/core/helpers.php';
 require __DIR__ . '/DriveService.php';
 
 $user = DriveUserContext::fromSession($_SESSION);
@@ -17,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_upload'], $_F
 }
 
 // CSRF Token Validation
-if (!verify_csrf()) {
+if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo htmlspecialchars('CSRF token tidak valid.', ENT_QUOTES, 'UTF-8');
     exit();
@@ -25,7 +21,7 @@ if (!verify_csrf()) {
 
 $storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
 
-require_once '../modules/System.php';
+require_once '../modules/core/System.php';
 $sys = new System($conn);
 $user_id = $_SESSION['user_id'];
 

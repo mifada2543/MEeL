@@ -1,7 +1,7 @@
 # 📋 MEeL-HUB Project Analysis & Description
 
-**Analysis Version:** 1.1  
-**Date:** July 22, 2026  
+**Analysis Version:** 2.0  
+**Date:** July 24, 2026  
 **Analyst:** Buffy (Freebuff AI Agent)
 
 ---
@@ -112,6 +112,17 @@ Hardcoded path → base_url(), open redirect fix, redirect guard, template extra
 
 ### Round 4: Rate Limiting, Dashboard & Cleanup (15 items)
 RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard charts, activity log viewer, pagination metadata, FK constraints, GarbageCollector integration
+
+### Round 5: Documentation & Restructuring
+- japanese.php, bootstrap.php, FfmpegUtils.php trait, exception classes, SearchEngine.php → proper module structure
+- Updated all documentation with correct file paths (modules/core/)
+
+### Round 6: Uploader & Transcoder Enhancement
+- Magic bytes validation, active upload limit, pre-flight disk space check
+- RAM disk priority (/dev/shm) for HLS staging
+- Atomic DB transactions with rollback + file cleanup
+- IPv4-mapped IPv6 support, stream.php throttling
+- dir_size() caching, detectProtocol() with Cloudflare support, resolve_binary() with MEEL_*_PATH override
 
 ---
 

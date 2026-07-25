@@ -27,11 +27,11 @@
  *
  * Dependencies:
  *   - auth/config.php ($conn)
- *   - modules/Transcoder.php
+ *   - modules/core/Transcoder.php
  */
 
 require_once __DIR__ . '/../../auth/config.php';
-require_once __DIR__ . '/../../modules/Transcoder.php';
+require_once __DIR__ . '/../../modules/core/Transcoder.php';
 
 // Session check manual (tanpa redirect)
 if (session_status() === PHP_SESSION_NONE) {

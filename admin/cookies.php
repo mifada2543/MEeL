@@ -1,5 +1,5 @@
 <?php
-require_once '../modules/helpers.php';
+require_once '../modules/core/helpers.php';
 session_name("meel");
 session_start();
 include '../auth/config.php';
@@ -10,13 +10,10 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
-$query_user = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$query_user->bind_param("i", $user_id);
-$query_user->execute();
-$user_data = $query_user->get_result()->fetch_assoc();
+$user_id = (int)$_SESSION['user_id'];
+$curr_role = get_user_role($conn, $user_id);
 
-if (!$user_data || $user_data['role'] !== 'admin') {
+if ($curr_role !== 'admin') {
     header("Location: ../index.php");
     exit();
 }
@@ -43,7 +40,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 // ── Handle DELETE ──
 $delete_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $delete_msg = ['type' => 'error', 'text' => 'CSRF Token tidak valid.'];
     } else {
         $del_id   = (int)($_POST['media_id'] ?? 0);

@@ -7,7 +7,7 @@
  * Mengembalikan JSON: { status, title, artist, album, cover (base64) }
  */
 
-require_once __DIR__ . '/../../modules/helpers.php';
+require_once __DIR__ . '/../../modules/core/helpers.php';
 require_once __DIR__ . '/../../auth/config.php';
 
 header('Content-Type: application/json');

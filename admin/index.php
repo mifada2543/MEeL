@@ -1,16 +1,17 @@
 <?php
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 include '../auth/config.php';
 include '../auth/auth.php';
-include_once '../modules/helpers.php';
-include_once '../modules/activity_logger.php';
-include_once '../modules/GarbageCollector.php';
-include_once '../modules/RateLimiter.php';
+include_once '../modules/core/helpers.php';
+include_once '../modules/core/activity_logger.php';
+include_once '../modules/core/GarbageCollector.php';
+include_once '../modules/core/RateLimiter.php';
 
 if (!isset($_SESSION['user_id'])) {
+    die(include '../err/denied.php');
+}
+
+// 🔴 Guard independen: verifikasi role admin (tidak bergantung pada side-effect include)
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     die(include '../err/denied.php');
 }
 

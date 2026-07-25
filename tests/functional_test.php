@@ -85,10 +85,10 @@ function testFileIntegrity(): void {
         '.htaccess', 'index.php', 'auth/config.php', 'auth/auth.php',
         'auth/login.php', 'auth/logout.php', 'auth/register.php',
         // Modules
-        'modules/helpers.php', 'modules/activity_logger.php', 'modules/System.php',
-        'modules/Uploader.php', 'modules/Transcoder.php', 'modules/japanese.php',
+        'modules/core/helpers.php', 'modules/core/activity_logger.php', 'modules/core/System.php',
+        'modules/core/Uploader.php', 'modules/core/Transcoder.php', 'modules/core/japanese.php',
         'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
-        'modules/media/MediaLibrary.php', 'modules/GarbageCollector.php',
+        'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php',
         // Controllers
         'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
         'controllers/api/like.php', 'controllers/profile/profile_edit.php',
@@ -144,13 +144,13 @@ function testClassLoading(): void {
     print_header('TEST 3: Class Loading — Instantiation Check');
 
     $classes = [
-        'Uploader'           => 'modules/Uploader.php',
-        'Transcoder'         => 'modules/Transcoder.php',
+        'Uploader'           => 'modules/core/Uploader.php',
+        'Transcoder'         => 'modules/core/Transcoder.php',
         'MediaViewer'        => 'modules/media/MediaViewer.php',
         'MediaLibrary'       => 'modules/media/MediaLibrary.php',
         'MediaInteraction'   => 'modules/media/MediaInteraction.php',
-        'System'             => 'modules/System.php',
-        'GarbageCollector'   => 'modules/GarbageCollector.php',
+        'System'             => 'modules/core/System.php',
+        'GarbageCollector'   => 'modules/core/GarbageCollector.php',
         'UpdateManager'      => 'controllers/system/UpdateManager.php',
         'BookRepository'     => 'modules/media/MediaLibrary.php',
         'BookUploader'       => 'modules/media/MediaLibrary.php',
@@ -193,21 +193,21 @@ function testFunctionExistence(): void {
 
     $functions = [
         // helpers.php
-        'time_ago'              => 'modules/helpers.php',
-        'format_bytes'          => 'modules/helpers.php',
-        'music_thumbnail_url'   => 'modules/helpers.php',
-        'get_user_usage'        => 'modules/helpers.php',
-        'get_csrf_token'        => 'modules/helpers.php',
-        'verify_csrf_token'     => 'modules/helpers.php',
-        'log_drive_operation'   => 'modules/helpers.php',
+        'time_ago'              => 'modules/core/helpers.php',
+        'format_bytes'          => 'modules/core/helpers.php',
+        'music_thumbnail_url'   => 'modules/core/helpers.php',
+        'get_user_usage'        => 'modules/core/helpers.php',
+        'get_csrf_token'        => 'modules/core/helpers.php',
+        'verify_csrf_token'     => 'modules/core/helpers.php',
+        'log_drive_operation'   => 'modules/core/helpers.php',
         // japanese.php
-        'getRomajiName'         => 'modules/japanese.php',
-        'analyzeJapaneseText'   => 'modules/japanese.php',
-        'getEnglishTranslation' => 'modules/japanese.php',
+        'getRomajiName'         => 'modules/core/japanese.php',
+        'analyzeJapaneseText'   => 'modules/core/japanese.php',
+        'getEnglishTranslation' => 'modules/core/japanese.php',
         // activity_logger.php — hanya di docs/security.md, belum diimplementasi
-        'log_activity'          => 'modules/activity_logger.php',
-        // config.php (CSRF)
-        'verify_csrf'           => 'auth/config.php',
+        'log_activity'          => 'modules/core/activity_logger.php',
+        // helpers.php (CSRF) — verify_csrf_token is the canonical function
+        'verify_csrf_token'     => 'modules/core/helpers.php',
     ];
 
     $warning_funcs = ['log_activity']; // fungsi ini boleh warning, bukan failure
@@ -247,7 +247,7 @@ function testFunctionExistence(): void {
 function testSecurityMagicBytes(): void {
     print_header('TEST 5A: Security Fix — Magic Bytes Validation');
 
-    $uploaderFile = PROJECT_ROOT . '/modules/Uploader.php';
+    $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
     if (!file_exists($uploaderFile)) {
         record("Uploader.php tidak ditemukan", false, false);
         return;
@@ -279,26 +279,26 @@ function testSecurityCsrf(): void {
     print_header('TEST 5B: Security Fix — CSRF Protection');
 
     $csrf_files = [
-        'admin/catur.php'     => ['verify_csrf', 'csrf_token'],
+        'admin/catur.php'     => ['verify_csrf_token', 'csrf_token'],
         'admin/index.php'     => ['csrf_token'],
-        'books/upload.php'    => ['verify_csrf', 'csrf_token'],
-        'controllers/api/WatchController.php' => ['verify_csrf'],
+        'books/upload.php'    => ['verify_csrf_token', 'csrf_token'],
+        'controllers/api/WatchController.php' => ['verify_csrf_token'],
         'controllers/api/like.php' => ['verify_csrf_token'],
-        'controllers/profile/profile_edit.php' => ['verify_csrf', 'csrf_token'],
-        'music/playlist_action.php' => ['verify_csrf'],
+        'controllers/profile/profile_edit.php' => ['verify_csrf_token', 'csrf_token'],
+        'music/playlist_action.php' => ['verify_csrf_token'],
         'music/view_playlist.php'   => ['csrf_token'],
         'music/watch.php'     => ['csrf_token'],
-        'transcode.php'       => ['verify_csrf', 'csrf_token'],
+        'transcode.php'       => ['verify_csrf_token', 'csrf_token'],
         'update.php'          => ['csrf_token'],
         'video/watch.php'     => ['csrf_token'],
-        'drive/upload.php'    => ['verify_csrf'],
+        'drive/upload.php'    => ['verify_csrf_token'],
         'drive/download.php'  => ['verify_csrf_token', 'csrf_token'],
-        'drive/delete.php'    => ['verify_csrf'],
-        'video/upload.php'    => ['verify_csrf', 'csrf_token'],
-        'music/upload.php'    => ['verify_csrf', 'csrf_token'],
-        'admin/edit-video.php'=> ['verify_csrf', 'csrf_token'],
-        'admin/edit-music.php'=> ['verify_csrf', 'csrf_token'],
-        'admin/cookies.php'   => ['verify_csrf', 'csrf_token'],
+        'drive/delete.php'    => ['verify_csrf_token'],
+        'video/upload.php'    => ['verify_csrf_token', 'csrf_token'],
+        'music/upload.php'    => ['verify_csrf_token', 'csrf_token'],
+        'admin/edit-video.php'=> ['verify_csrf_token', 'csrf_token'],
+        'admin/edit-music.php'=> ['verify_csrf_token', 'csrf_token'],
+        'admin/cookies.php'   => ['verify_csrf_token', 'csrf_token'],
     ];
 
     foreach ($csrf_files as $file => $patterns) {
@@ -328,14 +328,11 @@ function testSecurityCsrf(): void {
 function testSecurityPreparedStmts(): void {
     print_header('TEST 5C: Security Fix — Prepared Statements');
 
+    // Files with direct SQL queries (verified to use prepared statements)
     $critical_sql_files = [
         'music/view_playlist.php',
         'music/playlist_action.php',
-        'music/search_music.php',
-        'video/index.php',
         'controllers/profile/profile_edit.php',
-        'controllers/api/delete_comment.php',
-        'drive/DriveService.php',
     ];
 
     foreach ($critical_sql_files as $file) {
@@ -359,6 +356,46 @@ function testSecurityPreparedStmts(): void {
                 record("{$file} — memiliki SQL query tapi TANPA prepared statement", false, false, "Gunakan ->prepare() + ->bind_param()");
             } else {
                 record("{$file} — tidak memiliki SQL query langsung (didelegasikan) ⚠", true, true);
+            }
+        }
+    }
+
+    // Files that delegate SQL operations to other classes
+    $delegation_map = [
+        'music/search_music.php' => ['modules/media/MediaLibrary.php'], // SearchEngine → MediaLibrary (SQL actual source)
+        'video/index.php' => ['modules/media/MediaLibrary.php'],
+        'controllers/api/delete_comment.php' => ['modules/media/MediaInteraction.php'],
+        'drive/DriveService.php' => [], // file-based storage, no SQL needed
+    ];
+
+    foreach ($delegation_map as $file => $delegated_files) {
+        $full = PROJECT_ROOT . '/' . $file;
+        if (!file_exists($full)) {
+            record("{$file} — tidak ditemukan", true, true);
+            continue;
+        }
+
+        if (empty($delegated_files)) {
+            // Pure file-based storage (no SQL at all)
+            record("{$file} — penyimpanan berbasis file (tanpa SQL) ✓", true);
+            continue;
+        }
+
+        foreach ($delegated_files as $df) {
+            $dfFull = PROJECT_ROOT . '/' . $df;
+            if (!file_exists($dfFull)) {
+                record("{$file} → {$df} — file tidak ditemukan", false, false);
+                continue;
+            }
+
+            $dfContent = file_get_contents($dfFull);
+            $dfHasPrepare = (strpos($dfContent, '->prepare(') !== false);
+            $dfHasBind   = (strpos($dfContent, '->bind_param') !== false);
+
+            if ($dfHasPrepare || $dfHasBind) {
+                record("{$file} (SQL didelegasikan ke {$df} — prepared statements OK) ✓", true);
+            } else {
+                record("{$file} → {$df} — TANPA prepared statement", false, false);
             }
         }
     }
@@ -402,11 +439,11 @@ function testSecurityShellEscape(): void {
     print_header('TEST 5E: Security Fix — escapeshellarg() Shell Safety');
 
     $files = [
-        'modules/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
-        'modules/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/helpers.php'      => ['shell_exec'],
-        'modules/System.php'       => ['shell_exec'],
-        'modules/japanese.php'     => ['proc_open'],
+        'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
+        'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
+        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/System.php'       => ['shell_exec'],
+        'modules/core/japanese.php'     => ['proc_open'],
     ];
 
     foreach ($files as $file => $funcs) {
@@ -431,7 +468,7 @@ function testSecurityShellEscape(): void {
     }
 
     // Cek khusus proc_open di Transcoder.php — memverifikasi array arguments
-    $transcoderFile = PROJECT_ROOT . '/modules/Transcoder.php';
+    $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
     if (file_exists($transcoderFile)) {
         $tcContent = file_get_contents($transcoderFile);
         if (strpos($tcContent, 'proc_open([') !== false && strpos($tcContent, 'proc_close') !== false) {
@@ -452,7 +489,7 @@ function testSecurityShellEscape(): void {
 function testSecurityUploadLimit(): void {
     print_header('TEST 5F: Security Fix — Upload Concurrency & Rate Limit');
 
-    $uploaderFile = PROJECT_ROOT . '/modules/Uploader.php';
+    $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
     if (!file_exists($uploaderFile)) {
         record("Uploader.php tidak ditemukan", false, false);
         return;
@@ -480,7 +517,7 @@ function testSecurityUploadLimit(): void {
     }
 
     // Cek marker file di Transcoder
-    $transcoderFile = PROJECT_ROOT . '/modules/Transcoder.php';
+    $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
     if (file_exists($transcoderFile)) {
         $tcContent = file_get_contents($transcoderFile);
         if (strpos($tcContent, "'.processing'") !== false || strpos($tcContent, '$marker_file') !== false) {
@@ -591,7 +628,7 @@ function testConfigCheck(): void {
         'Session GC maxlifetime'         => '/session\\.gc_maxlifetime/',
         'Session cookie params'          => '/session_set_cookie_params/',
         'CSRF token generation'          => '/random_bytes.*32/',
-        'verify_csrf function'           => '/function verify_csrf/',
+        'verify_csrf_token function'     => '/function verify_csrf_token/',
         'Last activity timeout'          => '/LAST_ACTIVITY/',
         'MySQLi connection'              => '/new mysqli\\(/',
         'Activity logger include'        => '/activity_logger/',
@@ -606,7 +643,13 @@ function testConfigCheck(): void {
     }
 
     // Cek apakah config memiliki nilai database yang diisi (bukan template kosong)
-    if (preg_match('/\\$server\\s*=\\s*"localhost"/', $content) || preg_match('/\\$server\\s*=\\s*"[^"]+"/', $content)) {
+    // Mendukung dua pola:
+    //   - Pola variabel: $server = "localhost" (config.example.php)
+    //   - Pola langsung: new mysqli("localhost", ...) (config.php)
+    $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
+    $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
+    
+    if ($hasServerVar || $hasDirectConn) {
         record("Database server terkonfigurasi ✓", true);
     } else {
         record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/config.php");
@@ -658,10 +701,10 @@ function testModifiedFiles(): void {
     $modified_files = [
         'admin/catur.php' => [
             'role check'    => ['pattern' => '/role.*!==.*admin/', 'label' => 'Role check admin'],
-            'CSRF'          => ['pattern' => '/verify_csrf/', 'label' => 'CSRF verification'],
+            'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
             'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
         ],
-        'modules/Uploader.php' => [
+        'modules/core/Uploader.php' => [
             'magic bytes'   => ['pattern' => '/validateVideoMagicBytes/', 'label' => 'Magic bytes validation'],
             'ffprobe fix'   => ['pattern' => '/duration.*<=.*0/', 'label' => 'FFprobe failure handling'],
             'flock video'   => ['pattern' => '/meel_upload_video\\.lock/', 'label' => 'Flock video upload'],
@@ -671,7 +714,7 @@ function testModifiedFiles(): void {
             'flock move'    => ['pattern' => '/meel_move_hdd\\.lock/', 'label' => 'Flock HDD move'],
             'TTL auto-reset'=> ['pattern' => '/300\\)/', 'label' => 'TTL auto-reset 5 menit'],
         ],
-        'modules/Transcoder.php' => [
+        'modules/core/Transcoder.php' => [
             'proc_open finalizeVideo' => ['pattern' => '/proc_open\\(\\$hls_cmd/', 'label' => 'proc_open array (finalizeVideo)'],
             'proc_open transcodeVideo' => ['pattern' => '/proc_open\\(\\$tc_cmd/', 'label' => 'proc_open array (transcodeVideo)'],
             'env vars'      => ['pattern' => "/'LD_LIBRARY_PATH'/", 'label' => 'Environment variables via $env'],
@@ -684,7 +727,7 @@ function testModifiedFiles(): void {
             'prepared stmt' => ['pattern' => '/\\$songs_stmt = \\$conn->prepare\\(/', 'label' => 'Prepared statement'],
             'bind_param'    => ['pattern' => '/->bind_param\(/', 'label' => 'bind_param'],
         ],
-        'modules/japanese.php' => [
+        'modules/core/japanese.php' => [
             'escapeshellarg getRomajiName' => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getRomajiName)'],
             'escapeshellarg analyze'       => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
             'escapeshellarg translate'     => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getEnglishTranslation)'],

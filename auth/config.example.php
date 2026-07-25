@@ -22,6 +22,22 @@
  */
 
 // ════════════════════════════════════════════════════════════════
+// BOOTSTRAP (Error Handling Terpusat)
+// ════════════════════════════════════════════════════════════════
+// Bootstrap menangani display_errors, error_log, dan timezone
+// berdasarkan environment (production/development).
+// Tidak perlu lagi mengatur ini di file individual.
+require_once __DIR__ . '/../modules/core/bootstrap.php';
+
+// ════════════════════════════════════════════════════════════════
+// ENVIRONMENT (Timpa auto-detect bootstrap jika perlu)
+// ════════════════════════════════════════════════════════════════
+// Uncomment salah satu baris di bawah untuk menetapkan environment secara manual:
+// define('MEEL_ENV', 'production');
+// define('MEEL_ENV', 'development');
+// define('MEEL_ENV', 'maintenance');
+
+// ════════════════════════════════════════════════════════════════
 // DATABASE CONFIGURATION
 // ════════════════════════════════════════════════════════════════
 
@@ -36,7 +52,7 @@ if ($conn->connect_error) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// BASE URL (PATH PORTABILITY)
+// BASE URL & HOST (PATH PORTABILITY & SECURITY)
 // ════════════════════════════════════════════════════════════════
 // Gunakan untuk menggantikan hardcoded /MEeL/ prefix di redirect dan link.
 // Dihitung dari lokasi file ini (auth/config.php), sehingga konsisten
@@ -45,6 +61,43 @@ $project_root = str_replace('\\', '/', dirname(__DIR__));
 $doc_root     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
 $relative     = substr($project_root, strlen(rtrim($doc_root, '/')));
 define('MEEL_BASE_URL', rtrim($relative, '/'));
+
+// ════════════════════════════════════════════════════════════════
+// HOST CONSTANT (CEGAH OPEN REDIRECT)
+// ════════════════════════════════════════════════════════════════
+// Gunakan untuk validasi referer/open redirect, bukan $_SERVER['HTTP_HOST']
+// yang bisa dipalsukan. Set nilai ini sesuai hostname server Anda.
+// Contoh:
+//   define('MEEL_HOST', 'meel.example.com');
+//   define('MEEL_HOST', '192.168.1.100');
+// Biarkan kosong untuk fallback ke HTTP_HOST (kurang aman, tapi kompatibel).
+if (!defined('MEEL_HOST')) {
+    define('MEEL_HOST', $_SERVER['HTTP_HOST'] ?? '');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BINARY PATH CONSTANTS (CEGAH BINARY-HIJACKING)
+// ════════════════════════════════════════════════════════════════
+// Set path absolut untuk mencegah binary-hijacking via PATH environment.
+// Biarkan kosong untuk auto-discovery (hanya untuk development).
+//
+// Cara setting:
+//   define('MEEL_FFMPEG_PATH', '/usr/bin/ffmpeg');
+//   define('MEEL_FFPROBE_PATH', '/usr/bin/ffprobe');
+//   define('MEEL_NODE_PATH', '/usr/bin/node');
+//   define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
+if (!defined('MEEL_FFMPEG_PATH')) {
+    define('MEEL_FFMPEG_PATH', '');
+}
+if (!defined('MEEL_FFPROBE_PATH')) {
+    define('MEEL_FFPROBE_PATH', '');
+}
+if (!defined('MEEL_NODE_PATH')) {
+    define('MEEL_NODE_PATH', '');
+}
+if (!defined('MEEL_YTDLP_PATH')) {
+    define('MEEL_YTDLP_PATH', '');
+}
 
 // ════════════════════════════════════════════════════════════════
 // MEDIA STORAGE PATHS (TERPUSAT)
@@ -102,9 +155,12 @@ session_name('meel');
 session_start();
 
 // ════════════════════════════════════════════════════════════════
-// AUTOLOADER
+// AUTOLOADER & HELPERS
 // ════════════════════════════════════════════════════════════════
 require_once __DIR__ . '/../modules/autoload.php';
+
+// Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
+require_once __DIR__ . '/../modules/core/helpers.php';
 
 // ── Security Headers ──
 if (!headers_sent()) {
@@ -116,7 +172,7 @@ if (!headers_sent()) {
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         header("Strict-Transport-Security: max-age=15552000; includeSubDomains");
     }
-    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'");
+    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
 }
 
 // ── CSRF Token ──
@@ -124,21 +180,8 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// ── CSRF Verification ──
-if (!function_exists('verify_csrf')) {
-    function verify_csrf()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!isset($_POST['csrf_token'])
-                || !isset($_SESSION['csrf_token'])
-                || $_POST['csrf_token'] !== $_SESSION['csrf_token']
-            ) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
+// No wrapper function needed — use verify_csrf_token() directly
+// (defined in modules/core/helpers.php with hash_equals safety)
 
 // ── Session Timeout Check ──
 if (isset($_SESSION['LAST_ACTIVITY'])) {
@@ -153,4 +196,4 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
 $_SESSION['LAST_ACTIVITY'] = time();
 
 // ── Activity Logger ──
-include_once __DIR__ . '/../modules/activity_logger.php';
+include_once __DIR__ . '/../modules/core/activity_logger.php';

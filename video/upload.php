@@ -1,11 +1,8 @@
 <?php
-require_once '../modules/helpers.php';
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once '../modules/core/helpers.php';
 include '../auth/auth.php';
-include '../modules/Uploader.php';
-require_once '../modules/GarbageCollector.php';
+include '../modules/core/Uploader.php';
+require_once '../modules/core/GarbageCollector.php';
 require_once '../modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
@@ -37,7 +34,10 @@ $daily_limit = $is_admin ? '∞' : '3';
 $uploader = new Uploader($conn, $user_id, $user);
 
 if (isset($_POST['upload'])) {
-    verify_csrf();
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        http_response_code(403);
+        die('CSRF token tidak valid.');
+    }
     $result = $uploader->processVideo($_POST, $_FILES, __DIR__ . "/");
 
     if ($result['status'] === 'success') {

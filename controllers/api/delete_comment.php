@@ -21,9 +21,9 @@
  */
 
 define('ACCESS_GRANTED', true);
-require_once '../../modules/helpers.php';
+require_once '../../modules/core/helpers.php';
 include '../../auth/config.php';
-include '../../modules/RateLimiter.php';
+include '../../modules/core/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
 // ⚡ RATE LIMIT: 10 comments per menit per user

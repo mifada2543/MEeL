@@ -1,10 +1,7 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
-require_once '../modules/helpers.php';
+require_once '../modules/core/helpers.php';
 
 // ── Hanya user login ──
 if (!isset($_SESSION['user_id'])) {
@@ -45,7 +42,7 @@ $cleaned_count = cleanupPendingDeletions();
 // ── Handle delete action ──
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $delete_msg = 'Token tidak valid.';
     } else {
         $del_id   = (int)$_GET['id'];

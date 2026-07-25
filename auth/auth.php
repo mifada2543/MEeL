@@ -1,6 +1,6 @@
 <?php
 include 'config.php';
-require_once __DIR__ . '/../modules/helpers.php';
+require_once __DIR__ . '/../modules/core/helpers.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_name('meel');

@@ -1,8 +1,5 @@
 <?php
-require_once 'modules/helpers.php';
-// Error logging aktif, display_errors dimatikan untuk keamanan production
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once 'modules/core/helpers.php';
 include 'auth/config.php';
 require_once 'controllers/system/UpdateManager.php';
 

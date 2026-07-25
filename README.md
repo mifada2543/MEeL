@@ -164,20 +164,29 @@ MEeL/
 │   └── DriveService.php   # OOP: DriveUserContext, DriveStorage, DriveViewRenderer
 ├── err/                   # Halaman error (denied, maintenance, banned, revoked)
 ├── modules/               # Core logic & business layer (OOP)
-│   ├── helpers.php        # Fungsi bantuan: base_url(), resolve_binary(), time_ago(), dll
 │   ├── autoload.php       # 🔄 Autoloader PSR-4-like (semua class core auto-load)
-│   ├── RateLimiter.php    # ⚡ File-based API rate limiter
-│   ├── Transcoder.php     # FFmpeg HLS & yt-dlp download engine
-│   ├── Uploader.php       # Upload file & validasi
-│   ├── MediaLibrary.php   # Query database, search, pagination metadata
-│   ├── MediaViewer.php    # View tracking, komentar, rekomendasi
-│   ├── MediaInteraction.php # Like/dislike
-│   ├── System.php         # Queue management & monitoring
-│   ├── GarbageCollector.php # Auto-cleanup temp files + rate limit cache
-│   ├── CommentRenderer.php  # Render komentar nested
-│   ├── activity_logger.php  # Logging aktivitas & IP ban check
-│   ├── exceptions/        # Custom exception classes
-│   └── media/             # SearchEngine, MediaLibrary cache
+│   ├── core/              # Semua file core dipindah ke sini
+│   │   ├── helpers.php    # Fungsi bantuan: base_url(), resolve_binary(), time_ago(), dll
+│   │   ├── System.php     # Queue management & monitoring
+│   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
+│   │   ├── Uploader.php   # Upload file & validasi
+│   │   ├── GarbageCollector.php # Auto-cleanup temp files + rate limit cache
+│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── CommentRenderer.php # Render komentar nested
+│   │   ├── activity_logger.php # Logging aktivitas & IP ban check
+│   │   ├── japanese.php   # Analisis teks Jepang (MeCab/Romaji)
+│   │   └── bootstrap.php  # Bootstrap error handling terpusat
+│   ├── media/             # Media library classes
+│   │   ├── MediaLibrary.php   # Query database, search, pagination metadata
+│   │   ├── MediaViewer.php    # View tracking, komentar, rekomendasi
+│   │   ├── MediaInteraction.php # Like/dislike
+│   │   └── SearchEngine.php   # Mesin pencari FULLTEXT
+│   ├── transcoder/        # Utilitas FFmpeg
+│   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
+│   └── exceptions/        # Custom exception classes
+│       ├── TranscodeException.php
+│       ├── ProcessException.php
+│       └── DownloadException.php
 ├── music/                 # Modul pemutar musik
 ├── partials/              # Reusable UI components (navbar, footer, head, nav)
 ├── profile/               # Modul profil user

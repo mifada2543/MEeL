@@ -24,12 +24,16 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 | `auth/config.php` | Database, session, CSRF, **path terpusat** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
 | `auth/config.example.php` | Template konfigurasi | Sama dengan config.php |
 | `database/schema.sql` | Skema database standalone | — |
-| `modules/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
-| `modules/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
-| `modules/helpers.php` | HDD check path + berbagai utilitas | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, dll |
-| `modules/System.php` | Queue management | Rate limit constants |
-| `modules/GarbageCollector.php` | Auto-cleanup temp files + guest + rate limit | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
-| `modules/RateLimiter.php` | **Baru!** File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, dll.) |
+| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
+| `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
+| `modules/core/helpers.php` | HDD check path + berbagai utilitas | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, `resolve_binary()`, `dir_size()`, `check_disk_space()`, dll. |
+| `modules/core/System.php` | Queue management | Rate limit constants |
+| `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guest + rate limit | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
+| `modules/core/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, dll.) |
+| `modules/core/japanese.php` | Pemrosesan teks Jepang (MeCab + transliterasi) | `getRomajiName()`, `analyzeJapaneseText()` |
+| `modules/core/activity_logger.php` | Activity logging, IP banning, session kick | `get_real_ip()`, `log_activity()` |
+| `modules/core/bootstrap.php` | Bootstrap (env detection, error reporting, timezone) | `MEEL_ENV`, log error config |
+| `modules/transcoder/FfmpegUtils.php` | **Trait** utilitas FFmpeg | `resolveBinary()`, `probeDuration()`, `generateSpriteAndVTT()` |
 | `modules/autoload.php` | PSR-4-like autoloader | Daftar direktori yang di-scan |
 | `database/migrate.php` | Database migration v1–v7 | FULLTEXT index, FK, activity_log, UNIQUE KEY |
 
@@ -81,16 +85,14 @@ session_start();
 // Auto-generated token
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-// Verifikasi function
-function verify_csrf() {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isset($_POST['csrf_token']) || 
-            !isset($_SESSION['csrf_token']) || 
-            $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            return false;
-        }
+// Fungsi verifikasi (didefinisikan di modules/core/helpers.php)
+// Menggunakan hash_equals() untuk timing-attack safety
+function verify_csrf_token(?string $token = null): bool
+{
+    if ($token === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_POST['csrf_token'] ?? '';
     }
-    return true;
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token ?? '');
 }
 ```
 
@@ -221,7 +223,7 @@ Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, aplikasi akan redirect ke 
 
 ## Transcoder Configuration
 
-### File: `modules/Transcoder.php`
+### File: `modules/core/Transcoder.php`
 
 > ⚠️ **Perubahan:** Konstanta `HDD_BASE`, `HDD_VIDEO_DIR`, `HDD_THUMB_DIR` telah **dipindahkan** ke `auth/config.php` menjadi `MEEL_HDD_*`.
 
@@ -296,7 +298,7 @@ else                       $interval = 10;    // ≤ 5 menit → tiap 10 detik
 
 ## Uploader Configuration
 
-### File: `modules/Uploader.php`
+### File: `modules/core/Uploader.php`
 
 > ⚠️ **Perubahan:** `$base_dir` sekarang mengambil path dari `MEEL_HDD_VIDEO_UPLOAD` (didefinisikan di `auth/config.php`).
 
@@ -328,7 +330,7 @@ $allowed_ext = ['mp3', 'opus', 'ogg', 'm4a', 'wav', 'flac'];
 
 ## System Configuration
 
-### File: `modules/System.php`
+### File: `modules/core/System.php`
 
 ```php
 // Queue Processing
@@ -354,7 +356,7 @@ if ($user_role === 'admin') return ['allowed' => true];
 
 ### API Rate Limiting (RateLimiter.php)
 
-`modules/RateLimiter.php` — file-based rate limiter untuk endpoint API:
+`modules/core/RateLimiter.php` — file-based rate limiter untuk endpoint API:
 
 | Endpoint | Limit | Window | File |
 |----------|:-----:|:------:|------|
@@ -364,7 +366,7 @@ if ($user_role === 'admin') return ['allowed' => true];
 | Transcode | 5 | 1 jam | — |
 | API Generic | 60 | 1 menit | — |
 
-**Konfigurasi:** Edit langsung di `modules/RateLimiter.php`:
+**Konfigurasi:** Edit langsung di `modules/core/RateLimiter.php`:
 ```php
 private static array $limits = [
     'like'    => ['requests' => 30, 'window' => 60],
