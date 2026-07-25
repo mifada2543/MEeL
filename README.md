@@ -355,11 +355,15 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **Functional Test** | 144 | 143 | 1 | **0** | **100/100 A** |
-| **Security Test** | 72 | 72 | 0 | **0** | **100/100 A** |
-| **PHP Syntax** | 22 files | 22 | 0 | **0** | **✅ ALL PASS** |
+| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3% A** |
+| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100% A** |
+| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
+
+> 📖 **Panduan Testing** → [🇮🇩 docs/id/test.md](docs/id/test.md) · [🇬🇧 docs/en/test.md](docs/en/test.md)
 
 > 📖 **Konfigurasi lengkap** → [docs/id/configuration.md](docs/id/configuration.md) | [English](docs/en/configuration.md)
 
@@ -396,6 +400,7 @@ Dokumentasi proyek tersedia dalam dua bahasa:
 | 👨‍💻 Development | [🇮🇩](docs/id/development.md) | [🇬🇧](docs/en/development.md) |
 | 📥 Advanced Upload | [🇮🇩](docs/id/upload_issue.md) | [🇬🇧](docs/en/upload_issue.md) |
 | 📋 Analisis Proyek | [🇮🇩](docs/id/deskripsi.md) | [🇬🇧](docs/en/analysis.md) |
+| 🧪 Testing Guide | [🇮🇩](docs/id/test.md) | [🇬🇧](docs/en/test.md) |
 
 ---
 

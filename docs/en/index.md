@@ -17,6 +17,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | 7 | [🔧 Troubleshooting](troubleshooting.md) | Solutions for common issues |
 | 8 | [👨‍💻 Development Guide](development.md) | Coding standards, contributions, and testing |
 | 9 | [📥 Advanced Upload Issues](upload_issue.md) | Handling yt-dlp & background queue problems |
+| 10 | [🧪 Testing Guide](test.md) | PHPUnit, Functional, Security test — complete guide |
 
 ---
 

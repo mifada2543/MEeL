@@ -138,8 +138,10 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **Functional Test** | 145 | 139 | 6 | **0** | **98/100 A** |
-| **Security Test** | 60 | 60 | 0 | **0** | **100/100 A** |
+| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3%** |
+| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100%** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 ---
@@ -158,7 +160,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 
 ### Low Priority
 7. **Docker support** — consistent deployment environment
-8. **Unit tests** — PHPUnit for core classes
+8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (86 unit + 19 integration = 105 tests)
 
 ---
 

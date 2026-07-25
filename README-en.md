@@ -365,11 +365,15 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **Functional Test** | 144 | 143 | 1 | **0** | **100/100 A** |
-| **Security Test** | 72 | 72 | 0 | **0** | **100/100 A** |
-| **PHP Syntax** | 22 files | 22 | 0 | **0** | **✅ ALL PASS** |
+| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3% A** |
+| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100% A** |
+| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
+
+> 📖 **Testing Guide** → [🇬🇧 docs/en/test.md](docs/en/test.md) · [🇮🇩 docs/id/test.md](docs/id/test.md)
 
 > 📖 **Full configuration guide** → [docs/en/configuration.md](docs/en/configuration.md)
 
@@ -406,6 +410,7 @@ Documentation is available in two languages:
 | 👨‍💻 Development | [🇮🇩](docs/id/development.md) | [🇬🇧](docs/en/development.md) |
 | 📥 Advanced Upload | [🇮🇩](docs/id/upload_issue.md) | [🇬🇧](docs/en/upload_issue.md) |
 | 📋 Project Analysis | [🇮🇩](docs/id/deskripsi.md) | [🇬🇧](docs/en/analysis.md) |
+| 🧪 Testing Guide | [🇮🇩](docs/id/test.md) | [🇬🇧](docs/en/test.md) |
 
 ---
 

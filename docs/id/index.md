@@ -17,6 +17,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 | 7 | [🔧 Troubleshooting](troubleshooting.md) | Solusi untuk masalah umum |
 | 8 | [👨‍💻 Panduan Development](development.md) | Standar koding, kontribusi, dan testing |
 | 9 | [📥 Troubleshooting Advanced Upload](upload_issue.md) | Penanganan masalah yt-dlp & background queue |
+| 10 | [🧪 Testing Guide](test.md) | PHPUnit, Functional, Security test — panduan lengkap |
 
 ---
 
