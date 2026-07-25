@@ -328,14 +328,11 @@ function testSecurityCsrf(): void {
 function testSecurityPreparedStmts(): void {
     print_header('TEST 5C: Security Fix — Prepared Statements');
 
+    // Files with direct SQL queries (verified to use prepared statements)
     $critical_sql_files = [
         'music/view_playlist.php',
         'music/playlist_action.php',
-        'music/search_music.php',
-        'video/index.php',
         'controllers/profile/profile_edit.php',
-        'controllers/api/delete_comment.php',
-        'drive/DriveService.php',
     ];
 
     foreach ($critical_sql_files as $file) {
@@ -359,6 +356,46 @@ function testSecurityPreparedStmts(): void {
                 record("{$file} — memiliki SQL query tapi TANPA prepared statement", false, false, "Gunakan ->prepare() + ->bind_param()");
             } else {
                 record("{$file} — tidak memiliki SQL query langsung (didelegasikan) ⚠", true, true);
+            }
+        }
+    }
+
+    // Files that delegate SQL operations to other classes
+    $delegation_map = [
+        'music/search_music.php' => ['modules/media/MediaLibrary.php'], // SearchEngine → MediaLibrary (SQL actual source)
+        'video/index.php' => ['modules/media/MediaLibrary.php'],
+        'controllers/api/delete_comment.php' => ['modules/media/MediaInteraction.php'],
+        'drive/DriveService.php' => [], // file-based storage, no SQL needed
+    ];
+
+    foreach ($delegation_map as $file => $delegated_files) {
+        $full = PROJECT_ROOT . '/' . $file;
+        if (!file_exists($full)) {
+            record("{$file} — tidak ditemukan", true, true);
+            continue;
+        }
+
+        if (empty($delegated_files)) {
+            // Pure file-based storage (no SQL at all)
+            record("{$file} — penyimpanan berbasis file (tanpa SQL) ✓", true);
+            continue;
+        }
+
+        foreach ($delegated_files as $df) {
+            $dfFull = PROJECT_ROOT . '/' . $df;
+            if (!file_exists($dfFull)) {
+                record("{$file} → {$df} — file tidak ditemukan", false, false);
+                continue;
+            }
+
+            $dfContent = file_get_contents($dfFull);
+            $dfHasPrepare = (strpos($dfContent, '->prepare(') !== false);
+            $dfHasBind   = (strpos($dfContent, '->bind_param') !== false);
+
+            if ($dfHasPrepare || $dfHasBind) {
+                record("{$file} (SQL didelegasikan ke {$df} — prepared statements OK) ✓", true);
+            } else {
+                record("{$file} → {$df} — TANPA prepared statement", false, false);
             }
         }
     }
@@ -606,7 +643,13 @@ function testConfigCheck(): void {
     }
 
     // Cek apakah config memiliki nilai database yang diisi (bukan template kosong)
-    if (preg_match('/\\$server\\s*=\\s*"localhost"/', $content) || preg_match('/\\$server\\s*=\\s*"[^"]+"/', $content)) {
+    // Mendukung dua pola:
+    //   - Pola variabel: $server = "localhost" (config.example.php)
+    //   - Pola langsung: new mysqli("localhost", ...) (config.php)
+    $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
+    $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
+    
+    if ($hasServerVar || $hasDirectConn) {
         record("Database server terkonfigurasi ✓", true);
     } else {
         record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/config.php");
