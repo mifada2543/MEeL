@@ -1,7 +1,7 @@
 # 📋 Analisis & Deskripsi Proyek MEeL-HUB
 
-**Versi Analisis:** 2.0  
-**Tanggal:** 24 Juli 2026  
+**Versi Analisis:** 2.1  
+**Tanggal:** 25 Juli 2026  
 **Analis:** Buffy (Freebuff AI Agent)
 
 ---
@@ -81,7 +81,7 @@ MEeL/
 
 ## 🗄️ Verifikasi Database Schema
 
-### 16 Tabel + 1 Migration Table
+### 20 Tabel
 
 | # | Tabel | Fungsi | Status |
 |---|-------|--------|--------|
@@ -101,7 +101,10 @@ MEeL/
 | 14 | `sidebar_settings` | Konten pengumuman sidebar | ✅ |
 | 15 | `activity_log` | Log aktivitas untuk audit | ✅ |
 | 16 | `drive_files` | File Cloud Drive | ✅ |
-| 17 | `db_version` | **Migration tracker** (dibuat oleh migrate.php) | ✅ |
+| 17 | `db_version` | **Migration tracker** | ✅ |
+| 18 | `login_attempts` | Cegah brute force login | ✅ |
+| 19 | `rooms` | Ruang catur multiplayer (LAN) | ✅ |
+| 20 | `moves` | Riwayat langkah catur | ✅ |
 
 ### Index
 
@@ -120,9 +123,9 @@ MEeL/
 1. **✅ FULLTEXT Search** — Query `LIKE %...%` sudah diganti dengan `MATCH ... AGAINST` di `MediaLibrary.php` untuk video & music (10-100× lebih cepat)
 2. **✅ Foreign Keys** — Semua tabel utama (video, music, books, comments, playlists, upload_queue, drive_files) memiliki FK dengan `ON DELETE CASCADE`
 3. **✅ FK Constraint** — `upload_queue.user_id`, `transcode_queue.user_id`, `drive_files.user_id` sudah ditambahkan FK ke `users.id` (Migration v4)
-4. **⚠️ Role Enum** — `users.role` hanya `enum('admin','user')`, tapi kode di `DriveService.php` juga memeriksa role `'member'`. Ini bukan bug karena 'member' adalah logical check — user dengan role 'user' tetap bisa mengakses fitur member
-5. **✅ Unique Constraints** — `interactions` (cegah like duplikat), `view_logs` (cegah view inflation), `ip_ban` (cegah duplikasi IP)
-6. **✅ Migration System** — `database/migrate.php` menangani upgrade schema secara idempotent (FULLTEXT index, performance index, FK, activity_log, UNIQUE KEY)
+4. **✅ Role Column** — `users.role` adalah `varchar(20)` (bukan enum) — mendukung semua role: `admin`, `member`, `user`, `guest`. Di-sync via Migration v8
+5. **✅ Unique Constraints** — `interactions` (cegah like duplikat), `view_logs` (cegah view inflation), `ip_ban` (cegah duplikasi IP), `users.username` (cegah duplikasi guest)
+6. **✅ Migration System** — `database/migrate.php` menangani upgrade schema secara idempotent (FULLTEXT index, performance index, FK, activity_log, UNIQUE KEY, schema sync)
 
 ---
 
@@ -199,12 +202,12 @@ Tidak ada masalah high yang tersisa.
 
 Tidak ada masalah medium yang tersisa.
 
-### Low (2)
+### Low (0 ✅ — Semua telah diperbaiki)
 
-| # | Masalah | Lokasi | Saran |
-|---|---------|--------|-------|
-| 1 | `users.role` enum tidak include 'member' | `database/schema.sql` | Tambah 'member' ke enum atau dokumentasikan bahwa logical check saja |
-| 2 | Tidak ada `db_version` table di schema.sql (dibuat oleh migration) | `database/schema.sql` | Bisa ditambahkan untuk completeness |
+| # | Masalah | Status | Fix |
+|---|---------|--------|-----|
+| 1 | `users.role` enum tidak include 'member' | ✅ **Selesai** | Role diubah ke `varchar(20)` — mendukung `admin`, `member`, `user`, `guest` |
+| 2 | Tidak ada `db_version` table di schema.sql | ✅ **Selesai** | Ditambahkan ke schema.sql + Migration v8 sync untuk DB existing |
 
 ---
 
@@ -312,6 +315,17 @@ Tidak ada masalah medium yang tersisa.
 | 64 | `modules/core/activity_logger.php` | IPv4-mapped IPv6 support + stream.php throttling | 🛡 Stability |
 | 65 | `modules/core/GarbageCollector.php` | Auto-cleanup expired rate limit via RateLimiter::cleanup() | ♻ Code |
 
+### Round 7: Database Schema Sync & Migration v8
+
+| # | File | Perubahan | Kategori |
+|---|------|-----------|----------|
+| 66 | `database/schema.sql` | `users.role` → `varchar(20)` — dukung role `member` & `guest` | 🗄 Database |
+| 67 | `database/schema.sql` | Tambah tabel `db_version`, `moves`, `rooms` ke schema.sql | 🗄 Database |
+| 68 | `database/schema.sql` | Tambah missing FK `comments_ibfk_2` (music_id→music.id) | 🗄 Database |
+| 69 | `database/schema.sql` | Sync default values: `is_active=0`, `ip_address='Unknown'`, `last_page='Index'` | 🗄 Database |
+| 70 | `database/schema.sql` | `activity_log.ip_address` → `DEFAULT 'Unknown'` | 🗄 Database |
+| 71 | `database/migrate.php` | **Migration v8** — alter role, hapus duplicate UNIQUE KEY, sync defaults | 🗄 Database |
+
 ---
 
 ## 🧪 Test Results
@@ -358,4 +372,4 @@ Tidak ada masalah medium yang tersisa.
 | **Functional test score** | 98/100 (A) |
 | **Security test score** | 100/100 (A) |
 
-> **Status:** ✅ Production-ready dengan 0 critical issue, 0 high issue, 0 medium issue, dan 2 low issue (nice-to-have).
+> **Status:** ✅ **Production-ready dengan 0 critical, 0 high, 0 medium, dan 0 low issue.** Semua low issue yang teridentifikasi telah diperbaiki.
