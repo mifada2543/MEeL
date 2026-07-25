@@ -5,6 +5,13 @@ on:
     branches: [ "main", "master", "develop", "Experiment" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Enable debug logging'
+        required: false
+        default: false
+        type: boolean
 
 # ─── Concurrency: cancel redundant runs on the same branch ───
 concurrency:
