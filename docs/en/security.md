@@ -145,15 +145,14 @@ if (empty($_SESSION['csrf_token'])) {
 ### Token Validation
 
 ```php
-function verify_csrf() {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isset($_POST['csrf_token']) || 
-            !isset($_SESSION['csrf_token']) || 
-            $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            return false;
-        }
+// verify_csrf_token() — defined in modules/core/helpers.php
+// Uses hash_equals() for timing-attack safety
+function verify_csrf_token(?string $token = null): bool
+{
+    if ($token === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_POST['csrf_token'] ?? '';
     }
-    return true;
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token ?? '');
 }
 ```
 

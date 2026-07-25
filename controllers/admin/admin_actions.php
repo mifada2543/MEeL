@@ -21,7 +21,7 @@ if (!$__user_data || $__user_data['role'] !== 'admin') {
 unset($__uid, $__q, $__user_data);
 
 // ── CSRF Guard ─────────────────────────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf()) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_token'] ?? null)) {
     header("Location: index.php?msg=CSRF_Token_Invalid");
     exit();
 }

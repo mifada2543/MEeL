@@ -61,7 +61,7 @@ $status = "";
 $error_message = "";
 
 if (isset($_POST['update'])) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
     } else {
         $title = trim($_POST['title'] ?? '');

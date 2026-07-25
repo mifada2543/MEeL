@@ -233,15 +233,14 @@ if (empty($_SESSION['csrf_token'])) {
 ### Token Validation
 
 ```php
-function verify_csrf() {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isset($_POST['csrf_token']) || 
-            !isset($_SESSION['csrf_token']) || 
-            $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            return false;
-        }
+// verify_csrf_token() — didefinisikan di modules/core/helpers.php
+// Menggunakan hash_equals() untuk timing-attack safety
+function verify_csrf_token(?string $token = null): bool
+{
+    if ($token === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_POST['csrf_token'] ?? '';
     }
-    return true;
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token ?? '');
 }
 ```
 
@@ -635,7 +634,7 @@ echo htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8');
 
 ```php
 // Setiap form POST memiliki CSRF token
-if (!verify_csrf()) {
+if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     $error_msg = "Sesi keamanan kadaluarsa.";
 }
 ```

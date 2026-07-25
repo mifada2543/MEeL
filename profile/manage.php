@@ -42,7 +42,7 @@ $cleaned_count = cleanupPendingDeletions();
 // ── Handle delete action ──
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $delete_msg = 'Token tidak valid.';
     } else {
         $del_id   = (int)$_GET['id'];

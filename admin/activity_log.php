@@ -31,7 +31,7 @@ $offset       = ($page - 1) * $per_page;
 // ─── Clear Old Logs (POST) ─────────────────────────────────────
 $clear_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $clear_msg = 'CSRF Token tidak valid.';
     } else {
         $clear_days = max(1, (int)($_POST['clear_days'] ?? 30));

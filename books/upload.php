@@ -19,7 +19,7 @@ $message  = '';
 $val_title = htmlspecialchars($_GET['reup'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
-    if (!verify_csrf()) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = 'CSRF Token tidak valid.';
     } else {
     $uploader = new BookUploader($conn, __DIR__);
