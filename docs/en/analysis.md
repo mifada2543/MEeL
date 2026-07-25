@@ -62,7 +62,7 @@ MEeL/
 
 ## 🔒 Security Assessment
 
-### Security Test: ✅ 60/60 — Score: 100/100 (A)
+### Security Test: ✅ 72/72 — Score: 100/100 (A)
 
 | Category | Status | Detail |
 |----------|--------|--------|
@@ -79,7 +79,7 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 139/145 — Score: 98/100 (A)
+### Functional Test: ✅ 144/143 — Score: 99.3/100 (A)
 
 **6 Warnings (non-critical):**
 | Warning | Category | Notes |

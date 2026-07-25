@@ -36,7 +36,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 classes: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
-| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v7 (idempotent) |
+| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v8 (idempotent) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
 | **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
 | **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
@@ -58,7 +58,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Type hints:** Class properties and constructor parameters now use type hints (`\mysqli`, `int`, `string`, etc.)
 - **Activity Log Integration:** `log_activity()` function integrated at login, logout, upload, and admin actions — full audit trail to `activity_log` table
 - **Admin Activity Log Viewer:** `admin/activity_log.php` page for viewing, filtering, and cleaning audit trails
-- **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v7) — UNIQUE KEY username, FK constraints, FULLTEXT index
+- **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v8) — FULLTEXT, FK, UNIQUE KEY, activity_log, schema sync
 - **Anime Module Removed:** The "Coming Soon" placeholder module has been removed from the codebase
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` now return pagination metadata (`total_pages`, `from`, `to`) — UI displays page info
