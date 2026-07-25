@@ -75,7 +75,7 @@ if (isset($_POST['clean_stuck_queues'])) {
     if (!headers_sent()) {
         header("Location: " . $url);
     } else {
-        echo "<script>window.location.href='$url';</script>";
+        echo "<script nonce=\"" . (defined('CSP_NONCE') ? CSP_NONCE : '') . "\">window.location.href='$url';</script>";
     }
     exit();
 }
@@ -90,7 +90,7 @@ if (isset($_POST['force_stop_queue'])) {
     if (!headers_sent()) {
         header("Location: " . $url);
     } else {
-        echo "<script>window.location.href='$url';</script>";
+        echo "<script nonce=\"" . (defined('CSP_NONCE') ? CSP_NONCE : '') . "\">window.location.href='$url';</script>";
     }
     exit();
 }
