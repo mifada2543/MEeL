@@ -149,6 +149,30 @@ $_e_robots   = htmlspecialchars($_META_ROBOTS, ENT_QUOTES, 'UTF-8');
 <?php endif; ?>
 </script>
 
+<!-- PWA: Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+    // Dapatkan base path project dari lokasi file ini (partials/head.php)
+    const swUrl = (<?= json_encode(rtrim($_head_root_rel, '/')) ?> || '') + '/sw.js';
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register(swUrl).then(function(reg) {
+            // Update ditemukan → reload untuk aktivasi
+            reg.addEventListener('updatefound', function() {
+                const installing = reg.installing;
+                installing.addEventListener('statechange', function() {
+                    if (this.state === 'installed' && navigator.serviceWorker.controller) {
+                        // SW baru tersedia — notifikasi user
+                        console.log('[PWA] Update tersedia. Refresh untuk mengaktifkan.');
+                    }
+                });
+            });
+        }).catch(function(err) {
+            console.warn('[PWA] Registration failed:', err.message);
+        });
+    });
+}
+</script>
+
 <!-- Extra head content (if any) -->
 <?= $_META_EXTRA ?>
 
