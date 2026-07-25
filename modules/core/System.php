@@ -72,7 +72,7 @@ class System
 
     private static function getFolderSizeSys(string $path): float
     {
-        $full_path = realpath(__DIR__ . '/../' . $path);
+        $full_path = realpath($path);
         if (!$full_path || !file_exists($full_path)) {
             return 0.0;
         }
@@ -83,21 +83,22 @@ class System
 
     public function getStorageUsage(): array
     {
+        $project_root = dirname(__DIR__, 2);
 
         $ssd_free  = @disk_free_space("/") / (1024 ** 3);
         $ssd_total = @disk_total_space("/") / (1024 ** 3);
         $ssd_used  = $ssd_total - $ssd_free;
         $ssd_perc  = ($ssd_total > 0) ? ($ssd_used / $ssd_total) * 100 : 0;
 
-        $hdd_path  = __DIR__ . '/../video/upload';
+        $hdd_path  = $project_root . '/video/upload';
         $hdd_free  = @disk_free_space($hdd_path) / (1024 ** 3);
         $hdd_total = @disk_total_space($hdd_path) / (1024 ** 3);
 
-        $sz_vid   = self::getFolderSizeSys('video/upload') / (1024 ** 3);
-        $sz_mus   = self::getFolderSizeSys('music/upload') / (1024 ** 3);
-        $sz_book  = self::getFolderSizeSys('books/upload') / (1024 ** 3);
-        $sz_d_pub = self::getFolderSizeSys('data_drive/public') / (1024 ** 3);
-        $sz_d_prv = self::getFolderSizeSys('data_drive/private_admins') / (1024 ** 3);
+        $sz_vid   = self::getFolderSizeSys($project_root . '/video/upload') / (1024 ** 3);
+        $sz_mus   = self::getFolderSizeSys($project_root . '/music/upload') / (1024 ** 3);
+        $sz_book  = self::getFolderSizeSys($project_root . '/books/upload') / (1024 ** 3);
+        $sz_d_pub = self::getFolderSizeSys($project_root . '/data_drive/public') / (1024 ** 3);
+        $sz_d_prv = self::getFolderSizeSys($project_root . '/data_drive/private_admins') / (1024 ** 3);
 
         $sz_drive_total = $sz_d_pub + $sz_d_prv;
         $p_vid   = ($hdd_total > 0) ? ($sz_vid / $hdd_total) * 100 : 0;
