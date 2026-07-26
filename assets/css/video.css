@@ -289,8 +289,17 @@ body.meel-fs-active #main-video-wrapper .plyr__video-wrapper {
   margin-top: 0 !important;
 }
 #video-glow-canvas-fs {
-  pointer-events: none;
-  image-rendering: pixelated;
+  pointer-events: none !important;
+  filter: blur(50px) saturate(220%) brightness(1.2) !important;
+  transform: translate(-50%, -50%) scale(2.2) !important;
+  transform-origin: center center !important;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  will-change: transform, opacity, filter !important;
+  image-rendering: auto;
+}
+body.meel-fs-active #video-glow-canvas-fs {
+  filter: blur(70px) saturate(250%) brightness(1.3) !important;
+  transform: translate(-50%, -50%) scale(2.8) !important;
 }
 .plyr__video-wrapper {
   background: #000 !important;
@@ -818,30 +827,34 @@ body.meel-fs-active .plyr {
 }
 #video-glow-canvas {
   position: absolute;
-  top: -10%;
-  left: -10%;
+  top: 50% !important;
+  left: 50% !important;
   width: 120%;
   height: 120%;
-  pointer-events: none;
+  pointer-events: none !important;
   z-index: 0;
-  filter: blur(80px);
+  filter: blur(45px) saturate(200%) brightness(1.15) !important;
   opacity: 0;
-  image-rendering: pixelated;
-  transition: opacity 1s ease;
+  image-rendering: auto;
+  transform: translate(-50%, -50%) scale(1.35) !important;
+  transform-origin: center center !important;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  will-change: transform, opacity, filter !important;
 }
 #video-glow-canvas.glow-active {
-  opacity: 0.55;
+  opacity: 0.65;
 }
 @media (max-width: 639px) {
   #video-glow-canvas {
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    filter: blur(50px);
+    top: 50% !important;
+    left: 50% !important;
+    width: 110%;
+    height: 110%;
+    filter: blur(35px) saturate(180%) brightness(1.1) !important;
+    transform: translate(-50%, -50%) scale(1.2) !important;
   }
   #video-glow-canvas.glow-active {
-    opacity: 0.38;
+    opacity: 0.5;
   }
 }
 #video-glow-container #main-video-wrapper {

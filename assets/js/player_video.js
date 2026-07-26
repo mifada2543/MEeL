@@ -32,10 +32,12 @@ let lastPlayTime = -1,
   isTransitioningNext = !1,
   nextVideoTransitionId = 0;
 const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-let glowSampleInterval = null,
-  glowLerpInterval = null;
-const GLOW_W = 8,
-  GLOW_H = 6;
+let glowRAF = null,
+  glowLastSampleTime = 0;
+const GLOW_W = 12,
+  GLOW_H = 8;
+const GLOW_LERP = 0.035;
+const GLOW_SAMPLE_INTERVAL = 50;
 let glowTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowCurData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowStartFn = null,
@@ -119,6 +121,11 @@ function startPlaybackStartTimeout() {
     }, PLAYBACK_START_TIMEOUT_MS)));
 }
 function destroyPlayer() {
+  /* Clean up glow RAF to prevent stale videoElement reference */
+  if (glowRAF) {
+    cancelAnimationFrame(glowRAF);
+    glowRAF = null;
+  }
   if ((stopStuckDetector(), stopPlaybackStartTimeout(), player)) {
     try {
       player.destroy();
@@ -689,66 +696,78 @@ function setupMeelPlayerEvents() {
             "position:absolute",
             "top:50%",
             "left:50%",
-            "transform:translate(-50%,-50%) scale(1.4)",
+            "transform:translate(-50%,-50%) scale(2.2)",
             "width:100%",
             "height:100%",
             "pointer-events:none",
             "z-index:1",
-            "filter:blur(40px)",
+            "filter:blur(50px) saturate(220%) brightness(1.2)",
             "opacity:0",
-            "transition:opacity 0.6s ease",
+            "transition:opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
           ].join(";")),
           t.insertBefore(o, t.firstChild));
         const l = o.getContext("2d"),
           a = document.createElement("canvas");
         ((a.width = GLOW_W), (a.height = GLOW_H));
         const r = a.getContext("2d", { willReadFrequently: !0 }),
-          i = new Float32Array(GLOW_W * GLOW_H * 4),
-          s = new Float32Array(GLOW_W * GLOW_H * 4);
-        let c = null,
-          d = null;
-        const p = () => {
-            if (!(videoElement.readyState < 2 || document.hidden))
-              try {
-                r.drawImage(videoElement, 0, 0, GLOW_W, GLOW_H);
-                const e = r.getImageData(0, 0, GLOW_W, GLOW_H).data;
-                i.set(e);
-              } catch (e) {}
+          fsTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
+          fsCurData = new Float32Array(GLOW_W * GLOW_H * 4);
+        let fsRAF = null,
+          fsLastSampleTime = 0;
+        const fsSample = () => {
+            if (videoElement.readyState < 2 || document.hidden) return;
+            try {
+              r.drawImage(videoElement, 0, 0, GLOW_W, GLOW_H);
+              /* Hollow-out: clear center so only edge/border colors are sampled */
+              r.clearRect(2, 2, GLOW_W - 4, GLOW_H - 4);
+              const e = r.getImageData(0, 0, GLOW_W, GLOW_H).data;
+              fsTargetData.set(e);
+            } catch (e) {}
           },
-          u = () => {
-            for (let e = 0; e < s.length; e++) s[e] += 0.018 * (i[e] - s[e]);
+          fsLoop = (timestamp) => {
+            if (!fsRAF) return;
+            if (timestamp - fsLastSampleTime >= GLOW_SAMPLE_INTERVAL) {
+              fsLastSampleTime = timestamp;
+              fsSample();
+            }
+            for (let e = 0; e < fsCurData.length; e++)
+              fsCurData[e] += (fsTargetData[e] - fsCurData[e]) * GLOW_LERP;
             const e = l.createImageData(GLOW_W, GLOW_H);
-            for (let t = 0; t < s.length; t++) e.data[t] = Math.round(s[t]);
+            for (let t = 0; t < fsCurData.length; t++)
+              e.data[t] = Math.round(fsCurData[t]);
             l.putImageData(e, 0, 0);
+            fsRAF = requestAnimationFrame(fsLoop);
           },
-          m = () => {
-            glowEnabled &&
-              (c ||
-                ((o.style.opacity = "0.6"),
-                p(),
-                (c = setInterval(p, 300)),
-                (d = setInterval(u, 30))));
+          fsStart = () => {
+            if (!glowEnabled || fsRAF) return;
+            o.style.opacity = "0.6";
+            fsLastSampleTime = 0;
+            fsRAF = requestAnimationFrame(fsLoop);
           },
-          y = () => {
-            (c && (clearInterval(c), (c = null)),
-              d && (clearInterval(d), (d = null)),
-              (o.style.opacity = "0"),
-              i.fill(0),
-              s.fill(0),
-              l.clearRect(0, 0, GLOW_W, GLOW_H));
+          fsStop = () => {
+            if (fsRAF) {
+              cancelAnimationFrame(fsRAF);
+              fsRAF = null;
+            }
+            o.style.opacity = "0";
+            fsTargetData.fill(0);
+            fsCurData.fill(0);
+            l.clearRect(0, 0, GLOW_W, GLOW_H);
           },
-          v = () => {
-            (c && (clearInterval(c), (c = null)),
-              d && (clearInterval(d), (d = null)));
+          fsPause = () => {
+            if (fsRAF) {
+              cancelAnimationFrame(fsRAF);
+              fsRAF = null;
+            }
           };
-        ((e._fsGlowStart = m),
-          (e._fsGlowStop = y),
-          (e._fsGlowPause = v),
-          player.on("play", m),
-          player.on("playing", m),
-          player.on("pause", v),
-          player.on("ended", y),
-          videoElement.paused || videoElement.ended || m());
+        ((e._fsGlowStart = fsStart),
+          (e._fsGlowStop = fsStop),
+          (e._fsGlowPause = fsPause),
+          player.on("play", fsStart),
+          player.on("playing", fsStart),
+          player.on("pause", fsPause),
+          player.on("ended", fsStop),
+          videoElement.paused || videoElement.ended || fsStart());
       }
     }),
     player.on("exitfullscreen", () => {
@@ -799,18 +818,24 @@ function setupMeelPlayerEvents() {
     ((r.width = GLOW_W), (r.height = GLOW_H));
     const n = r.getContext("2d");
     glowNavbar = document.querySelector("nav");
-    const o = () => {
-        if (!(videoElement.readyState < 2 || document.hidden))
-          try {
-            t.drawImage(videoElement, 0, 0, GLOW_W, GLOW_H);
-            const e = t.getImageData(0, 0, GLOW_W, GLOW_H).data;
-            glowTargetData.set(e);
-          } catch (e) {}
+    const glowSample = () => {
+        if (videoElement.readyState < 2 || document.hidden) return;
+        try {
+          t.drawImage(videoElement, 0, 0, GLOW_W, GLOW_H);
+          /* Hollow-out: clear center so only edge/border colors are sampled */
+          t.clearRect(2, 2, GLOW_W - 4, GLOW_H - 4);
+          const e = t.getImageData(0, 0, GLOW_W, GLOW_H).data;
+          glowTargetData.set(e);
+        } catch (e) {}
       },
-      l = 0.018,
-      a = () => {
+      glowLoop = (timestamp) => {
+        if (!glowRAF) return;
+        if (timestamp - glowLastSampleTime >= GLOW_SAMPLE_INTERVAL) {
+          glowLastSampleTime = timestamp;
+          glowSample();
+        }
         for (let e = 0; e < glowCurData.length; e++)
-          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * l;
+          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * GLOW_LERP;
         const e = n.createImageData(GLOW_W, GLOW_H);
         for (let t = 0; t < glowCurData.length; t++)
           e.data[t] = Math.round(glowCurData[t]);
@@ -829,35 +854,34 @@ function setupMeelPlayerEvents() {
             a = Math.round(n / GLOW_W);
           glowNavbar.style.setProperty("--navbar-glow-color", `${o},${l},${a}`);
         }
+        glowRAF = requestAnimationFrame(glowLoop);
       },
-      i = () => {
-        glowEnabled &&
-          (glowSampleInterval ||
-            (r.classList.add("glow-active"),
-            o(),
-            (glowSampleInterval = setInterval(o, 300)),
-            (glowLerpInterval = setInterval(a, 30))));
+      glowStart = () => {
+        if (!glowEnabled || glowRAF) return;
+        r.classList.add("glow-active");
+        glowLastSampleTime = 0;
+        glowRAF = requestAnimationFrame(glowLoop);
       },
-      s = (e = !1) => {
-        (glowSampleInterval &&
-          (clearInterval(glowSampleInterval), (glowSampleInterval = null)),
-          glowLerpInterval &&
-            (clearInterval(glowLerpInterval), (glowLerpInterval = null)),
-          r.classList.remove("glow-active"),
-          glowNavbar &&
-            glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0"),
-          e &&
-            (glowTargetData.fill(0),
-            glowCurData.fill(0),
-            n.clearRect(0, 0, GLOW_W, GLOW_H)));
+      glowStop = (e = !1) => {
+        if (glowRAF) {
+          cancelAnimationFrame(glowRAF);
+          glowRAF = null;
+        }
+        r.classList.remove("glow-active");
+        glowNavbar &&
+          glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0");
+        e &&
+          (glowTargetData.fill(0),
+          glowCurData.fill(0),
+          n.clearRect(0, 0, GLOW_W, GLOW_H));
       },
-      c = () => {
-        (glowSampleInterval &&
-          (clearInterval(glowSampleInterval), (glowSampleInterval = null)),
-          glowLerpInterval &&
-            (clearInterval(glowLerpInterval), (glowLerpInterval = null)));
+      glowPause = () => {
+        if (glowRAF) {
+          cancelAnimationFrame(glowRAF);
+          glowRAF = null;
+        }
       };
-    ((glowStartFn = i), (glowStopFn = s));
+    ((glowStartFn = glowStart), (glowStopFn = glowStop));
     const d = (e) =>
         `${e ? "On" : "Off"} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:${e ? "inline-block" : "none"};vertical-align:middle;margin-left:4px"><polyline points="20 6 9 17 4 12"/></svg>`,
       p = () => {
@@ -988,18 +1012,48 @@ function setupMeelPlayerEvents() {
           );
         }
       }),
-      player.on("play", i),
-      player.on("playing", i),
-      player.on("pause", c),
-      player.on("ended", () => s(!0)),
-      videoElement.paused || videoElement.ended || i());
+      player.on("play", glowStart),
+      player.on("playing", glowStart),
+      player.on("pause", glowPause),
+      player.on("ended", () => glowStop(!0)),
+      videoElement.paused || videoElement.ended || glowStart());
   }
   setupMobileGestures();
 }
 (document.addEventListener("visibilitychange", () => {
-  document.hidden ||
-    ((lastTimeUpdateTimestamp = Date.now()),
-    player && (lastPlayTime = player.currentTime));
+  if (document.hidden) {
+    /* Pause glow RAF when tab hidden to save CPU */
+    if (glowRAF) {
+      cancelAnimationFrame(glowRAF);
+      glowRAF = null;
+    }
+    const e = player?.elements?.container;
+    if (e && e._fsGlowPause) e._fsGlowPause();
+  } else {
+    /* Resume glow RAF when tab visible via startFn (module-level) */
+    if (
+      glowEnabled &&
+      videoElement &&
+      !videoElement.paused &&
+      !videoElement.ended &&
+      !glowRAF &&
+      glowStartFn
+    ) {
+      glowStartFn();
+    }
+    const e = player?.elements?.container;
+    if (
+      e &&
+      e._fsGlowStart &&
+      videoElement &&
+      !videoElement.paused &&
+      !videoElement.ended
+    ) {
+      e._fsGlowStart();
+    }
+    (lastTimeUpdateTimestamp = Date.now()),
+      player && (lastPlayTime = player.currentTime);
+  }
 }),
   document.addEventListener("DOMContentLoaded", () => {
     initPlayer();
@@ -1402,10 +1456,8 @@ function setupMobileGestures() {
       e.classList.add("mini-player-mode"));
     const l = document.getElementById("video-glow-canvas");
     (l && ((l.style.display = "none"), l.classList.remove("glow-active")),
-      glowSampleInterval &&
-        (clearInterval(glowSampleInterval), (glowSampleInterval = null)),
-      glowLerpInterval &&
-        (clearInterval(glowLerpInterval), (glowLerpInterval = null)),
+      glowRAF &&
+        (cancelAnimationFrame(glowRAF), (glowRAF = null)),
       glowNavbar &&
         glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0"),
       document.body.appendChild(miniShell),
