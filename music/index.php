@@ -154,7 +154,12 @@ if (isset($_GET['content_only'])) {
                 </span>
             </a>
 
-            <div class="flex-1 max-w-sm flex items-center gap-1.5 sm:gap-2">
+            <form
+                    hx-get="search_music.php"
+                    hx-trigger="submit"
+                    hx-target="#music-list"
+                    hx-indicator="#search-indicator"
+                    class="flex-1 max-w-sm flex items-center gap-1.5 sm:gap-2">
                 <div class="relative flex-1 group">
                     <i data-lucide="search" class="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 group-focus-within:text-orange-500 transition-colors"></i>
                     <input type="text"
@@ -162,16 +167,9 @@ if (isset($_GET['content_only'])) {
                         name="search"
                         placeholder="Cari lagu..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs focus:outline-none focus:border-orange-500/40 transition-all text-gray-300"
-                        hx-get="search_music.php"
-                        hx-trigger="keyup[key=='Enter']"
-                        hx-target="#music-list"
-                        hx-indicator="#search-indicator"
                         autocomplete="off">
                 </div>
-                <button hx-get="search_music.php"
-                    hx-include="#m-search"
-                    hx-target="#music-list"
-                    hx-indicator="#search-indicator"
+                <button type="submit"
                     title="Cari lagu"
                     aria-label="Cari lagu"
                     class="px-2.5 sm:px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-orange-500 hover:border-orange-500/30 transition-all flex-shrink-0">
@@ -181,7 +179,7 @@ if (isset($_GET['content_only'])) {
                 <div id="search-indicator" class="htmx-indicator ml-1 sm:ml-2">
                     <div class="animate-spin h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></div>
                 </div>
-            </div>
+            </form>
 
             <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider flex-shrink-0">
                 <?php include '../partials/nav.php'; ?>
