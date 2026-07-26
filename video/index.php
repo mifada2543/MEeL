@@ -42,7 +42,12 @@ $totalPages = $meta['total_pages'];
                 </span>
             </a>
 
-            <div class="flex-1 max-w-sm flex items-center gap-1.5 sm:gap-2">
+            <form
+                    hx-get="search_video.php"
+                    hx-trigger="submit"
+                    hx-target="#video-container"
+                    hx-indicator="#search-indicator"
+                    class="flex-1 max-w-sm flex items-center gap-1.5 sm:gap-2">
                 <div class="relative flex-1 group" title="Cari">
                     <i data-lucide="search" class="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 group-focus-within:text-red-500 transition-colors"></i>
                     <input type="text"
@@ -52,17 +57,10 @@ $totalPages = $meta['total_pages'];
                         title="Cari Video"
                         aria-label="Cari video"
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs focus:outline-none focus:border-red-500/40 transition-all text-gray-300"
-                        hx-get="search_video.php"
-                        hx-trigger="keyup[key=='Enter']"
-                        hx-target="#video-container"
-                        hx-indicator="#search-indicator"
                         autocomplete="off">
                 </div>
 
-                <button hx-get="search_video.php"
-                    hx-include="#v-search"
-                    hx-target="#video-container"
-                    hx-indicator="#search-indicator"
+                <button type="submit"
                     title="Cari"
                     aria-label="Cari video"
                     class="px-2.5 sm:px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:text-red-500 hover:border-red-500/30 transition-all flex-shrink-0">
@@ -73,7 +71,7 @@ $totalPages = $meta['total_pages'];
                 <div id="search-indicator" class="htmx-indicator ml-1 sm:ml-2">
                     <div class="animate-spin h-3 w-3 border-2 border-red-500 border-t-transparent rounded-full"></div>
                 </div>
-            </div>
+            </form>
 
             <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider flex-shrink-0">
                 <?php include '../partials/nav.php'; ?>

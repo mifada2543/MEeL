@@ -131,7 +131,7 @@ MEeL/
 
 ## 🔒 Assessment Keamanan
 
-### Security Test: ✅ 60/60 — Score: 100/100 (A)
+### Security Test: ✅ 72/72 — Score: 100/100 (A)
 
 | Kategori | Status | Detail |
 |----------|--------|--------|
@@ -157,7 +157,7 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 139/145 — Score: 98/100 (A)
+### Functional Test: ✅ 144/143 — Score: 99.3/100 (A)
 
 **6 Warnings (non-critical):**
 
@@ -332,8 +332,10 @@ Tidak ada masalah medium yang tersisa.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **Functional Test** | 145 | 139 | 6 | **0** | **98/100 A** |
-| **Security Test** | 60 | 60 | 0 | **0** | **100/100 A** |
+| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3%** |
+| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100%** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 ---
@@ -352,7 +354,7 @@ Tidak ada masalah medium yang tersisa.
 
 ### Prioritas Rendah
 7. **Docker support** — environment yang konsisten untuk deployment
-8. **Unit tests** — tambah PHPUnit untuk test class-class core
+8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (86 unit + 19 integration = 105 tests)
 
 ---
 

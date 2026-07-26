@@ -17,6 +17,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 | 7 | [🔧 Troubleshooting](troubleshooting.md) | Solusi untuk masalah umum |
 | 8 | [👨‍💻 Panduan Development](development.md) | Standar koding, kontribusi, dan testing |
 | 9 | [📥 Troubleshooting Advanced Upload](upload_issue.md) | Penanganan masalah yt-dlp & background queue |
+| 10 | [🧪 Testing Guide](test.md) | PHPUnit, Functional, Security test — panduan lengkap |
 
 ---
 
@@ -35,7 +36,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 class: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
-| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v7 (idempotent) |
+| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v8 (idempotent) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
 | **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
 | **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
@@ -57,7 +58,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 - **Type hints:** Properti class dan parameter constructor sekarang menggunakan type hints (`\mysqli`, `int`, `string`, dll.)
 - **Activity Log Integration:** `log_activity()` function + integrasi di login, logout, upload, dan admin actions — audit trail penuh ke tabel `activity_log`
 - **Admin Activity Log Viewer:** Halaman `admin/activity_log.php` untuk melihat, filter, dan cleanup trail audit
-- **Database Alignment:** `schema.sql` dan `migrate.php` tersinkronisasi (v1–v7) — UNIQUE KEY username, FK constraints, FULLTEXT index
+- **Database Alignment:** `schema.sql` dan `migrate.php` tersinkronisasi (v1–v8) — FULLTEXT, FK, UNIQUE KEY, activity_log, schema sync
 - **Modul Anime dihapus:** Modul placeholder "Coming Soon" yang sudah tidak relevan dihapus dari kodebase
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — proteksi endpoint like, comment, upload dari abuse dengan per-user limits dan role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` sekarang mengembalikan metadata pagination (`total_pages`, `from`, `to`) — UI menampilkan info halaman
@@ -71,7 +72,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 - **🎵 Music** — Audio streaming dengan visualizer & mini player
 - **📚 Books** — Pembaca manga/PDF digital
 - **☁️ Cloud Drive** — Penyimpanan file pribadi dengan RBAC
-- **🕹️ Arcade** — Mini-game (Dino Run, Chess)
+- **🕹️ Arcade** — Mini-game (Dino Run, Snake, Chess)
 
 ### Tech Stack Utama
 

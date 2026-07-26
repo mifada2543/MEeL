@@ -158,10 +158,13 @@ if ($user->isMember()) {
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="relative">
+                    <div class="relative flex-1">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                        <input type="text" placeholder="Cari file..." class="bg-gray-900 border border-gray-800 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64">
+                        <input type="text" id="search-input-desktop" placeholder="Cari file..." class="bg-gray-900 border border-gray-800 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64">
                     </div>
+                    <button onclick="filterDriveFiles()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0">
+                        Cari
+                    </button>
                 </div>
             </header>
 
@@ -173,9 +176,14 @@ if ($user->isMember()) {
                     </h2>
                     <p id="fileCountMobile" class="text-xs text-gray-500 mt-0.5">Memuat file...</p>
                 </div>
-                <div class="relative">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                    <input type="text" placeholder="Cari file..." class="w-full bg-gray-900 border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500">
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                        <input type="text" id="search-input-mobile" placeholder="Cari file..." class="w-full bg-gray-900 border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button onclick="filterDriveFiles()" class="px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0">
+                        Cari
+                    </button>
                 </div>
             </div>
 
@@ -407,27 +415,40 @@ if ($user->isMember()) {
             }
         });
 
-        document.querySelectorAll('input[placeholder="Cari file..."]').forEach(input => {
-            input.addEventListener('input', event => {
-                const keyword = event.target.value.toLowerCase();
-                const activeSection = document.querySelector('.drive-section:not(.hidden)');
+        function filterDriveFiles() {
+            const desktopInput = document.getElementById('search-input-desktop');
+            const mobileInput = document.getElementById('search-input-mobile');
+            const active = document.activeElement;
 
-                if (!activeSection) {
-                    return;
-                }
+            // Ambil nilai dari input yang sedang difokuskan user
+            const value = active === mobileInput
+                ? (mobileInput ? mobileInput.value : '')
+                : (desktopInput ? desktopInput.value : mobileInput ? mobileInput.value : '');
 
-                activeSection.querySelectorAll('.glass').forEach(card => {
-                    const fileName = card.querySelector('h3')?.innerText.toLowerCase() ?? '';
-                    card.style.display = fileName.includes(keyword) ? 'block' : 'none';
-                });
-                
-                // Sync the other search input
-                document.querySelectorAll('input[placeholder="Cari file..."]').forEach(otherInput => {
-                    if (otherInput !== event.target) {
-                        otherInput.value = event.target.value;
-                    }
-                });
+            const keyword = value.toLowerCase();
+
+            // Sync kedua input agar konsisten saat resize layar
+            if (desktopInput && desktopInput !== active) desktopInput.value = value;
+            if (mobileInput && mobileInput !== active) mobileInput.value = value;
+
+            const activeSection = document.querySelector('.drive-section:not(.hidden)');
+            if (!activeSection) return;
+
+            activeSection.querySelectorAll('.glass').forEach(card => {
+                const fileName = card.querySelector('h3')?.innerText.toLowerCase() ?? '';
+                card.style.display = fileName.includes(keyword) ? 'block' : 'none';
             });
+        }
+
+        // Filter hanya saat Enter ditekan
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                const target = event.target;
+                if (target.id === 'search-input-desktop' || target.id === 'search-input-mobile') {
+                    event.preventDefault();
+                    filterDriveFiles();
+                }
+            }
         });
 
         showSection('video', document.querySelector('.nav-btn-desktop.active'));
