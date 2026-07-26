@@ -825,7 +825,7 @@ body.meel-fs-active .plyr {
   height: 100%;
   pointer-events: none;
   z-index: 1;
-  filter: blur(60px) brightness(1.1) saturate(1.15);
+  filter: blur(60px) brightness(1.8) saturate(1.15);
   opacity: 0;
   image-rendering: pixelated;
   will-change: transform, opacity;
@@ -833,7 +833,7 @@ body.meel-fs-active .plyr {
   transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 #video-glow-canvas.glow-active {
-  opacity: 0.65;
+  opacity: 0.5;
 }
 @media (max-width: 639px) {
   #video-glow-canvas {
@@ -841,7 +841,7 @@ body.meel-fs-active .plyr {
     left: 0;
     width: 100%;
     height: 100%;
-    filter: blur(40px) brightness(1.1) saturate(1.15);
+    filter: blur(20px) brightness(1.8) saturate(1.3);
   }
   #video-glow-canvas.glow-active {
     opacity: 0.5;
