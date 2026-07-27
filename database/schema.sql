@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `custom_theme` varchar(50) DEFAULT 'default',
   `last_session_id` varchar(128) DEFAULT NULL,
   `access_via` varchar(100) DEFAULT NULL,
+  `mfa_secret` varchar(64) DEFAULT NULL,
+  `mfa_backup_codes` text DEFAULT NULL,
+  `mfa_enabled` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_username_unique` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

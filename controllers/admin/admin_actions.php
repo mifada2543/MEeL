@@ -169,3 +169,43 @@ if (isset($_GET['kick_user'])) {
     header("Location: index.php?msg=Kicked_Success#monitor");
     exit();
 }
+
+// ─── RESET MFA USER ─────────────────────────────────────────────────────────
+if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
+    // CSRF guard
+    if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
+        header("Location: ../admin/mfa_reset.php?msg=csrf_invalid");
+        exit;
+    }
+
+    $target_id = (int)$_GET['user_id'];
+
+    // Cek apakah target adalah admin (jangan biarkan admin lain di-reset MFA-nya)
+    $check = $conn->prepare("SELECT id, username, role FROM users WHERE id = ?");
+    $check->bind_param("i", $target_id);
+    $check->execute();
+    $target = $check->get_result()->fetch_assoc();
+    $check->close();
+
+    if (!$target) {
+        header("Location: ../admin/mfa_reset.php?msg=user_not_found");
+        exit;
+    }
+
+    if ($target['role'] === 'admin') {
+        header("Location: ../admin/mfa_reset.php?msg=cannot_reset_admin");
+        exit;
+    }
+
+    // Reset MFA
+    $stmt = $conn->prepare("UPDATE users SET mfa_enabled = 0, mfa_secret = NULL, mfa_backup_codes = NULL WHERE id = ?");
+    $stmt->bind_param("i", $target_id);
+    if ($stmt->execute()) {
+        log_activity($conn, (int)$_SESSION['user_id'], 'reset_mfa', 'user', $target_id);
+        header("Location: ../admin/mfa_reset.php?msg=reset_ok&user=" . urlencode($target['username']));
+    } else {
+        header("Location: ../admin/mfa_reset.php?msg=reset_failed");
+    }
+    $stmt->close();
+    exit;
+}

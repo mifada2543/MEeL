@@ -219,6 +219,38 @@ $migrations = [
             },
         ],
     ],
+    9 => [
+        'description' => 'Tambah kolom MFA (multi-factor authentication) ke tabel users',
+        'sql' => [
+            function($conn) {
+                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT NULL AFTER last_session_id");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
+                        echo "[MEeL] ⚠ Warning (mfa_secret): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_backup_codes TEXT DEFAULT NULL AFTER mfa_secret");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
+                        echo "[MEeL] ⚠ Warning (mfa_backup_codes): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_enabled TINYINT(1) DEFAULT 0 AFTER mfa_backup_codes");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
+                        echo "[MEeL] ⚠ Warning (mfa_enabled): {$err}\n";
+                    }
+                }
+            },
+        ],
+    ],
 ];
 // ═══════════════════════════════════════════════════════════════════════════
 // Catatan Sinkronisasi
@@ -234,6 +266,7 @@ $migrations = [
 //   v6 — CREATE TABLE activity_log
 //   v7 — UNIQUE KEY idx_username_unique pada users.username
 //   v8 — users.role→varchar(20), hapus duplicate UNIQUE KEY, sync defaults
+//   v9 — Tambah kolom MFA (mfa_secret, mfa_backup_codes, mfa_enabled) ke tabel users
 //
 // Catatan: schema.sql (fresh install) sudah mencakup semua CREATE TABLE
 // dengan FK, INDEX, dan UNIQUE KEY langsung — migration ini hanya untuk

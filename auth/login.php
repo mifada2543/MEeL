@@ -146,10 +146,33 @@ if (isset($_POST['login']) && !$is_locked) {
                             $stmt_del->execute();
                             $stmt_del->close();
 
+                            $current_sid = session_id();
+
+                            // ─── CEK MFA ──────────────────────────────────
+                            // Jika user sudah mengaktifkan MFA, redirect ke
+                            // halaman verifikasi kode 6 digit terlebih dahulu.
+                            if (!empty($u['mfa_secret']) && $u['mfa_enabled'] == 1) {
+                                // Simpan data sementara — belum login penuh
+                                $_SESSION['mfa_temp_uid']      = (int)$u['id'];
+                                $_SESSION['mfa_temp_username'] = $u['username'];
+                                $_SESSION['mfa_temp_role']     = $u['role'];
+
+                                // Catat activity: melewati password
+                                log_activity($conn, $u['id'], 'login_password_ok');
+
+                                $upd = $conn->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?");
+                                $upd->bind_param("i", $u['id']);
+                                $upd->execute();
+                                $upd->close();
+
+                                header("Location: mfa_verify.php");
+                                exit;
+                            }
+
+                            // ─── LOGIN LENGKAP (tanpa MFA) ────────────────
                             $_SESSION['user_id']  = $u['id'];
                             $_SESSION['username'] = $u['username'];
                             $_SESSION['role']     = $u['role'];
-                            $current_sid = session_id();
 
                             log_activity($conn, $u['id'], 'login');
 

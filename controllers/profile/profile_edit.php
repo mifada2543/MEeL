@@ -107,6 +107,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
             background: rgba(22, 27, 34, 0.7);
             backdrop-filter: blur(10px);
         }
+
     </style>
 </head>
 
