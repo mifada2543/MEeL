@@ -563,7 +563,7 @@ function setupMeelPlayerEvents() {
           );
           if (t)
             try {
-              p = new Function("return " + t[1])();
+              p = JSON.parse(t[1]);
             } catch (e) {}
         }),
           (videoTitle = p.title || ""),
@@ -1147,7 +1147,7 @@ function attachMiniPlayerVideoCardListeners(e) {
               );
               if (t)
                 try {
-                  l = new Function("return " + t[1])();
+                  l = JSON.parse(t[1]);
                 } catch (e) {
                   console.error("Gagal parse playerConfig:", e);
                 }
@@ -1156,7 +1156,10 @@ function attachMiniPlayerVideoCardListeners(e) {
               r = l.title || "",
               i = l.uploader || "",
               s = l.videoSrc || a?.dataset?.src || "",
-              c = !0 === l.isHls || "true" === l.isHls,
+              c =
+                !0 === l.isHls ||
+                "true" === l.isHls ||
+                "true" === a?.dataset?.ishls,
               d = a?.dataset?.poster || "",
               p = l.id || new URL(n).searchParams.get("id") || "";
             updateSearchExcludeId(p);
