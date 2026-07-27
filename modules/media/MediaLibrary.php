@@ -120,21 +120,38 @@ class MediaLibrary
 
     public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0)
     {
-        $limit = 20; // selaraskan dengan $limit di search_video.php
+        $limit = 21; // Fetch limit+1 untuk efficiently check hasMore
 
         if (empty($q)) {
             if ($sidebar) {
+                // Optimized: Replace ORDER BY RAND() dengan more efficient approach
+                // Get max ID dan random offset
+                $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM video");
+                $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
+                
+                if ($max_id > 15) {
+                    $random_offset = rand(0, max(0, $max_id - 15));
+                } else {
+                    $random_offset = 0;
+                }
+
                 $stmt = $this->conn->prepare(
                     "SELECT v.*, u.username AS uploader_name FROM video v
                      JOIN users u ON v.user_id = u.id
-                     WHERE v.id != ? ORDER BY RAND() LIMIT 15"
+                     WHERE v.id != ? AND v.id > ? ORDER BY v.id ASC LIMIT 15"
                 );
-                $stmt->bind_param("i", $exclude);
+                $stmt->bind_param("ii", $exclude, $random_offset);
             } else {
-                $stmt = $this->conn->prepare("SELECT * FROM video WHERE id != ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
+                // Optimized: Fetch limit+1 untuk check hasMore
+                $stmt = $this->conn->prepare(
+                    "SELECT v.*, u.username AS uploader_name FROM video v
+                     JOIN users u ON v.user_id = u.id
+                     WHERE v.id != ? ORDER BY v.upload_date DESC LIMIT ? OFFSET ?"
+                );
                 $stmt->bind_param("iii", $exclude, $limit, $offset);
             }
         } else {
+            // Full-text search query — optimized dengan proper ranking
             $stmt = $this->conn->prepare(
                 "SELECT v.*, u.username AS uploader_name,
                  MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AS rank
@@ -211,30 +228,49 @@ class MediaLibrary
         return $stmt->get_result();
     }
 
-    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false)
+    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0)
     {
+        $limit = 21; // Fetch limit+1 untuk efficiently check hasMore
+
         if (empty($q)) {
             if ($sidebar) {
+                // Optimized: Replace ORDER BY RAND() dengan more efficient approach
+                // Get max ID dan random offset
+                $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM music");
+                $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
+                
+                if ($max_id > 15) {
+                    $random_offset = rand(0, max(0, $max_id - 15));
+                } else {
+                    $random_offset = 0;
+                }
+
                 $stmt = $this->conn->prepare(
                     "SELECT m.*, u.username AS uploader FROM music m
                      JOIN users u ON m.user_id = u.id
-                     WHERE m.id != ? ORDER BY RAND() LIMIT 15"
+                     WHERE m.id != ? AND m.id > ? ORDER BY m.id ASC LIMIT 15"
                 );
-                $stmt->bind_param("i", $exclude);
+                $stmt->bind_param("ii", $exclude, $random_offset);
             } else {
-                $stmt = $this->conn->prepare("SELECT * FROM music ORDER BY id DESC LIMIT 10");
+                // Optimized: Fetch limit+1 untuk check hasMore + support pagination
+                $stmt = $this->conn->prepare(
+                    "SELECT m.*, u.username AS uploader FROM music m
+                     JOIN users u ON m.user_id = u.id
+                     ORDER BY m.id DESC LIMIT ? OFFSET ?"
+                );
+                $stmt->bind_param("ii", $limit, $offset);
             }
         } else {
-            $stmt   = $this->conn->prepare(
+            // Full-text search query — optimized dengan proper ranking
+            $stmt = $this->conn->prepare(
                 "SELECT m.*, u.username AS uploader,
                  (MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)) AS rank
                  FROM music m
                  JOIN users u ON m.user_id = u.id
                  WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE) AND m.id != ?
-                 ORDER BY rank DESC, m.title ASC LIMIT 20"
+                 ORDER BY rank DESC, m.title ASC LIMIT ? OFFSET ?"
             );
-            // Prepared statement handle escaping natively — aman untuk MySQL 5.7+
-            $stmt->bind_param("ssi", $q, $q, $exclude);
+            $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
         $stmt->execute();
         return $stmt->get_result();
