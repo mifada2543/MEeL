@@ -1090,8 +1090,21 @@ function setupMeelPlayerEvents() {
   document.addEventListener("htmx:afterSwap", function (e) {
     if ("main-video-wrapper" === e.detail.target.id) {
       (destroyPlayer(), (isRecovering = !1));
-      const e = document.getElementById("meel-reconnect-indicator");
-      (e && e.remove(), initPlayer());
+      const n = document.getElementById("meel-reconnect-indicator");
+      (n && n.remove(), initPlayer());
+      /* ── Jika mini-player aktif, pastikan class & struktur shell tetap utuh ── */
+      if (isMiniPlayerActive) {
+        const o = document.getElementById("main-video-wrapper");
+        o && o.classList.add("mini-player-mode");
+        /* Cek apakah main-video-wrapper masih di dalam mini-shell,
+           jika tidak (mis. HTMX mengeluarkannya), masukkan kembali */
+        const l = document.getElementById("mini-player-shell");
+        if (l && o && o.parentNode !== l) {
+          /* Taruh video wrapper di awal shell (sebelum tombol) */
+          const a = l.querySelector("#mini-expand-btn");
+          a ? l.insertBefore(o, a) : l.prepend(o);
+        }
+      }
     }
     if (isMiniPlayerActive) {
       const t = document.getElementById("temp-index-content");
@@ -1112,6 +1125,12 @@ function setNavbarSearchTarget(e) {
       .forEach((t) => t.setAttribute("hx-target", e)));
 }
 function buildMiniShell(e) {
+  /* ── Guard: e (main-video-wrapper) wajib ada, jika null return null agar
+     caller bisa deteksi dan tidak lanjut ke DOM append ── */
+  if (!e) {
+    console.error("buildMiniShell: main-video-wrapper tidak ditemukan");
+    return null;
+  }
   const t = document.createElement("div");
   t.id = "mini-player-shell";
   const n = document.createElement("button");
@@ -1133,8 +1152,8 @@ function buildMiniShell(e) {
     t.appendChild(e),
     t.appendChild(n),
     t.appendChild(o));
-  const l = videoTitle,
-    a = videoUploader,
+  const l = videoTitle || "",
+    a = videoUploader || "",
     r = document.createElement("div");
   return (
     (r.id = "mini-player-info"),
@@ -1150,9 +1169,21 @@ function closeMiniPlayer() {
     (player && player.pause(), (window.location.href = "index.php"));
 }
 function updateMiniPlayerInfo(e, t) {
-  const n = document.getElementById("mini-info-title"),
+  let n = document.getElementById("mini-info-title"),
     o = document.getElementById("mini-info-uploader");
-  (n && (n.textContent = e || ""), o && (o.textContent = t || ""));
+  /* ── Fallback: jika elemen belum ada (mis. shell belum di-build),
+     buat struktur mini-player-info dari awal ── */
+  if (!n || !o) {
+    const l = document.getElementById("mini-player-info");
+    if (l) {
+      /* Info container ada tapi child-nya hilang — rebuild anak-anaknya */
+      l.innerHTML = `\n    <div style="flex:1;min-width:0;">\n      <div id="mini-info-title">${e || ""}</div>\n      <div id="mini-info-uploader">${t || ""}</div>\n    </div>\n  `;
+      return;
+    }
+    /* Shell pun belum ada — tidak bisa update, abaikan saja */
+    return;
+  }
+  (n.textContent = e || ""), (o.textContent = t || "");
 }
 function attachMiniPlayerVideoCardListeners(e) {
   e &&
@@ -1400,6 +1431,11 @@ function setupMobileGestures() {
     n = document.getElementById("recommendation-wrapper"),
     o = document.getElementById("app-content-grid"),
     l = document.getElementById("left-column");
+  /* ── Guard: jika main-video-wrapper tidak ada, exit ── */
+  if (!e && !isMiniPlayerActive) {
+    console.error("toggleMiniPlayer: main-video-wrapper tidak ditemukan");
+    return;
+  }
   if (isMiniPlayerActive) {
     ((isMiniPlayerActive = !1),
       setNavbarSearchTarget("#recommendation-column"));
@@ -1463,15 +1499,19 @@ function setupMobileGestures() {
       }),
       window.history.pushState({}, "", watchUrl));
   } else {
+    /* ── Wrap dalam try-catch agar error tidak meninggalkan state rusak ── */
+    const videoWrapper = e;
+    try {
     ((isMiniPlayerActive = !0),
       setNavbarSearchTarget("#video-container"),
       (savedWatchScrollY = window.scrollY),
       window.scrollTo({ top: 0, left: 0, behavior: "instant" }),
-      e &&
-        (e.style.removeProperty("aspect-ratio"),
-        e.style.removeProperty("height")),
-      (miniShell = buildMiniShell(e)),
-      e.classList.add("mini-player-mode"));
+      videoWrapper &&
+        (videoWrapper.style.removeProperty("aspect-ratio"),
+        videoWrapper.style.removeProperty("height")),
+      (miniShell = buildMiniShell(videoWrapper)),
+      /* ── Inline rollback dihapus — try-catch di bawah yang handle cleanup ── */
+      videoWrapper.classList.add("mini-player-mode"));
     const l = document.getElementById("video-glow-canvas");
     (l && ((l.style.display = "none"), l.classList.remove("glow-active")),
       glowRAF && (cancelAnimationFrame(glowRAF), (glowRAF = null)),
@@ -1510,6 +1550,24 @@ function setupMobileGestures() {
         console.error("Gagal memuat index:", e);
       }
     }
+  } catch (err) {
+    console.error("toggleMiniPlayer: error saat masuk mini-player mode:", err);
+    /* Rollback state agar tidak corrupt */
+    isMiniPlayerActive = !1;
+    miniShell = null;
+    setNavbarSearchTarget("#recommendation-column");
+    if (videoWrapper) {
+      videoWrapper.classList.remove("mini-player-mode");
+      videoWrapper.style.removeProperty("aspect-ratio");
+      videoWrapper.style.removeProperty("height");
+    }
+    document.body.style.paddingBottom = "";
+    if (t) t.style.display = "";
+    if (n) n.style.display = "";
+    if (o) o.style.display = "";
+    const a = document.getElementById("temp-index-content");
+    if (a) a.style.display = "none";
+  }
   }
 }),
   window.addEventListener(
@@ -1518,7 +1576,12 @@ function setupMobileGestures() {
       if (!["INPUT", "TEXTAREA"].includes(document.activeElement.tagName))
         return isMiniPlayerActive && "f" === e.key.toLowerCase()
           ? (e.preventDefault(), void e.stopPropagation())
-          : void ("i" === e.key.toLowerCase() && toggleMiniPlayer());
+          : void ("i" === e.key.toLowerCase() &&
+              /* ── Guard: hanya panggil toggleMiniPlayer jika main-video-wrapper ada ── */
+              (document.getElementById("main-video-wrapper") ||
+                (console.warn("toggleMiniPlayer via keydown: main-video-wrapper tidak ditemukan"),
+                0)) &&
+              toggleMiniPlayer());
     },
     !0,
   ),

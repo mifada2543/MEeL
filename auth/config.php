@@ -130,7 +130,14 @@ if (!headers_sent()) {
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         header("Strict-Transport-Security: max-age=15552000; includeSubDomains");
     }
-    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-src 'self' blob:; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
+    $csp_script_src = "script-src 'self' 'unsafe-inline'";
+    /* ── Development: tambah unsafe-eval untuk HLS.js Web Worker ── */
+    if (defined('MEEL_ENV') && MEEL_ENV === 'development') {
+        $csp_script_src .= " 'unsafe-eval'";
+    }
+    /* ── worker-src eksplisit untuk HLS.js blob worker ── */
+    $csp_worker_src = "worker-src 'self' blob:";
+    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-src 'self' blob:; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; {$csp_script_src}; {$csp_worker_src}");
 }
 
 // ── CSRF Token ──
