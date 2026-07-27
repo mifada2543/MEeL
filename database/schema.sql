@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Default admin user (password: Admin#123)
 -- Ganti password segera setelah pertama login!
 INSERT INTO `users` (`id`, `username`, `role`, `password`, `is_active`) VALUES
-(1, 'Admin', 'admin', '$2y$10$e0M2Vdf9vN2V3X7g4h9uO.g4gH8Z8K5E1gX4G2Y5Z6W7V8U9T0S1S', 1);
+(1, 'Admin', 'admin', '$2a$12$5cRghghOdj6ZQIAQ5dCGfOZcXUFvWhaAhwdq08r6bMIVNRY0gjAVm', 1);
 
 -- =============================================================================
 -- TABEL: video
