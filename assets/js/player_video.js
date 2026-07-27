@@ -733,7 +733,8 @@ function setupMeelPlayerEvents() {
               d = timestamp;
               p();
             }
-            for (let e = 0; e < s.length; e++) s[e] += GLOW_LERP_FACTOR * (i[e] - s[e]);
+            for (let e = 0; e < s.length; e++)
+              s[e] += GLOW_LERP_FACTOR * (i[e] - s[e]);
             const e = l.createImageData(GLOW_W, GLOW_H);
             for (let t = 0; t < s.length; t++) e.data[t] = Math.round(s[t]);
             l.putImageData(e, 0, 0);
@@ -835,7 +836,8 @@ function setupMeelPlayerEvents() {
           o();
         }
         for (let e = 0; e < glowCurData.length; e++)
-          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
+          glowCurData[e] +=
+            (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
         const e = n.createImageData(GLOW_W, GLOW_H);
         for (let t = 0; t < glowCurData.length; t++)
           e.data[t] = Math.round(glowCurData[t]);
@@ -870,7 +872,8 @@ function setupMeelPlayerEvents() {
           glowRAF = null;
         }
         r.classList.remove("glow-active");
-        glowNavbar && glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0");
+        glowNavbar &&
+          glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0");
         e &&
           (glowTargetData.fill(0),
           glowCurData.fill(0),
@@ -1021,28 +1024,52 @@ function setupMeelPlayerEvents() {
   }
   setupMobileGestures();
 }
-(document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    /* Pause glow RAF when tab hidden */
-    if (glowRAF) {
-      cancelAnimationFrame(glowRAF);
-      glowRAF = null;
-    }
-    const e = player?.elements?.container;
-    if (e && e._fsGlowPause) e._fsGlowPause();
-  } else {
-    /* Resume glow when tab visible */
-    if (glowEnabled && videoElement && !videoElement.paused && !videoElement.ended && !glowRAF && glowStartFn) {
-      glowStartFn();
-    }
-    const e = player?.elements?.container;
-    if (e && e._fsGlowStart && videoElement && !videoElement.paused && !videoElement.ended) {
-      e._fsGlowStart();
-    }
-    lastTimeUpdateTimestamp = Date.now();
-    player && (lastPlayTime = player.currentTime);
+(window.addEventListener("pageshow", (e) => {
+  /* Halaman dipulihkan dari bfcache (browser back/forward) alih-alih dieksekusi
+     ulang dari nol. State mini-player (isMiniPlayerActive, miniShell, elemen
+     ber-flag data-mini-intercepted, entri history.pushState) bisa jadi tidak
+     konsisten lagi (mis. mini-player masih "aktif" tapi elemen video sudah
+     ter-detach). Paksa reload bersih daripada membiarkan UI rusak sampai
+     user hard-refresh manual. */
+  if (e.persisted) {
+    window.location.reload();
   }
 }),
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      /* Pause glow RAF when tab hidden */
+      if (glowRAF) {
+        cancelAnimationFrame(glowRAF);
+        glowRAF = null;
+      }
+      const e = player?.elements?.container;
+      if (e && e._fsGlowPause) e._fsGlowPause();
+    } else {
+      /* Resume glow when tab visible */
+      if (
+        glowEnabled &&
+        videoElement &&
+        !videoElement.paused &&
+        !videoElement.ended &&
+        !glowRAF &&
+        glowStartFn
+      ) {
+        glowStartFn();
+      }
+      const e = player?.elements?.container;
+      if (
+        e &&
+        e._fsGlowStart &&
+        videoElement &&
+        !videoElement.paused &&
+        !videoElement.ended
+      ) {
+        e._fsGlowStart();
+      }
+      lastTimeUpdateTimestamp = Date.now();
+      player && (lastPlayTime = player.currentTime);
+    }
+  }),
   document.addEventListener("DOMContentLoaded", () => {
     initPlayer();
   }),
@@ -1447,8 +1474,7 @@ function setupMobileGestures() {
       e.classList.add("mini-player-mode"));
     const l = document.getElementById("video-glow-canvas");
     (l && ((l.style.display = "none"), l.classList.remove("glow-active")),
-      glowRAF &&
-        (cancelAnimationFrame(glowRAF), (glowRAF = null)),
+      glowRAF && (cancelAnimationFrame(glowRAF), (glowRAF = null)),
       glowNavbar &&
         glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0"),
       document.body.appendChild(miniShell),
