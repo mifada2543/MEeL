@@ -32,10 +32,12 @@ let lastPlayTime = -1,
   isTransitioningNext = !1,
   nextVideoTransitionId = 0;
 const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-let glowSampleInterval = null,
-  glowLerpInterval = null;
-const GLOW_W = 8,
-  GLOW_H = 6;
+let glowRAF = null,
+  glowLastSampleTime = 0;
+const GLOW_W = 16,
+  GLOW_H = 9,
+  GLOW_SAMPLE_INTERVAL = 120,
+  GLOW_LERP_FACTOR = 0.1;
 let glowTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowCurData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowStartFn = null,
@@ -119,6 +121,11 @@ function startPlaybackStartTimeout() {
     }, PLAYBACK_START_TIMEOUT_MS)));
 }
 function destroyPlayer() {
+  /* Clean up glow RAF to prevent stale videoElement reference */
+  if (glowRAF) {
+    cancelAnimationFrame(glowRAF);
+    glowRAF = null;
+  }
   if ((stopStuckDetector(), stopPlaybackStartTimeout(), player)) {
     try {
       player.destroy();
@@ -401,7 +408,11 @@ function setupMeelPlayerEvents() {
           void startPlaybackStartTimeout()
         );
       function s() {
-        if (i && parseFloat(i) > 10 && (!player.duration || parseFloat(i) < player.duration - 10)) {
+        if (
+          i &&
+          parseFloat(i) > 10 &&
+          (!player.duration || parseFloat(i) < player.duration - 10)
+        ) {
           const a = Math.floor(i / 60),
             r = Math.floor(i % 60);
           (o && (o.innerText = `${a}:${r.toString().padStart(2, "0")}`),
@@ -689,13 +700,14 @@ function setupMeelPlayerEvents() {
             "position:absolute",
             "top:50%",
             "left:50%",
-            "transform:translate(-50%,-50%) scale(1.4)",
+            "transform:translate3d(-50%,-50%,0) scale(1.0)",
             "width:100%",
             "height:100%",
             "pointer-events:none",
             "z-index:1",
-            "filter:blur(40px)",
+            "filter:blur(60px) brightness(1.8) saturate(1.15)",
             "opacity:0",
+            "will-change:transform,opacity",
             "transition:opacity 0.6s ease",
           ].join(";")),
           t.insertBefore(o, t.firstChild));
@@ -706,7 +718,7 @@ function setupMeelPlayerEvents() {
           i = new Float32Array(GLOW_W * GLOW_H * 4),
           s = new Float32Array(GLOW_W * GLOW_H * 4);
         let c = null,
-          d = null;
+          d = 0;
         const p = () => {
             if (!(videoElement.readyState < 2 || document.hidden))
               try {
@@ -715,31 +727,40 @@ function setupMeelPlayerEvents() {
                 i.set(e);
               } catch (e) {}
           },
-          u = () => {
-            for (let e = 0; e < s.length; e++) s[e] += 0.018 * (i[e] - s[e]);
+          u = (timestamp) => {
+            if (!c) return;
+            if (timestamp - d >= GLOW_SAMPLE_INTERVAL) {
+              d = timestamp;
+              p();
+            }
+            for (let e = 0; e < s.length; e++) s[e] += GLOW_LERP_FACTOR * (i[e] - s[e]);
             const e = l.createImageData(GLOW_W, GLOW_H);
             for (let t = 0; t < s.length; t++) e.data[t] = Math.round(s[t]);
             l.putImageData(e, 0, 0);
+            c = requestAnimationFrame(u);
           },
           m = () => {
-            glowEnabled &&
-              (c ||
-                ((o.style.opacity = "0.6"),
-                p(),
-                (c = setInterval(p, 300)),
-                (d = setInterval(u, 30))));
+            if (!glowEnabled || c) return;
+            o.style.opacity = "0.6";
+            p();
+            d = 0;
+            c = requestAnimationFrame(u);
           },
           y = () => {
-            (c && (clearInterval(c), (c = null)),
-              d && (clearInterval(d), (d = null)),
-              (o.style.opacity = "0"),
-              i.fill(0),
-              s.fill(0),
-              l.clearRect(0, 0, GLOW_W, GLOW_H));
+            if (c) {
+              cancelAnimationFrame(c);
+              c = null;
+            }
+            o.style.opacity = "0";
+            i.fill(0);
+            s.fill(0);
+            l.clearRect(0, 0, GLOW_W, GLOW_H);
           },
           v = () => {
-            (c && (clearInterval(c), (c = null)),
-              d && (clearInterval(d), (d = null)));
+            if (c) {
+              cancelAnimationFrame(c);
+              c = null;
+            }
           };
         ((e._fsGlowStart = m),
           (e._fsGlowStop = y),
@@ -807,14 +828,19 @@ function setupMeelPlayerEvents() {
             glowTargetData.set(e);
           } catch (e) {}
       },
-      l = 0.018,
-      a = () => {
+      a = (timestamp) => {
+        if (!glowRAF) return;
+        if (timestamp - glowLastSampleTime >= GLOW_SAMPLE_INTERVAL) {
+          glowLastSampleTime = timestamp;
+          o();
+        }
         for (let e = 0; e < glowCurData.length; e++)
-          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * l;
+          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
         const e = n.createImageData(GLOW_W, GLOW_H);
         for (let t = 0; t < glowCurData.length; t++)
           e.data[t] = Math.round(glowCurData[t]);
-        if ((n.putImageData(e, 0, 0), glowNavbar)) {
+        n.putImageData(e, 0, 0);
+        if (glowNavbar) {
           let e = 0,
             t = 0,
             n = 0;
@@ -829,33 +855,32 @@ function setupMeelPlayerEvents() {
             a = Math.round(n / GLOW_W);
           glowNavbar.style.setProperty("--navbar-glow-color", `${o},${l},${a}`);
         }
+        glowRAF = requestAnimationFrame(a);
       },
       i = () => {
-        glowEnabled &&
-          (glowSampleInterval ||
-            (r.classList.add("glow-active"),
-            o(),
-            (glowSampleInterval = setInterval(o, 300)),
-            (glowLerpInterval = setInterval(a, 30))));
+        if (!glowEnabled || glowRAF) return;
+        r.classList.add("glow-active");
+        o();
+        glowLastSampleTime = 0;
+        glowRAF = requestAnimationFrame(a);
       },
       s = (e = !1) => {
-        (glowSampleInterval &&
-          (clearInterval(glowSampleInterval), (glowSampleInterval = null)),
-          glowLerpInterval &&
-            (clearInterval(glowLerpInterval), (glowLerpInterval = null)),
-          r.classList.remove("glow-active"),
-          glowNavbar &&
-            glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0"),
-          e &&
-            (glowTargetData.fill(0),
-            glowCurData.fill(0),
-            n.clearRect(0, 0, GLOW_W, GLOW_H)));
+        if (glowRAF) {
+          cancelAnimationFrame(glowRAF);
+          glowRAF = null;
+        }
+        r.classList.remove("glow-active");
+        glowNavbar && glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0");
+        e &&
+          (glowTargetData.fill(0),
+          glowCurData.fill(0),
+          n.clearRect(0, 0, GLOW_W, GLOW_H));
       },
       c = () => {
-        (glowSampleInterval &&
-          (clearInterval(glowSampleInterval), (glowSampleInterval = null)),
-          glowLerpInterval &&
-            (clearInterval(glowLerpInterval), (glowLerpInterval = null)));
+        if (glowRAF) {
+          cancelAnimationFrame(glowRAF);
+          glowRAF = null;
+        }
       };
     ((glowStartFn = i), (glowStopFn = s));
     const d = (e) =>
@@ -997,9 +1022,26 @@ function setupMeelPlayerEvents() {
   setupMobileGestures();
 }
 (document.addEventListener("visibilitychange", () => {
-  document.hidden ||
-    ((lastTimeUpdateTimestamp = Date.now()),
-    player && (lastPlayTime = player.currentTime));
+  if (document.hidden) {
+    /* Pause glow RAF when tab hidden */
+    if (glowRAF) {
+      cancelAnimationFrame(glowRAF);
+      glowRAF = null;
+    }
+    const e = player?.elements?.container;
+    if (e && e._fsGlowPause) e._fsGlowPause();
+  } else {
+    /* Resume glow when tab visible */
+    if (glowEnabled && videoElement && !videoElement.paused && !videoElement.ended && !glowRAF && glowStartFn) {
+      glowStartFn();
+    }
+    const e = player?.elements?.container;
+    if (e && e._fsGlowStart && videoElement && !videoElement.paused && !videoElement.ended) {
+      e._fsGlowStart();
+    }
+    lastTimeUpdateTimestamp = Date.now();
+    player && (lastPlayTime = player.currentTime);
+  }
 }),
   document.addEventListener("DOMContentLoaded", () => {
     initPlayer();
@@ -1402,10 +1444,8 @@ function setupMobileGestures() {
       e.classList.add("mini-player-mode"));
     const l = document.getElementById("video-glow-canvas");
     (l && ((l.style.display = "none"), l.classList.remove("glow-active")),
-      glowSampleInterval &&
-        (clearInterval(glowSampleInterval), (glowSampleInterval = null)),
-      glowLerpInterval &&
-        (clearInterval(glowLerpInterval), (glowLerpInterval = null)),
+      glowRAF &&
+        (cancelAnimationFrame(glowRAF), (glowRAF = null)),
       glowNavbar &&
         glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0"),
       document.body.appendChild(miniShell),

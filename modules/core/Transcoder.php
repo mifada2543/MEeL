@@ -53,7 +53,7 @@ class Transcoder
     {
         $this->conn         = $db_connection;
         $this->user_id      = (int)$session_user_id;
-        $this->base_path    = dirname(__DIR__);
+        $this->base_path    = dirname(__DIR__, 2);
         $this->cookies_path = $this->base_path . "/cookies.txt";
         $this->user_agent   = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
         $this->ffmpeg_bin   = $this->resolveBinary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
@@ -115,7 +115,7 @@ class Transcoder
 
             $resolved[$subdir] = $use_shm
                 ? "$shm_path/meel/$subdir"
-                : dirname(__DIR__) . '/temp';
+                : dirname(__DIR__, 2) . '/temp';
 
             if (!is_dir($resolved[$subdir])) {
                 @mkdir($resolved[$subdir], 0755, true);
@@ -324,7 +324,7 @@ class Transcoder
 
         // 🟢 PRE-FLIGHT: Cek ruang disk sebelum download (queue belum di-lock)
         require_disk_space(512 * 1024 * 1024, $this->getShmTempPath(), 'RAM disk staging');
-        $hdd_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : dirname(__DIR__);
+        $hdd_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : dirname(__DIR__, 2);
         require_disk_space(2 * 1024 * 1024 * 1024, $hdd_path, 'HDD storage');
 
         $queue_id = $this->lockQueue($url, $type);

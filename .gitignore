@@ -18,7 +18,7 @@ data_drive/public/*
 data_drive/private_admins/*
 profile/upload/*
 temp/*
-
+.agents
 # Keep .gitkeep files to maintain directory structure
 !**/upload/.gitkeep
 !profile/upload/default_avatar.png
