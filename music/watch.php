@@ -20,7 +20,8 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock agar range request streaming tidak terblokir
 session_write_close();
-?><!DOCTYPE html>
+?>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -553,7 +554,7 @@ session_write_close();
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            
+
             // Handle Enter key untuk music search
             const searchInput = document.getElementById('m-search-watch');
             const searchBtn = document.getElementById('m-search-btn');
@@ -601,7 +602,13 @@ session_write_close();
     </script>
     <script src="../assets/js/plyr.min.js" defer></script>
     <script src="../assets/js/sweetalert2.all.min.js" defer></script>
-    <script src="../assets/js/player_music.js" defer></script>
+    <script src="../assets/js/music/state.js" defer></script>
+    <script src="../assets/js/music/utils.js" defer></script>
+    <script src="../assets/js/music/loop-ui.js" defer></script>
+    <script src="../assets/js/music/audio-state.js" defer></script>
+    <script src="../assets/js/music/equalizer.js" defer></script>
+    <script src="../assets/js/music/misc.js" defer></script>
+    <script src="../assets/js/music/player-core.js" defer></script>
 </body>
 
 </html>

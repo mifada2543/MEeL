@@ -19,7 +19,8 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock sesegera mungkin
 session_write_close();
-?><!DOCTYPE html>
+?>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -232,7 +233,7 @@ session_write_close();
                         </div>
                         <div class="relative">
                             <p id="desc-text" class="text-sm text-gray-400 leading-relaxed break-words whitespace-pre-wrap line-clamp-5 transition-all duration-300"><?= htmlspecialchars($v['description']) ?></p>
-                        </div>                                <button id="btn-read-more" onclick="toggleDescription()" class="mt-3 text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer border-none bg-transparent p-0 hidden" title="Tampilkan deskripsi lengkap">
+                        </div> <button id="btn-read-more" onclick="toggleDescription()" class="mt-3 text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer border-none bg-transparent p-0 hidden" title="Tampilkan deskripsi lengkap">
                             Selengkapnya
                         </button>
                     </div>
@@ -252,10 +253,10 @@ session_write_close();
                             <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-300">Komentar</span>
                         </div>
                         <div class="p-4 sm:p-6">
-                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6">                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                                        <textarea name="comments"
-                                            class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-red-500/40 min-h-[80px] resize-y transition-all"
-                                            placeholder="Tulis komentar..." required></textarea>
+                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"> <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                                <textarea name="comments"
+                                    class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-red-500/40 min-h-[80px] resize-y transition-all"
+                                    placeholder="Tulis komentar..." required></textarea>
                                 <div class="flex justify-end mt-2">
                                     <button name="send"
                                         class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all border-none cursor-pointer"
@@ -328,14 +329,23 @@ session_write_close();
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;
     </script>
-    <script src="../assets/js/player_video.js"></script>
+    <script src="../assets/js/video/state.js"></script>
+    <script src="../assets/js/video/recovery.js"></script>
+    <script src="../assets/js/video/player-init.js"></script>
+    <script src="../assets/js/video/player-events.js"></script>
+    <script src="../assets/js/video/lifecycle.js"></script>
+    <script src="../assets/js/video/mini-player.js"></script>
+    <script src="../assets/js/video/gestures.js"></script>
+    <script src="../assets/js/video/vtt-sprites.js"></script>
+    <script src="../assets/js/video/seek-indicator.js"></script>
+    <script src="../assets/js/video/misc.js"></script>
 
     <script>
         lucide.createIcons();
         document.body.addEventListener('htmx:afterOnLoad', function() {
             lucide.createIcons();
         });
-        
+
         // Handle Enter key untuk video search
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = ['v-search-watch', 'v-search-mobile'];

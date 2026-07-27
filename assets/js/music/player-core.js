@@ -1,223 +1,18 @@
-let player,
-  audio,
-  storageKeyMusic,
-  watchUrl,
-  isFinished = !1,
-  isMiniPlayerActive = !1,
-  skipResumeModalOnce = !1,
-  eqFilters = [],
-  eqBands = [60, 170, 350, 1e3, 3500, 1e4],
-  eqGains = Array(eqBands.length).fill(0),
-  eqEnabled = !1,
-  eqPreset = "flat";
-const ZERO_GAINS = Array(eqBands.length).fill(0),
-  EQ_PRESET_LABELS = {
-    flat: "Flat",
-    bass: "Bass Boost",
-    treble: "Treble Boost",
-    vocal: "Vocal Boost",
-    rock: "Rock",
-    classical: "Classical",
-    pop: "Pop",
-    jazz: "Jazz",
-    electronic: "Electronic",
-    acoustic: "Acoustic",
-    gaming: "Gaming",
-    podcast: "Podcast",
-  },
-  EQ_PRESETS = {
-    flat: [0, 0, 0, 0, 0, 0],
-    bass: [3, 4, 4, 2, 1, 0],
-    treble: [0, 1, 2, 2, 3, 4],
-    vocal: [2, 2, 0, 1, 2, 2],
-    rock: [3, 1, 0, -1, 2, 3],
-    classical: [2, 0, -1, -1, 2, 3],
-    pop: [1, 2, 2, 1, 2, 1],
-    jazz: [2, 3, 1, 0, 1, 2],
-    electronic: [4, 2, -1, -1, 2, 4],
-    acoustic: [2, 2, 1, 0, 1, 2],
-    gaming: [3, 2, -1, 1, 3, 2],
-    podcast: [0, -1, 2, 3, 1, -1],
-  };
-let miniEls = null;
-function formatTime(e) {
-  if (!e || isNaN(e)) return "0:00";
-  const t = Math.floor(e / 60),
-    n = Math.floor(e % 60);
-  return `${t}:${String(n).padStart(2, "0")}`;
-}
-function _setTogglePillUI(e, t) {
-  e &&
-    (e.classList.toggle("bg-gray-800", !t),
-    e.classList.toggle("text-gray-400", !t),
-    e.classList.toggle("bg-orange-500/10", t),
-    e.classList.toggle("text-orange-500", t),
-    e.classList.toggle("border", t),
-    e.classList.toggle("border-orange-500/30", t));
-}
-function _applyLoopUI(e) {
-  _setTogglePillUI(document.getElementById("btn-loop"), e);
-  const t = document.getElementById("loop-text"),
-    n = document.getElementById("mini-loop-btn");
-  (t && (t.innerText = e ? "Loop On" : "Loop Off"),
-    n &&
-      ((n.style.color = e ? "#f97316" : ""),
-      (n.style.opacity = e ? "1" : "0.5")));
-}
-function updateLoopUI() {
-  _applyLoopUI(
-    player ? player.loop : "true" === localStorage.getItem("meel_global_loop"),
-  );
-}
-function saveAudioState() {
-  if (!window.MEEL_MUSIC_CONFIG) return;
-  const e = window.MEEL_MUSIC_CONFIG,
-    t = e.playlistId || 0;
-  (sessionStorage.setItem(
-    "meel_audio_state",
-    JSON.stringify({
-      id: e.id,
-      musicId: e.id,
-      playlistId: t,
-      watchUrl: `watch.php?id=${e.id}`,
-      currentTime: player ? player.currentTime : 0,
-      isPlaying: !!player && !player.paused,
-      isLooping: !!player && player.loop,
-      title: e.title,
-      artist: e.artist,
-      thumbnail: e.thumbnail,
-      thumbnailUrl: e.thumbnailUrl || "",
-      filename: e.filename,
-    }),
-  ),
-    t > 0
-      ? localStorage.setItem("meel_last_playlist_id", String(t))
-      : localStorage.removeItem("meel_last_playlist_id"));
-}
-function normalizeEqValue(e) {
-  const t = Number(e);
-  return Number.isFinite(t) ? Math.max(-12, Math.min(12, t)) : 0;
-}
-function saveEqState() {
-  try {
-    localStorage.setItem(
-      "meel_music_eq_state",
-      JSON.stringify({ enabled: eqEnabled, preset: eqPreset, gains: eqGains }),
-    );
-  } catch (e) {
-    console.warn("⚠️ Could not save EQ state:", e);
-  }
-}
-function loadEqState() {
-  try {
-    const e = localStorage.getItem("meel_music_eq_state");
-    if (!e) return;
-    const t = JSON.parse(e);
-    (t && Array.isArray(t.gains) && (eqGains = t.gains.map(normalizeEqValue)),
-      "boolean" == typeof t?.enabled && (eqEnabled = t.enabled),
-      "string" == typeof t?.preset && (eqPreset = t.preset));
-  } catch (e) {
-    console.warn("⚠️ Bad EQ state:", e);
-  }
-}
-function applyEqToFilters() {
-  if (!eqFilters.length) return;
-  const e = eqEnabled ? eqGains : ZERO_GAINS;
-  for (let t = 0; t < eqFilters.length; t++)
-    eqFilters[t].gain.value = normalizeEqValue(e[t] ?? 0);
-}
-function getRealtimeVbrValue(e) {
-  if (!e || !e.length) return 160;
-  const t = e.reduce((e, t) => e + t, 0) / e.length,
-    n = Math.min(1, Math.max(0, t / 255));
-  return Math.round(96 + 224 * n);
-}
-function updateBitrateLabel(e, t) {
-  t && (t.innerText = `${e}`);
-}
-function updateBarColors(e, t) {
-  if (!t || !t.length) return;
-  const n = Math.round(28 + ((e - 96) / 224) * 180);
-  t.forEach((e) => {
-    e.style.background = `linear-gradient(to top, hsl(${n}, 96%, 50%), hsl(${Math.min(360, n + 40)}, 96%, 72%))`;
-  });
-}
-function updateEqUI() {
-  const e = document.getElementById("btn-eq"),
-    t = document.getElementById("eq-text"),
-    n = document.getElementById("eq-panel"),
-    a = document.getElementById("eq-container"),
-    o = document.getElementById("eq-preset"),
-    i =
-      (document.getElementById("eq-preset-button"),
-      document.getElementById("eq-preset-label")),
-    l = document.getElementById("eq-preset-options");
-  (_setTogglePillUI(e, eqEnabled),
-    t && (t.innerText = eqEnabled ? "EQ On" : "EQ Off"),
-    n && n.classList.toggle("hidden", !eqEnabled),
-    a && a.classList.toggle("hidden", !eqEnabled),
-    o && (o.value = eqPreset),
-    i && (i.innerText = EQ_PRESET_LABELS[eqPreset] || eqPreset),
-    l &&
-      l.querySelectorAll("button[data-preset]").forEach((e) => {
-        const t = e.dataset.preset === eqPreset;
-        (e.classList.toggle("bg-white/[.06]", t),
-          e.classList.toggle("text-orange-400", t));
-      }),
-    eqBands.forEach((e, t) => {
-      const n = document.getElementById(`eq-band-${t}`),
-        a = document.getElementById(`eq-band-value-${t}`);
-      (n && (n.value = eqGains[t] ?? 0),
-        a &&
-          (a.innerText = `${normalizeEqValue(eqGains[t] ?? 0).toFixed(1)} dB`));
-    }));
-}
-((window.toggleLoop = function () {
-  const e = !("true" === localStorage.getItem("meel_global_loop"));
-  (localStorage.setItem("meel_global_loop", String(e)),
-    player && ((player.loop = e), saveAudioState()),
-    updateLoopUI());
-}),
-  (window.toggleVisualizer = function () {}),
-  (window.toggleEqualizer = function () {}),
-  (window.setEqBand = function (e, t) {
-    ((eqGains[e] = normalizeEqValue(t)),
-      eqEnabled && applyEqToFilters(),
-      updateEqUI(),
-      saveEqState());
-  }),
-  (window.setEqPreset = function (e) {
-    const t = (EQ_PRESETS[e] || EQ_PRESETS.flat).map(normalizeEqValue);
-    ((eqPreset = e || "flat"),
-      (eqGains = t),
-      eqEnabled && applyEqToFilters(),
-      updateEqUI(),
-      saveEqState());
-  }),
-  (window.toggleReply = function (e) {
-    const t = document.getElementById(e);
-    if (!t) return;
-    t.classList.toggle("hidden");
-    const n = t.querySelector('input[type="text"]');
-    n && !t.classList.contains("hidden") && n.focus();
-  }),
-  document.addEventListener("keydown", (e) => {
-    const t = e.target.tagName.toLowerCase();
-    if ("input" === t || "textarea" === t) return;
-    if (e.ctrlKey || e.altKey || e.metaKey) return;
-    const n = e.key.toLowerCase();
-    "l" === n
-      ? (e.preventDefault(), window.toggleLoop())
-      : "e" === n
-        ? (e.preventDefault(), window.toggleEqualizer?.())
-        : "v" === n
-          ? window.toggleVisualizer?.()
-          : "i" === n &&
-            (e.preventDefault(),
-            window.goBackToLibrary
-              ? window.goBackToLibrary()
-              : window.toggleMiniPlayer?.());
-  }),
+/* ============================================================
+ * player-core.js — Inti player musik, jalan saat DOMContentLoaded:
+ * init Plyr, deteksi FLAC & loading overlay, resume posisi terakhir,
+ * visualizer canvas (cava-style bar), dan mode mini-player
+ * (shell, kontrol play/pause/seek/next/prev, ganti lagu tanpa reload).
+ *
+ * CATATAN: sengaja TIDAK dipecah lebih jauh (walau isinya visualizer
+ * & mini-player yang secara konsep beda) karena semuanya berbagi
+ * closure atas variabel lokal yang sama (elemen container, canvas
+ * context, state resume, playlist array). Sama seperti kasus
+ * player-events.js di video — memisahkan paksa berisiko merusak
+ * referensi closure tanpa testing langsung di browser.
+ * Depends on: state.js, utils.js, loop-ui.js, audio-state.js, equalizer.js
+ * ============================================================ */
+
   document.addEventListener("DOMContentLoaded", () => {
     if (
       ((watchUrl = window.location.href),
@@ -234,8 +29,9 @@ function updateEqUI() {
       return void console.error("❌ Plyr not loaded");
 
     // ── Deteksi FLAC & tambahkan event handler error/timeout ──
-    const isFlac = audio.querySelector('source[type="audio/flac"]') !== null
-      || window.MEEL_MUSIC_CONFIG?.filename?.toLowerCase().endsWith('.flac');
+    const isFlac =
+      audio.querySelector('source[type="audio/flac"]') !== null ||
+      window.MEEL_MUSIC_CONFIG?.filename?.toLowerCase().endsWith(".flac");
 
     // Loading state indicator untuk file besar
     let loadingTimeout = null;
@@ -246,43 +42,52 @@ function updateEqUI() {
 
     // Fungsi untuk membersihkan semua timeout
     function clearAllTimeouts() {
-      if (loadingTimeout) { clearTimeout(loadingTimeout); loadingTimeout = null; }
-      if (secondaryTimeout) { clearTimeout(secondaryTimeout); secondaryTimeout = null; }
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        loadingTimeout = null;
+      }
+      if (secondaryTimeout) {
+        clearTimeout(secondaryTimeout);
+        secondaryTimeout = null;
+      }
     }
 
     // Fungsi untuk menampilkan/tutup loading overlay
     function showLoadingOverlay(msg) {
-      let overlay = document.getElementById('flac-loading-overlay');
+      let overlay = document.getElementById("flac-loading-overlay");
       if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'flac-loading-overlay';
-        overlay.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,15,.85);z-index:50;border-radius:inherit;gap:12px;padding:20px;text-align:center;';
-        const spinner = document.createElement('div');
-        spinner.className = 'animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full';
-        const text = document.createElement('p');
-        text.id = 'flac-loading-text';
-        text.style.cssText = 'color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;';
+        overlay = document.createElement("div");
+        overlay.id = "flac-loading-overlay";
+        overlay.style.cssText =
+          "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,15,.85);z-index:50;border-radius:inherit;gap:12px;padding:20px;text-align:center;";
+        const spinner = document.createElement("div");
+        spinner.className =
+          "animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full";
+        const text = document.createElement("p");
+        text.id = "flac-loading-text";
+        text.style.cssText =
+          "color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;";
         overlay.appendChild(spinner);
         overlay.appendChild(text);
-        const container = document.getElementById('player-container');
+        const container = document.getElementById("player-container");
         if (container) {
-          container.style.position = 'relative';
+          container.style.position = "relative";
           container.appendChild(overlay);
         }
       }
-      overlay.style.display = 'flex';
-      const txt = document.getElementById('flac-loading-text');
-      if (txt) txt.textContent = msg || 'Memuat audio...';
+      overlay.style.display = "flex";
+      const txt = document.getElementById("flac-loading-text");
+      if (txt) txt.textContent = msg || "Memuat audio...";
     }
 
     function hideLoadingOverlay() {
-      const overlay = document.getElementById('flac-loading-overlay');
-      if (overlay) overlay.style.display = 'none';
+      const overlay = document.getElementById("flac-loading-overlay");
+      if (overlay) overlay.style.display = "none";
     }
 
     // ── Flag untuk mencegah redirect loop ──
-    let audioEndedNaturally = false;  // di-set true hanya jika playback mencapai akhir
-    let isNavigating = false;         // cegah navigasi ganda
+    let audioEndedNaturally = false; // di-set true hanya jika playback mencapai akhir
+    let isNavigating = false; // cegah navigasi ganda
 
     // Handler error audio — tandai bahwa audio GAGAL (bukan selesai natural)
     let errorHandled = false;
@@ -292,11 +97,13 @@ function updateEqUI() {
       audioEndedNaturally = false; // pastikan ended handler TIDAK redirect
       clearAllTimeouts();
       hideLoadingOverlay();
-      const errCode = audio.error ? audio.error.code : '?';
-      const errMsg = audio.error ? audio.error.message : 'Gagal memuat audio';
-      console.error('❌ Audio error [' + errCode + ']:', errMsg);
+      const errCode = audio.error ? audio.error.code : "?";
+      const errMsg = audio.error ? audio.error.message : "Gagal memuat audio";
+      console.error("❌ Audio error [" + errCode + "]:", errMsg);
       if (isFlac) {
-        showLoadingOverlay('⚠️ FLAC tidak dapat dimuat. Coba refresh halaman atau gunakan format lain.');
+        showLoadingOverlay(
+          "⚠️ FLAC tidak dapat dimuat. Coba refresh halaman atau gunakan format lain.",
+        );
       }
     }
 
@@ -308,14 +115,20 @@ function updateEqUI() {
     }
 
     // Pasang event listeners
-    audio.addEventListener('error', onAudioError);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+    audio.addEventListener("error", onAudioError);
+    audio.addEventListener("loadedmetadata", onLoadedMetadata, { once: true });
 
     // Timeout: jika loadedmetadata tidak kunjung tiba, reset state
     loadingTimeout = setTimeout(() => {
       if (!metadataLoaded && !errorHandled) {
-        console.warn('⚠️ loadedmetadata timeout setelah ' + (LOADING_TIMEOUT_MS/1000) + 's.');
-        showLoadingOverlay('Memuat file besar... (' + (isFlac ? 'FLAC' : 'audio') + ')');
+        console.warn(
+          "⚠️ loadedmetadata timeout setelah " +
+            LOADING_TIMEOUT_MS / 1000 +
+            "s.",
+        );
+        showLoadingOverlay(
+          "Memuat file besar... (" + (isFlac ? "FLAC" : "audio") + ")",
+        );
         // Coba reload source sekali saja — jika masih gagal, tampilkan error final
         if (isFlac && audio && !loadRetried) {
           loadRetried = true;
@@ -325,7 +138,9 @@ function updateEqUI() {
         secondaryTimeout = setTimeout(() => {
           if (!metadataLoaded && !errorHandled) {
             hideLoadingOverlay();
-            showLoadingOverlay('⚠️ Waktu muat habis. Silakan refresh halaman atau coba format lain.');
+            showLoadingOverlay(
+              "⚠️ Waktu muat habis. Silakan refresh halaman atau coba format lain.",
+            );
           }
         }, LOADING_TIMEOUT_MS);
       }
@@ -335,12 +150,12 @@ function updateEqUI() {
     function cleanupAudioListeners() {
       clearAllTimeouts();
       if (audio) {
-        audio.removeEventListener('error', onAudioError);
-        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+        audio.removeEventListener("error", onAudioError);
+        audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       }
       hideLoadingOverlay();
     }
-    window.addEventListener('beforeunload', cleanupAudioListeners);
+    window.addEventListener("beforeunload", cleanupAudioListeners);
 
     try {
       ((player = new Plyr(audio, {
@@ -602,7 +417,6 @@ function updateEqUI() {
             : player.play().catch(() => {});
         }
       }),
-
         (M.onclick = () => {
           ((R = !0),
             clearTimeout(z),
@@ -659,12 +473,17 @@ function updateEqUI() {
       player.on("ended", () => {
         // 🛡️ Cegah redirect loop: hanya lanjut jika audio benar-benar selesai
         // diputar sampai akhir (currentTime mendekati duration), BUKAN karena error.
-        const isGenuineEnd = audioEndedNaturally
-          || (player.duration > 0 && Math.abs(player.currentTime - player.duration) < 1.5)
-          || (player.currentTime > 0 && !audio.error && audio.ended === true);
+        const isGenuineEnd =
+          audioEndedNaturally ||
+          (player.duration > 0 &&
+            Math.abs(player.currentTime - player.duration) < 1.5) ||
+          (player.currentTime > 0 && !audio.error && audio.ended === true);
 
         if (!isGenuineEnd) {
-          console.warn('⚠️ ended fired tapi bukan natural end — skip redirect. err=', !!audio.error);
+          console.warn(
+            "⚠️ ended fired tapi bukan natural end — skip redirect. err=",
+            !!audio.error,
+          );
           return;
         }
         if (isNavigating) return;
@@ -682,7 +501,11 @@ function updateEqUI() {
       // Tandai natural end saat currentTime mendekati durasi & audio sedang diputar
       // (jangan set flag jika user cuma seek ke akhir lalu pause)
       player.on("timeupdate", () => {
-        if (player.duration > 0 && !player.paused && player.currentTime >= player.duration - 0.5) {
+        if (
+          player.duration > 0 &&
+          !player.paused &&
+          player.currentTime >= player.duration - 0.5
+        ) {
           audioEndedNaturally = true;
         }
       }));
@@ -836,4 +659,4 @@ function updateEqUI() {
           window.toggleMiniPlayer();
       }),
       "undefined" != typeof lucide && lucide.createIcons());
-  }));
+  });
