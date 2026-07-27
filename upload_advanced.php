@@ -517,7 +517,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
 <body class="min-h-screen flex flex-col">
 
     <!-- ── MEeL Engine Overlay (dari ui.php) ── -->
-    <?php include 'partials/ui.php'; ?>
+    <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
+        <?php include 'partials/ui.php'; ?>
+    <?php endif; ?>
 
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
