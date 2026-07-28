@@ -334,6 +334,8 @@ function attachMiniPlayerVideoCardListeners(e) {
               ("n" === e.key.toLowerCase() &&
                 !e.ctrlKey &&
                 !e.altKey &&
+                !isTransitioningNext &&
+                !isRecovering &&
                 (e.preventDefault(),
                 e.stopPropagation(),
                 window.skipToNextVideo && window.skipToNextVideo()))

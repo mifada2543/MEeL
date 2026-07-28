@@ -33,49 +33,86 @@ function setupMeelPlayerEvents() {
    * Tampilkan card overlay (YouTube-style) saat video selesai
    * dengan countdown 5 detik dan tombol batal.
    * Mengembalikan Promise: true = lanjut, false = dibatalkan.
+   *
+   * CATATAN: selector title/thumb/uploader pakai fallback agar
+   * kompatibel dengan struktur HTML dari watch.php (default) dan
+   * search_video.php (hasil pencarian via HTMX).
    * ─────────────────────────────────────────────────────── */
   const AUTONEXT_COUNTDOWN = 5;
   function showAutoNextOverlay(e) {
     return new Promise((t) => {
-      const n = document.getElementById("autonext-overlay");
-      n && n.remove();
-      const o =
-          e.querySelector(".rec-title-text")?.textContent?.trim() || "",
-        l = e.querySelector(".rec-thumb-img")?.src || "",
-        a = e.querySelector('[class*="text-red-500"]')?.textContent?.trim() || "",
-        r = document.getElementById("main-video-wrapper");
-      if (!r) return void t(!1);
-      const i = document.createElement("div");
-      (i.id = "autonext-overlay"),
-        (i.innerHTML =
+      try {
+        /* Hapus overlay lama jika ada */
+        const n = document.getElementById("autonext-overlay");
+        n && n.remove();
+
+        /* ── Ekstrak title ── */
+        const o =
+          e.querySelector(".rec-title-text, .line-clamp-2, h5")?.textContent?.trim() ||
+          e.querySelector('[class*="line-clamp"]')?.textContent?.trim() ||
+          e.querySelector("a[title]")?.getAttribute("title")?.trim() ||
+          "";
+
+        /* ── Ekstrak thumbnail src ── */
+        const l =
+          e.querySelector(".rec-thumb-img")?.src ||
+          e.querySelector('img[src*="thumbnail"]')?.src ||
+          e.querySelector("img")?.src ||
+          "";
+
+        /* ── Ekstrak uploader ── */
+        const a =
+          e.querySelector('[class*="text-red-500"], [class*="text-red-600"]')?.textContent?.trim() ||
+          "";
+
+        const r = document.getElementById("main-video-wrapper");
+        if (!r) return void t(!1);
+
+        const i = document.createElement("div");
+        i.id = "autonext-overlay";
+        /* Fallback thumb: jika src kosong, pakai placeholder */
+        const thumbHtml = l
+          ? '<img src="' + l.replace(/"/g, "&quot;") + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          : '<div style="width:100%;height:100%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>';
+        i.innerHTML =
           '<div class="autonext-card"><div class="autonext-header"><span class="autonext-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Up Next</span><span class="autonext-timer"><span class="countdown-num">' +
-            AUTONEXT_COUNTDOWN +
-            '</span>s</span></div><div class="autonext-body"><div class="autonext-thumb"><img src="' +
-            l +
-            '" alt="" loading="lazy"></div><div class="autonext-info"><div class="autonext-title">' +
-            o +
-            '</div><div class="autonext-uploader">' +
-            a +
-            '</div></div></div><div class="autonext-actions"><button class="autonext-cancel">Batal</button></div></div>'),
-        r.appendChild(i),
+          AUTONEXT_COUNTDOWN +
+          '</span>s</span></div><div class="autonext-body"><div class="autonext-thumb">' +
+          thumbHtml +
+          '</div><div class="autonext-info"><div class="autonext-title">' +
+          o.replace(/"/g, "&quot;") +
+          '</div><div class="autonext-uploader">' +
+          a.replace(/"/g, "&quot;") +
+          '</div></div></div><div class="autonext-actions"><button class="autonext-cancel">Batal</button></div></div>';
+        r.appendChild(i);
         requestAnimationFrame(() => i.classList.add("active"));
-      let s = AUTONEXT_COUNTDOWN;
-      const c = i.querySelector(".countdown-num"),
-        d = i.querySelector(".autonext-cancel"),
-        p = setInterval(() => {
-          if ((s--, c && (c.textContent = Math.max(0, s)), s <= 0)) {
-            clearInterval(p),
-              i.classList.remove("active"),
-              setTimeout(() => i.remove(), 350),
-              t(!0);
-          }
-        }, 1e3);
-      d.addEventListener("click", () => {
-        clearInterval(p),
-          i.classList.remove("active"),
-          setTimeout(() => i.remove(), 350),
+
+        let s = AUTONEXT_COUNTDOWN;
+        const c = i.querySelector(".countdown-num"),
+          d = i.querySelector(".autonext-cancel"),
+          p = setInterval(() => {
+            try {
+              if ((s--, c && (c.textContent = Math.max(0, s)), s <= 0)) {
+                clearInterval(p);
+                i.classList.remove("active");
+                setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
+                t(!0);
+              }
+            } catch (e) {
+              clearInterval(p);
+              t(!1);
+            }
+          }, 1e3);
+        d.addEventListener("click", () => {
+          clearInterval(p);
+          i.classList.remove("active");
+          setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
           t(!1);
-      });
+        });
+      } catch (err) {
+        console.error("[MEeL] showAutoNextOverlay error:", err);
+        t(!1);
+      }
     });
   }
   /* ── Ensure custom Plyr controls exist ────────────────
@@ -110,7 +147,7 @@ function setupMeelPlayerEvents() {
       (o.innerHTML =
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>'),
       o.addEventListener("click", (e) => {
-        (e.stopPropagation(), window.skipToNextVideo && window.skipToNextVideo());
+        (e.stopPropagation(), !isTransitioningNext && !isRecovering && window.skipToNextVideo && window.skipToNextVideo());
       }),
       n.parentNode.insertBefore(o, n.nextSibling));
     window.lucide && window.lucide.createIcons();
