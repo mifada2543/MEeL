@@ -329,16 +329,20 @@ session_write_close();
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;
     </script>
-    <script src="../assets/js/video/state.js"></script>
-    <script src="../assets/js/video/recovery.js"></script>
-    <script src="../assets/js/video/player-init.js"></script>
-    <script src="../assets/js/video/player-events.js"></script>
-    <script src="../assets/js/video/lifecycle.js"></script>
-    <script src="../assets/js/video/mini-player.js"></script>
-    <script src="../assets/js/video/gestures.js"></script>
-    <script src="../assets/js/video/vtt-sprites.js"></script>
-    <script src="../assets/js/video/seek-indicator.js"></script>
-    <script src="../assets/js/video/misc.js"></script>
+    <?php
+    // Cache-busting: pakai filemtime agar browser selalu dapet versi terbaru
+    $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
+    ?>
+    <script src="../assets/js/video/state.js<?= $__v('assets/js/video/state.js') ?>"></script>
+    <script src="../assets/js/video/recovery.js<?= $__v('assets/js/video/recovery.js') ?>"></script>
+    <script src="../assets/js/video/player-init.js<?= $__v('assets/js/video/player-init.js') ?>"></script>
+    <script src="../assets/js/video/player-events.js<?= $__v('assets/js/video/player-events.js') ?>"></script>
+    <script src="../assets/js/video/lifecycle.js<?= $__v('assets/js/video/lifecycle.js') ?>"></script>
+    <script src="../assets/js/video/mini-player.js<?= $__v('assets/js/video/mini-player.js') ?>"></script>
+    <script src="../assets/js/video/gestures.js<?= $__v('assets/js/video/gestures.js') ?>"></script>
+    <script src="../assets/js/video/vtt-sprites.js<?= $__v('assets/js/video/vtt-sprites.js') ?>"></script>
+    <script src="../assets/js/video/seek-indicator.js<?= $__v('assets/js/video/seek-indicator.js') ?>"></script>
+    <script src="../assets/js/video/misc.js<?= $__v('assets/js/video/misc.js') ?>"></script>
 
     <script>
         lucide.createIcons();

@@ -87,6 +87,9 @@ function attachMiniPlayerVideoCardListeners(e) {
         e.addEventListener("click", async (t) => {
           if (!isMiniPlayerActive) return;
           t.preventDefault();
+          /* Manual click pada video — reset auto-next ke OFF */
+          autoNextEnabled = false;
+          localStorage.setItem("meel_autonext_enabled", "false");
           const n = e.href;
           try {
             const e = await fetch(n),

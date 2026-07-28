@@ -199,12 +199,17 @@ function setupMeelPlayerEvents() {
     player.on("ended", async () => {
       if ((stopStuckDetector(), player.loop)) return;
       if (isTransitioningNext) return;
+      if (!autoNextEnabled) {
+        stopPlaybackStartTimeout();
+        return;
+      }
       ((isTransitioningNext = !0), (isRecovering = !0));
       const e = ++nextVideoTransitionId;
       localStorage.removeItem(storageKeyVideo);
       const t = document.querySelector(".rekomendasi-item");
       if (!t) return ((isTransitioningNext = !1), void (isRecovering = !1));
       const n = player.fullscreen.active || !!document.fullscreenElement;
+      sessionStorage.setItem("meel_autonav", "1");
       try {
         const o = await fetch(t.href),
           l = await o.text();
@@ -572,6 +577,32 @@ function setupMeelPlayerEvents() {
         n && (n.innerHTML = d(t));
       };
     ((window.updateLoopMenuUI = u), (window.updateGlowMenuUI = p));
+
+    /* ── AUTO-NEXT TOGGLE ────────────────────────────────── */
+    const S = (e) =>
+        `${e ? "On" : "Off"} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:${e ? "inline-block" : "none"};vertical-align:middle;margin-left:4px"><polyline points="20 6 9 17 4 12"/></svg>`;
+    window.updateAutoNextMenuUI = () => {
+      const e = document.getElementById("plyr-setting-autonext");
+      if (!e) return;
+      e.setAttribute("aria-checked", autoNextEnabled ? "true" : "false");
+      const t = e.querySelector(".plyr__menu__value");
+      t && (t.innerHTML = S(autoNextEnabled));
+    };
+    window.toggleAutoNext = () => {
+      (autoNextEnabled = !autoNextEnabled,
+        localStorage.setItem(
+          "meel_autonext_enabled",
+          autoNextEnabled ? "true" : "false",
+        ),
+        window.updateAutoNextMenuUI(),
+        h(
+          autoNextEnabled
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="2" x2="22" y2="22"/><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h11"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+          autoNextEnabled ? "Auto Next On" : "Auto Next Off",
+        ));
+    };
+
     const m = () => {
       if (!player?.elements?.container) return null;
       const e = player.elements?.settings?.panels?.home;
@@ -589,7 +620,8 @@ function setupMeelPlayerEvents() {
       const e = m();
       if (!e) return;
       (e.querySelector("#plyr-setting-glow")?.remove(),
-        e.querySelector("#plyr-setting-loop")?.remove());
+        e.querySelector("#plyr-setting-loop")?.remove(),
+        e.querySelector("#plyr-setting-autonext")?.remove());
       const t = document.createElement("button");
       ((t.type = "button"),
         (t.className = "plyr__control"),
@@ -609,11 +641,23 @@ function setupMeelPlayerEvents() {
           '<span>Loop Playback</span><span class="plyr__menu__value"></span>'),
         n.addEventListener("click", (e) => {
           (e.stopPropagation(), window.toggleLoop());
+        }));
+      const o = document.createElement("button");
+      ((o.type = "button"),
+        (o.className = "plyr__control"),
+        o.setAttribute("role", "menuitemcheckbox"),
+        (o.id = "plyr-setting-autonext"),
+        (o.innerHTML =
+          '<span>Auto Next</span><span class="plyr__menu__value"></span>'),
+        o.addEventListener("click", (e) => {
+          (e.stopPropagation(), window.toggleAutoNext());
         }),
         e.appendChild(t),
         e.appendChild(n),
+        e.appendChild(o),
         p(),
-        u());
+        u(),
+        window.updateAutoNextMenuUI());
     };
     window.appendCustomSettings = () => {
       if (y) return;
