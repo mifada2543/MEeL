@@ -78,6 +78,196 @@ function setupMeelPlayerEvents() {
       });
     });
   }
+  /* ── Ensure custom Plyr controls exist ────────────────
+   * Setelah seamless transition, Plyr mungkin render ulang
+   * kontrolnya sehingga tombol mini-player & next hilang.
+   * Fungsi ini ngecek dan re-insert jika perlu.
+   * ─────────────────────────────────────────────────── */
+  function ensureCustomControls() {
+    if (!player?.elements?.controls) return;
+    const e = player.elements.controls;
+    if (e.querySelector('[data-plyr="meel-miniplayer"]')) return;
+    const t = e.querySelector('[data-plyr="pip"]');
+    if (!t) return;
+    const n = document.createElement("button");
+    ((n.className = "plyr__control"),
+      n.setAttribute("data-plyr", "meel-miniplayer"),
+      n.setAttribute("type", "button"),
+      n.setAttribute("aria-label", "Mini Player"),
+      (n.title = "Mini Player"),
+      (n.innerHTML =
+        '<i data-lucide="shrink" style="width:18px;height:18px;"></i>'),
+      n.addEventListener("click", (e) => {
+        (e.stopPropagation(), window.toggleMiniPlayer());
+      }),
+      t.parentNode.insertBefore(n, t.nextSibling));
+    const o = document.createElement("button");
+    ((o.className = "plyr__control"),
+      o.setAttribute("data-plyr", "meel-next"),
+      o.setAttribute("type", "button"),
+      o.setAttribute("aria-label", "Video Berikutnya"),
+      (o.title = "Video Berikutnya (N)"),
+      (o.innerHTML =
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>'),
+      o.addEventListener("click", (e) => {
+        (e.stopPropagation(), window.skipToNextVideo && window.skipToNextVideo());
+      }),
+      n.parentNode.insertBefore(o, n.nextSibling));
+    window.lucide && window.lucide.createIcons();
+  }
+  /* ── Skip to Next Video ──────────────────────────────────
+   * Ambil video pertama dari rekomendasi, transisi seamless.
+   * Bisa dipanggil manual (tombol/keyboard) atau dari ended.
+   * Parameter isManual: true (default) → reset autoNext ke OFF.
+   *                    false (auto-trigger) → biarkan ON.
+   * Jika recommendationItem diberikan, pakai itu; jika tidak,
+   * cari .rekomendasi-item pertama di DOM.
+   * ─────────────────────────────────────────────────────── */
+  window.skipToNextVideo = async function (e, isManual = !0) {
+    const t = e || document.querySelector(".rekomendasi-item");
+    if (!t) return !1;
+    /* Manual skip → reset auto-next; auto-trigger → tetap ON */
+    isManual &&
+      ((autoNextEnabled = !1),
+        localStorage.setItem("meel_autonext_enabled", "false"),
+        window.updateAutoNextMenuUI && window.updateAutoNextMenuUI());
+    (isTransitioningNext = !0),
+      (isRecovering = !0);
+    const n = ++nextVideoTransitionId;
+    localStorage.removeItem(storageKeyVideo);
+    const o = player ? player.fullscreen.active || !!document.fullscreenElement : !1;
+    sessionStorage.setItem("meel_autonav", "1");
+    try {
+      const l = await fetch(t.href),
+        a = await l.text();
+      if (n !== nextVideoTransitionId) return !1;
+      const r = new DOMParser().parseFromString(a, "text/html");
+      (watchUrl = t.href),
+        window.history.pushState({}, "", t.href),
+        (document.title = r.title);
+      const i = r.getElementById("main-video");
+      if (!i) throw new Error("Video elemen tidak ditemukan");
+      const s = i.getAttribute("data-src"),
+        c = "true" === i.getAttribute("data-ishls"),
+        d = i.getAttribute("data-poster"),
+        p = i.getAttribute("data-vtt");
+      (videoId =
+        new URL(t.href, window.location.href).searchParams.get("id") ||
+        videoId),
+        (storageKeyVideo = `video_pos_${videoId}`),
+        (vttSrc = p);
+      let u = {};
+      r.querySelectorAll("script:not([src])").forEach((e) => {
+        const t = e.textContent.match(
+          /window\.playerConfig\s*=\s*(\{[\s\S]*?\});/,
+        );
+        if (t)
+          try {
+            u = JSON.parse(t[1]);
+          } catch (e) {}
+      }),
+        (videoTitle = u.title || ""),
+        (videoUploader = u.uploader || ""),
+        (window.playerConfig = {
+          videoSrc: s,
+          isHls: c,
+          vttSrc: p,
+          id: videoId,
+          title: videoTitle,
+          uploader: videoUploader,
+        }),
+        isMiniPlayerActive && updateMiniPlayerInfo(videoTitle, videoUploader),
+        updateSearchExcludeId(videoId),
+        ["watch-details-wrapper", "recommendation-column"].forEach((e) => {
+          const t = document.getElementById(e),
+            n = r.getElementById(e);
+          t && n && (t.innerHTML = n.innerHTML);
+        }),
+        window.lucide && window.lucide.createIcons(),
+        window.htmx && htmx.process(document.body),
+        isMiniPlayerActive ||
+          requestAnimationFrame(() => {
+            const e = document.getElementById("desc-text"),
+              t = document.getElementById("btn-read-more");
+            e &&
+              t &&
+              e.scrollHeight > e.clientHeight &&
+              t.classList.remove("hidden");
+          }),
+        (player.poster = d),
+        c
+          ? (!hls && window.Hls && Hls.isSupported()
+              ? ((hls = new Hls(HLS_CONFIG)),
+                registerHlsErrorListener(hls),
+                hls.attachMedia(player.media))
+              : hls &&
+                hls.media !== player.media &&
+                (hls.detachMedia(), hls.attachMedia(player.media)),
+            hls.loadSource(s),
+            videoElement.addEventListener(
+              "loadedmetadata",
+              function () {
+                var e = document.getElementById("main-video-wrapper");
+                e &&
+                  videoElement &&
+                  videoElement.videoWidth &&
+                  videoElement.videoHeight &&
+                  (e.style.aspectRatio =
+                    videoElement.videoWidth + "/" + videoElement.videoHeight);
+              },
+              { once: !0 },
+            ))
+          : (hls && (hls.destroy(), (hls = null)),
+            (player.media.src = s),
+            player.media.load(),
+            videoElement.addEventListener(
+              "loadedmetadata",
+              function () {
+                var e = document.getElementById("main-video-wrapper");
+                e &&
+                  videoElement &&
+                  videoElement.videoWidth &&
+                  videoElement.videoHeight &&
+                  (e.style.aspectRatio =
+                    videoElement.videoWidth + "/" + videoElement.videoHeight);
+              },
+              { once: !0 },
+            ));
+      const m = player.play();
+      if (
+        (void 0 !== m &&
+          m.catch((e) => {
+            console.error("Autoplay dicegah oleh browser:", e);
+          }),
+        p)
+      )
+        setTimeout(() => refreshVttSprites(p), 300);
+      else {
+        player.config.previewThumbnails.enabled = !1;
+        const e = document.querySelector(".plyr__preview-thumb");
+        e && (e.style.display = "none");
+      }
+      o &&
+        !player.fullscreen.active &&
+        (player.fullscreen.toggle(),
+        p &&
+          (setTimeout(() => refreshVttSprites(p), 500),
+          setTimeout(() => refreshVttSprites(p), 1500)));
+      return !0;
+    } catch (e) {
+      return (
+        console.error("Gagal transisi seamless, fallback ke reload:", e),
+        (window.location.href = t.href),
+        !1
+      );
+    } finally {
+      n === nextVideoTransitionId &&
+        ((isTransitioningNext = !1),
+        (isRecovering = !1),
+        startStuckDetector());
+      ensureCustomControls();
+    }
+  };
   (videoElement.readyState >= 1 && videoElement.videoWidth
     ? a()
     : videoElement.addEventListener("loadedmetadata", a, { once: !0 }),
@@ -95,26 +285,7 @@ function setupMeelPlayerEvents() {
         const e = document.querySelector(".plyr__preview-thumb");
         e && (e.style.display = "none");
       }
-      setTimeout(() => {
-        if (!player?.elements?.controls) return;
-        const e = player.elements.controls;
-        if (e.querySelector('[data-plyr="meel-miniplayer"]')) return;
-        const t = e.querySelector('[data-plyr="pip"]');
-        if (!t) return;
-        const n = document.createElement("button");
-        ((n.className = "plyr__control"),
-          n.setAttribute("data-plyr", "meel-miniplayer"),
-          n.setAttribute("type", "button"),
-          n.setAttribute("aria-label", "Mini Player"),
-          (n.title = "Mini Player"),
-          (n.innerHTML =
-            '<i data-lucide="shrink" style="width:18px;height:18px;"></i>'),
-          n.addEventListener("click", (e) => {
-            (e.stopPropagation(), window.toggleMiniPlayer());
-          }),
-          t.parentNode.insertBefore(n, t.nextSibling),
-          window.lucide && lucide.createIcons());
-      }, 200);
+      setTimeout(ensureCustomControls, 200);
       const i = localStorage.getItem(storageKeyVideo);
       if (isAutoRecovering && i)
         return (
@@ -266,133 +437,8 @@ function setupMeelPlayerEvents() {
         stopPlaybackStartTimeout();
         return;
       }
-      const h = player.fullscreen.active || !!document.fullscreenElement;
-      sessionStorage.setItem("meel_autonav", "1");
-      try {
-        const o = await fetch(t.href),
-          l = await o.text();
-        if (e !== nextVideoTransitionId) return;
-        const a = new DOMParser().parseFromString(l, "text/html");
-        ((watchUrl = t.href),
-          window.history.pushState({}, "", t.href),
-          (document.title = a.title));
-        const r = a.getElementById("main-video");
-        if (!r) throw new Error("Video elemen tidak ditemukan");
-        const i = r.getAttribute("data-src"),
-          s = "true" === r.getAttribute("data-ishls"),
-          c = r.getAttribute("data-poster"),
-          d = r.getAttribute("data-vtt");
-        ((videoId =
-          new URL(t.href, window.location.href).searchParams.get("id") ||
-          videoId),
-          (storageKeyVideo = `video_pos_${videoId}`),
-          (vttSrc = d));
-        let p = {};
-        (a.querySelectorAll("script:not([src])").forEach((e) => {
-          const t = e.textContent.match(
-            /window\.playerConfig\s*=\s*(\{[\s\S]*?\});/,
-          );
-          if (t)
-            try {
-              p = JSON.parse(t[1]);
-            } catch (e) {}
-        }),
-          (videoTitle = p.title || ""),
-          (videoUploader = p.uploader || ""),
-          (window.playerConfig = {
-            videoSrc: i,
-            isHls: s,
-            vttSrc: d,
-            id: videoId,
-            title: videoTitle,
-            uploader: videoUploader,
-          }),
-          isMiniPlayerActive && updateMiniPlayerInfo(videoTitle, videoUploader),
-          updateSearchExcludeId(videoId),
-          ["watch-details-wrapper", "recommendation-column"].forEach((e) => {
-            const t = document.getElementById(e),
-              n = a.getElementById(e);
-            t && n && (t.innerHTML = n.innerHTML);
-          }),
-          window.lucide && window.lucide.createIcons(),
-          window.htmx && htmx.process(document.body),
-          isMiniPlayerActive ||
-            requestAnimationFrame(() => {
-              const e = document.getElementById("desc-text"),
-                t = document.getElementById("btn-read-more");
-              e &&
-                t &&
-                e.scrollHeight > e.clientHeight &&
-                t.classList.remove("hidden");
-            }),
-          (player.poster = c),
-          s
-            ? (!hls && window.Hls && Hls.isSupported()
-                ? ((hls = new Hls(HLS_CONFIG)),
-                  registerHlsErrorListener(hls),
-                  hls.attachMedia(player.media))
-                : hls &&
-                  hls.media !== player.media &&
-                  (hls.detachMedia(), hls.attachMedia(player.media)),
-              hls.loadSource(i),
-              videoElement.addEventListener(
-                "loadedmetadata",
-                function () {
-                  var e = document.getElementById("main-video-wrapper");
-                  e &&
-                    videoElement &&
-                    videoElement.videoWidth &&
-                    videoElement.videoHeight &&
-                    (e.style.aspectRatio =
-                      videoElement.videoWidth + "/" + videoElement.videoHeight);
-                },
-                { once: !0 },
-              ))
-            : (hls && (hls.destroy(), (hls = null)),
-              (player.media.src = i),
-              player.media.load(),
-              videoElement.addEventListener(
-                "loadedmetadata",
-                function () {
-                  var e = document.getElementById("main-video-wrapper");
-                  e &&
-                    videoElement &&
-                    videoElement.videoWidth &&
-                    videoElement.videoHeight &&
-                    (e.style.aspectRatio =
-                      videoElement.videoWidth + "/" + videoElement.videoHeight);
-                },
-                { once: !0 },
-              )));
-        const u = player.play();
-        if (
-          (void 0 !== u &&
-            u.catch((e) => {
-              console.error("Autoplay dicegah oleh browser:", e);
-            }),
-          d)
-        )
-          setTimeout(() => refreshVttSprites(d), 300);
-        else {
-          player.config.previewThumbnails.enabled = !1;
-          const e = document.querySelector(".plyr__preview-thumb");
-          e && (e.style.display = "none");
-        }
-        h &&
-          !player.fullscreen.active &&
-          (player.fullscreen.toggle(),
-          d &&
-            (setTimeout(() => refreshVttSprites(d), 500),
-            setTimeout(() => refreshVttSprites(d), 1500)));
-      } catch (e) {
-        (console.error("Gagal transisi seamless, fallback ke reload:", e),
-          (window.location.href = t.href));
-      } finally {
-        e === nextVideoTransitionId &&
-          ((isTransitioningNext = !1),
-          (isRecovering = !1),
-          startStuckDetector());
-      }
+      /* ── Delegasi ke skipToNextVideo (auto-trigger, jangan reset auto-next) ── */
+      await window.skipToNextVideo(t, !1);
     }),
     player.on("enterfullscreen", () => {
       (screen.orientation?.lock &&

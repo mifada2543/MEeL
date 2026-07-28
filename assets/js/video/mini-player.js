@@ -323,14 +323,20 @@ function attachMiniPlayerVideoCardListeners(e) {
         return isMiniPlayerActive && "f" === e.key.toLowerCase()
           ? (e.preventDefault(), void e.stopPropagation())
           : void (
-              "i" === e.key.toLowerCase() &&
+              ("i" === e.key.toLowerCase() &&
               /* ── Guard: hanya panggil toggleMiniPlayer jika main-video-wrapper ada ── */
               (document.getElementById("main-video-wrapper") ||
                 (console.warn(
                   "toggleMiniPlayer via keydown: main-video-wrapper tidak ditemukan",
                 ),
                 0)) &&
-              toggleMiniPlayer()
+              toggleMiniPlayer()) ||
+              ("n" === e.key.toLowerCase() &&
+                !e.ctrlKey &&
+                !e.altKey &&
+                (e.preventDefault(),
+                e.stopPropagation(),
+                window.skipToNextVideo && window.skipToNextVideo()))
             );
     },
     !0,
