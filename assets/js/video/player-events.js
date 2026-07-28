@@ -29,6 +29,55 @@ function setupMeelPlayerEvents() {
     (console.log(`[MEeL] Aspect ratio video: ${n / a}:${o / a} (${n}x${o})`),
       isMiniPlayerActive || (e.style.aspectRatio = `${n} / ${o}`));
   }
+  /* ── Auto-Next Overlay Card ───────────────────────────────
+   * Tampilkan card overlay (YouTube-style) saat video selesai
+   * dengan countdown 5 detik dan tombol batal.
+   * Mengembalikan Promise: true = lanjut, false = dibatalkan.
+   * ─────────────────────────────────────────────────────── */
+  const AUTONEXT_COUNTDOWN = 5;
+  function showAutoNextOverlay(e) {
+    return new Promise((t) => {
+      const n = document.getElementById("autonext-overlay");
+      n && n.remove();
+      const o =
+          e.querySelector(".rec-title-text")?.textContent?.trim() || "",
+        l = e.querySelector(".rec-thumb-img")?.src || "",
+        a = e.querySelector('[class*="text-red-500"]')?.textContent?.trim() || "",
+        r = document.getElementById("main-video-wrapper");
+      if (!r) return void t(!1);
+      const i = document.createElement("div");
+      (i.id = "autonext-overlay"),
+        (i.innerHTML =
+          '<div class="autonext-card"><div class="autonext-header"><span class="autonext-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Up Next</span><span class="autonext-timer"><span class="countdown-num">' +
+            AUTONEXT_COUNTDOWN +
+            '</span>s</span></div><div class="autonext-body"><div class="autonext-thumb"><img src="' +
+            l +
+            '" alt="" loading="lazy"></div><div class="autonext-info"><div class="autonext-title">' +
+            o +
+            '</div><div class="autonext-uploader">' +
+            a +
+            '</div></div></div><div class="autonext-actions"><button class="autonext-cancel">Batal</button></div></div>'),
+        r.appendChild(i),
+        requestAnimationFrame(() => i.classList.add("active"));
+      let s = AUTONEXT_COUNTDOWN;
+      const c = i.querySelector(".countdown-num"),
+        d = i.querySelector(".autonext-cancel"),
+        p = setInterval(() => {
+          if ((s--, c && (c.textContent = Math.max(0, s)), s <= 0)) {
+            clearInterval(p),
+              i.classList.remove("active"),
+              setTimeout(() => i.remove(), 350),
+              t(!0);
+          }
+        }, 1e3);
+      d.addEventListener("click", () => {
+        clearInterval(p),
+          i.classList.remove("active"),
+          setTimeout(() => i.remove(), 350),
+          t(!1);
+      });
+    });
+  }
   (videoElement.readyState >= 1 && videoElement.videoWidth
     ? a()
     : videoElement.addEventListener("loadedmetadata", a, { once: !0 }),
@@ -208,7 +257,16 @@ function setupMeelPlayerEvents() {
       localStorage.removeItem(storageKeyVideo);
       const t = document.querySelector(".rekomendasi-item");
       if (!t) return ((isTransitioningNext = !1), void (isRecovering = !1));
-      const n = player.fullscreen.active || !!document.fullscreenElement;
+      /* ── Tampilkan overlay countdown, tunggu user ── */
+      const g = await showAutoNextOverlay(t);
+      if (!g) {
+        autoNextEnabled = !1;
+        localStorage.setItem("meel_autonext_enabled", "false");
+        (isTransitioningNext = !1), (isRecovering = !1);
+        stopPlaybackStartTimeout();
+        return;
+      }
+      const h = player.fullscreen.active || !!document.fullscreenElement;
       sessionStorage.setItem("meel_autonav", "1");
       try {
         const o = await fetch(t.href),
@@ -320,7 +378,7 @@ function setupMeelPlayerEvents() {
           const e = document.querySelector(".plyr__preview-thumb");
           e && (e.style.display = "none");
         }
-        n &&
+        h &&
           !player.fullscreen.active &&
           (player.fullscreen.toggle(),
           d &&
@@ -597,8 +655,8 @@ function setupMeelPlayerEvents() {
         window.updateAutoNextMenuUI(),
         h(
           autoNextEnabled
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>'
-            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="2" x2="22" y2="22"/><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h11"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="2" x2="22" y2="22"/><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
           autoNextEnabled ? "Auto Next On" : "Auto Next Off",
         ));
     };
