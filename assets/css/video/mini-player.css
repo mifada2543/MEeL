@@ -1,0 +1,254 @@
+/* ============================================================
+ * mini-player.css — Mini player shell, info, responsive
+ * ============================================================ */
+
+#mini-player-shell {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  width: 360px !important;
+  z-index: 9999 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: #0d1017 !important;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.07) !important;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s !important;
+  cursor: default !important;
+}
+
+#mini-player-shell:hover {
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(220, 38, 38, 0.35) !important;
+}
+
+/* ── Mini-player mode (inside shell) ── */
+.mini-player-mode {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
+
+.mini-player-mode .plyr {
+  pointer-events: auto !important;
+}
+
+.mini-player-mode .plyr::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 5%,
+    rgba(0, 0, 0, 0) 20%
+  );
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#mini-player-shell:hover .plyr::before,
+.mini-player-mode .plyr.plyr--pressed::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mini-player-mode button[data-plyr="fullscreen"],
+.mini-player-mode button[data-plyr="pip"],
+.mini-player-mode button[data-plyr="play"],
+.mini-player-mode button[data-plyr="settings"],
+.mini-player-mode button[data-plyr="meel-miniplayer"] {
+  display: none !important;
+}
+
+.mini-player-mode .plyr__controls {
+  padding-left: 16px !important;
+  background: 0 0 !important;
+  padding: 10px 12px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+#mini-player-shell:hover .plyr__controls,
+.mini-player-mode .plyr.plyr--pressed .plyr__controls {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.mini-player-mode .plyr__progress input[type="range"] {
+  cursor: pointer !important;
+}
+
+/* ── Close & Expand buttons ── */
+#mini-close-btn,
+#mini-expand-btn {
+  position: absolute;
+  top: 8px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    background 0.15s,
+    transform 0.15s;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#mini-player-shell:hover #mini-close-btn,
+#mini-player-shell:hover #mini-expand-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#mini-expand-btn {
+  left: 8px;
+}
+
+#mini-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+#mini-close-btn {
+  right: 8px;
+}
+
+#mini-close-btn:hover {
+  background: rgba(220, 38, 38, 0.75);
+  transform: scale(1.1);
+}
+
+/* ── Mini-player info ── */
+#mini-player-info {
+  padding: 10px 12px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+#mini-player-info:hover #mini-info-title {
+  color: #f87171;
+}
+
+#mini-info-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e5e7eb;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.15s;
+  font-family: var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+#mini-info-uploader {
+  font-size: 10px;
+  color: #6b7280;
+  margin-top: 2px;
+  font-family: var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Responsive: 640px ── */
+@media (max-width: 640px) {
+  #mini-player-shell {
+    width: 280px !important;
+    right: 12px !important;
+    bottom: 16px !important;
+    border-radius: 10px !important;
+  }
+  #mini-player-shell #mini-close-btn,
+  #mini-player-shell #mini-expand-btn {
+    width: 26px;
+    height: 26px;
+    top: 6px;
+  }
+  #mini-player-shell #mini-expand-btn {
+    left: 6px;
+  }
+  #mini-player-shell #mini-close-btn {
+    right: 6px;
+  }
+  #mini-player-shell #mini-player-info {
+    padding: 8px 10px 10px;
+    gap: 8px;
+  }
+  #mini-player-shell #mini-info-title {
+    font-size: 10px;
+  }
+  #mini-player-shell #mini-info-uploader {
+    font-size: 9px;
+  }
+}
+
+/* ── Responsive: 480px ── */
+@media (max-width: 480px) {
+  #mini-player-shell {
+    width: 240px !important;
+    right: 8px !important;
+    bottom: 12px !important;
+    border-radius: 8px !important;
+  }
+  #mini-player-shell #mini-close-btn,
+  #mini-player-shell #mini-expand-btn {
+    width: 22px;
+    height: 22px;
+    top: 4px;
+  }
+  #mini-player-shell #mini-expand-btn {
+    left: 4px;
+  }
+  #mini-player-shell #mini-close-btn {
+    right: 4px;
+  }
+  #mini-player-shell #mini-player-info {
+    padding: 6px 8px 8px;
+    gap: 6px;
+  }
+  #mini-player-shell #mini-info-title {
+    font-size: 9px;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+  #mini-player-shell #mini-info-uploader {
+    font-size: 8px;
+    margin-top: 1px;
+  }
+}

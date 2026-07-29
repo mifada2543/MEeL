@@ -25,7 +25,8 @@ $totalPages = $meta['total_pages'];
     <meta property="og:description" content="Jelajahi koleksi video di MEeL Video Library. Streaming HLS dengan kualitas terbaik.">
     <title>MEeL Video | Library</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video.css">
+    <link rel="stylesheet" href="../assets/css/video/main.css">
+    <link rel="stylesheet" href="../assets/css/video/index/main.css">
 </head>
 
 <body class="text-gray-400 min-h-screen">

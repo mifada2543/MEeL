@@ -35,7 +35,8 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <title><?= htmlspecialchars($v['title']) ?> — MEeL Video</title>
     <?php include '../partials/link.php'; ?>
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
-    <link rel="stylesheet" href="../assets/css/video.css<?= $__v('assets/css/video.css') ?>">
+    <link rel="stylesheet" href="../assets/css/video/main.css<?= $__v('assets/css/video/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/video/watch/main.css<?= $__v('assets/css/video/watch/main.css') ?>">
     <script src="../assets/js/htmx.min.js"></script>
     <script src="../assets/js/hls.js"></script>
 </head>

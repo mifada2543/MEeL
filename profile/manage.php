@@ -115,7 +115,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
     <meta property="og:description" content="Kelola konten video dan musik Anda di MEeL. Edit, hapus, dan pantau statistik.">
     <title>Kelola Konten | MEeL</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video.css">
+    <link rel="stylesheet" href="../assets/css/video/main.css">
     <style>
         body {
             background-color: #080a0f;
