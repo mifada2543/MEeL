@@ -736,6 +736,8 @@ function setupMeelPlayerEvents() {
           autoNextEnabled ? "true" : "false",
         ),
         window.updateAutoNextMenuUI(),
+        /* ── Mutual exclusion: Auto Next ON → Loop harus OFF ── */
+        autoNextEnabled && player && (player.loop = false, window.updateLoopMenuUI && window.updateLoopMenuUI()),
         h(
           autoNextEnabled
             ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
@@ -859,7 +861,10 @@ function setupMeelPlayerEvents() {
     }),
       (window.toggleLoop = () => {
         if (player) {
-          ((player.loop = !player.loop), u());
+          ((player.loop = !player.loop),
+            /* ── Mutual exclusion: Loop ON → Auto Next harus OFF ── */
+            player.loop && (autoNextEnabled = false, localStorage.setItem("meel_autonext_enabled", "false"), window.updateAutoNextMenuUI && window.updateAutoNextMenuUI()),
+            u());
           const e = player.loop;
           h(
             e
