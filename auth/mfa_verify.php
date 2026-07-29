@@ -97,6 +97,7 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
 
             if ($valid) {
                 // ─── LOGIN LENGKAP — set session ───
+                session_regenerate_id(true);
                 $_SESSION['user_id']  = $temp_id;
                 $_SESSION['username'] = $_SESSION['mfa_temp_username'];
                 $_SESSION['role']     = $_SESSION['mfa_temp_role'];

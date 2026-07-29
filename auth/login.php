@@ -146,9 +146,8 @@ if (isset($_POST['login']) && !$is_locked) {
                             $stmt_del->execute();
                             $stmt_del->close();
 
-                            $current_sid = session_id();
-
                             // ─── CEK MFA ──────────────────────────────────
+                            // (current_sid akan di-capture setelah session_regenerate_id di blok non-MFA)
                             // Jika user sudah mengaktifkan MFA, redirect ke
                             // halaman verifikasi kode 6 digit terlebih dahulu.
                             if (!empty($u['mfa_secret']) && $u['mfa_enabled'] == 1) {
@@ -170,6 +169,8 @@ if (isset($_POST['login']) && !$is_locked) {
                             }
 
                             // ─── LOGIN LENGKAP (tanpa MFA) ────────────────
+                            session_regenerate_id(true);
+                            $current_sid = session_id();
                             $_SESSION['user_id']  = $u['id'];
                             $_SESSION['username'] = $u['username'];
                             $_SESSION['role']     = $u['role'];
