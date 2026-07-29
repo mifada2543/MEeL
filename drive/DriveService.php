@@ -252,8 +252,20 @@ final class DriveStorage
         }
 
         // Ensure file is within user's private directory
-        return strpos($realPath, $realUserPath) === 0;
+        // Cegah bypass direktori sibling (misal "bob" bisa akses "bob2")
+        return $realPath === $realUserPath
+            || str_starts_with($realPath, $realUserPath . DIRECTORY_SEPARATOR);
     }
+
+    /**
+     * Manual test untuk fix path containment:
+     * 1. Buat folder: data_drive/private_admins/bob/ dan data_drive/private_admins/bob2/
+     * 2. Upload file test ke masing-masing folder
+     * 3. Login sebagai user "bob"
+     * 4. Pastikan user "bob" TIDAK bisa akses file apa pun di folder "bob2"
+     *    - Coba download: drive/download.php?type=dokumen&scope=private&filename=bob2_test.txt
+     *    - Harus mendapatkan error "Anda tidak memiliki akses ke file ini."
+     */
 
     private function buildFilePath(string $type, string $scope, string $filename, bool $forDelete = false): string
     {
