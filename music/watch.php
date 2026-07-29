@@ -112,7 +112,7 @@ session_write_close();
 
                 <div class="flex flex-col sm:flex-row gap-5 p-4 sm:p-6 border-b border-white/[.04]">
                     <div class="flex-shrink-0 flex items-center justify-center sm:justify-start">
-                        <div class="vinyl-spin vinyl-disc">
+                        <div class="vinyl-spin vinyl-disc" onclick="event.stopPropagation();(window.goBackToLibrary ? window.goBackToLibrary() : window.toggleMiniPlayer?.())" style="cursor:pointer" title="Mini Player (I)">
                             <img src="<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>" alt="<?= htmlspecialchars($v['title']) ?> cover" width="512" height="512" class="w-full h-full object-cover" fetchpriority="high" decoding="async">
                         </div>
                     </div>
@@ -600,15 +600,19 @@ session_write_close();
             if (options) options.classList.add('hidden');
         };
     </script>
+    <?php
+    // Cache-busting: pakai filemtime agar browser selalu dapet versi terbaru
+    $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
+    ?>
     <script src="../assets/js/plyr.min.js" defer></script>
     <script src="../assets/js/sweetalert2.all.min.js" defer></script>
-    <script src="../assets/js/music/state.js" defer></script>
-    <script src="../assets/js/music/utils.js" defer></script>
-    <script src="../assets/js/music/loop-ui.js" defer></script>
-    <script src="../assets/js/music/audio-state.js" defer></script>
-    <script src="../assets/js/music/equalizer.js" defer></script>
-    <script src="../assets/js/music/misc.js" defer></script>
-    <script src="../assets/js/music/player-core.js" defer></script>
+    <script src="../assets/js/music/state.js<?= $__v('assets/js/music/state.js') ?>" defer></script>
+    <script src="../assets/js/music/utils.js<?= $__v('assets/js/music/utils.js') ?>" defer></script>
+    <script src="../assets/js/music/loop-ui.js<?= $__v('assets/js/music/loop-ui.js') ?>" defer></script>
+    <script src="../assets/js/music/audio-state.js<?= $__v('assets/js/music/audio-state.js') ?>" defer></script>
+    <script src="../assets/js/music/equalizer.js<?= $__v('assets/js/music/equalizer.js') ?>" defer></script>
+    <script src="../assets/js/music/misc.js<?= $__v('assets/js/music/misc.js') ?>" defer></script>
+    <script src="../assets/js/music/player-core.js<?= $__v('assets/js/music/player-core.js') ?>" defer></script>
 </body>
 
 </html>

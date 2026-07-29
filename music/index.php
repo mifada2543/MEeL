@@ -742,6 +742,9 @@ if (isset($_GET['content_only'])) {
             // Simpan detik terakhir di index dulu
             saveIndexState();
 
+            // Tandai agar watch.php tidak menampilkan resume modal
+            sessionStorage.setItem('skip_resume_once', 'true');
+
             // Ambil data state terakhir untuk mendapatkan ID lagu atau URL-nya
             const savedState = sessionStorage.getItem('meel_audio_state');
             if (savedState) {

@@ -410,6 +410,7 @@ a.text-gray-600 {
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
 }
 .mp-art img {
   width: 100%;
@@ -428,10 +429,10 @@ a.text-gray-600 {
   opacity: 0;
   transition: opacity 0.2s;
 }
-.mp-track:hover .mp-art img {
+.mp-art:hover .mp-art img {
   filter: brightness(0.65);
 }
-.mp-track:hover .mp-art-overlay {
+.mp-art:hover .mp-art-overlay {
   opacity: 1;
 }
 .mp-meta {

@@ -842,6 +842,8 @@ if (isset($_GET['content_only'])) {
         // KEY FIX: expandPlayerFromMiniPlayer selalu menyertakan playlist_id dari state
         function expandPlayerFromMiniPlayer() {
             saveIndexState();
+            // Tandai agar watch.php tidak menampilkan resume modal
+            sessionStorage.setItem('skip_resume_once', 'true');
             const raw = sessionStorage.getItem('meel_audio_state');
             if (!raw) return;
             try {
