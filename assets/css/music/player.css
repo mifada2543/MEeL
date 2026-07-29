@@ -1,0 +1,55 @@
+/* ============================================================
+ * player.css — Vinyl disc, animasi spin, Plyr audio
+ * ============================================================ */
+
+.vinyl-disc {
+  aspect-ratio: 1/1;
+  contain: size;
+  width: clamp(120px, 35vw, 180px);
+  height: clamp(120px, 35vw, 180px);
+  border-radius: 50%;
+  border: 8px solid #000;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.7);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.vinyl-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vinyl-disc::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: #000;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.vinyl-spin {
+  animation: rotate 10s linear infinite;
+  animation-play-state: paused;
+}
+
+.playing .vinyl-spin {
+  animation-play-state: running;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

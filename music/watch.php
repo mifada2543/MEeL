@@ -38,7 +38,8 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
-    <link rel="stylesheet" href="../assets/css/music.css<?= $__v('assets/css/music.css') ?>">
+    <link rel="stylesheet" href="../assets/css/music/main.css<?= $__v('assets/css/music/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/music/watch/main.css<?= $__v('assets/css/music/watch/main.css') ?>">
     <script src="../assets/js/htmx.min.js" defer></script>
 </head>
 

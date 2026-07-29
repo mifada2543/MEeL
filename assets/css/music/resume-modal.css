@@ -1,0 +1,79 @@
+/* ============================================================
+ * resume-modal.css — Resume modal with container queries
+ * Tema: Oranye (Music)
+ * ============================================================ */
+
+#resume-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(8px);
+  container-type: inline-size;
+}
+
+#resume-modal:not(.hidden) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Default: medium player (360-600px) */
+#resume-modal > div {
+  max-width: min(320px, 68%);
+  padding: clamp(16px, 4cqw, 24px);
+}
+
+#resume-modal > div > div:nth-child(2) {
+  font-size: clamp(12px, 2.8cqw, 14px);
+}
+
+#resume-modal .text-\[10px\] {
+  font-size: clamp(9px, 2.2cqw, 10px) !important;
+}
+
+#resume-modal button {
+  font-size: clamp(10px, 2.4cqw, 12px);
+  padding-top: clamp(8px, 1.8cqw, 10px);
+  padding-bottom: clamp(8px, 1.8cqw, 10px);
+}
+
+/* Small player: <= 360px */
+@container (max-width: 360px) {
+  #resume-modal > div {
+    max-width: 88%;
+    padding: 12px 10px;
+    border-radius: 14px;
+  }
+  #resume-modal > div > div:nth-child(2) {
+    font-size: 11px !important;
+  }
+  #resume-modal .text-\[10px\] {
+    font-size: 8px !important;
+  }
+  #resume-modal button {
+    font-size: 9px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+}
+
+/* Large player: >= 600px */
+@container (min-width: 600px) {
+  #resume-modal > div {
+    max-width: 400px;
+    padding: 32px 36px;
+    border-radius: 24px;
+  }
+  #resume-modal > div > div:nth-child(2) {
+    font-size: 16px !important;
+  }
+  #resume-modal .text-\[10px\] {
+    font-size: 11px !important;
+  }
+  #resume-modal button {
+    font-size: 13px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+}

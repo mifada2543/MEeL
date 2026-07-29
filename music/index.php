@@ -91,53 +91,9 @@ if (isset($_GET['content_only'])) {
     <meta property="og:description" content="Jelajahi koleksi musik di MEeL Music Library. Streaming audio lossless dengan kualitas terbaik.">
     <title>MEeL Music | Library</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/music.css">
+    <link rel="stylesheet" href="../assets/css/music/main.css">
+    <link rel="stylesheet" href="../assets/css/music/index/main.css">
     <script src="../assets/js/htmx.min.js" defer></script>
-    <style>
-        .artist-dropdown-active .music-item {
-            pointer-events: none !important;
-        }
-
-        /* Smoothly blur and dim the main discovery content when the mobile dropdown is active */
-        main {
-            transition: filter 0.2s ease, opacity 0.2s ease;
-        }
-
-        .artist-dropdown-active main {
-            position: relative;
-            z-index: 10;
-            filter: blur(4px);
-            opacity: 0.45;
-        }
-
-        .artist-dropdown-active aside {
-            position: relative;
-            z-index: 50;
-        }
-
-        /* Pastikan area kosong di mini-player tidak memicu pointer tangan */
-        #mini-player-index {
-            cursor: default !important;
-        }
-
-        /* Cegah browser menggunakan tombol load-more sebagai scroll anchor */
-        #load-more-music {
-            overflow-anchor: none;
-        }
-
-        /* Berikan kursor pointer KHUSUS untuk thumbnail mini player */
-        #mini-player-index img,
-        .mp-thumbnail {
-            cursor: pointer !important;
-            transition: transform 0.2s ease;
-        }
-
-        /* Opsional: Beri efek sedikit membesar saat thumbnail di-hover agar user tahu itu bisa diklik */
-        #mini-player-index img:hover,
-        .mp-thumbnail:hover {
-            transform: scale(1.05);
-        }
-    </style>
 </head>
 
 <body class="text-gray-400 min-h-screen">

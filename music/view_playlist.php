@@ -323,7 +323,7 @@ if (isset($_GET['content_only'])) {
     <title><?= htmlspecialchars($playlist['name']) ?> — MEeL Playlist</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/music.css">
+    <link rel="stylesheet" href="../assets/css/music/main.css">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
     <script src="../assets/js/htmx.min.js"></script>
     <script src="../assets/js/sweetalert2.all.min.js"></script>
