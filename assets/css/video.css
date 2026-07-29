@@ -872,6 +872,7 @@ body.meel-fs-active .plyr {
 #autonext-overlay.active {
   opacity: 1;
   pointer-events: auto;
+  background: rgba(0, 0, 0, 0.45);
 }
 #autonext-overlay.active .autonext-card {
   transform: translateY(0) scale(1);

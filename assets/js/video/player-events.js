@@ -85,17 +85,37 @@ function setupMeelPlayerEvents() {
           a.replace(/"/g, "&quot;") +
           '</div></div></div><div class="autonext-actions"><button class="autonext-cancel">Batal</button></div></div>';
         r.appendChild(i);
+
+        /* ── Sembunyikan element end-screen Plyr (replay button & poster) ── */
+        const hidePlyrEndElements = () => {
+          const replayBtn = document.querySelector(".plyr__control--overlaid"),
+            poster = document.querySelector(".plyr__poster");
+          replayBtn && (replayBtn.style.display = "none");
+          poster && (poster.style.display = "none");
+        };
+        const showPlyrEndElements = () => {
+          const replayBtn = document.querySelector(".plyr__control--overlaid"),
+            poster = document.querySelector(".plyr__poster");
+          replayBtn && (replayBtn.style.display = "");
+          poster && (poster.style.display = "");
+        };
+        hidePlyrEndElements();
+
         requestAnimationFrame(() => i.classList.add("active"));
 
         let s = AUTONEXT_COUNTDOWN;
         const c = i.querySelector(".countdown-num"),
           d = i.querySelector(".autonext-cancel"),
+          cleanup = () => {
+            showPlyrEndElements();
+            i.classList.remove("active");
+            setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
+          },
           p = setInterval(() => {
             try {
               if ((s--, c && (c.textContent = Math.max(0, s)), s <= 0)) {
                 clearInterval(p);
-                i.classList.remove("active");
-                setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
+                cleanup();
                 t(!0);
               }
             } catch (e) {
@@ -105,8 +125,7 @@ function setupMeelPlayerEvents() {
           }, 1e3);
         d.addEventListener("click", () => {
           clearInterval(p);
-          i.classList.remove("active");
-          setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
+          cleanup();
           t(!1);
         });
       } catch (err) {
