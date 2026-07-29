@@ -1006,6 +1006,12 @@ body.meel-fs-active .plyr {
   background: rgba(220, 38, 38, 0.18);
 }
 
+/* ── Sembunyikan Plyr poster & replay button selama overlay auto-next aktif ── */
+body.meel-autonext-active .plyr__poster,
+body.meel-autonext-active .plyr__control--overlaid {
+  display: none !important;
+}
+
 /* ── Small player (≤360px container width, e.g. mini-player) ── */
 @container (max-width: 360px) {
   #autonext-overlay {

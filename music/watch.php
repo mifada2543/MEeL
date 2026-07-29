@@ -20,6 +20,9 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock agar range request streaming tidak terblokir
 session_write_close();
+
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru
+$__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -34,8 +37,8 @@ session_write_close();
     <?php include '../partials/link.php'; ?>
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
-    <link rel="stylesheet" href="../assets/css/plyr.css">
-    <link rel="stylesheet" href="../assets/css/music.css">
+    <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
+    <link rel="stylesheet" href="../assets/css/music.css<?= $__v('assets/css/music.css') ?>">
     <script src="../assets/js/htmx.min.js" defer></script>
 </head>
 
@@ -600,10 +603,6 @@ session_write_close();
             if (options) options.classList.add('hidden');
         };
     </script>
-    <?php
-    // Cache-busting: pakai filemtime agar browser selalu dapet versi terbaru
-    $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
-    ?>
     <script src="../assets/js/plyr.min.js" defer></script>
     <script src="../assets/js/sweetalert2.all.min.js" defer></script>
     <script src="../assets/js/music/state.js<?= $__v('assets/js/music/state.js') ?>" defer></script>

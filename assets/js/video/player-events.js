@@ -86,28 +86,20 @@ function setupMeelPlayerEvents() {
           '</div></div></div><div class="autonext-actions"><button class="autonext-cancel">Batal</button></div></div>';
         r.appendChild(i);
 
-        /* ── Sembunyikan element end-screen Plyr (replay button & poster) ── */
-        const hidePlyrEndElements = () => {
-          const replayBtn = document.querySelector(".plyr__control--overlaid"),
-            poster = document.querySelector(".plyr__poster");
-          replayBtn && (replayBtn.style.display = "none");
-          poster && (poster.style.display = "none");
-        };
-        const showPlyrEndElements = () => {
-          const replayBtn = document.querySelector(".plyr__control--overlaid"),
-            poster = document.querySelector(".plyr__poster");
-          replayBtn && (replayBtn.style.display = "");
-          poster && (poster.style.display = "");
-        };
-        hidePlyrEndElements();
+        /* ── Sembunyikan element end-screen Plyr (replay button & poster)
+           via CSS class di body agar !important override Plyr ── */
+        document.body.classList.add("meel-autonext-active");
 
-        requestAnimationFrame(() => i.classList.add("active"));
+        requestAnimationFrame(() => {
+          /* Pastikan Plyr selesai memproses ended sebelum menampilkan overlay */
+          i.classList.add("active");
+        });
 
         let s = AUTONEXT_COUNTDOWN;
         const c = i.querySelector(".countdown-num"),
           d = i.querySelector(".autonext-cancel"),
           cleanup = () => {
-            showPlyrEndElements();
+            document.body.classList.remove("meel-autonext-active");
             i.classList.remove("active");
             setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
           },
@@ -130,6 +122,7 @@ function setupMeelPlayerEvents() {
         });
       } catch (err) {
         console.error("[MEeL] showAutoNextOverlay error:", err);
+        document.body.classList.remove("meel-autonext-active");
         t(!1);
       }
     });
@@ -899,5 +892,24 @@ function setupMeelPlayerEvents() {
       player.on("ended", () => s(!0)),
       videoElement.paused || videoElement.ended || i());
   }
+  /* ── Click rekomendasi → auto-next OFF ──────────────────
+   * Saat user klik manual salah satu video di rekomendasi,
+   * auto-next otomatis dimatikan. Ini agar user tidak
+   * kaget kalau setelah video selesai tiba-tiba loncat ke
+   * video lain tanpa sepengetahuan mereka.
+   * Gunakan flag agar tidak registrasi ulang jika
+   * setupMeelPlayerEvents() dipanggil >1x (recovery).
+   * ─────────────────────────────────────────────────────── */
+  if (!window._meelClickRekomGuard) {
+    window._meelClickRekomGuard = !0;
+    document.addEventListener("click", function(e) {
+      const link = e.target.closest(".rekomendasi-item");
+      if (!link || !link.href) return;
+      if (link.href === window.location.href) return;
+      autoNextEnabled = false;
+      localStorage.setItem("meel_autonext_enabled", "false");
+    });
+  }
+
   setupMobileGestures();
 }

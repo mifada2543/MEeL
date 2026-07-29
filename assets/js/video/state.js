@@ -52,23 +52,16 @@ let glowTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowNavbar = null;
 
 /* ── Auto Next ──────────────────────────────────────────────
- * Default OFF. Setiap navigasi manual ke halaman watch akan
- * mereset ke OFF. Hanya seamless auto-next transition yang
- * mempertahankan state ON.
+ * Default OFF. State persist di localStorage agar tidak hilang
+ * saat navigasi normal (Ctrl+R, pindah halaman, dll).
+ * Hanya transisi auto-next yang mempertahankan state ON.
  * Deteksi menggunakan sessionStorage flag yang diset oleh
  * player-events.js sebelum memulai transisi auto-next.
  * ─────────────────────────────────────────────────────────── */
 const _meelAutoNavFlag = sessionStorage.getItem("meel_autonav") === "1";
 sessionStorage.removeItem("meel_autonav");
 
-let autoNextEnabled = _meelAutoNavFlag
-  ? localStorage.getItem("meel_autonext_enabled") === "true"
-  : false;
-
-/* Jika halaman ini dimuat bukan dari auto-next, reset ke OFF */
-if (!_meelAutoNavFlag) {
-  localStorage.setItem("meel_autonext_enabled", "false");
-}
+let autoNextEnabled = localStorage.getItem("meel_autonext_enabled") === "true";
 
 window.lucide && lucide.createIcons();
 const plyrOptions = {

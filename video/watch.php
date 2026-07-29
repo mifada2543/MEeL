@@ -19,6 +19,9 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock sesegera mungkin
 session_write_close();
+
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru
+$__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -31,8 +34,8 @@ session_write_close();
     <meta property="og:description" content="Tonton <?= htmlspecialchars($v['title']) ?> di MEeL Video - Streaming HLS dengan kualitas terbaik.">
     <title><?= htmlspecialchars($v['title']) ?> — MEeL Video</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/plyr.css">
-    <link rel="stylesheet" href="../assets/css/video.css">
+    <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
+    <link rel="stylesheet" href="../assets/css/video.css<?= $__v('assets/css/video.css') ?>">
     <script src="../assets/js/htmx.min.js"></script>
     <script src="../assets/js/hls.js"></script>
 </head>
@@ -329,10 +332,6 @@ session_write_close();
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;
     </script>
-    <?php
-    // Cache-busting: pakai filemtime agar browser selalu dapet versi terbaru
-    $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
-    ?>
     <script src="../assets/js/video/state.js<?= $__v('assets/js/video/state.js') ?>"></script>
     <script src="../assets/js/video/recovery.js<?= $__v('assets/js/video/recovery.js') ?>"></script>
     <script src="../assets/js/video/player-init.js<?= $__v('assets/js/video/player-init.js') ?>"></script>
