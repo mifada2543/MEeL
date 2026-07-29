@@ -347,7 +347,11 @@
         G,
         R = !1;
       // Bersihkan flag sisa dari navigasi index agar tidak stale
+      const _skipFromIndex = sessionStorage.getItem("skip_resume_once") === "true";
       sessionStorage.removeItem("skip_resume_once");
+      if (_skipFromIndex) {
+        skipResumeModalOnce = true;
+      }
       function B() {
         if (skipResumeModalOnce) return void (skipResumeModalOnce = !1);
         const e = localStorage.getItem(storageKeyMusic);
