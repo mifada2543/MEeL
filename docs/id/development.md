@@ -432,6 +432,150 @@ if (!$stmt) error_log("SQL Error: " . $conn->error);
 
 ---
 
+## MFA / TOTP Development
+
+### TOTP Implementation (Time-based One-Time Password)
+
+MEeL mengimplementasikan TOTP sesuai [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238):
+
+| Parameter | Nilai |
+|-----------|-------|
+| Algoritma | HMAC-SHA1 |
+| Digit | 6 digit |
+| Time Step | 30 detik |
+| Window | ±1 (90 detik toleransi) |
+| Encoding | Base32 |
+
+### Helper Functions (di `modules/core/helpers.php`)
+
+```php
+// ─── GENERATE SECRET ───────────────────────────────────────
+function generate_mfa_secret(): string {
+    $random = random_bytes(20);  // 160-bit
+    // Base32 encode (A-Z, 2-7)
+    $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $secret = '';
+    $bits = 0; $buffer = 0;
+    foreach (str_split($random) as $byte) {
+        $buffer = ($buffer << 8) | ord($byte);
+        $bits += 8;
+        while ($bits >= 5) {
+            $bits -= 5;
+            $secret .= $base32[($buffer >> $bits) & 31];
+        }
+    }
+    return $secret;
+}
+
+// ─── GENERATE TOTP ─────────────────────────────────────────
+function generate_totp(string $secret): string {
+    $decoded = base32_decode($secret);  // Base32 → raw bytes
+    $counter = pack('N*', 0) . pack('N*', intdiv(time(), 30));
+    $hash = hash_hmac('sha1', $counter, $decoded, true);
+    $offset = ord($hash[19]) & 0xf;
+    $code = (
+        ((ord($hash[$offset]) & 0x7f) << 24) |
+        ((ord($hash[$offset+1]) & 0xff) << 16) |
+        ((ord($hash[$offset+2]) & 0xff) << 8) |
+        (ord($hash[$offset+3]) & 0xff)
+    ) % 1000000;
+    return str_pad((string)$code, 6, '0', STR_PAD_LEFT);
+}
+
+// ─── VERIFY TOTP (dengan window ±1) ────────────────────────
+function verify_totp(string $secret, string $code): bool {
+    for ($i = -1; $i <= 1; $i++) {
+        // Generate TOTP dengan offset waktu $i step
+        $expected = generate_totp_at($secret, time() + ($i * 30));
+        if (hash_equals($expected, $code)) return true;
+    }
+    return false;
+}
+```
+
+### Backup Codes System
+
+```php
+// ─── GENERATE 8 BACKUP CODES ───────────────────────────────
+function generate_backup_codes(): array {
+    $plain = [];
+    $hashed = [];
+    for ($i = 0; $i < 8; $i++) {
+        $code = bin2hex(random_bytes(4));  // 8 karakter hex
+        $plain[] = $code;
+        $hashed[] = hash('sha256', $code);
+    }
+    return ['plain' => $plain, 'hashed' => $hashed];
+}
+
+// ─── VERIFY BACKUP CODE (single-use) ───────────────────────
+function verify_backup_code(string $hashedJson, string $code): array {
+    $codes = json_decode($hashedJson, true) ?? [];
+    foreach ($codes as $i => $hash) {
+        if (hash_equals($hash, hash('sha256', $code))) {
+            array_splice($codes, $i, 1);  // Hapus yang sudah dipakai
+            return ['valid' => true, 'remaining' => $codes];
+        }
+    }
+    return ['valid' => false, 'remaining' => $codes];
+}
+```
+
+### Database Schema
+
+3 kolom baru di tabel `users` (Migration v9):
+
+```sql
+ALTER TABLE users
+    ADD COLUMN mfa_secret      VARCHAR(64)  DEFAULT NULL AFTER last_session_id,
+    ADD COLUMN mfa_backup_codes TEXT        DEFAULT NULL AFTER mfa_secret,
+    ADD COLUMN mfa_enabled     TINYINT(1)   DEFAULT 0     AFTER mfa_backup_codes;
+```
+
+### MFA Session Flow
+
+```
+1. Login password benar → Cek mfa_enabled == 1
+2. Ya → Simpan $_SESSION['mfa_temp_uid'] = user_id
+          Simpan $_SESSION['mfa_temp_username']
+          Simpan $_SESSION['mfa_temp_role']
+3. Redirect ke mfa_verify.php
+4. User input kode 6-digit
+5. Valid → Set $_SESSION['user_id'], 'username', 'role']
+          Set $_SESSION['mfa_verified'] = true
+          Hapus mfa_temp_* dari session
+6. Invalid → Increment $_SESSION['mfa_fail_count']
+             Jika >= 10 → $_SESSION['mfa_locked_until'] = time() + 300
+```
+
+### Rate Limiting
+
+| Endpoint | Limit | Mekanisme |
+|----------|:-----:|-----------|
+| MFA Verify | 10 gagal → lock 5 menit | Session-based `mfa_fail_count` + `mfa_locked_until` |
+| Backup Password | 5 gagal → lock 5 menit | Session-based `backup_pwd_attempts` + `backup_pwd_lock_until` |
+
+### Security Considerations
+
+1. **Secret TOTP** — Disimpan plaintext di DB (TOTP secret harus bisa dibaca)
+2. **Backup Codes** — Disimpan sebagai SHA256 hash (one-way, tidak bisa dibaca balik)
+3. **Session Temp** — `mfa_temp_uid` hanya ada di session, tidak di cookie
+4. **Brute Force** — 10 percobaan MFA gagal → lock 5 menit
+5. **QR Code** — 100% offline (library qrcode.min.js lokal, tidak ada data dikirim ke server eksternal)
+6. **Admin Reset** — Admin tidak bisa reset MFA admin lain
+7. **Activity Log** — Semua event MFA (setup, verify, gagal, reset) dicatat di `activity_log`
+
+### Testing MFA Locally
+
+1. **Aktifkan MFA:** Buka `profile/index.php` → klik toggle MFA → ikuti setup
+2. **Dapatkan TOTP:** Buka `auth/mfa_setup.php`, scan QR dengan Google Authenticator
+3. **Simulate TOTP:** Gunakan `generate_totp($secret)` via script test untuk verifikasi
+4. **Test rate limit:** Input kode salah 10× → cek lockout
+5. **Test backup code:** Coba salah satu backup code untuk login
+6. **Test admin reset:** Login sebagai admin → `admin/mfa_reset.php` → reset user
+
+---
+
 ## Pull Request Guide
 
 ### 📜 Lisensi & Kontribusi
@@ -581,7 +725,19 @@ if (!headers_sent()) {
 | `modules/core/bootstrap.php` | Bootstrap & environment |
 | `modules/exceptions/*.php` | Exception classes |
 | `modules/transcoder/FfmpegUtils.php` | FFmpeg utilities trait |
+| `auth/mfa_setup.php` | MFA Setup (multi-step: secret → QR → verify → backup) |
+| `auth/mfa_verify.php` | MFA TOTP verification page (rate limited) |
+| `controllers/system/mfa.php` | MFA backend controller (generate/download backup codes) |
+| `admin/mfa_reset.php` | Admin MFA reset panel |
 | `partials/ui.php` | Overlay UI system (JS heavy) |
+| `assets/js/video/state.js` | Video player state management |
+| `assets/js/video/player-init.js` | Plyr + HLS.js initialization |
+| `assets/js/video/player-events.js` | Event orchestration (auto-next, glow, resume) |
+| `assets/js/video/mini-player.js` | Mini-player floating mode |
+| `assets/js/video/recovery.js` | Player auto-recovery system |
+| `assets/js/video/gestures.js` | Mobile touch gestures |
+| `assets/js/music/player-core.js` | Music player core (visualizer, EQ, mini-player) |
+| `assets/js/music/state.js` | Music player state & equalizer presets |
 
 ### Proses yang Perlu Dipahami
 
@@ -589,6 +745,7 @@ if (!headers_sent()) {
 2. **Download Pipeline** — URL → yt-dlp → FFmpeg → HDD → DB
 3. **Auth Flow** — Login → Session → RBAC → Activity Log
 4. **HTMX Flow** — Event → Request → Server → Response → DOM swap
+5. **MFA Flow** — Login password valid → Cek mfa_enabled → Redirect mfa_verify.php → Verify TOTP → Set session penuh
 
 ---
 

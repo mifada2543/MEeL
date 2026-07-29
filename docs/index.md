@@ -47,7 +47,7 @@ Choose your language / Pilih bahasa:
 | Resource | Link |
 |----------|------|
 | Project README (ID) | [🇮🇩](../README.md) |
-| Project README (EN) | [🇬🇧](../README.en.md) |
+| Project README (EN) | [🇬🇧](../README-en.md) |
 | GitHub Repository | [github.com/mifada2543/MEeL](https://github.com/mifada2543/MEeL) |
 | Bug Report | [📝](../.github/ISSUE_TEMPLATE/bug_report.md) |
 | License | [📄](../LICENSE) |

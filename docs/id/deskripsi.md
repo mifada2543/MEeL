@@ -1,7 +1,7 @@
 # 📋 Analisis & Deskripsi Proyek MEeL-HUB
 
-**Versi Analisis:** 2.1  
-**Tanggal:** 25 Juli 2026  
+**Versi Analisis:** 2.2  
+**Tanggal:** 29 Juli 2026  
 **Analis:** Buffy (Freebuff AI Agent)
 
 ---
@@ -325,6 +325,38 @@ Tidak ada masalah medium yang tersisa.
 | 69 | `database/schema.sql` | Sync default values: `is_active=0`, `ip_address='Unknown'`, `last_page='Index'` | 🗄 Database |
 | 70 | `database/schema.sql` | `activity_log.ip_address` → `DEFAULT 'Unknown'` | 🗄 Database |
 | 71 | `database/migrate.php` | **Migration v8** — alter role, hapus duplicate UNIQUE KEY, sync defaults | 🗄 Database |
+
+### Round 8: Player Enhancement & UX Fixes
+
+| # | File | Perubahan | Kategori |
+|---|------|-----------|----------|
+| 72 | `assets/js/video/player-events.js` | **Mutual exclusion:** Auto Next ON → Loop OFF; Loop ON → Auto Next OFF | 🐛 Bug |
+| 73 | `assets/js/video/player-events.js` | Sembunyikan tombol replay + poster Plyr saat auto-next overlay aktif | 🐛 Bug |
+| 74 | `assets/css/video.css` | Tambah backdrop gelap `rgba(0,0,0,0.45)` di auto-next overlay | 🐛 Bug |
+| 75 | `music/watch.php` | Klik vinyl disc → toggle mini-player (sama seperti keyboard `I`) | ✨ New |
+| 76 | `assets/css/music.css` | Hover overlay hanya muncul di area `mp-art`, bukan seluruh `mp-track` | 🐛 Bug |
+| 77 | `music/index.php` | Skip resume modal saat navigasi dari index mini-player ke watch | ✨ New |
+| 78 | `assets/js/music/player-core.js` | Baca flag `skip_resume_once` dari sessionStorage untuk skip modal | ✨ New |
+| 79 | `music/view_playlist.php` | Skip resume modal dari playlist view (sama seperti index) | ✨ New |
+| 80 | `music/watch.php` | **Cache-busting** — tambah `filemtime()` ke semua script music JS | 🐛 Bug |
+
+### Round 9: MFA Support & Chess
+
+| # | File | Perubahan | Kategori |
+|---|------|-----------|----------|
+| 81 | `auth/mfa_setup.php` | **Baru!** Halaman setup MFA (generate secret, verifikasi TOTP, backup codes) | ✨ New |
+| 82 | `auth/mfa_verify.php` | **Baru!** Halaman verifikasi TOTP setelah login (redirect dengan session temp) | ✨ New |
+| 83 | `admin/mfa_reset.php` | **Baru!** Halaman admin untuk reset MFA user yang kehilangan akses Authenticator | ✨ New |
+| 84 | `controllers/system/mfa.php` | **Baru!** MFA backend controller (TOTP verify, regenerate backup codes, email backup) | ✨ New |
+| 85 | `auth/login.php` | Integrasi MFA — redirect ke `mfa_verify.php` jika user punya MFA aktif | ✨ New |
+| 86 | `auth/auth.php` | Dokumentasi alur MFA (temp_uid, session flow) | 📖 Docs |
+| 87 | `controllers/admin/admin_actions.php` | Handler reset MFA via admin panel | ✨ New |
+| 88 | `admin/index.php` | Tambah link ke halaman MFA Management di admin panel | 📊 UI |
+| 89 | `profile/index.php` | Tampilkan status MFA (toggle switch visual) + link ke setup | 📊 UI |
+| 90 | `database/schema.sql` | Tambah kolom MFA (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`) | 🗄 Database |
+| 91 | `database/migrate.php` | **Migration v9** — alter tabel users tambah kolom MFA | 🗄 Database |
+| 92 | `modules/core/helpers.php` | **Tambah helper MFA/TOTP:** `generate_mfa_secret()`, `generate_totp()`, `verify_totp()`, `verify_backup_code()`, `generate_backup_codes()` | ✨ New |
+| 93 | `arcade/chess/` | **Baru!** Multiplayer catur real-time via LAN — create/join room, turn-based, legal move validation | ✨ New |
 
 ---
 

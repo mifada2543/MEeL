@@ -43,6 +43,11 @@
 | **Transisi Mulus** | Video berikutnya dimuat SPA-like tanpa reload, pertahankan fullscreen |
 | **Resume Otomatis** | Posisi terakhir disimpan via `localStorage` |
 | **Preview Thumbnail** | VTT sprite thumbnail pada seekbar |
+| **Auto-Next dengan Countdown** | Overlay YouTube-style countdown 5s + backdrop gelap + tombol batal |
+| **Mutual Exclusion Loop/AutoNext** | Auto Next ON → Loop OFF; Loop ON → Auto Next OFF |
+| **Ambient Glow** | Real-time canvas sampling → navbar glow + fullscreen bloom |
+| **Mini-Player Mode** | Picture-in-picture kustom, navigasi index tanpa reload |
+| **Seamless Recovery** | Stuck detector, waiting timeout, auto-reconnect HLS |
 
 ### 🎵 Music (Audio Platform)
 

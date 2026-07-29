@@ -222,13 +222,50 @@ class MusicWatchController { public function getViewData(): array; public functi
 
 | Versi | Perubahan |
 |-------|-----------|
-| **v1** | FULLTEXT index |
-| **v2** | Performance index |
+| **v1** | FULLTEXT index (video, music, books) |
+| **v2** | Performance index (upload_date) |
 | **v3** | Sinkronisasi struktural |
 | **v4** | Foreign key constraints |
 | **v5** | title VARCHAR → TEXT |
 | **v6** | activity_log table |
-| **v7** | UNIQUE INDEX on username |
+| **v7** | UNIQUE INDEX (username) + schema sync |
+| **v8** | Role column `varchar(20)`, hapus duplicate UNIQUE KEY, sync defaults |
+| **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
+
+### 20. MFA System
+
+Multi-Factor Authentication (TOTP) melindungi akun user:
+
+| File | Fungsi |
+|------|--------|
+| `auth/mfa_setup.php` | Setup MFA — generate secret, scan QR/barcode, verifikasi TOTP, backup codes |
+| `auth/mfa_verify.php` | Verifikasi TOTP setelah login — rate limit 10 percobaan gagal, lock 5 menit |
+| `admin/mfa_reset.php` | Admin reset MFA user yang kehilangan akses Authenticator |
+| `controllers/system/mfa.php` | Backend controller — AJAX verify, regenerate backup codes, email backup |
+
+**Flow:** `login.php` → cek `mfa_enabled` → redirect `mfa_verify.php` → valid TOTP → set session penuh
+
+**Helper functions** (di `modules/core/helpers.php`):
+```php
+function generate_mfa_secret(): string;      // Base32 random secret
+function generate_totp(string $secret): string;// TOTP kode 6 digit
+function verify_totp(string $secret, string $code): bool; // Verifikasi dengan window ±1
+function generate_backup_codes(): array;      // 8 backup codes (SHA256 hashed)
+function verify_backup_code(string $stored, string $code): array; // Verify + consume code
+```
+
+### 21. Chess Multiplayer (`arcade/chess/`)
+
+Multiplayer catur real-time via LAN:
+
+| File | Fungsi |
+|------|--------|
+| `index.php` | Board catur dengan drag-and-drop, timer, chat, sound effects |
+| `controller/create_room.php` | Buat ruang baru, return room code |
+| `controller/join_room.php` | Gabung ruang dengan kode |
+| `controller/get_move.php` | Ambil langkah lawan (polling) |
+| `controller/save_move.php` | Simpan langkah dengan validasi legal move |
+| `controller/check_room_status.php` | Cek status ruang (waiting/playing/ended) |
 
 ### Admin Activity Log Viewer
 
@@ -309,9 +346,33 @@ Validasi username & password
   ↓
 Gagal 5x? → Lock 5 menit
   ↓ Berhasil
-Set session variables
+Cek MFA (mfa_enabled)
+  ↓
+Aktif? → Simpan mfa_temp_uid → Redirect ke mfa_verify.php
+  ↓ Tidak
+Set session variables (user_id, username, role)
   ↓
 Update last_session_id
+  ↓
+Redirect ke index.php
+```
+
+### MFA Verification Flow
+
+```
+POST mfa_verify.php
+  ↓
+Rate limit: max 10 gagal, lock 5 menit
+  ↓
+Verifikasi TOTP 6 digit
+  ↓
+Gagal? → Increment fail count
+  ↓ Valid
+Set session lengkap (user_id, username, role)
+  ↓
+Set mfa_verified = true
+  ↓
+Hapus mfa_temp_uid dari session
   ↓
 Redirect ke index.php
 ```

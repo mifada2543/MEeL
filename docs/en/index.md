@@ -39,6 +39,11 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v8 (idempotent) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
 | **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
+| **MFA System** | `controllers/system/mfa.php` | MFA backend controller (TOTP verify, backup codes, email) |
+| **MFA Setup** | `auth/mfa_setup.php` | MFA setup (generate secret, scan QR, verify TOTP, backup codes) |
+| **MFA Verify** | `auth/mfa_verify.php` | TOTP verification page after login |
+| **MFA Reset (Admin)** | `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
+| **Chess Multiplayer** | `arcade/chess/` | Real-time LAN chess — create/join room, turn-based, legal move validation |
 | **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
 | **Admin Activity Log** | `admin/activity_log.php` | Audit trail viewer with filter, pagination, cleanup |
 
@@ -63,6 +68,11 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` now return pagination metadata (`total_pages`, `from`, `to`) — UI displays page info
 - **Admin Dashboard Charts:** Chart.js 7-Day Activity Chart — views, uploads, active users in the last 7 days
+- **Player Enhancement:** Auto-next overlay with dark backdrop + hide Plyr replay button + mutual exclusion Auto-Next ↔ Loop
+- **MFA Support:** Multi-Factor Authentication (TOTP) — setup, verify, backup codes, admin reset, brute-force protection (10 attempts → 5 min lockout)
+- **UX Improvement:** Click vinyl disc → toggle mini-player; Hover overlay only on music thumbnail area; Skip resume modal when navigating from index mini-player
+- **Cache Busting:** Music watch.php JS scripts now use `filemtime()` — no more hard-refresh needed
+- **Arcade Chess:** Real-time LAN multiplayer chess — create/join room, turn-based, legal move validation
 
 ## 📖 About the Project
 

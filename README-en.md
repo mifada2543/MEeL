@@ -43,6 +43,11 @@
 | **Smooth Transitions** | Next video loads SPA-like without page reload, preserves fullscreen |
 | **Auto Resume** | Last position saved via `localStorage` |
 | **Thumbnail Preview** | VTT sprite thumbnail on seekbar |
+| **Auto-Next with Countdown** | YouTube-style 5s countdown overlay + dark backdrop + cancel button |
+| **Mutual Exclusion Loop/AutoNext** | Auto Next ON → Loop OFF; Loop ON → Auto Next OFF |
+| **Ambient Glow** | Real-time canvas sampling → navbar glow + fullscreen bloom |
+| **Mini-Player Mode** | Custom picture-in-picture, index navigation without reload |
+| **Seamless Recovery** | Stuck detector, waiting timeout, auto-reconnect HLS |
 
 ### 🎵 Music (Audio Platform)
 

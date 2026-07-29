@@ -13,8 +13,11 @@ Documentation about authentication, authorization, and protection systems in MEe
 - [IP Banning & Firewall](#ip-banning--firewall)
 - [Activity Logging](#activity-logging)
 - [API Rate Limiting](#api-rate-limiting)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [File Upload Security](#file-upload-security)
 - [Apache .htaccess Protection](#apache-htaccess-protection)
+- [Exception Handling](#exception-handling)
+- [Disk Space Validation](#disk-space-validation)
 - [Input Validation](#input-validation)
 
 ---
@@ -57,7 +60,14 @@ Documentation about authentication, authorization, and protection systems in MEe
 └──────────────────────┬──────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────┐
-│              6. Prepared Statements                     │
+│              6. Multi-Factor Authentication (MFA)       │
+│  • TOTP (Time-based One-Time Password) via Authenticator │
+│  • Backup codes for recovery                            │
+│  • Brute-force protection (10 attempts → 5 min lock)    │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────┐
+│              7. Prepared Statements                     │
 │  • All database queries use mysqli prepared statements  │
 │  • No raw SQL concatenation with user input             │
 └─────────────────────────────────────────────────────────┘
@@ -269,6 +279,110 @@ Expired files (>1 hour) are automatically cleaned by `GarbageCollector::run()` c
 
 ---
 
+## Multi-Factor Authentication (MFA)
+
+### MFA Architecture
+
+```
+Login Flow:
+  POST login → password correct
+    ↓
+  Check users.mfa_enabled == 1?
+    ↓ Yes                         ↓ No
+  Save mfa_temp_uid to session    Set session directly
+    ↓                              ↓
+  Redirect to mfa_verify.php     Redirect to index
+```
+
+### TOTP Implementation
+
+MEeL uses **TOTP (Time-based One-Time Password)** with algorithm:
+- **HMAC-SHA1** — standard TOTP
+- **6 digits** — verification code
+- **30 seconds** — time step
+- **Window ±1** — 90 seconds tolerance
+
+### Secret Generation
+
+```php
+// modules/core/helpers.php
+function generate_mfa_secret(): string {
+    $random = random_bytes(20);  // 160-bit random
+    $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $secret = '';
+    foreach (str_split($random) as $byte) {
+        $secret .= $base32[ord($byte) & 31];
+        // XOR carry for 5-bit encoding
+    }
+    return $secret;
+}
+```
+
+Secret stored in `mfa_secret` column (VARCHAR(64)) in `users` table. TOTP secrets must be readable for verification. If database leaks, attacker still needs access to Google Authenticator or backup codes.
+
+### Backup Codes
+
+- **8 backup codes** — each 8 alphanumeric characters
+- **Stored as SHA256 hash** — one-way, cannot be reversed
+- **Single-use** — hash removed from array after use
+
+```php
+function generate_backup_codes(): array {
+    $codes = [];
+    $hashes = [];
+    for ($i = 0; $i < 8; $i++) {
+        $plain = bin2hex(random_bytes(4)); // 8 hex characters
+        $codes[] = $plain;
+        $hashes[] = hash('sha256', $plain);
+    }
+    return ['plain' => $codes, 'hashed' => $hashes];
+}
+
+function verify_backup_code(string $hashedCodes, string $code): array {
+    $codes = json_decode($hashedCodes, true) ?? [];
+    foreach ($codes as $i => $hash) {
+        if (hash_equals($hash, hash('sha256', $code))) {
+            array_splice($codes, $i, 1); // Remove used code
+            return ['valid' => true, 'remaining' => $codes];
+        }
+    }
+    return ['valid' => false, 'remaining' => $codes];
+}
+```
+
+### Brute-Force Protection
+
+```php
+// Max 10 failed MFA attempts, lock 5 minutes
+$max_mfa_attempts = 10;
+$mfa_lockout_time = 300; // 5 minutes
+
+if (isset($_SESSION['mfa_locked_until'])) {
+    if (time() >= $_SESSION['mfa_locked_until']) {
+        unset($_SESSION['mfa_locked_until'], $_SESSION['mfa_fail_count']);
+    } else {
+        $mfa_locked = true;
+        $mfa_remaining = $_SESSION['mfa_locked_until'] - time();
+    }
+}
+```
+
+### Admin Reset MFA
+
+Admins can reset a user's MFA from `admin/mfa_reset.php`:
+- **Cannot reset another admin** — only the admin themselves can disable their own MFA
+- **Action logged** — `log_activity($conn, $admin_id, 'reset_mfa', 'user', $target_id)`
+- **User needs to re-setup** — MFA reset to default (disabled)
+
+### MFA in Profile
+
+Page `profile/index.php` displays MFA status with visual toggle switch:
+- Green "Active" → link to `auth/mfa_setup.php` for management/disable
+- Gray "Inactive" → link to `auth/mfa_setup.php` for setup
+- If active, backup codes also displayed in profile
+
+---
+
 ## File Upload Security
 
 ### Extension Validation
@@ -311,6 +425,57 @@ if ($detectedType === 'audio') { /* MP3: 0xFFFB, FLAC: 0x664C6143 */ }
 - `books/upload/` — Book files
 - `music/upload/` — Music files
 - `video/upload/` — Video files
+
+---
+
+## Exception Handling
+
+### Custom Exception Classes
+
+Since PHP 8+, MEeL uses 3 custom exceptions for specific error handling:
+
+```php
+// ProcessException — External process failure (FFmpeg, yt-dlp)
+// Use for: I/O errors, exec() failures, environment issues
+catch (RuntimeException $e) { /* disk space */ }
+catch (ProcessException $e) { /* ffmpeg failed */ }
+catch (TranscodeException $e) { /* HLS failed */ }
+catch (DownloadException $e) { /* yt-dlp failed */ }
+```
+
+| Exception | Extends | Used For |
+|-----------|---------|-----------------|
+| `ProcessException` | `\RuntimeException` | External process failure: FFmpeg, yt-dlp, exec() non-zero |
+| `DownloadException` | `\RuntimeException` | URL download failure: metadata parsing, connection |
+| `TranscodeException` | `\RuntimeException` | Transcoding failure: HLS segments, codec, output missing |
+
+### Best Practice
+
+```php
+try {
+    $meta = $this->fetchMetadata($url);
+} catch (ProcessException $e) {
+    // Queue release + specific error
+    $this->releaseQueue($queue_id, 'failed');
+    throw $e;
+}
+```
+
+---
+
+## Disk Space Validation
+
+Before download/transcoding operations, disk space validation:
+
+```php
+function check_disk_space(int $required_bytes, string $path): array {
+    // Check free space, return ["ok" => bool, "free" => bytes, "required" => bytes]
+}
+
+function require_disk_space(int $required_bytes, string $path, string $label): void {
+    // Throw RuntimeException if disk space insufficient
+}
+```
 
 ---
 

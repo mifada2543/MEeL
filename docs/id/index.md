@@ -39,6 +39,11 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 | **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v8 (idempotent) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
 | **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
+| **MFA System** | `controllers/system/mfa.php` | MFA backend controller (TOTP verify, backup codes, email) |
+| **MFA Setup** | `auth/mfa_setup.php` | Setup MFA (generate secret, verify TOTP, backup codes) |
+| **MFA Verify** | `auth/mfa_verify.php` | Halaman verifikasi TOTP setelah login |
+| **MFA Reset (Admin)** | `admin/mfa_reset.php` | Admin reset MFA user jika kehilangan akses Authenticator |
+| **Chess Multiplayer** | `arcade/chess/` | Catur real-time via LAN — buat/gabung ruang, giliran, legal move validation |
 | **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
 | **Admin Activity Log** | `admin/activity_log.php` | Audit trail viewer dengan filter, pagination, cleanup |
 
@@ -63,6 +68,11 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — proteksi endpoint like, comment, upload dari abuse dengan per-user limits dan role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` sekarang mengembalikan metadata pagination (`total_pages`, `from`, `to`) — UI menampilkan info halaman
 - **Admin Dashboard Charts:** Chart.js 7-Day Activity Chart — views, uploads, active users dalam 7 hari terakhir
+- **Player Enhancement:** Auto-next overlay dengan backdrop gelap + sembunyikan replay button Plyr + mutual exclusion Auto-Next ↔ Loop
+- **MFA Support:** Multi-Factor Authentication (TOTP) — setup, verify, backup codes, admin reset, brute-force protection (10 attempts → 5 menit lock)
+- **UX Improvement:** Klik vinyl disc → toggle mini-player; Hover overlay hanya di area thumbnail musik; Skip resume modal saat navigasi dari index mini-player
+- **Cache Busting:** Script JS music watch.php pakai `filemtime()` — tidak perlu hard-refresh
+- **Arcade Chess:** Multiplayer catur real-time via LAN — buat/gabung ruang, giliran bergantian, validasi legal move
 
 ## 📖 Tentang Proyek
 

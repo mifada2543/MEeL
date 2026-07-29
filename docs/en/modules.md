@@ -311,7 +311,18 @@ class SearchEngine {
 }
 ```
 
-### 17. Migration System (`database/migrate.php`)
+### 17. `modules/autoload.php`
+
+PSR-4-like autoloader via `spl_autoload_register()`. Auto-loads classes from `modules/core/`, `modules/media/`, `drive/`, etc.
+
+### 18. WatchController (`controllers/api/WatchController.php`)
+
+```php
+class VideoWatchController { public function getViewData(): array; }
+class MusicWatchController { public function getViewData(): array; public function requireMedia(): void; }
+```
+
+### 19. Migration System (`database/migrate.php`)
 
 | Version | Changes |
 |-------|-----------|
@@ -321,7 +332,44 @@ class SearchEngine {
 | **v4** | Foreign key constraints |
 | **v5** | title VARCHAR → TEXT |
 | **v6** | activity_log table |
-| **v7** | UNIQUE INDEX on users.username |
+| **v7** | UNIQUE INDEX on users.username + schema sync |
+| **v8** | Role column `varchar(20)`, drop duplicate UNIQUE KEY, sync defaults |
+| **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
+
+### 20. MFA System
+
+Multi-Factor Authentication (TOTP) protects user accounts:
+
+| File | Function |
+|------|--------|
+| `auth/mfa_setup.php` | MFA Setup — generate secret, scan QR/barcode, verify TOTP, backup codes |
+| `auth/mfa_verify.php` | TOTP verification after login — rate limit 10 failed attempts, lock 5 minutes |
+| `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
+| `controllers/system/mfa.php` | Backend controller — AJAX verify, regenerate backup codes, email backup |
+
+**Flow:** `login.php` → check `mfa_enabled` → redirect `mfa_verify.php` → valid TOTP → set full session
+
+**Helper functions** (in `modules/core/helpers.php`):
+```php
+function generate_mfa_secret(): string;      // Base32 random secret
+function generate_totp(string $secret): string;// TOTP 6-digit code
+function verify_totp(string $secret, string $code): bool; // Verify with window ±1
+function generate_backup_codes(): array;      // 8 backup codes (SHA256 hashed)
+function verify_backup_code(string $stored, string $code): array; // Verify + consume code
+```
+
+### 21. Chess Multiplayer (`arcade/chess/`)
+
+Real-time LAN multiplayer chess:
+
+| File | Function |
+|------|--------|
+| `index.php` | Chess board with drag-and-drop, timer, chat, sound effects |
+| `controller/create_room.php` | Create new room, return room code |
+| `controller/join_room.php` | Join room with code |
+| `controller/get_move.php` | Fetch opponent's move (polling) |
+| `controller/save_move.php` | Save move with legal move validation |
+| `controller/check_room_status.php` | Check room status (waiting/playing/ended) |
 
 ### Admin Activity Log Viewer
 

@@ -14,6 +14,7 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 - [Activity Logging](#activity-logging)
 - [File Upload Security](#file-upload-security)
 - [Apache .htaccess Protection](#apache-htaccess-protection)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [Input Validation](#input-validation)
 
 ---
@@ -56,7 +57,14 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 └──────────────────────┬──────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────┐
-│              6. Prepared Statements                     │
+│              6. Multi-Factor Authentication (MFA)       │
+│  • TOTP (Time-based One-Time Password) via Authenticator │
+│  • Backup codes untuk recovery                          │
+│  • Brute-force protection (10 attempts → 5 menit lock)  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────┐
+│              7. Prepared Statements                     │
 │  • All database queries use mysqli prepared statements  │
 │  • No raw SQL concatenation with user input             │
 └─────────────────────────────────────────────────────────┘
@@ -216,6 +224,110 @@ $stmt_kick = $conn->prepare("UPDATE users SET
     WHERE username = ?");
 $stmt_kick->bind_param("s", $target_username);
 ```
+
+---
+
+## Multi-Factor Authentication (MFA)
+
+### Arsitektur MFA
+
+```
+Login Flow:
+  POST login → password benar
+    ↓
+  Cek users.mfa_enabled == 1?
+    ↓ Ya                             ↓ Tidak
+  Simpan mfa_temp_uid ke session    Set session langsung
+    ↓                                ↓
+  Redirect ke mfa_verify.php       Redirect ke index
+```
+
+### TOTP Implementation
+
+MEeL menggunakan **TOTP (Time-based One-Time Password)** dengan algoritma:
+- **HMAC-SHA1** — standard TOTP
+- **6 digit** — kode verifikasi
+- **30 detik** — time step
+- **Window ±1** — toleransi 90 detik
+
+### Secret Generation
+
+```php
+// modules/core/helpers.php
+function generate_mfa_secret(): string {
+    $random = random_bytes(20);  // 160-bit random
+    $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $secret = '';
+    foreach (str_split($random) as $byte) {
+        $secret .= $base32[ord($byte) & 31];
+        // XOR carry untuk 5-bit encoding
+    }
+    return $secret;
+}
+```
+
+Secret disimpan di kolom `mfa_secret` (VARCHAR(64)) di tabel `users`, di-hash? **Tidak** — secret TOTP harus bisa dibaca untuk verifikasi. Namun, jika database bocor, attacker butuh akses ke Google Authenticator atau backup codes untuk login.
+
+### Backup Codes
+
+- **8 backup codes** — masing-masing 8 karakter alfanumerik
+- **Disimpan sebagai SHA256 hash** — tidak bisa dibaca balik
+- **Sekali pakai** — setelah digunakan, hash dihapus dari daftar
+
+```php
+function generate_backup_codes(): array {
+    $codes = [];
+    $hashes = [];
+    for ($i = 0; $i < 8; $i++) {
+        $plain = bin2hex(random_bytes(4)); // 8 karakter hex
+        $codes[] = $plain;
+        $hashes[] = hash('sha256', $plain);
+    }
+    return ['plain' => $codes, 'hashed' => $hashes];
+}
+
+function verify_backup_code(string $hashedCodes, string $code): array {
+    $codes = json_decode($hashedCodes, true) ?? [];
+    foreach ($codes as $i => $hash) {
+        if (hash_equals($hash, hash('sha256', $code))) {
+            array_splice($codes, $i, 1); // Hapus yang sudah dipakai
+            return ['valid' => true, 'remaining' => $codes];
+        }
+    }
+    return ['valid' => false, 'remaining' => $codes];
+}
+```
+
+### Brute-Force Protection
+
+```php
+// Max 10 percobaan MFA gagal, lock 5 menit
+$max_mfa_attempts = 10;
+$mfa_lockout_time = 300; // 5 menit
+
+if (isset($_SESSION['mfa_locked_until'])) {
+    if (time() >= $_SESSION['mfa_locked_until']) {
+        unset($_SESSION['mfa_locked_until'], $_SESSION['mfa_fail_count']);
+    } else {
+        $mfa_locked = true;
+        $mfa_remaining = $_SESSION['mfa_locked_until'] - time();
+    }
+}
+```
+
+### Admin Reset MFA
+
+Admin dapat mereset MFA user dari halaman `admin/mfa_reset.php`:
+- **Tidak bisa reset admin lain** — hanya admin yang bersangkutan bisa menonaktifkan sendiri
+- **Aksi dicatat** — `log_activity($conn, $admin_id, 'reset_mfa', 'user', $target_id)`
+- **User perlu setup ulang** — MFA di-reset ke default (nonaktif)
+
+### MFA di Profile
+
+Halaman `profile/index.php` menampilkan status MFA dengan toggle switch visual:
+- Hijau "Aktif" → link ke `auth/mfa_setup.php` untuk kelola/disable
+- Abu-abu "Nonaktif" → link ke `auth/mfa_setup.php` untuk setup
+- Jika aktif, backup codes juga ditampilkan di profil
 
 ---
 

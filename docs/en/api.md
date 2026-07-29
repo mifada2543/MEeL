@@ -7,7 +7,9 @@ Documentation of API endpoints, controllers, and AJAX/HTMX handlers in MEeL-HUB.
 ## 📋 Table of Contents
 
 - [Controllers Overview](#controllers-overview)
+- [WatchController](#watchcontroller)
 - [Authentication Flow](#authentication-flow)
+- [MFA Endpoints](#mfa-endpoints)
 - [Media Interaction Endpoints](#media-interaction-endpoints)
 - [Upload Endpoints](#upload-endpoints)
 - [Profile Endpoints](#profile-endpoints)
@@ -36,8 +38,67 @@ controllers/
 │   ├── admin_actions.php     # Admin actions (process POST)
 │   └── admin_data.php        # Admin data queries
 └── system/
-    └── UpdateManager.php     # Update changelog management (OOP)
+    ├── UpdateManager.php     # Update changelog management (OOP)
+    └── mfa.php               # MFA backend controller (TOTP verify, backup codes, email)
 ```
+
+### MFA Pages (in `auth/` & `admin/`)
+
+| File | Function |
+|------|--------|
+| `auth/mfa_setup.php` | MFA Setup — generate secret, verify TOTP, backup codes |
+| `auth/mfa_verify.php` | TOTP verification after login |
+| `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
+
+---
+
+## WatchController
+
+**File:** `controllers/api/WatchController.php`  
+**Method:** Constructor-based (not a direct HTTP endpoint)
+
+Controller for video & music watch pages. Data fetched via `getViewData()` and `extract()`ed into the view.
+
+### VideoWatchController
+
+```php
+$ctrl = new VideoWatchController($conn, $user_id, $id);
+$ctrl->handleRequest();  // Handle POST (comments)
+extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_grouped, etc.
+```
+
+**Returned view data:**
+| Variable | Type | Description |
+|----------|------|-----------|
+| `$v` | array | Video data + uploader info |
+| `$video_src` | string | Path to video file / playlist.m3u8 |
+| `$is_hls` | bool | Whether video is HLS |
+| `$vtt_src` | string | Path to VTT thumbnail |
+| `$comments_grouped` | array | Comments grouped by parent |
+| `$rekom` | mysqli_result | Other video recommendations |
+| `$is_logged_in` | bool | Login status |
+| `$user_interaction` | ?string | User like/dislike status |
+
+### MusicWatchController
+
+```php
+$ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
+$ctrl->handleRequest();
+extract($ctrl->getViewData());
+```
+
+**Returned view data:**
+| Variable | Type | Description |
+|----------|------|-----------|
+| `$v` | array | Audio data + uploader info |
+| `$file_size` | int | Audio file size (bytes) |
+| `$mime_type` | string | File MIME type |
+| `$playlist` | array | Playlist queue (if any) |
+| `$grouped_comments` | array | Comments grouped by parent |
+| `$rekomendasi` | array | Other music recommendations |
+| `$playlist_id_in` | ?int | Active playlist ID |
+| `$is_logged_in` | bool | Login status |
+| `$user_interaction` | ?string | User like/dislike status |
 
 ---
 
@@ -48,6 +109,16 @@ controllers/
 **Endpoint:** `auth/login.php`  
 **Method:** POST  
 **Auth:** None (public)
+
+**Request:**
+```html
+<form method="POST" action="auth/login.php">
+  <input type="hidden" name="csrf_token" value="...">
+  <input type="text" name="username" required>
+  <input type="password" name="password" required>
+  <button name="login">Login</button>
+</form>
+```
 
 **Response:**
 - Success: Redirect to `index.php`
@@ -66,11 +137,320 @@ controllers/
 **Method:** POST  
 **Auth:** None (public)
 
+**Validation:**
+- Username min 8 characters, alphanumeric + underscore
+- Password min 8 characters
+- Username must not contain "guest"
+- Max 3 registrations per hour per session
+
 **Flow:**
 ```
 Register → CSRF Check → Validation → Insert DB (is_active=2) 
   → Wait for admin approval
 ```
+
+### MFA Verification Flow
+
+```
+POST login (password correct)
+  ↓
+Check users.mfa_enabled == 1 && users.mfa_secret IS NOT NULL?
+  ↓ Yes                           ↓ No
+Save mfa_temp_uid to session      Set session directly
+  ↓                                ↓
+Redirect to mfa_verify.php       Redirect to index.php
+  ↓
+User inputs TOTP 6-digit code
+  ↓
+Verify via TOTP (HMAC-SHA1, 30s step, window ±1)
+  ↓ Failed
+Try backup code (SHA256 hash, single-use)
+  ↓ Failed completely
+Increment fail count → max 10 → Lock 5 minutes
+  ↓ Valid
+Set full session (user_id, username, role) + mfa_verified
+  ↓
+Remove mfa_temp_uid → Redirect to index.php
+```
+
+---
+
+## MFA Endpoints
+
+### MFA Setup (`auth/mfa_setup.php`)
+
+**Method:** POST  
+**Auth:** User (login required)  
+**Rate Limit:** None (user's own account only)
+
+Multi-step page for enabling, managing, or disabling MFA.
+
+#### Step 1: Generate Secret
+
+```html
+<form method="POST" action="auth/mfa_setup.php">
+  <input type="hidden" name="csrf_token" value="...">
+  <button name="generate_secret" value="1">Start MFA Setup</button>
+</form>
+```
+
+**Process:**
+1. Generate random 20-byte secret → Base32 encoding → `VARCHAR(64)`
+2. Generate `otpauth://` URL → QR Code (local via qrcode.min.js, 100% offline)
+3. Temporarily store secret in `$_SESSION['mfa_pending_secret']`
+4. Show QR Code + manual entry (secret key, TOTP type, account)
+
+#### Step 2: Verify Code
+
+```html
+<form method="POST" action="auth/mfa_setup.php">
+  <input type="hidden" name="csrf_token" value="...">
+  <input type="hidden" name="verify_code" value="1">
+  <input type="text" name="code" maxlength="6" inputmode="numeric" placeholder="000000" required>
+  <button type="submit">Verify & Activate</button>
+</form>
+```
+
+**Response:**
+- Success: Generate 8 backup codes, save to DB, redirect to backup step
+- Error: "Invalid code" — stay on verify page
+
+**Validation:**
+- `preg_match('/^[0-9]{6}$/', $code)` — only 6 digits
+- `verify_totp($secret, $code)` — TOTP with window ±1 (90 seconds)
+
+| Error | Cause |
+|-------|----------|
+| `Security session expired` | Invalid CSRF token |
+| `MFA setup session not found` | Session expired, restart |
+| `Code must be 6 digits` | Input format invalid |
+| `Invalid code` | TOTP wrong (time not synced?) |
+
+#### Step 3: Backup Codes
+
+After verification succeeds, 8 backup codes (each 8 hex characters) are displayed **once**:
+
+```html
+<div class="backup-code">a1b2c3d4</div>
+<div class="backup-code">e5f6g7h8</div>
+<!-- ... 8 codes total -->
+
+<button onclick="downloadBackupCodes()">Download Backup Codes (.txt)</button>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="...">
+  <button name="backup_done" value="1">I've Saved Them</button>
+</form>
+```
+
+**Backup codes stored as:**
+- Database: `JSON array of SHA256 hashes`
+- Cannot be reversed (one-way hash)
+- After use, hash removed from array
+
+#### Disable MFA
+
+If MFA is already active, the page shows an option to disable:
+
+```html
+<form method="POST" action="auth/mfa_setup.php">
+  <input type="hidden" name="csrf_token" value="...">
+  <button name="disable_mfa" value="1">Disable MFA</button>
+</form>
+```
+
+**Process:** `UPDATE users SET mfa_enabled = 0, mfa_secret = NULL, mfa_backup_codes = NULL`
+
+---
+
+### MFA Verify (`auth/mfa_verify.php`)
+
+**Method:** POST  
+**Auth:** Session temp (`mfa_temp_uid`)  
+**Rate Limit:** 10 failed attempts → lock 5 minutes
+
+TOTP verification page shown after login if user has MFA enabled.
+
+**Request:**
+```html
+<form method="POST" action="auth/mfa_verify.php">
+  <input type="hidden" name="csrf_token" value="...">
+  <input type="hidden" name="verify" value="1">
+  <input type="text" name="code" maxlength="6" inputmode="numeric"
+         autocomplete="one-time-code" placeholder="000000" required>
+  <button type="submit">Verify</button>
+</form>
+```
+
+**Process:**
+1. Check `$_SESSION['mfa_temp_uid']` — if missing, redirect to login
+2. Fetch `mfa_secret` + `mfa_backup_codes` from database
+3. Try TOTP first (`verify_totp()`)
+4. If failed, try backup code (`verify_backup_code()`)
+5. If backup code valid, update DB (remove used code)
+6. If valid → set full session (`user_id`, `username`, `role`, `mfa_verified=true`)
+7. If failed → increment fail count, max 10 → lock 5 minutes
+
+**Response:**
+- Success: Redirect to `index.php`
+- Error: Show error message on page
+- Locked: Show countdown + auto-refresh when lock expires
+
+**Error Responses:**
+| Condition | Response |
+|---------|--------|
+| `mfa_temp_uid` missing + not fully logged in | Redirect to `login.php` |
+| `mfa_temp_uid` missing + already logged in | Redirect to `index.php` |
+| Max 10 failed attempts | Lock 5 minutes — render page with countdown + auto-refresh |
+| MFA disabled in DB | Redirect to `login.php` (re-login) |
+| Invalid CSRF token | Render error message on page |
+
+**Activity Logging:**
+- `mfa_verify` — MFA successful (TOTP)
+- `mfa_verify_failed` — MFA failed
+
+---
+
+### MFA Backend Controller (`controllers/system/mfa.php`)
+
+**Method:** POST  
+**Auth:** User (login required)  
+**Rate Limit:** Password verify: 5 attempts → lock 5 minutes (session-based)
+
+AJAX endpoint for MFA backend operations. All requests via `fetch()` + JSON.
+
+#### Generate Backup Codes
+
+**Request:**
+```javascript
+fetch('../controllers/system/mfa.php', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    action: 'generate_backup',
+    csrf_token: '...',
+    password: '********'  // Re-verify password
+  })
+});
+```
+
+**Success Response (JSON):**
+```json
+{
+  "status": "success",
+  "message": "New backup codes successfully created.",
+  "codes": ["a1b2c3d4", "e5f6g7h8", ...]  // 8 codes
+}
+```
+
+**Error Response (JSON):**
+```json
+{
+  "status": "error",
+  "message": "Wrong password."
+}
+```
+
+#### Download Backup Codes as TXT
+
+**Request:**
+```javascript
+const form = new FormData();
+form.append('action', 'download_backup');
+form.append('csrf_token', '...');
+form.append('password', '********');
+
+fetch('../controllers/system/mfa.php', { method: 'POST', body: form });
+```
+
+**Response:** File download `MEeL-backup-codes-{username}.txt` with headers:
+```
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: attachment; filename="MEeL-backup-codes-{username}.txt"
+Cache-Control: no-store, private
+```
+
+**File content:**
+```
+MEeL — MFA Backup Codes
+User: {username}
+Generated: 2026-01-15 14:30:00
+
+Each code can only be used ONCE.
+Store in a safe place!
+
+  a1b2c3d4
+  e5f6g7h8
+  ...
+```
+
+**Error Responses (JSON):**
+| Status | Cause |
+|--------|----------|
+| `401` | User not logged in |
+| `Please log in first.` | Session expired |
+| `Security session expired.` | Invalid CSRF token |
+| `User not found.` | User ID not in DB |
+| `MFA not enabled.` | User hasn't set up MFA |
+| `Wrong password.` | Password verification failed |
+| `Too many attempts...` | Rate limit (5 failures → 5 min) |
+| `Unknown action.` | Invalid `action` parameter |
+
+---
+
+### Admin MFA Reset (`admin/mfa_reset.php` + `controllers/admin/admin_actions.php`)
+
+**Method:** GET (link with parameters)  
+**Auth:** Admin only  
+**Rate Limit:** None
+
+Admins can reset MFA for users who lost access to their Authenticator app.
+
+#### View Users with MFA
+
+Page `admin/mfa_reset.php` shows a list of users with MFA enabled:
+
+| Column | Description |
+|-------|-----------|
+| Username | User name + ID |
+| Role | Admin/Member/User (color badge) |
+| Status | Active/Pending |
+| Last Activity | Last active time |
+| Action | "Reset MFA" button (not for other admins) |
+
+**Stats header:** `{total_mfa} / {total_all} users have MFA enabled`
+
+#### Reset MFA Action
+
+**Trigger:** Click "Reset MFA" → SweetAlert2 confirmation → redirect
+
+```
+GET admin/mfa_reset.php?reset_mfa=1&user_id=123&csrf_token=...
+  ↓
+die(include admin_actions.php)
+  ↓
+Check admin role → Check target user → Check target is not admin
+  ↓
+UPDATE users SET mfa_enabled=0, mfa_secret=NULL, mfa_backup_codes=NULL WHERE id=?
+  ↓
+log_activity(admin_id, 'reset_mfa', 'user', target_id)
+  ↓
+Redirect to mfa_reset.php?msg=reset_ok&user={username}
+```
+
+**Response Messages:**
+| Message | Description |
+|---------|-----------|
+| `reset_ok` | ✅ MFA successfully reset |
+| `csrf_invalid` | ❌ Invalid CSRF token |
+| `user_not_found` | ❌ User ID not found |
+| `cannot_reset_admin` | ❌ Cannot reset another admin's MFA |
+| `reset_failed` | ❌ Query failed |
+
+**Security:**
+- Admins **cannot** reset another admin's MFA
+- Admins can only reset users with role `member`, `user`, or `guest`
+- Action logged in `activity_log` with action `reset_mfa`
+- No special rate limit for admin
 
 ---
 

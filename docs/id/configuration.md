@@ -35,7 +35,7 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 | `modules/core/bootstrap.php` | Bootstrap (env detection, error reporting, timezone) | `MEEL_ENV`, log error config |
 | `modules/transcoder/FfmpegUtils.php` | **Trait** utilitas FFmpeg | `resolveBinary()`, `probeDuration()`, `generateSpriteAndVTT()` |
 | `modules/autoload.php` | PSR-4-like autoloader | Daftar direktori yang di-scan |
-| `database/migrate.php` | Database migration v1–v7 | FULLTEXT index, FK, activity_log, UNIQUE KEY |
+| `database/migrate.php` | Database migration v1–v9 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA columns |
 
 ---
 
