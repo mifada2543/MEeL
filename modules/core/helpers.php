@@ -466,6 +466,23 @@ function dir_size(string $path, int $cache_ttl = 300): float
 }
 } // end function_exists('dir_size')
 
+if (!function_exists('invalidate_dir_size_cache')) {
+/**
+ * Hapus cache dir_size() untuk user tertentu.
+ * Memaksa fresh scan pada next get_user_usage() call.
+ *
+ * @param string $username Nama user
+ */
+function invalidate_dir_size_cache(string $username): void
+{
+    $userPath = dirname(__DIR__, 2) . '/data_drive/private_admins/' . $username;
+    $cacheFile = dirname(__DIR__, 2) . '/temp/dirsize_' . md5($userPath) . '.cache';
+    if (file_exists($cacheFile)) {
+        @unlink($cacheFile);
+    }
+}
+} // end function_exists('invalidate_dir_size_cache')
+
 if (!function_exists('log_drive_operation')) {
 function log_drive_operation(int $userId, string $username, string $operation, string $filename, string $type, string $scope, string $status = 'success'): void
 {

@@ -1,1 +1,482 @@
 :root{--bg-base:#07090f;--bg-card:#0e1117;--bg-glass:rgba(255, 255, 255, 0.04);--border:rgba(255, 255, 255, 0.07);--accent-b:#3b82f6;--accent-p:#8b5cf6;--accent-r:#ef4444;--accent-o:#f97316;--accent-g:#10b981;--text-muted:#6b7280;--font-body:'Segoe UI',system-ui,-apple-system,sans-serif;--font-head:'Trebuchet MS','Segoe UI',system-ui,sans-serif}*{box-sizing:border-box}body{font-family:var(--font-body);background:var(--bg-base);color:#c9d1d9;min-height:100vh}.syne,h1,h2{font-family:var(--font-head)}#sidebar{position:fixed;inset:0 auto 0 0;width:260px;background:var(--bg-card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:40;transition:transform .3s cubic-bezier(.4, 0, .2, 1)}#sidebar.closed{transform:translateX(-100%)}#main-content{margin-left:260px;min-height:100vh;transition:margin-left .3s cubic-bezier(.4, 0, .2, 1)}#main-content.full{margin-left:0}#topbar{display:none}#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:30}#overlay.active{display:block}.nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);border:1px solid transparent;transition:all .2s;text-decoration:none}.nav-item:hover{background:var(--bg-glass);color:#e5e7eb;border-color:var(--border)}.nav-item.active{background:rgba(59,130,246,.1);color:#fff;border-color:rgba(59,130,246,.3)}.nav-item.active-purple{background:rgba(139,92,246,.1);color:#fff;border-color:rgba(139,92,246,.3)}.file-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;transition:border-color .2s,transform .2s}.file-card:hover{border-color:rgba(255,255,255,.18);transform:translateY(-2px)}.glass-panel{background:var(--bg-glass);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px)}.upload-zone{border:1.5px dashed rgba(255,255,255,.15);border-radius:12px;padding:16px;transition:border-color .2s,background .2s;cursor:pointer}.upload-zone:hover{border-color:var(--accent-b);background:rgba(59,130,246,.05)}.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.progress-track{background:rgba(255,255,255,.06);border-radius:999px;height:6px;overflow:hidden}.progress-fill{height:100%;border-radius:999px;transition:width .5s}@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fade-up{animation:fadeUp .35s ease-out forwards}.icon-btn{padding:6px;border-radius:8px;color:var(--text-muted);transition:all .15s;background:0 0;border:none;cursor:pointer}.icon-btn:hover{background:rgba(255,255,255,.08)}.icon-btn.blue:hover{color:var(--accent-b)}.icon-btn.red:hover{color:var(--accent-r)}.icon-btn.cyan:hover{color:#22d3ee}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:99px}@media (max-width:768px){#sidebar{width:280px;transform:translateX(-100%)}#sidebar.open{transform:translateX(0)}#main-content{margin-left:0}#topbar{display:flex}.page-title{font-size:22px!important}}#section-tabs{display:none}@media (max-width:768px){#section-tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);z-index:20;padding:6px 8px;gap:4px}#main-content{padding-bottom:80px}}.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);border:none;background:0 0;cursor:pointer;transition:all .15s}.tab-btn.active{background:rgba(255,255,255,.07);color:#fff}
+
+/* ── Floating Upload Progress Card ── */
+.upload-prog-card {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: rgba(14, 17, 23, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  z-index: 9999;
+  overflow: hidden;
+  transform: translateY(20px) scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.upload-prog-card.upload-prog-visible {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.upload-prog-card.hidden {
+  display: none;
+}
+
+.upload-prog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.upload-prog-filename {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-prog-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.upload-prog-close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.upload-prog-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upload-prog-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.upload-prog-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+  /* NO transition — JS + rAF handle smoothness, menghindari layout thrashing */
+}
+
+.upload-prog-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upload-prog-pct {
+  font-size: 20px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.upload-prog-status {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.upload-prog-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.upload-prog-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.upload-prog-stat-label {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  margin-bottom: 4px;
+}
+
+.upload-prog-stat-val {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+.upload-prog-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ⚠️ Specificity fix: override Tailwind .hidden yang ke-override oleh .upload-prog-result */
+.upload-prog-result.hidden,
+#uploadProgDone.hidden,
+#uploadProgError.hidden {
+  display: none !important;
+}
+
+.upload-prog-result-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-prog-result-success .upload-prog-result-icon {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.upload-prog-result-error .upload-prog-result-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.upload-prog-result-text {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.upload-prog-card.upload-prog-success .upload-prog-result-text {
+  color: #10b981;
+}
+
+.upload-prog-card.upload-prog-fail .upload-prog-result-text {
+  color: #ef4444;
+}
+
+.upload-prog-card.upload-prog-success .upload-prog-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+/* ── Animated Checkmark ── */
+.upload-checkmark {
+  display: block;
+}
+
+.upload-checkmark-circle {
+  stroke: #10b981;
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: upload-checkmark-draw 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.upload-checkmark-check {
+  stroke: #10b981;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: upload-checkmark-draw 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.3s forwards;
+}
+
+@keyframes upload-checkmark-draw {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Confetti ── */
+.upload-confetti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.upload-confetti-piece {
+  position: absolute;
+  top: -8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  will-change: transform, opacity;
+}
+
+@keyframes confetti-burst {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(-1 * (100px + 30%))) translateX(var(--x-spread, 0px)) rotate(720deg) scale(0.15);
+    opacity: 0;
+  }
+}
+
+.upload-prog-card.upload-prog-fail .upload-prog-fill {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+/* ── Minimized state ── */
+.upload-prog-card.minimized {
+  width: 280px;
+  cursor: pointer;
+  border-left: 3px solid #3b82f6;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.upload-prog-card.minimized.upload-prog-success {
+  border-left-color: #10b981;
+}
+
+.upload-prog-card.minimized.upload-prog-fail {
+  border-left-color: #ef4444;
+}
+
+.upload-prog-card.minimized:hover {
+  box-shadow: 0 16px 56px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.upload-prog-card.minimized .upload-prog-header {
+  border-bottom: none;
+  padding: 10px 12px;
+}
+
+.upload-prog-card.minimized .upload-prog-header-icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.upload-prog-card.minimized .upload-prog-body {
+  display: none;
+}
+
+.upload-prog-card.minimized .upload-prog-toggle-icon {
+  transform: rotate(-90deg);
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.upload-prog-card:not(.minimized) .upload-prog-toggle-icon {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.upload-prog-toggle-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s;
+  margin-right: 2px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.upload-prog-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+  padding: 4px 0;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.upload-prog-header-title:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.upload-prog-header-title:hover .upload-prog-toggle-icon {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes upload-prog-slide-in {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes upload-prog-slide-out {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+  }
+}
+
+/* Pulse scan effect — hanya jalan saat upload aktif, bukan saat complete */
+.upload-prog-track {
+  position: relative;
+}
+
+.upload-prog-track::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: upload-prog-scan 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
+  pointer-events: none;
+  /* GPU compositing */
+  transform: translateZ(0);
+}
+
+/* Matikan scan effect saat upload complete (sukses/gagal) — hemat GPU */
+.upload-prog-card.upload-prog-complete .upload-prog-track::after {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes upload-prog-scan {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(400%, 0, 0);
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-prog-card {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* ── Drag & Drop Upload Zone ── */
+.upload-dropzone {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.upload-dropzone.drag-over {
+  border-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), inset 0 0 30px rgba(59, 130, 246, 0.05);
+  transform: scale(1.01);
+}
+
+.upload-dropzone.drag-over .dropzone-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dropzone-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+.dropzone-hint-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #60a5fa;
+  animation: dropzone-pulse 1.2s ease-in-out infinite;
+}
+
+.dropzone-hint-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dropzone-hint-sub {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.05em;
+}
+
+@keyframes dropzone-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.15);
+  }
+}
