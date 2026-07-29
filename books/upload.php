@@ -45,12 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
     <meta property="og:description" content="Upload buku dan dokumen ke perpustakaan digital MEeL Books.">
     <title>MEeL | Upload Book</title>
     <?php include '../partials/link.php'; ?>
-    <style>
-        body {
-            background-color: #05070a;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/books/main.css">
+    <link rel="stylesheet" href="../assets/css/books/upload/main.css">
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-6">
