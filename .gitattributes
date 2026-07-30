@@ -23,19 +23,19 @@ assets/css/font/*.woff2          linguist-vendored
 
 # ─── THIRD-PARTY / VENDORED LIBRARIES (JS) ───────────────
 # HLS.js - HLS video streaming library
-assets/js/hls.js                 linguist-vendored
+assets/js/compatibilitas/hls.js                 linguist-vendored
 
 # Lucide Icons (SVG icon library)
-assets/js/lucide.js              linguist-vendored
+assets/js/compatibilitas/lucide.js              linguist-vendored
 
 # HTMX - AJAX library
-assets/js/htmx.min.js            linguist-vendored
+assets/js/compatibilitas/htmx.min.js            linguist-vendored
 
 # Plyr - Media player
-assets/js/plyr.min.js            linguist-vendored
+assets/js/compatibilitas/plyr.min.js            linguist-vendored
 
 # SweetAlert2 - Modal/notification library
-assets/js/sweetalert2.all.min.js linguist-vendored
+assets/js/compatibilitas/sweetalert2.all.min.js linguist-vendored
 
 # ─── OTHER ASSETS ────────────────────────────────────────
 # PWA Manifest

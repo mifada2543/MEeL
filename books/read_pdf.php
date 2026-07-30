@@ -167,7 +167,7 @@ $title = htmlspecialchars($book['title']);
         }, 5000);
     })();
     </script>
-    <script src="../assets/js/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
     <script>lucide.createIcons();</script>
 </body>
 </html>

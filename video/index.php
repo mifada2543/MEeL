@@ -120,7 +120,7 @@ $totalPages = $meta['total_pages'];
 
     <?php include '../partials/footer.php'; ?>
 
-    <script src="../assets/js/htmx.min.js"></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
     <script>
         lucide.createIcons();
         document.body.addEventListener('htmx:afterOnLoad', function(evt) {

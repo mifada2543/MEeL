@@ -171,9 +171,9 @@ $thumb_src = !empty($music['thumbnail'])
     <meta name="twitter:card" content="summary_large_image">
     <title>Edit Musik | MEeL Admin</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link rel="stylesheet" href="../assets/css/em.css">
+    <link rel="stylesheet" href="../assets/css/admin/edit/music/main.css?v=<?= filemtime('../assets/css/admin/edit/music/main.css') ?>">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
 
 </head>
 
@@ -376,11 +376,10 @@ $thumb_src = !empty($music['thumbnail'])
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/admin/edit/music.js?v=<?= filemtime('../assets/js/admin/edit/music.js') ?>"></script>
     <script>
-        lucide.createIcons();
-
         <?php if ($status === "success"): ?>
             Swal.fire({
                 title: 'Berhasil!',
@@ -391,65 +390,6 @@ $thumb_src = !empty($music['thumbnail'])
                 color: '#fff'
             });
         <?php endif; ?>
-
-        function handleSubmit() {
-            const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin2 .7s linear infinite;"></div> Menyimpan...';
-            btn.style.opacity = '.6';
-            btn.style.pointerEvents = 'none';
-        }
-
-        // Hidden file input di dalam form — trigger via klik/drop di sidebar
-        const coverHidden = document.getElementById('cover-file-hidden');
-
-        function handleCoverChange(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('cover-preview').src = e.target.result;
-                    document.getElementById('cover-changed-badge').style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // Klik pada area cover → trigger hidden input
-        document.getElementById('cover-wrap').addEventListener('click', function(e) {
-            if (e.target === coverHidden) return;
-            coverHidden.click();
-        });
-
-        // Hidden input change → preview
-        coverHidden.addEventListener('change', function() {
-            handleCoverChange(this);
-        });
-
-        // Drag-and-drop onto cover
-        const coverWrap = document.getElementById('cover-wrap');
-
-        coverWrap.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            coverWrap.classList.add('drag-over');
-        });
-        coverWrap.addEventListener('dragleave', function() {
-            coverWrap.classList.remove('drag-over');
-        });
-        coverWrap.addEventListener('drop', function(e) {
-            e.preventDefault();
-            coverWrap.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files && files[0] && files[0].type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                coverHidden.files = dt.files;
-                handleCoverChange(coverHidden);
-            }
-        });
-
-        // Inject keyframe for spin
-        const style = document.createElement('style');
-        style.textContent = '@keyframes spin2 { to { transform: rotate(360deg); } }';
-        document.head.appendChild(style);
     </script>
 </body>
 

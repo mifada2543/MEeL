@@ -68,9 +68,9 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="manifest" href="assets/manifest.json">
     <link href="assets/css/fonts.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
-    <script src="assets/js/sweetalert2.all.min.js"></script>
-    <script src="assets/js/script.min.js"></script>
+    <script src="assets/js/compatibilitas/lucide.js"></script>
+    <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="assets/js/compatibilitas/script.min.js"></script>
 
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
     <style>

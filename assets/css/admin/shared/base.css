@@ -1,0 +1,52 @@
+/* ============================================================
+ * base.css — Variabel, reset, body, scrollbar
+ * Modul: Admin (MEeL System Admin)
+ * ============================================================ */
+
+/* ── CSS Variables ── */
+:root {
+    --admin-bg: #0b0e14;
+    --admin-surface: rgba(14, 17, 24, 0.8);
+    --admin-glass: rgba(8, 11, 17, 0.9);
+    --admin-border: rgba(255, 255, 255, 0.06);
+    --admin-border-light: rgba(255, 255, 255, 0.05);
+    --admin-text: #e2e6ef;
+    --admin-muted: #455060;
+    --admin-muted-light: #6b7280;
+    --admin-accent: #2563eb;
+    --admin-red: #ef4444;
+    --admin-orange: #f97316;
+    --admin-green: #4ade80;
+    --admin-dark-text: #2c3440;
+}
+
+/* ── Body ── */
+body {
+    background-color: var(--admin-bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--admin-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+}
+
+/* ── Selection ── */
+::selection {
+    background: rgba(37, 99, 235, 0.3);
+    color: #fff;
+}

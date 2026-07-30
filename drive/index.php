@@ -36,34 +36,9 @@ if ($user->isMember()) {
     <meta property="og:description" content="MEeL Cloud Drive - Kelola dan simpan file Anda dengan aman di cloud pribadi.">
     <title>MEeL Cloud | Dashboard</title>
     <?php include '../partials/link.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <link rel="stylesheet" href="../assets/css/drive.css?v=<?= filemtime('../assets/css/drive.css') ?>">
-    <style>
-        :root {
-            --bg-main: #0b0f1a;
-            --bg-card: #161b2a;
-            --accent-blue: #3b82f6;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: #f3f4f6;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .glass {
-            background: rgba(22, 27, 42, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-active {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid var(--accent-blue);
-            color: var(--accent-blue);
-        }
-    </style>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/drive/main.css?v=<?= filemtime('../assets/css/drive/main.css') ?>">
 </head>
 
 <body class="antialiased">

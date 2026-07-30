@@ -224,8 +224,9 @@ while ($rc = $r->fetch_assoc()) {
     <title>MEeL | Media Analytics</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/admin.css">
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/cookies.css?v=<?= filemtime('../assets/css/admin/cookies.css') ?>">
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen">
@@ -471,7 +472,8 @@ while ($rc = $r->fetch_assoc()) {
         </div>
     </div>
 
-    <script src="../assets/js/admin.js"></script>
+    <script src="../assets/js/admin/main.js?v=<?= filemtime('../assets/js/admin/main.js') ?>"></script>
+    <script src="../assets/js/admin/cookies.js?v=<?= filemtime('../assets/js/admin/cookies.js') ?>"></script>
     <script>
         <?php if ($delete_msg && $delete_msg['type'] === 'success'): ?>
             Swal.fire({

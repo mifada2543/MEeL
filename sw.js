@@ -26,14 +26,14 @@ const PRECACHE_URLS = [
   'assets/css/video/main.css',
   'assets/css/music/main.css',
   'assets/css/books/main.css',
-  'assets/css/drive.css',
-  'assets/css/admin.css',
+  'assets/css/drive/main.css',
+  'assets/css/admin/main.css',
+  'assets/css/shared/upload-form.css',
   'assets/css/up.css',
-  'assets/css/em.css',
   'assets/css/introduction.css',
   // JS
-  'assets/js/lucide.js',
-  'assets/js/hls.js',
+  'assets/js/compatibilitas/lucide.js',
+  'assets/js/compatibilitas/hls.js',
   // Font
   'assets/css/font/latin.woff2',
   // Assets

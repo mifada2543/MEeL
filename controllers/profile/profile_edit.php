@@ -97,7 +97,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
     <title>Edit Profile | MEeL</title>
     <link rel="icon" type="image/png" href="../../assets/MEeL.png">
     <link href="../../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../../assets/js/lucide.js"></script>
+    <script src="../../assets/js/compatibilitas/lucide.js"></script>
     <style>
         body {
             background-color: #0b0e14;

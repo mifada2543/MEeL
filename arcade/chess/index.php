@@ -19,7 +19,7 @@ $description = "Arena Catur Pintar - Main catur dengan teman atau AI";
     <link rel="manifest" href="../../assets/manifest.json" />
     <link rel="icon" type="image/png" href="../../assets/MEeL.png" />
     <link href="../../assets/css/tailwind.min.css" rel="stylesheet" />
-    <script src="../../assets/js/lucide.js"></script>
+    <script src="../../assets/js/compatibilitas/lucide.js"></script>
     <link href="assets/css/chess.css" rel="stylesheet" />
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">

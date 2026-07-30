@@ -32,7 +32,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     <link rel="manifest" href="/MEeL/assets/manifest.json">
     <link rel="icon" type="image/png" href="/MEeL/assets/MEeL.png">
     <link href="/MEeL/assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="/MEeL/assets/js/lucide.js"></script>
+    <script src="/MEeL/assets/js/compatibilitas/lucide.js"></script>
     <style>
         @import url('/MEeL/assets/css/font.css');
 

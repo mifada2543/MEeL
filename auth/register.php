@@ -205,7 +205,7 @@ if (!$is_locked && !$session_blocked) {
     <title>MEeL | Register</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
     <style>
         body {
             background-color: #0b0e14;

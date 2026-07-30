@@ -1,0 +1,126 @@
+/* ============================================================
+ * index/main.css — Page-specific styles untuk Drive Dashboard
+ * Halaman: drive/index.php
+ *
+ * Diekstrak dari inline <style> di index.php.
+ * ============================================================ */
+
+/* ── Dashboard specific variables ── */
+.drive-dashboard {
+  background-color: var(--bg-main, #0b0f1a);
+  color: var(--text-heading, #f3f4f6);
+}
+
+/* ── Sidebar footer ── */
+.drive-sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.drive-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.drive-user-info {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.drive-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drive-user-role {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Heading Accents per category ── */
+.text-accent-video {
+  color: #ef4444;
+}
+
+.text-accent-audio {
+  color: #f97316;
+}
+
+.text-accent-dokumen {
+  color: #10b981;
+}
+
+/* ── Desktop header ── */
+.drive-heading {
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.drive-subheading {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ── Mobile scope toggle ── */
+.scope-toggle-mobile {
+  display: flex;
+  gap: 8px;
+}
+
+.scope-toggle-btn {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+/* ── Upload button ── */
+.upload-btn {
+  background: #3b82f6;
+  color: #fff;
+  padding: 12px 32px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  border: none;
+  cursor: pointer;
+}
+
+.upload-btn:hover {
+  background: #2563eb;
+}
+
+/* ── Page title mobile ── */
+@media (max-width: 768px) {
+  .drive-heading {
+    font-size: 1.25rem;
+  }
+}

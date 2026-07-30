@@ -40,7 +40,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
     <link rel="stylesheet" href="../assets/css/music/main.css<?= $__v('assets/css/music/main.css') ?>">
     <link rel="stylesheet" href="../assets/css/music/watch/main.css<?= $__v('assets/css/music/watch/main.css') ?>">
-    <script src="../assets/js/htmx.min.js" defer></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -541,7 +541,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
         </div>
 
     </main> <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         window.MEEL_MUSIC_CONFIG = {
             id: <?= $id ?>,
@@ -604,8 +604,8 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
             if (options) options.classList.add('hidden');
         };
     </script>
-    <script src="../assets/js/plyr.min.js" defer></script>
-    <script src="../assets/js/sweetalert2.all.min.js" defer></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js" defer></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js" defer></script>
     <script src="../assets/js/music/state.js<?= $__v('assets/js/music/state.js') ?>" defer></script>
     <script src="../assets/js/music/utils.js<?= $__v('assets/js/music/utils.js') ?>" defer></script>
     <script src="../assets/js/music/loop-ui.js<?= $__v('assets/js/music/loop-ui.js') ?>" defer></script>

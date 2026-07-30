@@ -93,7 +93,7 @@ if (isset($_GET['content_only'])) {
     <?php include '../partials/link.php'; ?>
     <link rel="stylesheet" href="../assets/css/music/main.css">
     <link rel="stylesheet" href="../assets/css/music/index/main.css">
-    <script src="../assets/js/htmx.min.js" defer></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -403,7 +403,7 @@ if (isset($_GET['content_only'])) {
             </div>
         </div>
     </div>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         if (typeof lucide !== 'undefined') lucide.createIcons();
 

@@ -38,7 +38,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="stylesheet" href="assets/css/introduction.css">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
+    <script src="assets/js/compatibilitas/lucide.js"></script>
 </head>
 
 <body>

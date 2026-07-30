@@ -43,23 +43,11 @@ $total_all = $conn->query("SELECT COUNT(*) AS c FROM users")->fetch_assoc()['c']
     <title>MFA Reset | Admin MEeL</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <style>
-        body { background-color: #0b0e14; }
-        .glass {
-            background: rgba(22, 27, 34, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .scroll-table {
-            overflow: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-        .scroll-table::-webkit-scrollbar { width: 5px; }
-        .scroll-table::-webkit-scrollbar-thumb { background: #374151; border-radius: 999px; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/mfa_reset.css?v=<?= filemtime('../assets/css/admin/mfa_reset.css') ?>">
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+
 </head>
 <body class="text-gray-300 min-h-screen">
 
@@ -202,38 +190,7 @@ $total_all = $conn->query("SELECT COUNT(*) AS c FROM users")->fetch_assoc()['c']
         </div>
     </div>
 
-    <script>
-        lucide.createIcons();
-
-        function confirmResetMFA(userId, username) {
-            Swal.fire({
-                title: 'Reset MFA ' + username + '?',
-                html: '<div style="font-size:12px;color:#9ca3af">' +
-                    'MFA untuk <strong style="color:#e5e7eb">@' + username + '</strong> akan dinonaktifkan.<br>' +
-                    'User harus <strong style="color:#fbbf24">setup ulang MFA</strong> dari profil mereka.<br><br>' +
-                    '<span style="color:#ef4444;font-size:11px">Tindakan ini tidak bisa dibatalkan.</span>' +
-                    '</div>',
-                icon: 'warning',
-                iconColor: '#ef4444',
-                showCancelButton: true,
-                confirmButtonText: 'RESET MFA',
-                cancelButtonText: 'BATAL',
-                background: '#141820',
-                color: '#fff',
-                reverseButtons: true,
-                customClass: {
-                    popup: 'border border-red-600/25 rounded-2xl shadow-2xl',
-                    title: 'text-sm font-black uppercase tracking-wider pt-4 text-red-500',
-                    htmlContainer: 'mt-1 mb-4',
-                    confirmButton: 'bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl transition-all border-none cursor-pointer ml-2',
-                    cancelButton: 'bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl border border-white/10 cursor-pointer transition-all mr-2'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = 'mfa_reset.php?reset_mfa=1&user_id=' + userId + '&csrf_token=<?= $_SESSION['csrf_token'] ?>';
-                }
-            });
-        }
-    </script>
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+    <script src="../assets/js/admin/mfa_reset.js?v=<?= filemtime('../assets/js/admin/mfa_reset.js') ?>"></script>
 </body>
 </html>

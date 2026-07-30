@@ -562,8 +562,8 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
     <?php include '../partials/footer.php'; ?>
 
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         lucide.createIcons();
 

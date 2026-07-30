@@ -1,0 +1,128 @@
+/* ============================================================
+ * modal.css — Delete confirmation modal
+ * ============================================================ */
+
+#delete-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
+
+#delete-modal.open {
+    display: flex;
+}
+
+.modal-box {
+    background: #0e1118;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+    position: relative;
+}
+
+.modal-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 8px;
+}
+
+.modal-body {
+    font-size: 13px;
+    color: var(--admin-muted-light);
+    margin: 0 0 6px;
+}
+
+.modal-title-display {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--admin-text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.modal-type-badge {
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.modal-warning {
+    font-size: 11px;
+    color: var(--admin-red);
+    margin: 0 0 24px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+/* ── Modal Actions ── */
+.modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-modal-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--admin-muted-light);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-modal-cancel:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--admin-text);
+}
+
+.btn-modal-delete {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--admin-red);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
+}
+
+.btn-modal-delete:hover {
+    background: #f87171;
+}

@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
         $deleted = $stmt_del->affected_rows;
 
         // Reset auto-increment ke ID tertinggi yang tersisa + 1
-        // (seperti sistem guest — agar ID baru melanjutkan dari yang tertinggi)            $next_id = 1;
+        $next_id = 1;
         $max_res = $conn->query("SELECT MAX(id) AS max_id FROM activity_log");
         if ($max_res) {
             $max_row = $max_res->fetch_assoc();
@@ -131,191 +131,11 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
     <meta name="description" content="MEeL Activity Log — Audit trail untuk monitoring aktivitas pengguna.">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
-
-        .glass {
-            background: rgba(22, 27, 34, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .scroll-table {
-            overflow: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-
-        .scroll-table::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-
-        .scroll-table::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .scroll-table::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-
-        .scroll-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .scroll-table thead th {
-            background: #0b0e14;
-        }
-
-        .action-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            white-space: nowrap;
-        }
-
-        .chip-filter {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            cursor: pointer;
-            transition: all .15s;
-            border: 1px solid transparent;
-        }
-
-        .chip-filter:hover {
-            opacity: .8;
-        }
-
-        .chip-filter.active {
-            border-color: currentColor;
-            box-shadow: 0 0 0 1px currentColor;
-        }
-
-        /* ── Custom Action Dropdown (seperti artist dropdown di music) ── */
-        .action-dropdown-btn {
-            background: #131720;
-            border: 1px solid rgba(255, 255, 255, .08);
-            transition: all .15s;
-            cursor: pointer;
-        }
-
-        .action-dropdown-btn:hover {
-            background: rgba(255, 255, 255, .05);
-            border-color: rgba(255, 255, 255, .12);
-        }
-
-        .action-dropdown-btn:focus {
-            border-color: #3b82f6;
-        }
-
-        .action-dropdown-panel {
-            background: #131720;
-            border: 1px solid rgba(255, 255, 255, .08);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
-            max-height: 220px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-
-        .action-dropdown-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .action-dropdown-panel::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .action-dropdown-panel::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-
-        .action-dropdown-option {
-            transition: all .1s;
-            cursor: pointer;
-        }
-
-        .action-dropdown-option:hover {
-            background: rgba(59, 130, 246, .08);
-        }
-
-        .action-dropdown-option.active {
-            color: #60a5fa;
-            font-weight: 700;
-            background: rgba(59, 130, 246, .06);
-        }
-
-        /* ── Pill Buttons (seperti format pills di music) ── */
-        .pill-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 14px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .1em;
-            transition: all .15s;
-            background: rgba(255, 255, 255, .03);
-            border: 1px solid rgba(255, 255, 255, .06);
-            color: #6b7280;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .pill-btn:hover {
-            background: rgba(255, 255, 255, .06);
-            border-color: rgba(255, 255, 255, .1);
-            color: #d1d5db;
-        }
-
-        .pill-btn.active-blue {
-            background: rgba(59, 130, 246, .12);
-            border-color: rgba(59, 130, 246, .25);
-            color: #93c5fd;
-        }
-
-        .pill-btn.active-red {
-            background: rgba(239, 68, 68, .12);
-            border-color: rgba(239, 68, 68, .25);
-            color: #fca5a5;
-        }
-
-        .pill-btn.active-green {
-            background: rgba(34, 197, 94, .12);
-            border-color: rgba(34, 197, 94, .25);
-            color: #86efac;
-        }
-
-        .dropdown-active .action-dropdown-panel {
-            filter: none !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/activity_log.css?v=<?= filemtime('../assets/css/admin/activity_log.css') ?>">
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen">
@@ -464,72 +284,7 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
             </div>
         </div>
 
-        <script>
-            // ── Action Dropdown ──
-            function toggleActionDropdown() {
-                const panel = document.getElementById('action-dropdown-panel');
-                panel.classList.toggle('hidden');
-            }
-
-            function selectAction(val) {
-                document.getElementById('action-input').value = val;
-                document.getElementById('action-dropdown-label').textContent = val || 'Semua Aksi';
-                // Highlight active via data-value attribute
-                document.querySelectorAll('.action-dropdown-option').forEach(el => {
-                    el.classList.toggle('active', el.dataset.value === val);
-                });
-                // Close
-                document.getElementById('action-dropdown-panel').classList.add('hidden');
-            }
-
-            // ── Clear Days Pill Buttons ──
-            function selectClearDays(val) {
-                document.getElementById('clear-days-input').value = val;
-                document.querySelectorAll('[data-clear-days]').forEach(btn => {
-                    btn.classList.toggle('active-red', parseInt(btn.dataset.clearDays) === val);
-                });
-            }
-
-            // ── Days Pill Buttons ──
-            function selectDays(val) {
-                document.getElementById('days-input').value = val;
-                document.querySelectorAll('.pill-btn[data-days]').forEach(btn => {
-                    btn.classList.toggle('active-blue', parseInt(btn.dataset.days) === val);
-                });
-            }
-
-            // ── Submit Filters ──
-            function submitFilters() {
-                const action = document.getElementById('action-input').value;
-                const q = document.getElementById('search-input').value.trim();
-                const days = document.getElementById('days-input').value;
-                const params = new URLSearchParams();
-                if (action) params.set('action', action);
-                if (q) params.set('q', q);
-                if (days) params.set('days', days);
-                window.location.href = 'activity_log.php?' + params.toString();
-            }
-
-            // ── Close dropdown on outside click ──
-            document.addEventListener('click', function(e) {
-                const container = document.getElementById('action-dropdown-container');
-                const panel = document.getElementById('action-dropdown-panel');
-                if (container && panel && !panel.classList.contains('hidden') && !container.contains(e.target)) {
-                    panel.classList.add('hidden');
-                    document.body.classList.remove('dropdown-active');
-                }
-            });
-
-            // ── Enter key on search field ──
-            document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('search-input')?.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        submitFilters();
-                    }
-                });
-            });
-        </script>
+    <script src="../assets/js/admin/activity_log.js?v=<?= filemtime('../assets/js/admin/activity_log.js') ?>"></script>
 
         <!-- Table -->
         <div class="glass rounded-2xl overflow-hidden relative z-0">
@@ -680,8 +435,6 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
     </div>
 
     <script>
-        lucide.createIcons();
-
         <?php if ($clear_msg): ?>
             Swal.fire({
                 title: 'Selesai!',

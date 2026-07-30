@@ -1,0 +1,27 @@
+/* ============================================================
+ * main.css — MEeL Admin Styles Entry Point
+ *
+ * Import semua modul CSS Admin secara terstruktur.
+ * Urutan: base → layout → komponen → utility
+ * ============================================================ */
+
+/* ── Base & Variables ── */
+@import url('shared/base.css');
+
+/* ── Structural Layout ── */
+@import url('shared/layout.css');
+
+/* ── Cards & Stats ── */
+@import url('shared/cards.css');
+
+/* ── Tables ── */
+@import url('shared/table.css');
+
+/* ── Forms & Inputs ── */
+@import url('shared/form.css');
+
+/* ── Modals ── */
+@import url('shared/modal.css');
+
+/* ── Utility ── */
+@import url('shared/utility.css');

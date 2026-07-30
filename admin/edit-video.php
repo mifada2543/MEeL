@@ -161,9 +161,9 @@ $thumb_src = !empty($video['thumbnail'])
     <meta name="twitter:card" content="summary_large_image">
     <title>Edit Video | MEeL Admin</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link rel="stylesheet" href="../assets/css/em.css">
+    <link rel="stylesheet" href="../assets/css/admin/edit/video/main.css?v=<?= filemtime('../assets/css/admin/edit/video/main.css') ?>">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
 </head>
 
 <body class="theme-video">
@@ -331,11 +331,10 @@ $thumb_src = !empty($video['thumbnail'])
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/admin/edit/video.js?v=<?= filemtime('../assets/js/admin/edit/video.js') ?>"></script>
     <script>
-        lucide.createIcons();
-
         <?php if ($status === "success"): ?>
             Swal.fire({
                 title: 'Berhasil!',
@@ -346,64 +345,6 @@ $thumb_src = !empty($video['thumbnail'])
                 color: '#fff'
             });
         <?php endif; ?>
-
-        function handleSubmit() {
-            const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin2 .7s linear infinite;"></div> Menyimpan...';
-            btn.style.opacity = '.6';
-            btn.style.pointerEvents = 'none';
-        }
-
-        // Hidden file input di dalam form — trigger via klik/drop di sidebar
-        const thumbHidden = document.getElementById('thumb-file-hidden');
-
-        function handleThumbChange(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('thumb-preview').src = e.target.result;
-                    document.getElementById('thumb-changed-badge').style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // Klik pada area thumbnail → trigger hidden input
-        document.getElementById('thumb-wrap').addEventListener('click', function(e) {
-            if (e.target === thumbHidden) return;
-            thumbHidden.click();
-        });
-
-        // Hidden input change → preview
-        thumbHidden.addEventListener('change', function() {
-            handleThumbChange(this);
-        });
-
-        // Drag-and-drop onto thumbnail
-        const thumbWrap = document.getElementById('thumb-wrap');
-
-        thumbWrap.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            thumbWrap.classList.add('drag-over');
-        });
-        thumbWrap.addEventListener('dragleave', function() {
-            thumbWrap.classList.remove('drag-over');
-        });
-        thumbWrap.addEventListener('drop', function(e) {
-            e.preventDefault();
-            thumbWrap.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files && files[0] && files[0].type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                thumbHidden.files = dt.files;
-                handleThumbChange(thumbHidden);
-            }
-        });
-
-        const style = document.createElement('style');
-        style.textContent = '@keyframes spin2 { to { transform: rotate(360deg); } }';
-        document.head.appendChild(style);
     </script>
 </body>
 

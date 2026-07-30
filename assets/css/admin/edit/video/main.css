@@ -1,0 +1,43 @@
+/* ============================================================
+ * edit/video/main.css — Edit Video Page Styles (Admin)
+ * Halaman: admin/edit-video.php
+ *
+ * Mengimpor shared edit styles + menambahkan tema merah.
+ * ============================================================ */
+
+@import url('../shared/main.css');
+
+/* ── Video Theme ── */
+body.theme-video {
+  --accent: #ef4444;
+  --accent-hover: #f87171;
+  --accent-dim: rgba(239, 68, 68, 0.10);
+  --accent-border: rgba(239, 68, 68, 0.20);
+  --accent-overlay: rgba(239, 68, 68, 0.9);
+  --btn-text: #fff;
+  --btn-shadow: rgba(239, 68, 68, 0.22);
+  --btn-shadow-hover: rgba(239, 68, 68, 0.32);
+  --brightness-hover: 0.45;
+  --sidebar-width: 360px;
+  --sidebar-gap: 24px;
+  --divider-margin: 24px 0;
+}
+
+@media (min-width: 1200px) {
+  body.theme-video {
+    --sidebar-width: 420px;
+  }
+}
+
+body.theme-video .thumb-changed-badge {
+  color: #fff;
+}
+
+body.theme-video .uploader-avatar-fallback {
+  background: linear-gradient(135deg, var(--accent) 0%, #991b1b 100%);
+}
+
+body.theme-video .field-input:focus {
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}

@@ -274,8 +274,8 @@ if (isset($_POST['upload'])) {
             </div>
         </div>
     </div>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         lucide.createIcons();
 

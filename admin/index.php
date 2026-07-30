@@ -67,59 +67,13 @@ GarbageCollector::cleanGuests($conn);
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <script src="../assets/js/chart.umd.min.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
+    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/index.css?v=<?= filemtime('../assets/css/admin/index.css') ?>">
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/chart.umd.min.js"></script>
 
-        .glass {
-            background: rgba(22, 27, 34, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .scrollable-table-wrap {
-            overflow: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        .scrollable-table-wrap thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .scrollable-table-wrap thead th {
-            background: #0b0e14;
-        }
-        .scrollable-table-wrap thead::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.03);
-            pointer-events: none;
-        }
-    </style>
 </head>
 
 <body class="text-gray-300 font-sans min-h-screen">
@@ -652,91 +606,10 @@ GarbageCollector::cleanGuests($conn);
             </div>
         </div>
     </div>
-    <script>
-        lucide.createIcons();
-
-        // ── CHART DATA ────────────────────────────────────────────────────────
-        var activityData = <?= json_encode($chart_activity) ?>;
-
-        // ── 7-DAY ACTIVITY BAR CHART ───────────────────────────────────────
-            var ctx2 = document.getElementById('activityChart');
-            if (ctx2 && activityData.length > 0) {
-                new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: activityData.map(function(d) { return d.label; }),
-                        datasets: [
-                            {
-                                label: 'Views',
-                                data: activityData.map(function(d) { return d.views; }),
-                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                                borderColor: '#3b82f6',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                order: 1
-                            },
-                            {
-                                label: 'Uploads',
-                                data: activityData.map(function(d) { return d.uploads; }),
-                                backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                                borderColor: '#22c55e',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                order: 2
-                            },
-                            {
-                                label: 'Active Users',
-                                data: activityData.map(function(d) { return d.users; }),
-                                type: 'line',
-                                borderColor: '#a855f7',
-                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                                pointBackgroundColor: '#a855f7',
-                                pointRadius: 3,
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3,
-                                order: 0
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#9ca3af',
-                                    font: { size: 9 },
-                                    boxWidth: 12,
-                                    padding: 8
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#6b7280', font: { size: 9 } }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#6b7280', font: { size: 9 } }
-                            }
-                        }
-                    }
-                });
-            }
-        
-
-        // Auto-refresh every 60 seconds
-        setTimeout(function() {
-            location.reload();
-        }, 60000);
-    </script>
+    <!-- Chart data (PHP → JS bridge) -->
+    <script>var activityData = <?= json_encode($chart_activity) ?>;</script>
+    <script src="../assets/js/admin/main.js?v=<?= filemtime('../assets/js/admin/main.js') ?>"></script>
+    <script src="../assets/js/admin/index.js?v=<?= filemtime('../assets/js/admin/index.js') ?>"></script>
 </body>
 
 </html>

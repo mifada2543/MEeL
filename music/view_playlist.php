@@ -325,8 +325,8 @@ if (isset($_GET['content_only'])) {
     <?php include '../partials/link.php'; ?>
     <link rel="stylesheet" href="../assets/css/music/main.css">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/htmx.min.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <style>
         .artist-dropdown-active #library-container > main {
             position: relative;

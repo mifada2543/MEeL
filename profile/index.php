@@ -288,7 +288,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
         </div>
     </div>
  <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script>
         lucide.createIcons();
 

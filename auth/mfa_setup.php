@@ -129,8 +129,8 @@ if ($mfa_enabled && $step === 'setup') {
     <title>Keamanan Akun | MEeL</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/qrcode.min.js"></script>
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/qrcode.min.js"></script>
     <style>
         body { background-color: #0b0e14; }
         .glass-effect {
@@ -429,7 +429,7 @@ if ($mfa_enabled && $step === 'setup') {
     <p class="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
 </main>
 
-<script src="../assets/js/sweetalert2.all.min.js"></script>
+<script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
 <script>
     lucide.createIcons();
 

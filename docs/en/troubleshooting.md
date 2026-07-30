@@ -217,7 +217,7 @@ Verify the mount point exists and is accessible.
 
 **Solution:**
 ```html
-<script src="/MEeL/assets/js/lucide.js"></script>
+<script src="/MEeL/assets/js/compatibilitas/lucide.js"></script>
 <script>lucide.createIcons();</script>
 ```
 

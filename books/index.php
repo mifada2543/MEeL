@@ -35,7 +35,7 @@ $totalPagesBooks = $meta_books['total_pages'];
     <?php include '../partials/link.php'; ?>
     <link rel="stylesheet" href="../assets/css/books/main.css">
     <link rel="stylesheet" href="../assets/css/books/index/main.css">
-    <script src="../assets/js/htmx.min.js"></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
 </head>
 
 <body class="text-gray-400 min-h-screen">

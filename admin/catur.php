@@ -167,48 +167,8 @@ $back_url    = 'index.php';
     <title>Chess Manager · MEeL Admin</title>
     <link rel="stylesheet" href="../assets/css/font.css">
     <?php include '../partials/link.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #080b11;
-            color: #e2e8f0;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 12px;
-        }
-
-        .badge-active {
-            background: rgba(34, 197, 94, .1);
-            color: #4ade80;
-            border: 1px solid rgba(34, 197, 94, .2);
-        }
-
-        .badge-waiting {
-            background: rgba(234, 179, 8, .1);
-            color: #facc15;
-            border: 1px solid rgba(234, 179, 8, .2);
-        }
-
-        .badge-idle {
-            background: rgba(239, 68, 68, .1);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, .2);
-        }
-
-        .log-entry {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: #64748b;
-        }
-
-        .countdown-bar {
-            transition: width 0.5s linear;
-        }
-    </style>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/admin/catur.css?v=<?= filemtime('../assets/css/admin/catur.css') ?>">
 </head>
 
 <body class="min-h-screen">
@@ -379,56 +339,7 @@ $back_url    = 'index.php';
 
     </main>
 
-    <script>
-        lucide.createIcons();
-
-        // Confirm delete dialog
-        function confirmDelete(code) {
-            return confirm(`Hapus room ${code} beserta semua moves-nya?`);
-        }
-
-        // ── Auto-cleanup setiap 10 menit ─────────────────────────────────────────────
-        const INTERVAL_MS = 10 * 60 * 1000; // 10 menit
-        let remaining = INTERVAL_MS / 1000;
-
-        const countdownEl = document.getElementById('countdown');
-        const liveLog = document.getElementById('live-log');
-
-        function formatTime(s) {
-            const m = Math.floor(s / 60).toString().padStart(2, '0');
-            const sec = (s % 60).toString().padStart(2, '0');
-            return `${m}:${sec}`;
-        }
-
-        function tick() {
-            remaining--;
-            if (remaining <= 0) {
-                remaining = INTERVAL_MS / 1000;
-                runCleanup();
-            }
-            countdownEl.textContent = formatTime(remaining);
-        }
-
-        async function runCleanup() {
-            try {
-                const res = await fetch('catur.php?auto_cleanup=1');
-                const data = await res.json();
-                if (data.success) {
-                    const entry = document.createElement('p');
-                    entry.className = 'log-entry';
-                    entry.textContent = `[${data.time}] AUTO-CLEANUP: ${data.rooms} rooms, ${data.moves} moves deleted`;
-                    liveLog.prepend(entry);
-
-                    // Refresh halaman setelah cleanup agar stats update
-                    setTimeout(() => location.reload(), 1500);
-                }
-            } catch (e) {
-                console.warn('Cleanup error:', e);
-            }
-        }
-
-        setInterval(tick, 1000);
-    </script>
+    <script src="../assets/js/admin/catur.js?v=<?= filemtime('../assets/js/admin/catur.js') ?>"></script>
 </body>
 
 </html>

@@ -1,0 +1,145 @@
+/* ============================================================
+ * navbar.css — Navigasi sidebar & kategori
+ * Modul: Drive (MEeL Cloud)
+ * ============================================================ */
+
+/* ── Nav Item ── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.nav-item:hover {
+  background: var(--bg-glass);
+  color: #e5e7eb;
+  border-color: var(--border);
+}
+
+.nav-item.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: #fff;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.nav-item.active-purple {
+  background: rgba(139, 92, 246, 0.1);
+  color: #fff;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* ── Nav Active (dari index.php inline) ── */
+.nav-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid var(--accent-blue, #3b82f6);
+  color: var(--accent-blue, #3b82f6);
+}
+
+/* ── Desktop Nav Section Buttons ── */
+.nav-btn-desktop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+  background: none;
+  border: 1px solid transparent;
+  text-align: left;
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nav-btn-desktop:hover {
+  background: var(--bg-glass);
+  color: #e5e7eb;
+  border-color: var(--border);
+}
+
+/* ── Mobile Nav Category Buttons ── */
+.nav-btn-mobile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* ── Logo / Brand ── */
+.drive-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.drive-brand {
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.2;
+}
+
+.drive-brand-accent {
+  color: var(--accent-b, #3b82f6);
+}
+
+.drive-brand-sub {
+  font-size: 10px;
+  color: #6b7280;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── Scope Pills ── */
+.scope-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.scope-pill-active {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.scope-pill-inactive {
+  background: rgba(255, 255, 255, 0.05);
+  color: #9ca3af;
+  border: 1px solid var(--border);
+}
+
+.scope-pill-inactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+}

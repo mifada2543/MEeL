@@ -700,7 +700,7 @@ if (!headers_sent()) {
 ### ❌ SweetAlert2 tidak muncul
 
 **Cek:**
-1. File `assets/js/sweetalert2.all.min.js` ter-load
+1. File `assets/js/compatibilitas/sweetalert2.all.min.js` ter-load
 2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/script.js`
 3. Tidak ada CSS conflict
 
