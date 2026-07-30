@@ -18,12 +18,6 @@
   --btn-text: #fff;
   --btn-shadow: rgba(239, 68, 68, 0.22);
   --btn-shadow-hover: rgba(239, 68, 68, 0.32);
-  --bg-base: #080b11;
-  --bg-card: #0e1118;
-  --bg-panel: #131720;
-  --border: rgba(255, 255, 255, .06);
-  --border-strong: rgba(255, 255, 255, .10);
-
   /* Shared CSS variable overrides */
   --page-wrap-rows: 56px 1fr;
   --sidebar-gap: 24px;

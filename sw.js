@@ -28,6 +28,7 @@ const PRECACHE_URLS = [
   'assets/css/books/main.css',
   'assets/css/drive/main.css',
   'assets/css/admin/main.css',
+  'assets/css/shared/design-tokens.css',
   'assets/css/shared/upload-form.css',
   'assets/css/up.css',
   'assets/css/introduction.css',
