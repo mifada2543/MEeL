@@ -472,7 +472,9 @@ while ($rc = $r->fetch_assoc()) {
         </div>
     </div>
 
-    <script src="../assets/js/admin/main.js?v=<?= filemtime('../assets/js/admin/main.js') ?>"></script>
+    <script src="../assets/js/admin/shared/modal.js?v=<?= filemtime('../assets/js/admin/shared/modal.js') ?>"></script>
+    <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
+    <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>
     <script src="../assets/js/admin/cookies.js?v=<?= filemtime('../assets/js/admin/cookies.js') ?>"></script>
     <script>
         <?php if ($delete_msg && $delete_msg['type'] === 'success'): ?>

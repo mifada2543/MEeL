@@ -299,7 +299,11 @@ if ($user->isMember()) {
         </div>
     </div>
 
-    <script src="../assets/js/drive/main.js?v=<?= filemtime('../assets/js/drive/main.js') ?>"></script>
+    <script src="../assets/js/drive/navigation.js?v=<?= filemtime('../assets/js/drive/navigation.js') ?>"></script>
+    <script src="../assets/js/drive/file-input.js?v=<?= filemtime('../assets/js/drive/file-input.js') ?>"></script>
+    <script src="../assets/js/drive/preview.js?v=<?= filemtime('../assets/js/drive/preview.js') ?>"></script>
+    <script src="../assets/js/drive/search.js?v=<?= filemtime('../assets/js/drive/search.js') ?>"></script>
+    <script src="../assets/js/drive/upload.js?v=<?= filemtime('../assets/js/drive/upload.js') ?>"></script>
     <?php include '../partials/footer.php'; ?>
 </body>
 

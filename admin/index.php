@@ -608,7 +608,9 @@ GarbageCollector::cleanGuests($conn);
     </div>
     <!-- Chart data (PHP → JS bridge) -->
     <script>var activityData = <?= json_encode($chart_activity) ?>;</script>
-    <script src="../assets/js/admin/main.js?v=<?= filemtime('../assets/js/admin/main.js') ?>"></script>
+    <script src="../assets/js/admin/shared/modal.js?v=<?= filemtime('../assets/js/admin/shared/modal.js') ?>"></script>
+    <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
+    <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>
     <script src="../assets/js/admin/index.js?v=<?= filemtime('../assets/js/admin/index.js') ?>"></script>
 </body>
 
