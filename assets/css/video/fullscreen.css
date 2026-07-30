@@ -124,3 +124,12 @@ body.meel-fs-active .plyr {
   background-color: #000 !important;
   z-index: 999999 !important;
 }
+
+/* ── Auto-next overlay inside fullscreen ────────────────────────
+ * Saat fullscreen, #autonext-overlay di-append ke .plyr (bukan
+ * #main-video-wrapper) agar satu stacking context dengan kontrol
+ * Plyr. z-index tinggi memastikan overlay muncul di atas kontrol.
+ * ───────────────────────────────────────────────────────────── */
+body.meel-fs-active #autonext-overlay {
+  z-index: 100 !important;
+}

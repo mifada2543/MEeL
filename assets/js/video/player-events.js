@@ -65,7 +65,13 @@ function setupMeelPlayerEvents() {
           e.querySelector('[class*="text-red-500"], [class*="text-red-600"]')?.textContent?.trim() ||
           "";
 
-        const r = document.getElementById("main-video-wrapper");
+        /* ── Cari container: prioritaskan `.plyr` (fullscreen-compatible),
+           fallback ke `#main-video-wrapper`. Di fullscreen, `.plyr` mendapat
+           `position: fixed; z-index: 999999` sehingga auto-next overlay harus
+           berada dalam stacking context yang sama dengan kontrol Plyr agar
+           tidak tersembunyi di belakangnya. ── */
+        const plyr = document.querySelector(".plyr");
+        const r = plyr || document.getElementById("main-video-wrapper");
         if (!r) return void t(!1);
 
         const i = document.createElement("div");
