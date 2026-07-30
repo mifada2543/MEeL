@@ -333,6 +333,9 @@ $thumb_src = !empty($video['thumbnail'])
     <?php include '../partials/footer.php'; ?>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/admin/edit/shared/form.js?v=<?= filemtime('../assets/js/admin/edit/shared/form.js') ?>"></script>
+    <script src="../assets/js/admin/edit/shared/thumbnail.js?v=<?= filemtime('../assets/js/admin/edit/shared/thumbnail.js') ?>"></script>
+    <script src="../assets/js/admin/edit/shared/dragdrop.js?v=<?= filemtime('../assets/js/admin/edit/shared/dragdrop.js') ?>"></script>
     <script src="../assets/js/admin/edit/video.js?v=<?= filemtime('../assets/js/admin/edit/video.js') ?>"></script>
     <script>
         <?php if ($status === "success"): ?>
