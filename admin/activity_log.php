@@ -510,13 +510,14 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                     class="text-[10px] text-gray-500 hover:text-white px-4 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-2 rounded-xl hover:bg-white/[.03]">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     Reset
-                </a><br>
+                </a><span class="text-white/10 text-[10px]">|</span>
                 <div class="flex items-center gap-1">
                     <button type="button" onclick="previewExport('csv')"
                         class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
                         title="Preview CSV">
                         <i data-lucide="eye" class="w-3 h-3"></i>
                     </button>
+                    <span class="text-white/10 text-[10px]">|</span>
                     <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>"
                         class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
                         title="Download CSV">
@@ -529,6 +530,7 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                         title="Preview JSON">
                         <i data-lucide="eye" class="w-3 h-3"></i>
                     </button>
+                    <span class="text-white/10 text-[10px]">|</span>
                     <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'json'])) ?>"
                         class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
                         title="Download JSON">
@@ -541,6 +543,7 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                         title="Preview XLS">
                         <i data-lucide="eye" class="w-3 h-3"></i>
                     </button>
+                    <span class="text-white/10 text-[10px]">|</span>
                     <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'xls'])) ?>"
                         class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
                         title="Download XLS">
