@@ -32,9 +32,6 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
         </div>
         <span class="text-[10px] text-gray-700 uppercase tracking-widest">
             <?= $total_music ?> tracks
-            <?php if ($totalPagesMusic > 1): ?>
-                <span class="text-gray-600">· Page <?= $pageMusic ?>/<?= $totalPagesMusic ?></span>
-            <?php endif; ?>
         </span>
     </div>
 
