@@ -54,6 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
     }
 }
 
+// ─── Clear All Logs (POST) ──────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $clear_msg = 'CSRF Token tidak valid.';
+    } else {
+        // TRUNCATE menghapus SEMUA baris + me-reset auto-increment ke 1
+        if ($conn->query("TRUNCATE TABLE activity_log")) {
+            $clear_msg = 'Semua log aktivitas berhasil dihapus. Auto-increment telah di-reset ke 1.';
+        } else {
+            $clear_msg = 'Gagal menghapus log: ' . $conn->error;
+        }
+    }
+}
+
 // ─── Build Query ───────────────────────────────────────────────
 $where_conditions = ["1=1"];
 $params = [];
@@ -119,7 +133,223 @@ if ($actions_res) {
 
 // ─── Stats ─────────────────────────────────────────────────────
 $stats_res = $conn->query("SELECT COUNT(*) AS total, COUNT(DISTINCT user_id) AS unique_users FROM activity_log WHERE created_at >= NOW() - INTERVAL 7 DAY");
-$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0];
+$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0]; // ─── Helper: Export Query ───────────────────────────────────────────
+function export_query_data(mysqli $conn, string $where_sql, array $params, string $types): array
+{
+    $stmt = $conn->prepare(
+        "SELECT al.*, u.username
+         FROM activity_log al
+         LEFT JOIN users u ON al.user_id = u.id
+         WHERE {$where_sql}
+         ORDER BY al.created_at DESC"
+    );
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($r = $result->fetch_assoc()) {
+        $rows[] = $r;
+    }
+    $stmt->close();
+    return $rows;
+}
+
+// ─── Multi-Format Export ─────────────────────────────────────────────
+$export_format = $_GET['export'] ?? '';
+if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
+    $timestamp = date('Y-m-d_H-i-s');
+    $filename_base = "activity-log-export-{$timestamp}";
+    $rows = export_query_data($conn, $where_sql, $params, $types);
+
+    switch ($export_format) {
+        // ═══ CSV ═════════════════════════════════════════════════════
+        case 'csv':
+            header('Content-Type: text/csv; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"{$filename_base}.csv\"");
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
+            fputcsv($output, ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu']);
+
+            foreach ($rows as $row) {
+                fputcsv($output, [
+                    $row['id'],
+                    $row['user_id'] ?? '',
+                    $row['username'] ?? 'Guest',
+                    $row['action'],
+                    $row['media_type'] ?? '',
+                    $row['media_id'] ?? '',
+                    $row['ip_address'] ?? '',
+                    $row['created_at']
+                ]);
+            }
+            fclose($output);
+            break;
+
+        // ═══ JSON ════════════════════════════════════════════════════
+        case 'json':
+            header('Content-Type: application/json; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"{$filename_base}.json\"");
+
+            $json_data = array_map(function ($r) {
+                return [
+                    'id'         => (int)$r['id'],
+                    'user_id'    => $r['user_id'] !== null ? (int)$r['user_id'] : null,
+                    'username'   => $r['username'] ?? 'Guest',
+                    'action'     => $r['action'],
+                    'media_type' => $r['media_type'] ?? '',
+                    'media_id'   => $r['media_id'] !== null ? (int)$r['media_id'] : null,
+                    'ip_address' => $r['ip_address'] ?? '',
+                    'created_at' => $r['created_at'],
+                ];
+            }, $rows);
+
+            echo json_encode($json_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        // ═══ XLS (XML Spreadsheet 2003) ════════════════════════════
+        case 'xls':
+            header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"{$filename_base}.xls\"");
+
+            // XML Spreadsheet 2003 — kompatibel dengan Excel, LibreOffice, Google Sheets
+            echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+            echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+            echo '  xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+            echo '  xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+            echo '  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n";
+            echo '  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n";
+            echo '    <Author>MEeL Admin</Author>' . "\n";
+            echo '    <Created>' . date('c') . '</Created>' . "\n";
+            echo '  </DocumentProperties>' . "\n";
+            echo '  <Worksheet ss:Name="Activity Log">' . "\n";
+            echo '    <Table>' . "\n";
+
+            // Header row
+            $headers = ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu'];
+            echo '      <Row>' . "\n";
+            foreach ($headers as $h) {
+                echo '        <Cell><Data ss:Type="String">' . htmlspecialchars($h) . '</Data></Cell>' . "\n";
+            }
+            echo '      </Row>' . "\n";
+
+            // Helper untuk cell null-safe
+            $xls_cell = function ($val, string $type = 'String'): string {
+                if ($val === null || $val === '') {
+                    return '        <Cell><Data ss:Type="String"></Data></Cell>' . "\n";
+                }
+                if ($type === 'Number') {
+                    return '        <Cell><Data ss:Type="Number">' . (int)$val . '</Data></Cell>' . "\n";
+                }
+                return '        <Cell><Data ss:Type="String">' . htmlspecialchars((string)$val) . '</Data></Cell>' . "\n";
+            };
+
+            // Data rows
+            foreach ($rows as $row) {
+                echo '      <Row>' . "\n";
+                echo $xls_cell($row['id'], 'Number');
+                echo $xls_cell($row['user_id'], 'Number');
+                echo $xls_cell($row['username'] ?? 'Guest');
+                echo $xls_cell($row['action']);
+                echo $xls_cell($row['media_type']);
+                echo $xls_cell($row['media_id'], 'Number');
+                echo $xls_cell($row['ip_address']);
+                echo $xls_cell($row['created_at']);
+                echo '      </Row>' . "\n";
+            }
+
+            echo '    </Table>' . "\n";
+            echo '  </Worksheet>' . "\n";
+            echo '</Workbook>' . "\n";
+            break;
+    }
+    exit;
+}
+
+// ─── Preview Handler ─────────────────────────────────────────────
+if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['format'] ?? '', ['csv', 'json', 'xls'], true)) {
+    $preview_format = $_GET['format'];
+    $all_rows = export_query_data($conn, $where_sql, $params, $types);
+    $preview_total = count($all_rows);
+    $preview_limit = 15;
+    $preview_rows = array_slice($all_rows, 0, $preview_limit);
+
+    $content = '';
+    switch ($preview_format) {
+        case 'csv':
+            $content = '';
+            $h = ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu'];
+            $content .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $h)) . "\n";
+            foreach ($preview_rows as $r) {
+                $vals = [
+                    $r['id'],
+                    $r['user_id'] ?? '',
+                    $r['username'] ?? 'Guest',
+                    $r['action'],
+                    $r['media_type'] ?? '',
+                    $r['media_id'] ?? '',
+                    $r['ip_address'] ?? '',
+                    $r['created_at']
+                ];
+                $content .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $vals)) . "\n";
+            }
+            if ($preview_total > $preview_limit) {
+                $content .= "\n... dan " . ($preview_total - $preview_limit) . " baris lainnya\n";
+            }
+            break;
+
+        case 'json':
+            $json_out = array_map(function ($r) {
+                return [
+                    'id'         => (int)$r['id'],
+                    'user_id'    => $r['user_id'] !== null ? (int)$r['user_id'] : null,
+                    'username'   => $r['username'] ?? 'Guest',
+                    'action'     => $r['action'],
+                    'media_type' => $r['media_type'] ?? '',
+                    'media_id'   => $r['media_id'] !== null ? (int)$r['media_id'] : null,
+                    'ip_address' => $r['ip_address'] ?? '',
+                    'created_at' => $r['created_at'],
+                ];
+            }, $preview_rows);
+            $content = json_encode($json_out, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($preview_total > $preview_limit) {
+                $content .= "\n\n/* ... dan {$preview_total} total baris (ditampilkan {$preview_limit}) */";
+            }
+            break;
+
+        case 'xls':
+            $content = "ID\tUser ID\tUsername\tAction\tMedia Type\tMedia ID\tIP Address\tWaktu\n";
+            foreach ($preview_rows as $r) {
+                $content .= implode("\t", [
+                    $r['id'],
+                    $r['user_id'] ?? '',
+                    $r['username'] ?? 'Guest',
+                    $r['action'],
+                    $r['media_type'] ?? '',
+                    $r['media_id'] ?? '',
+                    $r['ip_address'] ?? '',
+                    $r['created_at']
+                ]) . "\n";
+            }
+            if ($preview_total > $preview_limit) {
+                $content .= "\n... dan " . ($preview_total - $preview_limit) . " baris lainnya\n";
+            }
+            break;
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'format'        => $preview_format,
+        'total'         => $preview_total,
+        'preview_count' => min($preview_total, $preview_limit),
+        'content'       => $content,
+    ]);
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -280,11 +510,48 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                     class="text-[10px] text-gray-500 hover:text-white px-4 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-2 rounded-xl hover:bg-white/[.03]">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     Reset
-                </a>
+                </a><br>
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="previewExport('csv')"
+                        class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
+                        title="Preview CSV">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>"
+                        class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
+                        title="Download CSV">
+                        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                        CSV
+                    </a>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <button type="button" onclick="previewExport('json')"
+                        class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
+                        title="Preview JSON">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'json'])) ?>"
+                        class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
+                        title="Download JSON">
+                        <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
+                        JSON
+                    </a>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <button type="button" onclick="previewExport('xls')"
+                        class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
+                        title="Preview XLS">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'xls'])) ?>"
+                        class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
+                        title="Download XLS">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                        XLS
+                    </a>
+                </div>
             </div>
         </div>
 
-    <script src="../assets/js/admin/activity_log.js?v=<?= filemtime('../assets/js/admin/activity_log.js') ?>"></script>
+        <script src="../assets/js/admin/activity_log.js?v=<?= filemtime('../assets/js/admin/activity_log.js') ?>"></script>
 
         <!-- Table -->
         <div class="glass rounded-2xl overflow-hidden relative z-0">
@@ -428,6 +695,77 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                     class="bg-red-600/10 text-red-400 border border-red-500/20 hover:bg-red-600 hover:text-white text-[10px] font-bold px-5 py-2.5 rounded-xl transition-all uppercase tracking-wider inline-flex items-center gap-1.5">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     Hapus Log
+                </button>
+            </form>
+        </div>
+        <br>
+        <!-- Clear ALL Logs -->
+        <div class="glass p-6 rounded-2xl mt-5 border border-red-500/30">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 rounded-xl bg-red-600/15 border border-red-500/30">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-gray-300">Hapus Semua Log</h3>
+                    <p class="text-[9px] text-gray-500">Hapus <strong class="text-red-400">seluruh</strong> log aktivitas dan reset auto-increment ke 1. Tindakan ini <strong class="text-red-400">tidak dapat dibatalkan</strong>.</p>
+                </div>
+            </div>
+
+            <!-- Backup sebelum hapus -->
+            <div class="flex items-center gap-3 flex-wrap mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <i data-lucide="info" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <p class="text-[10px] text-amber-300 flex-1">
+                    Backup dulu sebelum menghapus? Semua log akan hilang permanen.
+                </p>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onclick="previewExport('csv')"
+                        class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
+                        title="Preview CSV">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?export=csv"
+                        class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
+                        onclick="return meelConfirmLink(event, { title:'Backup CSV', text:'Download backup seluruh log aktivitas sebagai CSV?', confirmButtonText:'DOWNLOAD', icon:'question' })"
+                        title="Download CSV">
+                        <i data-lucide="file-down" class="w-3 h-3"></i>
+                        CSV
+                    </a>
+                    <span class="text-amber-500/20">|</span>
+                    <button type="button" onclick="previewExport('json')"
+                        class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
+                        title="Preview JSON">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?export=json"
+                        class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
+                        onclick="return meelConfirmLink(event, { title:'Backup JSON', text:'Download backup seluruh log aktivitas sebagai JSON?', confirmButtonText:'DOWNLOAD', icon:'question' })"
+                        title="Download JSON">
+                        <i data-lucide="file-code" class="w-3 h-3"></i>
+                        JSON
+                    </a>
+                    <span class="text-amber-500/20">|</span>
+                    <button type="button" onclick="previewExport('xls')"
+                        class="text-[10px] font-bold text-violet-400 hover:text-violet-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-violet-500/10 hover:border-violet-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
+                        title="Preview XLS">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?export=xls"
+                        class="text-[10px] font-bold text-violet-400 hover:text-violet-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-violet-500/10 hover:border-violet-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
+                        onclick="return meelConfirmLink(event, { title:'Backup Excel', text:'Download backup seluruh log aktivitas sebagai Excel?', confirmButtonText:'DOWNLOAD', icon:'question' })"
+                        title="Download Excel">
+                        <i data-lucide="file-spreadsheet" class="w-3 h-3"></i>
+                        XLS
+                    </a>
+                </div>
+            </div>
+
+            <form method="POST" onsubmit="return meelConfirmForm(event, { title:'⚠️ Hapus Semua Log', text:'Apakah Anda yakin ingin menghapus SELURUH log aktivitas?\n\nAuto-increment ID akan di-reset ke 1. Tindakan ini tidak dapat dibatalkan!', icon:'warning', confirmButtonText:'HAPUS SEMUA', confirmButtonColor:'#dc2626' })" id="clear-all-logs-form">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                <input type="hidden" name="clear_all_logs" value="1">
+                <button type="submit"
+                    class="bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white text-[10px] font-bold px-6 py-3 rounded-xl transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    Hapus Semua & Reset ID
                 </button>
             </form>
         </div>
