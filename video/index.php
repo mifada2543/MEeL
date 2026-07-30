@@ -89,9 +89,6 @@ $totalPages = $meta['total_pages'];
             </div>
             <span class="text-[10px] text-gray-300 uppercase tracking-widest">
                 <?= $total ?> clips
-                <?php if ($totalPages > 1): ?>
-                    <span class="text-gray-600">· Page <?= $page ?>/<?= $totalPages ?></span>
-                <?php endif; ?>
             </span>
         </div>
 
