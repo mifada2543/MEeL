@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" tests="6" assertions="11" errors="0" warnings="0" failures="0" skipped="0" time="0.029178">
-    <testcase name="testGetRomajiNameEmptyString" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="21" assertions="1" time="0.001169"/>
-    <testcase name="testGetRomajiNameWithLatinText" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="26" assertions="1" time="0.015286"/>
-    <testcase name="testGetRomajiNameWithSpecialChars" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="33" assertions="1" time="0.004063"/>
+  <testsuite name="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" tests="11" assertions="18" errors="0" warnings="0" failures="0" skipped="0" time="0.053194">
+    <testcase name="testGetRomajiNameEmptyString" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="21" assertions="1" time="0.001279"/>
+    <testcase name="testGetRomajiNameWithLatinText" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="26" assertions="1" time="0.015542"/>
+    <testcase name="testGetRomajiNameWithSpecialChars" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="33" assertions="1" time="0.004008"/>
     <testcase name="testAnalyzeJapaneseTextEmpty" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="41" assertions="2" time="0.000053"/>
-    <testcase name="testAnalyzeJapaneseTextBasic" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="48" assertions="4" time="0.004351"/>
-    <testcase name="testAnalyzeJapaneseTextWithAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="57" assertions="2" time="0.004256"/>
+    <testcase name="testAnalyzeJapaneseTextBasic" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="48" assertions="4" time="0.004890"/>
+    <testcase name="testAnalyzeJapaneseTextWithAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="57" assertions="2" time="0.004436"/>
+    <testcase name="testAnalyzeJapaneseTextWithTouhouAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="66" assertions="1" time="0.004615"/>
+    <testcase name="testAnalyzeJapaneseTextWithNightcordAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="72" assertions="1" time="0.004503"/>
+    <testcase name="testAnalyzeJapaneseTextWithCharacterAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="78" assertions="2" time="0.005017"/>
+    <testcase name="testAnalyzeJapaneseTextWithNicknameAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="85" assertions="2" time="0.004003"/>
+    <testcase name="testAnalyzeJapaneseTextWithEnsembleStarsAlias" class="JapaneseTest" classname="JapaneseTest" file="/opt/lampp/htdocs/MEeL/tests/unit/JapaneseTest.php" line="93" assertions="1" time="0.004849"/>
   </testsuite>
 </testsuites>

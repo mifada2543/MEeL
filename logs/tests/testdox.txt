@@ -5,4 +5,9 @@ Japanese
  [x] Analyze japanese text empty
  [x] Analyze japanese text basic
  [x] Analyze japanese text with alias
+ [x] Analyze japanese text with touhou alias
+ [x] Analyze japanese text with nightcord alias
+ [x] Analyze japanese text with character alias
+ [x] Analyze japanese text with nickname alias
+ [x] Analyze japanese text with ensemble stars alias
 

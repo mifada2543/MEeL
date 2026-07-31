@@ -213,6 +213,27 @@ class HelpersTest extends TestCase
         @rmdir($testDir);
     }
 
+    // ─── generate_search_metadata() ──────────────────────────────────────────
+    // Helper ini butuh japanese.php + MeCab — sama seperti JapaneseTest.
+    // Memverifikasi format: original + romaji + english (lowercase), termasuk
+    // brand alias dari japanese_aliases.php.
+
+    public function testGenerateSearchMetadataWithAliases(): void
+    {
+        $result = generate_search_metadata('プロジェクトセカイ カラフルステージ!');
+        $this->assertStringContainsString('project sekai', $result);
+        $this->assertStringContainsString('colorful stage', $result);
+        $this->assertStringContainsString('purojekutosekai', $result); // romaji
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);   // lowercase
+    }
+
+    public function testGenerateSearchMetadataPlainText(): void
+    {
+        $result = generate_search_metadata('Hello World Test');
+        $this->assertStringContainsString('hello world test', $result);
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
+    }
+
     // ─── get_user_role() requires DB, skip basic test ────────────────────────
     // ─── is_dir() is a native function, not tested here ──────────────────────
 }

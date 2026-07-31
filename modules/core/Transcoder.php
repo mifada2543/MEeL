@@ -466,7 +466,7 @@ class Transcoder
         if ($type === 'music') {
             return $this->finalizeMusic($temp_id, $title, $artist, $album, $duration, $description);
         }
-        return $this->finalizeVideo($basename, $basename . ".webp", $title, $artist, $duration, $description);
+        return $this->finalizeVideo($basename, $basename . ".webp", $title, $duration, $description);
     }
 
     // ─── FINALIZE MUSIC ───────────────────────────────────────────────────────
@@ -512,7 +512,6 @@ class Transcoder
         string $basename,
         string $db_thumb,
         string $title,
-        string $artist,
         int    $duration,
         string $description = 'Upload by MEeL Engine'
     ): string {
@@ -720,8 +719,9 @@ class Transcoder
             return "";
         }
 
-        $analysis = analyzeJapaneseText($title); // 1x MeCab, hasilkan romaji + english sekaligus
-        $metadata = mb_strtolower(trim("$title $artist {$analysis['romaji']} {$analysis['english']}"), 'UTF-8');
+        // Generate search_metadata — helper terpusat (romaji + english + alias),
+        // konsisten dengan Uploader, backfill & admin/edit-*.php
+        $metadata = generate_search_metadata($title);
         $views    = 0;
 
         $stmt = $this->conn->prepare(
@@ -811,12 +811,9 @@ class Transcoder
             @unlink($leftover);
         }
 
-        $title_analysis  = analyzeJapaneseText($title);  // 1x MeCab (romaji + english title)
-        $artist_analysis = analyzeJapaneseText($artist); // 1x MeCab (romaji + english artist)
-        $metadata        = mb_strtolower(trim(
-            "$title $artist $album {$title_analysis['romaji']} {$artist_analysis['romaji']} "
-                . "{$title_analysis['english']} {$artist_analysis['english']}"
-        ), 'UTF-8');
+        // Generate search_metadata — helper terpusat (romaji + english + alias),
+        // 1x MeCab saja (sebelumnya 2x terpisah), konsisten dengan Uploader/backfill
+        $metadata = generate_search_metadata($title, $artist, $album);
 
         $stmt = $this->conn->prepare(
             "INSERT INTO music (title, artist, album, description, search_metadata, filename, thumbnail, duration, user_id, upload_date)

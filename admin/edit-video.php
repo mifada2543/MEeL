@@ -123,10 +123,9 @@ if (isset($_POST['update'])) {
         if ($title === '') {
             $error_message = "Judul video tidak boleh kosong.";
         } else {
-            // Generate search_metadata baru
-            $original = trim($title);
-            $romaji   = getRomajiName($original);
-            $meta     = mb_strtolower($original . " " . $romaji, 'UTF-8');
+            // Generate search_metadata — helper terpusat (romaji + english + alias),
+            // konsisten dengan Uploader & backfill
+            $meta = generate_search_metadata($title);
 
             $stmt_update = $conn->prepare("UPDATE video SET title = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
             $stmt_update->bind_param("ssssi", $title, $description, $thumbnail_url, $meta, $id);

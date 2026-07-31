@@ -42,15 +42,6 @@ class Uploader
         return $sys->checkRateLimit($this->user_id, $table, $this->user_role);
     }
 
-    private function generateMetadata(string $title, string $artist = "", string $album = ""): string
-    {
-        $original = trim("$title $artist $album");
-        $analysis = analyzeJapaneseText($original); // 1x MeCab, hasilkan romaji + english sekaligus
-
-        $combined = trim($original . " " . $analysis['romaji'] . " " . $analysis['english']);
-        return mb_strtolower($combined, 'UTF-8');
-    }
-
     /**
      * 🔒 FIX SECURITY: Validasi magic bytes file video.
      * Cek header file untuk memastikan benar-benar video (MP4/WebM/MKV).
@@ -270,7 +261,7 @@ class Uploader
             }
         }
 
-        $meta = $this->generateMetadata($title, $artist, $album);
+        $meta = generate_search_metadata($title, $artist, $album);
 
         // 🔒 TRANSACTION: Atomic DB insert — rollback jika gagal
         $this->conn->begin_transaction();
@@ -541,7 +532,7 @@ class Uploader
         $title       = trim($post['title'] ?? 'Untitled Video');
         // 1. Ambil data deskripsi dari form POST
         $description = trim($post['description'] ?? '');
-        $meta        = $this->generateMetadata($title);
+        $meta        = generate_search_metadata($title);
 
         // 🔒 TRANSACTION: Atomic DB insert — rollback + cleanup jika gagal
         $this->conn->begin_transaction();

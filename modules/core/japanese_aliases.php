@@ -12,9 +12,51 @@
  * Tambahkan entri baru di sini kapan saja tanpa perlu ubah kode lain.
  */
 return [
+    // ── Project Sekai — Franchise & Nickname ────────────────────────────────
     'プロジェクトセカイ'   => 'Project Sekai',
     'カラフルステージ'     => 'Colorful Stage',
+    'プロセカ'            => 'Project Sekai',
+
+    // ── Project Sekai — Unit ────────────────────────────────────────────────
     'ワンダーランズ×ショウタイム' => 'Wonderlands x Showtime',
     'ワンダーランズ'       => 'Wonderlands',
+    'ワンオポ'            => 'Wonderlands x Showtime',
+    '25時、ナイトコードで'  => 'Nightcord at 25:00',
+    'ナイトコード'         => 'Nightcord',
+
+    // ── Project Sekai — Karakter (grup pertama: menonjol di katalog) ────────
+    '初音ミク'            => 'Hatsune Miku',
+    '鏡音リン'            => 'Kagamine Rin',
+    '鏡音レン'            => 'Kagamine Len',
+    '巡音ルカ'            => 'Megurine Luka',
+    '重音テト'            => 'Kasane Teto',
+    '星乃一歌'            => 'Hoshino Ichika',
+    '花里みのり'          => 'Hanasato Minori',
+    '桐谷遥'              => 'Kiritani Haruka',
+    '桃井愛莉'            => 'Momoi Airi',
+    '日野森雫'            => 'Hinomori Shizuku',
+    '天馬咲希'            => 'Tenma Saki',
+    '日野森志歩'          => 'Hinomori Shiho',
+    '望月穂波'            => 'Mochizuki Honami',
+    '宵崎奏'              => 'Yoisaki Kanade',
+    '朝比奈まふゆ'         => 'Asahina Mafuyu',
+    '東雲絵名'            => 'Shinonome Ena',
+    '暁山瑞希'            => 'Akiyama Mizuki',
+    '天馬司'              => 'Tenma Tsukasa',
+    '鳳えむ'              => 'Otori Emu',
+    '草薙寧々'            => 'Kusanagi Nene',
+    '神代類'              => 'Kamishiro Rui',
+    '小豆沢こはね'         => 'Azusawa Kohane',
+    '白石杏'              => 'Shiraishi An',
+    '東雲彰人'            => 'Shinonome Akito',
+    '青柳冬弥'            => 'Aoyagi Toya',
+
+    // ── Franchise / Game / Platform lain di katalog ─────────────────────────
+    '東方'                => 'Touhou',
+    'あんさんぶるスターズ'  => 'Ensemble Stars',
+    'ミルグラム'           => 'MILGRAM',
+    'ニコニコ動画'         => 'Niconico',
+    'ニコニコ'            => 'Niconico',
+
     // Tambahkan entri lain di sini sesuai kebutuhan katalog.
 ];

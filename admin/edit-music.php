@@ -127,10 +127,9 @@ if (isset($_POST['update'])) {
         if ($title === '') {
             $error_message = "Judul lagu tidak boleh kosong.";
         } else {
-            // Generate search_metadata baru
-            $meta_string = trim("$title $artist $album");
-            $romaji = getRomajiName($meta_string);
-            $meta = mb_strtolower($meta_string . " " . $romaji, 'UTF-8');
+            // Generate search_metadata — helper terpusat (romaji + english + alias),
+            // konsisten dengan Uploader & backfill
+            $meta = generate_search_metadata($title, $artist, $album);
 
             $stmt_update = $conn->prepare("UPDATE music SET title = ?, artist = ?, album = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
             $stmt_update->bind_param("ssssssi", $title, $artist, $album, $description, $thumbnail_url, $meta, $id);

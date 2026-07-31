@@ -45,16 +45,6 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
 
 echo "[MEeL] " . ($dryRun ? 'DRY-RUN (tidak menulis DB)' : 'BACKFILL') . " dimulai...\n";
 
-// ─── generateMetadata() — disalin dari Uploader::generateMetadata() ─────
-function backfill_generate_metadata(string $title, string $artist = '', string $album = ''): string
-{
-    $original = trim("$title $artist $album");
-    $analysis = analyzeJapaneseText($original); // 1x MeCab, romaji + english sekaligus
-
-    $combined = trim($original . ' ' . $analysis['romaji'] . ' ' . $analysis['english']);
-    return mb_strtolower($combined, 'UTF-8');
-}
-
 // ─── Proses satu tabel dalam batch kecil ─────────────────────────────────
 function backfill_process_table(\mysqli $conn, string $table, string $columns, int $batchSize, ?int $limit, bool $dryRun, array &$stats): void
 {
@@ -82,12 +72,14 @@ function backfill_process_table(\mysqli $conn, string $table, string $columns, i
             $id    = (int)$row['id'];
             $title = trim((string)($row['title'] ?? ''));
 
+            // generate_search_metadata() — helper terpusat (romaji + english + alias),
+            // konsisten dengan Uploader dan admin/edit-*.php
             if ($table === 'video') {
-                $meta = backfill_generate_metadata($title);
+                $meta = generate_search_metadata($title);
             } else {
                 $artist = trim((string)($row['artist'] ?? ''));
                 $album  = trim((string)($row['album'] ?? ''));
-                $meta   = backfill_generate_metadata($title, $artist, $album);
+                $meta   = generate_search_metadata($title, $artist, $album);
             }
 
             $oldMeta = $row['search_metadata'] ?? null;

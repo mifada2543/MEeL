@@ -61,4 +61,39 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('Colorful Stage', $result['english']);
     }
 
+    // ─── Alias baru (japanese_aliases.php) ──────────────────────────────────
+
+    public function testAnalyzeJapaneseTextWithTouhouAlias(): void
+    {
+        $result = analyzeJapaneseText('東方プロジェクト ボスラッシュ');
+        $this->assertStringContainsString('Touhou', $result['english']);
+    }
+
+    public function testAnalyzeJapaneseTextWithNightcordAlias(): void
+    {
+        $result = analyzeJapaneseText('25時、ナイトコードで。 歌ってみた');
+        $this->assertStringContainsString('Nightcord at 25:00', $result['english']);
+    }
+
+    public function testAnalyzeJapaneseTextWithCharacterAlias(): void
+    {
+        $result = analyzeJapaneseText('天馬司 & 鳳えむ');
+        $this->assertStringContainsString('Tenma Tsukasa', $result['english']);
+        $this->assertStringContainsString('Otori Emu', $result['english']);
+    }
+
+    public function testAnalyzeJapaneseTextWithNicknameAlias(): void
+    {
+        // Nickname プロセカ / ワンオポ juga harus dikenali
+        $result = analyzeJapaneseText('プロセカ ワンオポ');
+        $this->assertStringContainsString('Project Sekai', $result['english']);
+        $this->assertStringContainsString('Wonderlands x Showtime', $result['english']);
+    }
+
+    public function testAnalyzeJapaneseTextWithEnsembleStarsAlias(): void
+    {
+        $result = analyzeJapaneseText('あんさんぶるスターズ コラボ');
+        $this->assertStringContainsString('Ensemble Stars', $result['english']);
+    }
+
 }

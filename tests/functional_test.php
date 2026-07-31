@@ -200,6 +200,7 @@ function testFunctionExistence(): void {
         'get_csrf_token'        => 'modules/core/helpers.php',
         'verify_csrf_token'     => 'modules/core/helpers.php',
         'log_drive_operation'   => 'modules/core/helpers.php',
+        'generate_search_metadata' => 'modules/core/helpers.php',
         // japanese.php
         'getRomajiName'         => 'modules/core/japanese.php',
         'analyzeJapaneseText'   => 'modules/core/japanese.php',
