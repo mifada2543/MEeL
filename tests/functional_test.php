@@ -85,7 +85,8 @@ function testFileIntegrity(): void {
         '.htaccess', 'index.php', 'auth/config.php', 'auth/auth.php',
         'auth/login.php', 'auth/logout.php', 'auth/register.php',
         // Modules
-        'modules/core/helpers.php', 'modules/core/activity_logger.php', 'modules/core/System.php',
+        'modules/core/helpers.php', 'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
+        'modules/core/activity_logger.php', 'modules/core/System.php',
         'modules/core/Uploader.php', 'modules/core/Transcoder.php', 'modules/core/japanese.php',
         'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php',
@@ -192,22 +193,22 @@ function testFunctionExistence(): void {
     print_header('TEST 4: Function Existence — Helper Functions');
 
     $functions = [
-        // helpers.php
-        'time_ago'              => 'modules/core/helpers.php',
-        'format_bytes'          => 'modules/core/helpers.php',
-        'music_thumbnail_url'   => 'modules/core/helpers.php',
-        'get_user_usage'        => 'modules/core/helpers.php',
-        'get_csrf_token'        => 'modules/core/helpers.php',
-        'verify_csrf_token'     => 'modules/core/helpers.php',
-        'log_drive_operation'   => 'modules/core/helpers.php',
-        'generate_search_metadata' => 'modules/core/helpers.php',
+        // helpers.php (dipecah ke modules/core/helpers/ — modul per domain)
+        'time_ago'              => 'modules/core/helpers/url.php',
+        'format_bytes'          => 'modules/core/helpers/url.php',
+        'music_thumbnail_url'   => 'modules/core/helpers/storage.php',
+        'get_user_usage'        => 'modules/core/helpers/user.php',
+        'get_csrf_token'        => 'modules/core/helpers/csrf.php',
+        'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
+        'log_drive_operation'   => 'modules/core/helpers/storage.php',
+        'generate_search_metadata' => 'modules/core/helpers/metadata.php',
         // japanese.php
         'getRomajiName'         => 'modules/core/japanese.php',
         'analyzeJapaneseText'   => 'modules/core/japanese.php',
         // activity_logger.php — hanya di docs/security.md, belum diimplementasi
         'log_activity'          => 'modules/core/activity_logger.php',
-        // helpers.php (CSRF) — verify_csrf_token is the canonical function
-        'verify_csrf_token'     => 'modules/core/helpers.php',
+        // helpers/csrf.php — verify_csrf_token is the canonical function
+        'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
     ];
 
     $warning_funcs = ['log_activity']; // fungsi ini boleh warning, bukan failure
@@ -441,7 +442,7 @@ function testSecurityShellEscape(): void {
     $files = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/helpers/storage.php' => ['shell_exec'], // dir_size() — dipecah dari helpers.php
         'modules/core/System.php'       => ['shell_exec'],
         'modules/core/japanese.php'     => ['proc_open'],
     ];

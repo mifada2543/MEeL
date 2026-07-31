@@ -234,6 +234,45 @@ class HelpersTest extends TestCase
         $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
     }
 
+    // ─── lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label() ──
+
+    public function testLangMapHasAllLanguages(): void
+    {
+        $map = lang_map();
+        $this->assertCount(15, $map);
+        $this->assertSame('Indonesia', $map['id']);
+        $this->assertSame('English', $map['en']);
+        $this->assertSame('日本語', $map['ja']);
+        $this->assertArrayHasKey('vi', $map);
+    }
+
+    public function testLangLabelKnownLanguage(): void
+    {
+        $this->assertSame('Indonesia', lang_label('id'));
+        $this->assertSame('English', lang_label('EN')); // case-insensitive
+        $this->assertSame('日本語', lang_label('ja'));
+    }
+
+    public function testLangLabelUnknownFallsBackToUppercase(): void
+    {
+        $this->assertSame('XX', lang_label('xx'));
+        $this->assertSame('PT-BR', lang_label('pt-br'));
+    }
+
+    public function testLangLabelConsistentWithMap(): void
+    {
+        foreach (lang_map() as $code => $label) {
+            $this->assertSame($label, lang_label($code));
+        }
+    }
+
+    public function testSubtitleAliasesMatchGeneric(): void
+    {
+        $this->assertSame(lang_map(), subtitle_lang_map());
+        $this->assertSame(lang_label('ja'), subtitle_lang_label('ja'));
+        $this->assertSame(lang_label('pt-br'), subtitle_lang_label('pt-br'));
+    }
+
     // ─── get_user_role() requires DB, skip basic test ────────────────────────
     // ─── is_dir() is a native function, not tested here ──────────────────────
 }

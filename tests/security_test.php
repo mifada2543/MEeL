@@ -338,7 +338,7 @@ function testHtaccessSecurity(): void {
     $sensitiveDirs = [
         // PHP-include only folders
         'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
-        'modules', 'modules/core', 'modules/media', 'modules/transcoder', 'modules/exceptions',
+        'modules', 'modules/core', 'modules/core/helpers', 'modules/media', 'modules/transcoder', 'modules/exceptions',
         'partials', 'drive/templates', 'docs/partials',
         // Auth & config
         'auth', 'database',
@@ -491,7 +491,7 @@ function testCommandInjection(): void {
     $risky = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/helpers/storage.php' => ['shell_exec'], // dir_size() — dipecah dari helpers.php
         'modules/core/System.php'       => ['shell_exec'],
         'auth/config.example.php'  => ['proc_open', 'shell_exec'],
         'modules/core/japanese.php'     => ['proc_open'],
@@ -556,6 +556,7 @@ function testFileIntegrity(): void {
     $critical = [
         '.htaccess', 'auth/config.php', 'auth/auth.php', 'auth/login.php',
         'auth/logout.php', 'auth/register.php', 'modules/core/helpers.php',
+        'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
         'modules/core/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php', 'modules/core/japanese.php',
