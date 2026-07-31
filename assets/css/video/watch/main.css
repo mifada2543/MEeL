@@ -1,8 +1,55 @@
-/* ============================================================
+    /* ============================================================
  * watch/main.css — Page-specific CSS untuk Watch Page
  * Halaman: video/watch.php
  * ============================================================ */
 
-/* Jika ada CSS spesifik untuk halaman watch di masa depan,
-   bisa ditambahkan di sini. Untuk saat ini, watch.php
-   menggunakan Tailwind utility classes + shared video/main.css */
+/* ── Mobile (portrait): player full-bleed & sticky ───────────
+ * Di layar < 640px, pemutar video:
+ *  1. Memenuhi tepi kiri-kanan layar (menembus padding px-4
+ *     pada #left-column via margin negatif).
+ *  2. Menempel (sticky) tepat di bawah navbar (h-14 = 56px)
+ *     sehingga tidak ikut ter-scroll bersama konten.
+ * Pada desktop (>= 640px) perilaku normal dipertahankan.
+ * ─────────────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+  #video-glow-container {
+    position: sticky;
+    top: 56px; /* tinggi navbar (h-14) */
+    z-index: 40;
+    width: auto;
+    /* lawan pt-4 pada <main> agar player pas menempel di bawah navbar
+       (tanpa ini, saat sticky mulai aktif player melompat 16px ke atas) */
+    margin-top: -1rem;
+    margin-left: -1rem; /* lawan px-4 (#left-column) */
+    margin-right: -1rem;
+    background: var(--bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Buang sudut membulat agar full-bleed rata dengan tepi layar */
+  #main-video-wrapper,
+  #main-video-wrapper .plyr,
+  #main-video-wrapper .plyr__video-wrapper {
+    border-radius: 0 !important;
+  }
+
+  /* Di mobile player full-bleed (margin -1rem), title juga perlu
+     di-geser -1rem agar ujung kirinya tetap sejajar dengan player */
+  #video-info {
+    margin-left: -1rem;
+  }
+}
+
+/* ── Jarak simetris untuk title ──────────────────────────────
+ * class pt-2/sm:pt-3 tidak tersedia di tailwind.min.css (build
+ * statis), sehingga padding atas #video-info hilang dan jarak
+ * title↔player (atas) ≠ title↔divider (bawah).
+ * 0.5rem (8px) dipilih agar sama dengan pb-2 (8px) yang aktif,
+ * sehingga jarak atas = jarak bawah di semua breakpoint.
+ * ─────────────────────────────────────────────────────────── */
+#video-info {
+  padding-top: 0.5rem;
+  /* Ujung kiri title sejajar dengan ujung kiri player:
+     padding-left 0 menggantikan px-4/sm:px-6 (padding kanan tetap) */
+  padding-left: 0;
+}
