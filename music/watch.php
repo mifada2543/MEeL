@@ -340,7 +340,13 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                         <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-500">Komentar</span>
                     </div>
                     <div class="p-4 sm:p-6">
-                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6">
+                        <div id="comment-alert"></div>
+                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
+                            hx-post="../controllers/api/comment.php"
+                            hx-target="#comment-list"
+                            hx-swap="innerHTML"
+                            hx-vals='{"id":"<?= $id ?>","media_type":"music"<?= $playlist_context > 0 ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'
+                            hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('comment-alert')?.replaceChildren(); var l=document.getElementById('comment-list'); if (l) l.scrollTop = l.scrollHeight; }">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                             <textarea name="comments"
                                 class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-orange-500/40 min-h-[80px] resize-y transition-all"
@@ -353,7 +359,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                             </div>
                         </form>
 
-                        <div class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                        <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                             <?php
                             if (empty($comments_grouped)) {
                                 echo "<div class='py-10 text-center text-[10px] text-gray-700 uppercase tracking-widest'>Belum ada komentar.</div>";

@@ -46,7 +46,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <nav class="border-b border-white/[.04] sticky top-0 z-50">
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
-            <a href="index.php" class="flex items-center gap-2 flex-shrink-0 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] transition-all" title="MEeL Video">
+            <a href="index.php" class="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-xl transition-all" title="MEeL Video">
                 <div class="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -112,8 +112,8 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
         </div>
     </div>
 
-    <main id="app-content-grid" class="w-full pt-4 sm:pt-8 pb-20 flex flex-col lg:flex-row gap-4">
-        <div id="left-column" class="flex-1 space-y-4 sm:space-y-5 px-4 sm:px-5">
+    <main id="app-content-grid" class="w-full pt-4 sm:pt-4 pb-20 flex flex-col lg:flex-row gap-4">
+        <div id="left-column" class="flex-1 space-y-2 sm:space-y-3 px-4 sm:px-5">
             <div id="video-glow-container" class="relative w-full">
                 <canvas id="video-glow-canvas" class="hidden sm:block"></canvas>
                 <div id="main-video-wrapper" class="relative bg-black rounded-none sm:rounded-none overflow-hidden border-0 shadow-2xl w-full" style="aspect-ratio: 16/9;">
@@ -155,8 +155,8 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                 </div>
             </div>
 
-            <div id="watch-details-wrapper" class="space-y-4 sm:space-y-5">
-                <div id="video-info" class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
+            <div id="watch-details-wrapper" class="space-y-2 sm:space-y-3">
+                <div id="video-info" class=" rounded-xl sm:rounded-2xl px-4 sm:px-6 pb-2 sm:pb-3 flex flex-col gap-4">
                     <div class="video-title w-full text-2xl font-bold text-white" id="main-video-title" title="<?= htmlspecialchars($v['title']) ?>"><?= htmlspecialchars($v['title']) ?></div>
                     <?php
                     $can_edit = $is_logged_in && (
@@ -236,7 +236,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                             <i data-lucide="align-left" class="w-3.5 h-3.5 text-red-500"></i> Deskripsi
                         </div>
                         <div class="relative">
-                            <p id="desc-text" class="text-sm text-gray-400 leading-relaxed break-words whitespace-pre-wrap line-clamp-5 transition-all duration-300"><?= htmlspecialchars($v['description']) ?></p>
+                            <p id="desc-text" class="text-sm text-gray-400 leading-relaxed break-words whitespace-pre-wrap line-clamp-2 transition-all duration-300"><?= htmlspecialchars($v['description']) ?></p>
                         </div> <button id="btn-read-more" onclick="toggleDescription()" class="mt-3 text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer border-none bg-transparent p-0 hidden" title="Tampilkan deskripsi lengkap">
                             Selengkapnya
                         </button>
@@ -257,7 +257,14 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                             <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-300">Komentar</span>
                         </div>
                         <div class="p-4 sm:p-6">
-                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"> <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                            <div id="comment-alert"></div>
+                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
+                                hx-post="../controllers/api/comment.php"
+                                hx-target="#comment-list"
+                                hx-swap="innerHTML"
+                                hx-vals='{"id":"<?= $id ?>","media_type":"video"}'
+                                hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('comment-alert')?.replaceChildren(); var l=document.getElementById('comment-list'); if (l) l.scrollTop = l.scrollHeight; }">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                                 <textarea name="comments"
                                     class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-red-500/40 min-h-[80px] resize-y transition-all"
                                     placeholder="Tulis komentar..." required></textarea>
@@ -270,7 +277,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                                 </div>
                             </form>
 
-                            <div class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                            <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                                 <?php
                                 if (empty($comments_grouped)) {
                                     echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Belum ada komentar.</div>";

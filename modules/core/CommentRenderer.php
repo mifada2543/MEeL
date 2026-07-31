@@ -58,8 +58,13 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         <span class="text-[10px] <?= $author_time_color ?> flex-shrink-0"><?= time_ago($c['created_at']) ?></span>
                     </div>
                     <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $c['user_id']): ?>
-                        <a href="../controllers/api/delete_comment.php?id=<?= $c['id'] ?>"
-                            onclick="return meelConfirmLink(event, { title: 'Hapus Komentar', text: 'Hapus komentar ini?', confirmButtonText: 'HAPUS' })"
+                        <a href="../controllers/api/delete_comment.php?id=<?= (int)$c['id'] ?>"
+                            hx-post="../controllers/api/delete_comment.php"
+                            hx-vals='{"id":"<?= (int)$c['id'] ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>","media_id":"<?= (int)$id ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>,"csrf_token":"<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES) ?>"}'
+                            hx-target="#comment-list"
+                            hx-swap="innerHTML"
+                            hx-confirm="Hapus komentar ini?"
+                            data-meel-confirm='{"title":"Hapus Komentar","text":"Hapus komentar ini?","confirmButtonText":"HAPUS"}'
                             class="<?= $c_delete ?> hover:text-red-400 transition-colors no-underline flex-shrink-0"
                             title="Hapus komentar">
                             <i data-lucide="trash-2" class="w-3 h-3"></i>
@@ -79,11 +84,14 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         Balas
                     </button>
                     <div id="<?= $reply_prefix . $c['id'] ?>" class="hidden mt-3">
-                        <form action="watch.php?id=<?= $id ?><?= $playlist_qs ?>" method="post" class="flex gap-2">
+                        <form action="watch.php?id=<?= $id ?><?= $playlist_qs ?>" method="post" class="flex gap-2"
+                            hx-post="../controllers/api/comment.php"
+                            hx-target="#comment-list"
+                            hx-swap="innerHTML"
+                            hx-vals='{"id":"<?= $id ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'
+                            hx-on::after-request="if (event.detail.successful) { var box = this.parentElement; if (box) box.classList.add('hidden'); }">
                             <input type="hidden" name="parent_id" value="<?= $c['id'] ?>">
-                            <?php if (!$is_video): ?>
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                            <?php endif; ?>
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <input type="text" name="comments"
                                 class="flex-1 bg-black/30 border border-white/[.06] rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none <?= $c_reply_focus ?> min-w-0"
                                 placeholder="Balas @<?= htmlspecialchars($author) ?>..." required>
