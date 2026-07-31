@@ -2,10 +2,10 @@
  * edit/music/main.css — Edit Music Page Styles (Admin)
  * Halaman: admin/edit-music.php
  *
- * Mengimpor shared edit styles + menambahkan tema orange.
+ * Tema orange untuk Edit Music. Shared styles (design-tokens.css,
+ * upload-form.css, edit/shared/main.css) dimuat via <link> di
+ * admin/edit-music.php agar semua file mendapat cache-buster.
  * ============================================================ */
-
-@import url('../shared/main.css');
 
 /* ── Music Theme ── */
 body.theme-music {

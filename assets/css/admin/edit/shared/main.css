@@ -1,13 +1,22 @@
 /* ============================================================
  * edit/shared/main.css — Shared Edit Page Styles
  * Digunakan oleh edit-video.php dan edit-music.php
- * Di-import oleh masing-masing main.css spesifik tema
- *
- * Dependensi:
- *   ../../shared/upload-form.css  — Nav, form, buttons, alerts (shared)
+ * (dimuat via <link> di halaman, bersama design-tokens.css
+ *  dan upload-form.css — agar semua file mendapat cache-buster)
  * ============================================================ */
 
-@import url('../../shared/upload-form.css');
+/* ── Background halaman ─────────────────────────────
+ * upload-form.css/design-tokens hanya mendefinisikan
+ * variabel --bg-base tanpa menerapkannya ke body,
+ * sehingga halaman edit tampil putih. Konsisten
+ * dengan video/upload/main.css & music/upload/main.css.
+ * ────────────────────────────────────────────────── */
+body {
+  background: var(--bg-base, #080b11);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  color: #c9cdd6;
+}
 
 /* ── Edit Layout (sidebar + form) ── */
 .edit-layout {

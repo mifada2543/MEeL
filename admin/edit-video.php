@@ -160,8 +160,11 @@ $thumb_src = !empty($video['thumbnail'])
     <meta name="twitter:card" content="summary_large_image">
     <title>Edit Video | MEeL Admin</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
+    <link rel="stylesheet" href="../assets/css/shared/design-tokens.css?v=<?= filemtime('../assets/css/shared/design-tokens.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/upload-form.css?v=<?= filemtime('../assets/css/shared/upload-form.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/edit/shared/main.css?v=<?= filemtime('../assets/css/admin/edit/shared/main.css') ?>">
     <link rel="stylesheet" href="../assets/css/admin/edit/video/main.css?v=<?= filemtime('../assets/css/admin/edit/video/main.css') ?>">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
+    <link href="../assets/css/tailwind.min.css?v=<?= filemtime('../assets/css/tailwind.min.css') ?>" rel="stylesheet">
     <script src="../assets/js/compatibilitas/lucide.js"></script>
 </head>
 
@@ -262,7 +265,7 @@ $thumb_src = !empty($video['thumbnail'])
                             <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Dashboard Admin
                         </a>
                     <?php else: ?>
-                        <a href="../profile/index.php" class="btn-secondary" style="justify-content:center;">
+                        <a href="../profile/?u=<?= $_SESSION['username'] ?>" class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="user" style="width:13px;height:13px;"></i> Profil Saya
                         </a>
                     <?php endif; ?>

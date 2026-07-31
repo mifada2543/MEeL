@@ -2,10 +2,10 @@
  * edit/video/main.css — Edit Video Page Styles (Admin)
  * Halaman: admin/edit-video.php
  *
- * Mengimpor shared edit styles + menambahkan tema merah.
+ * Tema merah untuk Edit Video. Shared styles (design-tokens.css,
+ * upload-form.css, edit/shared/main.css) dimuat via <link> di
+ * admin/edit-video.php agar semua file mendapat cache-buster.
  * ============================================================ */
-
-@import url('../shared/main.css');
 
 /* ── Video Theme ── */
 body.theme-video {

@@ -6,8 +6,8 @@
  *   ../../shared/upload-form.css  — Nav, form, buttons, alerts (shared)
  * ============================================================ */
 
-@import url('../../font.css');
-@import url('../../shared/upload-form.css');
+/* font.css & upload-form.css kini dimuat via <link> di video/upload.php
+   (dengan cache-buster) agar tidak basi di cache immutable 1 tahun. */
 
 :root {
   --accent: #ef4444;

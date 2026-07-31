@@ -64,8 +64,11 @@ if (isset($_POST['upload'])) {
     <meta property="og:description" content="Upload video ke MEeL Video Library. Format: MP4, WEBM, MKV. Transcoding otomatis ke HLS.">
     <title>MEeL Video | Upload</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video/main.css">
-    <link rel="stylesheet" href="../assets/css/video/upload/main.css">
+    <link rel="stylesheet" href="../assets/css/video/main.css?v=<?= filemtime('../assets/css/video/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/font.css?v=<?= filemtime('../assets/css/font.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/design-tokens.css?v=<?= filemtime('../assets/css/shared/design-tokens.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/upload-form.css?v=<?= filemtime('../assets/css/shared/upload-form.css') ?>">
+    <link rel="stylesheet" href="../assets/css/video/upload/main.css?v=<?= filemtime('../assets/css/video/upload/main.css') ?>">
 </head>
 
 <body>
