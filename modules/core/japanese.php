@@ -134,7 +134,9 @@ if (!function_exists('analyzeJapaneseText')) {
         // 3. Koneksi kamus offline (static — sekali per request)
         static $pdo = null, $dict_ready = null, $dict_stmt = null;
         if ($dict_ready === null) {
-            $dict_path = __DIR__ . '/../assets/dict/jmdict.sqlite3';
+            // File ini berada di modules/core/, jadi naik 2 level ke root project
+            // (sebelumnya ../ saja → resolve ke modules/assets/ yang tidak ada).
+            $dict_path = __DIR__ . '/../../assets/dict/jmdict.sqlite3';
             if (file_exists($dict_path)) {
                 try {
                     $pdo        = new PDO('sqlite:' . $dict_path);
@@ -142,9 +144,11 @@ if (!function_exists('analyzeJapaneseText')) {
                     $dict_ready = true;
                 } catch (RuntimeException $e) {
                     $dict_ready = false;
+                    error_log('[japanese.php] Gagal buka jmdict.sqlite3: ' . $e->getMessage());
                 }
             } else {
                 $dict_ready = false;
+                error_log('[japanese.php] Dictionary tidak ditemukan di: ' . $dict_path);
             }
         }
 
@@ -200,62 +204,3 @@ if (!function_exists('analyzeJapaneseText')) {
     }
 }
 
-// ─── ENGLISH TRANSLATION (OFFLINE) ────────────────────────────────────────────
-if (!function_exists('getEnglishTranslation')) {
-    function getEnglishTranslation(string $text): string
-    {
-        static $pdo = null, $dict_ready = null;
-
-        if ($dict_ready === null) {
-            $dict_path = __DIR__ . '/../assets/dict/jmdict.sqlite3';
-            if (file_exists($dict_path)) {
-                try {
-                    $pdo = new PDO('sqlite:' . $dict_path);
-                    $dict_ready = true;
-                } catch (RuntimeException $e) {
-                    $dict_ready = false;
-                }
-            } else {
-                $dict_ready = false;
-            }
-        }
-
-        if (!$dict_ready || empty(trim($text))) return '';
-
-        $mecab_bin = getMecabPath();
-        $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
-        $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
-        if (!is_resource($process)) return '';
-
-        fwrite($pipes[0], $text);
-        fclose($pipes[0]);
-        $output = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        proc_close($process);
-
-        $stmt = $pdo->prepare("SELECT glosses FROM entries WHERE reading = :w LIMIT 1");
-        $glosses = [];
-
-        foreach (explode("\n", trim($output)) as $line) {
-            if ($line === 'EOS' || trim($line) === '') continue;
-            $parts = explode("\t", $line);
-            if (count($parts) < 2) continue;
-
-            $surface  = $parts[0];
-            $features = explode(',', $parts[1]);
-            $base_form = $features[6] ?? '*';
-
-            foreach (array_unique([$surface, $base_form]) as $candidate) {
-                if ($candidate === '*' || $candidate === '') continue;
-                $stmt->execute([':w' => $candidate]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($row && !empty($row['glosses'])) {
-                    $glosses[] = explode(';', $row['glosses'])[0];
-                    break;
-                }
-            }
-        }
-
-        return trim(implode(' ', array_unique($glosses)));
-    }
-}

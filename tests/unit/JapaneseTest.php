@@ -54,8 +54,4 @@ class JapaneseTest extends TestCase
         $this->assertIsString($result['english']);
     }
 
-    public function testGetEnglishTranslationEmpty(): void
-    {
-        $this->assertSame('', getEnglishTranslation(''));
-    }
 }
