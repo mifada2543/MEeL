@@ -81,7 +81,7 @@ Required: `popen`, `exec`, `shell_exec`, `proc_open`, `proc_close` must NOT be d
 
 ### Step 3: Check Storage Paths
 ```bash
-ls -la /media/muhammaddaffa/MEeL/media/     # HDD mount
+ls -la /media/[user]/MEeL/media/            # HDD mount (ganti [user] dengan username Anda)
 ls -la /dev/shm/meel/temp/                  # RAM disk staging
 df -h /dev/shm                              # Need > 512MB free
 ```

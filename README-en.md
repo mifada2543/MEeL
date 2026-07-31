@@ -320,7 +320,7 @@ sudo systemctl restart apache2
 
 ```php
 // auth/config.php — ★ Only change this 1 line
-define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
+define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 
 // All modules automatically follow:
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
@@ -328,6 +328,12 @@ define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
 define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
 define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ```
+
+> ⚠️ **Migration note (security audit):** Since `auth/settings.php` is no longer tracked
+> in the repository (gitignored so credentials are never committed), **existing developers
+> must re-verify `MEEL_HDD_BASE`** in their local `settings.php` after `git pull`.
+> The default value is now the `CHANGE_ME` placeholder — make sure your storage path is
+> still correct, or media will not be found.
 
 ### Base URL Portability
 

@@ -321,7 +321,7 @@ sudo systemctl restart apache2
 
 ```php
 // auth/settings.php — ★ Cukup ubah 1 baris ini
-define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
+define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 
 // Semua modul otomatis mengikuti:
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
@@ -329,6 +329,12 @@ define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
 define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
 define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ```
+
+> ⚠️ **Catatan Migrasi (audit keamanan):** Sejak `auth/settings.php` tidak lagi di-track
+> di repositori (di-ignore agar kredensial tidak ter-commit), **developer lama harus
+> verifikasi ulang nilai `MEEL_HDD_BASE`** di file `settings.php` lokal mereka setelah
+> `git pull`. Nilai default sekarang placeholder `CHANGE_ME` — pastikan path storage
+> Anda masih benar, atau media tidak akan ditemukan.
 
 ### Base URL Portability
 

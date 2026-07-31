@@ -64,12 +64,15 @@ if (!defined('MEEL_YTDLP_PATH')) {
 // MEDIA STORAGE PATHS (TERPUSAT)
 // ════════════════════════════════════════════════════════════════
 // Cukup ubah MEEL_HDD_BASE, seluruh sistem akan mengikuti.
-// Contoh:
-//   - HDD eksternal: /media/[user]/MEeL/media
+//
+// ⚠️ WAJIB DIGANTI sebelum produksi — nilai di bawah hanyalah placeholder.
+// Sesuaikan dengan lokasi storage server ANDA sendiri:
+//   - HDD eksternal: /media/[username]/MEeL/media
 //   - Lokal SSD:     /var/www/meel-storage/media
 //   - Docker volume: /data/media
+// Jangan commit path yang mengandung username OS asli Anda.
 if (!defined('MEEL_HDD_BASE')) {
-    define('MEEL_HDD_BASE', '/path/to/your/media');
+    define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 
     // ── Path turunan (jangan diubah kecuali paham struktur folder) ──
     define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
