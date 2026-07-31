@@ -14,7 +14,7 @@ di-commit ke repo) di MEeL-HUB. File ini dibuat dari hasil audit keamanan
 |---------|-------|------------|----------------------|
 | `hls.js` | 1.6.15 | https://github.com/video-dev/hls.js/releases | 2026-07-31 |
 | `plyr.min.js` | 3.8.4 | https://github.com/sampotts/plyr/releases | 2026-07-31 |
-| `plyr.css` | 3.8.4 | https://github.com/sampotts/plyr/releases | 2026-07-31 |
+| `plyr.css` | 3.8.4 * | https://github.com/sampotts/plyr/releases | 2026-07-31 |
 | `sweetalert2.all.min.js` | 11.26.25 | https://github.com/sweetalert2/sweetalert2/releases | 2026-07-31 |
 | `htmx.min.js` | 1.9.10 | https://unpkg.com/htmx.org/ | 2026-07-31 |
 | `lucide.js` | 0.575.0 | https://unpkg.com/lucide@latest/ | 2026-07-31 |
@@ -27,9 +27,11 @@ di-commit ke repo) di MEeL-HUB. File ini dibuat dari hasil audit keamanan
 ### Keterangan Verifikasi
 
 - **hls.js 1.6.15** — diekstrak dari string versi di dalam bundle minified (`version 1.6.15`).
-- **plyr 3.8.4** — diekstrak dari string versi di dalam `plyr.min.js`; `plyr.css` mengikuti
-  versi rilis yang sama. *(Catatan: file `VENDOR_VERSIONS.md` lama menyebut 3.7.8 — itu
-  perkiraan dan tidak akurat, versi eksak file ini adalah 3.8.4.)*
+- **plyr 3.8.4** — diekstrak dari string versi di dalam `plyr.min.js`. *(Catatan: file
+  `VENDOR_VERSIONS.md` lama menyebut 3.7.8 — itu perkiraan dan tidak akurat, versi eksak
+  file ini adalah 3.8.4.)*
+- **plyr.css `*`** — versi **diasumsikan sama dengan `plyr.min.js`** (satu paket rilis
+  plyr), belum diverifikasi langsung dari isi file CSS.
 - **sweetalert2 11.26.25** — dari header lisensi (`sweetalert2 v11.26.25`) + atribut `version`.
 - **htmx 1.9.10** — dari string `version:"1.9.10"` di dalam bundle.
 - **lucide 0.575.0** — dari header lisensi (`@license lucide v0.575.0 - ISC`).
