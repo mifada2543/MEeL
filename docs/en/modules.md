@@ -221,9 +221,7 @@ function log_drive_operation(...);                       // Drive audit trail
 
 ### 9. `modules/core/CommentRenderer.php`
 
-**Functions:** `render_comments()`, `render_video_comments()`, `render_music_comments()`
-
-Nested comment rendering with 2 themes (video/music).
+**Functions:** `render_comments()` — nested comment rendering with 2 themes (video/music); `comment_preview()` — latest comment preview for the comment header.
 
 ### 10. `modules/core/GarbageCollector.php`
 

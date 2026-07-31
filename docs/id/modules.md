@@ -147,7 +147,7 @@ Semua fungsi dibungkus `function_exists()` guard:
 
 ### 9. `modules/core/CommentRenderer.php`
 
-**Fungsi:** `render_comments()`, `render_video_comments()`, `render_music_comments()` — render komentar nested dengan 2 tema (video/music).
+**Fungsi:** `render_comments()` — render komentar nested dengan 2 tema (video/music); `comment_preview()` — preview komentar terbaru untuk header kolom komentar.
 
 ### 10. `modules/core/GarbageCollector.php`
 

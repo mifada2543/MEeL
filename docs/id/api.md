@@ -58,12 +58,36 @@ controllers/
 
 Controller untuk halaman watch video & music. Data diambil via `getViewData()` dan di-`extract()` ke view.
 
+### AbstractWatchController (Base Class)
+
+`VideoWatchController` & `MusicWatchController` mewarisi `AbstractWatchController` — base class yang menampung state & behavior bersama:
+
+```php
+abstract class AbstractWatchController
+{
+    protected \mysqli $conn;
+    protected ?int $user_id;
+    protected int $id;
+    protected MediaViewer $viewer;
+
+    public function __construct(\mysqli $conn, ?int $user_id, int $id, string $media_type);
+    public function handleRequest(): void;            // recordView + komentar (CSRF + rate limit)
+    public function isLoggedIn(): bool;
+    protected function commentRedirectUrl(): string;  // hook URL redirect komentar
+    protected function baseViewData(array $v, $rekom = null): array; // key data bersama
+}
+```
+
+- `handleRequest()` — catat view + proses POST komentar dengan verifikasi CSRF & rate limit (10/menit). Redirect memakai hook `commentRedirectUrl()`.
+- `baseViewData()` — mengembalikan key yang sama di semua halaman watch: `id`, `user_id`, `is_logged_in`, `v`, `user_interaction`, `comments_grouped`, `user_map`, `rekom`.
+- `commentRedirectUrl()` — default `watch.php?id=...#comment-section`; `MusicWatchController` me-*override* untuk menambah `&playlist_id=...`.
+
 ### VideoWatchController
 
 ```php
 $ctrl = new VideoWatchController($conn, $user_id, $id);
 $ctrl->handleRequest();  // Handle POST (komentar)
-extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_grouped, dll
+extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $subtitles, dll
 ```
 
 **View data yang dikembalikan:**
@@ -72,8 +96,10 @@ extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_groupe
 | `$v` | array | Data video + uploader info |
 | `$video_src` | string | Path ke file video / playlist.m3u8 |
 | `$is_hls` | bool | Apakah video HLS |
-| `$vtt_src` | string | Path ke VTT thumbnail |
+| `$vtt_src` | string | Path ke VTT thumbnail (preview) |
+| `$subtitles` | array | Daftar subtitle `.vtt` terdeteksi (src, lang, label) |
 | `$comments_grouped` | array | Komentar yang sudah di-group by parent |
+| `$user_map` | array | Map id → username komentar |
 | `$rekom` | mysqli_result | Rekomendasi video lain |
 | `$is_logged_in` | bool | Status login |
 | `$user_interaction` | ?string | Status like/dislike user |
@@ -83,21 +109,36 @@ extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_groupe
 ```php
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
-extract($ctrl->getViewData());
+extract($ctrl->getViewData());  // getViewData() memanggil requireMedia() internal (redirect ke index.php jika tidak ditemukan)
 ```
 
 **View data yang dikembalikan:**
 | Variable | Tipe | Deskripsi |
 |----------|------|-----------|
 | `$v` | array | Data audio + uploader info |
-| `$file_size` | int | Ukuran file audio (bytes) |
-| `$mime_type` | string | MIME type file |
-| `$playlist` | array | Queue playlist (jika ada) |
-| `$grouped_comments` | array | Komentar yang sudah di-group |
-| `$rekomendasi` | array | Rekomendasi musik lain |
-| `$playlist_id_in` | ?int | ID playlist aktif |
+| `$playlist_id` | int | ID playlist aktif |
+| `$playlist_context` | int | ID playlist untuk link navigasi |
+| `$queue_query` | mysqli_result\|null | Antrean playlist (jika ada) |
+| `$next_song_url` | string | URL lagu berikutnya |
+| `$file_size_bytes` | int | Ukuran file audio (bytes) |
+| `$fmt_label` | string | Label format audio |
+| `$deskripsi` | string | Deskripsi format audio |
+| `$mimeType` | string | MIME type file |
+| `$preloadVal` | string | Nilai preload player (`none`/`metadata`) |
+| `$comments_grouped` | array | Komentar yang sudah di-group |
+| `$rekom` | mysqli_result | Rekomendasi musik lain |
 | `$is_logged_in` | bool | Status login |
 | `$user_interaction` | ?string | Status like/dislike user |
+
+### Comment Rendering Helpers (`modules/core/CommentRenderer.php`)
+
+Helper komentar yang dipakai bersama halaman watch & endpoint AJAX:
+
+| Fungsi | Deskripsi |
+|--------|-----------|
+| `render_comments($parent_id, $grouped, $level, $theme, $playlist_context)` | Render komentar nested dengan 2 tema (video/music) |
+| `comment_preview($grouped): array` | Preview komentar terbaru → `['text' => ..., 'latest_comment' => ?array]` |
+| `render_comment_empty_state($theme): void` | Empty state "Jadilah komentar pertama" theme-aware (video=gray-300, music=gray-700) |
 
 ---
 

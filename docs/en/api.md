@@ -59,12 +59,36 @@ controllers/
 
 Controller for video & music watch pages. Data fetched via `getViewData()` and `extract()`ed into the view.
 
+### AbstractWatchController (Base Class)
+
+`VideoWatchController` & `MusicWatchController` extend `AbstractWatchController` — a base class holding shared state & behavior:
+
+```php
+abstract class AbstractWatchController
+{
+    protected \mysqli $conn;
+    protected ?int $user_id;
+    protected int $id;
+    protected MediaViewer $viewer;
+
+    public function __construct(\mysqli $conn, ?int $user_id, int $id, string $media_type);
+    public function handleRequest(): void;            // recordView + comment POST (CSRF + rate limit)
+    public function isLoggedIn(): bool;
+    protected function commentRedirectUrl(): string;  // comment redirect URL hook
+    protected function baseViewData(array $v, $rekom = null): array; // shared view-data keys
+}
+```
+
+- `handleRequest()` — records the view and processes comment POSTs with CSRF verification & rate limit (10/min). Redirects via the `commentRedirectUrl()` hook.
+- `baseViewData()` — returns the keys shared by every watch page: `id`, `user_id`, `is_logged_in`, `v`, `user_interaction`, `comments_grouped`, `user_map`, `rekom`.
+- `commentRedirectUrl()` — defaults to `watch.php?id=...#comment-section`; `MusicWatchController` overrides it to append `&playlist_id=...`.
+
 ### VideoWatchController
 
 ```php
 $ctrl = new VideoWatchController($conn, $user_id, $id);
 $ctrl->handleRequest();  // Handle POST (comments)
-extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_grouped, etc.
+extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $subtitles, etc.
 ```
 
 **Returned view data:**
@@ -73,8 +97,10 @@ extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_groupe
 | `$v` | array | Video data + uploader info |
 | `$video_src` | string | Path to video file / playlist.m3u8 |
 | `$is_hls` | bool | Whether video is HLS |
-| `$vtt_src` | string | Path to VTT thumbnail |
+| `$vtt_src` | string | Path to VTT thumbnail (preview) |
+| `$subtitles` | array | Detected `.vtt` subtitle tracks (src, lang, label) |
 | `$comments_grouped` | array | Comments grouped by parent |
+| `$user_map` | array | Comment id → username map |
 | `$rekom` | mysqli_result | Other video recommendations |
 | `$is_logged_in` | bool | Login status |
 | `$user_interaction` | ?string | User like/dislike status |
@@ -84,21 +110,36 @@ extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $comments_groupe
 ```php
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
-extract($ctrl->getViewData());
+extract($ctrl->getViewData());  // getViewData() calls requireMedia() internally (redirects to index.php if not found)
 ```
 
 **Returned view data:**
 | Variable | Type | Description |
 |----------|------|-----------|
 | `$v` | array | Audio data + uploader info |
-| `$file_size` | int | Audio file size (bytes) |
-| `$mime_type` | string | File MIME type |
-| `$playlist` | array | Playlist queue (if any) |
-| `$grouped_comments` | array | Comments grouped by parent |
-| `$rekomendasi` | array | Other music recommendations |
-| `$playlist_id_in` | ?int | Active playlist ID |
+| `$playlist_id` | int | Active playlist ID |
+| `$playlist_context` | int | Playlist ID for navigation links |
+| `$queue_query` | mysqli_result\|null | Playlist queue (if any) |
+| `$next_song_url` | string | Next song URL |
+| `$file_size_bytes` | int | Audio file size (bytes) |
+| `$fmt_label` | string | Audio format label |
+| `$deskripsi` | string | Audio format description |
+| `$mimeType` | string | File MIME type |
+| `$preloadVal` | string | Player preload value (`none`/`metadata`) |
+| `$comments_grouped` | array | Comments grouped by parent |
+| `$rekom` | mysqli_result | Other music recommendations |
 | `$is_logged_in` | bool | Login status |
 | `$user_interaction` | ?string | User like/dislike status |
+
+### Comment Rendering Helpers (`modules/core/CommentRenderer.php`)
+
+Comment helpers shared by the watch pages & AJAX endpoints:
+
+| Function | Description |
+|----------|-------------|
+| `render_comments($parent_id, $grouped, $level, $theme, $playlist_context)` | Nested comment rendering with 2 themes (video/music) |
+| `comment_preview($grouped): array` | Latest comment preview → `['text' => ..., 'latest_comment' => ?array]` |
+| `render_comment_empty_state($theme): void` | "Jadilah komentar pertama" empty state, theme-aware (video=gray-300, music=gray-700) |
 
 ---
 
