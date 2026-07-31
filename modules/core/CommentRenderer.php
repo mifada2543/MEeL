@@ -47,7 +47,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
         $parent_user = ($c['parent_id'] > 0) ? ($user_map[$c['parent_id']] ?? 'Guest') : null;
         $indent      = min($level * 16, 48);
 ?>
-        <div class="comment-row flex gap-3 p-3 rounded-xl" style="margin-left:<?= $indent ?>px">
+        <div class="comment-row flex gap-3 p-3 rounded-xl" data-id="<?= (int)$c['id'] ?>" style="margin-left:<?= $indent ?>px">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br <?= $c_avatar_from ?> <?= $c_avatar_to ?> flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                 <?= strtoupper(substr($author, 0, 1)) ?>
             </div>

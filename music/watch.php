@@ -39,7 +39,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
     <link rel="stylesheet" href="../assets/css/music/main.css<?= $__v('assets/css/music/main.css') ?>">
-    <link rel="stylesheet" href="../assets/css/music/watch/main.css<?= $__v('assets/css/music/watch/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
     <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>
 
@@ -335,12 +335,40 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
 
             <?php if ($is_logged_in): ?>
                 <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section" style="content-visibility:auto;contain-intrinsic-size:200px">
-                    <div class="px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
+                    <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
+                        class="w-full px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2 cursor-pointer hover:bg-white/[.08] transition-colors text-left"
+                        title="Buka / tutup komentar">
                         <i data-lucide="message-square" class="w-3.5 h-3.5 text-orange-500"></i>
                         <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-500">Komentar</span>
+                        <i data-lucide="chevron-down" id="comment-chevron" class="w-3.5 h-3.5 ml-auto text-gray-500 transition-transform duration-300"></i>
+                    </button>
+                    <div id="comment-preview" class="px-4 sm:px-6 py-3">
+                        <?php
+                        // Preview mini: tampilkan komentar terbaru (id terbesar),
+                        // atau ajakan jika belum ada komentar sama sekali.
+                        $preview_txt = 'Jadilah komentar pertama';
+                        $latest_comment = null;
+                        $latest_id = -1;
+                        foreach (($comments_grouped ?? []) as $_grp) {
+                            foreach ($_grp as $_c) {
+                                if ((int)$_c['id'] > $latest_id) {
+                                    $latest_id = (int)$_c['id'];
+                                    $latest_comment = $_c;
+                                }
+                            }
+                        }
+                        if ($latest_comment) {
+                            $_preview_author = $latest_comment['username'] ?? 'Guest';
+                            $_preview_body   = preg_replace('/\s+/', ' ', (string)($latest_comment['comment'] ?? ''));
+                            $preview_txt     = '@' . $_preview_author . ': ' . $_preview_body;
+                        }
+                        ?>
+                        <span id="comment-preview-text" class="text-[10px] text-gray-500 line-clamp-1 <?= $latest_comment ? '' : 'italic' ?>"
+                            title="<?= htmlspecialchars($preview_txt, ENT_QUOTES) ?>"><?= htmlspecialchars($preview_txt) ?></span>
                     </div>
-                    <div class="p-4 sm:p-6">
-                        <div id="comment-alert"></div>
+                    <div id="comment-body">
+                        <div class="p-4 sm:p-6">
+                            <div id="comment-alert"></div>
                         <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
                             hx-post="../controllers/api/comment.php"
                             hx-target="#comment-list"
@@ -362,15 +390,22 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                         <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                             <?php
                             if (empty($comments_grouped)) {
-                                echo "<div class='py-10 text-center text-[10px] text-gray-700 uppercase tracking-widest'>Belum ada komentar.</div>";
+                                echo "<div class='py-10 text-center text-[10px] text-gray-700 uppercase tracking-widest'>Jadilah komentar pertama.</div>";
                             } else {
                                 render_comments(0, $comments_grouped, 0, 'music', $playlist_context);
                             }
                             ?>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            <?php endif; ?>
+                    </section>
+                    <script>
+                        // Progressive enhancement: collapse komentar hanya jika JS aktif.
+                        // Tanpa JS, section tetap terbuka (fallback form action tetap jalan).
+                        document.getElementById('comment-body')?.classList.add('collapsed');
+                    </script>
+                    <noscript><style>#comment-preview{display:none}</style></noscript>
+                <?php endif; ?>
 
         </div>
 
@@ -617,6 +652,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <script src="../assets/js/music/loop-ui.js<?= $__v('assets/js/music/loop-ui.js') ?>" defer></script>
     <script src="../assets/js/music/audio-state.js<?= $__v('assets/js/music/audio-state.js') ?>" defer></script>
     <script src="../assets/js/music/equalizer.js<?= $__v('assets/js/music/equalizer.js') ?>" defer></script>
+    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>" defer></script>
     <script src="../assets/js/music/misc.js<?= $__v('assets/js/music/misc.js') ?>" defer></script>
     <script src="../assets/js/music/player-core.js<?= $__v('assets/js/music/player-core.js') ?>" defer></script>
 </body>

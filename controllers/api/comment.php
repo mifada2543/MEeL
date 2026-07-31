@@ -97,7 +97,7 @@ $GLOBALS['id']        = $media_id;
 $GLOBALS['user_map']  = $user_map;
 
 if (empty($grouped)) {
-    echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Belum ada komentar.</div>";
+    echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Jadilah komentar pertama.</div>";
 } else {
     render_comments(0, $grouped, 0, $media_type, $playlist_context);
 }

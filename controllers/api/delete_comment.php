@@ -141,7 +141,7 @@ if ($is_ajax) {
 
     if (empty($grouped)) {
         $empty_color = ($media_type === 'music') ? 'text-gray-700' : 'text-gray-300';
-        echo "<div class='py-10 text-center text-[10px] $empty_color uppercase tracking-widest'>Belum ada komentar.</div>";
+        echo "<div class='py-10 text-center text-[10px] $empty_color uppercase tracking-widest'>Jadilah komentar pertama.</div>";
     } else {
         render_comments(0, $grouped, 0, $media_type, $playlist_context);
     }

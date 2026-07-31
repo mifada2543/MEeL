@@ -37,6 +37,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
     <link rel="stylesheet" href="../assets/css/video/main.css<?= $__v('assets/css/video/main.css') ?>">
     <link rel="stylesheet" href="../assets/css/video/watch/main.css<?= $__v('assets/css/video/watch/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
     <script src="../assets/js/compatibilitas/hls.js"></script>
 </head>
@@ -252,12 +253,40 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                 <?php endif; ?>
                 <?php if ($is_logged_in): ?>
                     <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden" id="comment-section">
-                        <div class="px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
+                        <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
+                            class="w-full px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2 cursor-pointer hover:bg-white/[.08] transition-colors text-left"
+                            title="Buka / tutup komentar">
                             <i data-lucide="message-square" class="w-3.5 h-3.5 text-red-500"></i>
                             <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-300">Komentar</span>
+                            <i data-lucide="chevron-down" id="comment-chevron" class="w-3.5 h-3.5 ml-auto text-gray-500 transition-transform duration-300"></i>
+                        </button>
+                        <div id="comment-preview" class="px-4 sm:px-6 py-3">
+                            <?php
+                            // Preview mini: tampilkan komentar terbaru (id terbesar),
+                            // atau ajakan jika belum ada komentar sama sekali.
+                            $preview_txt = 'Jadilah komentar pertama';
+                            $latest_comment = null;
+                            $latest_id = -1;
+                            foreach (($comments_grouped ?? []) as $_grp) {
+                                foreach ($_grp as $_c) {
+                                    if ((int)$_c['id'] > $latest_id) {
+                                        $latest_id = (int)$_c['id'];
+                                        $latest_comment = $_c;
+                                    }
+                                }
+                            }
+                            if ($latest_comment) {
+                                $_preview_author = $latest_comment['username'] ?? 'Guest';
+                                $_preview_body   = preg_replace('/\s+/', ' ', (string)($latest_comment['comment'] ?? ''));
+                                $preview_txt     = '@' . $_preview_author . ': ' . $_preview_body;
+                            }
+                            ?>
+                            <span id="comment-preview-text" class="text-[10px] text-gray-500 line-clamp-1 <?= $latest_comment ? '' : 'italic' ?>"
+                                title="<?= htmlspecialchars($preview_txt, ENT_QUOTES) ?>"><?= htmlspecialchars($preview_txt) ?></span>
                         </div>
-                        <div class="p-4 sm:p-6">
-                            <div id="comment-alert"></div>
+                        <div id="comment-body">
+                            <div class="p-4 sm:p-6">
+                                <div id="comment-alert"></div>
                             <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
                                 hx-post="../controllers/api/comment.php"
                                 hx-target="#comment-list"
@@ -280,14 +309,21 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                             <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                                 <?php
                                 if (empty($comments_grouped)) {
-                                    echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Belum ada komentar.</div>";
+                                    echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Jadilah komentar pertama.</div>";
                                 } else {
                                     render_comments(0, $comments_grouped, 0, 'video');
                                 }
                                 ?>
+                                </div>
                             </div>
                         </div>
                     </section>
+                    <script>
+                        // Progressive enhancement: collapse komentar hanya jika JS aktif.
+                        // Tanpa JS, section tetap terbuka (fallback form action tetap jalan).
+                        document.getElementById('comment-body')?.classList.add('collapsed');
+                    </script>
+                    <noscript><style>#comment-preview{display:none}</style></noscript>
                 <?php endif; ?>
             </div>
         </div>
@@ -349,6 +385,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
     <script src="../assets/js/video/gestures.js<?= $__v('assets/js/video/gestures.js') ?>"></script>
     <script src="../assets/js/video/vtt-sprites.js<?= $__v('assets/js/video/vtt-sprites.js') ?>"></script>
     <script src="../assets/js/video/seek-indicator.js<?= $__v('assets/js/video/seek-indicator.js') ?>"></script>
+    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
     <script src="../assets/js/video/misc.js<?= $__v('assets/js/video/misc.js') ?>"></script>
 
     <script>

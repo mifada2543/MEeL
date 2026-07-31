@@ -1,0 +1,49 @@
+/* ============================================================
+ * shared/comment.css — CSS bersama untuk section komentar.
+ * Dipakai oleh video/watch.php & music/watch.php.
+ * ============================================================ */
+
+/* ── Animasi expand/collapse section komentar ────────────────
+ * Transisi tinggi memakai teknik grid-template-rows 0fr→1fr
+ * (mulus tanpa max-height hardcoded) + fade opacity.
+ * State DEFAULT (tanpa class) = terbuka agar fallback no-JS
+ * tetap berfungsi; JS menambahkan .collapsed untuk menutup.
+ * ─────────────────────────────────────────────────────────── */
+#comment-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 0.35s ease, opacity 0.25s ease;
+}
+/* Anak grid harus bisa menyusut (min-height:0) & ter-clip saat 0fr */
+#comment-body > * {
+  overflow: hidden;
+  min-height: 0;
+}
+#comment-body.collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+/* Preview strip: fade + susut vertikal saat section dibuka */
+#comment-preview {
+  overflow: hidden;
+  max-height: 60px;
+  opacity: 1;
+  transition: max-height 0.3s ease, opacity 0.25s ease, padding 0.3s ease;
+}
+#comment-preview.preview-closed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Hormati preferensi pengguna: matikan animasi bagi yang minta reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  #comment-body,
+  #comment-preview,
+  #comment-chevron {
+    transition: none;
+  }
+}
