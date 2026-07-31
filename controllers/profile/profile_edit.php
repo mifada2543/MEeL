@@ -125,7 +125,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
             <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                 <div class="flex flex-col items-center gap-4">
-                    <img src="../../profile/upload/<?= $data['profile_picture'] ?: 'default.png' ?>" class="w-24 h-24 rounded-3xl object-cover border-2 border-blue-500/30">
+                    <img src="../../profile/upload/<?= htmlspecialchars($data['profile_picture'] ?: 'default.png', ENT_QUOTES, 'UTF-8') ?>" class="w-24 h-24 rounded-3xl object-cover border-2 border-blue-500/30">
                     <label class="cursor-pointer bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest uppercase transition">
                         Ganti Foto
                         <input type="file" name="avatar" class="hidden" accept="image/*">

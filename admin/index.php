@@ -461,7 +461,7 @@ GarbageCollector::cleanGuests($conn);
                                 <td class="py-4 px-2">
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold <?= $row['role'] === 'guest' ? 'text-gray-500 italic' : 'text-white' ?>">
-                                            <a href="profile/?u=<?= $row['username'] ?>"><?= htmlspecialchars($row['username']) ?></a>
+                                            <a href="profile/?u=<?= htmlspecialchars($row['username'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($row['username']) ?></a>
                                         </span>
                                         <?php if ($row['role'] === 'guest'): ?>
                                             <span class="text-[7px] bg-white/5 text-gray-500 px-1 rounded border border-white/10 uppercase font-black">Guest</span>

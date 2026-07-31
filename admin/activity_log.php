@@ -597,7 +597,7 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                                 }
                             ?>
                                 <tr class="hover:bg-white/[0.02] transition-colors">
-                                    <td class="py-3 px-4 font-mono text-gray-600"><?= $row['id'] ?></td>
+                                    <td class="py-3 px-4 font-mono text-gray-600"><?= (int)$row['id'] ?></td>
                                     <td class="py-3 px-4">
                                         <span class="font-bold text-white">
                                             <?= htmlspecialchars($row['username'] ?? '—') ?>
@@ -616,7 +616,7 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                                         <?= !empty($row['media_type']) ? htmlspecialchars($row['media_type']) : '<span class="text-gray-600">—</span>' ?>
                                     </td>
                                     <td class="py-3 px-4 text-center font-mono text-gray-500">
-                                        <?= $row['media_id'] ? $row['media_id'] : '—' ?>
+                                        <?= !empty($row['media_id']) ? (int)$row['media_id'] : '—' ?>
                                     </td>
                                     <td class="py-3 px-4 hidden md:table-cell font-mono text-gray-500 text-[10px]">
                                         <?= htmlspecialchars($row['ip_address'] ?? '—') ?>

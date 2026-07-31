@@ -117,7 +117,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
                                             </button>
                                             <form action="update.php" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus update versi <?= htmlspecialchars($row['version']) ?> ini?');" style="display:inline;">
                                                 <input type="hidden" name="action" value="delete_update">
-                                                <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                                 <button type="submit" style="background:none;border:none;cursor:pointer;color:#ef4444;" title="Hapus Update">
                                                     <i data-lucide="trash-2" style="width:14px;height:14px;"></i>

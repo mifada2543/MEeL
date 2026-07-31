@@ -392,7 +392,7 @@ while ($rc = $r->fetch_assoc()) {
                                                 <a href="<?= $watch_url ?>" target="_blank" class="content-title">
                                                     <?= htmlspecialchars($row['title']) ?>
                                                 </a>
-                                                <span class="content-id">ID #<?= $row['id'] ?></span>
+                                                <span class="content-id">ID #<?= (int)$row['id'] ?></span>
                                             </div>
                                         </div>
                                     </td>
@@ -426,7 +426,7 @@ while ($rc = $r->fetch_assoc()) {
                                                 <i data-lucide="edit-2" class="w-2.5 h-2.5"></i> Edit
                                             </a>
                                             <button type="button" title="Hapus"
-                                                onclick="confirmDelete(<?= $row['id'] ?>, '<?= $row['media_type'] ?>', '<?= addslashes(htmlspecialchars($row['title'])) ?>')"
+                                                onclick="confirmDelete(<?= (int)$row['id'] ?>, '<?= htmlspecialchars($row['media_type'], ENT_QUOTES, 'UTF-8') ?>', '<?= addslashes(htmlspecialchars($row['title'])) ?>')"
                                                 class="action-btn action-btn-delete border-0 cursor-pointer">
                                                 <i data-lucide="trash-2" class="w-2.5 h-2.5"></i> Hapus
                                             </button>
