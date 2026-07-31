@@ -111,20 +111,57 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
 }
 } // end function_exists('render_comments')
 
-// ── Backward compatibility aliases ──────────────────────────────────────────
+// ── Preview komentar terbaru ────────────────────────────────────────────────
 
-if (!function_exists('render_video_comments')) {
-/** @deprecated Gunakan render_comments($parent_id, $grouped, $level, 'video') */
-function render_video_comments(int $parent_id, array $grouped, int $level = 0): void
+if (!function_exists('comment_preview')) {
+/**
+ * Preview komentar terbaru (id terbesar) untuk header kolom komentar.
+ *
+ * Dipakai bersama oleh halaman watch video & music (video/watch.php, music/watch.php)
+ * sehingga logika pencarian komentar terbaru tidak diduplikasi per view.
+ *
+ * @param array $grouped Comments yang sudah dikelompokkan per parent
+ * @return array{text: string, latest_comment: ?array} Teks preview + komentar terbaru (null jika kosong)
+ */
+function comment_preview(array $grouped): array
 {
-    render_comments($parent_id, $grouped, $level, 'video');
-}
-}
+    $preview_txt    = 'Jadilah komentar pertama';
+    $latest_comment = null;
+    $latest_id      = -1;
 
-if (!function_exists('render_music_comments')) {
-/** @deprecated Gunakan render_comments($parent_id, $grouped, $level, 'music', $playlist_context) */
-function render_music_comments(int $parent_id, array $grouped, int $level = 0, int $playlist_context = 0): void
+    foreach ($grouped as $_grp) {
+        foreach ($_grp as $_c) {
+            if ((int)$_c['id'] > $latest_id) {
+                $latest_id      = (int)$_c['id'];
+                $latest_comment = $_c;
+            }
+        }
+    }
+
+    if ($latest_comment) {
+        $preview_author = $latest_comment['username'] ?? 'Guest';
+        $preview_body   = preg_replace('/\s+/', ' ', (string)($latest_comment['comment'] ?? ''));
+        $preview_txt    = '@' . $preview_author . ': ' . $preview_body;
+    }
+
+    return ['text' => $preview_txt, 'latest_comment' => $latest_comment];
+}
+} // end function_exists('comment_preview')
+
+// ── Empty state komentar ────────────────────────────────────────────────────
+
+if (!function_exists('render_comment_empty_state')) {
+/**
+ * Empty state untuk daftar komentar yang belum ada isinya.
+ *
+ * Warna mengikuti tema: video = text-gray-300, music = text-gray-700
+ * (satu sumber warna agar konsisten di semua halaman & endpoint AJAX).
+ *
+ * @param string $theme 'video' (merah) atau 'music' (oranye)
+ */
+function render_comment_empty_state(string $theme = 'video'): void
 {
-    render_comments($parent_id, $grouped, $level, 'music', $playlist_context);
+    $color = ($theme === 'music') ? 'text-gray-700' : 'text-gray-300';
+    echo "<div class='py-10 text-center text-[10px] $color uppercase tracking-widest'>Jadilah komentar pertama.</div>";
 }
-}
+} // end function_exists('render_comment_empty_state')

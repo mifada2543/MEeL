@@ -140,8 +140,7 @@ if ($is_ajax) {
     $GLOBALS['user_map'] = $user_map;
 
     if (empty($grouped)) {
-        $empty_color = ($media_type === 'music') ? 'text-gray-700' : 'text-gray-300';
-        echo "<div class='py-10 text-center text-[10px] $empty_color uppercase tracking-widest'>Jadilah komentar pertama.</div>";
+        render_comment_empty_state($media_type);
     } else {
         render_comments(0, $grouped, 0, $media_type, $playlist_context);
     }

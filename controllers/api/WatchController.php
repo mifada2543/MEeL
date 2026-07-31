@@ -10,6 +10,13 @@
  *   - VideoWatchController::class → video/watch.php
  *   - MusicWatchController::class → music/watch.php
  *
+ * Struktur:
+ *   AbstractWatchController — base class: state bersama (conn, user_id, id, viewer),
+ *       handleRequest() (view + komentar + CSRF + rate limit), isLoggedIn(),
+ *       dan baseViewData() untuk key data yang sama di semua halaman watch.
+ *   VideoWatchController  — subclass video (subtitle detection, HLS, VTT thumbnail).
+ *   MusicWatchController  — subclass music (playlist queue, format audio, next song).
+ *
  * @package MEeL\Controllers
  */
 
@@ -18,23 +25,26 @@ require_once __DIR__ . '/../../modules/core/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 
 // ════════════════════════════════════════════════════════════════
-// VIDEO WATCH CONTROLLER
+// ABSTRACT BASE: WATCH CONTROLLER
 // ════════════════════════════════════════════════════════════════
 
-class VideoWatchController
+abstract class AbstractWatchController
 {
-    private \mysqli $conn;
-    private ?int $user_id;
-    private int $id;
-    private MediaViewer $viewer;
-    private ?array $mediaData = null;
+    protected \mysqli $conn;
+    protected ?int $user_id;
+    protected int $id;
+    protected MediaViewer $viewer;
 
-    public function __construct(\mysqli $conn, ?int $user_id, int $id)
-    {
+    public function __construct(
+        \mysqli $conn,
+        ?int $user_id,
+        int $id,
+        string $media_type
+    ) {
         $this->conn    = $conn;
         $this->user_id = $user_id;
         $this->id      = $id;
-        $this->viewer  = new MediaViewer($conn, $user_id, 'video', $id);
+        $this->viewer  = new MediaViewer($conn, $user_id, $media_type, $id);
     }
 
     /**
@@ -46,9 +56,9 @@ class VideoWatchController
         $this->viewer->recordView();
 
         if ($this->isLoggedIn() && isset($_POST['send'])) {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-        die('CSRF Token tidak valid.');
-    }
+            if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+                die('CSRF Token tidak valid.');
+            }
 
             // ⚡ RATE LIMIT: 10 comments per menit per user
             $rateKey  = 'user_' . ($this->user_id ?? 0);
@@ -56,15 +66,62 @@ class VideoWatchController
             $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
             if (!$rateCheck['allowed']) {
                 $_SESSION['error'] = 'Terlalu banyak komentar. Coba lagi dalam ' . $rateCheck['retry_after'] . ' detik.';
-                header("Location: watch.php?id={$this->id}#comment-section");
+                header('Location: ' . $this->commentRedirectUrl());
                 exit;
             }
 
             if ($this->viewer->addComment($_POST)) {
-                header("Location: watch.php?id={$this->id}#comment-section");
+                header('Location: ' . $this->commentRedirectUrl());
                 exit;
             }
         }
+    }
+
+    /**
+     * URL redirect setelah komentar POST.
+     * Subclass boleh override untuk menambah parameter (mis. playlist_id).
+     */
+    protected function commentRedirectUrl(): string
+    {
+        return "watch.php?id={$this->id}#comment-section";
+    }
+
+    public function isLoggedIn(): bool
+    {
+        return isset($this->user_id);
+    }
+
+    /**
+     * Key data yang sama di semua halaman watch.
+     * @param mixed $rekom Result rekomendasi yang sudah di-fetch (opsional,
+     *                     untuk menghindari query ganda); null = fetch di sini.
+     */
+    protected function baseViewData(array $v, $rekom = null): array
+    {
+        $comments_data = $this->viewer->getComments();
+
+        return [
+            'id'               => $this->id,
+            'user_id'          => $this->user_id,
+            'is_logged_in'     => $this->isLoggedIn(),
+            'v'                => $v,
+            'user_interaction' => $this->viewer->getUserInteraction(),
+            'comments_grouped' => $comments_data['grouped'],
+            'user_map'         => $comments_data['user_map'],
+            'rekom'            => $rekom ?? $this->viewer->getRecommendations(15),
+        ];
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// VIDEO WATCH CONTROLLER
+// ════════════════════════════════════════════════════════════════
+
+class VideoWatchController extends AbstractWatchController
+{
+    public function __construct(\mysqli $conn, ?int $user_id, int $id)
+    {
+        parent::__construct($conn, $user_id, $id, 'video');
     }
 
     /**
@@ -82,27 +139,40 @@ class VideoWatchController
             ? $video_dir . '/thumbnails.vtt'
             : '';
 
-        $comments_data    = $this->viewer->getComments();
-        $rekom            = $this->viewer->getRecommendations(15);
+        // ── Subtitle: deteksi semua file .vtt di folder video ──────────────
+        // Konvensi penamaan: {folder}.{lang}.vtt (mis. video-folder.id.vtt)
+        // thumbnails.vtt di-exclude karena itu untuk preview thumbnail.
+        $subtitles = [];
+        foreach (glob($video_dir . '/*.vtt') ?: [] as $sub_file) {
+            $sub_base = basename($sub_file);
+            if ($sub_base === 'thumbnails.vtt') continue;
 
-        return [
-            'id'                => $this->id,
-            'user_id'           => $this->user_id,
-            'is_logged_in'      => $this->isLoggedIn(),
-            'v'                 => $v,
-            'video_src'         => $video_src,
-            'is_hls'            => $is_hls,
-            'vtt_src'           => $vtt_src,
-            'user_interaction'  => $this->viewer->getUserInteraction(),
-            'comments_grouped'  => $comments_data['grouped'],
-            'user_map'          => $comments_data['user_map'],
-            'rekom'             => $rekom,
-        ];
-    }
+            // Ekstrak kode bahasa dari pola {folder}.{lang}.vtt
+            $lang = 'und';
+            if (preg_match('/\.([a-z]{2,3}(?:-[a-z]{2,8})?)\.vtt$/i', $sub_base, $m)) {
+                $lang = strtolower($m[1]);
+            }
 
-    public function isLoggedIn(): bool
-    {
-        return isset($this->user_id);
+            $subtitles[] = [
+                'src'   => $video_dir . '/' . $sub_base,
+                'lang'  => $lang,
+                'label' => subtitle_lang_label($lang),
+            ];
+        }
+
+        // Urutkan: 'id' (default) di depan, lalu alfabetis
+        usort($subtitles, function ($a, $b) {
+            if ($a['lang'] === 'id') return -1;
+            if ($b['lang'] === 'id') return 1;
+            return strcmp($a['lang'], $b['lang']);
+        });
+
+        return array_merge($this->baseViewData($v), [
+            'video_src' => $video_src,
+            'is_hls'    => $is_hls,
+            'vtt_src'   => $vtt_src,
+            'subtitles' => $subtitles,
+        ]);
     }
 }
 
@@ -110,13 +180,9 @@ class VideoWatchController
 // MUSIC WATCH CONTROLLER
 // ════════════════════════════════════════════════════════════════
 
-class MusicWatchController
+class MusicWatchController extends AbstractWatchController
 {
-    private \mysqli $conn;
-    private ?int $user_id;
-    private int $id;
     private int $playlist_id;
-    private MediaViewer $viewer;
     private ?array $mediaData = null;
 
     public function __construct(
@@ -125,40 +191,13 @@ class MusicWatchController
         int $id,
         int $playlist_id = 0
     ) {
-        $this->conn         = $conn;
-        $this->user_id      = $user_id;
-        $this->id           = $id;
-        $this->playlist_id  = $playlist_id;
-        $this->viewer       = new MediaViewer($conn, $user_id, 'music', $id);
+        parent::__construct($conn, $user_id, $id, 'music');
+        $this->playlist_id = $playlist_id;
     }
 
-    /**
-     * Catat view + handle comment POST.
-     */
-    public function handleRequest(): void
+    protected function commentRedirectUrl(): string
     {
-        $this->viewer->recordView();
-
-        if ($this->isLoggedIn() && isset($_POST['send'])) {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-        die('CSRF Token tidak valid.');
-    }
-
-            // ⚡ RATE LIMIT: 10 comments per menit per user
-            $rateKey  = 'user_' . ($this->user_id ?? 0);
-            $rateRole = get_user_role($this->conn, $this->user_id ?? 0);
-            $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
-            if (!$rateCheck['allowed']) {
-                $_SESSION['error'] = 'Terlalu banyak komentar. Coba lagi dalam ' . $rateCheck['retry_after'] . ' detik.';
-                header("Location: watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section");
-                exit;
-            }
-
-            if ($this->viewer->addComment($_POST)) {
-                header("Location: watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section");
-                exit;
-            }
-        }
+        return "watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section";
     }
 
     /**
@@ -183,12 +222,12 @@ class MusicWatchController
         $this->requireMedia();
         $v = $this->mediaData;
 
-        $comments_data = $this->viewer->getComments();
-        $rekom         = $this->viewer->getRecommendations(15);
-        $playlist_data = $this->viewer->getPlaylistQueue($this->playlist_id);
-        $queue_query   = $playlist_data['queue'] ?? null;
-        $next_url      = $playlist_data['next_url'] ?? '';
+        $playlist_data    = $this->viewer->getPlaylistQueue($this->playlist_id);
+        $queue_query      = $playlist_data['queue'] ?? null;
+        $next_url         = $playlist_data['next_url'] ?? '';
         $playlist_context = $this->playlist_id;
+
+        $rekom = $this->viewer->getRecommendations(15);
 
         // Compute next song URL
         $next_song_url = $next_url;
@@ -209,34 +248,21 @@ class MusicWatchController
         $deskripsi = get_audio_format_description($ext);
         $mimeType  = get_audio_mime_type($ext);
 
-        $preloadVal    = ($ext === 'flac') ? 'none' : 'metadata';
-        $file_size_bytes = !empty($v['filename'])
+        $preloadVal       = ($ext === 'flac') ? 'none' : 'metadata';
+        $file_size_bytes  = !empty($v['filename'])
             ? (@filesize(__DIR__ . '/../../music/upload/file/' . $v['filename']) ?: 0)
             : 0;
 
-        return [
-            'id'                => $this->id,
-            'user_id'           => $this->user_id,
-            'is_logged_in'      => $this->isLoggedIn(),
-            'v'                 => $v,
-            'playlist_id'       => $this->playlist_id,
-            'playlist_context'  => $playlist_context,
-            'user_interaction'  => $this->viewer->getUserInteraction(),
-            'comments_grouped'  => $comments_data['grouped'],
-            'user_map'          => $comments_data['user_map'],
-            'rekom'             => $rekom,
-            'queue_query'       => $queue_query,
-            'next_song_url'     => $next_song_url,
-            'file_size_bytes'   => $file_size_bytes,
-            'fmt_label'         => $fmt_label,
-            'deskripsi'         => $deskripsi,
-            'mimeType'          => $mimeType,
-            'preloadVal'        => $preloadVal,
-        ];
-    }
-
-    public function isLoggedIn(): bool
-    {
-        return isset($this->user_id);
+        return array_merge($this->baseViewData($v, $rekom), [
+            'playlist_id'      => $this->playlist_id,
+            'playlist_context' => $playlist_context,
+            'queue_query'      => $queue_query,
+            'next_song_url'    => $next_song_url,
+            'file_size_bytes'  => $file_size_bytes,
+            'fmt_label'        => $fmt_label,
+            'deskripsi'        => $deskripsi,
+            'mimeType'         => $mimeType,
+            'preloadVal'       => $preloadVal,
+        ]);
     }
 }
