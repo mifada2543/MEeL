@@ -7,7 +7,7 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 ## 📋 Table of Contents
 
 - [Main Configuration Files](#main-configuration-files)
-- [Database (`auth/config.php`)](#database-authconfigphp)
+- [Database (`auth/settings.php`)](#database-authsettingsphp)
 - [Session & Security](#session--security)
 - [Media Storage Paths](#media-storage-paths)
 - [Transcoder Configuration](#transcoder-configuration)
@@ -21,8 +21,10 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 
 | File | Purpose | Key Variables |
 |------|--------|----------------|
-| `auth/config.php` | Database, session, CSRF, **centralized paths** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
-| `auth/config.example.php` | Config template | Same as config.php |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers | (init logic only) |
+| `auth/settings.php` | **Pure data**: DB credentials + **centralized paths** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
+| `auth/config.example.php` | Entry point template (copy to config.php) | Same as config.php |
+| `auth/settings.example.php` | Config data template (copy to settings.php) | Same as settings.php |
 | `database/schema.sql` | Standalone database schema | — |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
@@ -39,18 +41,21 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 
 ---
 
-## Database (`auth/config.php`)
+## Database (`auth/settings.php`)
 
 ### Database Connection
 
+DB credentials live in **`auth/settings.php`** (pure data). `auth/config.php` requires it and creates the connection:
+
 ```php
-// File: auth/config.php — can be copied from example
+// File: auth/settings.php — can be copied from settings.example.php
 
 $server   = "localhost";   // Database host
 $username = "root";        // Database username
 $password = "";            // Database password
 $db       = "MEeL";        // Database name
 
+// auth/config.php — entry point creates the connection:
 $conn = new mysqli($server, $username, $password, $db);
 ```
 
@@ -109,12 +114,12 @@ function getRomajiName($text) {
 
 ## Media Storage Paths (CENTRALIZED)
 
-All media storage paths are **centralized** in `auth/config.php` through `MEEL_HDD_*` constants. Change just **one line** to relocate storage.
+All media storage paths are **centralized** in `auth/settings.php` through `MEEL_HDD_*` constants. Change just **one line** to relocate storage.
 
 ### Main Path Configuration
 
 ```php
-// File: auth/config.php — ★ Just change MEEL_HDD_BASE, everything else follows
+// File: auth/settings.php — ★ Just change MEEL_HDD_BASE, everything else follows
 define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 
 // Derived paths (automatically follow MEEL_HDD_BASE)

@@ -128,16 +128,19 @@ SOURCE /path/to/MEeL/database/schema.sql;
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php`:
+Edit `auth/settings.php`:
 ```php
 $server   = "localhost";
 $username = "root";       // Your database user
 $password = "";           // Your database password
 $db       = "MEeL";       // Database name
 ```
+
+> `auth/config.php` is the entry point that requires `auth/settings.php`.
 
 After configuring `auth/config.php`, run the database migration:
 ```bash
@@ -231,7 +234,7 @@ mod_xsendfile speeds up streaming large files (FLAC 33MB+, MKV 4K) by letting Ap
    # Output: xsendfile_module (shared)
    ```
 
-7. Enable in app — edit `auth/config.php`:
+7. Enable in app — edit `auth/settings.php`:
    ```php
    define('MEEL_USE_XSENDFILE', true);
    ```
@@ -321,7 +324,7 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 
 ### ❌ "Database connection failed"
 - Make sure MySQL/MariaDB is running: `sudo systemctl status mysql`
-- Verify credentials in `auth/config.php`
+- Verify credentials in `auth/settings.php`
 - Try: `mysql -u root -p -e "SHOW DATABASES;"`
 
 ### ❌ "Storage Offline" / Redirected to maintenance

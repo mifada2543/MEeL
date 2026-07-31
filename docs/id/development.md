@@ -27,6 +27,7 @@ git clone https://github.com/mifada2543/MEeL.git
 cd MEeL
 
 # Copy config
+cp auth/settings.example.php auth/settings.php
 cp auth/config.example.php auth/config.php
 
 # Setup database (lihat installation.md)
@@ -162,7 +163,7 @@ private const FFMPEG_THREADS = 8;
 private const HLS_SEGMENT_DURATION = 10;
 private const DOWNLOAD_TIMEOUT = 900;
 
-// Global constants: MEEL_HDD_* untuk path terpusat (di auth/config.php)
+// Global constants: MEEL_HDD_* untuk path terpusat (di auth/settings.php)
 define('MEEL_HDD_BASE', '/media/username/MEeL/media');
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
 ```

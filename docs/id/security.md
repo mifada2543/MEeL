@@ -784,7 +784,7 @@ $reg_time_window = 3600; // 1 jam
 
 ### Security Checklist
 
-- [ ] Database credentials hanya di `auth/config.php`
+- [ ] Database credentials hanya di `auth/settings.php`
 - [ ] Semua `.htaccess` terpasang di direktori sensitif
 - [ ] Prepared statements di semua query SQL
 - [ ] CSRF token di semua form POST

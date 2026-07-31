@@ -23,7 +23,7 @@
 
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'tests', 'temp', 'assets/dict', 'data_drive']);
-define('EXCLUDE_FILES', ['config.example.php', 'test.php', '.gitkeep']);
+define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
 
 require_once __DIR__ . '/helpers.php';
 

@@ -161,7 +161,7 @@ mysql -u root -p -e "SHOW DATABASES;"
 
 **Solutions:**
 - Start MySQL: `sudo systemctl start mysql`
-- Check credentials in `auth/config.php`
+- Check credentials in `auth/settings.php`
 - Check MySQL port (default: 3306)
 
 ### ❌ "Table not found"

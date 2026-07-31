@@ -7,7 +7,7 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 ## 📋 Daftar Isi
 
 - [File Konfigurasi Utama](#file-konfigurasi-utama)
-- [Database (`auth/config.php`)](#database-authconfigphp)
+- [Database (`auth/settings.php`)](#database-authsettingsphp)
 - [Session & Security](#session--security)
 - [Media Storage Paths](#media-storage-paths)
 - [Transcoder Configuration](#transcoder-configuration)
@@ -21,8 +21,10 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 
 | File | Tujuan | Variabel Kunci |
 |------|--------|----------------|
-| `auth/config.php` | Database, session, CSRF, **path terpusat** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
-| `auth/config.example.php` | Template konfigurasi | Sama dengan config.php |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers | (hanya logic init) |
+| `auth/settings.php` | **Data murni**: DB credentials + **path terpusat** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
+| `auth/config.example.php` | Template entry point (copy ke config.php) | Sama dengan config.php |
+| `auth/settings.example.php` | Template data konfigurasi (copy ke settings.php) | Sama dengan settings.php |
 | `database/schema.sql` | Skema database standalone | — |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
@@ -39,18 +41,21 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 
 ---
 
-## Database (`auth/config.php`)
+## Database (`auth/settings.php`)
 
 ### Koneksi Database
 
+Kredensial database berada di **`auth/settings.php`** (data murni). `auth/config.php` me-require-nya lalu membuat koneksi:
+
 ```php
-// File: auth/config.php bisa diambil dari example
+// File: auth/settings.php — bisa diambil dari settings.example.php
 
 $server   = "localhost";   // Host database
 $username = "root";        // Username database
 $password = "";            // Password database
 $db       = "MEeL";        // Nama database
 
+// auth/config.php — entry point membuat koneksi:
 $conn = new mysqli($server, $username, $password, $db);
 ```
 
@@ -131,12 +136,12 @@ function getRomajiName($text) {
 
 ## Media Storage Paths (TERPUSAT)
 
-Semua path penyimpanan media **terpusat** di `auth/config.php` melalui konstanta `MEEL_HDD_*`. Cukup ubah **satu baris** untuk memindahkan lokasi penyimpanan.
+Semua path penyimpanan media **terpusat** di `auth/settings.php` melalui konstanta `MEEL_HDD_*`. Cukup ubah **satu baris** untuk memindahkan lokasi penyimpanan.
 
 ### Konfigurasi Path Utama
 
 ```php
-// File: auth/config.php — ★ Cukup ubah MEEL_HDD_BASE, sisanya otomatis
+// File: auth/settings.php — ★ Cukup ubah MEEL_HDD_BASE, sisanya otomatis
 define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 
 // Path turunan (otomatis mengikuti MEEL_HDD_BASE)
@@ -151,7 +156,7 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ### Cara Mengubah
 
 1. Tentukan path mount HDD Anda: `df -h` atau `lsblk`
-2. Edit `auth/config.php`:
+2. Edit `auth/settings.php`:
    ```php
    define('MEEL_HDD_BASE', '/media/[username]/MEeL/media');
    ```
@@ -159,7 +164,7 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 
 ### Konfigurasi X-Sendfile (Akselerasi Streaming)
 
-> Tersedia di: `auth/config.php`
+> Tersedia di: `auth/settings.php`
 
 ```php
 define('MEEL_USE_XSENDFILE', false);
@@ -225,7 +230,7 @@ Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, aplikasi akan redirect ke 
 
 ### File: `modules/core/Transcoder.php`
 
-> ⚠️ **Perubahan:** Konstanta `HDD_BASE`, `HDD_VIDEO_DIR`, `HDD_THUMB_DIR` telah **dipindahkan** ke `auth/config.php` menjadi `MEEL_HDD_*`.
+> ⚠️ **Perubahan:** Konstanta `HDD_BASE`, `HDD_VIDEO_DIR`, `HDD_THUMB_DIR` telah **dipindahkan** ke `auth/settings.php` menjadi `MEEL_HDD_*`.
 
 ```php
 // ─── KONSTANTA HARDWARE ───────────────────────────────────
@@ -242,7 +247,7 @@ private const HLS_SEGMENT_DURATION  = 10;
 // Download timeout (detik)
 private const DOWNLOAD_TIMEOUT      = 900;
 
-// PATH STORAGE — sekarang lihat auth/config.php (MEEL_HDD_*)
+// PATH STORAGE — sekarang lihat auth/settings.php (MEEL_HDD_*)
 // private const HDD_BASE = "..."; // DIPINDAHKAN
 ```
 
@@ -300,7 +305,7 @@ else                       $interval = 10;    // ≤ 5 menit → tiap 10 detik
 
 ### File: `modules/core/Uploader.php`
 
-> ⚠️ **Perubahan:** `$base_dir` sekarang mengambil path dari `MEEL_HDD_VIDEO_UPLOAD` (didefinisikan di `auth/config.php`).
+> ⚠️ **Perubahan:** `$base_dir` sekarang mengambil path dari `MEEL_HDD_VIDEO_UPLOAD` (didefinisikan di `auth/settings.php`).
 
 ```php
 $this->base_dir = defined('MEEL_HDD_VIDEO_UPLOAD')

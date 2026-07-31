@@ -130,16 +130,19 @@ SOURCE /path/ke/MEeL/database/schema.sql;
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php`:
+Edit `auth/settings.php`:
 ```php
 $server   = "localhost";
 $username = "root";       // User database Anda
 $password = "";           // Password database Anda
 $db       = "MEeL";       // Nama database
 ```
+
+> `auth/config.php` adalah entry point yang me-require `auth/settings.php`.
 
 Setelah `auth/config.php` sudah diisi, jalankan migrasi database:
 ```bash
@@ -234,7 +237,7 @@ membiarkan Apache mengirim file langsung dari disk tanpa melalui PHP.
    # Output: xsendfile_module (shared)
    ```
 
-7. Aktifkan di aplikasi — edit `auth/config.php`:
+7. Aktifkan di aplikasi — edit `auth/settings.php`:
    ```php
    define('MEEL_USE_XSENDFILE', true);
    ```
@@ -321,7 +324,7 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 
 ### ❌ "Koneksi ke database gagal"
 - Pastikan MySQL/MariaDB berjalan: `sudo systemctl status mysql`
-- Verifikasi kredensial di `auth/config.php`
+- Verifikasi kredensial di `auth/settings.php`
 - Coba: `mysql -u root -p -e "SHOW DATABASES;"`
 
 ### ❌ "Penyimpanan Offline" / Redirect ke maintenance

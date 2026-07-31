@@ -24,7 +24,7 @@
 
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'assets/dict', 'data_drive']);
-define('EXCLUDE_FILES', ['config.example.php', 'test.php', '.gitkeep']);
+define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
 
 require_once __DIR__ . '/helpers.php';
 
@@ -203,7 +203,6 @@ function testFunctionExistence(): void {
         // japanese.php
         'getRomajiName'         => 'modules/core/japanese.php',
         'analyzeJapaneseText'   => 'modules/core/japanese.php',
-        'getEnglishTranslation' => 'modules/core/japanese.php',
         // activity_logger.php — hanya di docs/security.md, belum diimplementasi
         'log_activity'          => 'modules/core/activity_logger.php',
         // helpers.php (CSRF) — verify_csrf_token is the canonical function
@@ -649,10 +648,17 @@ function testConfigCheck(): void {
     $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
     $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
     
+    // Refactor v2: credentials dipindah ke auth/settings.php — ikut dicek
+    $settingsFile = PROJECT_ROOT . '/auth/settings.php';
+    if (file_exists($settingsFile)) {
+        $settingsContent = file_get_contents($settingsFile);
+        $hasServerVar = $hasServerVar || preg_match('/\\$server\\s*=\\s*"[^"]*"/', $settingsContent);
+    }
+
     if ($hasServerVar || $hasDirectConn) {
         record("Database server terkonfigurasi ✓", true);
     } else {
-        record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/config.php");
+        record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/settings.php");
     }
 }
 
@@ -730,7 +736,7 @@ function testModifiedFiles(): void {
         'modules/core/japanese.php' => [
             'escapeshellarg getRomajiName' => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getRomajiName)'],
             'escapeshellarg analyze'       => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
-            'escapeshellarg translate'     => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getEnglishTranslation)'],
+            'escapeshellarg translate'     => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
         ],
         'music/stream.php' => [
             'basename'      => ['pattern' => '/basename\\(\\$v/', 'label' => 'basename() untuk file path'],

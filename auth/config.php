@@ -1,13 +1,29 @@
 <?php
 /**
- * MEeL-HUB — Konfigurasi Aplikasi
+ * MEeL-HUB — Konfigurasi Aplikasi (Entry Point)
  *
  * ═══════════════════════════════════════════════════════════════════
  * ★ PENTING — Jangan hapus guard !defined() di sekitar konstanta.
  *   File ini bisa di-include dari berbagai entry point (index.php,
  *   auth/auth.php, file admin, dll), guard mencegah redeclare error.
+ *
+ * ★ File ini HANYA memuat logic inisialisasi. Semua DATA konfigurasi
+ *   (DB credentials + MEEL_* constants) sudah dipindah ke settings.php:
+ *     require __DIR__ . '/settings.php';
+ *   Ubah nilai server di settings.php, JANGAN di file ini.
  * ═══════════════════════════════════════════════════════════════════
  */
+
+// ════════════════════════════════════════════════════════════════
+// PURE CONFIG (DATA) — DB credentials + MEEL_* constants
+// ════════════════════════════════════════════════════════════════
+$meel_settings = __DIR__ . '/settings.php';
+if (!file_exists($meel_settings)) {
+    die("[MEeL SYSTEM ERROR]\nFile auth/settings.php tidak ditemukan.\n"
+        . "Copy dari settings.example.php lalu isi kredensial:\n"
+        . "  cp auth/settings.example.php auth/settings.php");
+}
+require_once $meel_settings;
 
 // ════════════════════════════════════════════════════════════════
 // BOOTSTRAP (Error Handling Terpusat)
@@ -18,19 +34,12 @@
 require_once __DIR__ . '/../modules/core/bootstrap.php';
 
 // ════════════════════════════════════════════════════════════════
-// ENVIRONMENT (Override auto-detect bootstrap jika perlu)
-// ════════════════════════════════════════════════════════════════
-// Uncomment salah satu baris di bawah untuk menetapkan environment
-// secara manual (mengalahkan auto-detect dari bootstrap.php):
-// define('MEEL_ENV', 'production');
-// define('MEEL_ENV', 'development');
-
-// ════════════════════════════════════════════════════════════════
 // DATABASE CONNECTION
 // ════════════════════════════════════════════════════════════════
 // Hanya connect jika $conn belum ada — aman di-include berkali-kali
+// Credentials diambil dari settings.php ($server, $username, dll.)
 if (!isset($conn) || $conn === null) {
-    $conn = new mysqli("localhost", "root", "", "MEeL");
+    $conn = new mysqli($server, $username, $password, $db);
     if ($conn->connect_error) {
         die("[MEeL SYSTEM ERROR]\nKoneksi ke database gagal: " . $conn->connect_error);
     }
@@ -46,56 +55,6 @@ if (!defined('MEEL_BASE_URL')) {
     $meel_doc_root     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
     $meel_relative     = substr($meel_project_root, strlen(rtrim($meel_doc_root, '/')));
     define('MEEL_BASE_URL', rtrim($meel_relative, '/'));
-}
-
-// ════════════════════════════════════════════════════════════════
-// HOST CONSTANT (CEGAH OPEN REDIRECT)
-// ════════════════════════════════════════════════════════════════
-// Gunakan untuk validasi referer/open redirect. Set nilai ini
-// sesuai hostname server Anda untuk keamanan lebih baik.
-// Contoh: define('MEEL_HOST', 'meel.example.com');
-// Biarkan tidak di-set untuk fallback ke HTTP_HOST.
-if (!defined('MEEL_HOST')) {
-    define('MEEL_HOST', $_SERVER['HTTP_HOST'] ?? '');
-}
-
-// ════════════════════════════════════════════════════════════════
-// BINARY PATH CONSTANTS (CEGAH BINARY-HIJACKING)
-// ════════════════════════════════════════════════════════════════
-// Set path absolut untuk mencegah binary-hijacking via PATH environment.
-// Biarkan kosong untuk auto-discovery (hanya untuk development).
-if (!defined('MEEL_FFMPEG_PATH')) {
-    define('MEEL_FFMPEG_PATH', '');
-}
-if (!defined('MEEL_FFPROBE_PATH')) {
-    define('MEEL_FFPROBE_PATH', '');
-}
-if (!defined('MEEL_NODE_PATH')) {
-    define('MEEL_NODE_PATH', '');
-}
-if (!defined('MEEL_YTDLP_PATH')) {
-    define('MEEL_YTDLP_PATH', '');
-}
-
-// ════════════════════════════════════════════════════════════════
-// MEDIA STORAGE PATHS (TERPUSAT)
-// ════════════════════════════════════════════════════════════════
-// Ubah hanya di sini untuk portabilitas ke server/HDD lain!
-// Cukup set MEEL_HDD_BASE, sisanya otomatis mengikuti.
-if (!defined('MEEL_HDD_BASE')) {
-    define('MEEL_HDD_BASE', '/media/muhammaddaffa/MEeL/media');
-
-    // ── Path turunan (jangan diubah kecuali paham struktur folder) ──
-    define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
-    define('MEEL_HDD_VIDEO_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'video/');
-    define('MEEL_HDD_THUMB_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'thumbnail/');
-    define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
-    define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
-    define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
-
-    // Aktifkan jika mod_xsendfile sudah terinstall di Apache.
-    // 🚀 Untuk FLAC 33MB+, Apache kirim file langsung tanpa sentuh PHP.
-    define('MEEL_USE_XSENDFILE', true);
 }
 
 // ════════════════════════════════════════════════════════════════

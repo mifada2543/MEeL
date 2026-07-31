@@ -54,11 +54,12 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 | File | Deskripsi |
 |------|-----------|
 | `database/schema.sql` | Skema database standalone — import langsung `mysql < database/schema.sql` |
-| `auth/config.example.php` | Template konfigurasi (copy ke `config.php`) |
+| `auth/config.example.php` | Template entry point (copy ke `config.php`) |
+| `auth/settings.example.php` | Template data konfigurasi (copy ke `settings.php`) |
 
 ## 🔧 Perubahan Terbaru
 
-- **Path terpusat:** Semua path penyimpanan media (Video, Music, Books, Drive) diatur dari `MEEL_HDD_BASE` di `auth/config.php` — cukup ubah 1 baris
+- **Path terpusat:** Semua path penyimpanan media (Video, Music, Books, Drive) diatur dari `MEEL_HDD_BASE` di `auth/settings.php` — cukup ubah 1 baris
 - **Skema database standalone:** File `database/schema.sql` untuk import cepat
 - **Type hints:** Properti class dan parameter constructor sekarang menggunakan type hints (`\mysqli`, `int`, `string`, dll.)
 - **Activity Log Integration:** `log_activity()` function + integrasi di login, logout, upload, dan admin actions — audit trail penuh ke tabel `activity_log`

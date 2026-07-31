@@ -54,11 +54,12 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | File | Description |
 |------|-----------|
 | `database/schema.sql` | Standalone database schema — import directly via `mysql < database/schema.sql` |
-| `auth/config.example.php` | Config template (copy to `config.php`) |
+| `auth/config.example.php` | Entry point template (copy to `config.php`) |
+| `auth/settings.example.php` | Config data template (copy to `settings.php`) |
 
 ## 🔧 Recent Changes
 
-- **Centralized paths:** All media storage paths (Video, Music, Books, Drive) managed from `MEEL_HDD_BASE` in `auth/config.php` — change just 1 line
+- **Centralized paths:** All media storage paths (Video, Music, Books, Drive) managed from `MEEL_HDD_BASE` in `auth/settings.php` — change just 1 line
 - **Standalone database schema:** `database/schema.sql` for quick import
 - **Type hints:** Class properties and constructor parameters now use type hints (`\mysqli`, `int`, `string`, etc.)
 - **Activity Log Integration:** `log_activity()` function integrated at login, logout, upload, and admin actions — full audit trail to `activity_log` table

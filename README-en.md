@@ -152,7 +152,9 @@ MEeL/
 ├── arcade/                # Mini Games (Dino Run, Snake, Chess)
 ├── assets/                # Static assets (CSS, JS, fonts, images)
 ├── auth/                  # Authentication & session management
-│   ├── config.php         # Centralized database config + paths (MEEL_HDD_*)
+│   ├── config.php         # Entry point: bootstrap + requires settings.php
+│   ├── settings.php       # Pure data: DB + paths (MEEL_HDD_*)
+│   └── settings.example.php # Config data template
 │   └── config.example.php # Configuration template
 ├── books/                 # E-Book / Comic module
 ├── controllers/           # API Actions & Event Handlers (AJAX/HTMX)
@@ -261,6 +263,7 @@ mysql -u root -p MEeL < database/schema.sql
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
@@ -302,8 +305,10 @@ sudo systemctl restart apache2
 
 | File | Purpose |
 |------|---------|
-| `auth/config.php` | Database, session, CSRF, **centralized paths (`MEEL_HDD_*`)** |
-| `auth/config.example.php` | Configuration template (copy to config.php) |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers (requires settings.php) |
+| `auth/settings.php` | **Pure data**: DB credentials + centralized paths (`MEEL_HDD_*`) |
+| `auth/config.example.php` | Entry point template (copy to config.php) |
+| `auth/settings.example.php` | Config data template (copy to settings.php) |
 | `database/schema.sql` | Standalone database schema |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
 | `modules/core/Uploader.php` | File upload, FFmpeg |

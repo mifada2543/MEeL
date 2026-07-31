@@ -152,8 +152,10 @@ MEeL/
 ├── arcade/                # Mini Games (Dino Run, Snake, Chess)
 ├── assets/                # Aset statis (CSS, JS, font, gambar)
 ├── auth/                  # Autentikasi & manajemen sesi
-│   ├── config.php         # Konfigurasi database + path terpusat (MEEL_HDD_*)
-│   └── config.example.php # Template konfigurasi
+│   ├── config.php         # Entry point: bootstrap + require settings.php
+│   ├── config.example.php # Template entry point
+│   ├── settings.php       # Data murni: DB + path terpusat (MEEL_HDD_*)
+│   └── settings.example.php # Template data konfigurasi
 ├── books/                 # Modul E-Book / Komik
 ├── controllers/           # API Actions & Event Handler (AJAX/HTMX)
 │   ├── api/               # WatchController, like, comment, transcode
@@ -261,10 +263,12 @@ mysql -u root -p MEeL < database/schema.sql
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php` dan isi kredensial database Anda.
+Edit `auth/settings.php` dan isi kredensial database Anda (DB + `MEEL_HDD_*`).
+File `auth/config.php` adalah entry point yang me-require `settings.php`.
 
 ### 4. Setup Direktori Runtime
 
@@ -302,8 +306,10 @@ sudo systemctl restart apache2
 
 | File | Keperluan |
 |------|-----------|
-| `auth/config.php` | Database, session, CSRF, **path terpusat (`MEEL_HDD_*`)** |
-| `auth/config.example.php` | Template konfigurasi (copy ke config.php) |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers (me-require settings.php) |
+| `auth/settings.php` | **Data murni**: DB credentials + path terpusat (`MEEL_HDD_*`) |
+| `auth/config.example.php` | Template entry point (copy ke config.php) |
+| `auth/settings.example.php` | Template data konfigurasi (copy ke settings.php) |
 | `database/schema.sql` | Skema database standalone |
 | `modules/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
 | `modules/Uploader.php` | Upload file, FFmpeg |
@@ -314,7 +320,7 @@ sudo systemctl restart apache2
 ### Konfigurasi Path Terpusat
 
 ```php
-// auth/config.php — ★ Cukup ubah 1 baris ini
+// auth/settings.php — ★ Cukup ubah 1 baris ini
 define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 
 // Semua modul otomatis mengikuti:

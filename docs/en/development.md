@@ -24,6 +24,7 @@ Guide for developers who want to contribute or understand coding standards in ME
 ```bash
 git clone https://github.com/mifada2543/MEeL.git
 cd MEeL
+cp auth/settings.example.php auth/settings.php
 cp auth/config.example.php auth/config.php
 ```
 
