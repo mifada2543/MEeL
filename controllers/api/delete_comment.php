@@ -78,18 +78,18 @@ if (!$rateCheck['allowed']) {
 // Get comment ID (POST untuk AJAX, GET untuk fallback)
 $comment_id = (int)($_POST['id'] ?? ($_GET['id'] ?? 0));
 
-error_log("DELETE_COMMENT.PHP - ID: $comment_id");
+if (defined('APP_DEBUG') && APP_DEBUG) { error_log("DELETE_COMMENT.PHP - ID: $comment_id"); }
 
 // Gunakan MediaInteraction class
 $interaction = new MediaInteraction($conn, $_SESSION['user_id'] ?? null);
 $result = $interaction->deleteComment($comment_id);
 
 // Log result
-error_log("DELETE_COMMENT.PHP - Result: " . json_encode($result));
+if (defined('APP_DEBUG') && APP_DEBUG) { error_log("DELETE_COMMENT.PHP - Result: " . json_encode($result)); }
 
 // Handle response
 if (!$result['success']) {
-    error_log("DELETE_COMMENT - ERROR: {$result['message']}");
+    if (defined('APP_DEBUG') && APP_DEBUG) { error_log("DELETE_COMMENT - ERROR: {$result['message']}"); }
     if ($is_ajax) {
         http_response_code((int)($result['http_code'] ?? 400));
         header('HX-Retarget: #comment-alert');

@@ -19,6 +19,15 @@
 // define('MEEL_ENV', 'development');
 
 // ════════════════════════════════════════════════════════════════
+// DEBUG LOGGING (Override auto-detect bootstrap)
+// ════════════════════════════════════════════════════════════════
+// Guard error_log di controllers (pola: if (defined('APP_DEBUG') && APP_DEBUG)).
+// Default otomatis di bootstrap.php: true di development, false di produksi.
+// Uncomment untuk memaksa:
+// define('APP_DEBUG', true);   // paksa aktif (debugging)
+// define('APP_DEBUG', false);  // paksa nonaktif
+
+// ════════════════════════════════════════════════════════════════
 // DATABASE CREDENTIALS
 // ════════════════════════════════════════════════════════════════
 if (!isset($server))   $server   = "localhost";

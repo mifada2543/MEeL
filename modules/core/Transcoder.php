@@ -1,5 +1,5 @@
 <?php
-// File: auth/Transcoder.php
+// File: modules/core/Transcoder.php
 // Optimized for: Intel Core i3-1220P (10 core / 12 thread), Dual-Channel RAM, USB HDD storage
 // VA-API: Intel iHD 24.1.0 — H264/HEVC/VP9 encode+decode tersedia, tapi tidak dipakai di HLS
 //         karena pipeline ini sudah pakai -codec copy (stream copy, tanpa re-encode)

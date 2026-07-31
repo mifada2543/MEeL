@@ -1,6 +1,6 @@
 <?php
 /**
- * modules/SearchEngine.php
+ * modules/media/SearchEngine.php
  *
  * SearchEngine — Centralized search query handler optimized for performance.
  * Handles parameter parsing, input validation, and result wrapping dengan

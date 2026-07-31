@@ -3,9 +3,12 @@
  * modules/core/bootstrap.php — Bootstrap Terpusat MEeL-HUB
  *
  * Satu titik masuk untuk:
- *   - Environment detection & display_errors
+ *   - Environment detection (MEEL_ENV) & display_errors
  *   - Error logging konfigurasi
- *   - Security headers konsisten
+ *   - Definisi APP_DEBUG (mengikuti MEEL_ENV)
+ *
+ * Catatan: HTTP security headers TIDAK di-set di sini — itu tanggung jawab
+ * auth/config.php (X-Frame-Options, CSP, HSTS, dll).
  *
  * Cara pakai:
  *   Di setiap file entry-point (index.php, watch.php, dll), ganti:
@@ -25,6 +28,17 @@ if (!defined('MEEL_ENV')) {
     $is_local = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1', 'localhost'], true)
              || (isset($_SERVER['SERVER_NAME']) && in_array($_SERVER['SERVER_NAME'], ['localhost', '127.0.0.1'], true));
     define('MEEL_ENV', $is_local ? 'development' : 'production');
+}
+
+// ─── APP_DEBUG (Debug Logging Guard) ──────────────────────────────────────────
+// Guard untuk error_log di controllers/modules, pola pemakaian:
+//   if (defined('APP_DEBUG') && APP_DEBUG) { error_log(...); }
+// Default otomatis: true di development, false di produksi.
+// Override manual bisa dilakukan di auth/settings.php (sebelum bootstrap jalan):
+//   define('APP_DEBUG', true);   // paksa aktif (debugging)
+//   define('APP_DEBUG', false);  // paksa nonaktif
+if (!defined('APP_DEBUG')) {
+    define('APP_DEBUG', MEEL_ENV === 'development');
 }
 
 // ─── Error Reporting ─────────────────────────────────────────────────────────
