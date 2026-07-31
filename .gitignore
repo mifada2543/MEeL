@@ -4,6 +4,10 @@
 
 # ─── SENSITIVE CONFIGURATION ───────────────────────────
 # Database credentials and local configuration
+# auth/settings.php berisi DATA kredensial & path storage PRODUKSI yang nyata
+# (bukan template). Wajib di-ignore agar kredensial tidak pernah ter-commit
+# tanpa sengaja. Template yang aman untuk tetap di-track: auth/settings.example.php
+auth/settings.php
 auth/local.config.php
 .env
 .env.local
