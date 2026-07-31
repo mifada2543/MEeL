@@ -120,9 +120,45 @@ if (isset($_POST['update'])) {
             }
         }
 
+        // ── SUBTITLE (OPSIONAL): Upload / timpa file subtitle ───────────────
+        // Konvensi nama: {folder}.{lang}.vtt di dalam folder HLS video.
+        if (empty($error_message) && isset($_FILES['subtitle']) && $_FILES['subtitle']['error'] === UPLOAD_ERR_OK) {
+            $sub_ext     = strtolower(pathinfo($_FILES['subtitle']['name'], PATHINFO_EXTENSION));
+            $sub_lang    = sanitize_subtitle_lang($_POST['subtitle_lang'] ?? 'id');
+            $sub_allowed = ['vtt', 'srt'];
+
+            if (in_array($sub_ext, $sub_allowed, true) && validate_subtitle_file($_FILES['subtitle']['tmp_name'])) {
+                $sub_content = (string)@file_get_contents($_FILES['subtitle']['tmp_name']);
+                if ($sub_content !== '') {
+                    if ($sub_ext === 'srt') {
+                        $sub_content = convert_srt_to_vtt($sub_content);
+                    }
+                    $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
+
+                    // Lokasi folder HLS video di storage
+                    $hls_folder = basename(dirname($video['filename']));
+                    $sub_dir    = __DIR__ . '/../video/upload/video/' . $hls_folder . '/';
+                    if (is_dir($sub_dir)) {
+                        $sub_target = $sub_dir . $hls_folder . '.' . $sub_lang . '.vtt';
+                        if (@file_put_contents($sub_target, $sub_content, LOCK_EX) !== false) {
+                            $status = "success";
+                        } else {
+                            $error_message = "Gagal menulis file subtitle ke storage.";
+                        }
+                    } else {
+                        $error_message = "Folder HLS video tidak ditemukan di storage.";
+                    }
+                } else {
+                    $error_message = "File subtitle kosong atau tidak dapat dibaca.";
+                }
+            } else {
+                $error_message = "File subtitle tidak valid. Gunakan format VTT atau SRT (maks 2MB).";
+            }
+        }
+
         if ($title === '') {
             $error_message = "Judul video tidak boleh kosong.";
-        } else {
+        } elseif ($error_message === '') {
             // Generate search_metadata — helper terpusat (romaji + english + alias),
             // konsisten dengan Uploader & backfill
             $meta = generate_search_metadata($title);
@@ -138,8 +174,56 @@ if (isset($_POST['update'])) {
                 $error_message = "Gagal menyimpan perubahan ke database.";
             }
         }
+
+        // ── ROLLBACK THUMBNAIL ────────────────────────────────────────────────
+        // Jika ada error setelah thumbnail baru berhasil ditulis ke disk
+        // (mis. subtitle tidak valid), hapus file thumbnail baru agar tidak
+        // menjadi orphan — DB tetap menunjuk thumbnail lama.
+        if ($error_message !== '' && $thumbnail_url !== $video['thumbnail']) {
+            $orphan_thumb = __DIR__ . '/../video/upload/thumbnail/' . basename($thumbnail_url);
+            if (is_file($orphan_thumb)) {
+                @unlink($orphan_thumb);
+            }
+        }
     }
 }
+
+// ── SUBTITLE: Hapus file subtitle berdasarkan bahasa (handler terpisah) ──
+// Form hapus tidak mengirim 'update', jadi ditangani di luar blok update.
+if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== '') {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $error_message = "CSRF Token tidak valid.";
+    } else {
+        $del_lang   = sanitize_subtitle_lang($_POST['delete_subtitle_lang'], 'und');
+        $hls_folder = basename(dirname($video['filename']));
+        $del_path   = __DIR__ . '/../video/upload/video/' . $hls_folder . '/' . $hls_folder . '.' . $del_lang . '.vtt';
+        if (file_exists($del_path)) {
+            if (@unlink($del_path)) {
+                $status = "success";
+            } else {
+                $error_message = "Gagal menghapus file subtitle.";
+            }
+        } else {
+            $error_message = "File subtitle bahasa tersebut tidak ditemukan.";
+        }
+    }
+}
+
+// ── DAFTAR SUBTITLE EXISTING (untuk ditampilkan di form) ───────────────
+// Scan folder HLS video untuk semua file {folder}.{lang}.vtt.
+$existing_subtitles = [];
+$hls_folder_dir    = basename(dirname($video['filename']));
+$sub_scan_dir      = __DIR__ . '/../video/upload/video/' . $hls_folder_dir . '/';
+if (is_dir($sub_scan_dir)) {
+    foreach (glob($sub_scan_dir . '*.vtt') ?: [] as $sf) {
+        $sbase = basename($sf);
+        if ($sbase === 'thumbnails.vtt') continue; // preview thumbnail, bukan subtitle
+        if (preg_match('/\.([a-z]{2,3}(?:-[a-z]{2,8})?)\.vtt$/i', $sbase, $m)) {
+            $existing_subtitles[] = ['lang' => strtolower($m[1]), 'file' => $sbase];
+        }
+    }
+}
+usort($existing_subtitles, fn($a, $b) => strcmp($a['lang'], $b['lang']));
 
 $thumb_src = !empty($video['thumbnail'])
     ? '../video/upload/thumbnail/' . htmlspecialchars($video['thumbnail'])
@@ -299,7 +383,7 @@ $thumb_src = !empty($video['thumbnail'])
                 <form id="edit-form" method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
-                    <input type="file" name="thumbnail" accept="image/*" id="thumb-file-hidden" style="display:none">
+                        <input type="file" name="thumbnail" accept="image/*" id="thumb-file-hidden" style="display:none">
                     <?php endif; ?>
 
                     <!-- Judul -->
@@ -317,6 +401,71 @@ $thumb_src = !empty($video['thumbnail'])
                         <textarea id="f-desc" name="description"
                             placeholder="Masukkan deskripsi video..."
                             class="field-input" style="flex:1;min-height:120px;resize:none;"><?= htmlspecialchars($video['description'] ?? '') ?></textarea>
+                    </div>
+
+                    <!-- Subtitle existing — DI LUAR form utama agar tidak nested form -->
+                    <div class="field-group" style="gap:10px;">
+                        <label class="field-label">Subtitle</label>
+                        <?php if (!empty($existing_subtitles)): ?>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <?php foreach ($existing_subtitles as $_sub): ?>
+                                    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 10px;">
+                                        <i data-lucide="captions" style="width:13px;height:13px;color:var(--accent);flex-shrink:0;"></i>
+                                        <span style="flex:1;font-size:11px;font-weight:700;color:#e2e6ef;text-transform:uppercase;letter-spacing:.06em;"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
+                                        <span style="font-size:9px;color:#455060;text-transform:uppercase;letter-spacing:.05em;"><?= htmlspecialchars($_sub['file']) ?></span>
+                                        <form method="POST" style="display:inline;margin:0;"
+                                            onsubmit="return confirm('Hapus subtitle bahasa <?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?>?')">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                                            <input type="hidden" name="delete_subtitle_lang" value="<?= htmlspecialchars($_sub['lang']) ?>">
+                                            <button type="submit" title="Hapus subtitle"
+                                                style="background:none;border:none;cursor:pointer;color:#f87171;padding:4px;display:flex;"
+                                                aria-label="Hapus subtitle <?= htmlspecialchars($_sub['lang']) ?>">
+                                                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="font-size:10px;color:#455060;">Belum ada subtitle untuk video ini.</div>
+                        <?php endif; ?>
+                    </div>
+                    <!-- Subtitle upload (di dalam form utama) — paling bawah setelah deskripsi -->
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <label class="field-label">Upload / Ganti Subtitle</label>
+                        <!-- Subtitle file — drop zone memanjang satu baris penuh -->
+                        <div class="drop-zone-subtitle" id="subtitle-zone">
+                            <input type="file" name="subtitle" accept=".vtt,.srt"
+                                id="f-subtitle" onchange="handleSubtitleFile(this)" aria-label="Pilih file subtitle (VTT atau SRT)">
+                            <div class="drop-zone-icon">
+                                <i data-lucide="captions" style="width:18px;height:18px;color:var(--accent);"></i>
+                            </div>
+                            <div class="drop-zone-text">
+                                <div class="drop-zone-label" id="subtitle-label">Subtitle</div>
+                                <div class="drop-zone-sub" id="subtitle-sub">Opsional · VTT / SRT (maks 2MB)</div>
+                            </div>
+                        </div>
+
+                        <!-- Bahasa subtitle — custom dropdown ala books/read.php -->
+                        <div class="field-group">
+                            <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
+                            <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
+                                <button type="button" class="lang-trigger" id="f-subtitle-lang-trigger"
+                                    aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="lang-trigger-label" id="f-subtitle-lang-label"><?= htmlspecialchars(lang_map()['id'] ?? 'Indonesia') ?></span>
+                                    <i data-lucide="chevron-down" class="lang-trigger-chevron"></i>
+                                </button>
+                                <div class="lang-options hidden" role="listbox" aria-label="Pilih bahasa subtitle">
+                                    <?php foreach (lang_map() as $_lang_code => $_lang_label): ?>
+                                        <button type="button" class="lang-option<?= $_lang_code === 'id' ? ' active' : '' ?>"
+                                            data-lang="<?= htmlspecialchars($_lang_code) ?>" role="option"
+                                            aria-selected="<?= $_lang_code === 'id' ? 'true' : 'false' ?>"><?= htmlspecialchars($_lang_label) ?></button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <input type="hidden" name="subtitle_lang" id="f-subtitle-lang" value="id">
+                        </div>
+                        <div style="font-size:9px;color:#455060;">SRT dikonversi otomatis ke VTT</div>
                     </div>
 
                     <!-- Actions -->
@@ -339,6 +488,7 @@ $thumb_src = !empty($video['thumbnail'])
     <script src="../assets/js/admin/edit/shared/thumbnail.js?v=<?= filemtime('../assets/js/admin/edit/shared/thumbnail.js') ?>"></script>
     <script src="../assets/js/admin/edit/shared/dragdrop.js?v=<?= filemtime('../assets/js/admin/edit/shared/dragdrop.js') ?>"></script>
     <script src="../assets/js/admin/edit/video.js?v=<?= filemtime('../assets/js/admin/edit/video.js') ?>"></script>
+    <script src="../assets/js/shared/lang-dropdown.js?v=<?= filemtime('../assets/js/shared/lang-dropdown.js') ?>"></script>
     <script>
         <?php if ($status === "success"): ?>
             Swal.fire({

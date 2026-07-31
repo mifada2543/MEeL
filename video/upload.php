@@ -224,6 +224,43 @@ if (isset($_POST['upload'])) {
                         </div>
                     </div>
 
+                    <!-- Subtitle (opsional) -->
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <label class="field-label">Subtitle (Opsional)</label>
+                        <!-- Subtitle file — drop zone memanjang satu baris penuh -->
+                        <div class="drop-zone drop-zone-subtitle" id="subtitle-zone">
+                            <input type="file" name="subtitle" accept=".vtt,.srt"
+                                id="subtitle-input" onchange="handleSubtitleFile(this)" aria-label="Pilih atau drop file subtitle (format: VTT, SRT)">
+                            <div class="drop-zone-icon">
+                                <i data-lucide="captions" style="width:18px;height:18px;color:var(--accent);"></i>
+                            </div>
+                            <div class="drop-zone-text">
+                                <div class="drop-zone-label" id="subtitle-label">Subtitle</div>
+                                <div class="drop-zone-sub" id="subtitle-sub">Opsional · VTT / SRT</div>
+                            </div>
+                        </div>
+
+                        <!-- Bahasa subtitle — custom dropdown ala books/read.php -->
+                        <div class="field-group">
+                            <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
+                            <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
+                                <button type="button" class="lang-trigger" id="f-subtitle-lang-trigger"
+                                    aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="lang-trigger-label" id="f-subtitle-lang-label"><?= htmlspecialchars(lang_map()['id'] ?? 'Indonesia') ?></span>
+                                    <i data-lucide="chevron-down" class="lang-trigger-chevron"></i>
+                                </button>
+                                <div class="lang-options hidden" role="listbox" aria-label="Pilih bahasa subtitle">
+                                    <?php foreach (lang_map() as $_lang_code => $_lang_label): ?>
+                                        <button type="button" class="lang-option<?= $_lang_code === 'id' ? ' active' : '' ?>"
+                                            data-lang="<?= htmlspecialchars($_lang_code) ?>" role="option"
+                                            aria-selected="<?= $_lang_code === 'id' ? 'true' : 'false' ?>"><?= htmlspecialchars($_lang_label) ?></button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <input type="hidden" name="subtitle_lang" id="f-subtitle-lang" value="id">
+                        </div>
+                    </div>
+
                     <!-- Upload button -->
                     <div style="margin-top:auto;">
                         <button type="submit" name="upload" id="btn-upload" class="btn-primary">
@@ -279,6 +316,7 @@ if (isset($_POST['upload'])) {
     </div>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/shared/lang-dropdown.js?v=<?= filemtime('../assets/js/shared/lang-dropdown.js') ?>"></script>
     <script>
         lucide.createIcons();
 
@@ -319,6 +357,28 @@ if (isset($_POST['upload'])) {
             const zone = document.getElementById('video-zone');
             const label = document.getElementById('video-label');
             label.textContent = file.name;
+            zone.classList.add('has-file');
+        }
+
+        function handleSubtitleFile(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+            const allowed = ['vtt', 'srt'];
+            if (!allowed.includes(ext)) {
+                meelAlert({
+                    title: 'Format Ditolak',
+                    text: 'Gunakan VTT atau SRT.',
+                    icon: 'error'
+                });
+                input.value = '';
+                return;
+            }
+            const zone = document.getElementById('subtitle-zone');
+            const label = document.getElementById('subtitle-label');
+            const sub = document.getElementById('subtitle-sub');
+            label.textContent = file.name;
+            sub.textContent = ext === 'srt' ? 'SRT · akan dikonversi otomatis' : 'VTT';
             zone.classList.add('has-file');
         }
 
@@ -433,6 +493,26 @@ if (isset($_POST['upload'])) {
                 dt.items.add(files[0]);
                 videoInput.files = dt.files;
                 handleVideoFile(videoInput);
+            }
+        });
+
+        // Drag-and-drop for subtitle zone
+        const subtitleZone = document.getElementById('subtitle-zone');
+        const subtitleInput = document.getElementById('subtitle-input');
+        subtitleZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            subtitleZone.classList.add('drag-over');
+        });
+        subtitleZone.addEventListener('dragleave', () => subtitleZone.classList.remove('drag-over'));
+        subtitleZone.addEventListener('drop', e => {
+            e.preventDefault();
+            subtitleZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files[0]) {
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                subtitleInput.files = dt.files;
+                handleSubtitleFile(subtitleInput);
             }
         });
 

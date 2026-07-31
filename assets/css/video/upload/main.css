@@ -242,6 +242,140 @@ body::before {
   color: var(--accent);
 }
 
+/* ── Subtitle drop zone: memanjang satu baris (bukan grid) ── */
+.drop-zone-subtitle {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 56px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  text-align: left;
+}
+
+.drop-zone-subtitle .drop-zone-icon {
+  flex-shrink: 0;
+}
+
+.drop-zone-subtitle .drop-zone-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.drop-zone-subtitle .drop-zone-label {
+  max-width: none;
+  white-space: normal;
+}
+
+.drop-zone-subtitle .drop-zone-sub {
+  margin-top: 2px;
+}
+
+/* ── Custom dropdown bahasa — meniru .ch-trigger/.ch-options di books/read.php ── */
+.lang-dropdown {
+  position: relative;
+  z-index: 60;
+}
+
+.lang-trigger {
+  width: 100%;
+  background: rgba(13, 16, 23, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #d1d5db;
+  outline: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+}
+
+.lang-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.lang-dropdown.open .lang-trigger {
+  border-color: var(--accent, rgba(239, 68, 68, 0.4));
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.lang-trigger-chevron {
+  width: 14px;
+  height: 14px;
+  color: #6b7280;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.lang-dropdown.open .lang-trigger-chevron {
+  transform: rotate(180deg);
+}
+
+.lang-options {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #0d1017;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: none;
+  border-radius: 0 0 1rem 1rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  z-index: 60;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.lang-options.hidden {
+  display: none;
+}
+
+/* Buka ke atas saat ruang di bawah trigger sempit */
+.lang-dropdown.open-up .lang-options {
+  top: auto;
+  bottom: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.lang-dropdown.open-up .lang-trigger {
+  border-radius: 0;
+}
+
+.lang-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 1rem;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: block;
+}
+
+.lang-option:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e5e7eb;
+}
+
+.lang-option.active {
+  color: var(--accent, #22c55e);
+  font-weight: 700;
+  background: var(--accent-dim, rgba(34, 197, 94, 0.06));
+}
+
 /* Thumb preview inside drop zone */
 .thumb-mini {
   width: 56px;

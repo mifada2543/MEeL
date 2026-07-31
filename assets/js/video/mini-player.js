@@ -129,6 +129,19 @@ function attachMiniPlayerVideoCardListeners(e) {
             const m = document.getElementById("main-video");
             (m &&
               ((m.innerHTML = ""),
+              /* ── Subtitle: salin track captions dari halaman baru ──
+               * Setelah innerHTML dikosongkan, pasang ulang track
+               * agar Plyr membaca subtitle video tujuan saat init. */
+              Array.from(
+                a.querySelectorAll('track[kind="captions"]') || [],
+              ).forEach((t) => {
+                const track = document.createElement("track");
+                track.kind = "captions";
+                track.src = t.getAttribute("src") || "";
+                track.srclang = t.getAttribute("srclang") || "und";
+                track.label = t.getAttribute("label") || "";
+                m.appendChild(track);
+              }),
               (m.dataset.src = s),
               (m.dataset.ishls = c ? "true" : "false"),
               (m.dataset.poster = d),

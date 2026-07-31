@@ -131,6 +131,11 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                         <?php if (!empty($vtt_src)): ?>
                             <track kind="metadata" src="<?= $vtt_src ?>" default>
                         <?php endif; ?>
+                        <?php foreach (($subtitles ?? []) as $_sub): ?>
+                            <track kind="captions" src="<?= htmlspecialchars($_sub['src']) ?>"
+                                srclang="<?= htmlspecialchars($_sub['lang']) ?>"
+                                label="<?= htmlspecialchars($_sub['label']) ?>">
+                        <?php endforeach; ?>
                     </video>
                     <div id="resume-modal" class="hidden">
                         <div class="bg-[#141820] border border-red-600/25 border-t-2 border-t-red-600 rounded-2xl text-center">
@@ -264,22 +269,9 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                             <?php
                             // Preview mini: tampilkan komentar terbaru (id terbesar),
                             // atau ajakan jika belum ada komentar sama sekali.
-                            $preview_txt = 'Jadilah komentar pertama';
-                            $latest_comment = null;
-                            $latest_id = -1;
-                            foreach (($comments_grouped ?? []) as $_grp) {
-                                foreach ($_grp as $_c) {
-                                    if ((int)$_c['id'] > $latest_id) {
-                                        $latest_id = (int)$_c['id'];
-                                        $latest_comment = $_c;
-                                    }
-                                }
-                            }
-                            if ($latest_comment) {
-                                $_preview_author = $latest_comment['username'] ?? 'Guest';
-                                $_preview_body   = preg_replace('/\s+/', ' ', (string)($latest_comment['comment'] ?? ''));
-                                $preview_txt     = '@' . $_preview_author . ': ' . $_preview_body;
-                            }
+                            $preview        = comment_preview($comments_grouped ?? []);
+                            $preview_txt    = $preview['text'];
+                            $latest_comment = $preview['latest_comment'];
                             ?>
                             <span id="comment-preview-text" class="text-[10px] text-gray-500 line-clamp-1 <?= $latest_comment ? '' : 'italic' ?>"
                                 title="<?= htmlspecialchars($preview_txt, ENT_QUOTES) ?>"><?= htmlspecialchars($preview_txt) ?></span>
@@ -309,7 +301,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
                             <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                                 <?php
                                 if (empty($comments_grouped)) {
-                                    echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Jadilah komentar pertama.</div>";
+                                    render_comment_empty_state('video');
                                 } else {
                                     render_comments(0, $comments_grouped, 0, 'video');
                                 }

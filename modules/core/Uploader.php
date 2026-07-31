@@ -464,6 +464,38 @@ class Uploader
             $this->generateSpriteAndVTT($staged_video, $work_folder);
         }
 
+        // ── SUBTITLE (OPSIONAL) ─────────────────────────────────────────────
+        // Simpan file subtitle ke work_folder agar ikut terpindah ke HDD
+        // bersama file HLS lainnya (pola glob yang sama).
+        // Konvensi nama: {folder}.{lang}.vtt  → dideteksi WatchController.
+        if (
+            $result === 0
+            && !empty($files['subtitle']['tmp_name'])
+            && is_uploaded_file($files['subtitle']['tmp_name'])
+            && $files['subtitle']['error'] === UPLOAD_ERR_OK
+        ) {
+            $sub_ext    = strtolower(pathinfo($files['subtitle']['name'] ?? '', PATHINFO_EXTENSION));
+            $sub_lang   = sanitize_subtitle_lang($post['subtitle_lang'] ?? 'id');
+            $sub_allowed = ['vtt', 'srt'];
+
+            if (in_array($sub_ext, $sub_allowed, true) && validate_subtitle_file($files['subtitle']['tmp_name'])) {
+                $sub_content = (string)@file_get_contents($files['subtitle']['tmp_name']);
+                if ($sub_content !== '') {
+                    if ($sub_ext === 'srt') {
+                        $sub_content = convert_srt_to_vtt($sub_content);
+                    }
+                    $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
+                    $sub_target  = $work_folder . $folder_name . '.' . $sub_lang . '.vtt';
+                    if (@file_put_contents($sub_target, $sub_content, LOCK_EX) === false) {
+                        error_log("[MEeL] Gagal menulis subtitle ke work_folder: " . $sub_target);
+                    }
+                }
+            } else {
+                // Subtitle tidak valid — jangan gagalkan upload, hanya catat
+                error_log("[MEeL] Subtitle ditolak (format/validasi): " . ($files['subtitle']['name'] ?? 'unknown'));
+            }
+        }
+
         // Hapus staged video setelah FFmpeg selesai
         @unlink($staged_video);
 

@@ -206,6 +206,14 @@ function setupMeelPlayerEvents() {
         c = "true" === i.getAttribute("data-ishls"),
         d = i.getAttribute("data-poster"),
         p = i.getAttribute("data-vtt");
+      /* ── Subtitle: baca track captions dari halaman baru ── */
+      const subTracks = Array.from(
+        i.querySelectorAll('track[kind="captions"]'),
+      ).map((t) => ({
+        src: t.getAttribute("src") || "",
+        lang: t.getAttribute("srclang") || "und",
+        label: t.getAttribute("label") || "",
+      }));
       (videoId =
         new URL(t.href, window.location.href).searchParams.get("id") ||
         videoId),
@@ -288,6 +296,34 @@ function setupMeelPlayerEvents() {
               },
               { once: !0 },
             ));
+      /* ── Subtitle: sinkronkan track captions dengan video baru ──
+       * Hapus semua track lama, lalu pasang track dari halaman tujuan.
+       * Jika halaman tujuan tidak punya subtitle, track dibersihkan
+       * sehingga tombol CC otomatis menghilang (graceful degradation). */
+      if (videoElement) {
+        videoElement
+          .querySelectorAll('track[kind="captions"]')
+          .forEach((t) => t.remove());
+        subTracks.forEach((st) => {
+          const track = document.createElement("track");
+          track.kind = "captions";
+          track.src = st.src;
+          track.srclang = st.lang;
+          track.label = st.label;
+          videoElement.appendChild(track);
+        });
+      }
+      if (
+        player &&
+        player.captions &&
+        typeof player.captions.update === "function"
+      ) {
+        try {
+          player.captions.update();
+        } catch (e) {
+          console.error("[MEeL] captions update error:", e);
+        }
+      }
       const m = player.play();
       if (
         (void 0 !== m &&
