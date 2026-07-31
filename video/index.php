@@ -92,7 +92,7 @@ $totalPages = $meta['total_pages'];
             </span>
         </div>
 
-        <!-- [FIX] offset load_more sesuai $limit_init (8), bukan 10 -->
+        <!-- Catatan: offset load_more sesuai $limit_init (8), bukan 10 -->
         <div id="video-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5" title="Muat lebih banyak">
             <?php if ($data && $data->num_rows > 0): ?>
                 <?php while ($v = $data->fetch_assoc()): ?>

@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
     die(include '../err/denied.php');
 }
 
-// 🔴 Guard independen: verifikasi role admin (tidak bergantung pada side-effect include)
+// Guard independen: verifikasi role admin (tidak bergantung pada side-effect include)
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     die(include '../err/denied.php');
 }

@@ -549,7 +549,7 @@ if (isset($_GET['content_only'])) {
                 const state = JSON.parse(raw);
                 isMiniPlayerIndexActive = true;
 
-                // ⚠️ Update meta IMMEDIATELY dari state (sebelum setTimeout) agar
+                // Update meta IMMEDIATELY dari state (sebelum setTimeout) agar
                 // title/artist/thumbnail tampil tanpa flash default "Tidak ada musik".
                 // Sebelumnya updateIndexUI() dipanggil langsung di sini tetapi
                 // currentState masih null → meta tidak terganti.
@@ -844,7 +844,7 @@ if (isset($_GET['content_only'])) {
                     miniPlayerIndex.classList.add('active');
                 });
 
-                // Tombol play (ikon ▶ di kolom nomor)
+                // Tombol play (ikon play di kolom nomor)
                 var playBtn = item.querySelector('.pl-play-btn');
                 if (playBtn) {
                     playBtn.addEventListener('click', function(e) {

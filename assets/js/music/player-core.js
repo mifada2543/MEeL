@@ -391,7 +391,7 @@
             updateLoopUI(),
             sessionStorage.removeItem("meel_audio_state"));
 
-          // 🔥 FIX: Setelah restore dari audio state, tetap cek localStorage
+          // Setelah restore dari audio state, tetap cek localStorage
           // untuk resume modal (karena B() tidak pernah dipanggil dari cabang o=true)
           const _savedPos = localStorage.getItem(storageKeyMusic);
           if (
@@ -436,7 +436,7 @@
             clearTimeout(z),
             clearInterval(G),
             localStorage.removeItem(storageKeyMusic),
-            // ⚡ Gunakan audio.currentTime langsung (bukan player.currentTime)
+            // Gunakan audio.currentTime langsung (bukan player.currentTime)
             // karena Plyr ignore seek jika !duration — yang sering terjadi
             // untuk FLAC dengan preload="none" (metadata belum termuat).
             (audio.currentTime = 0),
@@ -475,7 +475,7 @@
     }),
       player.on("loadedmetadata", C),
       player.on("ended", () => {
-        // 🛡️ Cegah redirect loop: hanya lanjut jika audio benar-benar selesai
+        // Cegah redirect loop: hanya lanjut jika audio benar-benar selesai
         // diputar sampai akhir (currentTime mendekati duration), BUKAN karena error.
         const isGenuineEnd =
           audioEndedNaturally ||

@@ -240,7 +240,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                             playViaPlayer(item);
                         });
 
-                        // Tombol play (ikon ▶ di kolom nomor)
+                        // Tombol play (ikon play di kolom nomor)
                         var playBtn = item.querySelector('.pl-play-btn');
                         if (playBtn) {
                             playBtn.addEventListener('click', function(e) {
@@ -273,7 +273,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                         thumbnail: item.dataset.thumbnail,
                         thumbnailUrl: item.dataset.thumbnailUrl,
                         filename: item.dataset.filename,
-                        // ↓ KEY FIX: watchUrl menyertakan playlist_id
+                        // Catatan: watchUrl menyertakan playlist_id
                         watchUrl: watchUrl,
                         nextSongUrl: nextSongUrl,
                         playlistId: playlistId,
@@ -839,7 +839,7 @@ if (isset($_GET['content_only'])) {
             }
         };
 
-        // KEY FIX: expandPlayerFromMiniPlayer selalu menyertakan playlist_id dari state
+        // Catatan: expandPlayerFromMiniPlayer selalu menyertakan playlist_id dari state
         function expandPlayerFromMiniPlayer() {
             saveIndexState();
             // Tandai agar watch.php tidak menampilkan resume modal

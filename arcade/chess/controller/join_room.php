@@ -2,7 +2,7 @@
 require '../../../auth/config.php';
 header('Content-Type: application/json');
 
-// 🔒 FIX CSRF: Verifikasi token untuk AJAX POST
+// Verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     die(json_encode(['success' => false, 'message' => 'CSRF token tidak valid.']));
 }

@@ -137,7 +137,7 @@ final class DriveStorage
             throw new RuntimeException('Berkas gagal diterima dari browser.');
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk drive — minimal 100MB free
+        // PRE-FLIGHT: Cek ruang disk drive — minimal 100MB free
         $scope = $this->resolveUploadScope($requestedScope);
         $cleanName = $this->sanitizeFileName((string) ($file['name'] ?? ''));
         $type = $this->detectTypeFromFilename($cleanName);

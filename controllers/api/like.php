@@ -32,13 +32,13 @@ include '../../auth/config.php';
 include '../../modules/core/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
-// 🔒 FIX CSRF: Verifikasi token untuk AJAX POST
+// Verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     exit;
 }
 
-// ⚡ RATE LIMIT: 30 likes per menit per user
+// RATE LIMIT: 30 likes per menit per user
 $rateKey = 'user_' . ($_SESSION['user_id'] ?? 0);
 $rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
 $rateCheck = RateLimiter::check($rateKey, 'like', $rateRole);

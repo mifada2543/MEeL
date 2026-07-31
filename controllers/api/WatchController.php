@@ -60,7 +60,7 @@ abstract class AbstractWatchController
                 die('CSRF Token tidak valid.');
             }
 
-            // ⚡ RATE LIMIT: 10 comments per menit per user
+            // RATE LIMIT: 10 comments per menit per user
             $rateKey  = 'user_' . ($this->user_id ?? 0);
             $rateRole = get_user_role($this->conn, $this->user_id ?? 0);
             $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);

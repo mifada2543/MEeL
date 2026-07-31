@@ -12,13 +12,13 @@ $user_id = $_SESSION['user_id'];
 $msg = "";
 
 if (isset($_POST['update_profile'])) {
-    // 🔒 FIX CSRF: Verifikasi token
+    // Verifikasi token
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $msg = 'CSRF Token tidak valid.';
     } else {
     $bio = trim($_POST['bio'] ?? '');
 
-    // 🔒 TRANSACTION: Atomic profile update — bio + avatar adalah satu kesatuan
+    // TRANSACTION: Atomic profile update — bio + avatar adalah satu kesatuan
     $conn->begin_transaction();
     try {
         // 1. UPDATE BIO

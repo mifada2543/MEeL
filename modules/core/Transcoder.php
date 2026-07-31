@@ -239,7 +239,7 @@ class Transcoder
      */
     private function renderMetadataDebug(string $url, string $cmd, int $return_var, string $output): void
     {
-        // 🔒 SECURITY: Hanya admin yang boleh melihat info debug ini
+        // SECURITY: Hanya admin yang boleh melihat info debug ini
         // Info ini mengekspos path absolut ffmpeg/ffprobe dan path sistem lainnya
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             error_log('[MEeL] Debug info attempted by non-admin');
@@ -281,7 +281,7 @@ class Transcoder
             return "bestvideo[height<=1080]+bestaudio/best";
         }
         if (strpos($host, 'tiktok.com') !== false) {
-            // [FIX] 'bestvideo1' bukan format string yang valid — diganti ke format standar
+            // Catatan: 'bestvideo1' bukan format string yang valid — diganti ke format standar
             return "bestvideo+bestaudio/best";
         }
         return "bestvideo[height<=1080]+bestaudio/best";
@@ -322,7 +322,7 @@ class Transcoder
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk sebelum download (queue belum di-lock)
+        // PRE-FLIGHT: Cek ruang disk sebelum download (queue belum di-lock)
         require_disk_space(512 * 1024 * 1024, $this->getShmTempPath(), 'RAM disk staging');
         $hdd_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : dirname(__DIR__, 2);
         require_disk_space(2 * 1024 * 1024 * 1024, $hdd_path, 'HDD storage');
@@ -389,8 +389,7 @@ class Transcoder
 
         $error_log = "";
         $start     = time();
-        // Tambahkan -N 4 (4 koneksi paralel untuk mempercepat download, aman untuk server single-user)
-        // 🔒 FIX SECURITY: Set env via putenv() agar popen() tidak perlu shell metacharacters
+        // Tambahkan -N 4 (4 koneksi paralel untuk mempercepat download, aman untuk server single-user)            // Set env via putenv() agar popen() tidak perlu shell metacharacters
         putenv('PATH=/usr/local/bin:/usr/bin:/bin');
         putenv('LC_ALL=en_US.UTF-8');
         // $cmd_dl sudah berisi args yang di-escape dengan escapeshellarg() + filter_var() untuk URL
@@ -439,7 +438,7 @@ class Transcoder
 
         // Validasi hasil download
         $is_success = false;
-        // 🔴 BUG SEBELUMNYA: glob() pakai `{$this->base_path}/temp/` tapi yt-dlp simpan file di `$shm_temp` (/dev/shm/meel/temp/)
+        // BUG SEBELUMNYA: glob() pakai `{$this->base_path}/temp/` tapi yt-dlp simpan file di `$shm_temp` (/dev/shm/meel/temp/)
         if ($type === 'music') {
             $files      = glob("$shm_temp/$temp_id.*");
             $is_success = !empty($files);
@@ -537,7 +536,7 @@ class Transcoder
         flush();
 
         // ── Tentukan nama folder unik di HDD ──────────────────────────────────
-        // 🔒 FIX SECURITY: Lock untuk serialisasi folder — cegah TOCTOU race condition
+        // Lock untuk serialisasi folder — cegah TOCTOU race condition
         $flock_path = sys_get_temp_dir() . '/meel_transcode_folder.lock';
         $lock_fp    = @fopen($flock_path, 'c');
         $locked     = $lock_fp && flock($lock_fp, LOCK_EX);
@@ -588,7 +587,7 @@ class Transcoder
         // -codec copy: stream copy (tidak re-encode), sehingga QSV tidak relevan.
         // -threads hanya berlaku untuk muxer/demuxer I/O; tetap set untuk konsistensi.
         $work_m3u8  = $work_folder . $folder_name . ".m3u8";
-        // 🔒 FIX SECURITY: proc_open dengan array arguments + env vars — bypasses shell entirely
+        // proc_open dengan array arguments + env vars — bypasses shell entirely
         $hls_env = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $hls_cmd = [
             $this->ffmpeg_bin,
@@ -759,7 +758,7 @@ class Transcoder
         putenv("LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/lib");
         putenv("PATH=/usr/local/bin:/usr/bin:/bin");
 
-        // 🟢 PRE-FLIGHT: Cek HDD untuk output encode — butuh minimal 500MB
+        // PRE-FLIGHT: Cek HDD untuk output encode — butuh minimal 500MB
         $music_dir = "{$this->base_path}/music/upload/file";
         if (!is_dir($music_dir)) @mkdir($music_dir, 0755, true);
         $hdd_free = @disk_free_space($music_dir);
@@ -947,7 +946,7 @@ class Transcoder
         $output_dir = $this->getShmTranscodePath() . '/';
         if (!is_dir($output_dir)) mkdir($output_dir, 0755, true);
 
-        // 🟢 PRE-FLIGHT: Cek RAM disk untuk output transcode — butuh minimal 256MB
+        // PRE-FLIGHT: Cek RAM disk untuk output transcode — butuh minimal 256MB
         $shm_free = @disk_free_space($output_dir);
         if ($shm_free !== false && $shm_free < 256 * 1024 * 1024) {
             return ['status' => 'error', 'msg' => 'RAM disk tidak mencukupi untuk transcode. Hanya tersedia ' . sprintf('%.1f', $shm_free / (1024 ** 3)) . ' GB.'];
@@ -1021,7 +1020,7 @@ class Transcoder
         $output_filename = $this->sanitizeFilename($v_data['title']) . '.' . $format;
         $output_path     = $output_dir . $output_filename;
 
-        // 🔒 FIX SECURITY: Marker file — atomic check-then-create untuk cegah duplikat transcode
+        // Marker file — atomic check-then-create untuk cegah duplikat transcode
         // Pendekatan ini lebih baik dari flock() yang di-hold lama karena FFmpeg bisa memakan waktu menit.
         $marker_file = $output_path . '.processing';
 
@@ -1118,7 +1117,7 @@ class Transcoder
             . " -metadata artist='MEeL Transcoder'"
             . " " . escapeshellarg($output_path) . " 2>&1";
 
-        // 🔒 FIX SECURITY: proc_open dengan array arguments + env vars — bypasses shell entirely
+        // proc_open dengan array arguments + env vars — bypasses shell entirely
         // Daripada popen() yang melewati shell (rentan shell injection meski args sudah di-escape)
         $tc_env  = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $tc_cmd  = [$this->ffmpeg_bin,

@@ -65,7 +65,7 @@ if (!defined('MEEL_YTDLP_PATH')) {
 // ════════════════════════════════════════════════════════════════
 // Cukup ubah MEEL_HDD_BASE, seluruh sistem akan mengikuti.
 //
-// ⚠️ WAJIB DIGANTI sebelum produksi — nilai di bawah hanyalah placeholder.
+// WAJIB DIGANTI sebelum produksi — nilai di bawah hanyalah placeholder.
 // Sesuaikan dengan lokasi storage server ANDA sendiri:
 //   - HDD eksternal: /media/[username]/MEeL/media
 //   - Lokal SSD:     /var/www/meel-storage/media

@@ -42,7 +42,7 @@ include '../../modules/media/MediaInteraction.php';
 
 $is_ajax = !empty($_SERVER['HTTP_HX_REQUEST']);
 
-// 🔒 CSRF: wajib untuk jalur POST (AJAX). GET fallback tetap apa adanya (historis).
+// CSRF: wajib untuk jalur POST (AJAX). GET fallback tetap apa adanya (historis).
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
         if ($is_ajax) {
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ⚡ RATE LIMIT: 10 comments per menit per user
+// RATE LIMIT: 10 comments per menit per user
 $rateKey  = 'user_' . ($_SESSION['user_id'] ?? 0);
 $rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
 $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);

@@ -43,7 +43,7 @@ class Uploader
     }
 
     /**
-     * 🔒 FIX SECURITY: Validasi magic bytes file video.
+     * Validasi magic bytes file video.
      * Cek header file untuk memastikan benar-benar video (MP4/WebM/MKV).
      */
     private function validateVideoMagicBytes(string $filePath): bool
@@ -77,7 +77,7 @@ class Uploader
     }
 
     /**
-     * 🔒 FIX SECURITY: Cek jumlah upload aktif untuk mencegah overload server.
+     * Cek jumlah upload aktif untuk mencegah overload server.
      * Batasi maksimal 3 proses upload simultan.
      * Dilengkapi TTL auto-reset (5 menit) untuk mencegah counter stale akibat PHP crash.
      */
@@ -90,7 +90,7 @@ class Uploader
         if (!$fp) return true; // fallback: allow jika gagal lock
         flock($fp, LOCK_EX);
 
-        // 🔄 TTL auto-reset: jika counter file lebih dari 5 menit, reset ke 0
+        // TTL auto-reset: jika counter file lebih dari 5 menit, reset ke 0
         if (file_exists($counter_file) && (time() - filemtime($counter_file)) > 300) {
             @unlink($counter_file);
         }
@@ -144,12 +144,12 @@ class Uploader
             return ['status' => 'error', 'msg' => "Batas upload tercapai! Tunggu {$limit['minutes']} menit lagi.", 'alert' => true];
         }
 
-        // 🔒 FIX SECURITY: Batasi proses upload simultan
+        // Batasi proses upload simultan
         if (!$this->checkActiveUploadLimit()) {
             return ['status' => 'error', 'msg' => "Terlalu banyak proses upload bersamaan. Coba lagi nanti.", 'alert' => true];
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk HDD untuk music storage
+        // PRE-FLIGHT: Cek ruang disk HDD untuk music storage
         try {
             require_disk_space(500 * 1024 * 1024, $base_dir . 'upload/file/', 'storage musik HDD');
         } catch (\RuntimeException $e) {
@@ -172,7 +172,7 @@ class Uploader
             return ['status' => 'error', 'msg' => "Security Error / Format ditolak!"];
         }
 
-        // 🔒 FIX SECURITY: Lock untuk serialisasi penamaan file — cegah TOCTOU race condition
+        // Lock untuk serialisasi penamaan file — cegah TOCTOU race condition
         $lock_file = sys_get_temp_dir() . '/meel_music_upload.lock';
         $lock_fp   = @fopen($lock_file, 'c');
         $locked    = $lock_fp && flock($lock_fp, LOCK_EX);
@@ -197,7 +197,7 @@ class Uploader
 
         $duration = $this->probeDuration($target_file);
 
-        // 🔒 FIX SECURITY: Jika ffprobe gagal (duration 0 atau negatif), reject file
+        // Jika ffprobe gagal (duration 0 atau negatif), reject file
         if ($duration <= 0) {
             unlink($target_file);
             return ['status' => 'error', 'msg' => "Gagal memverifikasi durasi file. File mungkin korup atau tidak valid.", 'alert' => true];
@@ -241,7 +241,7 @@ class Uploader
 
         $skip_transcode = (isset($post['skip_transcode']) && $this->user_role === 'admin');
         if (!$skip_transcode) {
-            // 🔒 FIX SECURITY: Gunakan flock agar dua proses tidak menulis ke file .ogg yang sama
+            // Gunakan flock agar dua proses tidak menulis ke file .ogg yang sama
             $opus_file = pathinfo($file_name, PATHINFO_FILENAME) . ".ogg";
             $opus_path = $base_dir . "upload/file/" . $opus_file;
 
@@ -263,7 +263,7 @@ class Uploader
 
         $meta = generate_search_metadata($title, $artist, $album);
 
-        // 🔒 TRANSACTION: Atomic DB insert — rollback jika gagal
+        // TRANSACTION: Atomic DB insert — rollback jika gagal
         $this->conn->begin_transaction();
         try {
             $sql  = "INSERT INTO music (title, artist, description, search_metadata, album, filename, thumbnail, user_id, upload_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
@@ -301,12 +301,12 @@ class Uploader
             return ['status' => 'error', 'msg' => "Batas upload tercapai! Tunggu {$limit['minutes']} menit lagi.", 'alert' => true];
         }
 
-        // 🔒 FIX SECURITY: Batasi proses upload simultan
+        // Batasi proses upload simultan
         if (!$this->checkActiveUploadLimit()) {
             return ['status' => 'error', 'msg' => "Terlalu banyak proses upload bersamaan. Coba lagi nanti.", 'alert' => true];
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk untuk video storage + RAM disk untuk staging
+        // PRE-FLIGHT: Cek ruang disk untuk video storage + RAM disk untuk staging
         try {
             // Minimal 1GB free di HDD video storage
             require_disk_space(1024 * 1024 * 1024, $this->base_dir . 'video/', 'storage video HDD');
@@ -333,7 +333,7 @@ class Uploader
             return ['status' => 'error', 'msg' => "Format video tidak didukung! Gunakan MP4, WebM, atau MKV.", 'alert' => true];
         }
 
-        // 🔒 FIX SECURITY: Validasi magic bytes — cegah file non-video lolos
+        // Validasi magic bytes — cegah file non-video lolos
         if (!$this->validateVideoMagicBytes($temp_video)) {
             return ['status' => 'error', 'msg' => "File tidak valid sebagai video (magic bytes mismatch).", 'alert' => true];
         }
@@ -345,7 +345,7 @@ class Uploader
         if ($clean_name === '') $clean_name = 'video-' . time(); // fallback kalau nama jadi kosong
 
         // ── TENTUKAN NAMA FOLDER (cek konflik di HDD tujuan) ─────────────────
-        // 🔒 FIX SECURITY: Gunakan flock() untuk serialisasi akses — cegah TOCTOU race condition
+        // Gunakan flock() untuk serialisasi akses — cegah TOCTOU race condition
         $lock_file = sys_get_temp_dir() . '/meel_upload_video.lock';
         $lock_fp   = fopen($lock_file, 'c');
         if (!$lock_fp) {
@@ -513,7 +513,7 @@ class Uploader
         $hdd_target_folder = $hdd_video_dir . $folder_name . "/";
         $hdd_thumb_dir     = $this->base_dir . "thumbnail/";
 
-        // 🔒 FIX SECURITY: Lock saat memindahkan file ke HDD — cegah race condition
+        // Lock saat memindahkan file ke HDD — cegah race condition
         $lock_move = fopen(sys_get_temp_dir() . '/meel_move_hdd.lock', 'c');
         $move_locked = $lock_move && flock($lock_move, LOCK_EX);
 
@@ -566,7 +566,7 @@ class Uploader
         $description = trim($post['description'] ?? '');
         $meta        = generate_search_metadata($title);
 
-        // 🔒 TRANSACTION: Atomic DB insert — rollback + cleanup jika gagal
+        // TRANSACTION: Atomic DB insert — rollback + cleanup jika gagal
         $this->conn->begin_transaction();
         try {
             $stmt  = $this->conn->prepare(

@@ -3,11 +3,11 @@
  * MEeL-HUB — Konfigurasi Aplikasi (Entry Point)
  *
  * ═══════════════════════════════════════════════════════════════════
- * ★ PENTING — Jangan hapus guard !defined() di sekitar konstanta.
+ * PENTING — Jangan hapus guard !defined() di sekitar konstanta.
  *   File ini bisa di-include dari berbagai entry point (index.php,
  *   auth/auth.php, file admin, dll), guard mencegah redeclare error.
  *
- * ★ File ini HANYA memuat logic inisialisasi. Semua DATA konfigurasi
+ * File ini HANYA memuat logic inisialisasi. Semua DATA konfigurasi
  *   (DB credentials + MEEL_* constants) sudah dipindah ke settings.php:
  *     require __DIR__ . '/settings.php';
  *   Ubah nilai server di settings.php, JANGAN di file ini.

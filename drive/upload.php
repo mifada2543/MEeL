@@ -45,7 +45,7 @@ require_once '../modules/core/System.php';
 $sys = new System($conn);
 $user_id = $_SESSION['user_id'];
 
-// FIX: Use prepared statement untuk SQL query
+// Gunakan prepared statement untuk SQL query
 $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();

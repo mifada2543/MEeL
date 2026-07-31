@@ -6,7 +6,6 @@ if (!isset($_SESSION['user_id'])) {
     die(include '../err/denied.php');
 }
 
-// 🔴 FIX SECURITY: Proteksi role admin — hanya admin yang boleh akses
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     die(include '../err/denied.php');
 }
@@ -15,7 +14,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 $message = null;
 $message_type = 'success';
 
-// 🔒 FIX CSRF: Verifikasi token untuk semua POST request
+// Verifikasi token untuk semua POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = 'CSRF Token tidak valid!'; $message_type = 'error';

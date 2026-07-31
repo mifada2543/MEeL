@@ -34,7 +34,7 @@ try {
         'success'
     );
 
-    // ⚠️ Hapus cache dir_size() biar storage bar update
+    // Hapus cache dir_size() biar storage bar update
     if ($user->isMember()) {
         invalidate_dir_size_cache($user->username);
     }

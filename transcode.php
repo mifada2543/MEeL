@@ -12,7 +12,7 @@ $alert_message   = "";
 $video_title     = "";
 
 if (isset($_POST['start_transcode'])) {
-    // 🔒 FIX CSRF: Verifikasi token
+    // Verifikasi token
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF Token tidak valid.';
     } else {

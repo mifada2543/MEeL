@@ -36,7 +36,7 @@ include '../../modules/core/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 require_once __DIR__ . '/../../modules/core/CommentRenderer.php';
 
-// 🔒 CSRF: verifikasi token untuk AJAX POST
+// CSRF: verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     header('HX-Retarget: #comment-alert');
@@ -61,7 +61,7 @@ if ($media_id <= 0) {
     exit;
 }
 
-// ⚡ RATE LIMIT: 10 komentar per menit per user
+// RATE LIMIT: 10 komentar per menit per user
 $rateKey   = 'user_' . $user_id;
 $rateRole  = get_user_role($conn, $user_id);
 $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
