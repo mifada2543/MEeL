@@ -117,12 +117,30 @@ if (!function_exists('analyzeJapaneseText')) {
         $original_text = $text; // Simpan asli untuk fallback
         $clean_text = str_replace($search, $replace, $text);
 
+        // 1b. Alias lookup (brand/franchise/nama di luar JMdict) — substring match
+        static $aliases = null;
+        if ($aliases === null) {
+            $alias_path = __DIR__ . '/japanese_aliases.php';
+            $aliases = file_exists($alias_path) ? require $alias_path : [];
+            // Frasa terpanjang dulu — cegah duplikasi untuk substring yang tumpang tindih
+            uksort($aliases, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
+        }
+
+        $alias_glosses = [];
+        foreach ($aliases as $phrase => $translation) {
+            if ($phrase !== '' && mb_strpos($original_text, $phrase) !== false) {
+                $alias_glosses[] = $translation;
+            }
+        }
+
         // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
         $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
         if (!is_resource($process)) {
             $result['romaji'] = getRomajiName($text);
+            // Alias tetap dipakai walau MeCab gagal dibuka (tidak menyentuh logic MeCab)
+            $result['english'] = trim(implode(' ', array_unique($alias_glosses)));
             return $result;
         }
         fwrite($pipes[0], $clean_text);
@@ -199,6 +217,8 @@ if (!function_exists('analyzeJapaneseText')) {
             $result['romaji'] = $clean;
         }
 
+        // Alias (brand/franchise) didahulukan, lalu glosses JMdict
+        $glosses = array_merge($alias_glosses, $glosses);
         $result['english'] = trim(implode(' ', array_unique($glosses)));
         return $result;
     }

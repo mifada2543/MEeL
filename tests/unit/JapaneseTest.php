@@ -54,4 +54,11 @@ class JapaneseTest extends TestCase
         $this->assertIsString($result['english']);
     }
 
+    public function testAnalyzeJapaneseTextWithAlias(): void
+    {
+        $result = analyzeJapaneseText('プロジェクトセカイ カラフルステージ!');
+        $this->assertStringContainsString('Project Sekai', $result['english']);
+        $this->assertStringContainsString('Colorful Stage', $result['english']);
+    }
+
 }
