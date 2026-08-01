@@ -116,14 +116,35 @@ class MediaViewer
     // --- 5. REKOMENDASI ---
     public function getRecommendations($limit = 10)
     {
-        // DIUBAH: Menggunakan prepared statement untuk menghindari manipulasi limit & id
+        // DIUBAH: Ganti ORDER BY RAND() (full-table sort, lambat di library besar)
+        // dengan pola MAX(id) + random offset — sama seperti MediaLibrary::searchVideo().
+        // Query memanfaatkan PRIMARY KEY index, tanpa full table scan/sort.
         $limit = (int)$limit;
-        $stmt = $this->conn->prepare("SELECT m.*, u.username as uploader 
-                                      FROM {$this->table} m 
-                                      JOIN users u ON m.user_id = u.id 
-                                      WHERE m.id != ? 
-                                      ORDER BY RAND() LIMIT ?");
-        $stmt->bind_param("ii", $this->media_id, $limit);
+        $table = $this->table; // sudah tervalidasi di constructor: 'video' | 'music'
+
+        // Ambil MAX(id) — murah, pakai indeks PRIMARY
+        $max_res = $this->conn->query("SELECT MAX(id) AS max_id FROM {$table}");
+        $max_id  = (int)($max_res ? $max_res->fetch_assoc()['max_id'] : 0);
+
+        if ($max_id <= 1) {
+            // Library kosong atau hanya berisi 1 item → kembalikan result kosong
+            return $this->conn->query(
+                "SELECT m.*, u.username AS uploader FROM {$table} m
+                 JOIN users u ON m.user_id = u.id WHERE 1 = 0"
+            );
+        }
+
+        // Offset acak — dibatasi agar masih ada >= $limit baris setelahnya
+        $random_offset = rand(0, max(0, $max_id - $limit));
+
+        $stmt = $this->conn->prepare(
+            "SELECT m.*, u.username AS uploader
+             FROM {$table} m
+             JOIN users u ON m.user_id = u.id
+             WHERE m.id != ? AND m.id > ?
+             ORDER BY m.id ASC LIMIT ?"
+        );
+        $stmt->bind_param("iii", $this->media_id, $random_offset, $limit);
         $stmt->execute();
         return $stmt->get_result();
     }
