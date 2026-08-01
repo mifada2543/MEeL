@@ -38,11 +38,10 @@ require_once __DIR__ . '/../modules/core/bootstrap.php';
 // ════════════════════════════════════════════════════════════════
 // Hanya connect jika $conn belum ada — aman di-include berkali-kali
 // Credentials diambil dari settings.php ($server, $username, dll.)
-//
-// @var int|string $server   Host DB (dari settings.php)
-// @var string     $username User DB (dari settings.php)
-// @var string     $password Password DB (dari settings.php)
-// @var string     $db       Nama DB (dari settings.php)
+/** @var string $server   Host DB (dari settings.php) */
+/** @var string $username User DB (dari settings.php) */
+/** @var string $password Password DB (dari settings.php) */
+/** @var string $db       Nama DB (dari settings.php) */
 if (!isset($conn) || $conn === null) {
     $conn = new mysqli($server, $username, $password, $db);
     if ($conn->connect_error) {
