@@ -228,7 +228,8 @@
         const e = document.createElement("div");
         ((e.className =
           "flex-1 bg-gradient-to-t from-orange-600 to-orange-400 rounded-t-sm transition-all duration-75"),
-          (e.style.cssText = "height:4px;min-width:1px"),
+          (e.style.cssText =
+            "height:100%;min-width:1px;transform-origin:bottom;will-change:transform;transform:scaleY(0.04)"),
           t.appendChild(e),
           u.push(e));
       }
@@ -292,17 +293,26 @@
         return (console.error("❌ AudioContext error:", e), !1);
       }
     }
+    // Throttle visualizer ke ~30fps — mata tidak bisa membedakan untuk bar EQ,
+    // tapi beban CPU & layout berkurang hingga setengahnya.
+    let _visLastTs = 0;
     function _() {
       if (!c || !I || player.paused) return void cancelAnimationFrame(E);
+      const _now = performance.now();
+      if (_now - _visLastTs < 33.4) return void (E = requestAnimationFrame(_));
+      _visLastTs = _now;
       const e = new Uint8Array(w.frequencyBinCount);
       w.getByteFrequencyData(e);
       const n = u.length;
       if (0 === n) return void (E = requestAnimationFrame(_));
-      let a = 0;
       for (let t = 0; t < n; t++) {
         const o = e[Math.floor(t * (e.length / n) * 0.7)],
           i = Math.max(4, (o / 255) * 100);
-        u[t].style.height = `${i}%`;
+        // scaleY + transform-origin bottom: bar tumbuh dari bawah via compositor,
+        // bebas layout thrash (sebelumnya style.height dimutasi tiap frame).
+        // toFixed(3) memastikan string CSS pendek (0.04–1.0) — tanpa ini
+        // pembagian float menghasilkan string panjang yang lebih mahal diparse.
+        u[t].style.transform = `scaleY(${(i / 100).toFixed(3)})`;
         const l = o / 255;
         let r = "#9ca3af";
         (l > 0.75
@@ -310,8 +320,7 @@
           : l > 0.5
             ? (r = "#FB923C")
             : l > 0.25 && (r = "#eab308"),
-          (u[t].style.background = r),
-          (a = Math.max(a, o)));
+          (u[t].style.background = r));
       }
       E = requestAnimationFrame(_);
     }

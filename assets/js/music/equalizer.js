@@ -83,11 +83,21 @@ function updateEqUI() {
           (a.innerText = `${normalizeEqValue(eqGains[t] ?? 0).toFixed(1)} dB`));
     }));
 }
+// Debounce re-render penuh + persist EQ — slider input bisa memicu banyak event
+// per detik; hanya label band yang digeser yang diupdate real-time.
+let _eqUiSaveTimer = null;
 window.setEqBand = function (e, t) {
-    ((eqGains[e] = normalizeEqValue(t)),
-      eqEnabled && applyEqToFilters(),
-      updateEqUI(),
-      saveEqState());
+  ((eqGains[e] = normalizeEqValue(t)),
+    eqEnabled && applyEqToFilters());
+  // Update label band yang sedang digeser secara langsung
+  const bandLabel = document.getElementById(`eq-band-value-${e}`);
+  bandLabel &&
+    (bandLabel.innerText = `${normalizeEqValue(eqGains[e] ?? 0).toFixed(1)} dB`);
+  clearTimeout(_eqUiSaveTimer);
+  _eqUiSaveTimer = setTimeout(() => {
+    updateEqUI();
+    saveEqState();
+  }, 250);
 };
 window.setEqPreset = function (e) {
     const t = (EQ_PRESETS[e] || EQ_PRESETS.flat).map(normalizeEqValue);
