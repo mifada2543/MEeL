@@ -47,7 +47,7 @@ if (empty($files)): ?>
                         <i data-lucide='download' class='w-4 h-4'></i>
                     </a>
 
-                    <button onclick="if(confirm('Hapus file ini?')) document.getElementById('<?= $deleteFormId ?>').submit(); return false;" class='p-2 hover:bg-red-500/20 rounded-lg text-red-400' title='Hapus'>
+                    <button onclick="meelConfirm({ title:'Hapus File', text:'Hapus file ini?', confirmButtonText:'HAPUS' }).then(function(ok){ if(ok) document.getElementById('<?= $deleteFormId ?>').submit(); }); return false;" class='p-2 hover:bg-red-500/20 rounded-lg text-red-400' title='Hapus'>
                         <i data-lucide='trash-2' class='w-4 h-4'></i>
                     </button>
 

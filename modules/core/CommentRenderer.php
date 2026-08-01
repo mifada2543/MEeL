@@ -57,14 +57,30 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         <span class="text-[11px] font-bold <?= $c_author ?> truncate">@<?= htmlspecialchars($author) ?></span>
                         <span class="text-[10px] <?= $author_time_color ?> flex-shrink-0"><?= time_ago($c['created_at']) ?></span>
                     </div>
-                    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $c['user_id']): ?>
+                    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $c['user_id']):
+                        // ── Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi) ──
+                        $_c_snippet = trim(preg_replace('/\s+/', ' ', (string)($c['comment'] ?? '')));
+                        if (function_exists('mb_strlen') && mb_strlen($_c_snippet) > 60) {
+                            $_c_snippet = mb_substr($_c_snippet, 0, 60) . '…';
+                        } elseif (strlen($_c_snippet) > 60) {
+                            $_c_snippet = substr($_c_snippet, 0, 60) . '…';
+                        }
+                        $delete_text = ($_c_snippet === '')
+                            ? 'Yakin ingin menghapus komentar dari @' . $author . ' ini?'
+                            : 'Yakin ingin menghapus komentar dari @' . $author . ': \'' . $_c_snippet . '\'?';
+                        $delete_json = htmlspecialchars(json_encode([
+                            'title'             => 'Hapus Komentar',
+                            'text'              => $delete_text,
+                            'confirmButtonText' => 'HAPUS',
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
+                    ?>
                         <a href="../controllers/api/delete_comment.php?id=<?= (int)$c['id'] ?>"
                             hx-post="../controllers/api/delete_comment.php"
                             hx-vals='{"id":"<?= (int)$c['id'] ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>","media_id":"<?= (int)$id ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>,"csrf_token":"<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES) ?>"}'
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
-                            hx-confirm="Hapus komentar ini?"
-                            data-meel-confirm='{"title":"Hapus Komentar","text":"Hapus komentar ini?","confirmButtonText":"HAPUS"}'
+                            hx-confirm="<?= htmlspecialchars($delete_text, ENT_QUOTES, 'UTF-8') ?>"
+                            data-meel-confirm='<?= $delete_json ?>'
                             class="<?= $c_delete ?> hover:text-red-400 transition-colors no-underline flex-shrink-0"
                             title="Hapus komentar">
                             <i data-lucide="trash-2" class="w-3 h-3"></i>

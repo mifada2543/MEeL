@@ -591,7 +591,6 @@ $__vdir = function($dir) {
         </div>
 
     </main> <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         window.MEEL_MUSIC_CONFIG = {
             id: <?= $id ?>,
@@ -657,7 +656,6 @@ $__vdir = function($dir) {
         };
     </script>
     <script src="../assets/js/compatibilitas/plyr.min.js"></script>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
     <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
     <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>

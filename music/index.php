@@ -425,7 +425,6 @@ $__vdir = function($dir) {
             </div>
         </div>
     </div>
-    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         window.MEEL_INDEX_CONFIG = {
             playlistId: <?= (int)$playlist_id_from_url ?>

@@ -414,7 +414,7 @@ $thumb_src = !empty($video['thumbnail'])
                                         <span style="flex:1;font-size:11px;font-weight:700;color:#e2e6ef;text-transform:uppercase;letter-spacing:.06em;"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
                                         <span style="font-size:9px;color:#455060;text-transform:uppercase;letter-spacing:.05em;"><?= htmlspecialchars($_sub['file']) ?></span>
                                         <form method="POST" style="display:inline;margin:0;"
-                                            onsubmit="return confirm('Hapus subtitle bahasa <?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?>?')">
+                                            onsubmit="return meelConfirmForm(event, { title:'Hapus Subtitle', text:'Hapus subtitle bahasa <?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?>?', confirmButtonText:'HAPUS' })">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                                             <input type="hidden" name="delete_subtitle_lang" value="<?= htmlspecialchars($_sub['lang']) ?>">
                                             <button type="submit" title="Hapus subtitle"

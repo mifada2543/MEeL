@@ -460,8 +460,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </div>
 <?php endif; ?>
 
-<script src="<?= $_nav_root ?>assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-<script src="<?= $_nav_root ?>assets/js/compatibilitas/script.min.js"></script>
+<?php $scripts_root = $_nav_root; include __DIR__ . '/scripts.php'; ?>
 <script>
     // ── Dropdown desktop ──
     function toggleNavDropdown() {

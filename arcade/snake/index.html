@@ -124,20 +124,28 @@
     </div>
   </div>
 
+  <script src="../../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+  <script src="../../assets/js/compatibilitas/script.min.js"></script>
   <script>
     lucide.createIcons();
 
     // Reset high score
     document.getElementById("resetScoreBtn").addEventListener("click", () => {
       if (typeof gameState !== 'undefined' && gameState.isPlaying) return;
-      if (confirm("Reset High Score ke nol?")) {
-        localStorage.removeItem("snake_hi_score");
-        if (typeof gameState !== 'undefined') {
-          gameState.hiScore = 0;
-          const el = document.getElementById("hiScoreText");
-          if (el) el.textContent = "00000";
+      meelConfirm({
+        title: "Reset High Score",
+        text: "Reset High Score ke nol?",
+        confirmButtonText: "RESET",
+      }).then((ok) => {
+        if (ok) {
+          localStorage.removeItem("snake_hi_score");
+          if (typeof gameState !== 'undefined') {
+            gameState.hiScore = 0;
+            const el = document.getElementById("hiScoreText");
+            if (el) el.textContent = "00000";
+          }
         }
-      }
+      });
     });
   </script>
   <script src="assets/js/game.js"></script>

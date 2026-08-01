@@ -166,7 +166,7 @@ $back_url    = 'index.php';
     <title>Chess Manager · MEeL Admin</title>
     <link rel="stylesheet" href="../assets/css/font.css">
     <?php include '../partials/link.php'; ?>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <?php $scripts_root = '../'; include '../partials/scripts.php'; ?>
     <link rel="stylesheet" href="../assets/css/admin/catur.css?v=<?= filemtime('../assets/css/admin/catur.css') ?>">
 </head>
 
@@ -198,11 +198,11 @@ $back_url    = 'index.php';
                     <span>Auto-cleanup: <span id="countdown" class="text-blue-400 font-mono font-bold">10:00</span></span>
                 </div>
                 <!-- Manual purge -->
-                <form method="POST">
+                <form method="POST"
+                    onsubmit="return meelConfirmForm(event, { title:'Purge Room', text:'Hapus semua room tidak aktif sekarang?', confirmButtonText:'PURGE' })">
                     <input type="hidden" name="action" value="purge_inactive">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <button type="submit"
-                        onclick="return confirm('Hapus semua room tidak aktif sekarang?')"
                         class="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Purge Sekarang
                     </button>
@@ -298,7 +298,7 @@ $back_url    = 'index.php';
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-5 py-3 text-center">
-                                        <form method="POST" onsubmit="return confirmDelete('<?= htmlspecialchars($room['room_code']) ?>')">
+                                        <form method="POST" onsubmit="return meelConfirmForm(event, { title:'Hapus Room', text:'Hapus room <?= htmlspecialchars($room['room_code']) ?> beserta semua moves-nya?', confirmButtonText:'HAPUS' })">
                                             <input type="hidden" name="action" value="delete_room">
                                             <input type="hidden" name="room_code" value="<?= htmlspecialchars($room['room_code']) ?>">
                                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">

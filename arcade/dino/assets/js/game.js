@@ -44,29 +44,35 @@ document.getElementById("resetScoreBtn").addEventListener("click", () => {
   // Pastikan tidak sedang bermain untuk menghindari ketidaksengajaan tertekan
   if (gameState.isPlaying) return;
 
-  const konfirmasi = confirm(
-    "Apakah kamu yakin ingin mereset High Score kembali ke nol?",
-  );
-  if (konfirmasi) {
-    localStorage.removeItem("miku_hi_score");
-    gameState.hiScore = 0;
-    document.getElementById("hiScoreText").innerText = "00000";
-  }
+  meelConfirm({
+    title: "Reset High Score",
+    text: "Apakah kamu yakin ingin mereset High Score kembali ke nol?",
+    confirmButtonText: "RESET",
+  }).then((konfirmasi) => {
+    if (konfirmasi) {
+      localStorage.removeItem("miku_hi_score");
+      gameState.hiScore = 0;
+      document.getElementById("hiScoreText").innerText = "00000";
+    }
+  });
 });
 // LOGIKA MANUALLY STOP/RESET RUNNING GAME
 document.getElementById("resetGameBtn").addEventListener("click", () => {
   // Validasi jika game memang sedang tidak berjalan
   if (!gameState.isPlaying) {
-    alert("Tidak ada permainan yang sedang berjalan!");
+    meelAlert({ title: "Info", text: "Tidak ada permainan yang sedang berjalan!", icon: "info" });
     return;
   }
 
-  const konfirmasi = confirm(
-    "Apakah kamu ingin menghentikan permainan yang sedang berjalan?",
-  );
-  if (konfirmasi) {
-    endGame(); // Memicu kondisi Game Over agar panel cheat terbuka kembali
-  }
+  meelConfirm({
+    title: "Hentikan Game",
+    text: "Apakah kamu ingin menghentikan permainan yang sedang berjalan?",
+    confirmButtonText: "HENTIKAN",
+  }).then((konfirmasi) => {
+    if (konfirmasi) {
+      endGame(); // Memicu kondisi Game Over agar panel cheat terbuka kembali
+    }
+  });
 });
 // Fungsi Helper untuk mengunci/membuka UI
 function setGameplayControlsLocked(isLocked) {

@@ -745,7 +745,7 @@ document.addEventListener("DOMContentLoaded", () => {
       stopPolling();
       const data = await createRoomAPI();
       if (!data.success) {
-        alert(data.message || "Gagal buat room.");
+        window.meelAlert({ title: "Gagal", text: data.message || "Gagal buat room.", icon: "error" });
         return;
       }
 
@@ -766,12 +766,23 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("btn-join-room")
     .addEventListener("click", async () => {
-      const code = prompt("Masukkan Room Code");
+      const { value: code } = await window.Swal.fire({
+        title: "Masukkan Room Code",
+        input: "text",
+        inputPlaceholder: "Room Code",
+        showCancelButton: true,
+        confirmButtonText: "GABUNG",
+        cancelButtonText: "BATAL",
+        background: "#0f172a",
+        color: "#fff",
+        reverseButtons: true,
+        inputValidator: (v) => (v ? null : "Room code wajib diisi!"),
+      });
       if (!code) return;
 
       const data = await joinRoomAPI(code);
       if (!data.success) {
-        alert(data.message || "Room tidak wujud atau penuh.");
+        window.meelAlert({ title: "Gagal", text: data.message || "Room tidak wujud atau penuh.", icon: "error" });
         return;
       }
 
@@ -810,12 +821,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-restart").addEventListener("click", () => {
     // Fitur: Tampilkan alert konfirmasi jika permainan sedang berjalan
     if (game.history.length > 0 && !game.isGameOver) {
-      const isConfirmed = confirm(
-        "Adakah anda pasti mahu mula semula? Kemajuan permainan saat ini akan dipadam.",
-      );
-      if (isConfirmed) {
-        restartGame();
-      }
+      window.meelConfirm({
+        title: "Mula Semula?",
+        text: "Adakah anda pasti mahu mula semula? Kemajuan permainan saat ini akan dipadam.",
+        confirmButtonText: "MULA SEMULA",
+      }).then((isConfirmed) => {
+        if (isConfirmed) {
+          restartGame();
+        }
+      });
     } else {
       // Jika papan masih kosong atau game sudah selesai, langsung restart
       restartGame();

@@ -377,8 +377,6 @@ $__vdir = function($dir) {
     <?php include '../partials/footer.php'; ?>
 
     <script src="../assets/js/compatibilitas/plyr.min.js"></script>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/compatibilitas/script.min.js"></script>
 
     <script>
         window.playerConfig = <?= json_encode([

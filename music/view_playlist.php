@@ -95,7 +95,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                     </a>
                 <?php endif; ?>
                 <form action="playlist_action.php" method="POST"
-                    onsubmit="return confirm('Hapus seluruh playlist ini?')">
+                    onsubmit="return meelConfirmForm(event, { title:'Hapus Playlist', text:'Hapus seluruh playlist ini?', confirmButtonText:'HAPUS' })">
                     <input type="hidden" name="action" value="delete_playlist">
                     <input type="hidden" name="playlist_id" value="<?= $playlist_id ?>">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -186,7 +186,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
 
                     <!-- Hapus dari playlist -->
                     <form action="playlist_action.php" method="POST"
-                        onsubmit="return confirm('Hapus lagu ini dari playlist?')">
+                        onsubmit="return meelConfirmForm(event, { title:'Hapus dari Playlist', text:'Hapus lagu ini dari playlist?', confirmButtonText:'HAPUS' })">
                         <input type="hidden" name="action" value="remove_from_playlist">
                         <input type="hidden" name="pivot_id" value="<?= $s['pivot_id'] ?>">
                         <input type="hidden" name="playlist_id" value="<?= $playlist_id ?>">
@@ -256,7 +256,6 @@ $__v = function($f) {
     <link rel="stylesheet" href="../assets/css/music/main.css">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <style>
         .artist-dropdown-active #library-container > main {
             position: relative;

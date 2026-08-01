@@ -1,10 +1,10 @@
 /**
  * MEeL Admin — Chess (catur.php)
- * Auto-cleanup countdown timer & room delete confirmation
+ * Auto-cleanup countdown timer
  *
  * Dependencies:
  *   - compatibilitas/lucide.js
- *   - compatibilitas/sweetalert2.all.min.js
+ *   - partials/scripts.php (sweetalert2 + script.min.js — dipakai via meelConfirmForm di catur.php)
  */
 (function () {
   'use strict';
@@ -57,8 +57,4 @@
     }
   });
 
-  // ── Confirm delete room ──
-  window.confirmDelete = function (code) {
-    return confirm('Hapus room ' + code + ' beserta semua moves-nya?');
-  };
 })();
