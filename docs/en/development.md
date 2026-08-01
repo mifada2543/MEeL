@@ -438,14 +438,24 @@ main (stable)
 | `controllers/system/mfa.php` | MFA backend controller (generate/download backup codes) |
 | `admin/mfa_reset.php` | Admin MFA reset panel |
 | `partials/ui.php` | Overlay UI system (JS heavy) |
-| `assets/js/video/state.js` | Video player state management |
-| `assets/js/video/player-init.js` | Plyr + HLS.js initialization |
-| `assets/js/video/player-events.js` | Event orchestration (auto-next, glow, resume) |
-| `assets/js/video/mini-player.js` | Mini-player floating mode |
-| `assets/js/video/recovery.js` | Player auto-recovery system |
-| `assets/js/video/gestures.js` | Mobile touch gestures |
-| `assets/js/music/player-core.js` | Music player core (visualizer, EQ, mini-player) |
-| `assets/js/music/state.js` | Music player state & equalizer presets |
+| `assets/js/shared/keyboard.js` | Shared keyboard shortcut guard (meelKeyShortcutIgnored) — used by video & music misc/mini-player |
+| `assets/js/shared/temp-index.js` | Shared loader of index.php into #temp-index-content without reload (meelLoadTempIndex) — used by video & music mini-player |
+| `assets/js/shared/plyr-config.js` | Shared Plyr base config (MEEL_PLYR_COMMON: iconUrl, speed, keyboard, tooltips) — used by video & music players |
+| `assets/js/shared/upload-progress.js` | Shared upload progress-bar animation (meelUploadProgress) — used by music & video upload pages |
+| `assets/js/shared/resume-modal.js` | Shared resume modal (meelResumeModal) — used by video player-events & music player-core |
+| `assets/js/shared/format-time.js` | Shared mm:ss time formatter (formatTime) — moved from music/shared/utils.js, used by music mini-players & resume-modal |
+| `assets/js/shared/mini-player-popstate.js` | Shared popstate handler to exit mini-player mode (meelMiniPlayerPopstate) — used by video & music watch mini-players |
+| `assets/js/video/watch/main.js` | Entry point folder watch/ — loads siblings synchronously (document.write) |
+| `assets/js/video/watch/state.js` | Video player state management |
+| `assets/js/video/watch/player-init.js` | Plyr + HLS.js initialization |
+| `assets/js/video/watch/player-events.js` | Event orchestration (auto-next, glow, resume) |
+| `assets/js/video/watch/mini-player.js` | Mini-player floating mode |
+| `assets/js/video/watch/recovery.js` | Player auto-recovery system |
+| `assets/js/video/watch/gestures.js` | Mobile touch gestures |
+| `assets/js/music/watch/main.js` | Entry point folder watch/ — loads siblings synchronously (document.write) |
+| `assets/js/music/watch/mini-player.js` | Music mini-player mode (Spotify-style) — separated from player-core.js |
+| `assets/js/music/watch/player-core.js` | Music player core (visualizer, EQ, bitrate, resume) |
+| `assets/js/music/watch/state.js` | Music player state & equalizer presets |
 
 ### Key Processes
 

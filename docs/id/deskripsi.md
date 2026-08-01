@@ -330,13 +330,13 @@ Tidak ada masalah medium yang tersisa.
 
 | # | File | Perubahan | Kategori |
 |---|------|-----------|----------|
-| 72 | `assets/js/video/player-events.js` | **Mutual exclusion:** Auto Next ON → Loop OFF; Loop ON → Auto Next OFF | 🐛 Bug |
-| 73 | `assets/js/video/player-events.js` | Sembunyikan tombol replay + poster Plyr saat auto-next overlay aktif | 🐛 Bug |
+| 72 | `assets/js/video/watch/player-events.js` | **Mutual exclusion:** Auto Next ON → Loop OFF; Loop ON → Auto Next OFF | 🐛 Bug |
+| 73 | `assets/js/video/watch/player-events.js` | Sembunyikan tombol replay + poster Plyr saat auto-next overlay aktif | 🐛 Bug |
 | 74 | `assets/css/video.css` | Tambah backdrop gelap `rgba(0,0,0,0.45)` di auto-next overlay | 🐛 Bug |
 | 75 | `music/watch.php` | Klik vinyl disc → toggle mini-player (sama seperti keyboard `I`) | ✨ New |
 | 76 | `assets/css/music.css` | Hover overlay hanya muncul di area `mp-art`, bukan seluruh `mp-track` | 🐛 Bug |
 | 77 | `music/index.php` | Skip resume modal saat navigasi dari index mini-player ke watch | ✨ New |
-| 78 | `assets/js/music/player-core.js` | Baca flag `skip_resume_once` dari sessionStorage untuk skip modal | ✨ New |
+| 78 | `assets/js/music/watch/player-core.js` | Baca flag `skip_resume_once` dari sessionStorage untuk skip modal | ✨ New |
 | 79 | `music/view_playlist.php` | Skip resume modal dari playlist view (sama seperti index) | ✨ New |
 | 80 | `music/watch.php` | **Cache-busting** — tambah `filemtime()` ke semua script music JS | 🐛 Bug |
 
