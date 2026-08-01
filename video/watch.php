@@ -20,8 +20,16 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 // Lepas session lock sesegera mungkin
 session_write_close();
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru
-$__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
+// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -118,7 +126,7 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
             <div id="video-glow-container" class="relative w-full">
                 <canvas id="video-glow-canvas" class="hidden sm:block"></canvas>
                 <div id="main-video-wrapper" class="relative bg-black rounded-none sm:rounded-none overflow-hidden border-0 shadow-2xl w-full" style="aspect-ratio: 16/9;">
-                    <video id="main-video" playsinline controls preload="auto"
+                    <video id="main-video" playsinline controls preload="metadata"
                         data-poster="upload/thumbnail/<?= htmlspecialchars($v['thumbnail']) ?>"
                         data-src="<?= htmlspecialchars($video_src) ?>"
                         aria-label="Pemutar video: <?= htmlspecialchars($v['title']) ?>"
@@ -382,8 +390,10 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
 
     <script>
         lucide.createIcons();
-        document.body.addEventListener('htmx:afterOnLoad', function() {
-            lucide.createIcons();
+        document.body.addEventListener('htmx:afterOnLoad', function(e) {
+            // Scope ke elemen hasil swap saja (detail.target, bukan detail.elt
+            // yang merupakan elemen pemicu) — hindari scan seluruh DOM tiap request
+            lucide.createIcons({}, e.detail?.target || document.body);
         });
 
         // Handle Enter key untuk video search

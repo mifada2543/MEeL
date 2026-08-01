@@ -98,7 +98,10 @@ abstract class AbstractWatchController
      */
     protected function baseViewData(array $v, $rekom = null): array
     {
-        $comments_data = $this->viewer->getComments();
+        // Guest tidak melihat komentar — skip query berat (full scan comments)
+        $comments_data = $this->isLoggedIn()
+            ? $this->viewer->getComments()
+            : ['grouped' => [], 'user_map' => []];
 
         return [
             'id'               => $this->id,

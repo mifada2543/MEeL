@@ -130,6 +130,8 @@ CREATE TABLE IF NOT EXISTS `comments` (
   KEY `user_id` (`user_id`),
   KEY `music_id` (`music_id`),
   KEY `fk_parent_comment` (`parent_id`),
+  KEY `idx_comments_video_created` (`video_id`, `created_at`),
+  KEY `idx_comments_music_created` (`music_id`, `created_at`),
   CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_parent_comment` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE

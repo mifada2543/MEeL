@@ -251,6 +251,17 @@ $migrations = [
             },
         ],
     ],
+    10 => [
+        'description' => 'Tambah index komposit (video_id, created_at) & (music_id, created_at) pada tabel comments',
+        'sql' => [
+            function($conn) {
+                $conn->query("ALTER TABLE comments ADD INDEX idx_comments_video_created (video_id, created_at)");
+            },
+            function($conn) {
+                $conn->query("ALTER TABLE comments ADD INDEX idx_comments_music_created (music_id, created_at)");
+            },
+        ],
+    ],
 ];
 // ═══════════════════════════════════════════════════════════════════════════
 // Catatan Sinkronisasi
@@ -267,6 +278,7 @@ $migrations = [
 //   v7 — UNIQUE KEY idx_username_unique pada users.username
 //   v8 — users.role→varchar(20), hapus duplicate UNIQUE KEY, sync defaults
 //   v9 — Tambah kolom MFA (mfa_secret, mfa_backup_codes, mfa_enabled) ke tabel users
+//   v10 — Index komposit comments (video_id, created_at) & (music_id, created_at)
 //
 // Catatan: schema.sql (fresh install) sudah mencakup semua CREATE TABLE
 // dengan FK, INDEX, dan UNIQUE KEY langsung — migration ini hanya untuk

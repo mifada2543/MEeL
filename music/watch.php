@@ -21,8 +21,16 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 // Lepas session lock agar range request streaming tidak terblokir
 session_write_close();
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru
-$__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
+// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -600,9 +608,11 @@ $__v = function($f) { return '?v=' . filemtime(__DIR__ . '/../' . $f); };
             }
         });
 
-        document.body.addEventListener('htmx:afterOnLoad', function() {
+        document.body.addEventListener('htmx:afterOnLoad', function(e) {
             if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+                // Scope ke elemen hasil swap saja (detail.target, bukan detail.elt
+                // yang merupakan elemen pemicu) — hindari scan seluruh DOM tiap request
+                lucide.createIcons({}, e.detail?.target || document.body);
             }
         });
 
