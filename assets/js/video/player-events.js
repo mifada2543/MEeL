@@ -366,7 +366,7 @@ function setupMeelPlayerEvents() {
       if (
         ("function" == typeof window.appendCustomSettings &&
           setTimeout(window.appendCustomSettings, 0),
-        videoElement && !isHls && (videoElement.preload = "auto"),
+        videoElement && !isHls && (videoElement.preload = "metadata"),
         a(),
         vttSrc)
       )
@@ -689,6 +689,9 @@ function setupMeelPlayerEvents() {
     ((r.width = GLOW_W), (r.height = GLOW_H));
     const n = r.getContext("2d");
     glowNavbar = document.querySelector("nav");
+    // Throttle penulisan warna navbar — lerp pixel tetap tiap frame (murah,
+    // Float32Array 576 elemen), tapi setProperty CSS hanya tiap ~250ms.
+    let glowLastNavbarUpdate = 0;
     const o = () => {
         if (!(videoElement.readyState < 2 || document.hidden))
           try {
@@ -696,21 +699,27 @@ function setupMeelPlayerEvents() {
             const e = t.getImageData(0, 0, GLOW_W, GLOW_H).data;
             glowTargetData.set(e);
           } catch (e) {}
-      },
-      a = (timestamp) => {
+      },      a = (timestamp) => {
         if (!glowRAF) return;
+        /* Canvas glow tersembunyi (display:none — mis. mobile atau saat
+           mini-player) → lewati kerja pixel & navbar, tetap jadwalkan
+           agar langsung hidup saat terlihat kembali. */
+        if (r.offsetParent === null) {
+          glowRAF = requestAnimationFrame(a);
+          return;
+        }
         if (timestamp - glowLastSampleTime >= GLOW_SAMPLE_INTERVAL) {
           glowLastSampleTime = timestamp;
           o();
         }
         for (let e = 0; e < glowCurData.length; e++)
-          glowCurData[e] +=
-            (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
+          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
         const e = n.createImageData(GLOW_W, GLOW_H);
         for (let t = 0; t < glowCurData.length; t++)
           e.data[t] = Math.round(glowCurData[t]);
         n.putImageData(e, 0, 0);
-        if (glowNavbar) {
+        if (glowNavbar && timestamp - glowLastNavbarUpdate >= 250) {
+          glowLastNavbarUpdate = timestamp;
           let e = 0,
             t = 0,
             n = 0;
