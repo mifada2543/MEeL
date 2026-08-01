@@ -1,0 +1,67 @@
+/* ============================================================
+ * engine/download.css — Fase download (ikon, track, statistik)
+ * ============================================================ */
+
+#meel-phase-download .dl-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: rgba(59, 130, 246, .08);
+  border: 1px solid rgba(59, 130, 246, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 auto;
+  /* Hardware acceleration untuk kontainer icon */
+  transform: translateZ(0);
+}
+
+#meel-phase-download .dl-icon-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 20px;
+  border: 1px solid rgba(59, 130, 246, .35);
+  animation: meel-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.dl-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, .06);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.dl-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.dl-stat {
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.dl-stat-label {
+  font-size: 9px;
+  letter-spacing: .16em;
+  color: rgba(255, 255, 255, .3);
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.dl-stat-val {
+  font-size: 13px;
+  color: rgba(255, 255, 255, .8);
+  font-weight: 600;
+}

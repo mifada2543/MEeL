@@ -1,0 +1,15 @@
+/* ============================================================
+ * up/main.css — Page-specific CSS untuk upload_advanced.php
+ *
+ * Halaman: upload_advanced.php (Advanced Upload — yt-dlp).
+ * Dependensi: assets/css/up.css (base bersama, dipakai juga
+ * update.php) + assets/css/engine/ (overlay download/transcode).
+ *
+ * Modul (urutan: base → form → alerts → sidebar → animations):
+ * ============================================================ */
+
+@import url('base.css');
+@import url('form.css');
+@import url('alerts.css');
+@import url('sidebar.css');
+@import url('animations.css');
