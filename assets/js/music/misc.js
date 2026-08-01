@@ -17,12 +17,13 @@ window.toggleLoop = function () {
 window.toggleVisualizer = function () {};
 window.toggleEqualizer = function () {};
 document.addEventListener("keydown", (e) => {
-  const t = e.target.tagName.toLowerCase();
+  const t = (e.target?.tagName || "").toLowerCase();
   if ("input" === t || "textarea" === t) return;
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (e.repeat) return;
   const n = e.key.toLowerCase();
   "l" === n
-    ? (e.preventDefault(), window.toggleLoop())
+    ? (e.preventDefault(), e.stopPropagation(), window.toggleLoop())
     : "e" === n
       ? (e.preventDefault(), window.toggleEqualizer?.())
       : "v" === n

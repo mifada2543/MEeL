@@ -262,6 +262,10 @@
           latencyHint: "playback",
           sampleRate: 48e3,
         })),
+          // Pastikan context RUNNING — jika dibuat saat suspended (mis. play
+          // programatik tanpa gesture baru), output audio element sudah
+          // di-capture oleh createMediaElementSource dan bisa jadi senyap.
+          g.resume && g.resume().catch(() => {}),
           (w = g.createAnalyser()),
           (f = g.createMediaElementSource(audio)),
           (eqFilters = []));
@@ -309,9 +313,48 @@
           (u[t].style.background = r),
           (a = Math.max(a, o)));
       }
-      (t && updateBitrateLabel(getRealtimeVbrValue(e), t),
-        (E = requestAnimationFrame(_)));
+      E = requestAnimationFrame(_);
     }
+    // ── Bitrate real-time (terpisah dari visualizer) ─────────
+    // Label kbps tetap diperbarui walau visualizer OFF, selama
+    // AudioContext aktif & audio diputar. Loop ringan via setInterval
+    // (sebelumnya bitrate menumpang di RAF visualizer _(), jadi mati
+    // saat Vis OFF).
+    let bitrateTimer = null;
+    function refreshBitrate() {
+      if (!t || player.paused) return;
+      // AudioContext bisa belum dibuat saat play pertama (event order: handler
+      // play jalan sebelum click listener document men-set q). Retry tiap tick;
+      // guard q di v() melindungi autoplay murni dari context suspended yg
+      // bikin audio senyap (createMediaElementSource hanya bisa sekali).
+      if (!I && !v()) return;
+      // v() punya path early-return (g sudah ada) yang tidak men-set I —
+      // pastikan setup benar-benar lengkap sebelum membaca analyser.
+      if (!I || !w) return;
+      const e = new Uint8Array(w.frequencyBinCount);
+      w.getByteFrequencyData(e);
+      updateBitrateLabel(getRealtimeVbrValue(e), t);
+    }
+    function startBitrateLoop() {
+      if (bitrateTimer) return;
+      refreshBitrate();
+      bitrateTimer = setInterval(refreshBitrate, 1e3);
+    }
+    function stopBitrateLoop() {
+      if (bitrateTimer) {
+        clearInterval(bitrateTimer);
+        bitrateTimer = null;
+      }
+    }
+    // Fallback anti-senyap: jika AudioContext dibuat dalam keadaan suspended
+    // (mis. play programatik dari timer tanpa gesture user), createMediaElementSource
+    // sudah men-capture output audio → context yang tidak running = audio diam.
+    // Resume diupayakan ulang pada interaksi user berikutnya.
+    function meelResumeCtx() {
+      g && "suspended" === g.state && g.resume().catch(() => {});
+    }
+    document.addEventListener("click", meelResumeCtx);
+    document.addEventListener("keydown", meelResumeCtx);
     function b() {
       const e = document.getElementById("btn-vis"),
         t = document.getElementById("vis-text"),
@@ -332,7 +375,11 @@
       (window.toggleVisualizer = function () {
         ((c = !c),
           b(),
-          c && !player.paused ? (I || v()) && _() : cancelAnimationFrame(E));
+          c
+            ? ((I || v()),
+              startBitrateLoop(),
+              !player.paused && _())
+            : cancelAnimationFrame(E));
       }),
       setTimeout(b, 100));
     const L = document.getElementById("resume-modal"),
@@ -451,13 +498,17 @@
         : ((isFinished = !1),
           e.classList.add("playing"),
           A()?.classList.add("playing"),
-          c && (I || v()) && _(),
+          // AudioContext wajib ada utk bitrate real-time walau visualizer OFF
+          I || v(),
+          startBitrateLoop(),
+          c && _(),
           C());
     }),
       player.on("pause", () => {
         (e.classList.remove("playing"),
           A()?.classList.remove("playing"),
           cancelAnimationFrame(E),
+          stopBitrateLoop(),
           C());
       }));
     let F = -1;
@@ -492,6 +543,7 @@
         }
         if (isNavigating) return;
         isNavigating = true;
+        stopBitrateLoop();
 
         const e = window.MEEL_MUSIC_CONFIG.nextSongUrl;
         if (e) window.location.href = e;

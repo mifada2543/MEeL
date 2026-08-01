@@ -200,6 +200,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                             ['F',         'Layar penuh'],
                             ['C',         'Toggle caption'],
                             ['L',         'Toggle loop'],
+                            ['A',         'Toggle auto-next'],
                         ];
                         foreach ($shortcuts_video as $s): ?>
                             <div class="shortcut-item">

@@ -1,10 +1,29 @@
 /* ============================================================
  * misc.js — Util kecil: toggle deskripsi video, update parameter
- * exclude pada search box navbar.
+ * exclude pada search box navbar, dan shortcut keyboard global
+ * (L = toggle loop, A = toggle auto-next — sama seperti klik
+ * item Settings → Loop Playback / Auto Next).
  * Fungsi komentar (toggleReply, meelConfirmHtmx, toggleCommentSection)
  * kini berada di assets/js/shared/comment.js.
- * Depends on: -
+ * Depends on: state.js, player-events.js (window.toggleLoop / toggleAutoNext)
  * ============================================================ */
+
+document.addEventListener("keydown", (e) => {
+  // Abaikan saat fokus di kolom input/textarea (mis. form pencarian)
+  const t = (e.target?.tagName || "").toLowerCase();
+  if ("input" === t || "textarea" === t) return;
+  // Abaikan kombinasi dengan modifier (Ctrl/Alt/Meta)
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  // Abaikan auto-repeat (tombol ditahan) agar loop tidak toggle berulang
+  if (e.repeat) return;
+  const n = e.key.toLowerCase();
+  // L = toggle loop — sinkron dengan toggleLoop di player-events.js
+  "l" === n &&
+    (e.preventDefault(), e.stopPropagation(), window.toggleLoop?.());
+  // A = toggle auto-next — sinkron dengan toggleAutoNext di player-events.js
+  "a" === n &&
+    (e.preventDefault(), e.stopPropagation(), window.toggleAutoNext?.());
+});
 
 function updateSearchExcludeId(e) {
   (["v-search-watch", "v-search-mobile"].forEach((t) => {
