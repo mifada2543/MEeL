@@ -47,6 +47,56 @@ class BootstrapTest extends TestCase
     }
 
     /**
+     * Fallback MEEL_BASE_URL harus berbasis root proyek, bukan dirname(SCRIPT_NAME).
+     * Regresi: halaman di subdirektori (mis. /MEeL/admin/index.php) pernah
+     * menghasilkan MEEL_BASE_URL = /MEeL/admin, sehingga redirect auth
+     * mengarah ke /MEeL/admin/auth/login.php?next=... (salah).
+     *
+     * @dataProvider baseUrlProvider
+     */
+    public function testBaseUrlFallbackFromProjectRoot(
+        string $scriptName,
+        string $documentRoot,
+        string $expectedBase
+    ): void {
+        $bootstrap = realpath(__DIR__ . '/../../modules/core/bootstrap.php');
+        $this->assertNotFalse($bootstrap, 'modules/core/bootstrap.php tidak ditemukan');
+
+        $code = '$_SERVER["SCRIPT_NAME"]=' . var_export($scriptName, true) . ';'
+            . '$_SERVER["DOCUMENT_ROOT"]=' . var_export($documentRoot, true) . ';'
+            . 'require ' . var_export($bootstrap, true) . ';'
+            . 'echo MEEL_BASE_URL;';
+
+        $output = [];
+        $exit   = 0;
+        exec(PHP_BINARY . ' -d display_errors=0 -r ' . escapeshellarg($code) . ' 2>&1', $output, $exit);
+
+        $this->assertSame(0, $exit, 'Subprocess bootstrap gagal: ' . implode("\n", $output));
+        $this->assertCount(1, $output, 'Output subprocess tidak valid: ' . implode("\n", $output));
+        $this->assertSame($expectedBase, trim($output[0]));
+    }
+
+    public static function baseUrlProvider(): array
+    {
+        // Turunkan nilai dari root proyek asli agar test valid di instalasi mana pun.
+        $projectRoot = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/../..')), '/');
+        $docRoot     = dirname($projectRoot);
+        $expected    = '/' . basename($projectRoot);
+
+        return [
+            'halaman admin di subdirektori → root proyek' => [
+                $expected . '/admin/index.php', $docRoot, $expected,
+            ],
+            'halaman root index → root proyek' => [
+                $expected . '/index.php', $docRoot, $expected,
+            ],
+            'subdirektori video → root proyek' => [
+                $expected . '/video/watch.php', $docRoot, $expected,
+            ],
+        ];
+    }
+
+    /**
      * @dataProvider environmentProvider
      */
     public function testAppDebugFollowsEnvironment(
