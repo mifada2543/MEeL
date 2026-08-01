@@ -31,6 +31,20 @@ $__v = function($f) {
     }
     return '?v=' . $mtimeCache[$path];
 };
+
+// Versi folder JS = max filemtime semua file di folder (diteruskan ke sibling oleh main.js)
+$__vdir = function($dir) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $dir;
+    if (!isset($mtimeCache[$path])) {
+        $max = 0;
+        foreach (glob($path . '/*.js') ?: [] as $f) {
+            $max = max($max, (int)@filemtime($f));
+        }
+        $mtimeCache[$path] = $max;
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -642,16 +656,16 @@ $__v = function($f) {
             if (options) options.classList.add('hidden');
         };
     </script>
-    <script src="../assets/js/compatibilitas/plyr.min.js" defer></script>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js" defer></script>
-    <script src="../assets/js/music/state.js<?= $__v('assets/js/music/state.js') ?>" defer></script>
-    <script src="../assets/js/music/utils.js<?= $__v('assets/js/music/utils.js') ?>" defer></script>
-    <script src="../assets/js/music/loop-ui.js<?= $__v('assets/js/music/loop-ui.js') ?>" defer></script>
-    <script src="../assets/js/music/audio-state.js<?= $__v('assets/js/music/audio-state.js') ?>" defer></script>
-    <script src="../assets/js/music/equalizer.js<?= $__v('assets/js/music/equalizer.js') ?>" defer></script>
-    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>" defer></script>
-    <script src="../assets/js/music/misc.js<?= $__v('assets/js/music/misc.js') ?>" defer></script>
-    <script src="../assets/js/music/player-core.js<?= $__v('assets/js/music/player-core.js') ?>" defer></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
+    <script src="../assets/js/shared/resume-modal.js<?= $__v('assets/js/shared/resume-modal.js') ?>"></script>
+    <script src="../assets/js/shared/mini-player-popstate.js<?= $__v('assets/js/shared/mini-player-popstate.js') ?>"></script>
+    <script src="../assets/js/music/watch/main.js<?= $__vdir('assets/js/music/watch') ?>"></script>
+    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
 </body>
 
 </html>

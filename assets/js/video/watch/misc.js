@@ -5,17 +5,14 @@
  * item Settings → Loop Playback / Auto Next).
  * Fungsi komentar (toggleReply, meelConfirmHtmx, toggleCommentSection)
  * kini berada di assets/js/shared/comment.js.
- * Depends on: state.js, player-events.js (window.toggleLoop / toggleAutoNext)
+ * Depends on: state.js, player-events.js (window.toggleLoop / toggleAutoNext),
+ * shared/keyboard.js
  * ============================================================ */
 
 document.addEventListener("keydown", (e) => {
-  // Abaikan saat fokus di kolom input/textarea (mis. form pencarian)
-  const t = (e.target?.tagName || "").toLowerCase();
-  if ("input" === t || "textarea" === t) return;
-  // Abaikan kombinasi dengan modifier (Ctrl/Alt/Meta)
-  if (e.ctrlKey || e.altKey || e.metaKey) return;
-  // Abaikan auto-repeat (tombol ditahan) agar loop tidak toggle berulang
-  if (e.repeat) return;
+  // Guard: input/textarea, modifier (Ctrl/Alt/Meta), auto-repeat —
+  // kini di shared/keyboard.js (meelKeyShortcutIgnored)
+  if (window.meelKeyShortcutIgnored?.(e)) return;
   const n = e.key.toLowerCase();
   // L = toggle loop — sinkron dengan toggleLoop di player-events.js
   "l" === n &&

@@ -2,6 +2,8 @@
  * state.js — Konfigurasi player & seluruh state global (shared)
  * Semua var/const di sini dipakai lintas file (non-module script,
  * jadi tetap satu global scope). WAJIB dimuat PALING PERTAMA.
+ * Depends on: shared/plyr-config.js (MEEL_PLYR_COMMON) — harus
+ * dimuat SEBELUM state.js karena plyrOptions di-spread saat load.
  * ============================================================ */
 
 const config = window.playerConfig || {};
@@ -65,7 +67,7 @@ let autoNextEnabled = localStorage.getItem("meel_autonext_enabled") === "true";
 
 window.lucide && lucide.createIcons();
 const plyrOptions = {
-    iconUrl: "../assets/plyr.svg",
+    ...MEEL_PLYR_COMMON,
     controls: [
       "play-large",
       "play",
@@ -81,8 +83,6 @@ const plyrOptions = {
       "fullscreen",
     ],
     settings: ["quality", "speed"],
-    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-    tooltips: { controls: !0, seek: !0 },
     i18n: {
       play: "Putar video",
       pause: "Jeda video",
@@ -105,7 +105,6 @@ const plyrOptions = {
     },
     fullscreen: { enabled: !0, fallback: !0, iosNative: !1 },
     clickToPlay: !isTouchDevice,
-    keyboard: { focused: !0, global: !0 },
     previewThumbnails: { enabled: "" !== vttSrc, src: vttSrc },
     mediaMetadata: {},
   },

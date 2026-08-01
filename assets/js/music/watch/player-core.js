@@ -4,13 +4,13 @@
  * visualizer canvas (cava-style bar), dan mode mini-player
  * (shell, kontrol play/pause/seek/next/prev, ganti lagu tanpa reload).
  *
- * CATATAN: sengaja TIDAK dipecah lebih jauh (walau isinya visualizer
- * & mini-player yang secara konsep beda) karena semuanya berbagi
- * closure atas variabel lokal yang sama (elemen container, canvas
- * context, state resume, playlist array). Sama seperti kasus
- * player-events.js di video — memisahkan paksa berisiko merusak
- * referensi closure tanpa testing langsung di browser.
- * Depends on: state.js, utils.js, loop-ui.js, audio-state.js, equalizer.js
+ * CATATAN: mode mini-player TIDAK lagi di sini — dipisah ke
+ * mini-player.js (pola sama dengan video/watch/mini-player.js).
+ * Yang tersisa di sini: init Plyr, FLAC loading overlay, resume
+ * posisi, visualizer, bitrate, dan handler play/pause/ended.
+ * Depends on: state.js, utils.js, loop-ui.js, audio-state.js, equalizer.js,
+ * shared/plyr-config.js (MEEL_PLYR_COMMON), mini-player.js (updateMiniPlayerUI),
+ * shared/resume-modal.js (meelResumeModal)
  * ============================================================ */
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -87,7 +87,7 @@
 
     // ── Flag untuk mencegah redirect loop ──
     let audioEndedNaturally = false; // di-set true hanya jika playback mencapai akhir
-    let isNavigating = false; // cegah navigasi ganda
+    // isNavigating kini global di state.js (dipakai juga mini-player.js)
 
     // Handler error audio — tandai bahwa audio GAGAL (bukan selesai natural)
     let errorHandled = false;
@@ -159,7 +159,7 @@
 
     try {
       ((player = new Plyr(audio, {
-        iconUrl: "../assets/plyr.svg",
+        ...MEEL_PLYR_COMMON,
         controls: [
           "play",
           "progress",
@@ -170,9 +170,6 @@
           "settings",
         ],
         settings: ["speed"],
-        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-        keyboard: { focused: !0, global: !0 },
-        tooltips: { controls: !0, seek: !0 },
       })),
         (window.player = player));
     } catch (U) {
@@ -396,12 +393,6 @@
       T = document.getElementById("btn-restart"),
       x = document.getElementById("resume-time");
     if (L && M && T && x) {
-      const N = document.createElement("p");
-      ((N.className = "text-[9px] text-gray-500 italic mb-4"),
-        x.parentNode.after(N));
-      let z,
-        G,
-        R = !1;
       // Bersihkan flag sisa dari navigasi index agar tidak stale
       const _skipFromIndex = sessionStorage.getItem("skip_resume_once") === "true";
       sessionStorage.removeItem("skip_resume_once");
@@ -409,34 +400,43 @@
         skipResumeModalOnce = true;
       }
       function B() {
-        if (skipResumeModalOnce) return void (skipResumeModalOnce = !1);
-        const e = localStorage.getItem(storageKeyMusic);
-        if (!e || parseFloat(e) <= 10) return;
-        if (player.duration && parseFloat(e) >= player.duration - 5) return;
-        ((R = !1), clearInterval(G), clearTimeout(z));
-        const t = parseFloat(e),
-          n = Math.floor(t / 60),
-          a = Math.floor(t % 60);
-        ((x.innerText = `${n}:${String(a).padStart(2, "0")}`),
-          (audio.autoplay = player.autoplay = !1),
-          (audio.currentTime = t),
-          L.classList.remove("hidden"));
-        let i = 15;
-        const l = () => {
-          N.innerText =
-            i >= 0
-              ? `Otomatis putar dari awal dalam ${i--}s...`
-              : "Otomatis putar dari awal...";
-        };
-        (l(),
-          (G = setInterval(l, 1e3)),
-          (z = setTimeout(() => {
-            R ||
-              L.classList.contains("hidden") ||
-              (clearInterval(G), T.click());
-          }, 15e3)));
+        // Resume modal — helper bersama shared/resume-modal.js (meelResumeModal).
+        // true = modal tampil (jangan play dulu), false = lanjut play normal.
+        // Catatan: nilai balik tidak dipakai caller (ia cek L.classList hidden),
+        // tapi dikembalikan agar konsisten dengan pola video & komentar di atas.
+        return window.meelResumeModal({
+          storageKey: storageKeyMusic,
+          durationMargin: 5,
+          countdownPrefix: "Otomatis putar dari awal dalam",
+          countdownDoneText: "Otomatis putar dari awal...",
+          skipOnce: () => {
+            if (skipResumeModalOnce) {
+              skipResumeModalOnce = !1;
+              return !0;
+            }
+            return !1;
+          },
+          onShow: () => {
+            audio.autoplay = player.autoplay = !1;
+            audio.currentTime = parseFloat(
+              localStorage.getItem(storageKeyMusic),
+            );
+          },
+          onResume: (pos) => {
+            player.currentTime = pos;
+            player.play();
+          },
+          onRestart: () => {
+            localStorage.removeItem(storageKeyMusic);
+            // Gunakan audio.currentTime langsung (bukan player.currentTime)
+            // karena Plyr ignore seek jika !duration — yang sering terjadi
+            // untuk FLAC dengan preload="none" (metadata belum termuat).
+            audio.currentTime = 0;
+            player.play();
+          },
+        });
       }
-      (player.on("ready", () => {
+      player.on("ready", () => {
         y > 0 &&
           player.duration > 0 &&
           (h = Math.round((8 * y) / (1e3 * player.duration)));
@@ -476,29 +476,7 @@
             ? B()
             : player.play().catch(() => {});
         }
-      }),
-        (M.onclick = () => {
-          ((R = !0),
-            clearTimeout(z),
-            clearInterval(G),
-            (player.currentTime = parseFloat(
-              localStorage.getItem(storageKeyMusic),
-            )),
-            player.play(),
-            L.classList.add("hidden"));
-        }),
-        (T.onclick = () => {
-          ((R = !0),
-            clearTimeout(z),
-            clearInterval(G),
-            localStorage.removeItem(storageKeyMusic),
-            // Gunakan audio.currentTime langsung (bukan player.currentTime)
-            // karena Plyr ignore seek jika !duration — yang sering terjadi
-            // untuk FLAC dengan preload="none" (metadata belum termuat).
-            (audio.currentTime = 0),
-            player.play(),
-            L.classList.add("hidden"));
-        }));
+      });
     }
     const A = () => document.querySelector(".vinyl-wrap .vinyl-spin");
     (player.on("play", () => {
@@ -511,14 +489,14 @@
           I || v(),
           startBitrateLoop(),
           c && _(),
-          C());
+          window.updateMiniPlayerUI());
     }),
       player.on("pause", () => {
         (e.classList.remove("playing"),
           A()?.classList.remove("playing"),
           cancelAnimationFrame(E),
           stopBitrateLoop(),
-          C());
+          window.updateMiniPlayerUI());
       }));
     let F = -1;
     (player.on("timeupdate", () => {
@@ -531,9 +509,9 @@
         e !== F &&
           ((F = e), localStorage.setItem(storageKeyMusic, player.currentTime));
       }
-      C();
+      window.updateMiniPlayerUI();
     }),
-      player.on("loadedmetadata", C),
+      player.on("loadedmetadata", window.updateMiniPlayerUI),
       player.on("ended", () => {
         // Cegah redirect loop: hanya lanjut jika audio benar-benar selesai
         // diputar sampai akhir (currentTime mendekati duration), BUKAN karena error.
@@ -574,154 +552,4 @@
           audioEndedNaturally = true;
         }
       }));
-    let P = null;
-    function C() {
-      if (!isMiniPlayerActive) return;
-      miniEls ||
-        (miniEls = {
-          playBtn: document.getElementById("mini-play-btn"),
-          progressFill: document.getElementById("mini-progress-fill"),
-          currentTime: document.getElementById("mini-current-time"),
-          duration: document.getElementById("mini-duration"),
-        });
-      const {
-        playBtn: e,
-        progressFill: t,
-        currentTime: n,
-        duration: a,
-      } = miniEls;
-      e &&
-        player.paused !== P &&
-        ((P = player.paused),
-        (e.innerHTML = player.paused
-          ? '<i data-lucide="play"  style="width:18px;height:18px;"></i>'
-          : '<i data-lucide="pause" style="width:18px;height:18px;"></i>'),
-        "undefined" != typeof lucide && lucide.createIcons());
-      const o = player.duration
-        ? (player.currentTime / player.duration) * 100
-        : 0;
-      (t && (t.style.width = o + "%"),
-        n && (n.textContent = formatTime(player.currentTime)),
-        a && (a.textContent = formatTime(player.duration)));
-    }
-    ((window.toggleMiniPlayer = async function () {
-      const e = document.getElementById("player-container"),
-        t = document.querySelector(
-          'div[class*="grid-cols-1"][class*="lg:grid-cols-3"]',
-        ),
-        n = t?.querySelector('div[class*="lg:col-span-2"]'),
-        a = n?.nextElementSibling;
-      if (isMiniPlayerActive)
-        ((isMiniPlayerActive = !1),
-          e && ((e.style.maxHeight = ""), (e.style.overflow = "")),
-          document
-            .getElementById("temp-index-content")
-            ?.style.setProperty("display", "none"),
-          t &&
-            ((t.style.display = "grid"),
-            t.classList.add(
-              "grid",
-              "grid-cols-1",
-              "lg:grid-cols-3",
-              "gap-6",
-              "lg:gap-8",
-            )),
-          n?.classList.add("lg:col-span-2", "space-y-5"),
-          a && (a.style.display = "block"),
-          window.history.pushState({}, "", watchUrl));
-      else {
-        ((isMiniPlayerActive = !0),
-          (skipResumeModalOnce = !0),
-          a && (a.style.display = "none"),
-          e && ((e.style.maxHeight = "120px"), (e.style.overflow = "hidden")),
-          t &&
-            (t.classList.remove(
-              "grid",
-              "grid-cols-1",
-              "lg:grid-cols-3",
-              "gap-6",
-              "lg:gap-8",
-            ),
-            (t.style.cssText = "display:flex;flex-direction:column")));
-        let n = document.getElementById("temp-index-content");
-        if (n)
-          ((n.style.display = "block"),
-            window.history.pushState({ miniPlayer: !0 }, "", "index.php"));
-        else {
-          ((n = document.createElement("div")),
-            (n.id = "temp-index-content"),
-            (n.className = "w-full"),
-            t?.appendChild(n));
-          try {
-            const e = await (await fetch("index.php")).text(),
-              t = new DOMParser()
-                .parseFromString(e, "text/html")
-                .querySelector("main");
-            t &&
-              ((n.innerHTML = t.innerHTML),
-              window.history.pushState({ miniPlayer: !0 }, "", "index.php"),
-              window.lucide && lucide.createIcons(),
-              window.htmx && htmx.process(n));
-          } catch (e) {
-            console.error("Failed to load index:", e);
-          }
-        }
-      }
-    }),
-      setInterval(() => {
-        isMiniPlayerActive && saveAudioState();
-      }, 5e3),
-      (window.miniPlayPause = function () {
-        player &&
-          (window.meelHealthAlertActive ||
-            (player.paused ? player.play() : player.pause(), C()));
-      }),
-      (window.miniSeek = function (e) {
-        if (!player) return;
-        if (window.meelHealthAlertActive) return;
-        const t = e.currentTarget.getBoundingClientRect();
-        player.currentTime = ((e.clientX - t.left) / t.width) * player.duration;
-      }),
-      (window.miniNext = function () {
-        if (window.meelHealthAlertActive || isNavigating) return;
-        isNavigating = true;
-        const e = window.MEEL_MUSIC_CONFIG?.nextSongUrl;
-        if (e) (saveAudioState(), (window.location.href = e));
-        else {
-          const e = document.querySelector(".rekomendasi-item");
-          if (e) window.location.href = e.href;
-          else isNavigating = false; // reset jika tidak ada tujuan
-        }
-      }),
-      (window.miniPrev = function () {
-        player &&
-          (window.meelHealthAlertActive ||
-            (player.currentTime > 3
-              ? (player.currentTime = 0)
-              : window.history.length > 1
-                ? window.history.back()
-                : (player.currentTime = 0)));
-      }),
-      (window.goBackToLibrary = function () {
-        saveAudioState();
-        var e = window.MEEL_MUSIC_CONFIG?.playlistId;
-        (player?.destroy(),
-          (window.location.href =
-            e && e > 0 ? "index.php?playlist_id=" + e : "index.php"));
-      }),
-      document
-        .getElementById("player-container")
-        ?.addEventListener("click", (e) => {
-          e.target.closest(".plyr__controls") ||
-            e.target.closest(".mp-controls") ||
-            e.target.closest("button") ||
-            (isMiniPlayerActive &&
-              (e.preventDefault(), window.toggleMiniPlayer()));
-        }),
-      window.addEventListener("popstate", () => {
-        isMiniPlayerActive &&
-          window.location.href === watchUrl &&
-          window.toggleMiniPlayer();
-      }),
-      "undefined" != typeof lucide && lucide.createIcons());
   });

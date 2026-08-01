@@ -52,6 +52,17 @@ if (isset($_POST['upload'])) {
         die("<div style='color:red; padding:20px; background:#000;'><h2>$user, Error!</h2><p>{$result['msg']}</p></div>");
     }
 }
+
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
+// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -316,10 +327,9 @@ if (isset($_POST['upload'])) {
     </div>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/compatibilitas/script.min.js"></script>
-    <script src="../assets/js/shared/lang-dropdown.js?v=<?= filemtime('../assets/js/shared/lang-dropdown.js') ?>"></script>
+    <script src="../assets/js/shared/lang-dropdown.js<?= $__v('assets/js/shared/lang-dropdown.js') ?>"></script>
+    <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
     <script>
-        lucide.createIcons();
-
         <?php if ($alert_message !== ""): ?>
             meelAlertRedirect({
                 title: 'Upload Video',
@@ -339,207 +349,9 @@ if (isset($_POST['upload'])) {
                 color: '#fff'
             });
         <?php endif; ?>
-
-        function handleVideoFile(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const ext = file.name.split('.').pop().toLowerCase();
-            const allowed = ['mp4', 'webm', 'mkv'];
-            if (!allowed.includes(ext)) {
-                meelAlert({
-                    title: 'Format Ditolak',
-                    text: 'Gunakan MP4, WEBM, atau MKV.',
-                    icon: 'error'
-                });
-                input.value = '';
-                return;
-            }
-            const zone = document.getElementById('video-zone');
-            const label = document.getElementById('video-label');
-            label.textContent = file.name;
-            zone.classList.add('has-file');
-        }
-
-        function handleSubtitleFile(input) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const ext = file.name.split('.').pop().toLowerCase();
-            const allowed = ['vtt', 'srt'];
-            if (!allowed.includes(ext)) {
-                meelAlert({
-                    title: 'Format Ditolak',
-                    text: 'Gunakan VTT atau SRT.',
-                    icon: 'error'
-                });
-                input.value = '';
-                return;
-            }
-            const zone = document.getElementById('subtitle-zone');
-            const label = document.getElementById('subtitle-label');
-            const sub = document.getElementById('subtitle-sub');
-            label.textContent = file.name;
-            sub.textContent = ext === 'srt' ? 'SRT · akan dikonversi otomatis' : 'VTT';
-            zone.classList.add('has-file');
-        }
-
-        function handleThumbFile(input) {
-            if (!input.files || !input.files[0]) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById('thumb-preview');
-                const iconWrap = document.getElementById('thumb-icon-wrap');
-                const label = document.getElementById('thumb-label');
-                const sub = document.getElementById('thumb-sub');
-                const zone = document.getElementById('thumb-zone');
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                iconWrap.style.display = 'none';
-                label.textContent = input.files[0].name;
-                sub.textContent = '';
-                zone.classList.add('has-file');
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function handleSubmit() {
-            const videoInput = document.getElementById('video-input');
-            const titleInput = document.getElementById('f-title');
-            const overlay = document.getElementById('upload-overlay');
-            const fname = document.getElementById('overlay-filename');
-            const status = document.getElementById('overlay-status');
-            const bar = document.getElementById('progress-bar');
-            const pct = document.getElementById('overlay-pct');
-            const btn = document.getElementById('btn-upload');
-
-            // Tampilkan nama file
-            if (videoInput.files[0]) {
-                fname.textContent = videoInput.files[0].name;
-            } else if (titleInput.value) {
-                fname.textContent = titleInput.value;
-            }
-
-            // Nonaktifkan tombol
-            btn.style.opacity = '.5';
-            btn.style.pointerEvents = 'none';
-
-            // Tampilkan overlay
-            overlay.classList.add('active');
-
-            // Status messages — cycling manual karena tidak ada real-time progress
-            // (upload biasa, bukan streaming Transcoder)
-            const phases = [{
-                    msg: 'Mengirim file ke server…',
-                    pctVal: 5
-                },
-                {
-                    msg: 'File sedang diproses…',
-                    pctVal: 30
-                },
-                {
-                    msg: 'Menyimpan ke library…',
-                    pctVal: 60
-                },
-                {
-                    msg: 'Menyelesaikan proses…',
-                    pctVal: 85
-                },
-            ];
-
-            // Estimasi waktu berdasarkan ukuran file
-            const fileSizeMB = videoInput.files[0] ? videoInput.files[0].size / 1024 / 1024 : 50;
-            const baseDelay = Math.max(3000, Math.min(fileSizeMB * 120, 20000)); // 3s–20s
-            const phaseDelay = baseDelay / phases.length;
-
-            let phaseIdx = 0;
-
-            function advancePhase() {
-                if (phaseIdx >= phases.length) return;
-                const p = phases[phaseIdx];
-                status.textContent = p.msg;
-                bar.style.width = p.pctVal + '%';
-                pct.textContent = p.pctVal + '%';
-                phaseIdx++;
-                if (phaseIdx < phases.length) {
-                    setTimeout(advancePhase, phaseDelay);
-                }
-            }
-
-            advancePhase();
-
-            // Biarkan form submit biasa berjalan — jangan intercept dengan XHR
-            // PHP akan memproses dan redirect/reload sendiri
-        }
-
-        // Pastikan form submit normal (tidak diblock)
-        document.querySelector('form').addEventListener('submit', function() {
-            handleSubmit();
-            // return true — biarkan browser submit form seperti biasa
-        });
-
-        // Drag-and-drop for video zone
-        const videoZone = document.getElementById('video-zone');
-        const videoInput = document.getElementById('video-input');
-        videoZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            videoZone.classList.add('drag-over');
-        });
-        videoZone.addEventListener('dragleave', () => videoZone.classList.remove('drag-over'));
-        videoZone.addEventListener('drop', e => {
-            e.preventDefault();
-            videoZone.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files[0]) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                videoInput.files = dt.files;
-                handleVideoFile(videoInput);
-            }
-        });
-
-        // Drag-and-drop for subtitle zone
-        const subtitleZone = document.getElementById('subtitle-zone');
-        const subtitleInput = document.getElementById('subtitle-input');
-        subtitleZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            subtitleZone.classList.add('drag-over');
-        });
-        subtitleZone.addEventListener('dragleave', () => subtitleZone.classList.remove('drag-over'));
-        subtitleZone.addEventListener('drop', e => {
-            e.preventDefault();
-            subtitleZone.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files[0]) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                subtitleInput.files = dt.files;
-                handleSubtitleFile(subtitleInput);
-            }
-        });
-
-        // Drag-and-drop for thumb zone
-        const thumbZone = document.getElementById('thumb-zone');
-        const thumbInput = document.getElementById('thumb-input');
-        thumbZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            thumbZone.classList.add('drag-over');
-        });
-        thumbZone.addEventListener('dragleave', () => thumbZone.classList.remove('drag-over'));
-        thumbZone.addEventListener('drop', e => {
-            e.preventDefault();
-            thumbZone.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files[0] && files[0].type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                thumbInput.files = dt.files;
-                handleThumbFile(thumbInput);
-            }
-        });
-
-        const style = document.createElement('style');
-        style.textContent = '@keyframes spin { to { transform:rotate(360deg); } }';
-        document.head.appendChild(style);
     </script>
+    <script src="../assets/js/shared/upload-progress.js<?= $__v('assets/js/shared/upload-progress.js') ?>"></script>
+    <script src="../assets/js/video/upload/upload.js<?= $__v('assets/js/video/upload/upload.js') ?>"></script>
 </body>
 
 </html>

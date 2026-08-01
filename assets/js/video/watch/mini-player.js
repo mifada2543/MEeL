@@ -2,7 +2,8 @@
  * mini-player.js — Mode mini-player (picture-in-picture ala YouTube):
  * bangun shell, pindah target search navbar, ganti video dari
  * halaman index tanpa reload penuh, toggle buka/tutup.
- * Depends on: state.js, player-init.js
+ * Depends on: state.js, player-init.js,
+ * shared/mini-player-popstate.js (meelMiniPlayerPopstate)
  * ============================================================ */
 
 let isMiniPlayerActive = !1,
@@ -278,34 +279,13 @@ function attachMiniPlayerVideoCardListeners(e) {
         t && (t.style.display = "none"),
         n && (n.style.display = "none"),
         o && (o.style.display = "none"));
-      let a = document.getElementById("temp-index-content");
-      if (a)
-        ((a.style.display = "block"),
-          window.history.pushState({ miniPlayer: !0 }, "", "index.php"),
-          attachMiniPlayerVideoCardListeners(a));
-      else {
-        ((a = document.createElement("div")),
-          (a.id = "temp-index-content"),
-          (a.className = "w-full"));
-        const e =
-          document.querySelector("footer") ?? document.body.lastElementChild;
-        document.body.insertBefore(a, e);
-        try {
-          const e = await fetch("index.php"),
-            t = await e.text(),
-            n = new DOMParser()
-              .parseFromString(t, "text/html")
-              .querySelector("main");
-          n &&
-            ((a.innerHTML = n.outerHTML),
-            window.history.pushState({ miniPlayer: !0 }, "", "index.php"),
-            window.lucide && window.lucide.createIcons(),
-            window.htmx && htmx.process(a),
-            attachMiniPlayerVideoCardListeners(a));
-        } catch (e) {
-          console.error("Gagal memuat index:", e);
-        }
-      }
+      // Muat index.php ke #temp-index-content tanpa reload — helper bersama
+      // shared/temp-index.js (meelLoadTempIndex). Video pakai main.outerHTML
+      // + re-attach listener kartu setelah swap.
+      await window.meelLoadTempIndex({
+        useOuterHTML: true,
+        onLoad: (el) => attachMiniPlayerVideoCardListeners(el),
+      });
     } catch (err) {
       console.error(
         "toggleMiniPlayer: error saat masuk mini-player mode:",
@@ -329,6 +309,10 @@ function attachMiniPlayerVideoCardListeners(e) {
     }
   }
 }),
+  /* ── CATATAN: sengaja TIDAK memakai meelKeyShortcutIgnored (shared/keyboard.js)
+   * karena guard di sini berbasis document.activeElement (bukan e.target) dan
+   * punya semantik khusus: blokir 'f' saat mini-player aktif + handler 'i'/'n'.
+   * Jangan "sederhanakan" ke helper shared — akan mengubah perilaku. ── */
   window.addEventListener(
     "keydown",
     (e) => {
@@ -365,8 +349,11 @@ function attachMiniPlayerVideoCardListeners(e) {
     },
     !0,
   ),
-  window.addEventListener("popstate", (e) => {
-    isMiniPlayerActive &&
-      window.location.href === watchUrl &&
-      toggleMiniPlayer();
+  // Back/forward → keluar dari mode mini-player — helper bersama
+  // shared/mini-player-popstate.js (meelMiniPlayerPopstate): cek state
+  // history { miniPlayer: true } + fallback banding URL watch asli.
+  window.meelMiniPlayerPopstate({
+    isActive: () => isMiniPlayerActive,
+    watchUrl: () => watchUrl,
+    onExit: () => toggleMiniPlayer(),
   }));

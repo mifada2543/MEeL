@@ -1,23 +1,20 @@
 /* ============================================================
  * player-events.js — Orkestrasi event Plyr (play/pause/ended/dll),
- * resume-modal, ambient glow (navbar + fullscreen), auto-next video,
- * dan menu setting kustom (glow/loop toggle).
+ * resume-modal (via shared/resume-modal.js), ambient glow
+ * (navbar + fullscreen), auto-next video, dan menu setting kustom
+ * (glow/loop toggle).
  *
  * CATATAN: fungsi ini sengaja TIDAK dipecah lebih jauh karena bagian
- * ambient-glow, resume-modal, dan auto-next-video saling berbagi
- * closure/variabel lokal (mis. glowStartFn/glowStopFn dipakai juga
- * oleh handler fullscreen). Memisahkannya paksa berisiko merusak
- * referensi closure tsb. Sudah diberi komentar penanda tiap bagian.
- * Depends on: state.js, recovery.js, vtt-sprites.js, gestures.js
+ * ambient-glow dan auto-next-video saling berbagi closure/variabel
+ * lokal (mis. glowStartFn/glowStopFn dipakai juga oleh handler
+ * fullscreen). Memisahkannya paksa berisiko merusak referensi
+ * closure tsb. Sudah diberi komentar penanda tiap bagian.
+ * Depends on: state.js, recovery.js, vtt-sprites.js, gestures.js,
+ * shared/resume-modal.js (meelResumeModal)
  * ============================================================ */
 
 function setupMeelPlayerEvents() {
   window.player = player;
-  const e = document.getElementById("resume-modal"),
-    t = document.getElementById("btn-resume"),
-    n = document.getElementById("btn-restart"),
-    o = document.getElementById("resume-time"),
-    l = document.getElementById("resume-countdown");
   function a() {
     const e = document.getElementById("main-video-wrapper"),
       t = videoElement;
@@ -387,47 +384,28 @@ function setupMeelPlayerEvents() {
           void startPlaybackStartTimeout()
         );
       function s() {
+        // Resume modal — helper bersama shared/resume-modal.js.
+        // true = modal tampil (jangan play dulu), false = lanjut play normal.
         if (
-          i &&
-          parseFloat(i) > 10 &&
-          (!player.duration || parseFloat(i) < player.duration - 10)
-        ) {
-          const a = Math.floor(i / 60),
-            r = Math.floor(i % 60);
-          (o && (o.innerText = `${a}:${r.toString().padStart(2, "0")}`),
-            e && e.classList.remove("hidden"));
-          let s = 15;
-          const c = setInterval(() => {
-              (s--,
-                s > 0
-                  ? l &&
-                    (l.innerText = `Otomatis ulang dari awal dalam ${s}s...`)
-                  : clearInterval(c));
-            }, 1e3),
-            d = setTimeout(() => {
-              n && n.click();
-            }, 15e3);
-          (t &&
-            (t.onclick = () => {
-              (clearTimeout(d),
-                clearInterval(c),
-                (player.currentTime = parseFloat(i)),
-                player.play(),
-                e.classList.add("hidden"));
-            }),
-            n &&
-              (n.onclick = () => {
-                (clearTimeout(d),
-                  clearInterval(c),
-                  localStorage.removeItem(storageKeyVideo),
-                  (player.currentTime = 0),
-                  player.play(),
-                  e.classList.add("hidden"));
-              }));
-        } else
-          (player.play().catch(() => console.log("Menunggu interaksi user...")),
-            startStuckDetector(),
-            startPlaybackStartTimeout());
+          window.meelResumeModal({
+            storageKey: storageKeyVideo,
+            durationMargin: 10,
+            countdownPrefix: "Otomatis ulang dari awal dalam",
+            onResume: (pos) => {
+              player.currentTime = pos;
+              player.play();
+            },
+            onRestart: () => {
+              localStorage.removeItem(storageKeyVideo);
+              player.currentTime = 0;
+              player.play();
+            },
+          })
+        )
+          return;
+        player.play().catch(() => console.log("Menunggu interaksi user..."));
+        startStuckDetector();
+        startPlaybackStartTimeout();
       }
       if (isHls && hls) {
         let e = !1;

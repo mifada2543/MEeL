@@ -5,7 +5,7 @@
  * (L=loop, E=equalizer, V=visualizer, I=mini-player).
  * Fungsi komentar (toggleReply, meelConfirmHtmx, toggleCommentSection)
  * kini berada di assets/js/shared/comment.js.
- * Depends on: state.js, loop-ui.js, audio-state.js
+ * Depends on: state.js, loop-ui.js, audio-state.js, shared/keyboard.js
  * ============================================================ */
 
 window.toggleLoop = function () {
@@ -17,10 +17,9 @@ window.toggleLoop = function () {
 window.toggleVisualizer = function () {};
 window.toggleEqualizer = function () {};
 document.addEventListener("keydown", (e) => {
-  const t = (e.target?.tagName || "").toLowerCase();
-  if ("input" === t || "textarea" === t) return;
-  if (e.ctrlKey || e.altKey || e.metaKey) return;
-  if (e.repeat) return;
+  // Guard: input/textarea, modifier (Ctrl/Alt/Meta), auto-repeat —
+  // kini di shared/keyboard.js (meelKeyShortcutIgnored)
+  if (window.meelKeyShortcutIgnored?.(e)) return;
   const n = e.key.toLowerCase();
   "l" === n
     ? (e.preventDefault(), e.stopPropagation(), window.toggleLoop())

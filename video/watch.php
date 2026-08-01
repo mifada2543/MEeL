@@ -30,6 +30,20 @@ $__v = function($f) {
     }
     return '?v=' . $mtimeCache[$path];
 };
+
+// Versi folder JS = max filemtime semua file di folder (diteruskan ke sibling oleh main.js)
+$__vdir = function($dir) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $dir;
+    if (!isset($mtimeCache[$path])) {
+        $max = 0;
+        foreach (glob($path . '/*.js') ?: [] as $f) {
+            $max = max($max, (int)@filemtime($f));
+        }
+        $mtimeCache[$path] = $max;
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -376,26 +390,17 @@ $__v = function($f) {
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;
     </script>
-    <script src="../assets/js/video/state.js<?= $__v('assets/js/video/state.js') ?>"></script>
-    <script src="../assets/js/video/recovery.js<?= $__v('assets/js/video/recovery.js') ?>"></script>
-    <script src="../assets/js/video/player-init.js<?= $__v('assets/js/video/player-init.js') ?>"></script>
-    <script src="../assets/js/video/player-events.js<?= $__v('assets/js/video/player-events.js') ?>"></script>
-    <script src="../assets/js/video/lifecycle.js<?= $__v('assets/js/video/lifecycle.js') ?>"></script>
-    <script src="../assets/js/video/mini-player.js<?= $__v('assets/js/video/mini-player.js') ?>"></script>
-    <script src="../assets/js/video/gestures.js<?= $__v('assets/js/video/gestures.js') ?>"></script>
-    <script src="../assets/js/video/vtt-sprites.js<?= $__v('assets/js/video/vtt-sprites.js') ?>"></script>
-    <script src="../assets/js/video/seek-indicator.js<?= $__v('assets/js/video/seek-indicator.js') ?>"></script>
+    <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
+    <script src="../assets/js/shared/resume-modal.js<?= $__v('assets/js/shared/resume-modal.js') ?>"></script>
+    <script src="../assets/js/shared/mini-player-popstate.js<?= $__v('assets/js/shared/mini-player-popstate.js') ?>"></script>
+    <script src="../assets/js/video/watch/main.js<?= $__vdir('assets/js/video/watch') ?>"></script>
     <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
-    <script src="../assets/js/video/misc.js<?= $__v('assets/js/video/misc.js') ?>"></script>
+    <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 
     <script>
-        lucide.createIcons();
-        document.body.addEventListener('htmx:afterOnLoad', function(e) {
-            // Scope ke elemen hasil swap saja (detail.target, bukan detail.elt
-            // yang merupakan elemen pemicu) — hindari scan seluruh DOM tiap request
-            lucide.createIcons({}, e.detail?.target || document.body);
-        });
-
         // Handle Enter key untuk video search
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = ['v-search-watch', 'v-search-mobile'];

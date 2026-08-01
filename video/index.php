@@ -13,6 +13,17 @@ $data       = $meta['data'];
 $total      = $meta['total'];
 $page       = $meta['page'];
 $totalPages = $meta['total_pages'];
+
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
+// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -118,12 +129,7 @@ $totalPages = $meta['total_pages'];
     <?php include '../partials/footer.php'; ?>
 
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
-    <script>
-        lucide.createIcons();
-        document.body.addEventListener('htmx:afterOnLoad', function(evt) {
-            lucide.createIcons();
-        });
-    </script>
+    <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 </body>
 
 </html>
