@@ -68,10 +68,19 @@ function base_url(string $path = ''): string
     static $base = null;
     if ($base === null) {
         // Prioritas: konstanta MEEL_BASE_URL (didefinisikan di config.php)
-        // Fallback: deteksi otomatis dari SCRIPT_NAME
-        $base = defined('MEEL_BASE_URL')
-            ? rtrim(MEEL_BASE_URL, '/')
-            : rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+        // Fallback: root proyek relatif terhadap DOCUMENT_ROOT, konsisten dengan
+        // modules/core/bootstrap.php. BUKAN dirname(SCRIPT_NAME) — karena
+        // SCRIPT_NAME ikut direktori halaman aktif (mis. /MEeL/admin/index.php →
+        // /MEeL/admin), sehingga base yang dihasilkan salah untuk halaman di
+        // subdirektori (admin/, video/, dll).
+        if (defined('MEEL_BASE_URL')) {
+            $base = rtrim(MEEL_BASE_URL, '/');
+        } else {
+            // Fallback terpusat di modules/core/base_url.php (root proyek relatif
+            // terhadap DOCUMENT_ROOT), konsisten dengan bootstrap.php & config.php.
+            require_once __DIR__ . '/../base_url.php';
+            $base = meel_base_url_path();
+        }
     }
     return $base . '/' . ltrim($path, '/');
 }

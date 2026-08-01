@@ -52,11 +52,11 @@ if (!isset($conn) || $conn === null) {
 // ════════════════════════════════════════════════════════════════
 // BASE URL & HOST (PATH PORTABILITY & SECURITY)
 // ════════════════════════════════════════════════════════════════
-$project_root = str_replace('\\', '/', dirname(__DIR__));
-$doc_root     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
-$relative     = substr($project_root, strlen(rtrim($doc_root, '/')));
+// Perhitungan dipusatkan di modules/core/base_url.php (root proyek relatif
+// terhadap DOCUMENT_ROOT), konsisten di semua kedalaman include.
 if (!defined('MEEL_BASE_URL')) {
-    define('MEEL_BASE_URL', rtrim($relative, '/'));
+    require_once __DIR__ . '/../modules/core/base_url.php';
+    define('MEEL_BASE_URL', meel_base_url_path());
 }
 
 // ════════════════════════════════════════════════════════════════

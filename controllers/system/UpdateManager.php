@@ -212,8 +212,9 @@ class UpdateManager
 
     private function redirect(): void
     {
-        $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-        header("Location: {$base}/update.php");
+        // Pakai base_url() (berbasis MEEL_BASE_URL/root proyek) agar konsisten,
+        // bukan dirname(SCRIPT_NAME) yang ikut direktori halaman aktif.
+        header("Location: " . base_url('/update.php'));
         exit;
     }
 }

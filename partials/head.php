@@ -45,8 +45,10 @@ if (function_exists('detectProtocol')) {
         : 'http'));
 }
 $_head_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$_head_base_path = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/'), '/\\');
-$_head_base = $_head_proto . '://' . $_head_host . $_head_base_path;
+// Base = host saja. Path lengkap halaman diambil dari REQUEST_URI (di bawah);
+// menambahkan dirname(SCRIPT_NAME) di sini akan menggandakan path
+// (mis. /MEeL/admin + /MEeL/admin/ → /MEeL/admin/MEeL/admin/).
+$_head_base = $_head_proto . '://' . $_head_host;
 
 // ── Project root base (untuk asset tetap seperti manifest, favicon, OG image) ─
 // $_head_base bisa mengandung subdirektori (misal /MEeL/music) yang bikin
@@ -179,7 +181,7 @@ if ('serviceWorker' in navigator) {
 <!-- Cleanup variabel global agar tidak bocor ke halaman lain -->
 <?php
 unset(
-    $_head_proto, $_head_host, $_head_base, $_head_base_path,
+    $_head_proto, $_head_host, $_head_base,
     $_head_root_path, $_head_doc_root, $_head_root_rel, $_head_root,
     $_META_TITLE, $_META_DESC, $_META_IMAGE, $_META_IMAGE_W, $_META_IMAGE_H,
     $_META_TYPE, $_META_URL, $_META_SITE_NAME, $_META_LOCALE,

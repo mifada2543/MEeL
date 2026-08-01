@@ -49,12 +49,11 @@ if (!isset($conn) || $conn === null) {
 // BASE URL (PATH PORTABILITY)
 // ════════════════════════════════════════════════════════════════
 // Menggantikan hardcoded /MEeL/ prefix di redirect dan link.
-// Dihitung dari lokasi file ini, konsisten di semua kedalaman include.
+// Perhitungan dipusatkan di modules/core/base_url.php (root proyek relatif
+// terhadap DOCUMENT_ROOT), konsisten di semua kedalaman include.
 if (!defined('MEEL_BASE_URL')) {
-    $meel_project_root = str_replace('\\', '/', dirname(__DIR__));
-    $meel_doc_root     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
-    $meel_relative     = substr($meel_project_root, strlen(rtrim($meel_doc_root, '/')));
-    define('MEEL_BASE_URL', rtrim($meel_relative, '/'));
+    require_once __DIR__ . '/../modules/core/base_url.php';
+    define('MEEL_BASE_URL', meel_base_url_path());
 }
 
 // ════════════════════════════════════════════════════════════════

@@ -70,16 +70,14 @@ switch (MEEL_ENV) {
 }
 
 // ─── Base URL Constant Helper ────────────────────────────────────────────────
-// Pastikan MEEL_BASE_URL terdefinisi (fallback jika config.php belum di-load)
-// Dihitung dari root proyek (relatif ke DOCUMENT_ROOT), BUKAN dari
-// dirname(SCRIPT_NAME) — karena SCRIPT_NAME ikut direktori halaman aktif
-// (mis. /MEeL/admin/index.php → /MEeL/admin), sehingga base_url() yang
-// dihasilkan salah untuk semua halaman di subdirektori (admin/, video/, dll).
+// Pastikan MEEL_BASE_URL terdefinisi (fallback jika config.php belum di-load).
+// Perhitungan dipusatkan di modules/core/base_url.php (root proyek relatif
+// terhadap DOCUMENT_ROOT), BUKAN dari dirname(SCRIPT_NAME) — karena SCRIPT_NAME
+// ikut direktori halaman aktif (mis. /MEeL/admin/index.php → /MEeL/admin),
+// sehingga base_url() yang dihasilkan salah untuk halaman di subdirektori.
 if (!defined('MEEL_BASE_URL') && isset($_SERVER['SCRIPT_NAME'])) {
-    $doc_root      = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
-    $project_root  = str_replace('\\', '/', dirname(__DIR__, 2));
-    $relative      = substr($project_root, strlen(rtrim($doc_root, '/')));
-    define('MEEL_BASE_URL', rtrim($relative, '/'));
+    require_once __DIR__ . '/base_url.php';
+    define('MEEL_BASE_URL', meel_base_url_path());
 }
 
 // ─── Timezone ────────────────────────────────────────────────────────────────

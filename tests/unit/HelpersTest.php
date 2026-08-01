@@ -153,6 +153,36 @@ class HelpersTest extends TestCase
         $this->assertStringEndsWith('/css/style.css', $result3);
     }
 
+    /**
+     * Fallback base_url() (saat MEEL_BASE_URL belum didefinisikan) harus berbasis
+     * root proyek, bukan dirname(SCRIPT_NAME). Regresi: halaman di subdirektori
+     * (mis. /MEeL/admin/index.php) pernah menghasilkan base /MEeL/admin, sehingga
+     * redirect auth mengarah ke /MEeL/admin/auth/login.php?next=... (salah).
+     * Dijalankan di subprocess karena base_url() memakai static cache + define().
+     */
+    public function testBaseUrlFallbackFromProjectRoot(): void
+    {
+        $helpers = realpath(__DIR__ . '/../../modules/core/helpers.php');
+        $this->assertNotFalse($helpers, 'modules/core/helpers.php tidak ditemukan');
+
+        $projectRoot = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/../..')), '/');
+        $docRoot     = dirname($projectRoot);
+        $expected    = '/' . basename($projectRoot);
+
+        $code = '$_SERVER["SCRIPT_NAME"]=' . var_export($expected . '/admin/index.php', true) . ';'
+            . '$_SERVER["DOCUMENT_ROOT"]=' . var_export($docRoot, true) . ';'
+            . 'require ' . var_export($helpers, true) . ';'
+            . 'echo base_url("/auth/login.php?next=x");';
+
+        $output = [];
+        $exit   = 0;
+        exec(PHP_BINARY . ' -d display_errors=0 -r ' . escapeshellarg($code) . ' 2>&1', $output, $exit);
+
+        $this->assertSame(0, $exit, 'Subprocess helpers gagal: ' . implode("\n", $output));
+        $this->assertCount(1, $output, 'Output subprocess tidak valid: ' . implode("\n", $output));
+        $this->assertSame($expected . '/auth/login.php?next=x', trim($output[0]));
+    }
+
     // ─── check_disk_space() ──────────────────────────────────────────────────
 
     public function testCheckDiskSpaceOnExistingPath(): void
