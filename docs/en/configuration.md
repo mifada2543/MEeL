@@ -35,6 +35,7 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 | `modules/core/japanese.php` | Japanese text processing (MeCab + transliterator) | `getRomajiName()`, `analyzeJapaneseText()` |
 | `modules/core/activity_logger.php` | Activity logging, IP banning, session kick | `get_real_ip()`, `log_activity()`, `validate_and_format_ip()` |
 | `modules/core/bootstrap.php` | Bootstrap (env detection, error reporting, timezone) | `MEEL_ENV`, error log config |
+| `modules/core/base_url.php` | Centralized base URL computation (`meel_base_url_path()`) | `MEEL_BASE_URL` (via `bootstrap.php`/`config.php`) |
 | `modules/transcoder/FfmpegUtils.php` | **Trait** for FFmpeg utilities | `resolveBinary()`, `probeDuration()`, `generateSpriteAndVTT()` |
 | `modules/autoload.php` | PSR-4-like autoloader | List of scanned directories |
 | `database/migrate.php` | Database migration v1–v9 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA columns |

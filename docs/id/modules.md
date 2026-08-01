@@ -57,6 +57,7 @@ modules/
 │   ├── Transcoder.php      # Engine download yt-dlp & transcoding
 │   ├── helpers.php         # Fungsi utilitas global
 │   ├── bootstrap.php       # Environment detection & error reporting
+│   ├── base_url.php        # Perhitungan base URL terpusat (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
@@ -129,7 +130,7 @@ Fitur: Guest auto-registration (ON DUPLICATE KEY UPDATE), session kick detection
 
 Semua fungsi dibungkus `function_exists()` guard:
 - `resolve_binary(array): string` — Binary path (MEEL_*_PATH override)
-- `base_url(string): string` — Dynamic base URL
+- `base_url(string): string` — Dynamic base URL (fallback via `meel_base_url_path()`, lihat `base_url.php`)
 - `detectProtocol(): string` — HTTPS + Cloudflare
 - `time_ago($timestamp)` — Waktu relatif (ID)
 - `format_bytes($bytes)` — Ukuran file readable
@@ -202,6 +203,16 @@ function getMecabPath(): string;                         // MeCab binary resolve
 ### 15. `modules/core/bootstrap.php`
 
 Bootstrap terpusat: auto-detect `MEEL_ENV`, konfigurasi error reporting per environment, set `MEEL_BASE_URL`, default timezone.
+
+### 15a. `modules/core/base_url.php`
+
+Perhitungan **base URL terpusat** — satu-satunya sumber kebenaran untuk path base URL proyek (relatif terhadap `DOCUMENT_ROOT`):
+
+```php
+function meel_base_url_path(): string;   // Root proyek relatif DOCUMENT_ROOT (mis. "/MEeL")
+```
+
+Dipakai oleh `bootstrap.php` (fallback `MEEL_BASE_URL`), `auth/config.php`, `auth/config.example.php`, dan fallback `base_url()` di `helpers.php`. Dihitung dari lokasi file ini (`dirname(__DIR__, 2)`), bukan dari `dirname(SCRIPT_NAME)` — sehingga konsisten untuk semua halaman di subdirektori (admin/, video/, dll).
 
 ### 16. `modules/media/SearchEngine.php`
 

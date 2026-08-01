@@ -57,6 +57,7 @@ modules/
 │   ├── Transcoder.php      # yt-dlp download & transcoding engine
 │   ├── helpers.php         # Global utility functions
 │   ├── bootstrap.php       # Environment detection & error reporting
+│   ├── base_url.php        # Centralized base URL computation (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
@@ -200,7 +201,7 @@ Global utility functions — all wrapped in `function_exists()` guard:
 
 ```php
 function resolve_binary(array $candidates): string;     // Binary path discovery (with MEEL_*_PATH constant override)
-function base_url(string $path = ''): string;           // Dynamic base URL
+function base_url(string $path = ''): string;           // Dynamic base URL (fallback via meel_base_url_path(), see base_url.php)
 function detectProtocol(): string;                       // HTTPS detection with Cloudflare support
 function time_ago($timestamp);                           // Relative time (ID locale)
 function format_bytes($bytes);                           // Human-readable file size
@@ -297,6 +298,16 @@ Centralized bootstrap for all entry points:
 - Configures error reporting and logging per environment
 - Sets `MEEL_BASE_URL` constant
 - Default timezone (Asia/Jakarta)
+
+### 15a. `modules/core/base_url.php`
+
+Centralized **base URL computation** — the single source of truth for the project's base URL path (relative to `DOCUMENT_ROOT`):
+
+```php
+function meel_base_url_path(): string;   // Project root relative to DOCUMENT_ROOT (e.g. "/MEeL")
+```
+
+Used by `bootstrap.php` (`MEEL_BASE_URL` fallback), `auth/config.php`, `auth/config.example.php`, and the `base_url()` fallback in `helpers.php`. Computed from this file's location (`dirname(__DIR__, 2)`) rather than `dirname(SCRIPT_NAME)` — consistent for all pages in subdirectories (admin/, video/, etc.).
 
 ### 16. `modules/media/SearchEngine.php`
 
