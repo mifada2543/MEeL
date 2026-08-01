@@ -58,14 +58,31 @@ trait FfmpegUtils
     protected function moveFile(string $src, string $dst): bool
     {
         // Coba rename dulu (cepat, jika sama filesystem)
+        error_clear_last();
         if (@rename($src, $dst)) return true;
 
+        // Tangkap alasan nyata kegagalan rename (EXDEV, ENOENT, EACCES, dll.)
+        $rename_err = error_get_last();
+        $rename_msg = is_array($rename_err) ? ($rename_err['message'] ?? 'unknown') : 'unknown';
+
         // Fallback: copy + unlink (untuk USB/cross-device)
-        if (copy($src, $dst)) {
+        error_clear_last();
+        if (@copy($src, $dst)) {
             @unlink($src);
             return true;
         }
 
+        // Tangkap alasan nyata kegagalan copy — lebih berguna daripada pesan generik
+        $copy_err = error_get_last();
+        $copy_msg = is_array($copy_err) ? ($copy_err['message'] ?? 'unknown') : 'unknown';
+
+        error_log(sprintf(
+            '[MEeL] moveFile GAGAL: src=%s dst=%s | rename: %s | copy: %s',
+            $src,
+            $dst,
+            $rename_msg,
+            $copy_msg
+        ));
         return false;
     }
 
