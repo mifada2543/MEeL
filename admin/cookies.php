@@ -239,7 +239,9 @@ while ($rc = $r->fetch_assoc()) {
     <title>MEeL | Media Analytics</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/cookies.css?v=<?= filemtime('../assets/css/admin/cookies.css') ?>">
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
 </head>

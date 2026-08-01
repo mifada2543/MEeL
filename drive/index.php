@@ -38,7 +38,9 @@ if ($user->isMember()) {
     <?php include '../partials/link.php'; ?>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/compatibilitas/script.min.js"></script>
-    <link rel="stylesheet" href="../assets/css/drive/main.css?v=<?= filemtime('../assets/css/drive/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/drive/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/drive/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/drive/' . $__f) ?>">
+    <?php endforeach; ?>
 </head>
 
 <body class="antialiased">

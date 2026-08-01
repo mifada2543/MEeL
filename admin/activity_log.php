@@ -361,7 +361,9 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
     <meta name="description" content="MEeL Activity Log — Audit trail untuk monitoring aktivitas pengguna.">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/activity_log.css?v=<?= filemtime('../assets/css/admin/activity_log.css') ?>">
     <script src="../assets/js/compatibilitas/lucide.js"></script>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>

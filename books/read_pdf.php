@@ -80,7 +80,9 @@ $title = htmlspecialchars($book['title']);
     <link rel="manifest" href="../assets/manifest.json">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/books/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/books/read-pdf/main.css">
 </head>
 <body>

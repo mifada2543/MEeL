@@ -36,7 +36,9 @@ $__v = function($f) {
     <meta property="og:description" content="Jelajahi koleksi video di MEeL Video Library. Streaming HLS dengan kualitas terbaik.">
     <title>MEeL Video | Library</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?><?= $__v('assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/video/index/main.css">
 </head>
 

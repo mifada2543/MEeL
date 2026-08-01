@@ -253,7 +253,9 @@ $__v = function($f) {
     <title><?= htmlspecialchars($playlist['name']) ?> — MEeL Playlist</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/music/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
     <style>

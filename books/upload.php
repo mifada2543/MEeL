@@ -45,7 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
     <meta property="og:description" content="Upload buku dan dokumen ke perpustakaan digital MEeL Books.">
     <title>MEeL | Upload Book</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/books/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/books/upload/main.css">
 </head>
 

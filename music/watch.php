@@ -60,7 +60,9 @@ $__vdir = function($dir) {
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
-    <link rel="stylesheet" href="../assets/css/music/main.css<?= $__v('assets/css/music/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
     <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>

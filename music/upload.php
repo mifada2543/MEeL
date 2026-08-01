@@ -74,7 +74,9 @@ $__v = function($f) {
     <meta property="og:description" content="Upload musik ke MEeL Music Library. Format audio: FLAC, MP3, WAV, OPUS, OGG, M4A.">
     <title>Upload | MEeL Music</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/music/main.css?v=<?= filemtime('../assets/css/music/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/font.css?v=<?= filemtime('../assets/css/font.css') ?>">
     <link rel="stylesheet" href="../assets/css/shared/design-tokens.css?v=<?= filemtime('../assets/css/shared/design-tokens.css') ?>">
     <link rel="stylesheet" href="../assets/css/shared/upload-form.css?v=<?= filemtime('../assets/css/shared/upload-form.css') ?>">

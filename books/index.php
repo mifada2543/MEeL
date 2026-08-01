@@ -33,7 +33,9 @@ $totalPagesBooks = $meta_books['total_pages'];
     <meta property="og:description" content="MEeL Books - Perpustakaan digital untuk membaca manga, komik, dan dokumen PDF.">
     <title>MEeL | Books</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/books/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/books/index/main.css">
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
 </head>

@@ -43,7 +43,9 @@ $total_all = $conn->query("SELECT COUNT(*) AS c FROM users")->fetch_assoc()['c']
     <title>MFA Reset | Admin MEeL</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/admin/main.css?v=<?= filemtime('../assets/css/admin/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/mfa_reset.css?v=<?= filemtime('../assets/css/admin/mfa_reset.css') ?>">
     <script src="../assets/js/compatibilitas/lucide.js"></script>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>

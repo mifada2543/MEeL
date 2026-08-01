@@ -57,7 +57,9 @@ $__vdir = function($dir) {
     <title><?= htmlspecialchars($v['title']) ?> — MEeL Video</title>
     <?php include '../partials/link.php'; ?>
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
-    <link rel="stylesheet" href="../assets/css/video/main.css<?= $__v('assets/css/video/main.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?><?= $__v('assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/video/watch/main.css<?= $__v('assets/css/video/watch/main.css') ?>">
     <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>

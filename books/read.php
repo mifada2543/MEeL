@@ -96,7 +96,9 @@ function _scanSubdirs(string $dir): array {
     <meta property="og:description" content="Baca <?= htmlspecialchars($book['title']) ?> di MEeL Books - Platform Media Hub Pribadi.">
     <title>MEeL Read | <?= htmlspecialchars($book['title']) ?></title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/books/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/books/read/main.css">
 </head>
 

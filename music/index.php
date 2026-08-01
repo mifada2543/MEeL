@@ -113,7 +113,9 @@ $__vdir = function($dir) {
     <meta property="og:description" content="Jelajahi koleksi musik di MEeL Music Library. Streaming audio lossless dengan kualitas terbaik.">
     <title>MEeL Music | Library</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/music/main.css">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/music/index/main.css">
     <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>

@@ -143,7 +143,9 @@ $__v = function ($f) {
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
     <script src="assets/js/compatibilitas/lucide.js"></script>
     <link rel="stylesheet" href="assets/css/up.css">
-    <link rel="stylesheet" href="assets/css/up/main.css<?= $__v('assets/css/up/main.css') ?>">
+    <?php foreach (require __DIR__ . '/assets/css/up/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="assets/css/up/<?= $__f ?><?= $__v('assets/css/up/' . $__f) ?>">
+    <?php endforeach; ?>
 </head>
 
 <body class="min-h-screen flex flex-col">
