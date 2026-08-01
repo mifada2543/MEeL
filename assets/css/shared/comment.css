@@ -39,11 +39,29 @@
   padding-bottom: 0;
 }
 
+/* Bar konfirmasi hapus komentar INLINE (muncul hanya di baris tsb,
+ * bukan modal layar penuh). Fade + slide halus saat masuk. */
+.meel-inline-confirm {
+  animation: meel-inline-confirm-in 0.18s ease;
+}
+@keyframes meel-inline-confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Hormati preferensi pengguna: matikan animasi bagi yang minta reduced motion */
 @media (prefers-reduced-motion: reduce) {
   #comment-body,
   #comment-preview,
-  #comment-chevron {
+  #comment-chevron,
+  .meel-inline-confirm {
     transition: none;
+    animation: none;
   }
 }

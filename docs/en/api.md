@@ -138,7 +138,7 @@ Comment helpers shared by the watch pages & AJAX endpoints:
 | Function | Description |
 |----------|-------------|
 | `render_comments($parent_id, $grouped, $level, $theme, $playlist_context)` | Nested comment rendering with 2 themes (video/music) |
-| `comment_preview($grouped): array` | Latest comment preview → `['text' => ..., 'latest_comment' => ?array]` |
+| `comment_preview($grouped, $limit = 4): array` | Latest comment preview → `['text' => ..., 'latest_comment' => ?array, 'items' => array]` (up to `$limit` latest comments) |
 | `render_comment_empty_state($theme): void` | "Jadilah komentar pertama" empty state, theme-aware (video=gray-300, music=gray-700) |
 
 ---

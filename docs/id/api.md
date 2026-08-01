@@ -137,7 +137,7 @@ Helper komentar yang dipakai bersama halaman watch & endpoint AJAX:
 | Fungsi | Deskripsi |
 |--------|-----------|
 | `render_comments($parent_id, $grouped, $level, $theme, $playlist_context)` | Render komentar nested dengan 2 tema (video/music) |
-| `comment_preview($grouped): array` | Preview komentar terbaru → `['text' => ..., 'latest_comment' => ?array]` |
+| `comment_preview($grouped, $limit = 4): array` | Preview komentar terbaru → `['text' => ..., 'latest_comment' => ?array, 'items' => array]` (hingga `$limit` komentar terbaru) |
 | `render_comment_empty_state($theme): void` | Empty state "Jadilah komentar pertama" theme-aware (video=gray-300, music=gray-700) |
 
 ---

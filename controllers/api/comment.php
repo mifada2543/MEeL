@@ -92,7 +92,11 @@ $user_map      = $comments_data['user_map'];
 // Konteks playlist (khusus music) agar link navigasi pada render ulang tetap utuh
 $playlist_context = (int)($_POST['playlist_id'] ?? 0);
 
-// render_comments() membaca global $id dan $user_map
+// Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
+$media_row = $viewer->getMediaData();
+$GLOBALS['uploader_id'] = (int)($media_row['user_id'] ?? 0);
+
+// render_comments() membaca global $id, $user_map, dan $uploader_id
 $GLOBALS['id']        = $media_id;
 $GLOBALS['user_map']  = $user_map;
 

@@ -98,7 +98,8 @@ class MediaViewer
     public function getComments(int $limit = 200)
     {
         $col = ($this->media_type === 'video') ? 'video_id' : 'music_id';
-        $stmt = $this->conn->prepare("SELECT c.*, u.username FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.$col = ? ORDER BY c.created_at ASC LIMIT ?");
+        // u.role disertakan agar renderer bisa menampilkan badge admin/member
+        $stmt = $this->conn->prepare("SELECT c.*, u.username, u.role FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.$col = ? ORDER BY c.created_at ASC LIMIT ?");
         $stmt->bind_param("ii", $this->media_id, $limit);
         $stmt->execute();
         $raw_comments = $stmt->get_result();

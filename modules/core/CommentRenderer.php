@@ -18,10 +18,23 @@ if (!function_exists('render_comments')) {
  * @param int    $level            Level nesting (internal, untuk rekursi)
  * @param string $theme            'video' (merah) atau 'music' (oranye)
  * @param int    $playlist_context ID playlist untuk link navigasi (0 jika tidak ada)
+ *
+ * Global yang dibaca:
+ *   - $id          ID media (video/music) untuk link hapus
+ *   - $user_map    Map id komentar → username (untuk label balasan)
+ *   - $uploader_id ID user uploader media — menentukan siapa yang boleh
+ *     menghapus komentar (pemilik komentar ATAU uploader media ATAU admin).
+ *     Default 0 = tanpa konteks uploader (hanya pemilik komentar & admin).
+ *
+ * Hak hapus (berlaku di semua pemanggil):
+ *   - Pemilik komentar
+ *   - Uploader media (via global $uploader_id)
+ *   - Admin (via $_SESSION['role'] === 'admin')
  */
 function render_comments(int $parent_id, array $grouped, int $level = 0, string $theme = 'video', int $playlist_context = 0): void
 {
-    global $id, $user_map;
+    global $id, $user_map, $uploader_id;
+    $uploader_id = (int)($uploader_id ?? 0);
     if (!isset($grouped[$parent_id])) return;
 
     // ── Theme color mapping ──────────────────────────────────────────────
@@ -55,9 +68,29 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                 <div class="flex items-center justify-between gap-2 mb-1">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-[11px] font-bold <?= $c_author ?> truncate">@<?= htmlspecialchars($author) ?></span>
+                        <?php
+                        // ── Badge role: admin (merah) / member (biru) ──
+                        $_c_role = $c['role'] ?? '';
+                        if ($_c_role === 'admin' || $_c_role === 'member'):
+                            $_badge_color = ($_c_role === 'admin')
+                                ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                                : 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+                        ?>
+                            <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border flex-shrink-0 <?= $_badge_color ?>"
+                                title="Role: <?= htmlspecialchars($_c_role) ?>">
+                                <?= htmlspecialchars($_c_role) ?>
+                            </span>
+                        <?php endif; ?>
                         <span class="text-[10px] <?= $author_time_color ?> flex-shrink-0"><?= time_ago($c['created_at']) ?></span>
                     </div>
-                    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $c['user_id']):
+                    <?php
+                        // ── Hak hapus: pemilik komentar ATAU uploader media ATAU admin ──
+                        $is_owner   = (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)$c['user_id']);
+                        $is_uploader = ($uploader_id > 0 && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $uploader_id);
+                        $is_admin    = (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'admin');
+                        $can_delete = $is_owner || $is_uploader || $is_admin;
+
+                        if ($can_delete):
                         // ── Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi) ──
                         $_c_snippet = trim(preg_replace('/\s+/', ' ', (string)($c['comment'] ?? '')));
                         if (function_exists('mb_strlen') && mb_strlen($_c_snippet) > 60) {
@@ -65,9 +98,19 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         } elseif (strlen($_c_snippet) > 60) {
                             $_c_snippet = substr($_c_snippet, 0, 60) . '…';
                         }
-                        $delete_text = ($_c_snippet === '')
-                            ? 'Yakin ingin menghapus komentar dari @' . $author . ' ini?'
-                            : 'Yakin ingin menghapus komentar dari @' . $author . ': \'' . $_c_snippet . '\'?';
+
+                        // Hapus komentar sendiri → cukup isi komentar;
+                        // hapus komentar orang lain (uploader) → sertakan @author.
+                        if ($_c_snippet === '') {
+                            $delete_text = $is_owner
+                                ? 'Yakin ingin menghapus komentar ini?'
+                                : 'Yakin ingin menghapus komentar dari @' . $author . ' ini?';
+                        } else {
+                            $delete_text = $is_owner
+                                ? 'Yakin ingin menghapus komentar \'' . $_c_snippet . '\'?'
+                                : 'Yakin ingin menghapus komentar dari @' . $author . ': \'' . $_c_snippet . '\'?';
+                        }
+
                         $delete_json = htmlspecialchars(json_encode([
                             'title'             => 'Hapus Komentar',
                             'text'              => $delete_text,
@@ -131,28 +174,35 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
 
 if (!function_exists('comment_preview')) {
 /**
- * Preview komentar terbaru (id terbesar) untuk header kolom komentar.
+ * Preview komentar terbaru untuk header kolom komentar.
  *
  * Dipakai bersama oleh halaman watch video & music (video/watch.php, music/watch.php)
  * sehingga logika pencarian komentar terbaru tidak diduplikasi per view.
  *
  * @param array $grouped Comments yang sudah dikelompokkan per parent
- * @return array{text: string, latest_comment: ?array} Teks preview + komentar terbaru (null jika kosong)
+ * @param int   $limit   Berapa komentar terbaru yang dikembalikan (default 4)
+ * @return array{text: string, latest_comment: ?array, items: array}
+ *   - text           : preview satu baris komentar TERBARU (untuk title/tooltip)
+ *   - latest_comment : komentar terbaru (null jika kosong)
+ *   - items          : hingga $limit komentar terbaru (urut id menurun)
  */
-function comment_preview(array $grouped): array
+function comment_preview(array $grouped, int $limit = 4): array
 {
     $preview_txt    = 'Jadilah komentar pertama';
     $latest_comment = null;
-    $latest_id      = -1;
+    $items          = [];
 
+    // Kumpulkan semua komentar, lalu urutkan id menurun (terbaru di depan)
+    $all = [];
     foreach ($grouped as $_grp) {
         foreach ($_grp as $_c) {
-            if ((int)$_c['id'] > $latest_id) {
-                $latest_id      = (int)$_c['id'];
-                $latest_comment = $_c;
-            }
+            $all[] = $_c;
         }
     }
+    usort($all, fn($a, $b) => (int)$b['id'] <=> (int)$a['id']);
+
+    $items = array_slice($all, 0, max(1, $limit));
+    $latest_comment = $items[0] ?? null;
 
     if ($latest_comment) {
         $preview_author = $latest_comment['username'] ?? 'Guest';
@@ -160,7 +210,7 @@ function comment_preview(array $grouped): array
         $preview_txt    = '@' . $preview_author . ': ' . $preview_body;
     }
 
-    return ['text' => $preview_txt, 'latest_comment' => $latest_comment];
+    return ['text' => $preview_txt, 'latest_comment' => $latest_comment, 'items' => $items];
 }
 } // end function_exists('comment_preview')
 

@@ -94,8 +94,16 @@ class MediaInteraction {
     // ============================================================
 
     /**
-     * Delete comment dengan ownership check
-     * 
+     * Delete comment dengan ownership check.
+     *
+     * Berhak menghapus:
+     *   1. Pemilik komentar itu sendiri.
+     *   2. Uploader media (video/music) tempat komentar berada — media
+     *      di-derive dari baris komentar (video_id/music_id), BUKAN dari
+     *      input client, sehingga otorisasi tidak bisa dimanipulasi request.
+     *   3. Admin — dapat menghapus komentar apa pun di semua media
+     *      (role diperiksa langsung ke tabel users, bukan dari session).
+     *
      * @param int $comment_id
      * @return array Status response
      */
@@ -110,13 +118,48 @@ class MediaInteraction {
         }
 
         try {
-            // Ownership check: hanya bisa delete komentar milik sendiri
-            $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ? AND user_id = ?");
+            // Ambil kepemilikan komentar + media tempat komentar berada
+            $stmt = $this->conn->prepare("SELECT user_id, video_id, music_id FROM comments WHERE id = ?");
             if (!$stmt) {
                 throw new RuntimeException($this->conn->error);
             }
 
-            $stmt->bind_param("ii", $comment_id, $this->user_id);
+            $stmt->bind_param("i", $comment_id);
+            $stmt->execute();
+            $comment = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if (!$comment) {
+                return $this->getResponse(false, 'Komentar tidak ditemukan', 404);
+            }
+
+            // Otorisasi: pemilik komentar ATAU uploader media ATAU admin
+            $is_owner    = ((int)$comment['user_id'] === $this->user_id);
+            $is_uploader = false;
+            $is_admin    = false;
+
+            if (!$is_owner) {
+                $is_uploader = $this->isMediaUploader(
+                    (int)($comment['video_id'] ?? 0),
+                    (int)($comment['music_id'] ?? 0)
+                );
+            }
+
+            if (!$is_owner && !$is_uploader) {
+                $is_admin = $this->isAdmin();
+            }
+
+            if (!$is_owner && !$is_uploader && !$is_admin) {
+                return $this->getResponse(false, 'Komentar tidak ditemukan atau Anda tidak berwenang', 404);
+            }
+
+            // Hapus komentar (reply ikut terhapus via ON DELETE CASCADE)
+            $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+
+            $stmt->bind_param("i", $comment_id);
 
             if (!$stmt->execute()) {
                 throw new RuntimeException($this->conn->error);
@@ -139,6 +182,67 @@ class MediaInteraction {
     // ============================================================
     // PRIVATE HELPER FUNCTIONS
     // ============================================================
+
+    /**
+     * Cek apakah user adalah uploader dari media tempat komentar berada.
+     *
+     * Media di-derive dari kolom video_id/music_id pada baris komentar
+     * (bukan dari input client) sehingga otorisasi tetap aman meskipun
+     * request dipalsukan.
+     *
+     * @param int|null $video_id ID video tempat komentar (0/null = tidak ada)
+     * @param int|null $music_id ID music tempat komentar (0/null = tidak ada)
+     * @return bool True jika user ini adalah uploader media tsb
+     */
+    private function isMediaUploader(?int $video_id, ?int $music_id): bool
+    {
+        if ($video_id) {
+            $stmt = $this->conn->prepare("SELECT user_id FROM video WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+            $stmt->bind_param("i", $video_id);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $row && (int)$row['user_id'] === $this->user_id;
+        }
+
+        if ($music_id) {
+            $stmt = $this->conn->prepare("SELECT user_id FROM music WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+            $stmt->bind_param("i", $music_id);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $row && (int)$row['user_id'] === $this->user_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Cek apakah user adalah admin.
+     *
+     * Role diperiksa langsung ke tabel users (bukan dari session) agar
+     * otorisasi tetap aman meskipun data session tidak dipercaya.
+     *
+     * @return bool True jika user ini admin
+     */
+    private function isAdmin(): bool
+    {
+        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ?");
+        if (!$stmt) {
+            throw new RuntimeException($this->conn->error);
+        }
+        $stmt->bind_param("i", $this->user_id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return ($row && $row['role'] === 'admin');
+    }
 
     private function validateUser(): bool {
         return $this->user_id > 0;

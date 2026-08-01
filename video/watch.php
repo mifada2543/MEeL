@@ -289,14 +289,21 @@ $__vdir = function($dir) {
                         </button>
                         <div id="comment-preview" class="px-4 sm:px-6 py-3">
                             <?php
-                            // Preview mini: tampilkan komentar terbaru (id terbesar),
+                            // Preview mini: tampilkan 4 komentar terbaru (id terbesar),
                             // atau ajakan jika belum ada komentar sama sekali.
-                            $preview        = comment_preview($comments_grouped ?? []);
-                            $preview_txt    = $preview['text'];
-                            $latest_comment = $preview['latest_comment'];
+                            $preview       = comment_preview($comments_grouped ?? []);
+                            $preview_items = $preview['items'];
                             ?>
-                            <span id="comment-preview-text" class="text-[10px] text-gray-500 line-clamp-1 <?= $latest_comment ? '' : 'italic' ?>"
-                                title="<?= htmlspecialchars($preview_txt, ENT_QUOTES) ?>"><?= htmlspecialchars($preview_txt) ?></span>
+                            <div id="comment-preview-text" class="space-y-1 <?= empty($preview_items) ? 'italic' : '' ?>">
+                                <?php if (empty($preview_items)): ?>
+                                    <span class="text-[10px] text-gray-500">Jadilah komentar pertama</span>
+                                <?php else: foreach ($preview_items as $_pc): ?>
+                                    <div class="text-[10px] text-gray-500 line-clamp-1"
+                                        title="<?= htmlspecialchars('@' . ($_pc['username'] ?? 'Guest') . ': ' . preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? '')), ENT_QUOTES) ?>">
+                                        <span class="font-bold text-red-400">@<?= htmlspecialchars($_pc['username'] ?? 'Guest') ?></span>: <?= htmlspecialchars(preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? ''))) ?>
+                                    </div>
+                                <?php endforeach; endif; ?>
+                            </div>
                         </div>
                         <div id="comment-body">
                             <div class="p-4 sm:p-6">
@@ -322,6 +329,8 @@ $__vdir = function($dir) {
 
                             <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                                 <?php
+                                // Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
+                                $GLOBALS['uploader_id'] = (int)($v['user_id'] ?? 0);
                                 if (empty($comments_grouped)) {
                                     render_comment_empty_state('video');
                                 } else {
