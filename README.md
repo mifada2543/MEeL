@@ -455,7 +455,7 @@ Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**.
 
 ### Q: Ukuran MEeL?
 
-> A: 77MB untuk source codenya, 1-2GB untuk env (ffmpeg, yt-dlp, apache, MariaDB, php, dsb).
+> A: 47,3MB untuk source codenya, 1-2GB untuk env (ffmpeg, yt-dlp, apache, MariaDB, php, dsb).
 
 ### Q: System Requirement?
 
