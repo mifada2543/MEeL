@@ -65,33 +65,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $hdd_base = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE . '/' : "/path/to/your/media/";
                     if ($del_type === 'video') {
                         $filename = $media_row['filename'];
-                        $folder_rel = dirname($filename);
-                        $folder_abs = $hdd_base . "video/upload/" . basename($folder_rel) . "/";
-                        if (is_dir($folder_abs)) {
+                        // filename berformat "video/<folder>/<folder>.m3u8" → dirname()
+                        // menghasilkan "video/<folder>". Folder asli di HDD berada di
+                        // {MEEL_HDD_BASE}/video/upload/video/<folder>/ — jadi JANGAN
+                        // buang prefix "video/" dari dirname (bug lama: pakai basename()).
+                        $folder_rel  = dirname($filename);
+                        $folder_name = ($folder_rel !== '.' && $folder_rel !== '') ? basename($folder_rel) : '';
+                        $video_dir   = defined('MEEL_HDD_VIDEO_DIR') ? MEEL_HDD_VIDEO_DIR : $hdd_base . "video/upload/video/";
+                        $folder_abs  = $video_dir . $folder_name . "/";
+
+                        if ($folder_name !== '' && $folder_name !== '..' && is_dir($folder_abs)) {
                             foreach (glob($folder_abs . "*") as $f) {
                                 if (@unlink($f)) $files_deleted++;
                                 else $files_failed[] = basename($f);
                             }
                             @rmdir($folder_abs);
+                        } elseif ($folder_name !== '' && $folder_name !== '..') {
+                            // Folder tidak ditemukan di storage — laporkan agar admin tahu
+                            // file-nya TIDAK ikut terhapus (mencegah sukses diam-diam).
+                            $files_failed[] = "folder/" . $folder_name;
                         }
+
+                        $thumb_dir = defined('MEEL_HDD_THUMB_DIR') ? MEEL_HDD_THUMB_DIR : $hdd_base . "video/upload/thumbnail/";
                         if (!empty($media_row['thumbnail'])
                             && $media_row['thumbnail'] !== 'default_thumb.jpg'
                             && $media_row['thumbnail'] !== 'default_thumb.webp'
                         ) {
-                            $thumb_abs = $hdd_base . "video/upload/thumbnail/" . $media_row['thumbnail'];
+                            $thumb_abs = $thumb_dir . $media_row['thumbnail'];
                             if (file_exists($thumb_abs)) {
                                 if (@unlink($thumb_abs)) $files_deleted++;
                                 else $files_failed[] = $media_row['thumbnail'];
                             }
                         }
                     } elseif ($del_type === 'music') {
-                        $music_file_abs = $hdd_base . "music/upload/file/" . $media_row['filename'];
+                        $music_upload    = defined('MEEL_HDD_MUSIC_UPLOAD') ? MEEL_HDD_MUSIC_UPLOAD : $hdd_base . "music/upload/";
+                        $music_file_abs  = $music_upload . "file/" . $media_row['filename'];
+                        $music_thumb_dir = $music_upload . "thumbnail/";
                         if (file_exists($music_file_abs)) {
                             if (@unlink($music_file_abs)) $files_deleted++;
                             else $files_failed[] = $media_row['filename'];
                         }
                         if (!empty($media_row['thumbnail']) && $media_row['thumbnail'] !== 'music_default.png') {
-                            $thumb_abs = $hdd_base . "music/upload/thumbnail/" . $media_row['thumbnail'];
+                            $thumb_abs = $music_thumb_dir . $media_row['thumbnail'];
                             if (file_exists($thumb_abs)) {
                                 if (@unlink($thumb_abs)) $files_deleted++;
                                 else $files_failed[] = $media_row['thumbnail'];
