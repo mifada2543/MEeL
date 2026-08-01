@@ -45,6 +45,11 @@ class Transcoder
     // Download timeout (detik)
     private const DOWNLOAD_TIMEOUT      = 900;
 
+    // Ambang deteksi timeout fragment yt-dlp: berapa kali pesan
+    // "Retrying fragment N (1/10)" muncul sebelum proses dihentikan.
+    // 1 = hentikan segera begitu pola retry fragment terdeteksi.
+    private const FRAGMENT_RETRY_LIMIT  = 1;
+
     // ─── ENV PREFIX ───────────────────────────────────────────────────────────
     // Didefinisikan di class (bukan trait) karena PHP 8.0 tidak support trait constants
     private const ENV_PREFIX = "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
@@ -354,7 +359,9 @@ class Transcoder
 
         if ($type === 'music') {
             $shm_temp  = $this->getShmTempPath();
-            $temp_id   = "raw_" . time();
+            // temp_id unik per download — cegah bentrok file & marker pkill antar
+            // proses yang mulai di detik yang sama (pola sama seperti video).
+            $temp_id   = "raw_" . time() . "_" . substr(md5(uniqid('', true)), 0, 4);
             $temp_path = "$shm_temp/$temp_id.%(ext)s";
             $cmd_dl    = $this->base_cmd
                 . "-f bestaudio -o " . escapeshellarg($temp_path)
@@ -404,9 +411,16 @@ class Transcoder
 
         echo str_repeat(' ', 1024);
 
+        // Marker unik milik proses ini — dipakai pkill -f untuk menghentikan
+        // SELURUH tree proses yt-dlp (termasuk node runtime) saat timeout fragment.
+        $kill_marker = ($type === 'music') ? ($temp_id ?? '') : ($basename ?? '');
+
         // Contoh output yt-dlp:
         // [download]  63.2% of   45.23MiB at    4.20MiB/s ETA 00:42 (frag 3/5)
-        $frag_total = 0;
+        // [download] Got error: HTTP Error 429: Too Many Requests. Retrying fragment 3 (1/10)...
+        // [download] Got error: HTTP Error 403: Forbidden. Retrying fragment 3 (2/10)...
+        $frag_retry_abort = false;
+        $frag_total       = 0;
         while (!feof($handle)) {
             if (time() - $start > self::DOWNLOAD_TIMEOUT) {
                 $error_log .= "\n[ERROR] Timeout exceeded";
@@ -416,6 +430,18 @@ class Transcoder
             if ($line === false) break;
 
             $error_log .= $line;
+
+            // ── TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst") ──
+            // Begitu pola "Retrying fragment N (1/10)" terdeteksi (ambang FRAGMENT_RETRY_LIMIT),
+            // proses dihentikan otomatis — jangan biarkan yt-dlp retry terus menerus.
+            if (preg_match('/Retrying\s+fragment[s]?\b/i', $line)) {
+                $frag_total++;
+                if ($frag_total >= self::FRAGMENT_RETRY_LIMIT) {
+                    $error_log .= "\n[ERROR] Fragment retry timeout (yt-dlp retrying repeatedly)";
+                    $frag_retry_abort = true;
+                    break;
+                }
+            }
 
             if (preg_match('/\[download\]\s+(\d+(?:\.\d+)?)%\s+of\s+([\d.]+\s*\S+)\s+at\s+([\d.]+\s*\S+\/s)(?:\s+ETA\s+([\d:]+))?(?:\s+\(frag\s+(\d+)\/(\d+)\))?/', $line, $m)) {
                 $pct   = (int)$m[1];
@@ -431,6 +457,30 @@ class Transcoder
                 $pct  = (int)$m[1];
                 echo "<script>meelDlPct($pct);</script>";
                 flush();
+            }
+        }
+
+        // ── TIMEOUT FRAGMENT: hentikan proses yt-dlp + node + bersihkan partial ──
+        // pkill -f dengan marker unik (temp_id / basename) memastikan SELURUH tree
+        // proses milik download ini mati, bukan hanya keluar dari loop baca.
+        if ($frag_retry_abort) {
+            if ($kill_marker !== '') {
+                // preg_quote: pkill -f memperlakukan pattern sebagai REGEX (ERE),
+                // bukan string literal — marker dari judul bisa mengandung meta-karakter.
+                // Catatan: pkill ikut mencocokkan wrapper shell-nya sendiri (cmdline-nya
+                // memuat marker) — tidak berbahaya; signal sudah terkirim lebih dulu, dan
+                // cmdline proses PHP (upload_advanced.php) tidak memuat marker.
+                // TERM dulu, lalu KILL sebagai fallback bila yt-dlp mengabaikan SIGTERM,
+                // agar pclose() di bawah tidak keblok sampai backstop `timeout 900`.
+                @shell_exec('pkill -TERM -f ' . escapeshellarg(preg_quote($kill_marker)) . ' 2>/dev/null');
+                usleep(300000); // grace period 300ms
+                @shell_exec('pkill -KILL -f ' . escapeshellarg(preg_quote($kill_marker)) . ' 2>/dev/null');
+            }
+            // Hapus file partial download dari staging agar tidak jadi sampah
+            if ($type === 'music' && !empty($temp_id)) {
+                foreach (glob($shm_temp . "/$temp_id.*") ?: [] as $f) @unlink($f);
+            } elseif ($type === 'video' && !empty($basename)) {
+                foreach (glob($staging_dir . $basename . ".*") ?: [] as $f) @unlink($f);
             }
         }
 
@@ -451,10 +501,16 @@ class Transcoder
             $this->releaseQueue($queue_id, 'failed');
             file_put_contents('/tmp/ytdlp_error.log', $error_log);
 
-            $error_msg  = "Download gagal. Detail disimpan di server.";
-            $last_lines = array_slice(explode("\n", $error_log), -3);
-            $detail     = trim(implode(" | ", $last_lines));
-            if ($detail) $error_msg = substr($detail, 0, 200);
+            if ($frag_retry_abort) {
+                // Pesan spesifik untuk timeout fragment — lebih jelas daripada pesan generik
+                $error_msg = "Timeout: yt-dlp gagal mengunduh fragment berulang kali (retry 1/10, 2/10, dst). "
+                    . "Proses dihentikan otomatis. Coba lagi nanti atau gunakan URL lain.";
+            } else {
+                $error_msg  = "Download gagal. Detail disimpan di server.";
+                $last_lines = array_slice(explode("\n", $error_log), -3);
+                $detail     = trim(implode(" | ", $last_lines));
+                if ($detail) $error_msg = substr($detail, 0, 200);
+            }
 
             $this->jsError($error_msg);
             return "";
