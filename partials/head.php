@@ -157,7 +157,16 @@ if ('serviceWorker' in navigator) {
     // Dapatkan base path project dari lokasi file ini (partials/head.php)
     const swUrl = (<?= json_encode(rtrim($_head_root_rel, '/')) ?> || '') + '/sw.js';
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register(swUrl).then(function(reg) {
+        // updateViaCache:'none' → sw.js SELALU diambil fresh dari server
+        // (browser default hanya mengecek update SW maks 1x/24 jam, bikin
+        //  perubahan logo/asset baru tidak muncul saat Ctrl+R)
+        navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' }).then(function(reg) {
+            // Cek update di setiap load halaman → SW baru (mis. versi baru
+            // dengan logo/asset baru) langsung ter-install tanpa nunggu 24 jam
+            reg.update().catch(function() {
+                // Offline — abaikan, cek berikutnya akan mencoba lagi
+            });
+
             // Update ditemukan → reload untuk aktivasi
             reg.addEventListener('updatefound', function() {
                 const installing = reg.installing;

@@ -9,7 +9,7 @@
  * @license GPL v3
  */
 
-const SW_VERSION = 'v1.2-20260802';
+const SW_VERSION = 'v1.3-20260802';
 const STATIC_CACHE = 'meel-static-' + SW_VERSION;
 const PAGE_CACHE   = 'meel-pages-' + SW_VERSION;
 
@@ -139,6 +139,16 @@ self.addEventListener('fetch', (event) => {
 
   // ── API / Dynamic endpoints → Network only ──
   if (isApiRequest(url)) {
+    return;
+  }
+
+  // ── Avatar profil (profile/upload/) → Network-first ──
+  // URL avatar TIDAK pernah berubah (mis. user_1.webp) padahal isinya sering
+  // diganti. Cache-first bikin foto lama (mis. hasil tes berwarna biru) terus
+  // tampil sampai hard refresh — pakai network-first agar foto baru langsung
+  // muncul, dengan fallback ke cache saat offline.
+  if (url.pathname.includes('/profile/upload/')) {
+    event.respondWith(networkFirst(request, PAGE_CACHE));
     return;
   }
 

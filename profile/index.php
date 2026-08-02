@@ -181,12 +181,20 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 
     <div class="max-w-2xl mx-auto mt-10 p-4">
         <div class="glass rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="h-32 bg-gradient-to-r from-blue-600 to-indigo-800"></div>
+            <?php
+            $banner_pic = $u['profile_picture'] ?: 'default_avatar.png';
+            $banner_path = __DIR__ . '/upload/' . $banner_pic;
+            $banner_v = is_file($banner_path) ? (int)@filemtime($banner_path) : time();
+            ?>
+            <div class="relative h-32 w-full overflow-hidden" style="background-color:#111827">
+                <img src="upload/<?= htmlspecialchars($banner_pic, ENT_QUOTES, 'UTF-8') ?>?v=<?= $banner_v ?>" alt="Foto sampul <?= htmlspecialchars($u['username']) ?>" class="block h-full w-full scale-110" style="object-fit:cover;object-position:center;filter:blur(2px)" loading="eager" decoding="async" onerror="this.onerror=null;this.src='upload/default_avatar.png'">
+                <div class="absolute inset-0" style="background:linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.3) 50%, #0b0e14)"></div>
+            </div>
 
             <div class="px-8 pb-8">
                 <div class="relative flex justify-between items-end -mt-12">
                     <div class="relative">
-                        <img src="upload/<?= $u['profile_picture'] ?: 'default.png' ?>"
+                        <img src="upload/<?= $u['profile_picture'] ?: 'default_avatar.png' ?>"
                             class="w-32 h-32 rounded-3xl border-4 border-[#0b0e14] object-cover bg-gray-800 shadow-xl" title="Foto profil <?= htmlspecialchars($u['username']) ?>">
                         <?php if ($is_online): ?>
                             <div class="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-4 border-[#0b0e14] rounded-full"></div>
