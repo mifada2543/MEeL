@@ -1,28 +1,11 @@
 <?php
+require_once __DIR__ . '/auth_helpers.php';
+
 // Set session name & cookie params SEBELUM session_start()
-if (session_status() === PHP_SESSION_NONE) {
-    $timeout = 43200; // 12 jam
-    session_set_cookie_params($timeout, "/");
-    session_name('meel');
-    session_start();
-}
-if (isset($_SESSION['user_id'])) {
-    header("Location: ../index.php");
-    exit;
-}
+auth_boot_session();
 include 'config.php';
 
-$back_url = '../index.php';
-
-if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
-    $ref = $_SERVER['HTTP_REFERER'];
-    $host = $_SERVER['HTTP_HOST'];
-    if (strpos($ref, $host) !== false) {
-        if (strpos($ref, 'login.php') === false && strpos($ref, 'register.php') === false) {
-            $back_url = $ref;
-        }
-    }
-}
+$back_url = auth_back_url(['login.php', 'register.php']);
 
 $message = "";
 $msg_type = "";
@@ -33,34 +16,13 @@ $ip_lockout_time = 300; // 5 menit
 $is_locked = false;
 $remaining = 0;
 
-// ─── IP-BASED LOCKOUT CHECK ────────────────────────────────────
-$ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+// ─── IP-BASED LOCKOUT CHECK (shared helper) ────────────────────
+$ip_address = auth_get_ip();
+$ip_lock    = auth_ip_lockout_status($conn, $ip_address);
+$is_locked  = $ip_lock['locked'];
+$remaining  = $ip_lock['remaining'];
 
-// Cek & bersihkan lockout IP yang sudah expired
-$stmt_ip = $conn->prepare("SELECT attempts, locked_until FROM login_attempts WHERE ip_address = ?");
-if ($stmt_ip) {
-    $stmt_ip->bind_param("s", $ip_address);
-    $stmt_ip->execute();
-    $ip_result = $stmt_ip->get_result();
-    if ($ip_row = $ip_result->fetch_assoc()) {
-        if ($ip_row['locked_until'] !== null) {
-            $lock_ts = strtotime($ip_row['locked_until']);
-            if (time() < $lock_ts) {
-                $is_locked = true;
-                $remaining = $lock_ts - time();
-            } else {
-                // Lockout expired — reset
-                $stmt_del = $conn->prepare("DELETE FROM login_attempts WHERE ip_address = ?");
-                $stmt_del->bind_param("s", $ip_address);
-                $stmt_del->execute();
-                $stmt_del->close();
-            }
-        }
-    }
-    $stmt_ip->close();
-}
-
-// ─── SESSION-BASED RATE LIMIT (registrasi berhasil) ────────────
+// ─── SESSION-BASED RATE LIMIT (registrasi berhasil) — khusus register ───
 if (!isset($_SESSION['reg_attempts'])) {
     $_SESSION['reg_attempts'] = [];
 }
@@ -79,148 +41,79 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
         $msg_type = "error";
         $validation_error = true;
     } else {
-    $user = trim($_POST['username']);
-    $pass_raw = $_POST['password'];
+        $user = trim($_POST['username']);
+        $pass_raw = $_POST['password'];
 
-    $validation_error = false;
+        $validation_error = false;
 
-    // 1. Validasi Panjang Karakter
-    if (strlen($user) < 8 || strlen($pass_raw) < 8) {
-        $message = "Username min 8 karakter, Password min 8 karakter!";
-        $msg_type = "warning";
-        $validation_error = true;
-    } else if (!preg_match('/^[a-zA-Z0-9_]+$/', $user)) {
-        $message = "Username hanya boleh berisi huruf, angka, dan underscore (_)!";
-        $msg_type = "warning";
-        $validation_error = true;
-    } else if (stripos($user, 'guest') !== false) {
-        $message = "Username 'Guest' tidak dapat didaftarkan karena dicadangkan untuk sistem!";
-        $msg_type = "warning";
-        $validation_error = true;
-    } else {
-        // 3. Jika validasi lolos, baru cek ketersediaan username di database
-        $check = $conn->prepare("SELECT id FROM users WHERE username = ?");
-        $check->bind_param("s", $user);
-        $check->execute();
-        $result = $check->get_result();
-
-        // 4. Evaluasi hasil dari Database
-        if ($result === false) {
-            $message = "Terjadi kesalahan pada database. Silakan coba lagi nanti.";
-            $msg_type = "error";
-            $validation_error = true;
-            error_log("[MEeL-Register] Database error: " . $conn->error);
-        } else if ($result->num_rows > 0) {
-            $message = "Username sudah terdaftar!";
+        // Validasi (shared helper)
+        $val_error = auth_validate_credentials($user, $pass_raw);
+        if ($val_error !== null) {
+            $message = $val_error;
             $msg_type = "warning";
             $validation_error = true;
         } else {
-            // Jika belum ada, simpan ke database
-            $pass_hashed = password_hash($pass_raw, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (username, password, role, is_active) VALUES (?, ?, 'user', 2)");
-            $stmt->bind_param("ss", $user, $pass_hashed);
+            // Jika validasi lolos, baru cek ketersediaan username di database
+            $check = $conn->prepare("SELECT id FROM users WHERE username = ?");
+            $check->bind_param("s", $user);
+            $check->execute();
+            $result = $check->get_result();
 
-            if ($stmt->execute()) {
-                // Tambahkan percobaan ke session HANYA ketika registrasi berhasil
-                $_SESSION['reg_attempts'][] = time();
-                $message = "Registrasi berhasil! Silakan tunggu verifikasi admin.";
-                $msg_type = "success";
-            } else {
-                $message = "Terjadi kesalahan saat menyimpan data.";
+            if ($result === false) {
+                $message = "Terjadi kesalahan pada database. Silakan coba lagi nanti.";
                 $msg_type = "error";
                 $validation_error = true;
-            }
-        }
-    }
+                error_log("[MEeL-Register] Database error: " . $conn->error);
+            } else if ($result->num_rows > 0) {
+                $message = "Username sudah terdaftar!";
+                $msg_type = "warning";
+                $validation_error = true;
+            } else {
+                // Jika belum ada, simpan ke database
+                $pass_hashed = password_hash($pass_raw, PASSWORD_DEFAULT);
+                $stmt = $conn->prepare("INSERT INTO users (username, password, role, is_active) VALUES (?, ?, 'user', 2)");
+                $stmt->bind_param("ss", $user, $pass_hashed);
 
-    // ─── CATAT PERCOBAAN GAGAL KE IP ────────────────────────────
-    if ($validation_error) {
-        $stmt_ups = $conn->prepare(
-            "INSERT INTO login_attempts (ip_address, attempts, last_attempt_at, locked_until)
-             VALUES (?, 1, NOW(), NULL)
-             ON DUPLICATE KEY UPDATE
-                 attempts = attempts + 1,
-                 last_attempt_at = NOW()"
-        );
-        if ($stmt_ups) {
-            $stmt_ups->bind_param("s", $ip_address);
-            $stmt_ups->execute();
-            $stmt_ups->close();
-        }
-
-        // Cek apakah IP sudah melebihi batas
-        $stmt_chk = $conn->prepare("SELECT attempts FROM login_attempts WHERE ip_address = ?");
-        if ($stmt_chk) {
-            $stmt_chk->bind_param("s", $ip_address);
-            $stmt_chk->execute();
-            $chk_res = $stmt_chk->get_result();
-            if ($chk_row = $chk_res->fetch_assoc()) {
-                if ($chk_row['attempts'] >= $max_ip_attempts) {
-                    $lock_ts = date('Y-m-d H:i:s', time() + $ip_lockout_time);
-                    $stmt_lock = $conn->prepare("UPDATE login_attempts SET locked_until = ? WHERE ip_address = ?");
-                    $stmt_lock->bind_param("ss", $lock_ts, $ip_address);
-                    $stmt_lock->execute();
-                    $stmt_lock->close();
-                    $is_locked = true;
-                    $remaining = $ip_lockout_time;
+                if ($stmt->execute()) {
+                    // Tambahkan percobaan ke session HANYA ketika registrasi berhasil
+                    $_SESSION['reg_attempts'][] = time();
+                    $message = "Registrasi berhasil! Silakan tunggu verifikasi admin.";
+                    $msg_type = "success";
+                } else {
+                    $message = "Terjadi kesalahan saat menyimpan data.";
+                    $msg_type = "error";
+                    $validation_error = true;
                 }
             }
-            $stmt_chk->close();
+        }
+
+        // ─── CATAT PERCOBAAN GAGAL KE IP (shared helper) ────────────
+        if ($validation_error) {
+            $just_locked = auth_record_failed_attempt($conn, $ip_address, $max_ip_attempts, $ip_lockout_time);
+            if ($just_locked) {
+                $is_locked = true;
+                $remaining = $ip_lockout_time;
+            }
         }
     }
-    } // end else (CSRF valid)
 }
 
 // Re-check lockout setelah POST
 if (!$is_locked && !$session_blocked) {
-    $stmt_ip2 = $conn->prepare("SELECT locked_until FROM login_attempts WHERE ip_address = ? AND locked_until IS NOT NULL");
-    if ($stmt_ip2) {
-        $stmt_ip2->bind_param("s", $ip_address);
-        $stmt_ip2->execute();
-        $ip2_res = $stmt_ip2->get_result();
-        if ($ip2_row = $ip2_res->fetch_assoc()) {
-            $lock_ts = strtotime($ip2_row['locked_until']);
-            if (time() < $lock_ts) {
-                $is_locked = true;
-                $remaining = $lock_ts - time();
-            }
-        }
-        $stmt_ip2->close();
+    $recheck = auth_recheck_lockout($conn, $ip_address);
+    if ($recheck['locked']) {
+        $is_locked = true;
+        $remaining = $recheck['remaining'];
     }
 }
+
+// ─── HTML (shell bersama via partials) ─────────────────────────
+$auth_title       = "MEeL | Register";
+$auth_description = "MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.";
+$auth_og_title    = "MEeL | Register";
+$auth_og_desc     = "Buat akun MEeL dan nikmati streaming video, musik, dan akses perpustakaan digital.";
+include __DIR__ . '/partials/auth_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL | Register">
-    <meta property="og:description" content="Buat akun MEeL dan nikmati streaming video, musik, dan akses perpustakaan digital.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>MEeL | Register</title>
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/compatibilitas/lucide.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
-
-        .glass-effect {
-            background: rgba(22, 27, 34, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-    </style>
-</head>
-
-<body class="text-gray-200 min-h-screen flex items-center justify-center p-4">
-
     <main class="w-full max-w-sm" aria-labelledby="register-title">
         <!-- Header -->
         <div class="text-center mb-8">
@@ -247,28 +140,14 @@ if (!$is_locked && !$session_blocked) {
                 </div>
             <?php elseif ($is_locked): ?>
                 <!-- IP Lockout -->
-                <div class="text-center py-6 space-y-4">
-                    <i data-lucide="shield-alert" class="w-12 h-12 text-red-500 mx-auto animate-pulse"></i>
-                    <h3 class="text-lg font-bold text-white">Akses Ditangguhkan</h3>
-                    <p class="text-xs text-gray-300 leading-relaxed">Terlalu banyak percobaan gagal. Silakan coba lagi dalam:</p>
-                    <div id="countdown" class="text-4xl font-black text-red-500 tracking-widest"><?= $remaining ?></div>
-                    <p class="text-[10px] text-gray-300 uppercase">Detik</p>
-                    <div class="pt-2">
-                        <a href="login.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all" title="Pergi ke halaman login">Ke Halaman Login</a>
-                    </div>
-                </div>
-                <script>
-                    let seconds = <?= max(1, $remaining) ?>;
-                    const display = document.getElementById('countdown');
-                    const timer = setInterval(() => {
-                        seconds--;
-                        display.innerText = seconds > 0 ? seconds : 0;
-                        if (seconds <= 0) {
-                            clearInterval(timer);
-                            location.reload();
-                        }
-                    }, 1000);
-                </script>
+                <?php
+                $countdown_seconds = $remaining;
+                $countdown_color   = 'text-red-500';
+                $countdown_extra   = '<div class="pt-2">
+                    <a href="login.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all" title="Pergi ke halaman login">Ke Halaman Login</a>
+                </div>';
+                include __DIR__ . '/partials/auth_countdown.php';
+                ?>
             <?php else: ?>
                 <!-- CSRF Token -->
                 <?php if (isset($_SESSION['csrf_token'])): ?>
@@ -307,31 +186,4 @@ if (!$is_locked && !$session_blocked) {
                 </div>
             <?php endif; ?>
         </form>
-
-        <!-- Copyright -->
-        <p class="text-center text-[10px] text-gray-300 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
-    </main>
-
-    <script>
-        lucide.createIcons();
-
-        // Fitur Toggle Password
-        const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
-        const iconEye = document.getElementById('iconEye');
-        const iconEyeOff = document.getElementById('iconEyeOff');
-
-        if (togglePassword) {
-            togglePassword.addEventListener('click', function() {
-                const isHidden = passwordInput.type === 'password';
-                passwordInput.type = isHidden ? 'text' : 'password';
-                togglePassword.setAttribute('aria-pressed', String(isHidden));
-                togglePassword.setAttribute('aria-label', isHidden ? 'Sembunyikan password' : 'Tampilkan password');
-                iconEye.classList.toggle('hidden', !isHidden);
-                iconEyeOff.classList.toggle('hidden', isHidden);
-            });
-        }
-    </script>
-</body>
-
-</html>
+<?php include __DIR__ . '/partials/auth_footer.php'; ?>

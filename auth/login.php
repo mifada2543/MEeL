@@ -1,28 +1,11 @@
 <?php
+require_once __DIR__ . '/auth_helpers.php';
+
 // Set session name & cookie params SEBELUM session_start()
-if (session_status() === PHP_SESSION_NONE) {
-    $timeout = 43200; // 12 jam
-    session_set_cookie_params($timeout, "/");
-    session_name('meel');
-    session_start();
-}
-if (isset($_SESSION['user_id'])) {
-    header("Location: ../index.php");
-    exit;
-}
+auth_boot_session();
 include 'config.php';
 
-$back_url = '../index.php';
-
-if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
-    $ref = $_SERVER['HTTP_REFERER'];
-    $host = $_SERVER['HTTP_HOST'];
-    if (strpos($ref, $host) !== false) {
-        if (strpos($ref, 'login.php') === false && strpos($ref, 'register.php') === false && strpos($ref, 'revoked.php') === false && strpos($ref, 'banned.php') === false) {
-            $back_url = $ref;
-        }
-    }
-}
+$back_url = auth_back_url(['login.php', 'register.php', 'revoked.php', 'banned.php']);
 
 $error_msg = "";
 $max_login_attempts = 5;
@@ -30,10 +13,7 @@ $lockout_time = 300; // 5 menit
 $is_locked = false;
 $remaining = 0;
 
-// ─── IP-BASED LOCKOUT CHECK ────────────────────────────────────
-$ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-
-// Bersihkan lockout yang sudah expired (session-based)
+// ─── SESSION-BASED LOCKOUT (expired cleanup) — khusus login ────
 if (isset($_SESSION['login_locked_until'])) {
     if (time() >= $_SESSION['login_locked_until']) {
         unset($_SESSION['login_locked_until']);
@@ -41,30 +21,11 @@ if (isset($_SESSION['login_locked_until'])) {
     }
 }
 
-// Cek & bersihkan lockout yang sudah expired (IP-based)
-$ip_locked = false;
-$ip_remaining = 0;
-$stmt_ip = $conn->prepare("SELECT attempts, locked_until FROM login_attempts WHERE ip_address = ?");
-if ($stmt_ip) {
-    $stmt_ip->bind_param("s", $ip_address);
-    $stmt_ip->execute();
-    $ip_result = $stmt_ip->get_result();
-    if ($ip_row = $ip_result->fetch_assoc()) {
-        if ($ip_row['locked_until'] !== null) {
-            $lock_ts = strtotime($ip_row['locked_until']);
-            if (time() < $lock_ts) {
-                $ip_locked = true;
-                $ip_remaining = $lock_ts - time();
-            } else {
-                // Lockout expired — reset
-                $stmt_del = $conn->prepare("DELETE FROM login_attempts WHERE ip_address = ?");
-                $stmt_del->bind_param("s", $ip_address);
-                $stmt_del->execute();
-            }
-        }
-    }
-    $stmt_ip->close();
-}
+// ─── IP-BASED LOCKOUT CHECK (shared helper) ────────────────────
+$ip_address  = auth_get_ip();
+$ip_lock     = auth_ip_lockout_status($conn, $ip_address);
+$ip_locked   = $ip_lock['locked'];
+$ip_remaining = $ip_lock['remaining'];
 
 // Gabungan: locked jika session atau IP terkunci
 if ($ip_locked || (isset($_SESSION['login_locked_until']) && time() < $_SESSION['login_locked_until'])) {
@@ -72,46 +33,17 @@ if ($ip_locked || (isset($_SESSION['login_locked_until']) && time() < $_SESSION[
     $remaining = max($ip_remaining, ($_SESSION['login_locked_until'] ?? 0) - time());
 }
 
-// ─── HELPER: catat percobaan gagal ─────────────────────────────
+// ─── HELPER: catat percobaan gagal (session-based + IP via helper) ───
 function record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout_time) {
-    // Session-based counter
+    // Session-based counter (khusus login)
     $_SESSION['login_fail_count'] = ($_SESSION['login_fail_count'] ?? 0) + 1;
     if ($_SESSION['login_fail_count'] >= $max_login_attempts) {
         $_SESSION['login_locked_until'] = time() + $lockout_time;
         $_SESSION['login_fail_count'] = 0;
     }
 
-    // IP-based counter (database)
-    $stmt_ups = $conn->prepare(
-        "INSERT INTO login_attempts (ip_address, attempts, last_attempt_at, locked_until)
-         VALUES (?, 1, NOW(), NULL)
-         ON DUPLICATE KEY UPDATE
-             attempts = attempts + 1,
-             last_attempt_at = NOW()"
-    );
-    if ($stmt_ups) {
-        $stmt_ups->bind_param("s", $ip_address);
-        $stmt_ups->execute();
-        $stmt_ups->close();
-    }
-
-    // Cek apakah IP sudah melebihi batas
-    $stmt_chk = $conn->prepare("SELECT attempts FROM login_attempts WHERE ip_address = ?");
-    if ($stmt_chk) {
-        $stmt_chk->bind_param("s", $ip_address);
-        $stmt_chk->execute();
-        $chk_res = $stmt_chk->get_result();
-        if ($chk_row = $chk_res->fetch_assoc()) {
-            if ($chk_row['attempts'] >= $max_login_attempts) {
-                $lock_ts = date('Y-m-d H:i:s', time() + $lockout_time);
-                $stmt_lock = $conn->prepare("UPDATE login_attempts SET locked_until = ? WHERE ip_address = ?");
-                $stmt_lock->bind_param("ss", $lock_ts, $ip_address);
-                $stmt_lock->execute();
-                $stmt_lock->close();
-            }
-        }
-        $stmt_chk->close();
-    }
+    // IP-based counter (database) — shared helper
+    auth_record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout_time);
 }
 
 // ─── FORM PROCESSING ───────────────────────────────────────────
@@ -147,16 +79,11 @@ if (isset($_POST['login']) && !$is_locked) {
                             $stmt_del->close();
 
                             // ─── CEK MFA ──────────────────────────────────
-                            // (current_sid akan di-capture setelah session_regenerate_id di blok non-MFA)
-                            // Jika user sudah mengaktifkan MFA, redirect ke
-                            // halaman verifikasi kode 6 digit terlebih dahulu.
                             if (!empty($u['mfa_secret']) && $u['mfa_enabled'] == 1) {
-                                // Simpan data sementara — belum login penuh
                                 $_SESSION['mfa_temp_uid']      = (int)$u['id'];
                                 $_SESSION['mfa_temp_username'] = $u['username'];
                                 $_SESSION['mfa_temp_role']     = $u['role'];
 
-                                // Catat activity: melewati password
                                 log_activity($conn, $u['id'], 'login_password_ok');
 
                                 $upd = $conn->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?");
@@ -213,53 +140,20 @@ if (!$is_locked && isset($_SESSION['login_locked_until']) && time() < $_SESSION[
 }
 // Cek IP lockout lagi setelah POST (database, karena $ip_locked sudah stale)
 if (!$is_locked) {
-    $stmt_ip2 = $conn->prepare("SELECT locked_until FROM login_attempts WHERE ip_address = ? AND locked_until IS NOT NULL");
-    if ($stmt_ip2) {
-        $stmt_ip2->bind_param("s", $ip_address);
-        $stmt_ip2->execute();
-        $ip2_res = $stmt_ip2->get_result();
-        if ($ip2_row = $ip2_res->fetch_assoc()) {
-            $lock_ts = strtotime($ip2_row['locked_until']);
-            if (time() < $lock_ts) {
-                $is_locked = true;
-                $remaining = $lock_ts - time();
-            }
-        }
-        $stmt_ip2->close();
+    $recheck = auth_recheck_lockout($conn, $ip_address);
+    if ($recheck['locked']) {
+        $is_locked = true;
+        $remaining = $recheck['remaining'];
     }
 }
+
+// ─── HTML (shell bersama via partials) ─────────────────────────
+$auth_title       = "MEeL | Login";
+$auth_description = "MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.";
+$auth_og_title    = "MEeL | Login";
+$auth_og_desc     = "Masuk ke akun MEeL untuk streaming video, musik, dan mengakses perpustakaan digital.";
+include __DIR__ . '/partials/auth_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL | Login">
-    <meta property="og:description" content="Masuk ke akun MEeL untuk streaming video, musik, dan mengakses perpustakaan digital.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>MEeL | Login</title>
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/compatibilitas/lucide.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
-
-        .glass-effect {
-            background: rgba(22, 27, 34, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-    </style>
-</head>
-
-<body class="text-gray-200 min-h-screen flex items-center justify-center p-4">
     <main class="w-full max-w-sm" aria-labelledby="login-title">
         <!-- Header -->
         <div class="text-center mb-8">
@@ -275,25 +169,12 @@ if (!$is_locked) {
         <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6">
             <!-- Lockdown -->
             <?php if ($is_locked): ?>
-                <div class="text-center py-6 space-y-4">
-                    <i data-lucide="shield-alert" class="w-12 h-12 text-red-500 mx-auto animate-pulse"></i>
-                    <h3 class="text-lg font-bold text-white">Akses Ditangguhkan</h3>
-                    <p class="text-xs text-gray-300 leading-relaxed">Terlalu banyak percobaan gagal. Silakan coba lagi dalam:</p>
-                    <div id="countdown" class="text-4xl font-black text-blue-500 tracking-widest"><?= $remaining ?></div>
-                    <p class="text-[10px] text-gray-300 uppercase">Detik</p>
-                </div>
-                <script>
-                    let seconds = <?= max(1, $remaining) ?>;
-                    const display = document.getElementById('countdown');
-                    const timer = setInterval(() => {
-                        seconds--;
-                        display.innerText = seconds > 0 ? seconds : 0;
-                        if (seconds <= 0) {
-                            clearInterval(timer);
-                            location.reload();
-                        }
-                    }, 1000);
-                </script>
+                <?php
+                $countdown_seconds = $remaining;
+                $countdown_color   = 'text-blue-500';
+                $countdown_extra   = '';
+                include __DIR__ . '/partials/auth_countdown.php';
+                ?>
             <?php else: ?>
                 <!-- CSRF Token -->
                 <?php if (isset($_SESSION['csrf_token'])): ?>
@@ -335,31 +216,4 @@ if (!$is_locked) {
                 </a>
             </div>
         </form>
-
-        <!-- Copyright -->
-        <p class="text-center text-[10px] text-gray-300 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
-    </main>
-
-    <script>
-        lucide.createIcons();
-
-        // Fitur Toggle Password
-        const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
-        const iconEye = document.getElementById('iconEye');
-        const iconEyeOff = document.getElementById('iconEyeOff');
-
-        if (togglePassword) {
-            togglePassword.addEventListener('click', function() {
-                const isHidden = passwordInput.type === 'password';
-                passwordInput.type = isHidden ? 'text' : 'password';
-                togglePassword.setAttribute('aria-pressed', String(isHidden));
-                togglePassword.setAttribute('aria-label', isHidden ? 'Sembunyikan password' : 'Tampilkan password');
-                iconEye.classList.toggle('hidden', !isHidden);
-                iconEyeOff.classList.toggle('hidden', isHidden);
-            });
-        }
-    </script>
-</body>
-
-</html>
+<?php include __DIR__ . '/partials/auth_footer.php'; ?>

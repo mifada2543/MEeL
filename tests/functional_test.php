@@ -83,7 +83,7 @@ function testFileIntegrity(): void {
     $critical = [
         // Config & Auth
         '.htaccess', 'index.php', 'auth/config.php', 'auth/auth.php',
-        'auth/login.php', 'auth/logout.php', 'auth/register.php',
+        'auth/login.php', 'auth/logout.php', 'auth/register.php', 'auth/auth_helpers.php',
         // Modules
         'modules/core/helpers.php', 'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php',

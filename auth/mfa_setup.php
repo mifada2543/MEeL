@@ -120,24 +120,14 @@ if ($mfa_enabled && $step === 'setup') {
         $otpauth = generate_otpauth_url($existing_secret, $username);
     }
 }
-?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keamanan Akun | MEeL</title>
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/compatibilitas/lucide.js"></script>
-    <script src="../assets/js/compatibilitas/qrcode.min.js"></script>
-    <style>
-        body { background-color: #0b0e14; }
-        .glass-effect {
-            background: rgba(22, 27, 34, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+
+// ─── HTML (shell bersama via partials) ─────────────────────────
+$auth_title       = "Keamanan Akun | MEeL";
+$auth_description = "MEeL - Kelola autentikasi dua faktor (MFA) akun Anda.";
+$auth_og_title    = "Keamanan Akun | MEeL";
+$auth_og_desc     = "Aktifkan, nonaktifkan, atau kelola autentikasi dua faktor akun MEeL Anda.";
+$auth_extra_head  = '<script src="../assets/js/compatibilitas/qrcode.min.js"></script>';
+$auth_extra_style = '
         .code-input {
             letter-spacing: 0.5em;
             font-size: 1.5rem;
@@ -150,7 +140,7 @@ if ($mfa_enabled && $step === 'setup') {
         }
         .anim-fade { animation: fadeInUp 0.4s ease-out; }
         .backup-code {
-            font-family: 'Courier New', monospace;
+            font-family: \'Courier New\', monospace;
             font-size: 13px;
             letter-spacing: 0.15em;
             background: rgba(0,0,0,0.3);
@@ -160,374 +150,351 @@ if ($mfa_enabled && $step === 'setup') {
             color: #d1d5db;
             user-select: all;
         }
-    </style>
-</head>
-<body class="text-gray-200 min-h-screen flex items-center justify-center p-4">
-
-<main class="w-full max-w-lg" aria-labelledby="mfa-title">
-    <div class="text-center mb-8 anim-fade">
-        <div class="inline-flex p-4 bg-purple-600/10 rounded-3xl text-purple-500 mb-4">
-            <i data-lucide="shield" class="w-10 h-10"></i>
+';
+include __DIR__ . '/partials/auth_head.php';
+?>
+    <main class="w-full max-w-lg" aria-labelledby="mfa-title">
+        <div class="text-center mb-8 anim-fade">
+            <div class="inline-flex p-4 bg-purple-600/10 rounded-3xl text-purple-500 mb-4">
+                <i data-lucide="shield" class="w-10 h-10"></i>
+            </div>
+            <h2 id="mfa-title" class="text-3xl font-black text-white tracking-tighter">
+                Keamanan Akun
+            </h2>
+            <p class="text-sm text-gray-400 mt-1">
+                <?= $mfa_enabled ? 'Autentikasi Dua Faktor <span class="text-green-400 font-bold">Aktif</span>' : 'Lindungi akun dengan <span class="text-purple-500 font-bold">MFA</span>' ?>
+            </p>
         </div>
-        <h2 id="mfa-title" class="text-3xl font-black text-white tracking-tighter">
-            Keamanan Akun
-        </h2>
-        <p class="text-sm text-gray-400 mt-1">
-            <?= $mfa_enabled ? 'Autentikasi Dua Faktor <span class="text-green-400 font-bold">Aktif</span>' : 'Lindungi akun dengan <span class="text-purple-500 font-bold">MFA</span>' ?>
-        </p>
-    </div>
 
-    <?php if ($error): ?>
-        <div class="mb-6 p-4 rounded-2xl text-sm flex items-center gap-3 bg-red-500/10 text-red-400 border border-red-500/20 anim-fade">
-            <i data-lucide="alert-circle" class="w-5 h-5"></i>
-            <?= $error ?>
-        </div>
-    <?php endif; ?>
+        <?php if ($error): ?>
+            <div class="mb-6 p-4 rounded-2xl text-sm flex items-center gap-3 bg-red-500/10 text-red-400 border border-red-500/20 anim-fade">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <?= $error ?>
+            </div>
+        <?php endif; ?>
 
-    <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6 anim-fade">
+        <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6 anim-fade">
 
-        <?php if ($mfa_enabled && $step === 'setup'): ?>
-            <!-- ─── MFA SUDAH AKTIF ─── -->
-            <div class="text-center space-y-4">
-                <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
-                    <i data-lucide="check-circle" class="w-10 h-10"></i>
-                </div>
-                <h3 class="text-lg font-bold text-white">MFA Sudah Aktif</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Akun Anda dilindungi dengan autentikasi dua faktor.
-                    Setiap login memerlukan kode 6-digit dari aplikasi Authenticator.
-                </p>
-
-                
-                <?php if (!empty($otpauth)): ?>
-                    <div class="pt-4 space-y-2">
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest">Scan QR Code (jika perlu)</p>
-                        <div id="mfa-qr-existing" class="inline-flex items-center justify-center w-44 h-44 rounded-2xl bg-white p-2"></div>
+            <?php if ($mfa_enabled && $step === 'setup'): ?>
+                <!-- ─── MFA SUDAH AKTIF ─── -->
+                <div class="text-center space-y-4">
+                    <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
                     </div>
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            var existingQr = document.getElementById('mfa-qr-existing');
-                            if (existingQr && typeof QRCode !== 'undefined') {
-                                new QRCode(existingQr, {
-                                    text: <?= json_encode($otpauth) ?>,
-                                    width: 160,
-                                    height: 160,
-                                    correctLevel: QRCode.CorrectLevel.M
-                                });
-                            }
-                        });
-                    </script>
-                <?php endif; ?>
+                    <h3 class="text-lg font-bold text-white">MFA Sudah Aktif</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Akun Anda dilindungi dengan autentikasi dua faktor.
+                        Setiap login memerlukan kode 6-digit dari aplikasi Authenticator.
+                    </p>
 
-                <!-- Reset MFA -->
-                <div class="pt-4 border-t border-white/5 space-y-4">
-                    <p class="text-[10px] text-gray-600 uppercase tracking-widest">Ingin mengganti / menonaktifkan MFA?</p>
-                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                    <button type="button" onclick="confirmDisable()"
-                            class="px-6 py-3 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-600/20 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 mx-auto"
-                            title="Nonaktifkan MFA">
-                        <i data-lucide="shield-off" class="w-4 h-4"></i> Nonaktifkan MFA
+                    
+                    <?php if (!empty($otpauth)): ?>
+                        <div class="pt-4 space-y-2">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">Scan QR Code (jika perlu)</p>
+                            <div id="mfa-qr-existing" class="inline-flex items-center justify-center w-44 h-44 rounded-2xl bg-white p-2"></div>
+                        </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var existingQr = document.getElementById('mfa-qr-existing');
+                                if (existingQr && typeof QRCode !== 'undefined') {
+                                    new QRCode(existingQr, {
+                                        text: <?= json_encode($otpauth) ?>,
+                                        width: 160,
+                                        height: 160,
+                                        correctLevel: QRCode.CorrectLevel.M
+                                    });
+                                }
+                            });
+                        </script>
+                    <?php endif; ?>
+
+                    <!-- Reset MFA -->
+                    <div class="pt-4 border-t border-white/5 space-y-4">
+                        <p class="text-[10px] text-gray-600 uppercase tracking-widest">Ingin mengganti / menonaktifkan MFA?</p>
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                        <button type="button" onclick="confirmDisable()"
+                                class="px-6 py-3 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-600/20 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 mx-auto"
+                                title="Nonaktifkan MFA">
+                            <i data-lucide="shield-off" class="w-4 h-4"></i> Nonaktifkan MFA
+                        </button>
+                    </div>
+
+                    <script>
+                        function confirmDisable() {
+                            Swal.fire({
+                                title: 'Nonaktifkan MFA?',
+                                html: '<div style="font-size:12px;color:#9ca3af">Akun Anda akan kembali hanya menggunakan <strong style="color:#e5e7eb">password</strong> untuk login. Ini mengurangi keamanan akun.</div>',
+                                icon: 'warning',
+                                iconColor: '#ef4444',
+                                showCancelButton: true,
+                                confirmButtonText: 'YA, NONAKTIFKAN',
+                                cancelButtonText: 'BATAL',
+                                background: '#141820',
+                                color: '#fff',
+                                reverseButtons: true,
+                                customClass: {
+                                    popup: 'border border-red-600/25 rounded-2xl shadow-2xl',
+                                    title: 'text-sm font-black uppercase tracking-wider pt-4 text-red-500',
+                                    htmlContainer: 'mt-1 mb-4',
+                                    confirmButton: 'bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl transition-all border-none cursor-pointer ml-2',
+                                    cancelButton: 'bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl border border-white/10 cursor-pointer transition-all mr-2'
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    const form = document.createElement('form');
+                                    form.method = 'POST';
+                                    form.innerHTML = '<input type="hidden" name="disable_mfa" value="1"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">';
+                                    document.body.appendChild(form);
+                                    form.submit();
+                                }
+                            });
+                        }
+                    </script>
+                </div>
+
+            <?php elseif ($step === 'verify'): ?>
+                <!-- ─── VERIFY QR CODE ─── -->
+                <input type="hidden" name="verify_code" value="1">
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
+                <div class="text-center space-y-4">
+                    <h3 class="text-lg font-bold text-white">1. Scan QR Code</h3>
+                    <p class="text-xs text-gray-400">
+                        Buka aplikasi <strong class="text-white">Google Authenticator</strong> atau <strong class="text-white">Authy</strong>,
+                        lalu scan QR Code di bawah ini.
+                    </p>                
+                    <!-- QR Code (local canvas — 100% offline) -->
+                    <div class="flex justify-center">
+                        <div id="mfa-qr-canvas" class="inline-flex items-center justify-center w-48 h-48 rounded-2xl bg-white p-2 shadow-lg"></div>
+                    </div>
+                    <button type="button" onclick="downloadQR()"
+                            class="text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl font-bold transition-all inline-flex items-center gap-2 mx-auto"
+                            title="Download QR Code sebagai gambar PNG">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Download QR Code
+                    </button>
+
+                    <!-- Manual entry -->
+                    <details class="text-left cursor-pointer group">
+                        <summary class="text-[11px] text-gray-500 hover:text-gray-300 transition font-bold tracking-wider">
+                            Tidak bisa scan? Masukkan manual
+                        </summary>
+                        <div class="mt-3 p-3 bg-black/30 rounded-xl text-[11px] text-gray-400 space-y-1 break-all font-mono">
+                            <p><span class="text-gray-500">Secret:</span>
+                                <span id="mfa-secret-text" class="text-white select-all font-mono"><?= htmlspecialchars($_SESSION['mfa_pending_secret'] ?? '') ?></span>
+                                <button type="button" onclick="copySecret()"
+                                        class="inline-flex ml-1 p-1 rounded-md bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-all align-middle"
+                                        title="Salin secret key">
+                                    <i data-lucide="copy" class="w-3 h-3"></i>
+                                </button>
+                            </p>
+                            <p><span class="text-gray-500">Tipe:</span> Time-based (TOTP)</p>
+                            <p><span class="text-gray-500">Akun:</span> <span class="text-white"><?= htmlspecialchars($username) ?></span></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="border-t border-white/5 pt-6 space-y-4">
+                    <h3 class="text-lg font-bold text-white text-center">2. Verifikasi Kode</h3>
+                    <p class="text-[11px] text-gray-500 text-center">
+                        Masukkan kode 6-digit yang muncul di aplikasi Authenticator Anda.
+                    </p>
+                    <div>
+                        <label for="code" class="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-widest">Kode 6 Digit</label>
+                        <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
+                               placeholder="000000" required
+                               class="code-input w-full bg-[#0b0e14] border border-gray-800 rounded-2xl py-4 px-4 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 text-white transition-all">
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-purple-900/20">
+                        Verifikasi & Aktifkan
+                        <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
                     </button>
                 </div>
 
-                <script>
-                    function confirmDisable() {
-                        Swal.fire({
-                            title: 'Nonaktifkan MFA?',
-                            html: '<div style="font-size:12px;color:#9ca3af">Akun Anda akan kembali hanya menggunakan <strong style="color:#e5e7eb">password</strong> untuk login. Ini mengurangi keamanan akun.</div>',
-                            icon: 'warning',
-                            iconColor: '#ef4444',
-                            showCancelButton: true,
-                            confirmButtonText: 'YA, NONAKTIFKAN',
-                            cancelButtonText: 'BATAL',
-                            background: '#141820',
-                            color: '#fff',
-                            reverseButtons: true,
-                            customClass: {
-                                popup: 'border border-red-600/25 rounded-2xl shadow-2xl',
-                                title: 'text-sm font-black uppercase tracking-wider pt-4 text-red-500',
-                                htmlContainer: 'mt-1 mb-4',
-                                confirmButton: 'bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl transition-all border-none cursor-pointer ml-2',
-                                cancelButton: 'bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-black uppercase tracking-wider py-2.5 px-6 rounded-xl border border-white/10 cursor-pointer transition-all mr-2'
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.innerHTML = '<input type="hidden" name="disable_mfa" value="1"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">';
-                                document.body.appendChild(form);
-                                form.submit();
-                            }
-                        });
-                    }
-                </script>
-            </div>
-
-        <?php elseif ($step === 'verify'): ?>
-            <!-- ─── VERIFY QR CODE ─── -->
-            <input type="hidden" name="verify_code" value="1">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-
-            <div class="text-center space-y-4">
-                <h3 class="text-lg font-bold text-white">1. Scan QR Code</h3>
-                <p class="text-xs text-gray-400">
-                    Buka aplikasi <strong class="text-white">Google Authenticator</strong> atau <strong class="text-white">Authy</strong>,
-                    lalu scan QR Code di bawah ini.
-                </p>                
-                <!-- QR Code (local canvas — 100% offline) -->
-                <div class="flex justify-center">
-                    <div id="mfa-qr-canvas" class="inline-flex items-center justify-center w-48 h-48 rounded-2xl bg-white p-2 shadow-lg"></div>
+            <?php elseif ($step === 'backup'): ?>
+                <!-- ─── BACKUP CODES ─── -->
+                <div class="text-center space-y-4">
+                    <div class="inline-flex p-3 bg-yellow-500/10 rounded-full text-yellow-400">
+                        <i data-lucide="alert-triangle" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Simpan Kode Cadangan!</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Kode-kode ini bisa digunakan <strong class="text-yellow-300">sekali pakai</strong> jika Anda kehilangan akses ke aplikasi Authenticator.
+                        <span class="text-yellow-500 font-bold">Simpan di tempat aman!</span>
+                    </p>
                 </div>
-                <button type="button" onclick="downloadQR()"
-                        class="text-[11px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl font-bold transition-all inline-flex items-center gap-2 mx-auto"
-                        title="Download QR Code sebagai gambar PNG">
+
+                <div class="grid grid-cols-2 gap-2">
+                    <?php foreach ($backup_codes as $code): ?>
+                        <div class="backup-code text-center"><?= htmlspecialchars($code) ?></div>
+                    <?php endforeach; ?>
+                </div>
+
+                <button type="button" onclick="downloadBackupCodes()"
+                        class="w-full bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 border border-yellow-600/20 hover:border-yellow-500/40 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm">
                     <i data-lucide="download" class="w-4 h-4"></i>
-                    Download QR Code
+                    Download Backup Codes (.txt)
                 </button>
 
-                <!-- Manual entry -->
-                <details class="text-left cursor-pointer group">
-                    <summary class="text-[11px] text-gray-500 hover:text-gray-300 transition font-bold tracking-wider">
-                        Tidak bisa scan? Masukkan manual
-                    </summary>
-                    <div class="mt-3 p-3 bg-black/30 rounded-xl text-[11px] text-gray-400 space-y-1 break-all font-mono">
-                        <p><span class="text-gray-500">Secret:</span>
-                            <span class="text-white select-all font-mono"><?= htmlspecialchars($_SESSION['mfa_pending_secret'] ?? '') ?></span>
-                            <button type="button" onclick="copySecret()"
-                                    class="inline-flex ml-1 p-1 rounded-md bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white transition-all align-middle"
-                                    title="Salin secret key">
-                                <i data-lucide="copy" class="w-3 h-3"></i>
-                            </button>
-                        </p>
-                        <p><span class="text-gray-500">Tipe:</span> Time-based (TOTP)</p>
-                        <p><span class="text-gray-500">Akun:</span> <span class="text-white"><?= htmlspecialchars($username) ?></span></p>
-                    </div>
-                </details>
-            </div>
-
-            <div class="border-t border-white/5 pt-6 space-y-4">
-                <h3 class="text-lg font-bold text-white text-center">2. Verifikasi Kode</h3>
-                <p class="text-[11px] text-gray-500 text-center">
-                    Masukkan kode 6-digit yang muncul di aplikasi Authenticator Anda.
-                </p>
-                <div>
-                    <label for="code" class="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-widest">Kode 6 Digit</label>
-                    <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
-                           placeholder="000000" required
-                           class="code-input w-full bg-[#0b0e14] border border-gray-800 rounded-2xl py-4 px-4 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 text-white transition-all">
+                <div class="text-[10px] text-gray-600 text-center">
+                    Halaman ini hanya ditampilkan <strong class="text-gray-400">sekali</strong>.
+                    Kode tidak bisa ditampilkan lagi setelah ini.
                 </div>
-                <button type="submit"
+
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                <button type="submit" name="backup_done" value="1"
+                        class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-green-900/20">
+                    Saya Sudah Menyimpannya
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                </button>
+
+            <?php elseif ($step === 'done'): ?>
+                <!-- ─── MFA BERHASIL DIAKTIFKAN ─── -->
+                <div class="text-center space-y-4">
+                    <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
+                        <i data-lucide="shield-check" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">MFA Berhasil Diaktifkan! 🎉</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Akun Anda sekarang lebih aman dengan autentikasi dua faktor.
+                        Setiap login akan meminta kode 6-digit dari aplikasi Authenticator.
+                    </p>
+                    <a href="../index.php"
+                       class="inline-block mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all">
+                        Kembali ke Beranda
+                    </a>
+                </div>
+
+            <?php else: ?>
+                <!-- ─── SETUP (PERTAMA KALI) ─── -->
+                <div class="text-center space-y-4">
+                    <div class="inline-flex p-3 bg-purple-500/10 rounded-full text-purple-400">
+                        <i data-lucide="smartphone" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Aktifkan MFA</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Autentikasi Dua Faktor (MFA) menambahkan lapisan keamanan ekstra.
+                        Selain password, Anda juga perlu kode 6-digit dari aplikasi Authenticator
+                        (<strong class="text-white">Google Authenticator</strong>, <strong class="text-white">Authy</strong>, atau <strong class="text-white">Bitwarden</strong>).
+                    </p>
+                </div>
+
+                <div class="bg-white/5 rounded-2xl p-5 space-y-3 text-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">1</div>
+                        <p class="text-gray-400">Klik tombol di bawah untuk <strong class="text-white">Generate Secret Key</strong></p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">2</div>
+                        <p class="text-gray-400">Scan <strong class="text-white">QR Code</strong> dengan aplikasi Authenticator</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">3</div>
+                        <p class="text-gray-400">Masukkan kode 6-digit untuk <strong class="text-white">verifikasi</strong></p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">4</div>
+                        <p class="text-gray-400">Simpan <strong class="text-yellow-400">backup codes</strong> untuk keadaan darurat</p>
+                    </div>
+                </div>
+
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                <button type="submit" name="generate_secret" value="1"
                         class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-purple-900/20">
-                    Verifikasi & Aktifkan
+                    Mulai Setup MFA
                     <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
                 </button>
-            </div>
+            <?php endif; ?>
 
-        <?php elseif ($step === 'backup'): ?>
-            <!-- ─── BACKUP CODES ─── -->
-            <div class="text-center space-y-4">
-                <div class="inline-flex p-3 bg-yellow-500/10 rounded-full text-yellow-400">
-                    <i data-lucide="alert-triangle" class="w-10 h-10"></i>
-                </div>
-                <h3 class="text-lg font-bold text-white">Simpan Kode Cadangan!</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Kode-kode ini bisa digunakan <strong class="text-yellow-300">sekali pakai</strong> jika Anda kehilangan akses ke aplikasi Authenticator.
-                    <span class="text-yellow-500 font-bold">Simpan di tempat aman!</span>
-                </p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-                <?php foreach ($backup_codes as $code): ?>
-                    <div class="backup-code text-center"><?= htmlspecialchars($code) ?></div>
-                <?php endforeach; ?>
-            </div>
-
-            <button type="button" onclick="downloadBackupCodes()"
-                    class="w-full bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 border border-yellow-600/20 hover:border-yellow-500/40 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                Download Backup Codes (.txt)
-            </button>
-
-            <div class="text-[10px] text-gray-600 text-center">
-                Halaman ini hanya ditampilkan <strong class="text-gray-400">sekali</strong>.
-                Kode tidak bisa ditampilkan lagi setelah ini.
-            </div>
-
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            <button type="submit" name="backup_done" value="1"
-                    class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-green-900/20">
-                Saya Sudah Menyimpannya
-                <i data-lucide="check" class="w-4 h-4"></i>
-            </button>
-
-        <?php elseif ($step === 'done'): ?>
-            <!-- ─── MFA BERHASIL DIAKTIFKAN ─── -->
-            <div class="text-center space-y-4">
-                <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
-                    <i data-lucide="shield-check" class="w-10 h-10"></i>
-                </div>
-                <h3 class="text-lg font-bold text-white">MFA Berhasil Diaktifkan! 🎉</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Akun Anda sekarang lebih aman dengan autentikasi dua faktor.
-                    Setiap login akan meminta kode 6-digit dari aplikasi Authenticator.
-                </p>
-                <a href="../index.php"
-                   class="inline-block mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all">
-                    Kembali ke Beranda
+            <!-- Kembali -->
+            <div class="text-center pt-2">
+                <a href="../index.php" class="text-xs text-gray-500 hover:text-gray-300 transition">
+                    <i data-lucide="arrow-left" class="w-3 h-3 inline-block mr-1"></i> Kembali ke Beranda
                 </a>
             </div>
+        </form>
 
-        <?php else: ?>
-            <!-- ─── SETUP (PERTAMA KALI) ─── -->
-            <div class="text-center space-y-4">
-                <div class="inline-flex p-3 bg-purple-500/10 rounded-full text-purple-400">
-                    <i data-lucide="smartphone" class="w-10 h-10"></i>
-                </div>
-                <h3 class="text-lg font-bold text-white">Aktifkan MFA</h3>
-                <p class="text-xs text-gray-400 leading-relaxed">
-                    Autentikasi Dua Faktor (MFA) menambahkan lapisan keamanan ekstra.
-                    Selain password, Anda juga perlu kode 6-digit dari aplikasi Authenticator
-                    (<strong class="text-white">Google Authenticator</strong>, <strong class="text-white">Authy</strong>, atau <strong class="text-white">Bitwarden</strong>).
-                </p>
-            </div>
+        <!-- JS spesifik halaman: backup codes untuk download -->
+        <script>
+            var _backupCodes = <?= json_encode($backup_codes) ?>;
 
-            <div class="bg-white/5 rounded-2xl p-5 space-y-3 text-sm">
-                <div class="flex items-start gap-3">
-                    <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">1</div>
-                    <p class="text-gray-400">Klik tombol di bawah untuk <strong class="text-white">Generate Secret Key</strong></p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">2</div>
-                    <p class="text-gray-400">Scan <strong class="text-white">QR Code</strong> dengan aplikasi Authenticator</p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">3</div>
-                    <p class="text-gray-400">Masukkan kode 6-digit untuk <strong class="text-white">verifikasi</strong></p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-7 h-7 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0 text-purple-400 text-xs font-black">4</div>
-                    <p class="text-gray-400">Simpan <strong class="text-yellow-400">backup codes</strong> untuk keadaan darurat</p>
-                </div>
-            </div>
-
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            <button type="submit" name="generate_secret" value="1"
-                    class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-purple-900/20">
-                Mulai Setup MFA
-                <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
-            </button>
-        <?php endif; ?>
-
-        <!-- Kembali -->
-        <div class="text-center pt-2">
-            <a href="../index.php" class="text-xs text-gray-500 hover:text-gray-300 transition">
-                <i data-lucide="arrow-left" class="w-3 h-3 inline-block mr-1"></i> Kembali ke Beranda
-            </a>
-        </div>
-    </form>
-
-    <p class="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
-</main>
-
-<script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-<script>
-    lucide.createIcons();
-
-    // ── Backup codes yang ditampilkan di halaman (untuk download) ──
-    var _backupCodes = <?= json_encode($backup_codes) ?>;
-
-    // ── Generate QR Code menggunakan library lokal (offline) ──
-    document.addEventListener('DOMContentLoaded', function() {
-        var qrContainer = document.getElementById('mfa-qr-canvas');
-        if (qrContainer && typeof QRCode !== 'undefined') {
-            new QRCode(qrContainer, {
-                text: <?= json_encode($otpauth) ?>,
-                width: 170,
-                height: 170,
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-    });
-
-    // ── Download QR Code sebagai PNG ──
-    function downloadQR() {
-        var qrContainer = document.getElementById('mfa-qr-canvas');
-        if (!qrContainer) return;
-        var canvas = qrContainer.querySelector('canvas');
-        if (!canvas) return;
-        var link = document.createElement('a');
-        link.download = 'MEeL-MFA-QR-<?= htmlspecialchars($username) ?>.png';
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }    // ── Download Backup Codes sebagai TXT ──
-    function downloadBackupCodes() {
-        var codes = window._backupCodes || [];
-        if (!codes.length) return;
-
-        var username = '<?= htmlspecialchars($username) ?>';
-        var dateStr = new Date().toISOString().replace(/T/, ' ').slice(0, 19);
-        var lines = [
-            'MEeL — MFA Backup Codes',
-            'User: ' + username,
-            'Generated: ' + dateStr,
-            '',
-            'Setiap kode hanya bisa digunakan SEKALI.',
-            'Simpan di tempat yang aman!',
-            '',
-        ];
-        codes.forEach(function(c) { lines.push('  ' + c); });
-
-        var blob = new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' });
-        var link = document.createElement('a');
-        link.download = 'MEeL-backup-codes-' + username + '.txt';
-        link.href = URL.createObjectURL(blob);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    }
-
-    // Copy secret to clipboard
-    function copySecret() {
-        const text = document.getElementById('mfa-secret-text');
-        if (text) {
-            navigator.clipboard.writeText(text.textContent).then(() => {
-                const btn = document.querySelector('[onclick="copySecret()"]');
-                if (btn) {
-                    const icon = btn.querySelector('i');
-                    if (icon) {
-                        icon.setAttribute('data-lucide', 'check');
-                        lucide.createIcons();
-                        setTimeout(() => {
-                            icon.setAttribute('data-lucide', 'copy');
-                            lucide.createIcons();
-                        }, 2000);
-                    }
+            // ── Generate QR Code menggunakan library lokal (offline) ──
+            document.addEventListener('DOMContentLoaded', function() {
+                var qrContainer = document.getElementById('mfa-qr-canvas');
+                if (qrContainer && typeof QRCode !== 'undefined') {
+                    new QRCode(qrContainer, {
+                        text: <?= json_encode($otpauth) ?>,
+                        width: 170,
+                        height: 170,
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
                 }
-            }).catch(() => {
-                // Fallback: select text manually
-                text.select();
-                document.execCommand('copy');
             });
-        }
-    }
 
-    // Auto-focus on code input
-    const codeInput = document.getElementById('code');
-    if (codeInput) {
-        codeInput.focus();
-        codeInput.addEventListener('input', function() {
-            this.value = this.value.replace(/\D/g, '').slice(0, 6);
-            if (this.value.length === 6) {
-                // Auto-submit after brief delay
-                setTimeout(() => {
-                    if (this.form) this.form.submit();
-                }, 300);
+            // ── Download QR Code sebagai PNG ──
+            function downloadQR() {
+                var qrContainer = document.getElementById('mfa-qr-canvas');
+                if (!qrContainer) return;
+                var canvas = qrContainer.querySelector('canvas');
+                if (!canvas) return;
+                var link = document.createElement('a');
+                link.download = 'MEeL-MFA-QR-<?= htmlspecialchars($username) ?>.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }    // ── Download Backup Codes sebagai TXT ──
+            function downloadBackupCodes() {
+                var codes = window._backupCodes || [];
+                if (!codes.length) return;
+
+                var username = '<?= htmlspecialchars($username) ?>';
+                var dateStr = new Date().toISOString().replace(/T/, ' ').slice(0, 19);
+                var lines = [
+                    'MEeL — MFA Backup Codes',
+                    'User: ' + username,
+                    'Generated: ' + dateStr,
+                    '',
+                    'Setiap kode hanya bisa digunakan SEKALI.',
+                    'Simpan di tempat yang aman!',
+                    '',
+                ];
+                codes.forEach(function(c) { lines.push('  ' + c); });
+
+                var blob = new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' });
+                var link = document.createElement('a');
+                link.download = 'MEeL-backup-codes-' + username + '.txt';
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
             }
-        });
-    }
-</script>
-</body>
-</html>
+
+            // Copy secret to clipboard
+            function copySecret() {
+                const text = document.getElementById('mfa-secret-text');
+                if (text) {
+                    navigator.clipboard.writeText(text.textContent).then(() => {
+                        const btn = document.querySelector('[onclick="copySecret()"]');
+                        if (btn) {
+                            const icon = btn.querySelector('i');
+                            if (icon) {
+                                icon.setAttribute('data-lucide', 'check');
+                                lucide.createIcons();
+                                setTimeout(() => {
+                                    icon.setAttribute('data-lucide', 'copy');
+                                    lucide.createIcons();
+                                }, 2000);
+                            }
+                        }
+                    }).catch(() => {
+                        // Fallback: select text manually
+                        text.select();
+                        document.execCommand('copy');
+                    });
+                }
+            }
+        </script>
+<?php include __DIR__ . '/partials/auth_mfa_footer.php'; ?>

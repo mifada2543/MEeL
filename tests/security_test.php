@@ -527,11 +527,12 @@ function testPasswordPolicy(): void {
     print_header('TEST 11: Password Policy & Strength');
 
     $checks = [
-        ['Min 8 karakter password',          'auth/register.php', '/strlen.*pass.*8|min.*8/'],
+        // Validasi register dipindah ke auth/auth_helpers.php (refactor modular)
+        ['Min 8 karakter password',          'auth/auth_helpers.php', '/strlen.*pass.*8|min.*8/'],
         ['Brute force lockout',              'auth/login.php',    '/login_fail_count/'],
         ['Lockout timeout',                  'auth/login.php',    '/lockout_time/'],
-        ['Username regex (alpha numeric)',   'auth/register.php', '/preg_match.*a-zA-Z0-9/'],
-        ['Guest username blacklist',         'auth/register.php', '/stripos.*guest/'],
+        ['Username regex (alpha numeric)',   'auth/auth_helpers.php', '/preg_match.*a-zA-Z0-9/'],
+        ['Guest username blacklist',         'auth/auth_helpers.php', '/stripos.*guest/'],
     ];
 
     foreach ($checks as $c) {
@@ -555,7 +556,8 @@ function testFileIntegrity(): void {
 
     $critical = [
         '.htaccess', 'auth/config.php', 'auth/auth.php', 'auth/login.php',
-        'auth/logout.php', 'auth/register.php', 'modules/core/helpers.php',
+        'auth/logout.php', 'auth/register.php', 'auth/auth_helpers.php',
+        'modules/core/helpers.php',
         'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
         'modules/core/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
