@@ -9,7 +9,7 @@
  * @license GPL v3
  */
 
-const SW_VERSION = 'v1.3-20260802';
+const SW_VERSION = 'v1.4-20260802';
 const STATIC_CACHE = 'meel-static-' + SW_VERSION;
 const PAGE_CACHE   = 'meel-pages-' + SW_VERSION;
 

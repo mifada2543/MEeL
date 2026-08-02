@@ -379,6 +379,8 @@ function stopBreakEnforcement() {
  * bagian atas halaman — bukan modal paksa. Banner:
  *   - meluncur masuk dari atas, terlihat selama 20 detik, lalu hilang
  *     sendiri ("seperti iklan lewat"), tanpa mengharuskan klik;
+ *   - punya garis countdown hijau di paling atas yang menyusut 100% → 0%
+ *     selama 20 detik, sinkron dengan timer auto-hide;
  *   - bisa ditutup manual lewat tombol ✕;
  *   - TIDAK memblokir keyboard / scroll / pemutaran apa pun;
  *   - setelah selesai → jadwalkan alarm berikutnya (+20 menit).
@@ -456,8 +458,16 @@ function runReadingHealthBanner() {
     "border:1px solid rgba(16,185,129,.35);border-top:2px solid #10b981;" +
     "border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6);" +
     "padding:14px 14px 12px;display:flex;align-items:flex-start;gap:12px;" +
+    "overflow:hidden;" + // garis progress di top:0 tidak keluar dari sudut membulat
     "color:#fff;font-family:ui-sans-serif,system-ui,sans-serif;";
   banner.innerHTML =
+    // Garis countdown hijau di paling atas banner: menyusut 100% → 0% selama
+    // HEALTH_BANNER_MS (20 detik), sinkron dengan auto-hide. Elemen dibuat di
+    // sini dengan width awal 100%; lebar-nya diubah ke 0% di rAF di bawah agar
+    // transisi linear berjalan dari penuh → kosong.
+    '<div id="meel-health-banner-progress" style="position:absolute;top:0;left:0;' +
+    'height:3px;width:100%;background:#10b981;' +
+    'transition:width ' + (HEALTH_BANNER_MS / 1000) + 's linear;"></div>' +
     '<div style="flex-shrink:0;width:34px;height:34px;border-radius:10px;' +
     'background:rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;">' +
     '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
@@ -483,9 +493,15 @@ function runReadingHealthBanner() {
   if (typeof requestAnimationFrame !== "undefined") {
     requestAnimationFrame(function () {
       banner.style.animation = "meelBannerSlideIn .35s ease forwards";
+      // Mulai countdown garis hijau: dari penuh (100%) menyusut ke 0% selama
+      // 20 detik — transisi linear, sinkron dengan timer auto-hide.
+      var prog = banner.querySelector("#meel-health-banner-progress");
+      if (prog) prog.style.width = "0%";
     });
   } else {
     banner.style.animation = "meelBannerSlideIn .35s ease forwards";
+    var progFallback = banner.querySelector("#meel-health-banner-progress");
+    if (progFallback) progFallback.style.width = "0%";
   }
 
   // Auto-hide 20 detik + tombol tutup manual → jalur dismiss yang sama.
@@ -518,6 +534,29 @@ function dismissHealthReadingBanner(doSchedule) {
   }, 300);
   if (doSchedule !== false) scheduleNextHealthAlert();
   logHealthDebug("Banner ditutup.");
+  if (healthBannerResolve) {
+    var r = healthBannerResolve;
+    healthBannerResolve = null;
+    r();
+  }
+}
+
+/**
+ * Jalur ramping untuk pagehide: halaman sedang dibongkar, jadi animasi
+ * fade-out + timer 300ms tidak perlu. Langsung jadwalkan ulang +20 menit,
+ * lepas state banner, dan resolve lock — tanpa meninggalkan
+ * `healthBannerRemoving` yang menggantung (aman untuk bfcache restore).
+ */
+function finalizeReadingBannerOnLeave() {
+  if (!healthBannerEl || healthBannerRemoving) return;
+  clearTimeout(healthBannerHideTimer);
+  healthBannerHideTimer = null;
+  var b = healthBannerEl;
+  healthBannerEl = null;
+  healthBannerRemoving = false;
+  if (b.parentNode) b.parentNode.removeChild(b);
+  scheduleNextHealthAlert();
+  logHealthDebug("Banner dilewati (pindah halaman) → jadwal ulang +20 menit.");
   if (healthBannerResolve) {
     var r = healthBannerResolve;
     healthBannerResolve = null;
@@ -685,7 +724,10 @@ function runHealthAlertFlow() {
     reverseButtons: true,
     buttonsStyling: false,
     allowOutsideClick: false,
-    timer: 3e5, // auto-tutup setelah 5 menit
+    timer: 3e5, // 300.000 ms = 5 menit (auto-tutup jika user tidak merespons)
+    // Progress bar bawaan SweetAlert: menampilkan durasi menunggu 5 menit
+    // secara visual (menyusut dari 100% → 0% seiring berjalannya waktu).
+    timerProgressBar: true,
     customClass: {
       popup: "border border-red-600/25 border-t-2 border-t-red-600 rounded-2xl shadow-2xl",
       title: "text-sm font-black uppercase tracking-wider pt-4 text-red-500",
@@ -695,6 +737,9 @@ function runHealthAlertFlow() {
       cancelButton: "flex-1 bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-black uppercase tracking-wider py-2.5 rounded-xl border border-white/10 cursor-pointer transition-all",
     },
     didOpen: () => {
+      // Warna progress bar bawaan mengikuti tema merah peringatan modal ini.
+      const tpBar = document.querySelector(".swal2-timer-progress-bar");
+      if (tpBar) tpBar.style.background = "#dc2626";
       if (typeof lucide !== "undefined") lucide.createIcons();
       // Keluar dari fullscreen agar user benar-benar bisa memandang ke kejauhan.
       if (wasFullscreen) {
@@ -717,15 +762,14 @@ function runHealthAlertFlow() {
                         <div class="text-4xl font-mono font-black text-green-500 tracking-wider">
                             <span id="countdown-sec">20</span>s
                         </div>
-                        <div class="w-full bg-white/[0.04] h-1.5 rounded-full overflow-hidden">
-                            <div id="countdown-bar" class="bg-green-500 h-full w-full transition-all duration-1000 ease-linear"></div>
-                        </div>
                     </div>
                 `,
         background: "#141820",
         color: "#ffffff",
-        timer: 2e4, // auto-tutup setelah 20 detik
-        timerProgressBar: false,
+        timer: 2e4, // 20.000 ms = 20 detik (durasi relaksasi 20-20-20)
+        // Progress bar bawaan SweetAlert: menampilkan durasi 20 detik secara
+        // visual (menyusut dari 100% → 0% seiring berjalannya waktu).
+        timerProgressBar: true,
         showConfirmButton: false,
         allowOutsideClick: false,
         customClass: {
@@ -733,13 +777,14 @@ function runHealthAlertFlow() {
           title: "text-xs font-black uppercase tracking-widest pt-4 text-green-400",
         },
         didOpen: () => {
+          // Warna progress bar bawaan mengikuti tema hijau relaksasi.
+          const tpBar = document.querySelector(".swal2-timer-progress-bar");
+          if (tpBar) tpBar.style.background = "#10b981";
           let sec = 20;
           const secEl = document.getElementById("countdown-sec");
-          const barEl = document.getElementById("countdown-bar");
           countdownInterval = setInterval(() => {
             sec--;
             if (secEl) secEl.innerText = sec;
-            if (barEl) barEl.style.width = (sec / 20) * 100 + "%";
           }, 1000);
         },
         willClose: () => {
@@ -840,4 +885,15 @@ window.addEventListener("storage", function (e) {
     // Mode dimatikan dari tab lain → tutup banner yang mungkin tampil.
     dismissHealthReadingBanner(false);
   }
+});
+
+// Jika user PINDAH halaman (klik "Selanjutnya" chapter, refresh, atau tutup
+// tab) saat banner reading masih tampil → perlakukan banner sebagai "sudah
+// lewat": jadwalkan ulang alarm +20 menit. Tanpa ini, target lama (masa lalu)
+// terbawa ke halaman berikutnya sehingga "Target sudah lewat → langsung
+// menampilkan alarm" muncul lagi di tiap chapter — padahal user menganggap
+// banner sudah ia lewati. Hanya memengaruhi banner reading (healthBannerEl),
+// tidak menyentuh jalur media video/music.
+window.addEventListener("pagehide", function () {
+  finalizeReadingBannerOnLeave();
 });
