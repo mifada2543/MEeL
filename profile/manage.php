@@ -42,7 +42,11 @@ $cleaned_count = cleanupPendingDeletions();
 // ── Handle delete action ──
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+    // Delete link membawa token di query string (GET), bukan POST body.
+    // Dukungan POST tetap dipertahankan untuk kompatibilitas.
+    $csrf_input = $_GET['csrf_token'] ?? ($_POST['csrf_token'] ?? null);
+    $csrf_input = is_string($csrf_input) ? $csrf_input : null;
+    if (!verify_csrf_token($csrf_input)) {
         $delete_msg = 'Token tidak valid.';
     } else {
         $del_id   = (int)$_GET['id'];
