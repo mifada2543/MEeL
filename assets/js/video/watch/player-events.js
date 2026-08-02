@@ -15,6 +15,31 @@
 
 function setupMeelPlayerEvents() {
   window.player = player;
+
+  /* ── Helper terpusat: apply aspect-ratio + cap video portrait ──
+   * Landscape/square → perilaku default (w-full dari class Tailwind).
+   * Portrait (rasio < 1) → batasi tinggi maksimum 80vh, lebar
+   * menyesuaikan proporsional, wrapper di-center — mencegah video
+   * 9:16 meregang sangat tinggi di layar lebar. ── */
+  function applyMeelVideoAspect(wrapper, videoW, videoH) {
+    if (!wrapper || !videoW || !videoH) return;
+    wrapper.style.aspectRatio = `${videoW} / ${videoH}`;
+    if (videoW < videoH) {
+      // Portrait: batasi tinggi maksimum, biarkan lebar menyesuaikan
+      // (mencegah player meregang penuh w-full menjadi sangat tinggi).
+      wrapper.style.maxHeight = "80vh";
+      wrapper.style.width = "auto";
+      wrapper.style.marginLeft = "auto";
+      wrapper.style.marginRight = "auto";
+    } else {
+      // Landscape/square: kembali ke perilaku default (w-full dari class Tailwind)
+      wrapper.style.maxHeight = "";
+      wrapper.style.width = "";
+      wrapper.style.marginLeft = "";
+      wrapper.style.marginRight = "";
+    }
+  }
+
   function a() {
     const e = document.getElementById("main-video-wrapper"),
       t = videoElement;
@@ -23,8 +48,8 @@ function setupMeelPlayerEvents() {
       o = t.videoHeight,
       l = (e, t) => (0 === t ? e : l(t, e % t)),
       a = l(n, o);
-    (console.log(`[MEeL] Aspect ratio video: ${n / a}:${o / a} (${n}x${o})`),
-      isMiniPlayerActive || (e.style.aspectRatio = `${n} / ${o}`));
+    console.log(`[MEeL] Aspect ratio video: ${n / a}:${o / a} (${n}x${o})`);
+    if (!isMiniPlayerActive) applyMeelVideoAspect(e, n, o);
   }
   /* ── Auto-Next Overlay Card ───────────────────────────────
    * Tampilkan card overlay (YouTube-style) saat video selesai
@@ -272,8 +297,11 @@ function setupMeelPlayerEvents() {
                   videoElement &&
                   videoElement.videoWidth &&
                   videoElement.videoHeight &&
-                  (e.style.aspectRatio =
-                    videoElement.videoWidth + "/" + videoElement.videoHeight);
+                  applyMeelVideoAspect(
+                    e,
+                    videoElement.videoWidth,
+                    videoElement.videoHeight,
+                  );
               },
               { once: !0 },
             ))
@@ -288,8 +316,11 @@ function setupMeelPlayerEvents() {
                   videoElement &&
                   videoElement.videoWidth &&
                   videoElement.videoHeight &&
-                  (e.style.aspectRatio =
-                    videoElement.videoWidth + "/" + videoElement.videoHeight);
+                  applyMeelVideoAspect(
+                    e,
+                    videoElement.videoWidth,
+                    videoElement.videoHeight,
+                  );
               },
               { once: !0 },
             ));
@@ -516,11 +547,22 @@ function setupMeelPlayerEvents() {
 
       /* ── Ignore notch: force true fullscreen ── */
       document.body.classList.add("meel-fs-active");
+
+      /* ── Hentikan glow canvas biasa (halaman) saat fullscreen ──
+       * Hanya #video-glow-canvas-fs yang berjalan di fullscreen,
+       * mencegah double-glow (dua loop RAF = boros CPU & terang 2x).
+       * Loop halaman di-restart di exitfullscreen. */
+      glowStopFn && glowStopFn(!0);
       const e_fsWrap = document.getElementById("main-video-wrapper"),
         e_fsGlow = document.getElementById("video-glow-container");
       if (e_fsWrap) {
         e_fsWrap._meelSavedRatio = e_fsWrap.style.aspectRatio || "";
+        e_fsWrap._meelSavedMaxHeight = e_fsWrap.style.maxHeight || "";
+        e_fsWrap._meelSavedWidth = e_fsWrap.style.width || "";
+        e_fsWrap._meelSavedMarginL = e_fsWrap.style.marginLeft || "";
+        e_fsWrap._meelSavedMarginR = e_fsWrap.style.marginRight || "";
         e_fsWrap.style.setProperty("aspect-ratio", "unset", "important");
+        e_fsWrap.style.setProperty("max-height", "none", "important");
         e_fsWrap.style.setProperty("height", "100vh", "important");
         e_fsWrap.style.setProperty("width", "100vw", "important");
         e_fsWrap.style.setProperty("border-radius", "0", "important");
@@ -628,12 +670,25 @@ function setupMeelPlayerEvents() {
         e_xsGlow = document.getElementById("video-glow-container");
       if (e_xsWrap) {
         e_xsWrap.style.removeProperty("aspect-ratio");
+        e_xsWrap.style.removeProperty("max-height");
         e_xsWrap.style.removeProperty("height");
         e_xsWrap.style.removeProperty("width");
         e_xsWrap.style.removeProperty("border-radius");
         if (e_xsWrap._meelSavedRatio)
           e_xsWrap.style.aspectRatio = e_xsWrap._meelSavedRatio;
+        if (e_xsWrap._meelSavedMaxHeight)
+          e_xsWrap.style.maxHeight = e_xsWrap._meelSavedMaxHeight;
+        if (e_xsWrap._meelSavedWidth)
+          e_xsWrap.style.width = e_xsWrap._meelSavedWidth;
+        if (e_xsWrap._meelSavedMarginL)
+          e_xsWrap.style.marginLeft = e_xsWrap._meelSavedMarginL;
+        if (e_xsWrap._meelSavedMarginR)
+          e_xsWrap.style.marginRight = e_xsWrap._meelSavedMarginR;
         delete e_xsWrap._meelSavedRatio;
+        delete e_xsWrap._meelSavedMaxHeight;
+        delete e_xsWrap._meelSavedWidth;
+        delete e_xsWrap._meelSavedMarginL;
+        delete e_xsWrap._meelSavedMarginR;
       }
       if (e_xsGlow) {
         e_xsGlow.style.removeProperty("height");
@@ -658,6 +713,17 @@ function setupMeelPlayerEvents() {
             ((videoElement.style.position = ""),
             (videoElement.style.zIndex = "")));
       }
+      /* ── Restart glow canvas biasa (halaman) setelah keluar fullscreen ──
+       * Hanya jika glow aktif & video masih diputar (mirror logic resume
+       * di lifecycle.js visibilitychange). player.fullscreen.active sudah
+       * false saat event ini di-emit, jadi guard di glowStartFn lolos. */
+      glowEnabled &&
+        videoElement &&
+        !videoElement.paused &&
+        !videoElement.ended &&
+        !glowRAF &&
+        glowStartFn &&
+        glowStartFn();
     }));
   const r = document.getElementById("video-glow-canvas");
   if (r && videoElement) {
@@ -679,9 +745,10 @@ function setupMeelPlayerEvents() {
           } catch (e) {}
       },      a = (timestamp) => {
         if (!glowRAF) return;
-        /* Canvas glow tersembunyi (display:none — mis. mobile atau saat
-           mini-player) → lewati kerja pixel & navbar, tetap jadwalkan
-           agar langsung hidup saat terlihat kembali. */
+        /* Canvas glow tersembunyi (display:none — saat mini-player aktif)
+           → lewati kerja pixel & navbar, tetap jadwalkan agar langsung
+           hidup saat terlihat kembali. (Mobile kini menampilkan glow —
+           class block, blur lebih ringan di glow.css <640px.) */
         if (r.offsetParent === null) {
           glowRAF = requestAnimationFrame(a);
           return;
@@ -716,6 +783,10 @@ function setupMeelPlayerEvents() {
       },
       i = () => {
         if (!glowEnabled || glowRAF) return;
+        /* Fullscreen: hanya #video-glow-canvas-fs yang boleh jalan —
+           jangan mulai glow halaman saat fullscreen aktif (guard ini
+           juga melindungi restart via play/visibilitychange/toggleGlow). */
+        if (player && player.fullscreen && player.fullscreen.active) return;
         r.classList.add("glow-active");
         o();
         glowLastSampleTime = 0;

@@ -140,7 +140,7 @@ $__vdir = function($dir) {
     <main id="app-content-grid" class="w-full pt-4 sm:pt-4 pb-20 flex flex-col lg:flex-row gap-4">
         <div id="left-column" class="flex-1 space-y-2 sm:space-y-3 px-4 sm:px-5">
             <div id="video-glow-container" class="relative w-full">
-                <canvas id="video-glow-canvas" class="hidden sm:block"></canvas>
+                <canvas id="video-glow-canvas" class="block"></canvas>
                 <div id="main-video-wrapper" class="relative bg-black rounded-none sm:rounded-none overflow-hidden border-0 shadow-2xl w-full" style="aspect-ratio: 16/9;">
                     <video id="main-video" playsinline controls preload="metadata"
                         data-poster="upload/thumbnail/<?= htmlspecialchars($v['thumbnail']) ?>"
