@@ -146,12 +146,14 @@ $allowed_sort_columns = [
     'likes'    => 'likes',
     'dislikes' => 'dislikes',
     'title'    => 'title',
+    'id'       => 'id',
 ];
 if (!isset($allowed_sort_columns[$sort])) {
     $sort = 'views';
 }
 if (!in_array($sort_dir, ['asc', 'desc'], true)) {
-    $sort_dir = ($sort === 'title') ? 'asc' : 'desc';
+    // title & id diurutkan A→Z / kecil→besar secara default (asc).
+    $sort_dir = in_array($sort, ['title', 'id'], true) ? 'asc' : 'desc';
 }
 $order_by = $allowed_sort_columns[$sort] . ' ' . strtoupper($sort_dir);
 
@@ -159,7 +161,7 @@ function getSortUrl(string $field): string {
     global $sort, $sort_dir, $type_filter, $search;
     $next_dir = ($field === $sort)
         ? ($sort_dir === 'asc' ? 'desc' : 'asc')
-        : ($field === 'title' ? 'asc' : 'desc');
+        : (in_array($field, ['title', 'id'], true) ? 'asc' : 'desc');
     return '?sort=' . $field . '&dir=' . $next_dir . '&type=' . urlencode($type_filter) . '&search=' . urlencode($search);
 }
 
@@ -174,12 +176,12 @@ function sortIcon(string $field): string {
 // ── Query Utama (Prepared Statement) ──
 $query_media = "
     SELECT * FROM (
-        SELECT id, title, 'video' AS media_type, views,
+        SELECT id, title, search_metadata, 'video' AS media_type, views,
             (SELECT COUNT(*) FROM interactions WHERE video_id = video.id AND type = 'like')    AS likes,
             (SELECT COUNT(*) FROM interactions WHERE video_id = video.id AND type = 'dislike') AS dislikes
         FROM video
         UNION ALL
-        SELECT id, title, 'music' AS media_type, views,
+        SELECT id, title, search_metadata, 'music' AS media_type, views,
             (SELECT COUNT(*) FROM interactions WHERE music_id = music.id AND type = 'like')    AS likes,
             (SELECT COUNT(*) FROM interactions WHERE music_id = music.id AND type = 'dislike') AS dislikes
         FROM music
@@ -191,7 +193,10 @@ $params = [];
 $types = '';
 
 if (!empty($search)) {
-    $conditions[] = "(title LIKE ? OR id LIKE ?)";
+    // Cari di search_metadata (judul asli + romaji + english + alias, lowercase)
+    // — bukan hanya title — agar judul Jepang bisa ditemukan via romaji/english.
+    // id tetap disertakan agar pencarian "ID #<angka>" tetap berfungsi.
+    $conditions[] = "(search_metadata LIKE ? OR id LIKE ?)";
     $like_param = '%' . $search . '%';
     $params[] = $like_param;
     $params[] = $like_param;
@@ -315,7 +320,7 @@ while ($rc = $r->fetch_assoc()) {
                     <input type="hidden" name="sort" value="<?= $sort ?>">
                     <input type="hidden" name="dir" value="<?= $sort_dir ?>">
                     <input type="hidden" name="type" value="<?= $type_filter ?>">
-                    <input type="text" name="search" placeholder="Cari judul atau ID..." 
+                    <input type="text" name="search" placeholder="Cari judul, romaji, atau ID..."
                         value="<?= htmlspecialchars($search) ?>"
                         class="admin-search-input">
                 </form>
@@ -361,9 +366,9 @@ while ($rc = $r->fetch_assoc()) {
                     <thead>
                         <tr>
                             <th class="th-center text-left">
-                                <a href="<?= getSortUrl('title') ?>" class="sort-link">
+                                <a href="<?= getSortUrl('id') ?>" class="sort-link">
                                     Konten
-                                    <?= sortIcon('title') ?>
+                                    <?= sortIcon('id') ?>
                                 </a>
                             </th>
                             <th class="th-center">
