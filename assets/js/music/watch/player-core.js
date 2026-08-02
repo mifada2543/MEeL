@@ -513,6 +513,8 @@
     }),
       player.on("loadedmetadata", window.updateMiniPlayerUI),
       player.on("ended", () => {
+        // Jeda kesehatan (20-20-20) aktif → jangan auto-next ke lagu lain.
+        if (window.meelHealthAlertActive) return;
         // Cegah redirect loop: hanya lanjut jika audio benar-benar selesai
         // diputar sampai akhir (currentTime mendekati duration), BUKAN karena error.
         const isGenuineEnd =

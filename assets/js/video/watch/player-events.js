@@ -201,6 +201,9 @@ function setupMeelPlayerEvents() {
    * cari .rekomendasi-item pertama di DOM.
    * ─────────────────────────────────────────────────────── */
   window.skipToNextVideo = async function (e, isManual = !0) {
+    // Jeda kesehatan (20-20-20) aktif → tolak pindah ke video lain
+    // (baik dari tombol next / keyboard 'n' / auto-next).
+    if (window.meelHealthAlertActive) return !1;
     const t = e || document.querySelector(".rekomendasi-item");
     if (!t) return !1;
     /* Manual skip → reset auto-next; auto-trigger → tetap ON */
@@ -517,6 +520,9 @@ function setupMeelPlayerEvents() {
       stopWaitingTimeout();
     }),
     player.on("ended", async () => {
+      // Jeda kesehatan (20-20-20) aktif → jangan tampilkan overlay
+      // auto-next / jangan lanjut ke video berikutnya.
+      if (window.meelHealthAlertActive) return;
       if ((stopStuckDetector(), player.loop)) return;
       if (isTransitioningNext) return;
       if (!autoNextEnabled) {

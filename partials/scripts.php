@@ -5,9 +5,12 @@
  * ═══════════════════════════════════════════════════════════════
  *
  * Partial ini adalah SATU-SATUNYA tempat memuat:
- *   - sweetalert2.all.min.js   (library SweetAlert2)
- *   - script.min.js            (helper meelAlert / meelConfirm /
- *                               meelConfirmLink / meelConfirmForm / health)
+ *   - sweetalert2.all.min.js      (library SweetAlert2)
+ *   - script.min.js               (helper meelAlert / meelConfirm /
+ *                                  meelConfirmLink / meelConfirmForm)
+ *   - shared/health-reminder.js   (fitur Mode Sehat 20-20-20, sumber
+ *                                  logika kesehatan terpisah dari
+ *                                  script.min.js)
  *
  * Semua halaman cukup include partial ini SEBELUM </body>:
  *
@@ -21,3 +24,4 @@ $scripts_root = $scripts_root ?? '';
 ?>
 <script src="<?= $scripts_root ?>assets/js/compatibilitas/sweetalert2.all.min.js"></script>
 <script src="<?= $scripts_root ?>assets/js/compatibilitas/script.min.js"></script>
+<script src="<?= $scripts_root ?>assets/js/shared/health-reminder.js"></script>

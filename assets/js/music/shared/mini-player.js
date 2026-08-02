@@ -202,6 +202,8 @@ function initMiniPlayerIndex() {
 // --- Play / Pause ---
 window.miniPlayPauseIndex = function() {
     if (!audioPlayer) return;
+    // Jeda kesehatan (20-20-20) aktif → jangan izinkan memulai pemutaran baru.
+    if (window.meelHealthAlertActive && audioPlayer.paused) return;
     audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
 };
 
@@ -216,6 +218,8 @@ window.miniSeekIndex = function(event) {
 // --- Next: Cari lagu berikutnya di DOM (termasuk playlist items) ---
 window.miniNextIndex = function() {
     if (!audioPlayer) return;
+    // Jeda kesehatan (20-20-20) aktif → tolak auto-next / pindah lagu.
+    if (window.meelHealthAlertActive) return;
     if (audioPlayer.loop) return;
     if (currentState && currentState.filename) {
         const allItems = Array.from(document.querySelectorAll('.music-item, .music-pl-item'));
