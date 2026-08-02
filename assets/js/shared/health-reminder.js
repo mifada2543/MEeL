@@ -28,8 +28,9 @@
  *   - Pemutar media: Plyr (`window.player`) atau elemen `<video>` /
  *     `<audio>` native (#main-video / #main-player / lainnya)
  *
- * Dimuat otomatis di setiap halaman yang memuat `script.min.js`
- * (via `partials/scripts.php` atau include langsung).
+ * Dimuat otomatis di halaman yang memuat `script.min.js` (via
+ * `partials/scripts.php` atau include langsung) dan di halaman baca
+ * buku (`books/read.php`) yang memuat file ini secara langsung.
  *
  * Koordinasi antar-tab (cegah alarm ganda saat 2+ tab terbuka):
  *   - Web Locks API      → hanya satu tab yang menampilkan alarm; lock
@@ -367,6 +368,164 @@ function stopBreakEnforcement() {
 }
 
 /* ============================================================
+ * 3c) MODE MEMBACA (books) — BANNER 20-20-20 yang lembut
+ * ============================================================
+ * Halaman buku (books/read.php) TIDAK memutar media apa pun, sehingga
+ * isPlayerActive() selalu false dan alarm biasa tidak pernah muncul.
+ * Halaman tersebut menyetel `window.meelHealthActivityMode = "reading"`
+ * (inline, sebelum health-reminder.js di-load).
+ *
+ * Saat mode membaca aktif dan alarm tiba, kita menampilkan BANNER di
+ * bagian atas halaman — bukan modal paksa. Banner:
+ *   - meluncur masuk dari atas, terlihat selama 20 detik, lalu hilang
+ *     sendiri ("seperti iklan lewat"), tanpa mengharuskan klik;
+ *   - bisa ditutup manual lewat tombol ✕;
+ *   - TIDAK memblokir keyboard / scroll / pemutaran apa pun;
+ *   - setelah selesai → jadwalkan alarm berikutnya (+20 menit).
+ *
+ * "Sedang membaca?" ditentukan via deteksi idle: ada aktivitas
+ * (scroll/klik/ketik) dalam 60 detik terakhir. Jika user meninggalkan
+ * halaman (idle), banner tidak muncul — konsisten dengan filosofi
+ * isPlayerActive() yang tidak mengganggu saat tidak ada aktivitas.
+ */
+
+var healthReadingLastActivity = 0;    // ts (ms) aktivitas baca terakhir
+var HEALTH_READING_IDLE_MS = 6e4;     // 60.000 ms = 1 menit idle
+var healthBannerEl = null;            // elemen banner yang sedang tampil
+var healthBannerHideTimer = null;     // timer auto-hide banner (20 detik)
+var healthBannerResolve = null;       // resolve Promise lock banner
+var healthBannerRemoving = false;     // true saat banner sedang fade-out
+var HEALTH_BANNER_MS = 2e4;           // 20.000 ms banner tampil
+
+/** Mode membaca aktif? (diset halaman books via window flag). */
+function isReadingModeActive() {
+  return window.meelHealthActivityMode === "reading";
+}
+
+/** Tandai aktivitas baca terakhir (dipanggil tiap scroll/klik/ketik). */
+function markHealthReadingActivity() {
+  healthReadingLastActivity = Date.now();
+}
+
+/**
+ * Apakah user sedang aktif membaca? (aktivitas dalam 60 detik terakhir
+ * dan halaman masih terlihat). Jika belum pernah ada aktivitas tercatat
+ * → anggap aktif (halaman baru).
+ */
+function isReadingActivityActive() {
+  if (document.hidden) return false; // tab tidak aktif → jangan ganggu
+  if (!healthReadingLastActivity) return true;
+  return Date.now() - healthReadingLastActivity <= HEALTH_READING_IDLE_MS;
+}
+
+/** Pasang pendeteksi aktivitas baca (hanya jika mode reading). */
+function setupReadingActivityTracking() {
+  if (!isReadingModeActive()) return;
+  var mark = markHealthReadingActivity;
+  document.addEventListener("scroll", mark, { passive: true });
+  document.addEventListener("keydown", mark, { passive: true });
+  document.addEventListener("click", mark, { passive: true });
+  markHealthReadingActivity();
+}
+
+/**
+ * Tampilkan banner 20-20-20 (mode membaca). Mengembalikan Promise agar
+ * lock antar-tab ditahan sampai banner selesai (cegah banner ganda).
+ * Banner auto-hide setelah HEALTH_BANNER_MS dan bisa ditutup manual.
+ */
+function runReadingHealthBanner() {
+  if (healthBannerEl || healthBannerRemoving) return Promise.resolve(); // sudah ada banner
+
+  // Suntikkan animasi slide (sekali saja).
+  if (!document.getElementById("meel-health-banner-style")) {
+    var st = document.createElement("style");
+    st.id = "meel-health-banner-style";
+    st.textContent =
+      "@keyframes meelBannerSlideIn{from{transform:translateX(-50%) translateY(-130%);opacity:0}" +
+      "to{transform:translateX(-50%) translateY(0);opacity:1}}" +
+      "@keyframes meelBannerFadeOut{to{transform:translateX(-50%) translateY(-130%);opacity:0}}";
+    (document.head || document.body).appendChild(st);
+  }
+
+  var banner = document.createElement("div");
+  banner.id = "meel-health-banner";
+  banner.setAttribute("role", "status");
+  banner.style.cssText =
+    "position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-130%);" +
+    "z-index:2147483000;width:min(92vw,430px);background:#141820;" +
+    "border:1px solid rgba(16,185,129,.35);border-top:2px solid #10b981;" +
+    "border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6);" +
+    "padding:14px 14px 12px;display:flex;align-items:flex-start;gap:12px;" +
+    "color:#fff;font-family:ui-sans-serif,system-ui,sans-serif;";
+  banner.innerHTML =
+    '<div style="flex-shrink:0;width:34px;height:34px;border-radius:10px;' +
+    'background:rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;">' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>' +
+    '</svg></div>' +
+    '<div style="flex:1;min-width:0;">' +
+    '<div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;' +
+    'color:#10b981;">20-20-20 &middot; Istirahat Mata</div>' +
+    '<div style="font-size:12px;line-height:1.5;color:#cbd5e1;margin-top:3px;">' +
+    'Anda telah membaca 20 menit. Pandang objek sejauh &plusmn;6 meter (20 kaki) ' +
+    'selama 20 detik untuk menyegarkan mata.</div>' +
+    '</div>' +
+    '<button class="meel-health-banner-close" aria-label="Tutup" ' +
+    'style="flex-shrink:0;background:rgba(255,255,255,.06);border:none;color:#94a3b8;' +
+    'width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:13px;line-height:1;">' +
+    '&times;</button>';
+
+  (document.body || document.head).appendChild(banner);
+  healthBannerEl = banner;
+
+  // Animasi masuk (rAF agar transition/animasi berjalan di browser).
+  if (typeof requestAnimationFrame !== "undefined") {
+    requestAnimationFrame(function () {
+      banner.style.animation = "meelBannerSlideIn .35s ease forwards";
+    });
+  } else {
+    banner.style.animation = "meelBannerSlideIn .35s ease forwards";
+  }
+
+  // Auto-hide 20 detik + tombol tutup manual → jalur dismiss yang sama.
+  healthBannerHideTimer = setTimeout(dismissHealthReadingBanner, HEALTH_BANNER_MS);
+  var closeBtn = banner.querySelector(".meel-health-banner-close");
+  if (closeBtn) closeBtn.addEventListener("click", dismissHealthReadingBanner);
+
+  logHealthDebug("Banner 20-20-20 tampil (mode membaca).");
+  return new Promise(function (resolve) {
+    healthBannerResolve = resolve;
+  });
+}
+
+/**
+ * Tutup/hilangkan banner, lalu jadwalkan alarm berikutnya.
+ * Dipanggil oleh timer auto-hide (20 detik) dan tombol tutup.
+ * `doSchedule=false` dipakai saat mode dimatikan (jangan buat target baru).
+ */
+function dismissHealthReadingBanner(doSchedule) {
+  if (!healthBannerEl || healthBannerRemoving) return;
+  clearTimeout(healthBannerHideTimer);
+  healthBannerHideTimer = null;
+  var b = healthBannerEl;
+  healthBannerEl = null;
+  healthBannerRemoving = true; // cegah banner baru menumpuk saat fade-out
+  b.style.animation = "meelBannerFadeOut .3s ease forwards";
+  setTimeout(function () {
+    if (b.parentNode) b.parentNode.removeChild(b);
+    healthBannerRemoving = false;
+  }, 300);
+  if (doSchedule !== false) scheduleNextHealthAlert();
+  logHealthDebug("Banner ditutup.");
+  if (healthBannerResolve) {
+    var r = healthBannerResolve;
+    healthBannerResolve = null;
+    r();
+  }
+}
+
+/* ============================================================
  * 4) ALARM UTAMA — pause, tampilkan modal 20-20-20, countdown 20s
  * ============================================================ */
 
@@ -381,11 +540,6 @@ function stopBreakEnforcement() {
  * Asli (minified): triggerPremiumHealthAlert
  */
 function triggerPremiumHealthAlert() {
-  if (typeof Swal === "undefined") {
-    console.warn("SweetAlert2 belum ter-load.");
-    return;
-  }
-
   // Jika target alarm sudah bergeser ke masa depan, berarti tab lain sudah
   // menangani siklus ini → cukup sinkronkan timer, JANGAN tampilkan alarm
   // lagi (mencegah alarm ganda saat beberapa tab terbuka).
@@ -395,9 +549,22 @@ function triggerPremiumHealthAlert() {
     return;
   }
 
-  // Tidak ada media yang diputar → tunda 30 detik, coba lagi.
+  // Tidak ada media yang diputar:
   if (!isPlayerActive()) {
+    // Mode membaca (books): tidak butuh media & tidak butuh SweetAlert2 →
+    // tampilkan BANNER lembut jika user sedang aktif membaca.
+    if (isReadingModeActive() && isReadingActivityActive()) {
+      acquireHealthAlertLock(() => runReadingHealthBanner());
+      return;
+    }
+    // Tidak ada aktivitas baca / bukan mode membaca → tunda 30 detik, coba lagi.
     healthReminderTimer = setTimeout(triggerPremiumHealthAlert, 3e4); // 30.000 ms
+    return;
+  }
+
+  // Ada media diputar → jalur modal butuh SweetAlert2.
+  if (typeof Swal === "undefined") {
+    console.warn("SweetAlert2 belum ter-load.");
     return;
   }
 
@@ -655,6 +822,7 @@ document.addEventListener("keydown", meelHealthKeydownBlock, true);
 document.addEventListener("DOMContentLoaded", () => {
   startHealthReminder();      // lanjutkan countdown dari localStorage (jika mode ON)
   updateHealthToggleButton(); // sinkronkan tombol toggle (halaman hub)
+  setupReadingActivityTracking(); // mode membaca (books): deteksi idle 60s
 });
 
 // Sinkronisasi antar-tab: event 'storage' hanya terpicu di tab LAIN ketika
@@ -669,5 +837,7 @@ window.addEventListener("storage", function (e) {
   } else {
     clearTimeout(healthReminderTimer);
     window.meelHealthReminderStarted = false;
+    // Mode dimatikan dari tab lain → tutup banner yang mungkin tampil.
+    dismissHealthReadingBanner(false);
   }
 });

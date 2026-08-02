@@ -812,6 +812,10 @@ function _scanSubdirs(string $dir): array {
             lucide.createIcons();
         });
     </script>
+
+    <!-- Mode Sehat 20-20-20: halaman baca = aktivitas membaca (tanpa media) -->
+    <script>window.meelHealthActivityMode = "reading";</script>
+    <script src="../assets/js/shared/health-reminder.js"></script>
 </body>
 
 </html>
