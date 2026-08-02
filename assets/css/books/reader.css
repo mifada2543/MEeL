@@ -1,18 +1,15 @@
 /* ============================================================
  * reader.css — Reader navigation, chapter dropdown, page counter
  * ============================================================ */
-
 .reader-nav {
   background: rgba(11, 14, 20, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 /* ── Chapter Custom Dropdown ── */
 .ch-dropdown-open .ch-overlay {
   display: block;
 }
-
 .ch-overlay {
   display: none;
   position: fixed;
@@ -21,7 +18,6 @@
   z-index: 20;
   pointer-events: none;
 }
-
 .ch-dropdown-open .reader-nav,
 .ch-dropdown-open .page-counter,
 .ch-dropdown-open #scroll-top-btn {
@@ -29,12 +25,10 @@
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
-
 .ch-dropdown {
   position: relative;
   z-index: 60;
 }
-
 .ch-trigger {
   width: 100%;
   background: rgba(13, 16, 23, 0.95);
@@ -54,18 +48,15 @@
     background 0.2s;
   font-family: inherit;
 }
-
 .ch-trigger:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.12);
 }
-
 .ch-dropdown-open .ch-trigger {
   border-color: rgba(34, 197, 94, 0.4);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 .ch-options {
   position: absolute;
   left: 0;
@@ -80,11 +71,9 @@
   max-height: 50vh;
   overflow-y: auto;
 }
-
 .ch-options.hidden {
   display: none;
 }
-
 .ch-option {
   width: 100%;
   text-align: left;
@@ -98,12 +87,10 @@
   font-family: inherit;
   display: block;
 }
-
 .ch-option:hover {
   background: rgba(255, 255, 255, 0.04);
   color: #e5e7eb;
 }
-
 .ch-option.active {
   color: #22c55e;
   font-weight: 700;

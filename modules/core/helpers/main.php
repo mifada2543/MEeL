@@ -17,6 +17,7 @@
 require_once __DIR__ . '/url.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/user.php';
+require_once __DIR__ . '/authz.php';
 require_once __DIR__ . '/storage.php';
 require_once __DIR__ . '/audio.php';
 require_once __DIR__ . '/metadata.php';

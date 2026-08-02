@@ -6,14 +6,8 @@ include_once '../modules/core/activity_logger.php';
 include_once '../modules/core/GarbageCollector.php';
 include_once '../modules/core/RateLimiter.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die(include '../err/denied.php');
-}
-
-// Guard independen: verifikasi role admin (tidak bergantung pada side-effect include)
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    die(include '../err/denied.php');
-}
+// Guard terpusat: harus login + role admin
+require_admin($conn);
 
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';

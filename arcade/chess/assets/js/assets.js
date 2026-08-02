@@ -12,7 +12,6 @@ export const SVG_PIECES = {
   bq: `<svg style="width:85%;height:85%" viewBox="0 0 45 45"><g fill="#1a1a1a" stroke="#000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.75"/><circle cx="14" cy="9" r="2.75"/><circle cx="22.5" cy="8" r="2.75"/><circle cx="31" cy="9" r="2.75"/><circle cx="39" cy="12" r="2.75"/><path d="M9 26c8.5-8.5 15.5-4.5 22.5-7.5l-3.5 7.5c-3-4-5.5-3-8.5-.5l-3-5c-3 2.5-5 4-7.5 5.5z" stroke-linecap="butt"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5 1.5-18.5 1.5-27 0z"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c4-1.5 17-1.5 21 0" fill="none" stroke="#fff" stroke-width="0.8"/></g></svg>`,
   bk: `<svg style="width:85%;height:85%" viewBox="0 0 45 45"><g fill="#1a1a1a" stroke="#000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6" stroke="#fff" stroke-linejoin="miter" stroke-width="1"/><path d="M20 8h5" stroke="#fff" stroke-linejoin="miter" stroke-width="1"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V17s-5.5-13.5-11 0c-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0M11.5 33.5c5.5-3 15.5-3 21 0M11.5 37c5.5-3 15.5-3 21 0" fill="none" stroke="#fff" stroke-width="0.8"/></g></svg>`,
 };
-
 export const UNICODE_PIECES = {
   p: "♟",
   r: "♜",

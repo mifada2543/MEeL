@@ -1,16 +1,12 @@
 /* ============================================================
  * index/main.css — Page-specific styles untuk Drive Dashboard
  * Halaman: drive/index.php
- *
- * Diekstrak dari inline <style> di index.php.
  * ============================================================ */
-
 /* ── Dashboard specific variables ── */
 .drive-dashboard {
   background-color: var(--bg-main, #0b0f1a);
   color: var(--text-heading, #f3f4f6);
 }
-
 /* ── Sidebar footer ── */
 .drive-sidebar-footer {
   margin-top: auto;
@@ -18,7 +14,6 @@
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.2);
 }
-
 .drive-user-avatar {
   width: 40px;
   height: 40px;
@@ -32,12 +27,10 @@
   color: #fff;
   flex-shrink: 0;
 }
-
 .drive-user-info {
   overflow: hidden;
   min-width: 0;
 }
-
 .drive-user-name {
   font-size: 0.875rem;
   font-weight: 600;
@@ -45,27 +38,22 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .drive-user-role {
   font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
 /* ── Heading Accents per category ── */
 .text-accent-video {
   color: #ef4444;
 }
-
 .text-accent-audio {
   color: #f97316;
 }
-
 .text-accent-dokumen {
   color: #10b981;
 }
-
 /* ── Desktop header ── */
 .drive-heading {
   font-size: 1.875rem;
@@ -73,19 +61,16 @@
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
-
 .drive-subheading {
   font-size: 0.875rem;
   color: var(--text-muted);
   margin-top: 4px;
 }
-
 /* ── Mobile scope toggle ── */
 .scope-toggle-mobile {
   display: flex;
   gap: 8px;
 }
-
 .scope-toggle-btn {
   flex: 1;
   text-align: center;
@@ -96,7 +81,6 @@
   transition: all 0.2s;
   text-decoration: none;
 }
-
 /* ── Upload button ── */
 .upload-btn {
   background: #3b82f6;
@@ -113,11 +97,9 @@
   border: none;
   cursor: pointer;
 }
-
 .upload-btn:hover {
   background: #2563eb;
 }
-
 /* ── Page title mobile ── */
 @media (max-width: 768px) {
   .drive-heading {

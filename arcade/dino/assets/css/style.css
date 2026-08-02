@@ -4,11 +4,9 @@
   --theme-glow-heavy: rgba(57, 197, 187, 0.4);
   --theme-gradient: linear-gradient(to right, #39c5bb, #ff4081);
 }
-/* Mencegah zoom saat double tap dan mempercepat respon touch */
 html {
   touch-action: manipulation;
 }
-
 body {
   font-family: "Plus Jakarta Sans", sans-serif;
   background-color: #080b11;
@@ -16,22 +14,18 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
 }
-
 .pixel-font {
   font-family: "Press Start 2P", monospace;
 }
-
 canvas {
   image-rendering: pixelated;
 }
-
 #gameCanvas {
   width: 100%;
   height: auto;
   aspect-ratio: 800 / 250;
   display: block;
 }
-
 /* Cheat Panel mobile styling */
 @media (max-width: 1023px) {
   #cheatPanel {
@@ -47,44 +41,35 @@ canvas {
     background: rgba(8, 11, 16, 0.95);
   }
 }
-
 ::-webkit-scrollbar {
   width: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.5);
 }
-
 ::-webkit-scrollbar-thumb {
   background: var(--theme-glow);
   border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: var(--theme-glow-heavy);
 }
-
 .dynamic-border {
   border-color: var(--theme-primary);
   transition: border-color 0.3s ease;
 }
-
 .dynamic-text {
   color: var(--theme-primary);
   transition: color 0.3s ease;
 }
-
 .dynamic-glow {
   box-shadow: 0 0 50px var(--theme-glow);
   transition: box-shadow 0.3s ease;
 }
-
 .dynamic-bg-glow {
   background-color: var(--theme-glow);
   transition: background-color 0.3s ease;
 }
-
 /* Cheat panel animation */
 #cheatPanel {
   transition:
@@ -92,17 +77,14 @@ canvas {
     transform 0.4s ease,
     visibility 0.4s ease;
 }
-
 #cheatPanel.hidden {
   pointer-events: none;
   visibility: hidden;
 }
-
 #cheatPanel.opacity-0 {
   opacity: 0;
   transform: translateX(20px);
 }
-
 #cheatPanel.opacity-100 {
   opacity: 1;
   transform: translateX(0);

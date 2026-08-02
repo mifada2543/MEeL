@@ -1,19 +1,15 @@
 /* ============================================================
- * table.css — Tabel admin, sort header, action buttons,
- *             content title, row numbers, badges
+ * table.css — Tabel admin, sort header, action buttons, content title, row numbers, badges
  * ============================================================ */
-
 /* ── Table Wrapper ── */
 .admin-table-wrap {
     overflow-x: auto;
 }
-
 .admin-table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
 }
-
 /* ── Table Head ── */
 .admin-table thead {
     font-size: 9px;
@@ -24,21 +20,17 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     background: rgba(255, 255, 255, 0.02);
 }
-
 .admin-table th {
     padding: 14px 20px;
 }
-
 .admin-table th.th-center {
     padding: 14px 12px;
     text-align: center;
 }
-
 .admin-table th.th-right {
     padding: 14px 20px;
     text-align: right;
 }
-
 .admin-table th a {
     color: inherit;
     text-decoration: none;
@@ -46,35 +38,28 @@
     align-items: center;
     gap: 6px;
 }
-
 /* ── Table Body ── */
 .admin-table tbody tr {
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     transition: background 0.15s;
 }
-
 .admin-table tbody tr:hover {
     background: rgba(255, 255, 255, 0.02);
 }
-
 .admin-table td {
     padding: 14px;
 }
-
 .admin-table td.td-left {
     padding: 14px 20px;
 }
-
 .admin-table td.td-center {
     padding: 14px 12px;
     text-align: center;
 }
-
 .admin-table td.td-right {
     padding: 14px 20px;
     text-align: right;
 }
-
 /* ── Sort Header Link ── */
 .sort-link {
     color: inherit;
@@ -83,17 +68,14 @@
     align-items: center;
     gap: 6px;
 }
-
 /* ── Row Actions (hover reveal) ── */
 .row-actions {
     opacity: 0;
     transition: opacity 0.15s;
 }
-
 tr:hover .row-actions {
     opacity: 1;
 }
-
 /* ── Row Number ── */
 .row-num {
     font-size: 10px;
@@ -102,7 +84,6 @@ tr:hover .row-actions {
     min-width: 24px;
     text-align: center;
 }
-
 /* ── Content Title ── */
 .content-title {
     font-size: 13px;
@@ -116,11 +97,9 @@ tr:hover .row-actions {
     white-space: nowrap;
     transition: color 0.15s;
 }
-
 .content-title:hover {
     color: #60a5fa;
 }
-
 .content-id {
     font-size: 9px;
     color: var(--admin-dark-text);
@@ -128,25 +107,20 @@ tr:hover .row-actions {
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
-
 /* ── Stats Values dalam Table ── */
 .stat-value {
     font-size: 12px;
     font-family: monospace;
 }
-
 .stat-value-views {
     color: #c9cdd6;
 }
-
 .stat-value-likes {
     color: var(--admin-green);
 }
-
 .stat-value-dislikes {
     color: #f87171;
 }
-
 /* ── Type Badge dalam Table ── */
 .type-badge {
     font-size: 8px;
@@ -156,7 +130,6 @@ tr:hover .row-actions {
     padding: 4px 9px;
     border-radius: 8px;
 }
-
 /* ── Empty State ── */
 .empty-state {
     padding: 60px;

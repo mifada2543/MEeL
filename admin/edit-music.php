@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $curr_role = get_user_role($conn, (int)$user_id);
-$is_admin   = ($curr_role === 'admin');
+$is_admin   = is_admin($conn);
 
 // Tolak guest
 if ($curr_role === 'guest') {
@@ -38,28 +38,22 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         if (!$should_exclude) $back_url = $ref;
     }
 }
-
-// Validasi ID Musik
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $stmt_music = $conn->prepare("SELECT m.*, u.username AS uploader, u.profile_picture AS uploader_pfp FROM music m JOIN users u ON m.user_id = u.id WHERE m.id = ? LIMIT 1");
 $stmt_music->bind_param("i", $id);
 $stmt_music->execute();
 $music = $stmt_music->get_result()->fetch_assoc();
-
 if (!$music) {
     die("<div style='color:orange; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Musik tidak ditemukan!</h2><a href='../music/index.php' style='color:#f97316;'>Kembali ke Musik</a></div>");
 }
-
 // Cek kepemilikan: admin bisa edit semua, uploader hanya miliknya
 $is_owner = ((int)$music['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
     header("Location: ../err/denied.php");
     exit();
 }
-
 $status = "";
 $error_message = "";
-
 if (isset($_POST['update'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
@@ -76,8 +70,7 @@ if (isset($_POST['update'])) {
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file cover maksimal 5MB.';
             }
-
-            // Validasi MIME type — finfo() cek magic bytes, lebih aman dari $_FILES['type']
+            // Validasi MIME type — finfo() cek magic bytes
             if (empty($error_message)) {
                 $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -87,8 +80,7 @@ if (isset($_POST['update'])) {
                     $error_message = 'File cover harus berupa gambar (JPEG, PNG, WebP, GIF, atau AVIF).';
                 }
             }
-
-            // Proses thumbnail hanya jika validasi lolos
+            // Proses thumbnail lolos
             if (empty($error_message)) {
                 $target_dir = __DIR__ . '/../music/upload/thumbnail/';
                 if (!is_dir($target_dir)) {
@@ -112,9 +104,7 @@ if (isset($_POST['update'])) {
                 exec($cmd, $out, $ret);
                 if ($ret === 0 && file_exists($upload_path) && filesize($upload_path) > 0) {
                     $thumbnail_url = $new_name;
-                    // CATATAN: Thumbnail akan di-update bersama query utama di bawah, tidak perlu UPDATE terpisah
                 } else {
-                    // Fallback: simpan file asli jika ffmpeg gagal
                     if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $upload_path)) {
                         $thumbnail_url = $new_name;
                     } else {
@@ -123,14 +113,11 @@ if (isset($_POST['update'])) {
                 }
             }
         }
-
         if ($title === '') {
             $error_message = "Judul lagu tidak boleh kosong.";
         } else {
             // Generate search_metadata — helper terpusat (romaji + english + alias),
-            // konsisten dengan Uploader & backfill
             $meta = generate_search_metadata($title, $artist, $album);
-
             $stmt_update = $conn->prepare("UPDATE music SET title = ?, artist = ?, album = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
             $stmt_update->bind_param("ssssssi", $title, $artist, $album, $description, $thumbnail_url, $meta, $id);
             if ($stmt_update->execute()) {
@@ -196,7 +183,7 @@ $thumb_src = !empty($music['thumbnail'])
             <aside class="sidebar-panel">
                 <!-- Cover — klik atau drag untuk ganti -->
                 <div class="cover-wrap" id="cover-wrap">
-                    <!-- File input dipindahkan ke dalam form (ID: cover-file-hidden) -->
+                    <!-- File input (ID: cover-file-hidden) -->
                     <img src="<?= $thumb_src ?>"
                         alt="Cover <?= htmlspecialchars($music['title']) ?>"
                         class="cover-img"
@@ -326,7 +313,7 @@ $thumb_src = !empty($music['thumbnail'])
                 <form id="edit-form" method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
-                    <input type="file" name="thumbnail" accept="image/*" id="cover-file-hidden" style="display:none">
+                        <input type="file" name="thumbnail" accept="image/*" id="cover-file-hidden" style="display:none">
                     <?php endif; ?>
 
                     <!-- Judul -->
@@ -357,7 +344,6 @@ $thumb_src = !empty($music['thumbnail'])
                     </div>
 
                     <!-- Deskripsi -->
-                    <!-- Deskripsi — mengisi sisa ruang -->
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description" placeholder="Masukkan deskripsi musik..."

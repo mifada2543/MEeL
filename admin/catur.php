@@ -2,54 +2,45 @@
 include '../auth/config.php';
 include '../auth/auth.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die(include '../err/denied.php');
-}
-
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    die(include '../err/denied.php');
-}
+// Guard terpusat: harus login + role admin
+require_admin($conn);
 
 // ── Action handler ──────────────────────────────────────────────────────────
 $message = null;
 $message_type = 'success';
-
-// Verifikasi token untuk semua POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-        $message = 'CSRF Token tidak valid!'; $message_type = 'error';
+        $message = 'CSRF Token tidak valid!';
+        $message_type = 'error';
     } else {
-    $action = $_POST['action'];
+        $action = $_POST['action'];
+        if ($action === 'delete_room' && !empty($_POST['room_code'])) {
+            $code = $_POST['room_code'];
+            $conn->begin_transaction();
+            try {
+                $d1 = $conn->prepare("DELETE FROM moves WHERE room_code = ?");
+                $d1->bind_param("s", $code);
+                $d1->execute();
+                $moved = $d1->affected_rows;
 
-    if ($action === 'delete_room' && !empty($_POST['room_code'])) {
-        $code = $_POST['room_code'];
-        $conn->begin_transaction();
-        try {
-            $d1 = $conn->prepare("DELETE FROM moves WHERE room_code = ?");
-            $d1->bind_param("s", $code);
-            $d1->execute();
-            $moved = $d1->affected_rows;
+                $d2 = $conn->prepare("DELETE FROM rooms WHERE room_code = ?");
+                $d2->bind_param("s", $code);
+                $d2->execute();
 
-            $d2 = $conn->prepare("DELETE FROM rooms WHERE room_code = ?");
-            $d2->bind_param("s", $code);
-            $d2->execute();
-
-            $conn->commit();
-            $message = "Room <strong>$code</strong> berhasil dihapus ($moved moves dihapus).";
-        } catch (RuntimeException $e) {
-            $conn->rollback();
-            $message = "Gagal menghapus room: " . $e->getMessage();
-            $message_type = 'error';
+                $conn->commit();
+                $message = "Room <strong>$code</strong> berhasil dihapus ($moved moves dihapus).";
+            } catch (RuntimeException $e) {
+                $conn->rollback();
+                $message = "Gagal menghapus room: " . $e->getMessage();
+                $message_type = 'error';
+            }
+        }
+        elseif ($action === 'purge_inactive') {
+            $result = purgeInactiveRooms($conn);
+            $message = "Purge selesai: <strong>{$result['rooms']}</strong> room dan <strong>{$result['moves']}</strong> moves dihapus.";
         }
     }
-
-    // Manual purge finished/inactive rooms
-    elseif ($action === 'purge_inactive') {
-        $result = purgeInactiveRooms($conn);
-        $message = "Purge selesai: <strong>{$result['rooms']}</strong> room dan <strong>{$result['moves']}</strong> moves dihapus.";
-    }
-    } // tutup else dari verify_csrf
-    } // tutup if ($_SERVER['REQUEST_METHOD'] === 'POST')
+}
 
 // ── Auto-cleanup trigger (dipanggil via JS fetch setiap 10 menit) ──────────
 if (isset($_GET['auto_cleanup'])) {
@@ -61,12 +52,6 @@ if (isset($_GET['auto_cleanup'])) {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Hapus rooms yang sudah selesai atau tidak aktif > 10 menit.
- * "Tidak aktif" = tidak ada moves baru selama 10 menit DAN black_joined = 0 (belum ada lawan)
- * ATAU room sudah punya 2 pemain tapi moves terakhir > 10 menit yang lalu (permainan selesai/ditinggal).
- */
 function purgeInactiveRooms(mysqli $conn): array
 {
     // Kumpulkan room_code yang mau dihapus
@@ -88,31 +73,23 @@ function purgeInactiveRooms(mysqli $conn): array
 
     $res = $conn->query($sql);
     if (!$res || $res->num_rows === 0) return ['rooms' => 0, 'moves' => 0];
-
     $codes = [];
     while ($row = $res->fetch_assoc()) $codes[] = $row['room_code'];
-
     $placeholders = implode(',', array_fill(0, count($codes), '?'));
     $types = str_repeat('s', count($codes));
-
-    // Hapus moves
     $dm = $conn->prepare("DELETE FROM moves WHERE room_code IN ($placeholders)");
     $dm->bind_param($types, ...$codes);
     $dm->execute();
     $movesDeleted = $dm->affected_rows;
-
-    // Hapus rooms
     $dr = $conn->prepare("DELETE FROM rooms WHERE room_code IN ($placeholders)");
     $dr->bind_param($types, ...$codes);
     $dr->execute();
     $roomsDeleted = $dr->affected_rows;
-
     return ['rooms' => $roomsDeleted, 'moves' => $movesDeleted];
 }
 
 function logCleanup(mysqli $conn, array $result): void
 {
-    // Simpan ke tabel admin_logs jika ada, fallback ke file log
     $logLine = date('[Y-m-d H:i:s]') . " AUTO-CLEANUP chess: {$result['rooms']} rooms, {$result['moves']} moves deleted\n";
     @file_put_contents(__DIR__ . '/../logs/chess_cleanup.log', $logLine, FILE_APPEND | LOCK_EX);
 }
@@ -166,7 +143,8 @@ $back_url    = 'index.php';
     <title>Chess Manager · MEeL Admin</title>
     <link rel="stylesheet" href="../assets/css/font.css">
     <?php include '../partials/link.php'; ?>
-    <?php $scripts_root = '../'; include '../partials/scripts.php'; ?>
+    <?php $scripts_root = '../';
+    include '../partials/scripts.php'; ?>
     <link rel="stylesheet" href="../assets/css/admin/catur.css?v=<?= filemtime('../assets/css/admin/catur.css') ?>">
 </head>
 

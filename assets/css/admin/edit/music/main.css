@@ -1,12 +1,7 @@
 /* ============================================================
  * edit/music/main.css — Edit Music Page Styles (Admin)
  * Halaman: admin/edit-music.php
- *
- * Tema orange untuk Edit Music. Shared styles (design-tokens.css,
- * upload-form.css, edit/shared/main.css) dimuat via <link> di
- * admin/edit-music.php agar semua file mendapat cache-buster.
  * ============================================================ */
-
 /* ── Music Theme ── */
 body.theme-music {
   --accent: #f97316;
@@ -22,22 +17,18 @@ body.theme-music {
   --sidebar-gap: 28px;
   --divider-margin: 28px 0;
 }
-
 @media (min-width: 1200px) {
   body.theme-music {
     --sidebar-width: 380px;
   }
 }
-
 body.theme-music .field-input:focus {
   background: rgba(249, 115, 22, 0.05);
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.08);
 }
-
 body.theme-music .uploader-avatar-fallback {
   background: linear-gradient(135deg, var(--accent) 0%, #c2410c 100%);
 }
-
 body.theme-music textarea.field-input {
   min-height: 110px;
 }

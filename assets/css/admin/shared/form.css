@@ -1,136 +1,124 @@
 /* ============================================================
  * form.css — Search input, type dropdown, alert banners
  * ============================================================ */
-
 /* ── Search Input ── */
 .admin-search-input {
-    padding: 8px 12px 8px 36px;
-    border-radius: 11px;
-    font-size: 11px;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: var(--admin-text);
-    width: 200px;
-    transition: all 0.2s;
-    outline: none;
+  padding: 8px 12px 8px 36px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--admin-text);
+  width: 200px;
+  transition: all 0.2s;
+  outline: none;
 }
-
 .admin-search-input:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(37, 99, 235, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(37, 99, 235, 0.3);
 }
-
 .admin-search-input::placeholder {
-    color: var(--admin-muted);
+  color: var(--admin-muted);
 }
-
 .admin-search-input::-webkit-search-cancel-button {
-    -webkit-appearance: none;
+  -webkit-appearance: none;
 }
-
 /* ── Type Dropdown ── */
 .type-dropdown {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
-
 .type-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--admin-text);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--admin-text);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-
 .type-dropdown:hover .type-trigger {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
 }
-
 .type-menu {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    min-width: 160px;
-    background: rgba(14, 17, 24, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
-    z-index: 20;
-    overflow: hidden;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 160px;
+  background: rgba(14, 17, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s ease;
+  z-index: 20;
+  overflow: hidden;
 }
-
 .type-dropdown:hover .type-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
-
 .type-option {
-    display: block;
-    padding: 12px 14px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--admin-text);
-    text-decoration: none;
-    transition: background 0.15s, color 0.15s;
+  display: block;
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--admin-text);
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
-
 .type-option:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
-
 .type-option.active {
-    background: rgba(37, 99, 235, 0.14);
-    color: #60a5fa;
+  background: rgba(37, 99, 235, 0.14);
+  color: #60a5fa;
 }
-
 .type-option.active:hover {
-    background: rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.18);
 }
-
 /* ── Alert Banners ── */
 .alert-banner {
-    margin-bottom: 20px;
-    padding: 14px 18px;
-    border-radius: 14px;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-
 .alert-success {
-    background: rgba(34, 197, 94, 0.08);
-    border: 1px solid rgba(34, 197, 94, 0.2);
-    color: #4ade80;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #4ade80;
 }
-
 .alert-warning {
-    background: rgba(234, 179, 8, 0.08);
-    border: 1px solid rgba(234, 179, 8, 0.2);
-    color: #facc15;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  color: #facc15;
 }
-
 .alert-error {
-    background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #f87171;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }

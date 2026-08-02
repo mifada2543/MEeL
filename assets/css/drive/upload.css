@@ -2,39 +2,37 @@
  * upload.css — Upload dropzone, drag & drop, progress card
  * Modul: Drive (MEeL Cloud)
  * ============================================================ */
-
 /* ── Upload Dropzone ── */
 .upload-zone {
   border: 1.5px dashed rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   padding: 16px;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
   cursor: pointer;
 }
-
 .upload-zone:hover {
   border-color: var(--accent-b);
   background: rgba(59, 130, 246, 0.05);
 }
-
 /* ── Full Dropzone ── */
 .upload-dropzone {
   position: relative;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .upload-dropzone.drag-over {
   border-color: #3b82f6 !important;
   background: rgba(59, 130, 246, 0.08) !important;
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), inset 0 0 30px rgba(59, 130, 246, 0.05);
+  box-shadow:
+    0 0 30px rgba(59, 130, 246, 0.15),
+    inset 0 0 30px rgba(59, 130, 246, 0.05);
   transform: scale(1.01);
 }
-
 .upload-dropzone.drag-over .dropzone-hint {
   opacity: 1;
   transform: translateY(0);
 }
-
 /* ── Dropzone Hint Overlay (on drag) ── */
 .dropzone-hint {
   position: absolute;
@@ -54,7 +52,6 @@
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 5;
 }
-
 .dropzone-hint-icon {
   width: 40px;
   height: 40px;
@@ -67,21 +64,19 @@
   color: #60a5fa;
   animation: dropzone-pulse 1.2s ease-in-out infinite;
 }
-
 .dropzone-hint-text {
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
 }
-
 .dropzone-hint-sub {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.05em;
 }
-
 @keyframes dropzone-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
   }
@@ -90,7 +85,6 @@
     box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.15);
   }
 }
-
 /* ── Upload Input Label ── */
 .upload-label {
   display: flex;
@@ -107,15 +101,12 @@
   font-weight: 500;
   color: var(--text-muted);
 }
-
 .upload-label:hover {
   background: rgba(0, 0, 0, 0.5);
 }
-
 /* ══════════════════════════════════════════════════════════
  * UPLOAD PROGRESS CARD (Floating)
  * ══════════════════════════════════════════════════════════ */
-
 .upload-prog-card {
   position: fixed;
   bottom: 24px;
@@ -127,26 +118,26 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   z-index: 9999;
   overflow: hidden;
   transform: translateY(20px) scale(0.95);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .upload-prog-card.upload-prog-visible {
   transform: translateY(0) scale(1);
   opacity: 1;
   pointer-events: auto;
 }
-
 .upload-prog-card.hidden {
   display: none;
 }
-
 /* ── Header ── */
 .upload-prog-header {
   display: flex;
@@ -156,7 +147,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.2);
 }
-
 .upload-prog-header-title {
   display: flex;
   align-items: center;
@@ -168,15 +158,12 @@
   border-radius: 6px;
   transition: background 0.15s;
 }
-
 .upload-prog-header-title:hover {
   background: rgba(255, 255, 255, 0.04);
 }
-
 .upload-prog-header-title:hover .upload-prog-toggle-icon {
   color: rgba(255, 255, 255, 0.5);
 }
-
 .upload-prog-filename {
   font-size: 12px;
   font-weight: 600;
@@ -185,7 +172,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .upload-prog-toggle-icon {
   flex-shrink: 0;
   width: 20px;
@@ -193,15 +179,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.15s;
   margin-right: 2px;
   color: rgba(255, 255, 255, 0.2);
 }
-
 .upload-prog-header-icon {
   flex-shrink: 0;
 }
-
 .upload-prog-close {
   flex-shrink: 0;
   width: 28px;
@@ -216,12 +202,10 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-
 .upload-prog-close:hover {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
-
 /* ── Body ── */
 .upload-prog-body {
   padding: 16px;
@@ -229,7 +213,6 @@
   flex-direction: column;
   gap: 12px;
 }
-
 /* ── Progress Track ── */
 .upload-prog-track {
   width: 100%;
@@ -240,36 +223,35 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
   position: relative;
 }
-
 .upload-prog-fill {
   height: 100%;
   width: 0%;
   border-radius: 99px;
   background: linear-gradient(90deg, #3b82f6, #60a5fa);
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
-  /* NO transition — JS + rAF handle smoothness */
 }
-
-/* ── Pulse scan effect (during active upload) ── */
 .upload-prog-track::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 30%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   animation: upload-prog-scan 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform;
   pointer-events: none;
   transform: translateZ(0);
 }
-
 .upload-prog-card.upload-prog-complete .upload-prog-track::after {
   animation: none;
   opacity: 0;
 }
-
 @keyframes upload-prog-scan {
   0% {
     transform: translate3d(-100%, 0, 0);
@@ -278,14 +260,12 @@
     transform: translate3d(400%, 0, 0);
   }
 }
-
 /* ── Info Row ── */
 .upload-prog-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .upload-prog-pct {
   font-size: 20px;
   font-weight: 800;
@@ -293,7 +273,6 @@
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-
 .upload-prog-status {
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -301,14 +280,12 @@
   font-weight: 600;
   color: rgba(255, 255, 255, 0.4);
 }
-
 /* ── Stats Grid ── */
 .upload-prog-stats {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 6px;
 }
-
 .upload-prog-stat {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -316,7 +293,6 @@
   padding: 8px 6px;
   text-align: center;
 }
-
 .upload-prog-stat-label {
   display: block;
   font-size: 8px;
@@ -326,7 +302,6 @@
   color: rgba(255, 255, 255, 0.25);
   margin-bottom: 4px;
 }
-
 .upload-prog-stat-val {
   display: block;
   font-size: 12px;
@@ -334,7 +309,6 @@
   color: rgba(255, 255, 255, 0.8);
   font-variant-numeric: tabular-nums;
 }
-
 /* ── Result Section ── */
 .upload-prog-result {
   display: flex;
@@ -344,14 +318,12 @@
   padding: 8px 0 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 /* Specificity fix: override Tailwind .hidden */
 .upload-prog-result.hidden,
 #uploadProgDone.hidden,
 #uploadProgError.hidden {
   display: none !important;
 }
-
 .upload-prog-result-icon {
   width: 28px;
   height: 28px;
@@ -360,66 +332,55 @@
   align-items: center;
   justify-content: center;
 }
-
 .upload-prog-result-success .upload-prog-result-icon {
   background: rgba(16, 185, 129, 0.15);
   color: #10b981;
 }
-
 .upload-prog-result-error .upload-prog-result-icon {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
-
 .upload-prog-result-text {
   font-size: 13px;
   font-weight: 700;
 }
-
 /* ── Color States ── */
 .upload-prog-card.upload-prog-success .upload-prog-result-text {
   color: #10b981;
 }
-
 .upload-prog-card.upload-prog-fail .upload-prog-result-text {
   color: #ef4444;
 }
-
 .upload-prog-card.upload-prog-success .upload-prog-fill {
   background: linear-gradient(90deg, #10b981, #34d399);
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
 }
-
 .upload-prog-card.upload-prog-fail .upload-prog-fill {
   background: linear-gradient(90deg, #ef4444, #f87171);
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
 }
-
 /* ── Animated Checkmark ── */
 .upload-checkmark {
   display: block;
 }
-
 .upload-checkmark-circle {
   stroke: #10b981;
   stroke-dasharray: 166;
   stroke-dashoffset: 166;
   animation: upload-checkmark-draw 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
 }
-
 .upload-checkmark-check {
   stroke: #10b981;
   stroke-dasharray: 48;
   stroke-dashoffset: 48;
-  animation: upload-checkmark-draw 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.3s forwards;
+  animation: upload-checkmark-draw 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.3s
+    forwards;
 }
-
 @keyframes upload-checkmark-draw {
   100% {
     stroke-dashoffset: 0;
   }
 }
-
 /* ── Confetti ── */
 .upload-confetti {
   position: absolute;
@@ -431,11 +392,9 @@
   overflow: hidden;
   z-index: 1;
 }
-
 .upload-confetti.hidden {
   display: none;
 }
-
 .upload-confetti-piece {
   position: absolute;
   top: -8px;
@@ -444,7 +403,6 @@
   border-radius: 2px;
   will-change: transform, opacity;
 }
-
 @keyframes confetti-burst {
   0% {
     transform: translateY(0) translateX(0) rotate(0deg) scale(1);
@@ -454,54 +412,48 @@
     opacity: 1;
   }
   100% {
-    transform: translateY(calc(-1 * (100px + 30%))) translateX(var(--x-spread, 0px)) rotate(720deg) scale(0.15);
+    transform: translateY(calc(-1 * (100px + 30%)))
+      translateX(var(--x-spread, 0px)) rotate(720deg) scale(0.15);
     opacity: 0;
   }
 }
-
 /* ── Minimized State ── */
 .upload-prog-card.minimized {
   width: 280px;
   cursor: pointer;
   border-left: 3px solid #3b82f6;
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .upload-prog-card.minimized.upload-prog-success {
   border-left-color: #10b981;
 }
-
 .upload-prog-card.minimized.upload-prog-fail {
   border-left-color: #ef4444;
 }
-
 .upload-prog-card.minimized:hover {
-  box-shadow: 0 16px 56px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  box-shadow:
+    0 16px 56px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
 }
-
 .upload-prog-card.minimized .upload-prog-header {
   border-bottom: none;
   padding: 10px 12px;
 }
-
 .upload-prog-card.minimized .upload-prog-header-icon {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .upload-prog-card.minimized .upload-prog-body {
   display: none;
 }
-
 .upload-prog-card.minimized .upload-prog-toggle-icon {
   transform: rotate(-90deg);
   color: rgba(255, 255, 255, 0.25);
 }
-
 .upload-prog-card:not(.minimized) .upload-prog-toggle-icon {
   color: rgba(255, 255, 255, 0.25);
 }
-
 /* ── Slide Animations ── */
 @keyframes upload-prog-slide-in {
   from {
@@ -513,7 +465,6 @@
     opacity: 1;
   }
 }
-
 @keyframes upload-prog-slide-out {
   from {
     transform: translateY(0) scale(1);
@@ -524,7 +475,6 @@
     opacity: 0;
   }
 }
-
 /* ── Mobile ── */
 @media (max-width: 480px) {
   .upload-prog-card {

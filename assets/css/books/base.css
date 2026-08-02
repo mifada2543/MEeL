@@ -2,7 +2,6 @@
  * base.css — Variabel, body, scrollbar, glass, tipografi
  * Tema: Hijau (Books)
  * ============================================================ */
-
 :root {
   --green: #22c55e;
   --bg: #080a0f;
@@ -11,19 +10,16 @@
   --font-display:
     Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
 }
-
 body {
   background-color: var(--bg);
   font-family: var(--font);
 }
-
 .glass,
 .glass-card {
   background: rgba(13, 16, 23, 0.8);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 3px;
@@ -38,7 +34,6 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #374151;
 }
-
 /* ── Section Title ── */
 .section-title {
   font-family: var(--font-display);
@@ -47,7 +42,6 @@ body {
   color: #f0f2f7;
   line-height: 1;
 }
-
 /* ── Line Clamp (shared) ── */
 .line-clamp-2 {
   display: -webkit-box;

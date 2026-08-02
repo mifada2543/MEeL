@@ -2,7 +2,6 @@
  * layout.css — Tata letak struktural halaman Drive
  * Sidebar, main-content, topbar, overlay, responsive, tabs
  * ============================================================ */
-
 /* ── Sidebar ── */
 #sidebar {
   position: fixed;
@@ -15,27 +14,22 @@
   z-index: 40;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 #sidebar.closed {
   transform: translateX(-100%);
 }
-
 /* ── Main Content ── */
 #main-content {
   margin-left: 260px;
   min-height: 100vh;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 #main-content.full {
   margin-left: 0;
 }
-
 /* ── Topbar (mobile) ── */
 #topbar {
   display: none;
 }
-
 /* ── Overlay ── */
 #overlay {
   display: none;
@@ -46,16 +40,13 @@
   -webkit-backdrop-filter: blur(4px);
   z-index: 30;
 }
-
 #overlay.active {
   display: block;
 }
-
 /* ── Section Tabs (mobile bottom nav) ── */
 #section-tabs {
   display: none;
 }
-
 .tab-btn {
   flex: 1;
   display: flex;
@@ -74,23 +65,19 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-
 .tab-btn.active {
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
 }
-
 /* ── Header Layout ── */
 .drive-header {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
 .drive-section {
   animation: driveFadeIn 0.3s ease-out;
 }
-
 @keyframes driveFadeIn {
   from {
     opacity: 0;
@@ -101,30 +88,24 @@
     transform: translateY(0);
   }
 }
-
 /* ── Responsive: Mobile ── */
 @media (max-width: 768px) {
   #sidebar {
     width: 280px;
     transform: translateX(-100%);
   }
-
   #sidebar.open {
     transform: translateX(0);
   }
-
   #main-content {
     margin-left: 0;
   }
-
   #topbar {
     display: flex;
   }
-
   .page-title {
     font-size: 22px !important;
   }
-
   #section-tabs {
     display: flex;
     position: fixed;
@@ -137,7 +118,6 @@
     padding: 6px 8px;
     gap: 4px;
   }
-
   #main-content {
     padding-bottom: 80px;
   }

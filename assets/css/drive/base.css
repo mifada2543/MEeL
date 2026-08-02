@@ -2,7 +2,6 @@
  * base.css — Variabel, reset, body, scrollbar, tipografi
  * Modul: Drive (MEeL Cloud)
  * ============================================================ */
-
 /* ── CSS Variables ── */
 :root {
   --bg-base: #07090f;
@@ -20,15 +19,13 @@
   --text-muted: #6b7280;
   --text-body: #c9d1d9;
   --text-heading: #f3f4f6;
-  --font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-head: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-head: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
 }
-
 /* ── Reset ── */
 * {
   box-sizing: border-box;
 }
-
 /* ── Body ── */
 body {
   font-family: var(--font-body);
@@ -39,13 +36,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 /* ── Heading ── */
 .syne,
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-head);
 }
-
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 5px;
@@ -60,7 +58,6 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
-
 /* ── Glass / Frosted ── */
 .glass {
   background: rgba(22, 27, 42, 0.7);
@@ -68,7 +65,6 @@ h1, h2, h3, h4 {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-soft);
 }
-
 /* ── Selection ── */
 ::selection {
   background: rgba(59, 130, 246, 0.3);

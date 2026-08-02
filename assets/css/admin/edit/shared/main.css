@@ -1,23 +1,13 @@
 /* ============================================================
  * edit/shared/main.css — Shared Edit Page Styles
  * Digunakan oleh edit-video.php dan edit-music.php
- * (dimuat via <link> di halaman, bersama design-tokens.css
- *  dan upload-form.css — agar semua file mendapat cache-buster)
  * ============================================================ */
-
-/* ── Background halaman ─────────────────────────────
- * upload-form.css/design-tokens hanya mendefinisikan
- * variabel --bg-base tanpa menerapkannya ke body,
- * sehingga halaman edit tampil putih. Konsisten
- * dengan video/upload/main.css & music/upload/main.css.
- * ────────────────────────────────────────────────── */
 body {
   background: var(--bg-base, #080b11);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   min-height: 100vh;
   color: #c9cdd6;
 }
-
 /* ── Edit Layout (sidebar + form) ── */
 .edit-layout {
   display: grid;
@@ -25,14 +15,12 @@ body {
   gap: 0;
   flex: 1;
 }
-
 @media (min-width: 900px) {
   .edit-layout {
     grid-template-columns: var(--sidebar-width, 340px) 1fr;
     min-height: calc(100vh - 56px);
   }
 }
-
 /* ── Thumbnail / Cover Wrap ── */
 .thumb-wrap,
 .cover-wrap {
@@ -44,39 +32,34 @@ body {
   border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1));
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
-
 .cover-wrap {
   max-width: 240px;
   margin: 0 auto;
 }
-
 .thumb-wrap {
   background: #0a0d14;
 }
-
 @media (max-width: 899px) {
   .cover-wrap {
     max-width: 100%;
     border-radius: 14px;
   }
 }
-
 .thumb-img,
 .cover-img {
   width: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.35s ease, filter 0.35s ease;
+  transition:
+    transform 0.35s ease,
+    filter 0.35s ease;
 }
-
 .cover-img {
   aspect-ratio: 1;
 }
-
 .thumb-img {
   aspect-ratio: 16/9;
 }
-
 .thumb-wrap:hover .thumb-img,
 .thumb-wrap.drag-over .thumb-img,
 .cover-wrap:hover .cover-img,
@@ -84,7 +67,6 @@ body {
   transform: scale(1.04);
   filter: brightness(var(--brightness-hover, 0.55));
 }
-
 /* ── Overlay pada hover/drag ── */
 .thumb-overlay,
 .cover-overlay {
@@ -100,18 +82,15 @@ body {
   pointer-events: none;
   z-index: 2;
 }
-
 .thumb-overlay {
   z-index: 3;
 }
-
 .thumb-wrap:hover .thumb-overlay,
 .thumb-wrap.drag-over .thumb-overlay,
 .cover-wrap:hover .cover-overlay,
 .cover-wrap.drag-over .cover-overlay {
   opacity: 1;
 }
-
 .thumb-overlay-icon,
 .cover-overlay-icon {
   width: 44px;
@@ -123,12 +102,10 @@ body {
   justify-content: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
-
 .thumb-overlay-icon {
   width: 48px;
   height: 48px;
 }
-
 .thumb-overlay-text,
 .cover-overlay-text {
   font-size: 10px;
@@ -139,11 +116,9 @@ body {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
   text-align: center;
 }
-
 .cover-overlay-text {
   padding: 0 12px;
 }
-
 /* ── Badge & Label ── */
 .thumb-label,
 .cover-badge {
@@ -167,18 +142,15 @@ body {
   pointer-events: none;
   transition: opacity 0.25s;
 }
-
 .thumb-label {
   z-index: 2;
 }
-
 .thumb-wrap:hover .thumb-label,
 .thumb-wrap.drag-over .thumb-label,
 .cover-wrap:hover .cover-badge,
 .cover-wrap.drag-over .cover-badge {
   opacity: 0;
 }
-
 .thumb-changed-badge,
 .cover-changed-badge {
   position: absolute;
@@ -195,7 +167,6 @@ body {
   z-index: 4;
   display: none;
 }
-
 /* ── Uploader Card ── */
 .uploader-card {
   display: flex;
@@ -206,7 +177,6 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
 }
-
 .uploader-avatar {
   width: 40px;
   height: 40px;
@@ -215,7 +185,6 @@ body {
   object-fit: cover;
   border: 2px solid var(--accent-border, rgba(239, 68, 68, 0.2));
 }
-
 .uploader-avatar-fallback {
   width: 40px;
   height: 40px;
@@ -232,12 +201,10 @@ body {
   text-transform: uppercase;
   background: linear-gradient(135deg, var(--accent, #ef4444) 0%, #c2410c 100%);
 }
-
 .uploader-info {
   min-width: 0;
   flex: 1;
 }
-
 .uploader-label {
   font-size: 9px;
   font-weight: 700;
@@ -246,7 +213,6 @@ body {
   color: #555e6e;
   margin-bottom: 2px;
 }
-
 .uploader-name {
   font-size: 13px;
   font-weight: 700;
@@ -255,7 +221,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .uploader-role-badge {
   display: inline-block;
   font-size: 8px;
@@ -269,14 +234,12 @@ body {
   color: var(--accent, #ef4444);
   margin-bottom: 3px;
 }
-
 /* ── Meta Info ── */
 .meta-info {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 .meta-row {
   display: flex;
   align-items: flex-start;
@@ -286,7 +249,6 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
 }
-
 .meta-row-icon {
   width: 28px;
   height: 28px;
@@ -299,7 +261,6 @@ body {
   flex-shrink: 0;
   margin-top: 1px;
 }
-
 .meta-label {
   font-size: 9px;
   font-weight: 700;
@@ -308,7 +269,6 @@ body {
   color: #555e6e;
   margin-bottom: 2px;
 }
-
 .meta-value {
   font-size: 13px;
   font-weight: 600;
@@ -316,21 +276,16 @@ body {
   line-height: 1.3;
   word-break: break-word;
 }
-
 /* ── Edit-specific overrides ── */
-
-/* textarea di edit pages */
 textarea.field-input {
   resize: vertical;
   min-height: 130px;
   line-height: 1.6;
 }
-
 form textarea.field-input[style*="resize:none"] {
   resize: none;
   min-height: 120px;
 }
-
 /* ID Chip */
 .id-chip {
   margin-left: auto;
@@ -345,17 +300,11 @@ form textarea.field-input[style*="resize:none"] {
   border-radius: 20px;
   font-family: Syne, sans-serif;
 }
-
-/* ── Custom dropdown bahasa — meniru .ch-trigger/.ch-options di books/read.php ──
- * Shared agar reusable: dipakai edit-video.php (subtitle) dan modul lain
- * (mis. edit-music.php) yang butuh pilihan bahasa. Warna mengikuti --accent
- * tema halaman (merah untuk video, dsb.).
- * Pasangan JS: assets/js/shared/lang-dropdown.js (baca input via data-name). */
+/* ── Custom dropdown bahasa — Pasangan JS: assets/js/shared/lang-dropdown.js (baca input via data-name). */
 .lang-dropdown {
   position: relative;
   z-index: 60;
 }
-
 .lang-trigger {
   width: 100%;
   background: rgba(13, 16, 23, 0.95);
@@ -370,21 +319,20 @@ form textarea.field-input[style*="resize:none"] {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
   font-family: inherit;
 }
-
 .lang-trigger:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.12);
 }
-
 .lang-dropdown.open .lang-trigger {
   border-color: var(--accent, rgba(239, 68, 68, 0.4));
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 .lang-trigger-chevron {
   width: 14px;
   height: 14px;
@@ -392,11 +340,9 @@ form textarea.field-input[style*="resize:none"] {
   flex-shrink: 0;
   transition: transform 0.2s;
 }
-
 .lang-dropdown.open .lang-trigger-chevron {
   transform: rotate(180deg);
 }
-
 .lang-options {
   position: absolute;
   left: 0;
@@ -411,12 +357,9 @@ form textarea.field-input[style*="resize:none"] {
   max-height: 50vh;
   overflow-y: auto;
 }
-
 .lang-options.hidden {
   display: none;
 }
-
-/* Buka ke atas saat ruang di bawah trigger sempit */
 .lang-dropdown.open-up .lang-options {
   top: auto;
   bottom: 100%;
@@ -424,11 +367,9 @@ form textarea.field-input[style*="resize:none"] {
   border-bottom: none;
   border-radius: 1rem 1rem 0 0;
 }
-
 .lang-dropdown.open-up .lang-trigger {
   border-radius: 0;
 }
-
 .lang-option {
   width: 100%;
   text-align: left;
@@ -442,18 +383,15 @@ form textarea.field-input[style*="resize:none"] {
   font-family: inherit;
   display: block;
 }
-
 .lang-option:hover {
   background: rgba(255, 255, 255, 0.04);
   color: #e5e7eb;
 }
-
 .lang-option.active {
   color: var(--accent, #22c55e);
   font-weight: 700;
   background: var(--accent-dim, rgba(34, 197, 94, 0.06));
 }
-
 /* Form Actions */
 .form-actions {
   display: flex;
@@ -462,12 +400,10 @@ form textarea.field-input[style*="resize:none"] {
   flex-wrap: wrap;
   margin-top: 8px;
 }
-
 .form-actions .btn-primary {
   flex: 1;
   min-width: 160px;
 }
-
 @media (max-width: 400px) {
   .form-actions {
     flex-direction: column;

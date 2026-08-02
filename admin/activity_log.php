@@ -1,24 +1,13 @@
 <?php
 
-/**
- * MEeL Admin — Activity Log Viewer
- * Menampilkan trail audit dari tabel activity_log.
- * Hanya untuk admin. Query menggunakan prepared statements.
- */
+/** MEeL Admin — Activity Log Viewer **/
 
 include '../auth/config.php';
 include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die(include '../err/denied.php');
-}
-
-// Verifikasi role admin
-$curr_role = get_user_role($conn, (int)$_SESSION['user_id']);
-if ($curr_role !== 'admin') {
-    die(include '../err/denied.php');
-}
+// Guard terpusat: harus login + role admin
+require_admin($conn);
 
 // ─── Filter & Pagination ───────────────────────────────────────
 $action_filter = $_GET['action'] ?? '';
@@ -39,8 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
         $stmt_del->bind_param("i", $clear_days);
         $stmt_del->execute();
         $deleted = $stmt_del->affected_rows;
-
-        // Reset auto-increment ke ID tertinggi yang tersisa + 1
         $next_id = 1;
         $max_res = $conn->query("SELECT MAX(id) AS max_id FROM activity_log");
         if ($max_res) {
@@ -59,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $clear_msg = 'CSRF Token tidak valid.';
     } else {
-        // TRUNCATE menghapus SEMUA baris + me-reset auto-increment ke 1
         if ($conn->query("TRUNCATE TABLE activity_log")) {
             $clear_msg = 'Semua log aktivitas berhasil dihapus. Auto-increment telah di-reset ke 1.';
         } else {
@@ -213,7 +199,6 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
         case 'xls':
             header('Content-Type: application/vnd.ms-excel; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.xls\"");
-
             // XML Spreadsheet 2003 — kompatibel dengan Excel, LibreOffice, Google Sheets
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
@@ -235,8 +220,6 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
                 echo '        <Cell><Data ss:Type="String">' . htmlspecialchars($h) . '</Data></Cell>' . "\n";
             }
             echo '      </Row>' . "\n";
-
-            // Helper untuk cell null-safe
             $xls_cell = function ($val, string $type = 'String'): string {
                 if ($val === null || $val === '') {
                     return '        <Cell><Data ss:Type="String"></Data></Cell>' . "\n";

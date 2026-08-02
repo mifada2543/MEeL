@@ -10,10 +10,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$user_id = (int)$_SESSION['user_id'];
-$curr_role = get_user_role($conn, $user_id);
-
-if ($curr_role !== 'admin') {
+// Guard terpusat: role admin (helper is_admin)
+if (!is_admin($conn)) {
     header("Location: ../index.php");
     exit();
 }
@@ -65,15 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $hdd_base = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE . '/' : "/path/to/your/media/";
                     if ($del_type === 'video') {
                         $filename = $media_row['filename'];
-                        // filename berformat "video/<folder>/<folder>.m3u8" → dirname()
-                        // menghasilkan "video/<folder>". Folder asli di HDD berada di
-                        // {MEEL_HDD_BASE}/video/upload/video/<folder>/ — jadi JANGAN
-                        // buang prefix "video/" dari dirname (bug lama: pakai basename()).
                         $folder_rel  = dirname($filename);
                         $folder_name = ($folder_rel !== '.' && $folder_rel !== '') ? basename($folder_rel) : '';
                         $video_dir   = defined('MEEL_HDD_VIDEO_DIR') ? MEEL_HDD_VIDEO_DIR : $hdd_base . "video/upload/video/";
                         $folder_abs  = $video_dir . $folder_name . "/";
-
                         if ($folder_name !== '' && $folder_name !== '..' && is_dir($folder_abs)) {
                             foreach (glob($folder_abs . "*") as $f) {
                                 if (@unlink($f)) $files_deleted++;
@@ -81,13 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             }
                             @rmdir($folder_abs);
                         } elseif ($folder_name !== '' && $folder_name !== '..') {
-                            // Folder tidak ditemukan di storage — laporkan agar admin tahu
-                            // file-nya TIDAK ikut terhapus (mencegah sukses diam-diam).
                             $files_failed[] = "folder/" . $folder_name;
                         }
-
                         $thumb_dir = defined('MEEL_HDD_THUMB_DIR') ? MEEL_HDD_THUMB_DIR : $hdd_base . "video/upload/thumbnail/";
-                        if (!empty($media_row['thumbnail'])
+                        if (
+                            !empty($media_row['thumbnail'])
                             && $media_row['thumbnail'] !== 'default_thumb.jpg'
                             && $media_row['thumbnail'] !== 'default_thumb.webp'
                         ) {
@@ -152,12 +143,12 @@ if (!isset($allowed_sort_columns[$sort])) {
     $sort = 'views';
 }
 if (!in_array($sort_dir, ['asc', 'desc'], true)) {
-    // title & id diurutkan A→Z / kecil→besar secara default (asc).
     $sort_dir = in_array($sort, ['title', 'id'], true) ? 'asc' : 'desc';
 }
 $order_by = $allowed_sort_columns[$sort] . ' ' . strtoupper($sort_dir);
 
-function getSortUrl(string $field): string {
+function getSortUrl(string $field): string
+{
     global $sort, $sort_dir, $type_filter, $search;
     $next_dir = ($field === $sort)
         ? ($sort_dir === 'asc' ? 'desc' : 'asc')
@@ -165,7 +156,8 @@ function getSortUrl(string $field): string {
     return '?sort=' . $field . '&dir=' . $next_dir . '&type=' . urlencode($type_filter) . '&search=' . urlencode($search);
 }
 
-function sortIcon(string $field): string {
+function sortIcon(string $field): string
+{
     global $sort, $sort_dir;
     if ($field !== $sort) {
         return '';
@@ -187,15 +179,11 @@ $query_media = "
         FROM music
     ) AS combined_media
     WHERE 1=1";
-
 $conditions = [];
 $params = [];
 $types = '';
 
 if (!empty($search)) {
-    // Cari di search_metadata (judul asli + romaji + english + alias, lowercase)
-    // — bukan hanya title — agar judul Jepang bisa ditemukan via romaji/english.
-    // id tetap disertakan agar pencarian "ID #<angka>" tetap berfungsi.
     $conditions[] = "(search_metadata LIKE ? OR id LIKE ?)";
     $like_param = '%' . $search . '%';
     $params[] = $like_param;
@@ -245,7 +233,7 @@ while ($rc = $r->fetch_assoc()) {
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <?php include '../partials/link.php'; ?>
     <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
-    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+        <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/cookies.css?v=<?= filemtime('../assets/css/admin/cookies.css') ?>">
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
@@ -312,191 +300,190 @@ while ($rc = $r->fetch_assoc()) {
             <?php endforeach; ?>
         </div>
 
-        <!-- Filter & Sort bar + Table (kontainer swap HTMX) -->
+        <!-- Filter & Sort bar + Table -->
         <div id="analytics-panel">
-        <div class="flex flex-wrap gap-3 mb-5 items-center">
-            <!-- Search -->
-            <div class="relative flex items-center">
-                <i data-lucide="search" class="absolute left-3 w-3.5 h-3.5 text-[#455060] pointer-events-none"></i>
-                <form method="GET" id="search-form" class="flex gap-0">
-                    <input type="hidden" name="sort" value="<?= $sort ?>">
-                    <input type="hidden" name="dir" value="<?= $sort_dir ?>">
-                    <input type="hidden" name="type" value="<?= $type_filter ?>">
-                    <input type="text" name="search" placeholder="Cari judul, romaji, atau ID..."
-                        value="<?= htmlspecialchars($search) ?>"
-                        class="admin-search-input">
-                </form>
-            </div>
+            <div class="flex flex-wrap gap-3 mb-5 items-center">
+                <!-- Search -->
+                <div class="relative flex items-center">
+                    <i data-lucide="search" class="absolute left-3 w-3.5 h-3.5 text-[#455060] pointer-events-none"></i>
+                    <form method="GET" id="search-form" class="flex gap-0">
+                        <input type="hidden" name="sort" value="<?= $sort ?>">
+                        <input type="hidden" name="dir" value="<?= $sort_dir ?>">
+                        <input type="hidden" name="type" value="<?= $type_filter ?>">
+                        <input type="text" name="search" placeholder="Cari judul, romaji, atau ID..."
+                            value="<?= htmlspecialchars($search) ?>"
+                            class="admin-search-input">
+                    </form>
+                </div>
 
-            <!-- Type -->
-            <?php
+                <!-- Type -->
+                <?php
                 $type_labels = ['all' => 'Semua', 'video' => 'Video', 'music' => 'Musik'];
                 $current_type_label = $type_labels[$type_filter] ?? 'Semua';
-            ?>
-            <div class="type-dropdown">
-                <div class="type-trigger">
-                    <span><?= $current_type_label ?></span>
-                    <i data-lucide="chevron-down" class="w-3 h-3 text-indigo-300"></i>
+                ?>
+                <div class="type-dropdown">
+                    <div class="type-trigger">
+                        <span><?= $current_type_label ?></span>
+                        <i data-lucide="chevron-down" class="w-3 h-3 text-indigo-300"></i>
+                    </div>
+                    <div class="type-menu">
+                        <?php foreach ($type_labels as $k => $v): ?>
+                            <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $k ?>&search=<?= urlencode($search) ?>"
+                                class="type-option<?= $type_filter === $k ? ' active' : '' ?>">
+                                <?= $v ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-                <div class="type-menu">
-                    <?php foreach ($type_labels as $k => $v): ?>
-                        <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $k ?>&search=<?= urlencode($search) ?>"
-                            class="type-option<?= $type_filter === $k ? ' active' : '' ?>">
-                            <?= $v ?>
+
+                <!-- Count & Clear -->
+                <div class="ml-auto flex items-center gap-3">
+                    <div id="sort-indicator" class="htmx-indicator">
+                        <div class="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    </div>
+                    <div class="text-[11px] font-semibold text-[#455060]">
+                        <?= $result_media->num_rows ?> item ditemukan
+                    </div>
+                    <?php if (!empty($search)): ?>
+                        <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $type_filter ?>" class="btn-clear-filter">
+                            <i data-lucide="x" class="w-3 h-3"></i> Hapus Filter
                         </a>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Count & Clear -->
-            <div class="ml-auto flex items-center gap-3">
-                <div id="sort-indicator" class="htmx-indicator">
-                    <div class="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                </div>
-                <div class="text-[11px] font-semibold text-[#455060]">
-                    <?= $result_media->num_rows ?> item ditemukan
-                </div>
-                <?php if (!empty($search)): ?>
-                    <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $type_filter ?>" class="btn-clear-filter">
-                        <i data-lucide="x" class="w-3 h-3"></i> Hapus Filter
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Table -->
-        <div class="glass rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,.4)]">
-            <div class="admin-table-wrap">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th class="th-center text-left">
-                                <a href="<?= getSortUrl('id') ?>"
-                                    hx-get="<?= htmlspecialchars(getSortUrl('id')) ?>"
-                                    hx-target="#analytics-panel"
-                                    hx-select="#analytics-panel"
-                                    hx-swap="outerHTML"
-                                    hx-indicator="#sort-indicator"
-                                    class="sort-link">
-                                    Konten
-                                    <?= sortIcon('id') ?>
-                                </a>
-                            </th>
-                            <th class="th-center">
-                                <a href="<?= getSortUrl('views') ?>"
-                                    hx-get="<?= htmlspecialchars(getSortUrl('views')) ?>"
-                                    hx-target="#analytics-panel"
-                                    hx-select="#analytics-panel"
-                                    hx-swap="outerHTML"
-                                    hx-indicator="#sort-indicator"
-                                    class="sort-link">
-                                    Views
-                                    <?= sortIcon('views') ?>
-                                </a>
-                            </th>
-                            <th class="th-center">
-                                <a href="<?= getSortUrl('likes') ?>"
-                                    hx-get="<?= htmlspecialchars(getSortUrl('likes')) ?>"
-                                    hx-target="#analytics-panel"
-                                    hx-select="#analytics-panel"
-                                    hx-swap="outerHTML"
-                                    hx-indicator="#sort-indicator"
-                                    class="sort-link">
-                                    Likes
-                                    <?= sortIcon('likes') ?>
-                                </a>
-                            </th>
-                            <th class="th-center">
-                                <a href="<?= getSortUrl('dislikes') ?>"
-                                    hx-get="<?= htmlspecialchars(getSortUrl('dislikes')) ?>"
-                                    hx-target="#analytics-panel"
-                                    hx-select="#analytics-panel"
-                                    hx-swap="outerHTML"
-                                    hx-indicator="#sort-indicator"
-                                    class="sort-link">
-                                    Dislikes
-                                    <?= sortIcon('dislikes') ?>
-                                </a>
-                            </th>
-                            <th class="th-center">Tipe</th>
-                            <th class="th-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($result_media->num_rows > 0):
-                            $row_i = 0;
-                            while ($row = $result_media->fetch_assoc()):
-                                $row_i++;
-                                $is_video   = ($row['media_type'] === 'video');
-                                $watch_url  = $is_video ? "../video/watch.php?id={$row['id']}" : "../music/watch.php?id={$row['id']}";
-                                $edit_url   = $is_video ? "edit-video.php?id={$row['id']}" : "edit-music.php?id={$row['id']}";
-                                $type_color = $is_video ? '#ef4444' : '#f97316';
-                                $type_bg    = $is_video ? 'rgba(239,68,68,.1)' : 'rgba(249,115,22,.1)';
-                                $type_bdr   = $is_video ? 'rgba(239,68,68,.2)' : 'rgba(249,115,22,.2)';
-                        ?>
-                                <tr title="<?= htmlspecialchars($row['title']) ?>">
-                                    <!-- Title -->
-                                    <td class="td-left" style="max-width:320px;">
-                                        <div class="flex items-center gap-2.5">
-                                            <span class="row-num"><?= $row_i ?></span>
-                                            <div>
-                                                <a href="<?= $watch_url ?>" target="_blank" class="content-title">
-                                                    <?= htmlspecialchars($row['title']) ?>
-                                                </a>
-                                                <span class="content-id">ID #<?= (int)$row['id'] ?></span>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Views -->
-                                    <td class="td-center">
-                                        <span class="stat-value stat-value-views"><?= number_format($row['views']) ?></span>
-                                    </td>
-
-                                    <!-- Likes -->
-                                    <td class="td-center">
-                                        <span class="stat-value stat-value-likes"><?= number_format($row['likes']) ?></span>
-                                    </td>
-
-                                    <!-- Dislikes -->
-                                    <td class="td-center">
-                                        <span class="stat-value stat-value-dislikes"><?= number_format($row['dislikes']) ?></span>
-                                    </td>
-
-                                    <!-- Type badge -->
-                                    <td class="td-center">
-                                        <span class="type-badge" style="background:<?= $type_bg ?>;color:<?= $type_color ?>;border:1px solid <?= $type_bdr ?>;">
-                                            <?= strtoupper($row['media_type']) ?>
-                                        </span>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td class="th-right">
-                                        <div class="row-actions inline-flex items-center gap-1.5">
-                                            <a href="<?= $edit_url ?>" title="Edit" class="action-btn action-btn-edit">
-                                                <i data-lucide="edit-2" class="w-2.5 h-2.5"></i> Edit
-                                            </a>
-                                            <button type="button" title="Hapus"
-                                                onclick="confirmDelete(<?= (int)$row['id'] ?>, '<?= htmlspecialchars($row['media_type'], ENT_QUOTES, 'UTF-8') ?>', '<?= addslashes(htmlspecialchars($row['title'])) ?>')"
-                                                class="action-btn action-btn-delete border-0 cursor-pointer">
-                                                <i data-lucide="trash-2" class="w-2.5 h-2.5"></i> Hapus
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endwhile;
-                        else: ?>
+            <!-- Table -->
+            <div class="glass rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,.4)]">
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
                             <tr>
-                                <td colspan="6" class="empty-state">Tidak ada media ditemukan.</td>
+                                <th class="th-center text-left">
+                                    <a href="<?= getSortUrl('id') ?>"
+                                        hx-get="<?= htmlspecialchars(getSortUrl('id')) ?>"
+                                        hx-target="#analytics-panel"
+                                        hx-select="#analytics-panel"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#sort-indicator"
+                                        class="sort-link">
+                                        Konten
+                                        <?= sortIcon('id') ?>
+                                    </a>
+                                </th>
+                                <th class="th-center">
+                                    <a href="<?= getSortUrl('views') ?>"
+                                        hx-get="<?= htmlspecialchars(getSortUrl('views')) ?>"
+                                        hx-target="#analytics-panel"
+                                        hx-select="#analytics-panel"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#sort-indicator"
+                                        class="sort-link">
+                                        Views
+                                        <?= sortIcon('views') ?>
+                                    </a>
+                                </th>
+                                <th class="th-center">
+                                    <a href="<?= getSortUrl('likes') ?>"
+                                        hx-get="<?= htmlspecialchars(getSortUrl('likes')) ?>"
+                                        hx-target="#analytics-panel"
+                                        hx-select="#analytics-panel"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#sort-indicator"
+                                        class="sort-link">
+                                        Likes
+                                        <?= sortIcon('likes') ?>
+                                    </a>
+                                </th>
+                                <th class="th-center">
+                                    <a href="<?= getSortUrl('dislikes') ?>"
+                                        hx-get="<?= htmlspecialchars(getSortUrl('dislikes')) ?>"
+                                        hx-target="#analytics-panel"
+                                        hx-select="#analytics-panel"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#sort-indicator"
+                                        class="sort-link">
+                                        Dislikes
+                                        <?= sortIcon('dislikes') ?>
+                                    </a>
+                                </th>
+                                <th class="th-center">Tipe</th>
+                                <th class="th-right">Aksi</th>
                             </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php if ($result_media->num_rows > 0):
+                                $row_i = 0;
+                                while ($row = $result_media->fetch_assoc()):
+                                    $row_i++;
+                                    $is_video   = ($row['media_type'] === 'video');
+                                    $watch_url  = $is_video ? "../video/watch.php?id={$row['id']}" : "../music/watch.php?id={$row['id']}";
+                                    $edit_url   = $is_video ? "edit-video.php?id={$row['id']}" : "edit-music.php?id={$row['id']}";
+                                    $type_color = $is_video ? '#ef4444' : '#f97316';
+                                    $type_bg    = $is_video ? 'rgba(239,68,68,.1)' : 'rgba(249,115,22,.1)';
+                                    $type_bdr   = $is_video ? 'rgba(239,68,68,.2)' : 'rgba(249,115,22,.2)';
+                            ?>
+                                    <tr title="<?= htmlspecialchars($row['title']) ?>">
+                                        <!-- Title -->
+                                        <td class="td-left" style="max-width:320px;">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="row-num"><?= $row_i ?></span>
+                                                <div>
+                                                    <a href="<?= $watch_url ?>" target="_blank" class="content-title">
+                                                        <?= htmlspecialchars($row['title']) ?>
+                                                    </a>
+                                                    <span class="content-id">ID #<?= (int)$row['id'] ?></span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Views -->
+                                        <td class="td-center">
+                                            <span class="stat-value stat-value-views"><?= number_format($row['views']) ?></span>
+                                        </td>
+
+                                        <!-- Likes -->
+                                        <td class="td-center">
+                                            <span class="stat-value stat-value-likes"><?= number_format($row['likes']) ?></span>
+                                        </td>
+
+                                        <!-- Dislikes -->
+                                        <td class="td-center">
+                                            <span class="stat-value stat-value-dislikes"><?= number_format($row['dislikes']) ?></span>
+                                        </td>
+
+                                        <!-- Type badge -->
+                                        <td class="td-center">
+                                            <span class="type-badge" style="background:<?= $type_bg ?>;color:<?= $type_color ?>;border:1px solid <?= $type_bdr ?>;">
+                                                <?= strtoupper($row['media_type']) ?>
+                                            </span>
+                                        </td>
+
+                                        <!-- Actions -->
+                                        <td class="th-right">
+                                            <div class="row-actions inline-flex items-center gap-1.5">
+                                                <a href="<?= $edit_url ?>" title="Edit" class="action-btn action-btn-edit">
+                                                    <i data-lucide="edit-2" class="w-2.5 h-2.5"></i> Edit
+                                                </a>
+                                                <button type="button" title="Hapus"
+                                                    onclick="confirmDelete(<?= (int)$row['id'] ?>, '<?= htmlspecialchars($row['media_type'], ENT_QUOTES, 'UTF-8') ?>', '<?= addslashes(htmlspecialchars($row['title'])) ?>')"
+                                                    class="action-btn action-btn-delete border-0 cursor-pointer">
+                                                    <i data-lucide="trash-2" class="w-2.5 h-2.5"></i> Hapus
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endwhile;
+                            else: ?>
+                                <tr>
+                                    <td colspan="6" class="empty-state">Tidak ada media ditemukan.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        </div><!-- /analytics-panel -->
-
-    </div><!-- /max-w -->
+    </div>
 
     <!-- ── Delete Confirm Modal ── -->
     <div id="delete-modal">

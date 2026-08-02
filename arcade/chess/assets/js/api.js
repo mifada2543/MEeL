@@ -16,7 +16,6 @@ export async function saveMoveAPI(roomCode, move) {
   });
   return await res.json();
 }
-
 export async function fetchMovesAPI(roomCode, afterId = 0) {
   const res = await fetch(
     `controller/get_move.php?room=${encodeURIComponent(roomCode)}&last=${afterId}`,
@@ -24,17 +23,14 @@ export async function fetchMovesAPI(roomCode, afterId = 0) {
   const data = await res.json();
   return Array.isArray(data) ? data : [];
 }
-
 export async function checkRoomStatusAPI(roomCode) {
   const res = await fetch(`controller/check_room_status.php?room=${roomCode}`);
   return await res.json();
 }
-
 export async function createRoomAPI() {
   const res = await fetch("controller/create_room.php", { method: "POST" });
   return await res.json();
 }
-
 export async function joinRoomAPI(code) {
   const form = new FormData();
   form.append("room", code.trim().toUpperCase());

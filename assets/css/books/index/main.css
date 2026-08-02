@@ -1,13 +1,10 @@
 /* ============================================================
  * index/main.css — Page-specific untuk Books Library
  * Halaman: books/index.php
- * Diekstrak dari inline <style> di index.php
  * ============================================================ */
-
 body {
   background-color: #080a0f;
 }
-
 /* ── Continue Reading Banner ── */
 .continue-banner {
   display: none;
@@ -21,11 +18,9 @@ body {
   gap: 1rem;
   transition: all 0.3s ease;
 }
-
 .continue-banner.visible {
   display: flex;
 }
-
 .continue-banner-left {
   display: flex;
   align-items: center;
@@ -33,7 +28,6 @@ body {
   min-width: 0;
   flex: 1;
 }
-
 .continue-badge {
   flex-shrink: 0;
   font-size: 8px;
@@ -45,7 +39,6 @@ body {
   background: rgba(34, 197, 94, 0.15);
   color: #22c55e;
 }
-
 .continue-banner-text {
   font-size: 0.75rem;
   color: #9ca3af;
@@ -53,11 +46,9 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .continue-banner-text strong {
   color: #e5e7eb;
 }
-
 .continue-banner-link {
   flex-shrink: 0;
   display: inline-flex;
@@ -73,12 +64,10 @@ body {
   transition: all 0.2s;
   white-space: nowrap;
 }
-
 .continue-banner-link:hover {
   background: rgba(34, 197, 94, 0.2);
   transform: translateY(-1px);
 }
-
 .continue-banner-close {
   flex-shrink: 0;
   padding: 0.3rem;
@@ -92,12 +81,10 @@ body {
   align-items: center;
   justify-content: center;
 }
-
 .continue-banner-close:hover {
   color: #e5e7eb;
   background: rgba(255, 255, 255, 0.05);
 }
-
 @media (max-width: 480px) {
   .continue-banner {
     flex-wrap: wrap;

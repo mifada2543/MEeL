@@ -2,7 +2,6 @@
  * utility.css — Utility classes, animasi, icon buttons
  * Modul: Drive (MEeL Cloud)
  * ============================================================ */
-
 /* ── Glass Panel ── */
 .glass-panel {
   background: var(--bg-glass);
@@ -11,7 +10,6 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-
 /* ── Badge ── */
 .badge {
   display: inline-flex;
@@ -24,7 +22,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-
 /* ── Progress Track (generic) ── */
 .progress-track {
   background: rgba(255, 255, 255, 0.06);
@@ -32,13 +29,11 @@
   height: 6px;
   overflow: hidden;
 }
-
 .progress-fill {
   height: 100%;
   border-radius: 999px;
   transition: width 0.5s;
 }
-
 /* ── Fade Up Animation ── */
 @keyframes fadeUp {
   from {
@@ -50,11 +45,9 @@
     transform: translateY(0);
   }
 }
-
 .fade-up {
   animation: fadeUp 0.35s ease-out forwards;
 }
-
 /* ── Icon Buttons ── */
 .icon-btn {
   padding: 6px;
@@ -65,46 +58,36 @@
   border: none;
   cursor: pointer;
 }
-
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.08);
 }
-
 .icon-btn.blue:hover {
   color: var(--accent-b);
 }
-
 .icon-btn.red:hover {
   color: var(--accent-r);
 }
-
 .icon-btn.cyan:hover {
   color: #22d3ee;
 }
-
 /* ── Scrollbar Hide (utility) ── */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
 /* ── Transition Helpers ── */
 .transition-all {
   transition: all 0.2s ease;
 }
-
 .transition-transform {
   transition: transform 0.2s ease;
 }
-
 .transition-opacity {
   transition: opacity 0.2s ease;
 }
-
 /* ── Storage Bar ── */
 .storage-bar {
   height: 8px;
@@ -112,14 +95,12 @@
   border-radius: 999px;
   overflow: hidden;
 }
-
 .storage-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--accent-b), #60a5fa);
   border-radius: 999px;
   transition: width 0.5s ease;
 }
-
 /* ── Preview Modal ── */
 .preview-modal {
   position: fixed;
@@ -133,7 +114,6 @@
   justify-content: center;
   padding: 16px;
 }
-
 .preview-modal-content {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -143,7 +123,6 @@
   overflow: hidden;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
 }
-
 .preview-modal-header {
   display: flex;
   align-items: center;
@@ -152,7 +131,6 @@
   border-bottom: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.2);
 }
-
 .preview-modal-title {
   font-size: 0.875rem;
   font-weight: 600;
@@ -162,13 +140,11 @@
   white-space: nowrap;
   max-width: 200px;
 }
-
 @media (min-width: 768px) {
   .preview-modal-title {
     max-width: 28rem;
   }
 }
-
 .preview-modal-close {
   padding: 8px;
   border-radius: 8px;
@@ -178,12 +154,10 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-
 .preview-modal-close:hover {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
-
 .preview-modal-body {
   min-height: 300px;
   display: flex;
