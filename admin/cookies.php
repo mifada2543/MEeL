@@ -249,6 +249,7 @@ while ($rc = $r->fetch_assoc()) {
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/cookies.css?v=<?= filemtime('../assets/css/admin/cookies.css') ?>">
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen">
@@ -311,7 +312,8 @@ while ($rc = $r->fetch_assoc()) {
             <?php endforeach; ?>
         </div>
 
-        <!-- Filter & Sort bar -->
+        <!-- Filter & Sort bar + Table (kontainer swap HTMX) -->
+        <div id="analytics-panel">
         <div class="flex flex-wrap gap-3 mb-5 items-center">
             <!-- Search -->
             <div class="relative flex items-center">
@@ -348,6 +350,9 @@ while ($rc = $r->fetch_assoc()) {
 
             <!-- Count & Clear -->
             <div class="ml-auto flex items-center gap-3">
+                <div id="sort-indicator" class="htmx-indicator">
+                    <div class="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                </div>
                 <div class="text-[11px] font-semibold text-[#455060]">
                     <?= $result_media->num_rows ?> item ditemukan
                 </div>
@@ -366,25 +371,49 @@ while ($rc = $r->fetch_assoc()) {
                     <thead>
                         <tr>
                             <th class="th-center text-left">
-                                <a href="<?= getSortUrl('id') ?>" class="sort-link">
+                                <a href="<?= getSortUrl('id') ?>"
+                                    hx-get="<?= htmlspecialchars(getSortUrl('id')) ?>"
+                                    hx-target="#analytics-panel"
+                                    hx-select="#analytics-panel"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#sort-indicator"
+                                    class="sort-link">
                                     Konten
                                     <?= sortIcon('id') ?>
                                 </a>
                             </th>
                             <th class="th-center">
-                                <a href="<?= getSortUrl('views') ?>" class="sort-link">
+                                <a href="<?= getSortUrl('views') ?>"
+                                    hx-get="<?= htmlspecialchars(getSortUrl('views')) ?>"
+                                    hx-target="#analytics-panel"
+                                    hx-select="#analytics-panel"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#sort-indicator"
+                                    class="sort-link">
                                     Views
                                     <?= sortIcon('views') ?>
                                 </a>
                             </th>
                             <th class="th-center">
-                                <a href="<?= getSortUrl('likes') ?>" class="sort-link">
+                                <a href="<?= getSortUrl('likes') ?>"
+                                    hx-get="<?= htmlspecialchars(getSortUrl('likes')) ?>"
+                                    hx-target="#analytics-panel"
+                                    hx-select="#analytics-panel"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#sort-indicator"
+                                    class="sort-link">
                                     Likes
                                     <?= sortIcon('likes') ?>
                                 </a>
                             </th>
                             <th class="th-center">
-                                <a href="<?= getSortUrl('dislikes') ?>" class="sort-link">
+                                <a href="<?= getSortUrl('dislikes') ?>"
+                                    hx-get="<?= htmlspecialchars(getSortUrl('dislikes')) ?>"
+                                    hx-target="#analytics-panel"
+                                    hx-select="#analytics-panel"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#sort-indicator"
+                                    class="sort-link">
                                     Dislikes
                                     <?= sortIcon('dislikes') ?>
                                 </a>
@@ -465,6 +494,7 @@ while ($rc = $r->fetch_assoc()) {
                 </table>
             </div>
         </div>
+        </div><!-- /analytics-panel -->
 
     </div><!-- /max-w -->
 

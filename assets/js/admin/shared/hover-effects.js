@@ -1,10 +1,15 @@
 /**
  * MEeL Admin — Shared: Table Row & Action Button Hover Effects
+ *
+ * Catatan HTMX: cookies.php melakukan swap kontainer tabel via htmx
+ * (sort tanpa reload halaman). Elemen hasil swap (baris tabel, tombol
+ * aksi) perlu di-attach listener lagi setelah swap — dilakukan lewat
+ * initHoverEffects() yang dipanggil ulang pada event htmx:afterSwap.
  */
 (function () {
   'use strict';
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function initHoverEffects() {
     // ── Table row hover effect ──
     document.querySelectorAll('.admin-table tbody tr').forEach(function (row) {
       row.addEventListener('mouseenter', function () {
@@ -37,5 +42,12 @@
         this.style.color = '#f87171';
       });
     });
-  });
+  }
+
+  document.addEventListener('DOMContentLoaded', initHoverEffects);
+
+  // Re-init setelah konten di-swap oleh htmx (mis. sort di cookies.php)
+  if (window.htmx) {
+    document.body.addEventListener('htmx:afterSwap', initHoverEffects);
+  }
 })();
