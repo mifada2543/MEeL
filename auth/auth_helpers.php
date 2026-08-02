@@ -55,8 +55,17 @@ function auth_get_ip(): string
 
 if (!function_exists('auth_back_url')) {
 /**
- * Hitung $back_url dari HTTP_REFERER (hanya referer host yang sama dan
- * bukan dari file yang ada di $exclude).
+ * Hitung $back_url dari HTTP_REFERER — HANYA jika referer berasal dari host
+ * yang sama (perbandingan EXACT via parse_url, bukan substring) dan bukan
+ * dari file yang ada di $exclude.
+ *
+ * Keamanan: validasi lama memakai strpos($ref, $host) yang bisa ditembus
+ * dengan referer palsu seperti "https://evil.com/<host-asli>/apa-saja"
+ * (substring match lolos padahal host aslinya beda → potensi open redirect
+ * pada link "kembali" setelah login/register). Sekarang host dibandingkan
+ * secara EXACT (strcasecmp) terhadap hasil parse_url(PHP_URL_HOST), dan
+ * pengecekan $exclude dilakukan terhadap bagian PATH saja (bukan string
+ * referer utuh) supaya konsisten aman.
  *
  * @param string[] $exclude Nama file yang tidak boleh menjadi back_url
  *                          (mis. login.php, register.php, revoked.php, banned.php)
@@ -67,11 +76,17 @@ function auth_back_url(array $exclude = ['login.php', 'register.php']): string
 
     if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         $ref  = $_SERVER['HTTP_REFERER'];
-        $host = $_SERVER['HTTP_HOST'];
-        if (strpos($ref, $host) !== false) {
+        // HTTP_HOST bisa menyertakan port (mis. "localhost:8080") — strip port
+        // agar bisa dibandingkan dengan PHP_URL_HOST (yang tanpa port).
+        $host = parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST);
+
+        $refHost = parse_url($ref, PHP_URL_HOST);
+
+        if ($refHost !== null && $host !== null && strcasecmp($refHost, $host) === 0) {
+            $refPath    = parse_url($ref, PHP_URL_PATH) ?? '';
             $isExcluded = false;
             foreach ($exclude as $file) {
-                if (strpos($ref, $file) !== false) {
+                if (strpos($refPath, $file) !== false) {
                     $isExcluded = true;
                     break;
                 }
