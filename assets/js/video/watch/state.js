@@ -1,11 +1,7 @@
 /* ============================================================
  * state.js — Konfigurasi player & seluruh state global (shared)
- * Semua var/const di sini dipakai lintas file (non-module script,
- * jadi tetap satu global scope). WAJIB dimuat PALING PERTAMA.
- * Depends on: shared/plyr-config.js (MEEL_PLYR_COMMON) — harus
- * dimuat SEBELUM state.js karena plyrOptions di-spread saat load.
+ * Depends on: shared/plyr-config.js
  * ============================================================ */
-
 const config = window.playerConfig || {};
 let videoElement,
   player,
@@ -52,19 +48,10 @@ let glowTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowStopFn = null,
   glowEnabled = "false" !== localStorage.getItem("meel_glow_enabled"),
   glowNavbar = null;
-
-/* ── Auto Next ──────────────────────────────────────────────
- * Default OFF. State persist di localStorage agar tidak hilang
- * saat navigasi normal (Ctrl+R, pindah halaman, dll).
- * Hanya transisi auto-next yang mempertahankan state ON.
- * Deteksi menggunakan sessionStorage flag yang diset oleh
- * player-events.js sebelum memulai transisi auto-next.
- * ─────────────────────────────────────────────────────────── */
+/* ── Auto Next ── */
 const _meelAutoNavFlag = sessionStorage.getItem("meel_autonav") === "1";
 sessionStorage.removeItem("meel_autonav");
-
 let autoNextEnabled = localStorage.getItem("meel_autonext_enabled") === "true";
-
 window.lucide && lucide.createIcons();
 const plyrOptions = {
     ...MEEL_PLYR_COMMON,

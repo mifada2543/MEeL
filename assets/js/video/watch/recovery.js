@@ -1,9 +1,7 @@
 /* ============================================================
- * recovery.js — Auto-recovery: deteksi video 'macet'/stuck,
- * error HLS/HTML5, reconnect indicator, watchdog timer.
+ * recovery.js — Auto-recovery: deteksi video 'macet'/stuck, error HLS/HTML5, reconnect indicator, watchdog timer.
  * Depends on: state.js
  * ============================================================ */
-
 function stopPlaybackStartTimeout() {
   playbackStartTimeout &&
     (clearTimeout(playbackStartTimeout), (playbackStartTimeout = null));
@@ -21,7 +19,6 @@ function startPlaybackStartTimeout() {
     }, PLAYBACK_START_TIMEOUT_MS)));
 }
 function destroyPlayer() {
-  /* Clean up glow RAF to prevent stale videoElement reference */
   if (glowRAF) {
     cancelAnimationFrame(glowRAF);
     glowRAF = null;
@@ -184,7 +181,6 @@ function registerVideoErrorListener(videoEl) {
       "code:",
       mediaError.code,
     );
-    // code 2=NETWORK, 3=DECODE, 4=SRC_NOT_SUPPORTED -> coba recovery
     if ([2, 3, 4].includes(mediaError.code)) triggerPlayerRecovery();
   });
   videoEl.addEventListener("stalled", () => {

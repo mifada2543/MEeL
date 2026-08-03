@@ -2,7 +2,6 @@
  * base.css — Variabel, reset, body, scrollbar, glass, tipografi
  * Tema: Oranye (Music)
  * ============================================================ */
-
 :root {
   --plyr-color-main: #f97316;
   --plyr-audio-controls-background: transparent;
@@ -13,19 +12,16 @@
     ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --font-display: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
 }
-
 body {
   background-color: var(--bg);
   font-family: var(--font);
   scroll-behavior: smooth;
 }
-
 .glass {
   background: rgba(13, 16, 23, 0.8);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 3px;
@@ -40,14 +36,12 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #374151;
 }
-
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .no-scrollbar {
   scrollbar-width: none;
 }
-
 /* ── Section Title ── */
 .section-title {
   font-family: var(--font-display);
@@ -56,7 +50,6 @@ body {
   color: #f0f2f7;
   line-height: 1;
 }
-
 .track-title {
   font-family: var(--font-display);
   font-size: clamp(1.3rem, 6vw, 2rem);
@@ -69,7 +62,6 @@ body {
   -webkit-box-orient: vertical;
   line-clamp: 3;
 }
-
 .rec-title-text {
   display: -webkit-box;
   -webkit-line-clamp: 2;

@@ -1,7 +1,6 @@
 /* ============================================================
  * toast.css — Toggle toast notification
  * ============================================================ */
-
 .meel-toggle-toast {
   position: absolute;
   top: 50%;
@@ -27,12 +26,10 @@
   opacity: 0;
   animation: meelToastPop 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-
 .meel-toggle-toast svg {
   flex-shrink: 0;
   opacity: 0.9;
 }
-
 @keyframes meelToastPop {
   0% {
     opacity: 0;

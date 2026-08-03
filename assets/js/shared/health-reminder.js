@@ -1,62 +1,14 @@
-/**
- * MEeL - Media Hub Platform
- *
+/** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3
- */
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
 /* ============================================================
  * health-reminder.js — Mode Sehat 20-20-20 (pengingat istirahat mata)
- *
  * Aturan 20-20-20: setiap 20 menit menatap layar, istirahatlah
  * dengan memandang objek sejauh ≥ 6 meter (20 kaki) selama 20 detik.
- *
- * Sejarah: logika ini sebelumnya terbenam dalam satu baris minified
- * di `assets/js/compatibilitas/script.min.js`. Diekstrak ke file
- * terpisah agar mudah dibaca, dirawat, dan diuji. PERILAKU
- * dipertahankan identik dengan versi aslinya (catatan "Asli
- * (minified): <nama fungsi>" pada tiap fungsi), KECUALI satu
- * perbaikan yang disengaja: cabang auto-dismiss 5 menit kini ikut
- * menjadwalkan ulang alarm, konsisten dengan cabang lainnya.
- *
- * State disimpan di localStorage agar timer bertahan lintas halaman:
- *   - `health_reminder`    → "true" = mode aktif
- *   - `health_target_time` → timestamp (ms) kapan alarm berikutnya muncul
- *
- * Dependencies:
- *   - SweetAlert2 (global `Swal`) — menampilkan modal jeda
- *   - lucide                     — ikon di dalam modal
- *   - Pemutar media: Plyr (`window.player`) atau elemen `<video>` /
- *     `<audio>` native (#main-video / #main-player / lainnya)
- *
- * Dimuat otomatis di halaman yang memuat `script.min.js` (via
- * `partials/scripts.php` atau include langsung) dan di halaman baca
- * buku (`books/read.php`) yang memuat file ini secara langsung.
- *
- * Koordinasi antar-tab (cegah alarm ganda saat 2+ tab terbuka):
- *   - Web Locks API      → hanya satu tab yang menampilkan alarm; lock
- *                          ditahan selama rangkaian modal berjalan.
- *   - BroadcastChannel   → tab lain ikut masuk mode jeda (kunci keyboard
- *                          & tolak pemutaran) lalu di-resume saat selesai.
- *   - event 'storage'    → tab lain menyelaraskan timer saat target
- *                          diperbarui (atau berhenti jika mode dimatikan).
- *
- * Mode agresif selama jeda (perilaku diperketat):
- *   - SEMUA input keyboard diblokir (kecuali mengetik di kolom teks),
- *     termasuk Escape, tombol next (n), loop (l), auto-next (a), dst.
- *   - SEMUA pemutaran media ditolak: event play/playing di-intercept di
- *     level document + watchdog berkala mem-pause media apa pun.
- *   - Auto-next & loop di player music/video dijaga langsung di
- *     assets/js/music/* dan assets/js/video/watch/*.
  * ============================================================ */
-
 /* ── State global (variabel global agar konsisten antar fungsi) ─────────── */
-var healthReminderTimer = null;          // handle setTimeout untuk alarm
+var healthReminderTimer = null;          
 var HEALTH_INTERVAL_MS  = 12e5;          // 1.200.000 ms = 20 menit
-
-/* ── Log debug ───────────────────────────────────────────────────────────
- * Dipakai untuk debugging sinkronisasi timer. Format durasi sisa yang
- * mudah dibaca dari selisih milidetik (mis. "19 menit 42 detik").
- * Hanya memengaruhi console — tidak mengubah perilaku fitur sama sekali. */
 function formatHealthRemaining(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(totalSec / 60);
@@ -69,28 +21,17 @@ function logHealthDebug(msg) {
     console.log("[health-reminder]", msg);
   }
 }
-
-// true selama modal jeda terbuka — dipakai player musik (mini-player.js)
-// untuk memblokir kontrol play/seek/next/prev selama jeda berlangsung.
 window.meelHealthAlertActive = false;
-
-// true jika countdown sudah dijadwalkan pada sesi halaman ini (cegah ganda).
 window.meelHealthReminderStarted = false;
-
 /* ============================================================
  * 1) TOGGLE — tombol "Mode 20-20-20" di halaman hub (index.php)
  * ============================================================ */
-
-/**
- * Balik status mode sehat ON/OFF lalu simpan ke localStorage.
- * Asli (minified): toggleHealth
- */
+/** Balik status mode sehat ON/OFF lalu simpan ke localStorage.
+ * Asli (minified): toggleHealth */
 function toggleHealth() {
   const enabled = !(localStorage.getItem("health_reminder") === "true");
   localStorage.setItem("health_reminder", String(enabled));
-
   updateHealthToggleButton();
-
   if (enabled) {
     // ON → jadwalkan alarm pertama 20 menit lagi.
     scheduleNextHealthAlert();
@@ -101,25 +42,18 @@ function toggleHealth() {
     window.meelHealthReminderStarted = false;
   }
 }
-
-/**
- * Sinkronkan tampilan tombol #healthToggle (pill hijau "ON" / merah "OFF")
- * dan pasang handler klik pada tombol tersebut.
- * Asli (minified): updateHealthToggleButton
- */
+/** Sinkronkan tampilan tombol #healthToggle (pill hijau "ON" / merah "OFF")
+ * dan pasang handler klik pada tombol tersebut. */
 function updateHealthToggleButton() {
   const btn = document.getElementById("healthToggle");
   if (!btn) return;
-
   btn.onclick = toggleHealth;
-
   const on = localStorage.getItem("health_reminder") === "true";
   btn.classList.remove(
     "bg-green-500/20", "text-green-500",
     "bg-red-500/20",   "text-red-500",
     "text-gray-700"
   );
-
   if (on) {
     btn.classList.add("bg-green-500/20", "text-green-500");
     btn.innerText = "ON";
@@ -128,7 +62,6 @@ function updateHealthToggleButton() {
     btn.innerText = "OFF";
   }
 }
-
 /* ============================================================
  * 2) PENJADWALAN — hitung mundur menuju alarm berikutnya
  * ============================================================ */

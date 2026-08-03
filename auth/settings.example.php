@@ -1,13 +1,10 @@
 <?php
-/**
- * MEeL-HUB — Contoh Konfigurasi Server (Template)
- *
+
+/** MEeL-HUB — Contoh Konfigurasi Server (Template)
  * Copy file ini ke settings.php dan sesuaikan dengan environment Anda:
  *   cp auth/settings.example.php auth/settings.php
- *
  * File ini HANYA memuat data konfigurasi (DB credentials + MEEL_*
- * constants) — tanpa session, header, atau logic lain. Logic bootstrap
- * ada di auth/config.php yang me-require settings.php.
+ * constants) — tanpa session, header, atau logic lain.
  */
 
 // ════════════════════════════════════════════════════════════════

@@ -6,12 +6,7 @@
  */
 /* ────────────────────────────────────────────────────────────────
  * shared/htmx-lucide.js — Inisialisasi ikon Lucide + re-init setelah
- * swap HTMX. Dipakai BERSAMA oleh modul video & music (sebelumnya
  * diduplikasi di assets/js/music/shared & assets/js/video/shared).
- *
- * Versi scoped: hanya elemen hasil swap yang di-scan ulang
- * (detail.target, bukan detail.elt yang merupakan elemen pemicu) —
- * hindari scan seluruh DOM tiap request HTMX.
  * ──────────────────────────────────────────────────────────────── */
 lucide.createIcons();
 document.body.addEventListener('htmx:afterOnLoad', function(e) {

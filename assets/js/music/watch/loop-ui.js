@@ -2,7 +2,6 @@
  * loop-ui.js — Update tampilan pill/tombol 'Loop' (desktop & mini-player).
  * Depends on: state.js
  * ============================================================ */
-
 function _setTogglePillUI(e, t) {
   e &&
     (e.classList.toggle("bg-gray-800", !t),

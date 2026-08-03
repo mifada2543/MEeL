@@ -1,24 +1,18 @@
 /* ============================================================
  * upload/main.css — Page-specific CSS untuk Upload Video
  * Halaman: video/upload.php
- *
  * Dependensi:
  *   ../../shared/upload-form.css  — Nav, form, buttons, alerts (shared)
  * ============================================================ */
-
-/* font.css & upload-form.css kini dimuat via <link> di video/upload.php
-   (dengan cache-buster) agar tidak basi di cache immutable 1 tahun. */
-
 :root {
   --accent: #ef4444;
   --accent-hover: #f87171;
-  --accent-dim: rgba(239, 68, 68, .10);
-  --accent-border: rgba(239, 68, 68, .22);
+  --accent-dim: rgba(239, 68, 68, 0.1);
+  --accent-border: rgba(239, 68, 68, 0.22);
   --accent-shadow: rgba(239, 68, 68, 0.08);
   --btn-text: #fff;
   --btn-shadow: rgba(239, 68, 68, 0.22);
   --btn-shadow-hover: rgba(239, 68, 68, 0.32);
-  /* Shared CSS variable overrides */
   --page-wrap-rows: 56px 1fr;
   --sidebar-gap: 24px;
   --stat-chip-min-width: 80px;
@@ -29,58 +23,54 @@
   --form-title-max: 30px;
   --divider-margin: 20px 0;
 }
-
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
-
 body {
   background: var(--bg-base);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   min-height: 100vh;
   color: #c9cdd6;
 }
-
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
 }
-
 .page-wrap {
   grid-template-columns: 1fr;
 }
-
 /* ── Layout ── */
 .upload-layout {
   display: grid;
   grid-template-columns: 1fr;
 }
-
 @media (min-width: 900px) {
   .upload-layout {
     grid-template-columns: 320px 1fr;
     min-height: calc(100vh - 56px);
   }
 }
-
 @media (min-width: 1200px) {
   .upload-layout {
     grid-template-columns: 360px 1fr;
   }
 }
-
 /* ── Video icon hero ── */
 .hero-icon {
   width: 100%;
   aspect-ratio: 16/9;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(239, 68, 68, .15) 0%, rgba(8, 11, 17, 0) 70%);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(8, 11, 17, 0) 70%
+  );
   border: 1px solid var(--accent-border);
   display: flex;
   flex-direction: column;
@@ -90,18 +80,18 @@ body::before {
   position: relative;
   overflow: hidden;
 }
-
 .hero-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(0deg,
-      transparent,
-      transparent 28px,
-      rgba(239, 68, 68, .04) 28px,
-      rgba(239, 68, 68, .04) 29px);
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 28px,
+    rgba(239, 68, 68, 0.04) 28px,
+    rgba(239, 68, 68, 0.04) 29px
+  );
 }
-
 .hero-icon-ring {
   width: 64px;
   height: 64px;
@@ -114,24 +104,21 @@ body::before {
   position: relative;
   z-index: 1;
 }
-
 /* ── Guide list ── */
 .guide-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 .guide-item {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, .03);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
 }
-
 .guide-icon {
   width: 26px;
   height: 26px;
@@ -143,36 +130,31 @@ body::before {
   justify-content: center;
   flex-shrink: 0;
 }
-
 .guide-title {
   font-size: 11px;
   font-weight: 700;
   color: #e2e6ef;
   margin-bottom: 2px;
 }
-
 .guide-desc {
   font-size: 10px;
   color: #cbd5e1;
   line-height: 1.4;
 }
-
 /* ── Drop zones ── */
 .drop-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-
 @media (max-width: 480px) {
   .drop-grid {
     grid-template-columns: 1fr;
   }
 }
-
 .drop-zone {
   position: relative;
-  border: 2px dashed rgba(255, 255, 255, .09);
+  border: 2px dashed rgba(255, 255, 255, 0.09);
   border-radius: 16px;
   padding: 24px 16px;
   display: flex;
@@ -182,11 +164,13 @@ body::before {
   gap: 10px;
   text-align: center;
   cursor: pointer;
-  transition: border-color .2s, background .2s, transform .15s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
   min-height: 130px;
-  background: rgba(255, 255, 255, .02);
+  background: rgba(255, 255, 255, 0.02);
 }
-
 .drop-zone input[type="file"] {
   position: absolute;
   inset: 0;
@@ -195,14 +179,12 @@ body::before {
   width: 100%;
   height: 100%;
 }
-
 .drop-zone:hover,
 .drop-zone.drag-over {
   border-color: var(--accent);
   background: var(--accent-dim);
   transform: translateY(-1px);
 }
-
 .drop-zone-icon {
   width: 40px;
   height: 40px;
@@ -212,36 +194,31 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform .2s;
+  transition: transform 0.2s;
 }
-
 .drop-zone:hover .drop-zone-icon {
   transform: scale(1.1);
 }
-
 .drop-zone-label {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   color: #cbd5e1;
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .drop-zone-sub {
   font-size: 9px;
   color: #cbd5e1;
   font-weight: 600;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
 }
-
 .drop-zone.has-file .drop-zone-label {
   color: var(--accent);
 }
-
 /* ── Subtitle drop zone: memanjang satu baris (bukan grid) ── */
 .drop-zone-subtitle {
   flex-direction: row;
@@ -252,32 +229,26 @@ body::before {
   border-radius: 14px;
   text-align: left;
 }
-
 .drop-zone-subtitle .drop-zone-icon {
   flex-shrink: 0;
 }
-
 .drop-zone-subtitle .drop-zone-text {
   flex: 1;
   min-width: 0;
   text-align: left;
 }
-
 .drop-zone-subtitle .drop-zone-label {
   max-width: none;
   white-space: normal;
 }
-
 .drop-zone-subtitle .drop-zone-sub {
   margin-top: 2px;
 }
-
 /* ── Custom dropdown bahasa — meniru .ch-trigger/.ch-options di books/read.php ── */
 .lang-dropdown {
   position: relative;
   z-index: 60;
 }
-
 .lang-trigger {
   width: 100%;
   background: rgba(13, 16, 23, 0.95);
@@ -292,21 +263,20 @@ body::before {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
   font-family: inherit;
 }
-
 .lang-trigger:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.12);
 }
-
 .lang-dropdown.open .lang-trigger {
   border-color: var(--accent, rgba(239, 68, 68, 0.4));
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 .lang-trigger-chevron {
   width: 14px;
   height: 14px;
@@ -314,11 +284,9 @@ body::before {
   flex-shrink: 0;
   transition: transform 0.2s;
 }
-
 .lang-dropdown.open .lang-trigger-chevron {
   transform: rotate(180deg);
 }
-
 .lang-options {
   position: absolute;
   left: 0;
@@ -333,12 +301,9 @@ body::before {
   max-height: 50vh;
   overflow-y: auto;
 }
-
 .lang-options.hidden {
   display: none;
 }
-
-/* Buka ke atas saat ruang di bawah trigger sempit */
 .lang-dropdown.open-up .lang-options {
   top: auto;
   bottom: 100%;
@@ -346,11 +311,9 @@ body::before {
   border-bottom: none;
   border-radius: 1rem 1rem 0 0;
 }
-
 .lang-dropdown.open-up .lang-trigger {
   border-radius: 0;
 }
-
 .lang-option {
   width: 100%;
   text-align: left;
@@ -364,19 +327,16 @@ body::before {
   font-family: inherit;
   display: block;
 }
-
 .lang-option:hover {
   background: rgba(255, 255, 255, 0.04);
   color: #e5e7eb;
 }
-
 .lang-option.active {
   color: var(--accent, #22c55e);
   font-weight: 700;
   background: var(--accent-dim, rgba(34, 197, 94, 0.06));
 }
-
-/* Thumb preview inside drop zone */
+/* Thumb preview */
 .thumb-mini {
   width: 56px;
   height: 36px;
@@ -385,26 +345,23 @@ body::before {
   display: none;
   border: 1px solid var(--border-strong);
 }
-
 /* ── Upload overlay ── */
 #upload-overlay {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgba(8, 11, 17, .92);
+  background: rgba(8, 11, 17, 0.92);
   backdrop-filter: blur(18px);
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 0;
 }
-
 #upload-overlay.active {
   display: flex;
-  animation: overlayIn .3s ease;
+  animation: overlayIn 0.3s ease;
 }
-
 @keyframes overlayIn {
   from {
     opacity: 0;
@@ -413,10 +370,9 @@ body::before {
     opacity: 1;
   }
 }
-
 .overlay-card {
   background: #0e1118;
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
   padding: 40px 44px;
   width: 100%;
@@ -425,12 +381,11 @@ body::before {
   flex-direction: column;
   align-items: center;
   gap: 24px;
-  animation: cardUp .35s cubic-bezier(.34, 1.56, .64, 1);
+  animation: cardUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
 @keyframes cardUp {
   from {
-    transform: translateY(24px) scale(.97);
+    transform: translateY(24px) scale(0.97);
     opacity: 0;
   }
   to {
@@ -438,43 +393,38 @@ body::before {
     opacity: 1;
   }
 }
-
 /* spinning ring */
 .upload-ring {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  border: 3px solid rgba(239, 68, 68, .15);
+  border: 3px solid rgba(239, 68, 68, 0.15);
   border-top-color: var(--accent);
-  border-right-color: rgba(239, 68, 68, .5);
+  border-right-color: rgba(239, 68, 68, 0.5);
   animation: ringSpin 1s linear infinite;
   position: relative;
   flex-shrink: 0;
 }
-
 .upload-ring-inner {
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  border: 2px solid rgba(239, 68, 68, .1);
-  border-top-color: rgba(239, 68, 68, .4);
-  animation: ringSpin .7s linear infinite reverse;
+  border: 2px solid rgba(239, 68, 68, 0.1);
+  border-top-color: rgba(239, 68, 68, 0.4);
+  animation: ringSpin 0.7s linear infinite reverse;
 }
-
 @keyframes ringSpin {
   to {
     transform: rotate(360deg);
   }
 }
-
 .overlay-title {
-  font-family: 'Syne', sans-serif;
+  font-family: "Syne", sans-serif;
   font-size: 18px;
   font-weight: 800;
   color: #fff;
   text-align: center;
 }
-
 .overlay-filename {
   font-size: 11px;
   font-weight: 600;
@@ -485,26 +435,23 @@ body::before {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 /* progress bar */
 .progress-track {
   width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, .06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 4px;
   overflow: hidden;
 }
-
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, var(--accent), #f87171);
   border-radius: 4px;
   width: 0%;
-  transition: width .4s ease;
+  transition: width 0.4s ease;
   animation: progressShimmer 1.5s ease-in-out infinite;
   background-size: 200% 100%;
 }
-
 @keyframes progressShimmer {
   0% {
     background-position: 200% center;
@@ -513,24 +460,21 @@ body::before {
     background-position: -200% center;
   }
 }
-
 .overlay-status {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
   color: var(--accent);
   text-align: center;
   min-height: 16px;
 }
-
 .overlay-note {
   font-size: 10px;
   color: #353d4a;
   text-align: center;
   line-height: 1.5;
 }
-
 /* Footer links */
 .footer-links {
   display: flex;
@@ -541,35 +485,29 @@ body::before {
   border-top: 1px solid var(--border);
   margin-top: 8px;
 }
-
 .footer-link {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
   color: #cbd5e1;
   text-decoration: none;
-  transition: color .2s;
+  transition: color 0.2s;
 }
-
 .footer-link:hover {
   color: #e2e6ef;
 }
-
 .footer-link.accent {
   color: var(--accent);
 }
-
 .footer-link.accent:hover {
   color: #f87171;
 }
-
-/* ── Alert in upload context needs margin-bottom ── */
+/* ── Alert upload ── */
 .alert {
   margin-bottom: 20px;
 }
-
-/* ── Primary button full-width ── */
+/* ── Primary button ── */
 .btn-primary {
   width: 100%;
   padding-top: 15px;

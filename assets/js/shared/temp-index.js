@@ -1,17 +1,9 @@
-/**
- * MEeL - Media Hub Platform
- *
+/** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3
- */
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
 /* ────────────────────────────────────────────────────────────────
- * shared/temp-index.js — Helper memuat konten index.php ke elemen
- * #temp-index-content TANPA reload (pola mini-player). Dipakai BERSAMA
- * oleh modul music (watch/player-core.js) & video (watch/mini-player.js)
- * — sebelumnya pola fetch → DOMParser → querySelector('main') → pushState
- * → createIcons → htmx.process diduplikasi di kedua file.
- *
- * window.meelLoadTempIndex(options) → Promise<Element|null>
+ * shared/temp-index.js — Helper memuat konten index.php ke elemen #temp-index-content TANPA reload (pola mini-player).
+ * Dipakai BERSAMA oleh modul music (watch/player-core.js) & video (watch/mini-player.js) — sebelumnya pola fetch → DOMParser → querySelector('main') → pushState → createIcons → htmx.process diduplikasi di kedua file. window.meelLoadTempIndex(options) → Promise<Element|null>
  *   options.container    : elemen induk tempat append div baru. Jika null,
  *                          default: insert sebelum <footer> / elemen body terakhir.
  *   options.useOuterHTML : true → pakai main.outerHTML (video); false (default)
@@ -24,17 +16,13 @@ window.meelLoadTempIndex = async function (options) {
   const container = opts.container || null;
   const useOuterHTML = !!opts.useOuterHTML;
   const onLoad = opts.onLoad || null;
-
   let el = document.getElementById("temp-index-content");
   if (el) {
-    // Sudah pernah dimuat — cukup tampilkan & sinkronkan URL
     el.style.display = "block";
     window.history.pushState({ miniPlayer: true }, "", "index.php");
     onLoad && onLoad(el);
     return el;
   }
-
-  // Buat shell, taruh di container yang diminta (default: body sebelum footer)
   el = document.createElement("div");
   el.id = "temp-index-content";
   el.className = "w-full";
@@ -45,7 +33,6 @@ window.meelLoadTempIndex = async function (options) {
       document.querySelector("footer") ?? document.body.lastElementChild;
     document.body.insertBefore(el, ref);
   }
-
   try {
     const res = await fetch("index.php");
     const html = await res.text();

@@ -1,45 +1,25 @@
 /* ============================================================
- * player-events.js — Orkestrasi event Plyr (play/pause/ended/dll),
- * resume-modal (via shared/resume-modal.js), ambient glow
- * (navbar + fullscreen), auto-next video, dan menu setting kustom
- * (glow/loop toggle).
- *
- * CATATAN: fungsi ini sengaja TIDAK dipecah lebih jauh karena bagian
- * ambient-glow dan auto-next-video saling berbagi closure/variabel
- * lokal (mis. glowStartFn/glowStopFn dipakai juga oleh handler
- * fullscreen). Memisahkannya paksa berisiko merusak referensi
- * closure tsb. Sudah diberi komentar penanda tiap bagian.
- * Depends on: state.js, recovery.js, vtt-sprites.js, gestures.js,
- * shared/resume-modal.js (meelResumeModal)
+ * player-events.js — Orkestrasi event Plyr (play/pause/ended/dll), resume-modal (via shared/resume-modal.js), ambient glow (navbar + fullscreen), auto-next video, dan menu setting kustom (glow/loop toggle).
+ * Depends on: state.js, recovery.js, vtt-sprites.js, gestures.js, shared/resume-modal.js (meelResumeModal)
  * ============================================================ */
-
 function setupMeelPlayerEvents() {
   window.player = player;
-
-  /* ── Helper terpusat: apply aspect-ratio + cap video portrait ──
-   * Landscape/square → perilaku default (w-full dari class Tailwind).
-   * Portrait (rasio < 1) → batasi tinggi maksimum 80vh, lebar
-   * menyesuaikan proporsional, wrapper di-center — mencegah video
-   * 9:16 meregang sangat tinggi di layar lebar. ── */
+  /* ── Helper terpusat: apply aspect-ratio + cap video portrait ── */
   function applyMeelVideoAspect(wrapper, videoW, videoH) {
     if (!wrapper || !videoW || !videoH) return;
     wrapper.style.aspectRatio = `${videoW} / ${videoH}`;
     if (videoW < videoH) {
-      // Portrait: batasi tinggi maksimum, biarkan lebar menyesuaikan
-      // (mencegah player meregang penuh w-full menjadi sangat tinggi).
       wrapper.style.maxHeight = "80vh";
       wrapper.style.width = "auto";
       wrapper.style.marginLeft = "auto";
       wrapper.style.marginRight = "auto";
     } else {
-      // Landscape/square: kembali ke perilaku default (w-full dari class Tailwind)
       wrapper.style.maxHeight = "";
       wrapper.style.width = "";
       wrapper.style.marginLeft = "";
       wrapper.style.marginRight = "";
     }
   }
-
   function a() {
     const e = document.getElementById("main-video-wrapper"),
       t = videoElement;
@@ -51,56 +31,41 @@ function setupMeelPlayerEvents() {
     console.log(`[MEeL] Aspect ratio video: ${n / a}:${o / a} (${n}x${o})`);
     if (!isMiniPlayerActive) applyMeelVideoAspect(e, n, o);
   }
-  /* ── Auto-Next Overlay Card ───────────────────────────────
-   * Tampilkan card overlay (YouTube-style) saat video selesai
-   * dengan countdown 5 detik dan tombol batal.
-   * Mengembalikan Promise: true = lanjut, false = dibatalkan.
-   *
-   * CATATAN: selector title/thumb/uploader pakai fallback agar
-   * kompatibel dengan struktur HTML dari watch.php (default) dan
-   * search_video.php (hasil pencarian via HTMX).
-   * ─────────────────────────────────────────────────────── */
+  /* ── Auto-Next Overlay Card ── */
   const AUTONEXT_COUNTDOWN = 5;
   function showAutoNextOverlay(e) {
     return new Promise((t) => {
       try {
-        /* Hapus overlay lama jika ada */
         const n = document.getElementById("autonext-overlay");
         n && n.remove();
-
         /* ── Ekstrak title ── */
         const o =
-          e.querySelector(".rec-title-text, .line-clamp-2, h5")?.textContent?.trim() ||
+          e
+            .querySelector(".rec-title-text, .line-clamp-2, h5")
+            ?.textContent?.trim() ||
           e.querySelector('[class*="line-clamp"]')?.textContent?.trim() ||
           e.querySelector("a[title]")?.getAttribute("title")?.trim() ||
           "";
-
         /* ── Ekstrak thumbnail src ── */
         const l =
           e.querySelector(".rec-thumb-img")?.src ||
           e.querySelector('img[src*="thumbnail"]')?.src ||
           e.querySelector("img")?.src ||
           "";
-
         /* ── Ekstrak uploader ── */
         const a =
-          e.querySelector('[class*="text-red-500"], [class*="text-red-600"]')?.textContent?.trim() ||
-          "";
-
-        /* ── Cari container: prioritaskan `.plyr` (fullscreen-compatible),
-           fallback ke `#main-video-wrapper`. Di fullscreen, `.plyr` mendapat
-           `position: fixed; z-index: 999999` sehingga auto-next overlay harus
-           berada dalam stacking context yang sama dengan kontrol Plyr agar
-           tidak tersembunyi di belakangnya. ── */
+          e
+            .querySelector('[class*="text-red-500"], [class*="text-red-600"]')
+            ?.textContent?.trim() || "";
         const plyr = document.querySelector(".plyr");
         const r = plyr || document.getElementById("main-video-wrapper");
         if (!r) return void t(!1);
-
         const i = document.createElement("div");
         i.id = "autonext-overlay";
-        /* Fallback thumb: jika src kosong, pakai placeholder */
         const thumbHtml = l
-          ? '<img src="' + l.replace(/"/g, "&quot;") + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          ? '<img src="' +
+            l.replace(/"/g, "&quot;") +
+            '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
           : '<div style="width:100%;height:100%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>';
         i.innerHTML =
           '<div class="autonext-card"><div class="autonext-header"><span class="autonext-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Up Next</span><span class="autonext-timer"><span class="countdown-num">' +
@@ -113,23 +78,21 @@ function setupMeelPlayerEvents() {
           a.replace(/"/g, "&quot;") +
           '</div></div></div><div class="autonext-actions"><button class="autonext-cancel">Batal</button></div></div>';
         r.appendChild(i);
-
-        /* ── Sembunyikan element end-screen Plyr (replay button & poster)
-           via CSS class di body agar !important override Plyr ── */
         document.body.classList.add("meel-autonext-active");
-
         requestAnimationFrame(() => {
-          /* Pastikan Plyr selesai memproses ended sebelum menampilkan overlay */
           i.classList.add("active");
         });
-
         let s = AUTONEXT_COUNTDOWN;
         const c = i.querySelector(".countdown-num"),
           d = i.querySelector(".autonext-cancel"),
           cleanup = () => {
             document.body.classList.remove("meel-autonext-active");
             i.classList.remove("active");
-            setTimeout(() => { try { i.remove(); } catch (e) {} }, 350);
+            setTimeout(() => {
+              try {
+                i.remove();
+              } catch (e) {}
+            }, 350);
           },
           p = setInterval(() => {
             try {
@@ -155,11 +118,7 @@ function setupMeelPlayerEvents() {
       }
     });
   }
-  /* ── Ensure custom Plyr controls exist ────────────────
-   * Setelah seamless transition, Plyr mungkin render ulang
-   * kontrolnya sehingga tombol mini-player & next hilang.
-   * Fungsi ini ngecek dan re-insert jika perlu.
-   * ─────────────────────────────────────────────────── */
+  /* ── Ensure custom Plyr controls exist ── */
   function ensureCustomControls() {
     if (!player?.elements?.controls) return;
     const e = player.elements.controls;
@@ -187,44 +146,39 @@ function setupMeelPlayerEvents() {
       (o.innerHTML =
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>'),
       o.addEventListener("click", (e) => {
-        (e.stopPropagation(), !isTransitioningNext && !isRecovering && window.skipToNextVideo && window.skipToNextVideo());
+        (e.stopPropagation(),
+          !isTransitioningNext &&
+            !isRecovering &&
+            window.skipToNextVideo &&
+            window.skipToNextVideo());
       }),
       n.parentNode.insertBefore(o, n.nextSibling));
     window.lucide && window.lucide.createIcons();
   }
-  /* ── Skip to Next Video ──────────────────────────────────
-   * Ambil video pertama dari rekomendasi, transisi seamless.
-   * Bisa dipanggil manual (tombol/keyboard) atau dari ended.
-   * Parameter isManual: true (default) → reset autoNext ke OFF.
-   *                    false (auto-trigger) → biarkan ON.
-   * Jika recommendationItem diberikan, pakai itu; jika tidak,
-   * cari .rekomendasi-item pertama di DOM.
-   * ─────────────────────────────────────────────────────── */
+  /* ── Skip to Next Video ── */
   window.skipToNextVideo = async function (e, isManual = !0) {
-    // Jeda kesehatan (20-20-20) aktif → tolak pindah ke video lain
-    // (baik dari tombol next / keyboard 'n' / auto-next).
     if (window.meelHealthAlertActive) return !1;
     const t = e || document.querySelector(".rekomendasi-item");
     if (!t) return !1;
-    /* Manual skip → reset auto-next; auto-trigger → tetap ON */
     isManual &&
       ((autoNextEnabled = !1),
-        localStorage.setItem("meel_autonext_enabled", "false"),
-        window.updateAutoNextMenuUI && window.updateAutoNextMenuUI());
-    (isTransitioningNext = !0),
-      (isRecovering = !0);
+      localStorage.setItem("meel_autonext_enabled", "false"),
+      window.updateAutoNextMenuUI && window.updateAutoNextMenuUI());
+    ((isTransitioningNext = !0), (isRecovering = !0));
     const n = ++nextVideoTransitionId;
     localStorage.removeItem(storageKeyVideo);
-    const o = player ? player.fullscreen.active || !!document.fullscreenElement : !1;
+    const o = player
+      ? player.fullscreen.active || !!document.fullscreenElement
+      : !1;
     sessionStorage.setItem("meel_autonav", "1");
     try {
       const l = await fetch(t.href),
         a = await l.text();
       if (n !== nextVideoTransitionId) return !1;
       const r = new DOMParser().parseFromString(a, "text/html");
-      (watchUrl = t.href),
+      ((watchUrl = t.href),
         window.history.pushState({}, "", t.href),
-        (document.title = r.title);
+        (document.title = r.title));
       const i = r.getElementById("main-video");
       if (!i) throw new Error("Video elemen tidak ditemukan");
       const s = i.getAttribute("data-src"),
@@ -239,13 +193,13 @@ function setupMeelPlayerEvents() {
         lang: t.getAttribute("srclang") || "und",
         label: t.getAttribute("label") || "",
       }));
-      (videoId =
+      ((videoId =
         new URL(t.href, window.location.href).searchParams.get("id") ||
         videoId),
         (storageKeyVideo = `video_pos_${videoId}`),
-        (vttSrc = p);
+        (vttSrc = p));
       let u = {};
-      r.querySelectorAll("script:not([src])").forEach((e) => {
+      (r.querySelectorAll("script:not([src])").forEach((e) => {
         const t = e.textContent.match(
           /window\.playerConfig\s*=\s*(\{[\s\S]*?\});/,
         );
@@ -326,11 +280,8 @@ function setupMeelPlayerEvents() {
                   );
               },
               { once: !0 },
-            ));
-      /* ── Subtitle: sinkronkan track captions dengan video baru ──
-       * Hapus semua track lama, lalu pasang track dari halaman tujuan.
-       * Jika halaman tujuan tidak punya subtitle, track dibersihkan
-       * sehingga tombol CC otomatis menghilang (graceful degradation). */
+            )));
+      /* ── Subtitle: sinkronkan track captions */
       if (videoElement) {
         videoElement
           .querySelectorAll('track[kind="captions"]')
@@ -384,9 +335,7 @@ function setupMeelPlayerEvents() {
       );
     } finally {
       n === nextVideoTransitionId &&
-        ((isTransitioningNext = !1),
-        (isRecovering = !1),
-        startStuckDetector());
+        ((isTransitioningNext = !1), (isRecovering = !1), startStuckDetector());
       ensureCustomControls();
     }
   };
@@ -418,8 +367,7 @@ function setupMeelPlayerEvents() {
           void startPlaybackStartTimeout()
         );
       function s() {
-        // Resume modal — helper bersama shared/resume-modal.js.
-        // true = modal tampil (jangan play dulu), false = lanjut play normal.
+        7;
         if (
           window.meelResumeModal({
             storageKey: storageKeyVideo,
@@ -520,8 +468,7 @@ function setupMeelPlayerEvents() {
       stopWaitingTimeout();
     }),
     player.on("ended", async () => {
-      // Jeda kesehatan (20-20-20) aktif → jangan tampilkan overlay
-      // auto-next / jangan lanjut ke video berikutnya.
+      // Jeda kesehatan (20-20-20) aktif
       if (window.meelHealthAlertActive) return;
       if ((stopStuckDetector(), player.loop)) return;
       if (isTransitioningNext) return;
@@ -534,30 +481,23 @@ function setupMeelPlayerEvents() {
       localStorage.removeItem(storageKeyVideo);
       const t = document.querySelector(".rekomendasi-item");
       if (!t) return ((isTransitioningNext = !1), void (isRecovering = !1));
-      /* ── Tampilkan overlay countdown, tunggu user ── */
+      /* ── Tampilkan overlay countdown ── */
       const g = await showAutoNextOverlay(t);
       if (!g) {
         autoNextEnabled = !1;
         localStorage.setItem("meel_autonext_enabled", "false");
-        (isTransitioningNext = !1), (isRecovering = !1);
+        ((isTransitioningNext = !1), (isRecovering = !1));
         stopPlaybackStartTimeout();
         return;
       }
-      /* ── Delegasi ke skipToNextVideo (auto-trigger, jangan reset auto-next) ── */
+      /* ── Delegasi ke skipToNextVideo ── */
       await window.skipToNextVideo(t, !1);
     }),
     player.on("enterfullscreen", () => {
       (screen.orientation?.lock &&
         screen.orientation.lock("landscape").catch(() => {}),
         vttSrc && setTimeout(() => refreshVttSprites(vttSrc), 300));
-
-      /* ── Ignore notch: force true fullscreen ── */
       document.body.classList.add("meel-fs-active");
-
-      /* ── Hentikan glow canvas biasa (halaman) saat fullscreen ──
-       * Hanya #video-glow-canvas-fs yang berjalan di fullscreen,
-       * mencegah double-glow (dua loop RAF = boros CPU & terang 2x).
-       * Loop halaman di-restart di exitfullscreen. */
       glowStopFn && glowStopFn(!0);
       const e_fsWrap = document.getElementById("main-video-wrapper"),
         e_fsGlow = document.getElementById("video-glow-container");
@@ -669,7 +609,6 @@ function setupMeelPlayerEvents() {
     }),
     player.on("exitfullscreen", () => {
       screen.orientation?.unlock && screen.orientation.unlock();
-
       /* ── Restore notch-ignoring overrides ── */
       document.body.classList.remove("meel-fs-active");
       const e_xsWrap = document.getElementById("main-video-wrapper"),
@@ -719,10 +658,6 @@ function setupMeelPlayerEvents() {
             ((videoElement.style.position = ""),
             (videoElement.style.zIndex = "")));
       }
-      /* ── Restart glow canvas biasa (halaman) setelah keluar fullscreen ──
-       * Hanya jika glow aktif & video masih diputar (mirror logic resume
-       * di lifecycle.js visibilitychange). player.fullscreen.active sudah
-       * false saat event ini di-emit, jadi guard di glowStartFn lolos. */
       glowEnabled &&
         videoElement &&
         !videoElement.paused &&
@@ -739,8 +674,6 @@ function setupMeelPlayerEvents() {
     ((r.width = GLOW_W), (r.height = GLOW_H));
     const n = r.getContext("2d");
     glowNavbar = document.querySelector("nav");
-    // Throttle penulisan warna navbar — lerp pixel tetap tiap frame (murah,
-    // Float32Array 576 elemen), tapi setProperty CSS hanya tiap ~250ms.
     let glowLastNavbarUpdate = 0;
     const o = () => {
         if (!(videoElement.readyState < 2 || document.hidden))
@@ -749,12 +682,9 @@ function setupMeelPlayerEvents() {
             const e = t.getImageData(0, 0, GLOW_W, GLOW_H).data;
             glowTargetData.set(e);
           } catch (e) {}
-      },      a = (timestamp) => {
+      },
+      a = (timestamp) => {
         if (!glowRAF) return;
-        /* Canvas glow tersembunyi (display:none — saat mini-player aktif)
-           → lewati kerja pixel & navbar, tetap jadwalkan agar langsung
-           hidup saat terlihat kembali. (Mobile kini menampilkan glow —
-           class block, blur lebih ringan di glow.css <640px.) */
         if (r.offsetParent === null) {
           glowRAF = requestAnimationFrame(a);
           return;
@@ -764,7 +694,8 @@ function setupMeelPlayerEvents() {
           o();
         }
         for (let e = 0; e < glowCurData.length; e++)
-          glowCurData[e] += (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
+          glowCurData[e] +=
+            (glowTargetData[e] - glowCurData[e]) * GLOW_LERP_FACTOR;
         const e = n.createImageData(GLOW_W, GLOW_H);
         for (let t = 0; t < glowCurData.length; t++)
           e.data[t] = Math.round(glowCurData[t]);
@@ -789,9 +720,6 @@ function setupMeelPlayerEvents() {
       },
       i = () => {
         if (!glowEnabled || glowRAF) return;
-        /* Fullscreen: hanya #video-glow-canvas-fs yang boleh jalan —
-           jangan mulai glow halaman saat fullscreen aktif (guard ini
-           juga melindungi restart via play/visibilitychange/toggleGlow). */
         if (player && player.fullscreen && player.fullscreen.active) return;
         r.classList.add("glow-active");
         o();
@@ -836,10 +764,9 @@ function setupMeelPlayerEvents() {
         n && (n.innerHTML = d(t));
       };
     ((window.updateLoopMenuUI = u), (window.updateGlowMenuUI = p));
-
     /* ── AUTO-NEXT TOGGLE ────────────────────────────────── */
     const S = (e) =>
-        `${e ? "On" : "Off"} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:${e ? "inline-block" : "none"};vertical-align:middle;margin-left:4px"><polyline points="20 6 9 17 4 12"/></svg>`;
+      `${e ? "On" : "Off"} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:${e ? "inline-block" : "none"};vertical-align:middle;margin-left:4px"><polyline points="20 6 9 17 4 12"/></svg>`;
     window.updateAutoNextMenuUI = () => {
       const e = document.getElementById("plyr-setting-autonext");
       if (!e) return;
@@ -848,14 +775,16 @@ function setupMeelPlayerEvents() {
       t && (t.innerHTML = S(autoNextEnabled));
     };
     window.toggleAutoNext = () => {
-      (autoNextEnabled = !autoNextEnabled,
+      ((autoNextEnabled = !autoNextEnabled),
         localStorage.setItem(
           "meel_autonext_enabled",
           autoNextEnabled ? "true" : "false",
         ),
         window.updateAutoNextMenuUI(),
-        /* ── Mutual exclusion: Auto Next ON → Loop harus OFF ── */
-        autoNextEnabled && player && (player.loop = false, window.updateLoopMenuUI && window.updateLoopMenuUI()),
+        autoNextEnabled &&
+          player &&
+          ((player.loop = false),
+          window.updateLoopMenuUI && window.updateLoopMenuUI()),
         h(
           autoNextEnabled
             ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
@@ -980,8 +909,10 @@ function setupMeelPlayerEvents() {
       (window.toggleLoop = () => {
         if (player) {
           ((player.loop = !player.loop),
-            /* ── Mutual exclusion: Loop ON → Auto Next harus OFF ── */
-            player.loop && (autoNextEnabled = false, localStorage.setItem("meel_autonext_enabled", "false"), window.updateAutoNextMenuUI && window.updateAutoNextMenuUI()),
+            player.loop &&
+              ((autoNextEnabled = false),
+              localStorage.setItem("meel_autonext_enabled", "false"),
+              window.updateAutoNextMenuUI && window.updateAutoNextMenuUI()),
             u());
           const e = player.loop;
           h(
@@ -998,17 +929,10 @@ function setupMeelPlayerEvents() {
       player.on("ended", () => s(!0)),
       videoElement.paused || videoElement.ended || i());
   }
-  /* ── Click rekomendasi → auto-next OFF ──────────────────
-   * Saat user klik manual salah satu video di rekomendasi,
-   * auto-next otomatis dimatikan. Ini agar user tidak
-   * kaget kalau setelah video selesai tiba-tiba loncat ke
-   * video lain tanpa sepengetahuan mereka.
-   * Gunakan flag agar tidak registrasi ulang jika
-   * setupMeelPlayerEvents() dipanggil >1x (recovery).
-   * ─────────────────────────────────────────────────────── */
+  /* ── Click rekomendasi → auto-next OFF ── */
   if (!window._meelClickRekomGuard) {
     window._meelClickRekomGuard = !0;
-    document.addEventListener("click", function(e) {
+    document.addEventListener("click", function (e) {
       const link = e.target.closest(".rekomendasi-item");
       if (!link || !link.href) return;
       if (link.href === window.location.href) return;

@@ -2,11 +2,6 @@
 /**
  * MEeL-HUB — Contoh Konfigurasi Aplikasi (Entry Point)
  *
- * PERBAIKAN v2: Autoloader terintegrasi
- *    Semua class (Uploader, Transcoder, MediaLibrary, dll) akan
- *    otomatis di-load tanpa require_once manual.
- *    Lihat modules/autoload.php untuk daftar class yang tersedia.
- *
  * File ini adalah TEMPLATE entry point. Semua DATA konfigurasi
  *    (DB credentials + MEEL_* constants) dipindah ke settings.example.php:
  *      require __DIR__ . '/settings.example.php';

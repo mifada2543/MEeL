@@ -1,31 +1,25 @@
-/**
- * MEeL Drive — Preview Modal (Video / Audio / Dokumen)
- * Opens a modal to preview or link to download files.
- */
-
+/** MEeL Drive — Preview Modal (Video / Audio / Dokumen)
+ * Opens a modal to preview or link to download files. **/
 function openPreview(path, type, name) {
-  var modal = document.getElementById('previewModal');
-  var content = document.getElementById('previewContent');
-  var title = document.getElementById('previewTitle');
+  var modal = document.getElementById("previewModal");
+  var content = document.getElementById("previewContent");
+  var title = document.getElementById("previewTitle");
   if (!modal || !content || !title) return;
-
   title.innerText = name;
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
   content.innerHTML =
     '<div class="text-gray-500 flex flex-col items-center"><div class="animate-spin mb-2">⏳</div> Memuat pratinjau...</div>';
-
-  var html = '';
-  var ext = name.split('.').pop().toLowerCase();
-
-  if (type === 'video') {
+  var html = "";
+  var ext = name.split(".").pop().toLowerCase();
+  if (type === "video") {
     html =
       '\n            <video controls autoplay class="max-w-full max-h-[75vh] rounded-lg shadow-2xl bg-black">\n                <source src="' +
       path +
       '" type="video/mp4">\n                <source src="' +
       path +
       '" type="video/webm">\n                Browser Anda tidak mendukung pratinjau video.\n            </video>';
-  } else if (type === 'audio') {
+  } else if (type === "audio") {
     html =
       '\n            <div class="bg-gray-900 p-10 rounded-2xl border border-gray-800 w-full max-w-md text-center shadow-2xl">\n                <div class="mb-6 inline-block p-4 bg-orange-500/10 rounded-full">\n                    <i data-lucide="music" class="w-12 h-12 text-orange-500"></i>\n                </div>\n                <audio controls autoplay class="w-full">\n                    <source src="' +
       path +
@@ -33,9 +27,9 @@ function openPreview(path, type, name) {
       path +
       '" type="audio/wav">\n                    Browser Anda tidak mendukung pratinjau audio.\n                </audio>\n                <p class="text-gray-500 text-xs mt-4 truncate">' +
       name +
-      '</p>\n            </div>';
-  } else if (type === 'dokumen') {
-    var imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+      "</p>\n            </div>";
+  } else if (type === "dokumen") {
+    var imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "svg"];
     if (imageExtensions.indexOf(ext) !== -1) {
       html =
         '<img src="' +
@@ -50,30 +44,25 @@ function openPreview(path, type, name) {
         '" download class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-bold">\n                        Unduh untuk Melihat\n                    </a>\n                </div>';
     }
   }
-
   setTimeout(function () {
     content.innerHTML = html;
     if (window.lucide) lucide.createIcons();
   }, 200);
 }
-
 function closePreview() {
-  var modal = document.getElementById('previewModal');
-  var content = document.getElementById('previewContent');
+  var modal = document.getElementById("previewModal");
+  var content = document.getElementById("previewContent");
   if (!modal || !content) return;
-
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
-  content.innerHTML = '';
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  content.innerHTML = "";
 }
-
 // Click outside modal content to close
-// (Script dimuat di bottom <body>, DOM sudah ready — tidak perlu DOMContentLoaded)
 (function () {
-  var modal = document.getElementById('previewModal');
+  var modal = document.getElementById("previewModal");
   if (modal) {
-    modal.addEventListener('click', function (event) {
-      if (event.target.id === 'previewModal') {
+    modal.addEventListener("click", function (event) {
+      if (event.target.id === "previewModal") {
         closePreview();
       }
     });

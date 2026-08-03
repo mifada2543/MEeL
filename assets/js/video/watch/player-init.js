@@ -2,7 +2,6 @@
  * player-init.js — Inisialisasi instance Plyr + HLS.js.
  * Depends on: state.js, recovery.js, player-events.js
  * ============================================================ */
-
 function initPlayer() {
   ((videoElement = document.getElementById("main-video")),
     videoElement &&

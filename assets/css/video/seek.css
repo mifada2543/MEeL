@@ -1,7 +1,6 @@
 /* ============================================================
  * seek.css — Seek indicators & keyframes
  * ============================================================ */
-
 .meel-seek-indicator {
   position: absolute;
   top: 0;
@@ -20,7 +19,6 @@
   color: #fff;
   transition: none;
 }
-
 .meel-seek-rewind {
   left: 0;
   border-radius: 0 999px 999px 0;
@@ -30,7 +28,6 @@
     transparent 70%
   );
 }
-
 .meel-seek-forward {
   right: 0;
   border-radius: 999px 0 0 999px;
@@ -40,11 +37,9 @@
     transparent 70%
   );
 }
-
 .meel-seek-indicator.meel-seek-active {
   animation: meelSeekPop 0.75s ease-out forwards;
 }
-
 @keyframes meelSeekPop {
   0% {
     opacity: 0;
@@ -63,7 +58,6 @@
     transform: scale(1.04);
   }
 }
-
 .meel-seek-icon {
   width: 36px;
   height: 36px;
@@ -71,15 +65,12 @@
   filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.5));
   flex-shrink: 0;
 }
-
 .meel-seek-rewind .meel-seek-icon {
   animation: meelSeekIconLeft 0.75s ease-out forwards;
 }
-
 .meel-seek-forward .meel-seek-icon {
   animation: meelSeekIconRight 0.75s ease-out forwards;
 }
-
 @keyframes meelSeekIconLeft {
   0% {
     transform: translateX(8px);
@@ -98,7 +89,6 @@
     opacity: 0;
   }
 }
-
 @keyframes meelSeekIconRight {
   0% {
     transform: translateX(-8px);
@@ -117,7 +107,6 @@
     opacity: 0;
   }
 }
-
 .meel-seek-label {
   font-family: var(--font);
   font-size: 13px;

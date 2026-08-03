@@ -1,34 +1,28 @@
 /* ============================================================
  * layout.css — CLS Prevention & Layout Stability
  * ============================================================ */
-
 #player-container {
   min-height: 280px;
   contain: content;
   position: relative;
 }
-
 .desc-container {
   min-height: 120px;
   contain-intrinsic-size: 120px;
   content-visibility: auto;
 }
-
 .comment-section {
   content-visibility: auto;
   contain-intrinsic-size: 200px;
 }
-
 .rekomendasi-sidebar {
   content-visibility: auto;
   contain-intrinsic-size: 500px;
   min-height: 300px;
 }
-
 .plyr--audio {
   min-height: 52px;
 }
-
 audio#main-player {
   min-height: 52px;
   width: 100%;

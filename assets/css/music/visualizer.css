@@ -1,7 +1,6 @@
 /* ============================================================
  * visualizer.css — Visualizer bars (cava-style)
  * ============================================================ */
-
 #cava-container {
   display: flex;
   align-items: flex-end;
@@ -10,7 +9,6 @@
   min-height: 80px;
   width: 100%;
 }
-
 @media (max-width: 480px) {
   #cava-container {
     min-height: 56px;
@@ -18,14 +16,12 @@
     padding: 0.5rem;
   }
 }
-
 @media (min-width: 481px) and (max-width: 768px) {
   #cava-container {
     min-height: 64px;
     gap: 2px;
   }
 }
-
 @media (min-width: 1024px) {
   #cava-container {
     min-height: 96px;

@@ -1,14 +1,10 @@
-/**
- * MEeL - Media Hub Platform
- *
+/** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3
- */
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
 /* ============================================================
  * mini-player.js — Mode mini-player music (Spotify-style) untuk
  * halaman music/watch.php. Dipisah dari player-core.js agar
  * konsisten dengan pola video (watch/mini-player.js).
- *
  * Semua fungsi global di sini dipanggil dari HTML onclick
  * (toggleMiniPlayer, miniPlayPause, miniSeek, miniNext, miniPrev,
  * goBackToLibrary) dan player-core.js (updateMiniPlayerUI).
@@ -18,11 +14,9 @@
  * shared/temp-index.js (meelLoadTempIndex),
  * shared/mini-player-popstate.js (meelMiniPlayerPopstate)
  * ============================================================ */
-
 // Track state paused terakhir untuk update ikon play/pause
 let _mpPrevPaused = null;
-
-// ── Update UI mini-player (ikon, seekbar, label waktu) ──────────
+// ── Update UI mini-player ──────────
 window.updateMiniPlayerUI = function () {
   if (!isMiniPlayerActive) return;
   miniEls ||
@@ -32,12 +26,7 @@ window.updateMiniPlayerUI = function () {
       currentTime: document.getElementById("mini-current-time"),
       duration: document.getElementById("mini-duration"),
     });
-  const {
-    playBtn: e,
-    progressFill: t,
-    currentTime: n,
-    duration: a,
-  } = miniEls;
+  const { playBtn: e, progressFill: t, currentTime: n, duration: a } = miniEls;
   e &&
     player.paused !== _mpPrevPaused &&
     ((_mpPrevPaused = player.paused),
@@ -45,15 +34,12 @@ window.updateMiniPlayerUI = function () {
       ? '<i data-lucide="play"  style="width:18px;height:18px;"></i>'
       : '<i data-lucide="pause" style="width:18px;height:18px;"></i>'),
     "undefined" != typeof lucide && lucide.createIcons());
-  const o = player.duration
-    ? (player.currentTime / player.duration) * 100
-    : 0;
+  const o = player.duration ? (player.currentTime / player.duration) * 100 : 0;
   (t && (t.style.width = o + "%"),
     n && (n.textContent = formatTime(player.currentTime)),
     a && (a.textContent = formatTime(player.duration)));
 };
-
-// ── Toggle mini-player: sembunyikan detail, tampilkan index ──────
+// ── Toggle mini-player ──────
 window.toggleMiniPlayer = async function () {
   const e = document.getElementById("player-container"),
     t = document.querySelector(
@@ -93,17 +79,12 @@ window.toggleMiniPlayer = async function () {
           "lg:gap-8",
         ),
         (t.style.cssText = "display:flex;flex-direction:column")));
-    // Muat index.php ke #temp-index-content tanpa reload — helper bersama
-    // shared/temp-index.js (meelLoadTempIndex)
     await window.meelLoadTempIndex({ container: t });
   }
 };
-
-// Auto-save state tiap 5 detik saat mini-player aktif
 setInterval(() => {
   isMiniPlayerActive && saveAudioState();
 }, 5e3);
-
 // ── Kontrol mini-player ──
 window.miniPlayPause = function () {
   player &&
@@ -111,14 +92,12 @@ window.miniPlayPause = function () {
       (player.paused ? player.play() : player.pause(),
       window.updateMiniPlayerUI()));
 };
-
 window.miniSeek = function (e) {
   if (!player) return;
   if (window.meelHealthAlertActive) return;
   const t = e.currentTarget.getBoundingClientRect();
   player.currentTime = ((e.clientX - t.left) / t.width) * player.duration;
 };
-
 window.miniNext = function () {
   if (window.meelHealthAlertActive || isNavigating) return;
   isNavigating = true;
@@ -130,7 +109,6 @@ window.miniNext = function () {
     else isNavigating = false; // reset jika tidak ada tujuan
   }
 };
-
 window.miniPrev = function () {
   player &&
     (window.meelHealthAlertActive ||
@@ -140,7 +118,6 @@ window.miniPrev = function () {
           ? window.history.back()
           : (player.currentTime = 0)));
 };
-
 window.goBackToLibrary = function () {
   saveAudioState();
   var e = window.MEEL_MUSIC_CONFIG?.playlistId;
@@ -148,36 +125,22 @@ window.goBackToLibrary = function () {
     (window.location.href =
       e && e > 0 ? "index.php?playlist_id=" + e : "index.php"));
 };
-
-// Side-effect DOM langsung (click listener, popstate, createIcons). Di kode
-// asli (player-core.js) blok ini berjalan di dalam callback DOMContentLoaded —
-// timing yang sama dipertahankan agar aman walau main.js dipindah lebih awal
-// (mis. ke <head>), karena document.getElementById sebelum DOM siap akan
-// return null dan listener click gagal terpasang secara senyap.
 function _attachMiniPlayerDom() {
-  // Klik di luar kontrol player saat mini aktif → buka player penuh
   document
     .getElementById("player-container")
     ?.addEventListener("click", (e) => {
       e.target.closest(".plyr__controls") ||
         e.target.closest(".mp-controls") ||
         e.target.closest("button") ||
-        (isMiniPlayerActive &&
-          (e.preventDefault(), window.toggleMiniPlayer()));
+        (isMiniPlayerActive && (e.preventDefault(), window.toggleMiniPlayer()));
     });
-
-  // Back/forward → keluar dari mode mini-player — helper bersama
-  // shared/mini-player-popstate.js (meelMiniPlayerPopstate): cek state
-  // history { miniPlayer: true } + fallback banding URL watch asli.
   window.meelMiniPlayerPopstate({
     isActive: () => isMiniPlayerActive,
     watchUrl: () => watchUrl,
     onExit: () => window.toggleMiniPlayer(),
   });
-
   "undefined" != typeof lucide && lucide.createIcons();
 }
-
 if (document.readyState === "loading")
   document.addEventListener("DOMContentLoaded", _attachMiniPlayerDom);
 else _attachMiniPlayerDom();

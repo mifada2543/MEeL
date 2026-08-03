@@ -1,19 +1,7 @@
 <?php
-/**
- * auth/partials/auth_head.php — <head> + body open bersama untuk halaman auth
- *
- * Variabel yang HARUS diset sebelum include:
- *   $auth_title       (string) Judul & og:title (mis. "MEeL | Login")
- *   $auth_description (string) Meta description
- *   $auth_og_title    (string) og:title
- *   $auth_og_desc     (string) og:description
- *
- * Variabel OPSIONAL (dipakai halaman MFA):
- *   $auth_extra_style (string) CSS tambahan yang disisipkan di dalam <style>
- *   $auth_extra_head  (string) HTML tambahan di dalam <head> (mis. <script src="qrcode.min.js">)
- *
- * Digunakan oleh: auth/login.php, auth/register.php, auth/mfa_setup.php, auth/mfa_verify.php
- */
+
+/** auth/partials/auth_head.php — <head> + body open bersama untuk halaman auth
+ * Digunakan oleh: auth/login.php, auth/register.php, auth/mfa_setup.php, auth/mfa_verify.php */
 $auth_extra_style = $auth_extra_style ?? '';
 $auth_extra_head  = $auth_extra_head ?? '';
 ?>
@@ -44,6 +32,7 @@ $auth_extra_head  = $auth_extra_head ?? '';
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         <?= $auth_extra_style ?>
     </style>
     <?= $auth_extra_head ?>

@@ -1,8 +1,7 @@
-    /* ============================================================
+/* ============================================================
  * watch/main.css — Page-specific CSS untuk Watch Page
  * Halaman: video/watch.php
  * ============================================================ */
-
 /* ── Mobile (portrait): ── */
 @media (max-width: 639px) {
   #video-glow-container {
@@ -16,8 +15,6 @@
     background: var(--bg);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
-
-  /* Buang sudut membulat agar full-bleed rata dengan tepi layar */
   #main-video-wrapper,
   #main-video-wrapper .plyr,
   #main-video-wrapper .plyr__video-wrapper {
@@ -27,14 +24,12 @@
     margin-left: -1rem;
   }
 }
-
-/* ── Mobile portrait: cap tinggi player ── */
+/* ── Mobile portrait ── */
 @media (max-width: 639px) {
   #main-video-wrapper {
     max-height: 80vh;
   }
 }
-
 /* ── Jarak simetris untuk title * ─────────────────────────────────────────────────────────── */
 #video-info {
   padding-top: 0.5rem;

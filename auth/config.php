@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MEeL-HUB — Konfigurasi Aplikasi (Entry Point)
  *
@@ -24,15 +25,10 @@ if (!file_exists($meel_settings)) {
         . "  cp auth/settings.example.php auth/settings.php");
 }
 require_once $meel_settings;
-
 // ════════════════════════════════════════════════════════════════
-// BOOTSTRAP (Error Handling Terpusat)
+// BOOTSTRAP (Error Handling)
 // ════════════════════════════════════════════════════════════════
-// Bootstrap menangani display_errors, error_log, dan timezone
-// berdasarkan environment (production/development).
-// Tidak perlu lagi mengatur ini di file individual.
 require_once __DIR__ . '/../modules/core/bootstrap.php';
-
 // ════════════════════════════════════════════════════════════════
 // DATABASE CONNECTION
 // ════════════════════════════════════════════════════════════════
@@ -48,22 +44,16 @@ if (!isset($conn) || $conn === null) {
         die("[MEeL SYSTEM ERROR]\nKoneksi ke database gagal: " . $conn->connect_error);
     }
 }
-
 // ════════════════════════════════════════════════════════════════
 // BASE URL (PATH PORTABILITY)
 // ════════════════════════════════════════════════════════════════
-// Menggantikan hardcoded /MEeL/ prefix di redirect dan link.
-// Perhitungan dipusatkan di modules/core/base_url.php (root proyek relatif
-// terhadap DOCUMENT_ROOT), konsisten di semua kedalaman include.
 if (!defined('MEEL_BASE_URL')) {
     require_once __DIR__ . '/../modules/core/base_url.php';
     define('MEEL_BASE_URL', meel_base_url_path());
 }
-
 // ════════════════════════════════════════════════════════════════
 // SESSION CONFIGURATION
 // ════════════════════════════════════════════════════════════════
-// Hanya set jika session belum jalan — aman dipanggil dari auth/auth.php
 if (session_status() === PHP_SESSION_NONE) {
     $timeout = 43200; // 12 jam
     ini_set('session.gc_maxlifetime', $timeout);
@@ -71,17 +61,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_name('meel');
     session_start();
 }
-
 // ════════════════════════════════════════════════════════════════
 // AUTOLOADER & HELPERS
 // ════════════════════════════════════════════════════════════════
-// Semua class core (Uploader, Transcoder, MediaLibrary, dll)
-// akan otomatis di-load tanpa require_once manual.
 require_once __DIR__ . '/../modules/autoload.php';
-
 // Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
 require_once __DIR__ . '/../modules/core/helpers.php';
-
 // ── Security Headers ──
 if (!headers_sent()) {
     header("X-Frame-Options: SAMEORIGIN");
@@ -93,23 +78,16 @@ if (!headers_sent()) {
         header("Strict-Transport-Security: max-age=15552000; includeSubDomains");
     }
     $csp_script_src = "script-src 'self' 'unsafe-inline'";
-    /* ── Development: tambah unsafe-eval untuk HLS.js Web Worker ── */
     if (defined('MEEL_ENV') && MEEL_ENV === 'development') {
         $csp_script_src .= " 'unsafe-eval'";
     }
-    /* ── worker-src eksplisit untuk HLS.js blob worker ── */
     $csp_worker_src = "worker-src 'self' blob:";
     header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-src 'self' blob:; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; {$csp_script_src}; {$csp_worker_src}");
 }
-
 // ── CSRF Token ──
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-
-// No wrapper function needed — use verify_csrf_token() directly
-// (defined in modules/core/helpers.php with hash_equals safety)
-
 // ── Session Timeout Check (12 jam) ──
 if (isset($_SESSION['LAST_ACTIVITY'])) {
     $elapsed_time = time() - $_SESSION['LAST_ACTIVITY'];
@@ -121,7 +99,6 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
     }
 }
 $_SESSION['LAST_ACTIVITY'] = time();
-
 // ── Activity Logger (skip di CLI — tidak ada HTTP request) ──
 if (PHP_SAPI !== 'cli') {
     include_once __DIR__ . '/../modules/core/activity_logger.php';

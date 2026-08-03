@@ -1,7 +1,6 @@
 /* ============================================================
  * playlist-modal.css — Playlist modal overlay
  * ============================================================ */
-
 #playlist-modal {
   position: fixed;
   inset: 0;
@@ -10,7 +9,6 @@
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(10px);
 }
-
 #playlist-modal:not(.hidden) {
   display: flex;
   align-items: center;

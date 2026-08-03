@@ -1,7 +1,6 @@
 /* ============================================================
  * mini-player.css — Mini player shell, info, responsive
  * ============================================================ */
-
 #mini-player-shell {
   position: fixed !important;
   bottom: 24px !important;
@@ -19,13 +18,11 @@
     box-shadow 0.3s !important;
   cursor: default !important;
 }
-
 #mini-player-shell:hover {
   box-shadow:
     0 28px 64px rgba(0, 0, 0, 0.95),
     0 0 0 1px rgba(220, 38, 38, 0.35) !important;
 }
-
 /* ── Mini-player mode (inside shell) ── */
 .mini-player-mode {
   position: relative !important;
@@ -35,11 +32,9 @@
   box-shadow: none !important;
   cursor: default !important;
 }
-
 .mini-player-mode .plyr {
   pointer-events: auto !important;
 }
-
 .mini-player-mode .plyr::before {
   content: "";
   position: absolute;
@@ -57,13 +52,11 @@
   z-index: 1;
   pointer-events: none;
 }
-
 #mini-player-shell:hover .plyr::before,
 .mini-player-mode .plyr.plyr--pressed::before {
   opacity: 1;
   visibility: visible;
 }
-
 .mini-player-mode button[data-plyr="fullscreen"],
 .mini-player-mode button[data-plyr="pip"],
 .mini-player-mode button[data-plyr="play"],
@@ -71,7 +64,6 @@
 .mini-player-mode button[data-plyr="meel-miniplayer"] {
   display: none !important;
 }
-
 .mini-player-mode .plyr__controls {
   padding-left: 16px !important;
   background: 0 0 !important;
@@ -86,17 +78,14 @@
   left: 0 !important;
   right: 0 !important;
 }
-
 #mini-player-shell:hover .plyr__controls,
 .mini-player-mode .plyr.plyr--pressed .plyr__controls {
   opacity: 1 !important;
   visibility: visible !important;
 }
-
 .mini-player-mode .plyr__progress input[type="range"] {
   cursor: pointer !important;
 }
-
 /* ── Close & Expand buttons ── */
 #mini-close-btn,
 #mini-expand-btn {
@@ -120,31 +109,25 @@
   z-index: 20;
   pointer-events: none;
 }
-
 #mini-player-shell:hover #mini-close-btn,
 #mini-player-shell:hover #mini-expand-btn {
   opacity: 1;
   pointer-events: auto;
 }
-
 #mini-expand-btn {
   left: 8px;
 }
-
 #mini-expand-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
 }
-
 #mini-close-btn {
   right: 8px;
 }
-
 #mini-close-btn:hover {
   background: rgba(220, 38, 38, 0.75);
   transform: scale(1.1);
 }
-
 /* ── Mini-player info ── */
 #mini-player-info {
   padding: 10px 12px 12px;
@@ -153,11 +136,9 @@
   gap: 10px;
   cursor: pointer;
 }
-
 #mini-player-info:hover #mini-info-title {
   color: #f87171;
 }
-
 #mini-info-title {
   font-size: 11px;
   font-weight: 700;
@@ -173,7 +154,6 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
-
 #mini-info-uploader {
   font-size: 10px;
   color: #6b7280;
@@ -185,7 +165,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 /* ── Responsive: 640px ── */
 @media (max-width: 640px) {
   #mini-player-shell {
@@ -217,7 +196,6 @@
     font-size: 9px;
   }
 }
-
 /* ── Responsive: 480px ── */
 @media (max-width: 480px) {
   #mini-player-shell {

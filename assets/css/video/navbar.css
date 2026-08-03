@@ -1,13 +1,11 @@
 /* ============================================================
  * navbar.css — Navigasi, glow navbar, overlay pencarian
  * ============================================================ */
-
 nav {
   --navbar-glow-color: 0, 0, 0;
   position: relative;
   isolation: isolate;
 }
-
 nav::before {
   content: "";
   position: absolute;
@@ -25,21 +23,17 @@ nav::before {
   filter: blur(20px);
   pointer-events: none;
 }
-
 nav > div {
   position: relative;
   z-index: 1;
 }
-
 #nav-avatar-btn {
   background: rgba(255, 255, 255, 0.04) !important;
   transition: background 0.15s !important;
 }
-
 #nav-avatar-btn:hover {
   background: rgba(255, 255, 255, 0.08) !important;
 }
-
 /* ── Mobile search overlay ── */
 #mobile-search-overlay {
   display: none;
@@ -54,11 +48,9 @@ nav > div {
   gap: 0.5rem;
   align-items: center;
 }
-
 #mobile-search-overlay.open {
   display: flex;
 }
-
 @media (max-width: 480px) {
   #navbar-search-wrap {
     display: none;

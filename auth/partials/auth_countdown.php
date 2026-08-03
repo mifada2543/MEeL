@@ -1,12 +1,6 @@
 <?php
-/**
- * auth/partials/auth_countdown.php — blok lockout + countdown JS bersama
- *
- * Variabel yang HARUS diset sebelum include:
- *   $countdown_seconds (int)    Sisa detik sebelum unlock
- *   $countdown_color   (string) Class warna angka (mis. 'text-red-500' / 'text-blue-500')
- *   $countdown_extra   (string) HTML tambahan opsional di bawah "Detik" (mis. link "Ke Halaman Login")
- *
+
+/** auth/partials/auth_countdown.php — blok lockout + countdown JS bersama
  * Digunakan oleh: auth/login.php (warna biru), auth/register.php (warna merah + extra link)
  */
 $countdown_seconds = max(1, (int)($countdown_seconds ?? 1));

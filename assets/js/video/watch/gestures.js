@@ -3,7 +3,6 @@
  * double-tap kiri/kanan untuk seek -10s/+10s, geser volume.
  * Depends on: state.js, seek-indicator.js
  * ============================================================ */
-
 function setupMobileGestures() {
   if (!isTouchDevice) return;
   const e = document.querySelector(".plyr");

@@ -38,18 +38,9 @@ if (!function_exists('auth_get_ip')) {
     }
 }
 if (!function_exists('auth_is_loopback')) {
-    /**
-     * Deteksi apakah request berasal dari mesin lokal (loopback / 'lo').
-     *
-     * Dipakai untuk MENONAKTIFKAN rate-limit login/register saat debugging
-     * lokal — tidak ada alasan membatasi percobaan dari localhost sendiri.
-     * CATATAN: hanya mempercayai REMOTE_ADDR (bukan X-Forwarded-For yang
-     * bisa dipalsukan), jadi aman dari bypass rate-limit jarak jauh.
-     */
     function auth_is_loopback(): bool
     {
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        // Normalisasi IPv4-mapped IPv6 (mis. ::ffff:127.0.0.1) di Apache dual-stack
         if (strpos($ip, '::ffff:') === 0) {
             $ip = substr($ip, 7);
         }

@@ -1,7 +1,6 @@
 /* ============================================================
  * glow.css — Ambient glow canvas (normal & fullscreen)
  * ============================================================ */
-
 #video-glow-canvas {
   position: absolute;
   top: 0;
@@ -17,11 +16,9 @@
   transform: translate3d(0, 0, 0);
   transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 #video-glow-canvas.glow-active {
   opacity: 0.5;
 }
-
 @media (max-width: 639px) {
   #video-glow-canvas {
     top: 0;
@@ -34,12 +31,10 @@
     opacity: 0.5;
   }
 }
-
 #mini-player-shell ~ #video-glow-canvas,
 .mini-player-mode ~ #video-glow-canvas {
   display: none !important;
 }
-
 /* ── Fullscreen glow canvas ── */
 #video-glow-canvas-fs {
   pointer-events: none;

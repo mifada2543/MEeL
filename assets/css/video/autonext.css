@@ -1,7 +1,6 @@
 /* ============================================================
  * autonext.css — Auto-next overlay card (YouTube-style)
  * ============================================================ */
-
 #autonext-overlay {
   position: absolute;
   inset: 0;
@@ -15,18 +14,15 @@
   padding: clamp(8px, 2.5cqw, 20px);
   transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
-
 #autonext-overlay.active {
   opacity: 1;
   pointer-events: auto;
   background: rgba(0, 0, 0, 0.45);
 }
-
 #autonext-overlay.active .autonext-card {
   transform: translateY(0) scale(1);
 }
-
-/* ── Default: medium player (container width ~360-600px) ── */
+/* ── Default: medium player width ~360-600px ── */
 .autonext-card {
   width: min(300px, 45cqw, 60vw);
   background: rgba(10, 12, 18, 0.92);
@@ -35,11 +31,12 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: clamp(10px, 3cqw, 18px);
   overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(220, 38, 38, 0.12);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(220, 38, 38, 0.12);
   transform: translateY(12px) scale(0.96);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
-
 .autonext-header {
   display: flex;
   align-items: center;
@@ -48,7 +45,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   background: rgba(220, 38, 38, 0.06);
 }
-
 .autonext-label {
   font-size: clamp(7px, 2cqw, 12px);
   font-weight: 800;
@@ -59,12 +55,10 @@
   align-items: center;
   gap: clamp(3px, 1.2cqw, 8px);
 }
-
 .autonext-label svg {
   width: clamp(8px, 2.5cqw, 14px);
   height: clamp(8px, 2.5cqw, 14px);
 }
-
 .autonext-timer {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: clamp(8px, 2.5cqw, 13px);
@@ -76,18 +70,15 @@
   min-width: clamp(20px, 5cqw, 34px);
   text-align: center;
 }
-
 .autonext-timer .countdown-num {
   display: inline-block;
   min-width: 10px;
 }
-
 .autonext-body {
   display: flex;
   gap: clamp(5px, 2cqw, 12px);
   padding: clamp(6px, 2.2cqw, 14px) clamp(8px, 2.5cqw, 18px);
 }
-
 .autonext-thumb {
   width: clamp(50px, 18cqw, 90px);
   height: clamp(28px, 10cqw, 50px);
@@ -97,13 +88,11 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
-
 .autonext-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .autonext-info {
   flex: 1;
   min-width: 0;
@@ -112,7 +101,6 @@
   justify-content: center;
   gap: 3px;
 }
-
 .autonext-title {
   font-size: clamp(8px, 2.5cqw, 13px);
   font-weight: 700;
@@ -126,7 +114,6 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
-
 .autonext-uploader {
   font-size: clamp(7px, 2cqw, 11px);
   font-weight: 700;
@@ -138,12 +125,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .autonext-actions {
   display: flex;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
-
 .autonext-cancel {
   flex: 1;
   padding: clamp(4px, 1.5cqw, 10px);
@@ -156,26 +141,24 @@
   text-transform: uppercase;
   letter-spacing: 0.14em;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   border-radius: 0 0 0 clamp(8px, 2cqw, 14px);
 }
-
 .autonext-cancel:hover {
   background: rgba(220, 38, 38, 0.1);
   color: #f87171;
 }
-
 .autonext-cancel:active {
   background: rgba(220, 38, 38, 0.18);
 }
-
-/* ── Hide Plyr poster & replay button during auto-next ── */
+/* ── Hide Plyr poster & replay button for auto-next ── */
 body.meel-autonext-active .plyr__poster,
 body.meel-autonext-active .plyr__control--overlaid {
   display: none !important;
 }
-
-/* ── Small player (<=360px) ── */
+/* ── Small player <=360px ── */
 @container (max-width: 360px) {
   #autonext-overlay {
     padding: 6px;
@@ -224,7 +207,6 @@ body.meel-autonext-active .plyr__control--overlaid {
     border-radius: 0 0 0 8px;
   }
 }
-
 /* ── Large player (>=600px) ── */
 @container (min-width: 600px) {
   #autonext-overlay {

@@ -1,7 +1,6 @@
 /* ============================================================
  * player.css — Vinyl disc, animasi spin, Plyr audio
  * ============================================================ */
-
 .vinyl-disc {
   aspect-ratio: 1/1;
   contain: size;
@@ -16,13 +15,11 @@
   position: relative;
   flex-shrink: 0;
 }
-
 .vinyl-disc img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .vinyl-disc::after {
   content: "";
   position: absolute;
@@ -35,16 +32,13 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.12);
 }
-
 .vinyl-spin {
   animation: rotate 10s linear infinite;
   animation-play-state: paused;
 }
-
 .playing .vinyl-spin {
   animation-play-state: running;
 }
-
 @keyframes rotate {
   from {
     transform: rotate(0);

@@ -1,10 +1,7 @@
 /* ============================================================
- * equalizer.js — Semua logic equalizer: normalisasi nilai,
- * simpan/muat state EQ, terapkan gain ke filter Web Audio,
- * render UI band & preset EQ.
+ * equalizer.js — Semua logic equalizer: normalisasi nilai, simpan/muat state EQ, terapkan gain ke filter Web Audio, render UI band & preset EQ.
  * Depends on: state.js, loop-ui.js (pakai _setTogglePillUI)
  * ============================================================ */
-
 function normalizeEqValue(e) {
   const t = Number(e);
   return Number.isFinite(t) ? Math.max(-12, Math.min(12, t)) : 0;
@@ -83,13 +80,9 @@ function updateEqUI() {
           (a.innerText = `${normalizeEqValue(eqGains[t] ?? 0).toFixed(1)} dB`));
     }));
 }
-// Debounce re-render penuh + persist EQ — slider input bisa memicu banyak event
-// per detik; hanya label band yang digeser yang diupdate real-time.
 let _eqUiSaveTimer = null;
 window.setEqBand = function (e, t) {
-  ((eqGains[e] = normalizeEqValue(t)),
-    eqEnabled && applyEqToFilters());
-  // Update label band yang sedang digeser secara langsung
+  ((eqGains[e] = normalizeEqValue(t)), eqEnabled && applyEqToFilters());
   const bandLabel = document.getElementById(`eq-band-value-${e}`);
   bandLabel &&
     (bandLabel.innerText = `${normalizeEqValue(eqGains[e] ?? 0).toFixed(1)} dB`);
@@ -100,10 +93,10 @@ window.setEqBand = function (e, t) {
   }, 250);
 };
 window.setEqPreset = function (e) {
-    const t = (EQ_PRESETS[e] || EQ_PRESETS.flat).map(normalizeEqValue);
-    ((eqPreset = e || "flat"),
-      (eqGains = t),
-      eqEnabled && applyEqToFilters(),
-      updateEqUI(),
-      saveEqState());
+  const t = (EQ_PRESETS[e] || EQ_PRESETS.flat).map(normalizeEqValue);
+  ((eqPreset = e || "flat"),
+    (eqGains = t),
+    eqEnabled && applyEqToFilters(),
+    updateEqUI(),
+    saveEqState());
 };
