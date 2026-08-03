@@ -344,7 +344,20 @@ class Transcoder
             throw $e;
         }
 
-        $title       = $meta['title']                                     ?? "Upload_" . time();
+        // YouTube (via yt-dlp) terkadang memotong judul panjang dengan '...'
+        // pada field `title`/`fulltitle` (sering terjadi pada video musik).
+        // Field `track`/`alt_title` biasanya memuat judul LENGKAP — ambil
+        // kandidat terpanjang yang tidak berakhiran '...' agar judul utuh
+        // tersimpan ke database. Pemotongan visual '...' saat ditampilkan
+        // ditangani CSS (text-overflow: ellipsis) di halaman library.
+        // Catatan: bila title terpotong DAN track/alt_title tidak ada, judul
+        // terpotong tetap tersimpan — tidak ada sumber lengkap untuk diperbaiki.
+        $title_candidates = array_values(array_filter(
+            [$meta['title'] ?? '', $meta['fulltitle'] ?? '', $meta['alt_title'] ?? '', $meta['track'] ?? ''],
+            fn($t) => $t !== '' && mb_substr(trim($t), -3) !== '...'
+        ));
+        usort($title_candidates, fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+        $title       = $title_candidates[0] ?? $meta['title'] ?? "Upload_" . time();
         $artist      = $meta['artist']      ?? ($meta['uploader']         ?? 'Unknown Artist');
         $album       = $meta['album']                                     ?? 'Single';
         $duration    = (int)($meta['duration']                            ?? 0);
@@ -546,15 +559,29 @@ class Transcoder
         }
 
         if ($raw_file) {
-            $params = http_build_query([
-                'temp_file'   => $raw_file,
+            // Metadata dikirim lewat SESSION (bukan query string URL) agar judul
+            // dan deskripsi panjang tidak terpotong atau memicu error 414 oleh
+            // batas URL server (Apache LimitRequestLine ~8190 byte).
+            $meta_key = pathinfo($raw_file, PATHINFO_FILENAME);
+            if (!isset($_SESSION['meel_pending_music']) || !is_array($_SESSION['meel_pending_music'])) {
+                $_SESSION['meel_pending_music'] = [];
+            }
+            // Buang entri basi (> 1 jam) agar session tidak menumpuk
+            foreach ($_SESSION['meel_pending_music'] as $k => $v) {
+                if (($v['ts'] ?? 0) < time() - 3600) unset($_SESSION['meel_pending_music'][$k]);
+            }
+            $_SESSION['meel_pending_music'][$meta_key] = [
+                'ts'          => time(),
                 'title'       => $title,
                 'artist'      => $artist,
                 'album'       => $album,
                 'duration'    => $duration,
                 'description' => $description,
-            ]);
-            echo "<script>window.location.href = 'controllers/api/post_encode.php?$params';</script>";
+            ];
+            // Tulis session sekarang juga agar data pasti tersimpan sebelum
+            // browser mengeksekusi redirect (mencegah race condition).
+            session_write_close();
+            echo "<script>window.location.href = 'controllers/api/post_encode.php?temp_file=" . rawurlencode($raw_file) . "';</script>";
             exit;
         }
 
