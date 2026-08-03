@@ -20,11 +20,12 @@ require_once __DIR__ . '/../modules/core/helpers.php';
 // ── Rate limit: max 10 percobaan MFA gagal ──
 $max_mfa_attempts = 10;
 $mfa_lockout_time = 300; // 5 menit
+$is_loopback = auth_is_loopback(); // localhost bebas rate-limit saat debug
 
 // Cek lockout
 $mfa_locked = false;
 $mfa_remaining = 0;
-if (isset($_SESSION['mfa_locked_until'])) {
+if (!$is_loopback && isset($_SESSION['mfa_locked_until'])) {
     if (time() >= $_SESSION['mfa_locked_until']) {
         unset($_SESSION['mfa_locked_until'], $_SESSION['mfa_fail_count']);
     } else {
@@ -132,13 +133,15 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
                 $stmt->execute();
                 $stmt->close();
 
-                // Rate limiting: hitung percobaan gagal
-                $_SESSION['mfa_fail_count'] = ($_SESSION['mfa_fail_count'] ?? 0) + 1;
-                if ($_SESSION['mfa_fail_count'] >= $max_mfa_attempts) {
-                    $_SESSION['mfa_locked_until'] = time() + $mfa_lockout_time;
-                    $_SESSION['mfa_fail_count'] = 0;
-                    $mfa_locked = true;
-                    $mfa_remaining = $mfa_lockout_time;
+                // Rate limiting: hitung percobaan gagal (di-skip untuk localhost)
+                if (!$is_loopback) {
+                    $_SESSION['mfa_fail_count'] = ($_SESSION['mfa_fail_count'] ?? 0) + 1;
+                    if ($_SESSION['mfa_fail_count'] >= $max_mfa_attempts) {
+                        $_SESSION['mfa_locked_until'] = time() + $mfa_lockout_time;
+                        $_SESSION['mfa_fail_count'] = 0;
+                        $mfa_locked = true;
+                        $mfa_remaining = $mfa_lockout_time;
+                    }
                 }
             }
         }

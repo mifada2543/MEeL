@@ -13,6 +13,9 @@ $lockout_time = 300; // 5 menit
 $is_locked = false;
 $remaining = 0;
 
+// ─── LOOPBACK (localhost) — bebas rate-limit untuk debugging ──
+$is_loopback = auth_is_loopback();
+
 // ─── SESSION-BASED LOCKOUT (expired cleanup) — khusus login ────
 if (isset($_SESSION['login_locked_until'])) {
     if (time() >= $_SESSION['login_locked_until']) {
@@ -23,18 +26,22 @@ if (isset($_SESSION['login_locked_until'])) {
 
 // ─── IP-BASED LOCKOUT CHECK (shared helper) ────────────────────
 $ip_address  = auth_get_ip();
-$ip_lock     = auth_ip_lockout_status($conn, $ip_address);
+$ip_lock     = $is_loopback ? ['locked' => false, 'remaining' => 0] : auth_ip_lockout_status($conn, $ip_address);
 $ip_locked   = $ip_lock['locked'];
 $ip_remaining = $ip_lock['remaining'];
 
-// Gabungan: locked jika session atau IP terkunci
-if ($ip_locked || (isset($_SESSION['login_locked_until']) && time() < $_SESSION['login_locked_until'])) {
+// Gabungan: locked jika session atau IP terkunci (di-skip untuk loopback)
+if (!$is_loopback && ($ip_locked || (isset($_SESSION['login_locked_until']) && time() < $_SESSION['login_locked_until']))) {
     $is_locked = true;
     $remaining = max($ip_remaining, ($_SESSION['login_locked_until'] ?? 0) - time());
 }
 
 // ─── HELPER: catat percobaan gagal (session-based + IP via helper) ───
 function record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout_time) {
+    // Loopback (localhost) bebas rate-limit — jangan catat apa pun saat debug
+    if (auth_is_loopback()) {
+        return;
+    }
     // Session-based counter (khusus login)
     $_SESSION['login_fail_count'] = ($_SESSION['login_fail_count'] ?? 0) + 1;
     if ($_SESSION['login_fail_count'] >= $max_login_attempts) {
@@ -134,12 +141,12 @@ if (isset($_POST['login']) && !$is_locked) {
 }
 
 // Re-check lockout setelah POST processing (kalau baru kena lock)
-if (!$is_locked && isset($_SESSION['login_locked_until']) && time() < $_SESSION['login_locked_until']) {
+if (!$is_loopback && !$is_locked && isset($_SESSION['login_locked_until']) && time() < $_SESSION['login_locked_until']) {
     $is_locked = true;
     $remaining = $_SESSION['login_locked_until'] - time();
 }
 // Cek IP lockout lagi setelah POST (database, karena $ip_locked sudah stale)
-if (!$is_locked) {
+if (!$is_loopback && !$is_locked) {
     $recheck = auth_recheck_lockout($conn, $ip_address);
     if ($recheck['locked']) {
         $is_locked = true;

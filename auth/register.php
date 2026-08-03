@@ -17,10 +17,12 @@ $is_locked = false;
 $remaining = 0;
 
 // ─── IP-BASED LOCKOUT CHECK (shared helper) ────────────────────
-$ip_address = auth_get_ip();
-$ip_lock    = auth_ip_lockout_status($conn, $ip_address);
-$is_locked  = $ip_lock['locked'];
-$remaining  = $ip_lock['remaining'];
+// Loopback (localhost) bebas rate-limit untuk debugging
+$ip_address  = auth_get_ip();
+$is_loopback = auth_is_loopback();
+$ip_lock     = $is_loopback ? ['locked' => false, 'remaining' => 0] : auth_ip_lockout_status($conn, $ip_address);
+$is_locked   = $ip_lock['locked'];
+$remaining   = $ip_lock['remaining'];
 
 // ─── SESSION-BASED RATE LIMIT (registrasi berhasil) — khusus register ───
 if (!isset($_SESSION['reg_attempts'])) {
@@ -32,7 +34,7 @@ $_SESSION['reg_attempts'] = array_filter($_SESSION['reg_attempts'], function ($t
     return $timestamp > (time() - $reg_time_window);
 });
 
-$session_blocked = count($_SESSION['reg_attempts']) >= $max_reg_attempts;
+$session_blocked = !$is_loopback && count($_SESSION['reg_attempts']) >= $max_reg_attempts;
 
 // ─── FORM PROCESSING ───────────────────────────────────────────
 if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
@@ -99,7 +101,7 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
 }
 
 // Re-check lockout setelah POST
-if (!$is_locked && !$session_blocked) {
+if (!$is_loopback && !$is_locked && !$session_blocked) {
     $recheck = auth_recheck_lockout($conn, $ip_address);
     if ($recheck['locked']) {
         $is_locked = true;
