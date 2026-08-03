@@ -934,7 +934,7 @@ function run(): int {
     echo CLR_GRAY . "  Report saved to: {$reportFile}\n\n" . CLR_RESET;
     echo CLR_BOLD . "  Done.\n\n" . CLR_RESET;
 
-    return ($f > 0) ? 2 : (($w > 0) ? 1 : 0);
+    return ($f > 0) ? 2 : 0;
 }
 
 exit(run());

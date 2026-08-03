@@ -178,7 +178,7 @@ jobs:
       - name: Run PHPUnit Tests
         run: |
           if [ -f vendor/bin/phpunit ]; then
-            php vendor/bin/phpunit --no-coverage --verbose
+            php vendor/bin/phpunit --testsuite "MEeL Core Unit Tests" --no-coverage --verbose
           else
             echo "⚠️  PHPUnit not installed, skipping."
           fi

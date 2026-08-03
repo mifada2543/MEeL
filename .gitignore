@@ -21,8 +21,10 @@ temp/*
 .agents
 # Keep .gitkeep files to maintain directory structure
 !**/upload/.gitkeep
+!**/upload/.htaccess
 !profile/upload/default_avatar.png
 !**/temp/.gitkeep
+!**/temp/.htaccess
 !**/data_drive/public/.gitkeep
 !**/data_drive/private_admins/.gitkeep
 
