@@ -10,6 +10,18 @@ use PHPUnit\Framework\TestCase;
  */
 class JapaneseTest extends TestCase
 {
+    private function hasMecab(): bool
+    {
+        $mecabPath = getMecabPath();
+
+        if (strpos($mecabPath, '/') !== false) {
+            return is_executable($mecabPath);
+        }
+
+        $resolved = shell_exec('command -v ' . escapeshellarg($mecabPath) . ' 2>/dev/null');
+        return trim((string) $resolved) !== '';
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,6 +44,10 @@ class JapaneseTest extends TestCase
 
     public function testGetRomajiNameWithSpecialChars(): void
     {
+        if (!$this->hasMecab()) {
+            $this->markTestSkipped('MeCab binary is not available in this environment.');
+        }
+
         // Special chars should be replaced
         $result = getRomajiName('初音ミク【テスト】');
         // Should contain 'hatsune' (replacement for 初音)
