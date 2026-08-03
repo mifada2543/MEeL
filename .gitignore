@@ -23,6 +23,7 @@ temp/*
 !**/upload/.gitkeep
 !profile/upload/default_avatar.png
 !**/temp/.gitkeep
+!**/temp/.htaccess
 !**/data_drive/public/.gitkeep
 !**/data_drive/private_admins/.gitkeep
 
