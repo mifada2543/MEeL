@@ -21,7 +21,10 @@ class SearchEngine
     // Limit default, harus sinkron dengan @ MediaLibrary
     const VIDEO_LIMIT = 20;
     const MUSIC_LIMIT = 20;
-    const MIN_SEARCH_QUERY = 2;  // Minimum search length
+    // Minimum search length — sinkron dengan batas token MySQL InnoDB
+    // (innodb_ft_min_token_size default = 3). Query di bawah ini selalu
+    // mengembalikan 0 hasil, jadi lebih baik ditolak sejak awal.
+    const MIN_SEARCH_QUERY = 3;
     const MAX_SEARCH_QUERY = 255; // Maximum search length
 
     public function __construct(mysqli $db_connection)
@@ -47,7 +50,7 @@ class SearchEngine
      */
     public function parseParams(): array
     {
-        $query = $this->sanitizeSearchQuery($_GET['search'] ?? '');
+        $query = self::sanitizeQuery($_GET['search'] ?? '');
         
         return [
             'query'   => $query,
@@ -60,21 +63,43 @@ class SearchEngine
     }
 
     /**
-     * Sanitize search query:
-     * - Trim whitespace
-     * - Limit length
-     * - Remove special characters yang bisa break fulltext search
+     * Sanitize & normalisasi query agar selalu aman untuk FULLTEXT boolean mode.
+     *
+     * MySQL boolean mode melempar syntax error (1064) untuk input seperti
+     * operator saja ("*", "-", "+", "\""), tanda kutip tak seimbang, atau
+     * truncation "*kata" di awal token. Fungsi ini:
+     * - Trim & batasi panjang
+     * - Buang karakter yang tidak berguna: < > ( ) ~ @
+     * - Buang token yang HANYA berisi operator boolean (+ - " *)
+     * - Seimbangkan tanda kutip ganda (ganjil → buang semua)
+     * - Buang asterisk di awal token (*kata → kata), retain kata* (prefix search)
+     *
+     * Public static agar dipakai ulang oleh endpoint search lain (mis. books).
      */
-    private function sanitizeSearchQuery(string $q): string
+    public static function sanitizeQuery(string $q): string
     {
         $q = trim($q);
         $q = mb_substr($q, 0, self::MAX_SEARCH_QUERY);
-        
-        // Remove atau normalize special fulltext operators yang bisa cause issues
-        // Tapi retain basic operators untuk performance: + - " *
+
+        // Buang karakter yang bisa cause issues / tidak pernah berguna
         $q = preg_replace('/[<>()~@]+/', '', $q);
-        
-        return $q;
+
+        // Buang token yang hanya berisi operator boolean — penyebab syntax error 1064
+        $tokens = preg_split('/\s+/', $q);
+        $tokens = array_filter($tokens, static function ($t) {
+            return $t !== '' && !preg_match('/^[+\-*"]+$/', $t);
+        });
+        $q = implode(' ', $tokens);
+
+        // Tanda kutip ganda harus berpasangan — kalau ganjil, buang semuanya
+        if (substr_count($q, '"') % 2 === 1) {
+            $q = str_replace('"', '', $q);
+        }
+
+        // Truncation "*kata" di awal token tidak valid di boolean mode
+        $q = preg_replace('/(^|\s)\*(?=\S)/', '$1', $q);
+
+        return trim($q);
     }
 
     /**
@@ -149,10 +174,13 @@ class SearchEngine
      */
     private static function getCacheKey(string $type, array $params): string
     {
+        // Offset WAJIB masuk key — kalau tidak, request halaman 0 & halaman 2
+        // dengan query sama akan saling menimpa hasil (bug pagination).
         $key = $type . ':' . md5(json_encode([
             'query'   => $params['query'],
             'exclude' => $params['exclude'],
             'sidebar' => $params['sidebar'],
+            'offset'  => $params['offset'],
         ]));
         return $key;
     }
