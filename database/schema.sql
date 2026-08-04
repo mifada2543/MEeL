@@ -149,7 +149,12 @@ CREATE TABLE IF NOT EXISTS `interactions` (
   `type` enum('like','dislike') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_interaction` (`user_id`,`video_id`,`music_id`),
+  -- Catatan: untuk baris video, music_id = NULL; untuk baris music, video_id = NULL.
+  -- Unique key gabungan (user_id, video_id, music_id) TIDAK mencegah duplikat karena
+  -- MySQL memperlakukan NULL sebagai nilai berbeda. Karena itu dipisah menjadi
+  -- dua unique key per media type.
+  UNIQUE KEY `unique_interaction_video` (`user_id`,`video_id`),
+  UNIQUE KEY `unique_interaction_music` (`user_id`,`music_id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

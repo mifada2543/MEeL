@@ -40,11 +40,11 @@ if (isset($_POST['ban_ip'])) {
 }
 
 // ─── UNBAN IP ──────────────────────────────────────────────────────────────
-if (isset($_GET['unban_ip'])) {
+if (isset($_POST['unban_ip'])) {
     $stmt = $conn->prepare("DELETE FROM ip_ban WHERE ip_address = ?");
-    $stmt->bind_param("s", $_GET['unban_ip']);
+    $stmt->bind_param("s", $_POST['unban_ip']);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0, $_GET['unban_ip']);
+    log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0, $_POST['unban_ip']);
     header("Location: index.php?msg=IP_Unbanned#unban");
     exit();
 }
@@ -96,11 +96,11 @@ if (isset($_POST['force_stop_queue'])) {
 }
 
 // ─── APPROVE USER ──────────────────────────────────────────────────────────
-if (isset($_GET['approve_id'])) {
+if (isset($_POST['approve_id'])) {
     $stmt = $conn->prepare("UPDATE users SET is_active = 1 WHERE id = ?");
-    $stmt->bind_param("i", $_GET['approve_id']);
+    $stmt->bind_param("i", $_POST['approve_id']);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'approve_user', 'user', (int)$_GET['approve_id']);
+    log_activity($conn, (int)$_SESSION['user_id'], 'approve_user', 'user', (int)$_POST['approve_id']);
     // Invalidate role cache agar session role ter-update untuk user yang di-approve
     if (function_exists('invalidate_user_role_cache')) {
         invalidate_user_role_cache();
@@ -110,18 +110,18 @@ if (isset($_GET['approve_id'])) {
 }
 
 // ─── REJECT USER ───────────────────────────────────────────────────────────
-if (isset($_GET['reject_id'])) {
+if (isset($_POST['reject_id'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND is_active = 2");
-    $stmt->bind_param("i", $_GET['reject_id']);
+    $stmt->bind_param("i", $_POST['reject_id']);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'reject_user', 'user', (int)$_GET['reject_id']);
+    log_activity($conn, (int)$_SESSION['user_id'], 'reject_user', 'user', (int)$_POST['reject_id']);
     header("Location: index.php?msg=Rejected");
     exit();
 }
 
 // ─── DELETE USER ───────────────────────────────────────────────────────────
-if (isset($_GET['delete_user_id'])) {
-    $id = (int)$_GET['delete_user_id'];
+if (isset($_POST['delete_user_id'])) {
+    $id = (int)$_POST['delete_user_id'];
 
     if ($id === (int)($_SESSION['user_id'] ?? 0)) {
         header("Location: index.php?msg=Cannot_Delete_Self");
@@ -157,15 +157,15 @@ if (isset($_POST['clean_orphans'])) {
 }
 
 // ─── KICK USER ─────────────────────────────────────────────────────────────
-if (isset($_GET['kick_user'])) {
+if (isset($_POST['kick_user'])) {
     $stmt = $conn->prepare("UPDATE users SET 
         last_session_id = 'KICKED',
         last_page       = 'KICKED BY ADMIN',
         last_activity   = DATE_SUB(NOW(), INTERVAL 10 MINUTE)
         WHERE username = ?");
-    $stmt->bind_param("s", $_GET['kick_user']);
+    $stmt->bind_param("s", $_POST['kick_user']);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0, $_GET['kick_user']);
+    log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0, $_POST['kick_user']);
     header("Location: index.php?msg=Kicked_Success#monitor");
     exit();
 }

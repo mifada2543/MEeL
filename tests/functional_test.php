@@ -708,7 +708,9 @@ function testModifiedFiles(): void {
     // File-file yang telah dimodifikasi selama patch keamanan
     $modified_files = [
         'admin/catur.php' => [
-            'role check'    => ['pattern' => '/role.*!==.*admin/', 'label' => 'Role check admin'],
+            // Guard terpusat via require_admin() (authz.php) — lebih aman daripada
+            // pola manual role.*!==.*admin karena membaca role langsung dari DB.
+            'role check'    => ['pattern' => '/require_admin\s*\(/', 'label' => 'Role check admin (require_admin)'],
             'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
             'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
         ],

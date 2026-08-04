@@ -42,6 +42,20 @@ if (!defined('MEEL_HOST')) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// TRUSTED PROXY (CEGAH IP SPOOFING)
+// ════════════════════════════════════════════════════════════════
+// Header HTTP_X_FORWARDED_FOR / HTTP_CF_CONNECTING_IP hanya boleh
+// dipercaya jika request benar-benar lewat proxy/CDN yang Anda kendalikan
+// (mis. Cloudflare, Nginx reverse proxy). Jika diset true padahal server
+// diakses langsung, attacker bisa memalsukan IP untuk bypass IP-ban atau
+// membanjiri activity log.
+//   false = (default, aman) hanya pakai REMOTE_ADDR
+//   true  = percaya header proxy (hanya jika di belakang proxy terpercaya)
+if (!defined('MEEL_TRUST_PROXY_HEADERS')) {
+    define('MEEL_TRUST_PROXY_HEADERS', false);
+}
+
+// ════════════════════════════════════════════════════════════════
 // BINARY PATH CONSTANTS (CEGAH BINARY-HIJACKING)
 // ════════════════════════════════════════════════════════════════
 if (!defined('MEEL_FFMPEG_PATH')) {

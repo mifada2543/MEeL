@@ -262,6 +262,61 @@ $migrations = [
             },
         ],
     ],
+    11 => [
+        'description' => 'Perbaiki unique key tabel interactions — pisah jadi (user_id, video_id) & (user_id, music_id) karena NULL di unique key gabungan tidak mencegah duplikat',
+        'sql' => [
+            function($conn) {
+                // Step 1: Hapus duplikat interaksi video (user_id + video_id sama, music_id NULL)
+                // Sisakan baris dengan id terbesar.
+                $conn->query("DELETE i1 FROM interactions i1
+                    INNER JOIN interactions i2
+                    WHERE i1.id < i2.id
+                    AND i1.user_id = i2.user_id
+                    AND i1.video_id = i2.video_id
+                    AND i1.video_id IS NOT NULL
+                    AND i2.video_id IS NOT NULL");
+            },
+            function($conn) {
+                // Step 2: Hapus duplikat interaksi music (user_id + music_id sama, video_id NULL)
+                $conn->query("DELETE i1 FROM interactions i1
+                    INNER JOIN interactions i2
+                    WHERE i1.id < i2.id
+                    AND i1.user_id = i2.user_id
+                    AND i1.music_id = i2.music_id
+                    AND i1.music_id IS NOT NULL
+                    AND i2.music_id IS NOT NULL");
+            },
+            function($conn) {
+                // Step 3: Drop unique key lama (jika masih ada)
+                $result = $conn->query("ALTER TABLE interactions DROP INDEX unique_interaction");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'drop index') && !str_contains($err, "can't DROP") && !str_contains($err, 'check that column/key exists')) {
+                        echo "[MEeL] ⚠ Warning (drop unique_interaction): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                // Step 4: Tambah unique key per media type — cegah like duplikat
+                $result = $conn->query("ALTER TABLE interactions ADD UNIQUE INDEX unique_interaction_video (user_id, video_id)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (unique_interaction_video): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                $result = $conn->query("ALTER TABLE interactions ADD UNIQUE INDEX unique_interaction_music (user_id, music_id)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (unique_interaction_music): {$err}\n";
+                    }
+                }
+            },
+        ],
+    ],
 ];
 // ═══════════════════════════════════════════════════════════════════════════
 // Catatan Sinkronisasi

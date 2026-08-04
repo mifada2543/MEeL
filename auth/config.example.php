@@ -42,6 +42,8 @@ if (!isset($conn) || $conn === null) {
     if ($conn->connect_error) {
         die("[MEeL SYSTEM ERROR]\nKoneksi ke database gagal: " . $conn->connect_error);
     }
+    // Charset koneksi harus utf8mb4 agar cocok dengan schema.
+    $conn->set_charset('utf8mb4');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -60,7 +62,15 @@ if (!defined('MEEL_BASE_URL')) {
 if (session_status() === PHP_SESSION_NONE) {
     $timeout = 43200; // 12 jam
     ini_set('session.gc_maxlifetime', $timeout);
-    session_set_cookie_params($timeout, "/");
+    $secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    session_set_cookie_params([
+        'lifetime' => $timeout,
+        'path'     => '/',
+        'secure'   => $secure_cookie,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_name('meel');
     session_start();
 }
