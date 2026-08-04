@@ -1,29 +1,38 @@
 <?php
 
-// 1. Fungsi Penangkap IP Asli (Anti-Cloudflare Masking)
-function get_real_ip()
+function trust_proxy_headers(): bool
 {
-    if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
-        return $_SERVER["HTTP_CF_CONNECTING_IP"];
-    }
-    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
-        return trim(explode(',', $_SERVER["HTTP_X_FORWARDED_FOR"])[0]);
-    }
-    return $_SERVER["REMOTE_ADDR"] ?? '0.0.0.0'; // Fallback dengan default
+    return defined('MEEL_TRUST_PROXY_HEADERS') && MEEL_TRUST_PROXY_HEADERS === true;
 }
 
+function get_real_ip()
+{
+    // Format IP yang valid (IPv4 atau IPv6)
+    $valid = function ($ip) {
+        return is_string($ip) && $ip !== '' && filter_var($ip, FILTER_VALIDATE_IP) !== false;
+    };
+
+    if (trust_proxy_headers()) {
+        if (isset($_SERVER["HTTP_CF_CONNECTING_IP"]) && $valid($_SERVER["HTTP_CF_CONNECTING_IP"])) {
+            return $_SERVER["HTTP_CF_CONNECTING_IP"];
+        }
+        if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
+            $xff = trim(explode(',', $_SERVER["HTTP_X_FORWARDED_FOR"])[0]);
+            if ($valid($xff)) {
+                return $xff;
+            }
+        }
+    }
+    $remote = $_SERVER["REMOTE_ADDR"] ?? '0.0.0.0';
+    return $valid($remote) ? $remote : '0.0.0.0';
+}
 // 2. Fungsi Deteksi Tipe Akses & Validasi IP
 function validate_and_format_ip($ip)
 {
-    // Normalize: hapus whitespace
     $ip = trim($ip);
-    
-    // Filter loopback address (IPv4: 127.x.x.x)
     if (strpos($ip, '127.') === 0) {
         return ['ip' => 'LOCAL', 'display' => 'Local Access (IPv4)', 'is_local' => true, 'version' => 'ipv4'];
     }
-    
-    // Filter loopback address IPv6 (::1)
     if ($ip === '::1') {
         return ['ip' => 'LOCAL', 'display' => 'Local Access (IPv6)', 'is_local' => true, 'version' => 'ipv6'];
     }
@@ -57,20 +66,20 @@ function validate_and_format_ip($ip)
 // 3. Fungsi Deteksi Metode Akses
 function get_access_method()
 {
-    if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
-        // Cek apakah via Cloudflare tunnel
+    $trusted = trust_proxy_headers();
+    if ($trusted && isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
         if (strpos($_SERVER["HTTP_HOST"] ?? '', 'trycloudflare.com') !== false) {
             return 'Cloudflare Tunnel';
         }
         return 'Cloudflare CDN';
     }
-    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
+    if ($trusted && isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
         return 'Proxy/Forwarded';
     }
-    if (isset($_SERVER["HTTP_X_REAL_IP"])) {
+    if ($trusted && isset($_SERVER["HTTP_X_REAL_IP"])) {
         return 'Nginx Proxy';
     }
-    if (isset($_SERVER["HTTP_VIA"])) {
+    if ($trusted && isset($_SERVER["HTTP_VIA"])) {
         return 'HTTP Proxy';
     }
     return 'Direct';

@@ -260,8 +260,16 @@ GarbageCollector::cleanGuests($conn);
                             <tr class="hover:bg-white/[0.02]">
                                 <td class="py-4 px-6 font-bold text-white"><?= htmlspecialchars($u['username']) ?></td>
                                 <td class="py-4 px-6 text-right space-x-2">
-                                    <a href="?approve_id=<?= $u['id'] ?>" class="bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold text-[10px]" title="Setujui pendaftaran <?= htmlspecialchars($u['username']) ?>">APPROVE</a>
-                                    <a href="?reject_id=<?= $u['id'] ?>" class="bg-red-600/20 text-red-500 px-4 py-1.5 rounded-xl font-bold text-[10px] border border-red-500/20" title="Tolak pendaftaran <?= htmlspecialchars($u['username']) ?>">REJECT</a>
+                                    <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Setujui User', text: 'Setujui pendaftaran <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'APPROVE' })">
+                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                        <input type="hidden" name="approve_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold text-[10px] cursor-pointer" title="Setujui pendaftaran <?= htmlspecialchars($u['username']) ?>">APPROVE</button>
+                                    </form>
+                                    <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Tolak User', text: 'Tolak pendaftaran <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'TOLAK' })">
+                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                        <input type="hidden" name="reject_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="bg-red-600/20 text-red-500 px-4 py-1.5 rounded-xl font-bold text-[10px] border border-red-500/20 cursor-pointer" title="Tolak pendaftaran <?= htmlspecialchars($u['username']) ?>">REJECT</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -332,11 +340,14 @@ GarbageCollector::cleanGuests($conn);
                                         // Tombol Hapus HANYA muncul jika role BUKAN admin
                                         if ($u['role'] !== 'admin'):
                                         ?>
-                                            <a href="?delete_user_id=<?= $u['id'] ?>"
-                                                onclick="return meelConfirmLink(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })"
-                                                class="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] uppercase" title="Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>">
-                                                Delete
-                                            </a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="delete_user_id" value="<?= (int)$u['id'] ?>">
+                                                <button type="submit"
+                                                    class="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] uppercase cursor-pointer" title="Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>">
+                                                    Delete
+                                                </button>
+                                            </form>
                                         <?php else: ?>
                                             <span class="text-[9px] text-gray-600 italic">Protected</span>
                                         <?php endif; ?>
@@ -526,12 +537,15 @@ GarbageCollector::cleanGuests($conn);
 
                                         if ($is_online && $row['username'] !== $_SESSION['username'] && $row['role'] !== 'guest'):
                                         ?>
-                                            <a href="?kick_user=<?= urlencode($row['username']) ?>"
-                                                onclick="return meelConfirmLink(event, { title: 'Kick User', text: 'Tendang <?= htmlspecialchars($row['username'], ENT_QUOTES) ?>? User akan langsung offline.', confirmButtonText: 'TENDANG' })"
-                                                class="p-1.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                                                title="Kick Active User">
-                                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-                                            </a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Kick User', text: 'Tendang <?= htmlspecialchars($row['username'], ENT_QUOTES) ?>? User akan langsung offline.', confirmButtonText: 'TENDANG' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="kick_user" value="<?= htmlspecialchars($row['username'], ENT_QUOTES) ?>">
+                                                <button type="submit"
+                                                    class="p-1.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-600 hover:text-white transition-all cursor-pointer"
+                                                    title="Kick Active User">
+                                                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </form>
                                         <?php elseif (!$is_online && $row['username'] !== $_SESSION['username']): ?>
                                             <span class="p-1.5 bg-gray-800/30 text-gray-700 rounded-lg border border-gray-800/50 cursor-not-allowed" title="User is already offline">
                                                 <i data-lucide="user-minus" class="w-3.5 h-3.5"></i>
@@ -589,7 +603,11 @@ GarbageCollector::cleanGuests($conn);
                                         <td class="py-3 text-gray-400"><?= $ban['reason'] ?></td>
                                         <td class="py-3 text-gray-500"><?= $ban['banned_at'] ?></td>
                                         <td class="py-3 text-right">
-                                            <a href="?unban_ip=<?= $ban['ip_address'] ?>" class="text-[9px] border border-green-500/30 text-green-500 px-3 py-1 rounded hover:bg-green-500 hover:text-white transition" title="Buka blokir IP <?= $ban['ip_address'] ?>">UNBAN</a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Unban IP', text: 'Buka blokir IP <?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>?', confirmButtonText: 'UNBAN' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="unban_ip" value="<?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>">
+                                                <button type="submit" class="text-[9px] border border-green-500/30 text-green-500 px-3 py-1 rounded hover:bg-green-500 hover:text-white transition cursor-pointer" title="Buka blokir IP <?= htmlspecialchars($ban['ip_address']) ?>">UNBAN</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>

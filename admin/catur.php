@@ -41,10 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 }
-
-// ── Auto-cleanup trigger (dipanggil via JS fetch setiap 10 menit) ──────────
 if (isset($_GET['auto_cleanup'])) {
     header('Content-Type: application/json');
+    if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'CSRF token tidak valid.']);
+        exit;
+    }
     $result = purgeInactiveRooms($conn);
     logCleanup($conn, $result);
     echo json_encode(['success' => true, 'rooms' => $result['rooms'], 'moves' => $result['moves'], 'time' => date('H:i:s')]);
@@ -316,6 +319,10 @@ $back_url    = 'index.php';
 
     </main>
 
+    <script>
+        // Bridge PHP → JS: token CSRF untuk endpoint auto_cleanup
+        window.MEEL_ADMIN_CSRF = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    </script>
     <script src="../assets/js/admin/catur.js?v=<?= filemtime('../assets/js/admin/catur.js') ?>"></script>
 </body>
 
