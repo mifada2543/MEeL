@@ -592,7 +592,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const diffCont = document.getElementById("ai-difficulty-container");
   const panel = document.getElementById("multiplayer-panel");
   if (onlineBtn) {
-    onlineBtn.addEventListener("click", () => {
+    // Masuk mode multiplayer: tampilkan panel room + reset papan.
+    function enterOnlineMode() {
       game.gameMode = "online";
       resetAllModes();
       if (panel) panel.classList.remove("hidden");
@@ -611,6 +612,24 @@ document.addEventListener("DOMContentLoaded", () => {
           myColor === "b" ? "Pemain Hitam (Anda)" : "Pemain Hitam";
       updateRoomUI();
       restartGame();
+    }
+    onlineBtn.addEventListener("click", () => {
+      // Sudah di mode multiplayer — jangan tanya lagi.
+      if (game.gameMode === "online") return;
+      // Alert konfirmasi sebelum masuk mode multiplayer.
+      window.Swal.fire({
+        title: "Mode Multiplayer",
+        html: 'Bermain dengan pemain lain memerlukan <b>akun login</b>.<br>Anda akan membuat atau bergabung room menggunakan <b>Room Code</b> yang dibagikan.',
+        icon: "info",
+        background: "#0f172a",
+        color: "#fff",
+        showCancelButton: true,
+        confirmButtonText: "LANJUT",
+        cancelButtonText: "BATAL",
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) enterOnlineMode();
+      });
     });
   }
   if (btnLocal) {

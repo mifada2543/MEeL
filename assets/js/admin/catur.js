@@ -27,7 +27,9 @@
     }
     async function runCleanup() {
       try {
-        var res = await fetch('catur.php?auto_cleanup=1');
+        // Token CSRF wajib untuk aksi destruktif via GET (server verifikasi)
+        var csrf = encodeURIComponent(window.MEEL_ADMIN_CSRF || '');
+        var res = await fetch('catur.php?auto_cleanup=1&csrf_token=' + csrf);
         var data = await res.json();
         if (data.success) {
           if (liveLog) {

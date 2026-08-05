@@ -1,6 +1,17 @@
 <?php
 require '../../../auth/config.php';
 header('Content-Type: application/json');
+
+// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    die(json_encode([
+        "success" => false,
+        "login_required" => true,
+        "message" => "Anda harus login untuk mengecek status room."
+    ]));
+}
+
 $room = $_GET['room'] ?? '';
 if (!$room) {
     die(json_encode(["success" => false, "message" => "Room code diperlukan"]));
