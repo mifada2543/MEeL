@@ -1,5 +1,35 @@
+<?php
 /**
- * MEeL-HUB — Service Worker v1.0
+ * sw.js.php — Service Worker MEeL (DIBANGKITKAN DINAMIS oleh PHP).
+ *
+ * File ini di-serve sebagai /sw.js lewat rewrite di .htaccess:
+ *   RewriteRule ^sw\.js$ sw.js.php [L]
+ *
+ * Mengapa dinamis:
+ *  - Daftar precache CSS modul diambil otomatis dari setiap manifest.php
+ *    di subfolder assets/css — menambah folder modul baru TIDAK perlu
+ *    mengubah file ini.
+ *  - SW_VERSION dihitung dari hash isi semua aset precache (SwPrecache::version)
+ *    → setiap perubahan konten otomatis menaikkan versi SW (update + purge cache).
+ *
+ * Output DIJAGA DETERMINISTIK (tanpa timestamp) agar browser tidak menganggap
+ * SW berubah pada setiap kunjungan — update SW hanya terjadi saat konten asli
+ * benar-benar berubah.
+ *
+ * @license GPL v3
+ */
+require_once __DIR__ . '/modules/core/SwPrecache.php';
+
+$sw_precache_urls = SwPrecache::all();
+$sw_version       = SwPrecache::version();
+
+// Wajib sebelum output apa pun: browser menolak SW yang MIME-nya bukan JS.
+header('Content-Type: application/javascript; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+?>
+/**
+ * MEeL-HUB — Service Worker (dibangkitkan dari sw.js.php)
  *
  * Cache strategies:
  *  - STATIC_ASSETS: Cache-first (CSS, JS, fonts, images) — pre-cached on install
@@ -9,79 +39,19 @@
  * @license GPL v3
  */
 
-const SW_VERSION = 'v1.5-20260805';
+const SW_VERSION = <?php echo json_encode($sw_version) ?>;
 const STATIC_CACHE = 'meel-static-' + SW_VERSION;
 const PAGE_CACHE   = 'meel-pages-' + SW_VERSION;
+const PAGE_CACHE_MAX = 100; // batas entri cache halaman (cegah membengkak)
+
+// URL absolut halaman offline — dihitung dari scope SW (self.registration.scope),
+// jadi portabel saat project di-deploy ke root ATAU subfolder (tidak hardcoded /MEeL/).
+const OFFLINE_URL = new URL('err/offline.php', self.registration.scope).href;
 
 // ─── FILES TO PRE-CACHE ON INSTALL ───────────────────────────────────────────
-// ─── FILES TO PRE-CACHE ON INSTALL ───────────────────────────────────────────
+// Daftar DINAMIS: aset tetap + semua modul CSS dari assets/css/*/manifest.php.
 // Paths are relative to the SW scope (project root).
-// e.g. if SW serves from /MEeL/, these resolve to /MEeL/assets/css/...
-const PRECACHE_URLS = [
-  // CSS
-  'assets/css/index(hub).css',
-  'assets/css/tailwind.min.css',
-  'assets/css/font.css',
-  'assets/css/plyr.css',
-  // CSS modules per folder (dari manifest.php — list paralel <link>, bukan @import)
-  'assets/css/video/base.css',
-  'assets/css/video/layout.css',
-  'assets/css/video/navbar.css',
-  'assets/css/video/player.css',
-  'assets/css/video/fullscreen.css',
-  'assets/css/video/cards.css',
-  'assets/css/video/mini-player.css',
-  'assets/css/video/resume-modal.css',
-  'assets/css/video/autonext.css',
-  'assets/css/video/glow.css',
-  'assets/css/video/seek.css',
-  'assets/css/video/toast.css',
-  'assets/css/video/utility.css',
-  'assets/css/music/base.css',
-  'assets/css/music/layout.css',
-  'assets/css/music/cards.css',
-  'assets/css/music/player.css',
-  'assets/css/music/mini-player.css',
-  'assets/css/music/resume-modal.css',
-  'assets/css/music/visualizer.css',
-  'assets/css/music/playlist-modal.css',
-  'assets/css/music/utility.css',
-  'assets/css/books/base.css',
-  'assets/css/books/cards.css',
-  'assets/css/books/manga.css',
-  'assets/css/books/reader.css',
-  'assets/css/books/pdf.css',
-  'assets/css/books/utility.css',
-  'assets/css/drive/base.css',
-  'assets/css/drive/layout.css',
-  'assets/css/drive/navbar.css',
-  'assets/css/drive/cards.css',
-  'assets/css/drive/upload.css',
-  'assets/css/drive/utility.css',
-  'assets/css/drive/index/main.css',
-  'assets/css/admin/shared/base.css',
-  'assets/css/admin/shared/layout.css',
-  'assets/css/admin/shared/cards.css',
-  'assets/css/admin/shared/table.css',
-  'assets/css/admin/shared/form.css',
-  'assets/css/admin/shared/modal.css',
-  'assets/css/admin/shared/utility.css',
-  'assets/css/shared/design-tokens.css',
-  'assets/css/shared/upload-form.css',
-  'assets/css/up.css',
-  'assets/css/introduction.css',
-  // JS
-  'assets/js/compatibilitas/lucide.js',
-  'assets/js/compatibilitas/hls.js',
-  // Font
-  'assets/css/font/latin.woff2',
-  // Assets
-  'assets/MEeL.png',
-  // Manifest
-  'assets/manifest.json',
-  // Offline page
-  'err/offline.php',
-];
+const PRECACHE_URLS = <?php echo json_encode($sw_precache_urls, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?>;
 
 // ─── INSTALL ─────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -120,6 +90,12 @@ self.addEventListener('activate', (event) => {
           })
       );
     }).then(() => {
+      // Navigation preload: minta respons navigasi paralel dengan boot SW
+      // → first paint lebih cepat (tidak menunggu SW aktif dulu).
+      if (self.registration.navigationPreload) {
+        return self.registration.navigationPreload.enable().catch(() => {});
+      }
+    }).then(() => {
       // Claim all clients immediately
       return self.clients.claim();
     })
@@ -139,6 +115,13 @@ self.addEventListener('fetch', (event) => {
 
   // ── API / Dynamic endpoints → Network only ──
   if (isApiRequest(url)) {
+    return;
+  }
+
+  // ── Media streaming & download → Network only ──
+  // Video/audio/arsip bisa ratusan MB — melewati SW malah bikin cache meledak
+  // dan buffering/seek bermasalah. Selalu ambil langsung dari network.
+  if (isStreamingMedia(url)) {
     return;
   }
 
@@ -166,9 +149,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── HTML pages → Network-first ──
+  // ── HTML pages → Network-first (pakai navigationPreload bila tersedia) ──
   if (isPageRequest(request)) {
-    event.respondWith(networkFirst(request, PAGE_CACHE));
+    event.respondWith(networkFirst(request, PAGE_CACHE, event.preloadResponse));
     return;
   }
 
@@ -196,7 +179,7 @@ async function cacheFirst(request, cacheName) {
   } catch (err) {
     // If asset fails to load, return cached offline fallback for pages
     if (request.destination === 'document') {
-      return caches.match('err/offline.php');
+      return caches.match(OFFLINE_URL);
     }
     // For other assets, return a transparent placeholder
     return new Response('', { status: 200, headers: { 'Content-Type': 'text/plain' } });
@@ -229,12 +212,23 @@ async function staleWhileRevalidate(request, cacheName) {
  * Network-first: try network, fallback to cache, then offline.
  * Good for HTML pages that change frequently.
  */
-async function networkFirst(request, cacheName) {
+async function networkFirst(request, cacheName, preloadPromise) {
   try {
-    const network = await fetch(request);
+    // Kalau ada (navigasi), pakai hasil navigationPreload dulu — respons
+    // sudah berjalan paralel dengan boot SW, jadi lebih cepat dari fetch().
+    let network = null;
+    if (preloadPromise) {
+      const preload = await preloadPromise.catch(() => null);
+      if (preload && preload.ok) network = preload;
+    }
+    if (!network) network = await fetch(request);
+
     if (network.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, network.clone());
+      // Batasi ukuran cache halaman agar tidak membengkak tanpa batas
+      // (mis. halaman watch.php?id=X yang terus berganti).
+      trimCache(cacheName, PAGE_CACHE_MAX);
     }
     return network;
   } catch (err) {
@@ -243,7 +237,7 @@ async function networkFirst(request, cacheName) {
 
     // Offline fallback for page requests
     if (request.destination === 'document') {
-      return caches.match('/MEeL/err/offline.php');
+      return caches.match(OFFLINE_URL);
     }
 
     return new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } });
@@ -257,16 +251,43 @@ function isStaticAsset(url) {
 }
 
 function isApiRequest(url) {
-  // Skip API, controllers, AJAX endpoints
-  return /^\/(controllers\/|auth\/login|auth\/register)/.test(url.pathname) ||
-         url.pathname.includes('search_') ||
-         url.pathname.includes('load_more') ||
-         url.pathname.includes('like.php') ||
-         url.pathname.includes('delete_comment') ||
-         url.pathname.includes('admin_data');
+  // pathname absolut (/MEeL/controllers/... ATAU /controllers/... di root) —
+  // pakai includes('/.../') agar cocok untuk subdir maupun root deployment.
+  const p = url.pathname;
+  return p.includes('/controllers/') ||
+         p.includes('/auth/') ||
+         p.includes('/partials/engine/') ||
+         p.includes('/controller/') ||      // polling catur (arcade/chess/controller/)
+         p.includes('/api/') ||
+         p.includes('/search_') ||
+         p.includes('load_more') ||
+         p.includes('like.php') ||
+         p.includes('comment.php') ||
+         p.includes('delete_comment') ||
+         p.includes('admin_data') ||
+         p.includes('playlist_action') ||
+         p.includes('stream.php') ||        // streaming audio (Range request)
+         p.includes('read_pdf') ||
+         p.includes('download') ||          // drive/download.php, download_transcode.php
+         p.includes('post_encode') ||
+         p.includes('download_transcode');
+}
+
+function isStreamingMedia(url) {
+  // File media & arsip — tidak pernah disentuh SW (network-only).
+  return /\.(mp4|webm|mkv|avi|mov|m4v|mp3|m4a|ogg|oga|wav|flac|aac|opus|pdf|epub|zip|rar|7z|tar|gz)$/i.test(url.pathname);
 }
 
 function isPageRequest(request) {
   return request.destination === 'document' ||
          request.headers.get('Accept')?.includes('text/html');
+}
+
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length > maxEntries) {
+    // Buang entri terlama (urutan insert) satu per satu.
+    await cache.delete(keys[0]);
+  }
 }

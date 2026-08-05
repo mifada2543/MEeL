@@ -16,3 +16,11 @@ DirectoryIndex index.php index.html
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# ── PWA: /sw.js disajikan dari generator PHP (precache dinamis dari manifest.php) ──
+# sw.js.php menghitung daftar precache + SW_VERSION otomatis, jadi menambah
+# folder modul CSS baru tidak perlu menyentuh service worker manual.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^sw\.js$ sw.js.php [L]
+</IfModule>

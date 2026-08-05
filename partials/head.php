@@ -123,7 +123,13 @@ $_e_robots   = htmlspecialchars($_META_ROBOTS, ENT_QUOTES, 'UTF-8');
 <link rel="manifest" href="<?= $_head_root ?>/assets/manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="<?= $_head_root ?>/assets/MEeL.png">
 <link rel="icon" type="image/png" sizes="16x16" href="<?= $_head_root ?>/assets/MEeL.png">
-<link rel="apple-touch-icon" sizes="180x180" href="<?= $_head_root ?>/assets/MEeL.png">
+<link rel="apple-touch-icon" sizes="180x180" href="<?= $_head_root ?>/assets/MEeL-180.png">
+
+<!-- iOS / Android standalone PWA -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MEeL">
 
 <!-- Structured Data (JSON-LD) -->
 <script type="application/ld+json">
@@ -167,19 +173,29 @@ if ('serviceWorker' in navigator) {
                 // Offline — abaikan, cek berikutnya akan mencoba lagi
             });
 
-            // Update ditemukan → reload untuk aktivasi
+            // Update ditemukan → tandai, nanti controllerchange auto-reload
             reg.addEventListener('updatefound', function() {
-                const installing = reg.installing;
+                const installing = reg.installing || reg.waiting;
+                if (!installing) return;
                 installing.addEventListener('statechange', function() {
                     if (this.state === 'installed' && navigator.serviceWorker.controller) {
-                        // SW baru tersedia — notifikasi user
-                        console.log('[PWA] Update tersedia. Refresh untuk mengaktifkan.');
+                        // SW baru tersedia (skipWaiting + clients.claim aktif)
+                        sessionStorage.setItem('meel_pwa_update', '1');
                     }
                 });
             });
         }).catch(function(err) {
             console.warn('[PWA] Registration failed:', err.message);
         });
+    });
+
+    // SW baru mengambil alih halaman → reload sekali saja, tanpa nunggu user
+    // refresh manual (flag sessionStorage menghindari reload saat install pertama).
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (sessionStorage.getItem('meel_pwa_update')) {
+            sessionStorage.removeItem('meel_pwa_update');
+            window.location.reload();
+        }
     });
 }
 </script>

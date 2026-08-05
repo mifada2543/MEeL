@@ -2,12 +2,16 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * @coversNothing
- * Tests for manifest.php di setiap subfolder assets/css (daftar modul CSS):
+ * @covers SwPrecache
+ * Tests for manifest.php di setiap subfolder assets/css (daftar modul CSS)
+ * dan generator precache service worker (SwPrecache):
  *  1. Setiap entri manifest harus merujuk file yang benar-benar ada.
- *  2. Daftar modul per folder harus sama persis dengan daftar precache di
- *     sw.js (folder video/music/drive/books/admin di-pre-cache; engine & up
- *     tidak di-pre-cache sehingga dilewati dengan markTestSkipped).
+ *  2. SEMUA folder modul yang punya manifest.php harus masuk precache SW —
+ *     generator dinamis (SwPrecache) mengambilnya otomatis dari manifest.php,
+ *     jadi menambah folder modul baru tidak perlu menyentuh sw.js lagi.
+ *  3. Semua entri precache (aset tetap + modul) harus merujuk file yang ada.
+ *  4. SW_VERSION hasil generator harus deterministik (tidak berubah antar
+ *     pemanggilan) — penting agar browser tidak update SW tiap kunjungan.
  */
 class CssManifestTest extends TestCase
 {
@@ -48,9 +52,13 @@ class CssManifestTest extends TestCase
     }
 
     /**
+     * Semua folder modul (yang punya manifest.php) harus ter-precache.
+     * Generator SwPrecache::moduleAssets() mengambilnya otomatis dari
+     * manifest.php — test ini menjaga agar list tetap sinkron.
+     *
      * @dataProvider manifestProvider
      */
-    public function testManifestModulesMatchSwPrecache(string $manifest): void
+    public function testAllManifestFoldersArePrecached(string $manifest): void
     {
         $folder = basename(dirname($manifest));
         $mods   = require $manifest;
@@ -61,27 +69,50 @@ class CssManifestTest extends TestCase
         }
         sort($expected);
 
-        $sw = file_get_contents(MEEL_ROOT . '/sw.js');
-        $this->assertNotFalse($sw, 'sw.js tidak bisa dibaca');
-
-        preg_match_all('/^\s*\'([^\']+)\',/m', $sw, $m);
         $precached = array_values(array_filter(
-            $m[1],
+            SwPrecache::all(),
             static fn (string $url): bool => str_starts_with($url, "assets/css/{$folder}/")
         ));
         sort($precached);
 
-        if ($precached === []) {
-            $this->markTestSkipped(
-                "Folder '{$folder}' tidak di-pre-cache di sw.js — tidak ada daftar untuk dibandingkan."
-            );
-            return;
-        }
-
         $this->assertSame(
             $expected,
             $precached,
-            "Daftar modul '{$folder}' di sw.js tidak sinkron dengan assets/css/{$folder}/manifest.php"
+            "Daftar modul '{$folder}' di precache SW tidak sinkron dengan assets/css/{$folder}/manifest.php"
         );
+    }
+
+    /**
+     * Setiap entri precache (aset tetap + semua modul) harus ada di disk —
+     * mencegah daftar basi di SwPrecache::baseAssets() atau modul yang lupa
+     * di-upload merusak install service worker (cache.addAll gagal total).
+     */
+    public function testAllPrecacheEntriesResolveToFile(): void
+    {
+        $missing = [];
+        foreach (SwPrecache::all() as $rel) {
+            if (!is_file(MEEL_ROOT . '/' . $rel)) {
+                $missing[] = $rel;
+            }
+        }
+        $this->assertSame(
+            [],
+            $missing,
+            'Entri precache berikut tidak ditemukan di disk (SW install akan gagal):'
+        );
+    }
+
+    /**
+     * SW_VERSION harus deterministik: dua pemanggilan menghasilkan nilai sama.
+     * Format: v2-<hash 10 char>. Kalau tidak deterministik, browser akan
+     * melakukan update service worker pada SETIAP kunjungan.
+     */
+    public function testSwVersionIsDeterministic(): void
+    {
+        $v1 = SwPrecache::version();
+        $v2 = SwPrecache::version();
+
+        $this->assertMatchesRegularExpression('/^v2-[0-9a-f]{10}$/', $v1, 'Format SW_VERSION tidak sesuai');
+        $this->assertSame($v1, $v2, 'SW_VERSION harus deterministik antar pemanggilan');
     }
 }

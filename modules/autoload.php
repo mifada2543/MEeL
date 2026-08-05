@@ -34,6 +34,9 @@ spl_autoload_register(function (string $class) {
         
         // Drive service
         'DriveService'       => __DIR__ . '/../drive/DriveService.php',
+
+        // PWA service worker
+        'SwPrecache'         => __DIR__ . '/core/SwPrecache.php',
         
     ];
 
