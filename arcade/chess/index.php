@@ -26,7 +26,9 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
   <script src="../../assets/js/compatibilitas/lucide.js"></script>
   <script src="../../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
   <script src="../../assets/js/compatibilitas/script.min.js"></script>
-  <link href="assets/css/chess.css" rel="stylesheet" />
+  <!-- Cache-busting (?v=filemtime): service worker cache-first TIDAK boleh
+       mengunci versi lama aset ini — lihat kasus hard-refresh 2026-08-05. -->
+  <link href="assets/css/chess.css?v=<?= @filemtime(__DIR__ . '/assets/css/chess.css') ?>" rel="stylesheet" />
 </head>
 
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
@@ -120,11 +122,7 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <button id="btn-create-room" class="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold transition-all active:scale-95" title="Buat room multiplayer baru">Buat Room</button>
-          <button id="btn-join-room" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-bold transition-all active:scale-95 border border-slate-700" title="Gabung ke room multiplayer yang sudah ada">Join Room</button>
-          <button id="btn-leave-room" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-bold transition-all active:scale-95 border border-slate-700" title="Keluar dari room multiplayer">Keluar</button>
-        </div>
+        <button id="btn-leave-room" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-bold transition-all active:scale-95 border border-slate-700" title="Keluar dari mode multiplayer">Keluar</button>
       </div>
       <!-- Status Panel -->
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 shadow-xl">
@@ -172,6 +170,37 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
             <button id="btn-restart-overlay" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition-all text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-900/20 flex justify-center items-center gap-2" title="Mulai ulang permainan dari awal">
               <i data-lucide="play" class="w-4 h-4"></i> Main Semula
             </button>
+          </div>
+        </div>
+        <!-- COLOR PICKER OVERLAY (multiplayer: pilih warna sebelum game dimulai) -->
+        <div id="color-picker-overlay" class="absolute inset-0 bg-slate-950/95 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center p-4 text-center z-40 hidden opacity-0 transition-opacity duration-300">
+          <!-- State 1: pilih warna -->
+          <div id="cp-pick" class="bg-slate-900 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl animate-pop">
+            <div class="w-14 h-14 bg-gradient-to-br from-cyan-500 to-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg ring-4 ring-cyan-500/10">
+              <i data-lucide="globe" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-lg font-extrabold text-slate-100 mb-1 tracking-tight">Pilih Warna</h3>
+            <p class="text-xs text-slate-400 mb-5">Putih = buat room &amp; tunggu lawan.<br>Hitam = gabung pakai Room Code.</p>
+            <div class="grid grid-cols-2 gap-3">
+              <button id="btn-pick-white" class="flex flex-col items-center gap-1.5 py-3.5 rounded-xl bg-slate-100 hover:bg-white text-slate-900 font-bold transition-all active:scale-95 shadow-lg" title="Main sebagai Putih — buat room baru">
+                <i data-lucide="circle" class="w-6 h-6 fill-white stroke-slate-400"></i>
+                <span class="text-sm">Putih</span>
+                <span class="text-[10px] font-medium text-slate-500">Buat Room</span>
+              </button>
+              <button id="btn-pick-black" class="flex flex-col items-center gap-1.5 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition-all active:scale-95 border border-slate-600 shadow-lg" title="Main sebagai Hitam — gabung pakai Room Code">
+                <i data-lucide="circle" class="w-6 h-6 fill-slate-900 stroke-slate-500"></i>
+                <span class="text-sm">Hitam</span>
+                <span class="text-[10px] font-medium text-slate-400">Join Room</span>
+              </button>
+            </div>
+          </div>
+          <!-- State 2: menunggu lawan (setelah pilih Putih & buat room) -->
+          <div id="cp-waiting" class="bg-slate-900 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl animate-pop hidden">
+            <div class="w-10 h-10 mx-auto mb-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
+            <h3 class="text-lg font-extrabold text-slate-100 mb-1 tracking-tight">Menunggu Lawan</h3>
+            <p class="text-xs text-slate-400 mb-3">Bagikan Room Code ini ke rakan:</p>
+            <p id="cp-room-code" class="text-2xl font-extrabold text-cyan-300 tracking-[0.2em] mb-5">-</p>
+            <button id="btn-cancel-waiting" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold transition-all active:scale-95 border border-slate-600" title="Batal — kembali ke pilihan warna">BATAL</button>
           </div>
         </div>
       </div>
@@ -223,7 +252,7 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
   <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500 mt-auto">
     <p class="font-medium tracking-wide">© 2026 Arena Catur Pintar. Diperhalusi untuk Pengalaman Terbaik.</p>
   </footer>
-  <script type="module" src="assets/js/main.js"></script>
+  <script type="module" src="assets/js/main.js?v=<?= @filemtime(__DIR__ . '/assets/js/main.js') ?>"></script>
   <script>
     // Bridge PHP → JS: token CSRF untuk endpoint multiplayer
     // (status login ditangani api.js: respon 401 dari controller → redirect ke login)

@@ -9,7 +9,7 @@
  * @license GPL v3
  */
 
-const SW_VERSION = 'v1.4-20260802';
+const SW_VERSION = 'v1.5-20260805';
 const STATIC_CACHE = 'meel-static-' + SW_VERSION;
 const PAGE_CACHE   = 'meel-pages-' + SW_VERSION;
 
@@ -152,9 +152,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── Static assets (CSS, JS, fonts, images) → Cache-first ──
+  // ── Static assets (CSS, JS, fonts, images) ──
   if (isStaticAsset(url)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    // Aset dengan cache-buster (?v=filemtime) = immutable → cache-first.
+    // Aset TANPA ?v= (URL sama, tapi isi bisa berubah setelah deploy/edits)
+    // → stale-while-revalidate: sajikan cache (cepat) + refresh background,
+    //   supaya perubahan file langsung terlihat tanpa hard refresh.
+    if (url.searchParams.has('v')) {
+      event.respondWith(cacheFirst(request, STATIC_CACHE));
+    } else {
+      event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
+    }
     return;
   }
 
@@ -193,6 +201,28 @@ async function cacheFirst(request, cacheName) {
     // For other assets, return a transparent placeholder
     return new Response('', { status: 200, headers: { 'Content-Type': 'text/plain' } });
   }
+}
+
+/**
+ * Stale-while-revalidate: serve from cache (fast), refresh in background.
+ * For unversioned static assets whose URL stays the same but content can
+ * change after deploy (e.g. main.js edited during development).
+ * Prevents "must hard-refresh to see changes" + stale-JS-against-new-HTML.
+ */
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  const networkPromise = fetch(request)
+    .then((response) => {
+      if (response.ok) cache.put(request, response.clone());
+      return response;
+    })
+    .catch(() => null);
+
+  if (cached) return cached;
+  const network = await networkPromise;
+  if (network) return network;
+  return new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } });
 }
 
 /**

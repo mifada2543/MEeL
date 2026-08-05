@@ -23,6 +23,15 @@ const boardEl = document.getElementById("chess-board");
 const moveHistoryList = document.getElementById("move-history-list");
 const promotionModal = document.getElementById("promotion-modal");
 const blackName = document.getElementById("player-black-name");
+// ── Color Picker Overlay (multiplayer: pilih warna sebelum game dimulai) ──
+const colorPickerOverlay = document.getElementById("color-picker-overlay");
+const cpPick = document.getElementById("cp-pick");
+const cpWaiting = document.getElementById("cp-waiting");
+const cpRoomCode = document.getElementById("cp-room-code");
+const btnPickWhite = document.getElementById("btn-pick-white");
+const btnPickBlack = document.getElementById("btn-pick-black");
+const btnCancelWaiting = document.getElementById("btn-cancel-waiting");
+let colorPickerHideTimer = null; // cegah race hide/show overlay
 function resetAllModes() {
   const panel = document.getElementById("multiplayer-panel");
   if (panel) panel.classList.add("hidden");
@@ -58,6 +67,33 @@ function updateRoomUI() {
       "px-3 py-1 text-[10px] font-bold rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20 uppercase tracking-widest";
     badge.innerText = "Offline";
   }
+}
+// ── COLOR PICKER OVERLAY ───────────────────────────────────────────────────
+function showColorPicker() {
+  if (!colorPickerOverlay) return;
+  // Batalkan timer hide yang masih tertunda agar overlay tidak ke-hide lagi.
+  if (colorPickerHideTimer) {
+    clearTimeout(colorPickerHideTimer);
+    colorPickerHideTimer = null;
+  }
+  colorPickerOverlay.classList.remove("hidden");
+  setTimeout(() => colorPickerOverlay.classList.remove("opacity-0"), 50);
+  if (cpPick) cpPick.classList.remove("hidden");
+  if (cpWaiting) cpWaiting.classList.add("hidden");
+}
+function hideColorPicker() {
+  if (!colorPickerOverlay) return;
+  colorPickerOverlay.classList.add("opacity-0");
+  if (colorPickerHideTimer) clearTimeout(colorPickerHideTimer);
+  colorPickerHideTimer = setTimeout(() => {
+    colorPickerOverlay.classList.add("hidden");
+    colorPickerHideTimer = null;
+  }, 300);
+}
+function showWaitingState(code) {
+  if (cpRoomCode) cpRoomCode.innerText = code;
+  if (cpPick) cpPick.classList.add("hidden");
+  if (cpWaiting) cpWaiting.classList.remove("hidden");
 }
 async function syncRoomState(resetBoard = false) {
   if (!roomCode) return;
@@ -140,6 +176,7 @@ function tungguLawanBergabung(code) {
       if (data.success && data.joined) {
         clearInterval(roomStatusTimer);
         roomStatusTimer = null;
+        hideColorPicker(); // game dimulai — papan aktif & bisa diklik
         document.getElementById("room-status").innerText =
           "Lawan bergabung! Menunggu langkah...";
         document.getElementById("player-black-name").innerText =
@@ -300,6 +337,13 @@ function clearAnimationState() {
 }
 function handleCellClick(r, c) {
   if (game.isGameOver) return;
+  // Multiplayer: papan terkunci selama overlay pilih warna / menunggu lawan.
+  if (
+    game.gameMode === "online" &&
+    colorPickerOverlay &&
+    !colorPickerOverlay.classList.contains("hidden")
+  )
+    return;
   if (game.gameMode === "ai" && game.turn === "b") return;
   if (game.gameMode === "online" && myColor && game.turn !== myColor) return;
   const clickedPiece = game.getPiece(r, c);
@@ -591,9 +635,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnAi = document.getElementById("mode-vs-ai");
   const diffCont = document.getElementById("ai-difficulty-container");
   const panel = document.getElementById("multiplayer-panel");
+  // ── Alert "Game Sedang Berjalan" ─────────────────────────────────────────
+  // Semua tombol mode me-reset papan (restartGame). Jika masih ada langkah
+  // yang sudah dimainkan, minta konfirmasi dulu sebelum berpindah mode.
+  function confirmSwitchMode(proceed) {
+    if (game.history.length > 0 && !game.isGameOver) {
+      window.Swal.fire({
+        title: "Game Sedang Berjalan",
+        html: "Masih ada langkah yang sudah dimainkan.<br>Berpindah mode akan <b>menghapus permainan saat ini</b>.",
+        icon: "warning",
+        background: "#0f172a",
+        color: "#fff",
+        showCancelButton: true,
+        confirmButtonText: "LANJUT",
+        cancelButtonText: "BATAL",
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) proceed();
+      });
+    } else {
+      proceed();
+    }
+  }
+
   if (onlineBtn) {
     // Masuk mode multiplayer: tampilkan panel room + reset papan.
     function enterOnlineMode() {
+      // Reset state multiplayer — user memilih warna lewat overlay papan.
+      if (roomStatusTimer) {
+        clearInterval(roomStatusTimer);
+        roomStatusTimer = null;
+      }
+      stopPolling();
+      roomCode = null;
+      myColor = null;
+      lastMoveId = 0;
+      suppressNetworkSync = false;
       game.gameMode = "online";
       resetAllModes();
       if (panel) panel.classList.remove("hidden");
@@ -607,33 +684,36 @@ document.addEventListener("DOMContentLoaded", () => {
         onlineIndicator.className =
           "mode-indicator w-3.5 h-3.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(34,211,238,0.6)] flex items-center justify-center";
       }
-      if (blackName)
-        blackName.innerText =
-          myColor === "b" ? "Pemain Hitam (Anda)" : "Pemain Hitam";
+      if (blackName) blackName.innerText = "Pemain Hitam";
       updateRoomUI();
       restartGame();
+      showColorPicker(); // timpa papan dengan pilihan warna
     }
     onlineBtn.addEventListener("click", () => {
       // Sudah di mode multiplayer — jangan tanya lagi.
       if (game.gameMode === "online") return;
-      // Alert konfirmasi sebelum masuk mode multiplayer.
-      window.Swal.fire({
-        title: "Mode Multiplayer",
-        html: 'Bermain dengan pemain lain memerlukan <b>akun login</b>.<br>Anda akan membuat atau bergabung room menggunakan <b>Room Code</b> yang dibagikan.',
-        icon: "info",
-        background: "#0f172a",
-        color: "#fff",
-        showCancelButton: true,
-        confirmButtonText: "LANJUT",
-        cancelButtonText: "BATAL",
-        reverseButtons: true,
-      }).then((result) => {
-        if (result.isConfirmed) enterOnlineMode();
+      confirmSwitchMode(() => {
+        // Alert konfirmasi sebelum masuk mode multiplayer.
+        window.Swal.fire({
+          title: "Mode Multiplayer",
+          html: 'Bermain dengan pemain lain memerlukan <b>akun login</b>.<br>Anda akan membuat atau bergabung room menggunakan <b>Room Code</b> yang dibagikan.',
+          icon: "info",
+          background: "#0f172a",
+          color: "#fff",
+          showCancelButton: true,
+          confirmButtonText: "LANJUT",
+          cancelButtonText: "BATAL",
+          reverseButtons: true,
+        }).then((result) => {
+          if (result.isConfirmed) enterOnlineMode();
+        });
       });
     });
   }
   if (btnLocal) {
-    btnLocal.addEventListener("click", () => {
+    function enterLocalMode() {
+      // Keluar dari session online (room, polling, overlay) kalau ada.
+      if (game.gameMode === "online") stopOnlineSession();
       game.gameMode = "local";
       resetAllModes();
       if (diffCont) diffCont.classList.add("hidden");
@@ -649,10 +729,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (blackName) blackName.innerText = "Pemain Hitam";
       updateRoomUI();
       restartGame();
+    }
+    btnLocal.addEventListener("click", () => {
+      if (game.gameMode === "local") return;
+      confirmSwitchMode(enterLocalMode);
     });
   }
   if (btnAi) {
-    btnAi.addEventListener("click", () => {
+    function enterAiMode() {
+      // Keluar dari session online (room, polling, overlay) kalau ada.
+      if (game.gameMode === "online") stopOnlineSession();
       game.gameMode = "ai";
       resetAllModes();
       if (diffCont) diffCont.classList.remove("hidden");
@@ -668,77 +754,112 @@ document.addEventListener("DOMContentLoaded", () => {
       if (blackName) blackName.innerText = "Komputer (AI)";
       updateRoomUI();
       restartGame();
+    }
+    btnAi.addEventListener("click", () => {
+      if (game.gameMode === "ai") return;
+      confirmSwitchMode(enterAiMode);
     });
   }
-  document
-    .getElementById("btn-create-room")
-    .addEventListener("click", async () => {
-      if (roomStatusTimer) {
-        clearInterval(roomStatusTimer);
-        roomStatusTimer = null;
-      }
-      stopPolling();
-      const data = await createRoomAPI();
-      if (!data.success) {
-        window.meelAlert({
-          title: "Gagal",
-          text: data.message || "Gagal buat room.",
-          icon: "error",
-        });
-        return;
-      }
-      roomCode = data.room;
+  // ── Multiplayer: alur dimulai dari color picker di atas papan ──
+  async function createRoom() {
+    if (roomStatusTimer) {
+      clearInterval(roomStatusTimer);
+      roomStatusTimer = null;
+    }
+    stopPolling();
+    const data = await createRoomAPI();
+    if (!data.success) {
+      window.meelAlert({
+        title: "Gagal",
+        text: data.message || "Gagal buat room.",
+        icon: "error",
+      });
+      return;
+    }      roomCode = data.room;
       myColor = "w";
       lastMoveId = 0;
-      game.gameMode = "online";
       restartGame();
       updateRoomUI();
-      document.getElementById("room-code-display").innerText = roomCode;
-      document.getElementById("room-color").innerText = "Putih";
-      document.getElementById("room-status").innerText =
-        "Room dibuat. Bagi code ini ke rakan.";
-      tungguLawanBergabung(roomCode);
-    });
+    document.getElementById("room-code-display").innerText = roomCode;
+    document.getElementById("room-color").innerText = "Putih";
+    document.getElementById("room-status").innerText =
+      "Room dibuat. Bagi code ini ke rakan.";
+    showWaitingState(roomCode); // overlay: room code + menunggu lawan
+    tungguLawanBergabung(roomCode);
+  }
 
-  document
-    .getElementById("btn-join-room")
-    .addEventListener("click", async () => {
-      const { value: code } = await window.Swal.fire({
-        title: "Masukkan Room Code",
-        input: "text",
-        inputPlaceholder: "Room Code",
-        showCancelButton: true,
-        confirmButtonText: "GABUNG",
-        cancelButtonText: "BATAL",
-        background: "#0f172a",
-        color: "#fff",
-        reverseButtons: true,
-        inputValidator: (v) => (v ? null : "Room code wajib diisi!"),
-      });
-      if (!code) return;
-      const data = await joinRoomAPI(code);
-      if (!data.success) {
-        window.meelAlert({
-          title: "Gagal",
-          text: data.message || "Room tidak wujud atau penuh.",
-          icon: "error",
-        });
-        return;
-      }
-      roomCode = data.room;
-      myColor = "b";
-      lastMoveId = 0;
-      document.getElementById("room-code-display").innerText = roomCode;
-      document.getElementById("room-color").innerText = "Hitam";
-      document.getElementById("room-status").innerText =
-        "Sudah masuk room. Sync papan...";
-      game.gameMode = "online";
-      restartGame();
-      await syncRoomState(true);
-      startPolling();
-      updateRoomUI();
+  async function joinRoom() {
+    const { value: code } = await window.Swal.fire({
+      title: "Masukkan Room Code",
+      input: "text",
+      inputPlaceholder: "Room Code",
+      showCancelButton: true,
+      confirmButtonText: "GABUNG",
+      cancelButtonText: "BATAL",
+      background: "#0f172a",
+      color: "#fff",
+      reverseButtons: true,
+      inputValidator: (v) => (v ? null : "Room code wajib diisi!"),
     });
-  document.getElementById("btn-leave-room").addEventListener("click", () => {
+    if (!code) return;
+    const data = await joinRoomAPI(code);
+    if (!data.success) {
+      window.meelAlert({
+        title: "Gagal",
+        text: data.message || "Room tidak wujud atau penuh.",
+        icon: "error",
+      });
+      return;
+    }
+    roomCode = data.room;
+    myColor = "b";
+    lastMoveId = 0;
+    document.getElementById("room-code-display").innerText = roomCode;
+    document.getElementById("room-color").innerText = "Hitam";
+    document.getElementById("room-status").innerText =
+      "Sudah masuk room. Sync papan...";
+    restartGame();
+    // finally: pastikan overlay selalu tertutup & polling jalan walau sync gagal,
+    // supaya pemain Hitam tidak terjebak di balik overlay.
+    try {
+      await syncRoomState(true);
+    } finally {
+      hideColorPicker(); // game dimulai — papan aktif & bisa diklik
+      startPolling();
+    }
+    updateRoomUI();
+  }
+
+  // Bersihkan session online (polling, room, overlay) tanpa mengganti mode.
+  function stopOnlineSession() {
+    if (roomStatusTimer) {
+      clearInterval(roomStatusTimer);
+      roomStatusTimer = null;
+    }
+    stopPolling();
+    roomCode = null;
+    myColor = null;
+    lastMoveId = 0;
+    suppressNetworkSync = false;
+    hideColorPicker();
+    const panelEl = document.getElementById("multiplayer-panel");
+    if (panelEl) panelEl.classList.add("hidden");
+  }
+
+  // Keluar penuh dari multiplayer → kembali ke mode lokal.
+  function leaveRoom() {
+    stopOnlineSession();
+    document.getElementById("room-code-display").innerText = "-";
+    document.getElementById("room-color").innerText = "-";
+    document.getElementById("room-status").innerText = "Belum masuk room.";
+    if (blackName) blackName.innerText = "Pemain Hitam";
+    game.gameMode = "local";
+    restartGame();
+    updateRoomUI();
+  }
+
+  // Batal saat menunggu lawan → kembali ke pilihan warna (tetap di multiplayer).
+  function cancelWaiting() {
     if (roomStatusTimer) {
       clearInterval(roomStatusTimer);
       roomStatusTimer = null;
@@ -750,10 +871,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("room-code-display").innerText = "-";
     document.getElementById("room-color").innerText = "-";
     document.getElementById("room-status").innerText = "Belum masuk room.";
-    game.gameMode = "local";
-    restartGame();
     updateRoomUI();
-  });
+    showColorPicker();
+  }
+
+  if (btnPickWhite) btnPickWhite.addEventListener("click", createRoom);
+  if (btnPickBlack) btnPickBlack.addEventListener("click", joinRoom);
+  if (btnCancelWaiting) btnCancelWaiting.addEventListener("click", cancelWaiting);
+  document
+    .getElementById("btn-leave-room")
+    .addEventListener("click", leaveRoom);
   document.getElementById("btn-restart").addEventListener("click", () => {
     // Fitur: Tampilkan alert konfirmasi jika permainan sedang berjalan
     if (game.history.length > 0 && !game.isGameOver) {
