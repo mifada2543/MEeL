@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheResult="false"
+         stopOnFailure="false"
+         failOnWarning="false"
+         failOnRisky="false"
+         verbose="true">
+    <testsuites>
+        <testsuite name="MEeL Core Unit Tests">
+            <directory>tests/unit</directory>
+        </testsuite>
+        <testsuite name="MEeL Integration Tests">
+            <directory>tests/integration</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <const name="PHPUNIT_TEST" value="true"/>
+        <const name="MEEL_FFMPEG_PATH" value=""/>
+        <const name="MEEL_FFPROBE_PATH" value=""/>
+        <const name="MEEL_NODE_PATH" value=""/>
+        <const name="MEEL_YTDLP_PATH" value=""/>
+    </php>
+
+    <logging>
+        <log type="testdox-text" target="logs/tests/testdox.txt"/>
+        <log type="junit" target="logs/tests/junit.xml"/>
+    </logging>
+</phpunit>

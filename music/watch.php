@@ -63,16 +63,13 @@ session_write_close();
                         name="search"
                         placeholder="Cari lagu atau artis..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-orange-500/40 transition-all text-gray-300"
-                        hx-get="search_music.php?exclude=<?= $id ?>"
-                        hx-trigger="keyup[key=='Enter']"
-                        hx-target="#music-recommendation-column"
-                        hx-indicator="#music-search-indicator"
                         autocomplete="off">
                     <div id="music-search-indicator" class="htmx-indicator absolute right-3.5 top-1/2 -translate-y-1/2">
                         <div class="animate-spin h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></div>
                     </div>
                 </div>
-                <button hx-get="search_music.php?exclude=<?= $id ?>"
+                <button id="m-search-btn"
+                    hx-get="search_music.php?exclude=<?= $id ?>"
                     hx-include="#m-search-watch"
                     hx-target="#music-recommendation-column"
                     hx-indicator="#music-search-indicator"
@@ -555,6 +552,18 @@ session_write_close();
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+            }
+            
+            // Handle Enter key untuk music search
+            const searchInput = document.getElementById('m-search-watch');
+            const searchBtn = document.getElementById('m-search-btn');
+            if (searchInput && searchBtn) {
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        searchBtn.click();
+                    }
+                });
             }
         });
 

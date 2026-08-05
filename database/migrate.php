@@ -182,11 +182,48 @@ $migrations = [
             },
         ],
     ],
+    8 => [
+        'description' => 'Sinkronisasi kolom & default values dengan actual DB — role→varchar(20), hapus duplicate UNIQUE KEY, defaults konsisten',
+        'sql' => [
+            function($conn) {
+                // Step 1: Ubah users.role dari enum ke varchar(20) — dukung role 'guest' dan 'member'
+                $result = $conn->query("ALTER TABLE users MODIFY COLUMN role varchar(20) DEFAULT 'user'");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists')) {
+                        echo "[MEeL] ⚠ Warning (users.role): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                // Step 2: Hapus duplicate UNIQUE KEY 'username' — sisakan 'idx_username_unique'
+                // Guard: cek keberadaan index dulu agar tidak error di fresh install
+                $check = $conn->query("SHOW INDEX FROM users WHERE Key_name = 'username'");
+                if ($check && $check->num_rows > 0) {
+                    $conn->query("ALTER TABLE users DROP INDEX username");
+                }
+            },
+            function($conn) {
+                // Step 3: Sync default values users table
+                $conn->query("ALTER TABLE users ALTER COLUMN is_active SET DEFAULT 0");
+            },
+            function($conn) {
+                $conn->query("ALTER TABLE users ALTER COLUMN ip_address SET DEFAULT 'Unknown'");
+            },
+            function($conn) {
+                $conn->query("ALTER TABLE users ALTER COLUMN last_page SET DEFAULT 'Index'");
+            },
+            function($conn) {
+                // Step 4: Sync default value activity_log table
+                $conn->query("ALTER TABLE activity_log ALTER COLUMN ip_address SET DEFAULT 'Unknown'");
+            },
+        ],
+    ],
 ];
 // ═══════════════════════════════════════════════════════════════════════════
 // Catatan Sinkronisasi
 // ====================
-// schema.sql dan migrate.php telah diverifikasi selaras pada 22 Juli 2026.
+// schema.sql dan migrate.php telah diverifikasi selaras pada 25 Juli 2026.
 //
 // Ringkasan alignment:
 //   v1 — FULLTEXT index (video, music, books)
@@ -196,6 +233,7 @@ $migrations = [
 //   v5 — Ubah kolom title ke TEXT
 //   v6 — CREATE TABLE activity_log
 //   v7 — UNIQUE KEY idx_username_unique pada users.username
+//   v8 — users.role→varchar(20), hapus duplicate UNIQUE KEY, sync defaults
 //
 // Catatan: schema.sql (fresh install) sudah mencakup semua CREATE TABLE
 // dengan FK, INDEX, dan UNIQUE KEY langsung — migration ini hanya untuk

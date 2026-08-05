@@ -22,14 +22,14 @@ USE `MEeL`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
-  `role` enum('admin','user') NOT NULL DEFAULT 'user',
-  `ip_address` varchar(45) DEFAULT NULL,
+  `role` varchar(20) DEFAULT 'user',
+  `ip_address` varchar(45) DEFAULT 'Unknown',
   `password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `last_activity` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `last_page` varchar(255) DEFAULT NULL,
+  `last_page` varchar(255) DEFAULT 'Index',
   `user_agent` varchar(255) DEFAULT NULL,
-  `is_active` tinyint(1) DEFAULT 1,
+  `is_active` tinyint(1) DEFAULT 0,
   `bio` text DEFAULT NULL,
   `profile_picture` varchar(255) DEFAULT 'default_avatar.png',
   `favorite_genre` varchar(100) DEFAULT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Default admin user (password: Admin#123)
 -- Ganti password segera setelah pertama login!
 INSERT INTO `users` (`id`, `username`, `role`, `password`, `is_active`) VALUES
-(1, 'Admin', 'admin', '$2y$10$e0M2Vdf9vN2V3X7g4h9uO.g4gH8Z8K5E1gX4G2Y5Z6W7V8U9T0S1S', 1);
+(1, 'Admin', 'admin', '$2a$12$5cRghghOdj6ZQIAQ5dCGfOZcXUFvWhaAhwdq08r6bMIVNRY0gjAVm', 1);
 
 -- =============================================================================
 -- TABEL: video
@@ -125,8 +125,10 @@ CREATE TABLE IF NOT EXISTS `comments` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
+  KEY `music_id` (`music_id`),
   KEY `fk_parent_comment` (`parent_id`),
   CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_parent_comment` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -266,8 +268,20 @@ CREATE TABLE IF NOT EXISTS `activity_log` (
   `action` varchar(50) NOT NULL,
   `media_type` varchar(20) DEFAULT NULL,
   `media_id` int(11) DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT 'Unknown',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- =============================================================================
+-- TABEL: db_version
+-- Migration tracker — mencatat versi skema database yang sudah dijalankan.
+-- Dibuat secara otomatis oleh database/migrate.php.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS `db_version` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `version` int(11) NOT NULL,
+  `applied_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -300,6 +314,40 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
   `locked_until` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ip_address` (`ip_address`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- =============================================================================
+-- TABEL: rooms
+-- Ruang permainan catur online (multiplayer LAN).
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS `rooms` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `room_code` varchar(10) NOT NULL,
+  `black_joined` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `room_code` (`room_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- =============================================================================
+-- TABEL: moves
+-- Riwayat langkah permainan catur.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS `moves` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `room_code` varchar(10) NOT NULL,
+  `from_r` tinyint(3) unsigned NOT NULL,
+  `from_c` tinyint(3) unsigned NOT NULL,
+  `to_r` tinyint(3) unsigned NOT NULL,
+  `to_c` tinyint(3) unsigned NOT NULL,
+  `piece` char(1) NOT NULL,
+  `color` char(1) NOT NULL,
+  `captured` char(1) DEFAULT NULL,
+  `promoted_piece_type` char(1) DEFAULT NULL,
+  `move_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`move_data`)),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_room_id` (`room_code`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 COMMIT;

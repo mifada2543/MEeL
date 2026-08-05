@@ -27,6 +27,7 @@ const DOCS = {
             ['troubleshooting',   '🔧 Troubleshoot'],
             ['problem-solved',    '🌍 Problems'],
             ['upload_issue',      '📥 Upload'],
+            ['test',              '🧪 Test'],
             ['analysis',          '📋 Analysis'],
         ]
     },
@@ -44,6 +45,7 @@ const DOCS = {
             ['troubleshooting',   '🔧 Troubleshoot'],
             ['problem-solved',    '🌍 Masalah'],
             ['upload_issue',      '📥 Upload'],
+            ['test',              '🧪 Test'],
             ['deskripsi',         '📋 Analisis'],
         ]
     }

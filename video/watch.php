@@ -58,17 +58,14 @@ session_write_close();
                         name="search"
                         placeholder="Cari video lain..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-red-500/40 transition-all text-gray-300"
-                        hx-get="search_video.php?exclude=<?= $id ?>"
-                        hx-trigger="keyup[key=='Enter']"
-                        hx-target="#recommendation-column"
-                        hx-indicator="#search-indicator"
                         autocomplete="off"
                         title="Cari Video">
                     <div id="search-indicator" class="htmx-indicator absolute right-3.5 top-1/2 -translate-y-1/2">
                         <div class="animate-spin h-3 w-3 border-2 border-red-500 border-t-transparent rounded-full"></div>
                     </div>
                 </div>
-                <button hx-get="search_video.php?exclude=<?= $id ?>"
+                <button id="v-search-btn"
+                    hx-get="search_video.php?exclude=<?= $id ?>"
                     title="Cari"
                     hx-include="#v-search-watch"
                     hx-target="#recommendation-column"
@@ -337,6 +334,22 @@ session_write_close();
         lucide.createIcons();
         document.body.addEventListener('htmx:afterOnLoad', function() {
             lucide.createIcons();
+        });
+        
+        // Handle Enter key untuk video search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInputs = ['v-search-watch', 'v-search-mobile'];
+            searchInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            document.getElementById('v-search-btn')?.click();
+                        }
+                    });
+                }
+            });
         });
     </script>
 </body>

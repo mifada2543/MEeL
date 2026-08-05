@@ -130,7 +130,60 @@ jobs:
             echo "⚠️  Security test not found, skipping."
           fi
 
-  # ─── Job 4: HTACCESS & Integrity Check ───
+  # ─── Job 4: PHPUnit Tests ───
+  phpunit-tests:
+    name: PHPUnit Unit Tests
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: composer
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: |
+          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        run: |
+          if [ -f composer.json ]; then
+            composer install --no-progress --no-interaction --prefer-dist
+          else
+            echo "⚠️  composer.json not found, skipping."
+          fi
+
+      - name: Run PHPUnit Tests
+        run: |
+          if [ -f vendor/bin/phpunit ]; then
+            php vendor/bin/phpunit --no-coverage --verbose
+          else
+            echo "⚠️  PHPUnit not installed, skipping."
+          fi
+
+  # ─── Job 5: HTACCESS & Integrity Check ───
   htaccess-check:
     name: HTACCESS & Integrity
     runs-on: ubuntu-latest
@@ -181,11 +234,11 @@ jobs:
           done
           echo "✅ Permission check complete."
 
-  # ─── Job 5: Summary / Status ───
+  # ─── Job 6: Summary / Status ───
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [php-syntax, functional-tests, security-tests, htaccess-check]
+    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check]
     if: always()
     steps:
       - name: Generate Job Status Summary
@@ -212,6 +265,7 @@ jobs:
           report_job "PHP Syntax (8.3)" "${{ needs.php-syntax.result }}"
           report_job "Functional Tests" "${{ needs.functional-tests.result }}"
           report_job "Security Tests" "${{ needs.security-tests.result }}"
+          report_job "PHPUnit Unit Tests" "${{ needs.phpunit-tests.result }}"
           report_job "HTACCESS & Integrity" "${{ needs.htaccess-check.result }}"
 
           echo "" >> $GITHUB_STEP_SUMMARY

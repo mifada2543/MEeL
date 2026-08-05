@@ -27,9 +27,14 @@ spl_autoload_register(function (string $class) {
         'MediaViewer'        => __DIR__ . '/media/MediaViewer.php',
         'MediaInteraction'   => __DIR__ . '/media/MediaInteraction.php',
         'GarbageCollector'   => __DIR__ . '/core/GarbageCollector.php',
+        'RateLimiter'         => __DIR__ . '/core/RateLimiter.php',
+        
+        // Media
+        'SearchEngine'        => __DIR__ . '/media/SearchEngine.php',
         
         // Drive service
         'DriveService'       => __DIR__ . '/../drive/DriveService.php',
+        
     ];
 
     if (isset($map[$class])) {

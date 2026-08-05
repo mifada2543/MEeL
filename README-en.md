@@ -89,7 +89,7 @@
 | **User Profiles** | Avatar, bio, upload statistics |
 | **20-20-20 Eye Care** | Eye rest notifications every 20 minutes |
 | **PSR-4 Autoloader** | Auto-loading core classes (`MediaLibrary`, `Uploader`, etc.) without manual require |
-| **Migration System v1–v7** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY) |
+| **Migration System v1–v8** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, schema sync) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — consistent paths across all subdirectories |
 | **FULLTEXT Search** | Search video/music 10-100× faster via `MATCH AGAINST` (MySQL 5.7+) |
 | **Admin Panel** | Dashboard monitoring, user management, queue control, activity log viewer |
@@ -130,7 +130,7 @@
 | **Downloader** | yt-dlp (optional) | External media URL downloads |
 | **Transliteration** | PHP `intl` (Transliterator) | File name sanitization (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loads 10+ core classes |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v7 (FULLTEXT, FK, activity_log) |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v8 (FULLTEXT, FK, activity_log, schema sync) |
 | **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
 
 ---
@@ -155,8 +155,8 @@ MEeL/
 │   ├── admin/             # admin_actions, admin_data
 │   └── profile/           # profile_edit, fun-manage
 ├── database/              # Database schema
-│   ├── schema.sql         # Standalone schema file (16 tables)
-│   └── migrate.php        # 🔄 Migration system v1–v7 (FULLTEXT, FK, activity_log)
+│   ├── schema.sql         # Standalone schema file (20 tables)
+│   └── migrate.php        # 🔄 Migration system v1–v8 (FULLTEXT, FK, activity_log, schema sync)
 ├── data_drive/            # Cloud Drive runtime storage
 ├── docs/                  # Project documentation
 ├── drive/                 # Cloud Drive module
@@ -343,7 +343,7 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 ### Migration System
 
 ```bash
-# Upgrade database to latest version (v1–v7)
+# Upgrade database to latest version (v1–v8)
 /opt/lampp/bin/php database/migrate.php
 ```
 
@@ -357,8 +357,23 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 | **v5** | title VARCHAR → TEXT |
 | **v6** | activity_log table for audit trail |
 | **v7** | UNIQUE INDEX on users.username |
+| **v8** | role→varchar(20), remove duplicate UNIQUE KEY, sync default values |
 
 Migrations are **idempotent** — safe to run repeatedly.
+
+### Test Results
+
+| Test | Total | Pass | Warn | Fail | Score |
+|------|-------|------|------|------|-------|
+| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3% A** |
+| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100% A** |
+| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+
+> **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
+
+> 📖 **Testing Guide** → [🇬🇧 docs/en/test.md](docs/en/test.md) · [🇮🇩 docs/id/test.md](docs/id/test.md)
 
 > 📖 **Full configuration guide** → [docs/en/configuration.md](docs/en/configuration.md)
 
@@ -395,6 +410,7 @@ Documentation is available in two languages:
 | 👨‍💻 Development | [🇮🇩](docs/id/development.md) | [🇬🇧](docs/en/development.md) |
 | 📥 Advanced Upload | [🇮🇩](docs/id/upload_issue.md) | [🇬🇧](docs/en/upload_issue.md) |
 | 📋 Project Analysis | [🇮🇩](docs/id/deskripsi.md) | [🇬🇧](docs/en/analysis.md) |
+| 🧪 Testing Guide | [🇮🇩](docs/id/test.md) | [🇬🇧](docs/en/test.md) |
 
 ---
 
@@ -450,7 +466,7 @@ This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
 
 **Contact:** `mifada2543@gmail.com` · [github.com/mifada2543](https://github.com/mifada2543)
 
-*Last synced with README.md: July 24, 2026*
+*Last synced with README.md: July 25, 2026*
 
 ---
 
