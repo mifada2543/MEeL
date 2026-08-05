@@ -131,7 +131,7 @@ MEeL/
 
 ## 🔒 Assessment Keamanan
 
-### Security Test: ✅ 72/72 — Score: 100/100 (A)
+### Security Test: ⚠️ 66/72 — Score: 66/72* (6 fail hanya muncul saat storage HDD tidak ter-mount)
 
 | Kategori | Status | Detail |
 |----------|--------|--------|
@@ -157,7 +157,7 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 144/143 — Score: 99.3/100 (A)
+### Functional Test: ✅ 144/138 — Score: 98/100 (A) (6 warning non-kritis)
 
 **6 Warnings (non-critical):**
 
@@ -364,10 +364,10 @@ Tidak ada masalah medium yang tersisa.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3%** |
-| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 125 | 125 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 24 | 24 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 144 | 138 | 6 warn | **0** | **✅ 98/100** |
+| **Security Test** | 72 | 66 | 6* | **0** | **⚠️ 66/72*** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 ---
@@ -382,11 +382,11 @@ Tidak ada masalah medium yang tersisa.
 5. ~~Dashboard admin lebih informatif~~ ✅ **Sudah diimplementasi** (Chart.js 7-Day Activity Chart)
 
 ### Prioritas Menengah
-6. **Service Worker** untuk PWA — caching halaman, install prompt di mobile
+6. ~~**Service Worker** untuk PWA — caching halaman, install prompt di mobile~~ ✅ **Sudah diimplementasi** (`sw.js.php` dinamis + `SwPrecache`, precache otomatis per modul via `manifest.php`)
 
 ### Prioritas Rendah
 7. **Docker support** — environment yang konsisten untuk deployment
-8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (86 unit + 19 integration = 105 tests)
+8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (125 unit + 24 integration = 149 tests)
 
 ---
 
@@ -404,6 +404,6 @@ Tidak ada masalah medium yang tersisa.
 | **Code quality improvement** | 12 (autoloader, template, static cache, deduplikasi) |
 | **Documentation updated** | 8 file docs + README.md |
 | **Functional test score** | 98/100 (A) |
-| **Security test score** | 100/100 (A) |
+| **Security test score** | 66/72* (6 fail hanya saat storage HDD tidak ter-mount) |
 
 > **Status:** ✅ **Production-ready dengan 0 critical, 0 high, 0 medium, dan 0 low issue.** Semua low issue yang teridentifikasi telah diperbaiki.

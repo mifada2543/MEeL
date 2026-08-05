@@ -148,6 +148,7 @@ final class DriveUserContext {
 | Advanced Upload | ✅ | ✅ (rate-limited) | ✅ (rate-limited) | ❌ |
 | Transcoder | ✅ | ✅ | ✅ | ❌ |
 | Admin Panel | ✅ | ❌ | ❌ | ❌ |
+| Chess Multiplayer | ✅ | ✅ | ✅ | ❌ |
 
 ---
 
@@ -159,10 +160,29 @@ final class DriveUserContext {
 // auth/config.php
 $timeout = 43200;              // 12 jam
 ini_set('session.gc_maxlifetime', $timeout);
-session_set_cookie_params($timeout, "/");
+
+// Flag cookie aman (auto-detect HTTPS / X-Forwarded-Proto)
+$secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+
+session_set_cookie_params([
+    'lifetime' => $timeout,
+    'path'     => '/',
+    'secure'   => $secure_cookie,  // hanya via HTTPS
+    'httponly' => true,            // tidak bisa dibaca JavaScript
+    'samesite' => 'Lax',           // mitigasi CSRF
+]);
 session_name('meel');           // Cookie name: "meel"
 session_start();
 ```
+
+| Flag | Nilai | Proteksi |
+|------|-------|----------|
+| `Secure` | auto (HTTPS) | Cookie tidak pernah terkirim lewat HTTP polos — cegah sniffing |
+| `HttpOnly` | `true` | XSS tidak bisa mencuri session cookie via JavaScript |
+| `SameSite` | `Lax` | Request POST lintas-situs tidak membawa cookie (CSRF layer 1) |
+
+Diterapkan di `auth/config.php` dan `auth/auth_helpers.php` (`auth_boot_session()`).
 
 ### Path Configuration
 
@@ -372,6 +392,31 @@ $token = $_SESSION['csrf_token'];
 echo "<input type='hidden' name='csrf_token' value='$token'>";
 ```
 
+### Admin Actions — Form POST (bukan link GET)
+
+Aksi admin yang mengubah state (approve/reject/delete user, kick user, unban IP)
+telah dipindah dari link GET ke **form POST dengan token CSRF** — link GET bisa
+dipicu oleh tag `<img>` (CSRF), form POST tidak:
+
+```html
+<form method="POST" class="inline" onsubmit="return meelConfirmForm(event, {...})">
+    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+    <input type="hidden" name="approve_id" value="<?= (int)$u['id'] ?>">
+    <button type="submit">APPROVE</button>
+</form>
+```
+
+Handler di `controllers/admin/admin_actions.php` kini membaca `$_POST`, dan
+endpoint catur admin `catur.php?auto_cleanup=1` juga wajib `csrf_token`
+(bridge `window.MEEL_ADMIN_CSRF`).
+
+### Chess Multiplayer — Guard Login + CSRF
+
+Semua endpoint `arcade/chess/controller/*.php` mewajibkan:
+- **Login** — JSON `401` + `login_required: true` (client `api.js` redirect ke login).
+- **CSRF** — setiap POST yang mengubah state membawa `csrf_token` (body JSON untuk `save_move`, `FormData` untuk `create_room`/`join_room`).
+- Token **tidak pernah disimpan** di `moves.move_data` (tidak ter-expose ke lawan).
+
 ---
 
 ## IP Banning & Firewall
@@ -392,6 +437,18 @@ function get_real_ip() {
     return $_SERVER["REMOTE_ADDR"];
 }
 ```
+
+### Gerbang Trusted Proxy (`MEEL_TRUST_PROXY_HEADERS`)
+
+Header proxy **hanya** boleh dipercaya jika request lewat proxy/CDN yang Anda
+kendalikan. Konfigurasi di `auth/settings.php`:
+
+```php
+define('MEEL_TRUST_PROXY_HEADERS', false); // default aman: pakai REMOTE_ADDR saja
+```
+
+> Jika diset `true` padahal server diakses langsung, attacker bisa memalsukan
+> `X-Forwarded-For` untuk mem-bypass IP-ban atau membanjiri activity log.
 
 ### IP Validation
 

@@ -751,19 +751,24 @@ Endpoint admin tersebar di beberapa file:
 
 ### User Management
 
+> ⚠️ Semua aksi di bawah adalah **form POST dengan token CSRF** (sebelumnya
+> link GET — link GET bisa dipicu tag `<img>`).
+
 | Action | Parameter | Method | Deskripsi |
 |--------|-----------|--------|-----------|
-| Approve User | `?approve_id=123` | GET | Set `is_active=1` |
-| Reject User | `?reject_id=123` | GET | Delete user (pending) |
-| Delete User | `?delete_user_id=123` | GET | Delete user (non-admin) |
-| Kick User | `?kick_user=username` | GET | Force user offline |
+| Approve User | `approve_id` | POST | Set `is_active=1` |
+| Reject User | `reject_id` | POST | Delete user (pending) |
+| Delete User | `delete_user_id` | POST | Delete user (non-admin) |
+| Kick User | `kick_user` | POST | Force user offline |
 
 ### IP Ban Management
 
 | Action | Parameter | Method | Deskripsi |
 |--------|-----------|--------|-----------|
 | Ban IP | `ban_ip=1` + `ip_target` + `ban_reason` | POST | Insert ke ip_ban |
-| Unban IP | `?unban_ip=192.168.1.1` | GET | Delete dari ip_ban |
+| Unban IP | `unban_ip` | POST | Delete dari ip_ban |
+
+Setiap POST wajib menyertakan `csrf_token`.
 
 ### Queue Management
 
@@ -822,7 +827,16 @@ Endpoint admin tersebar di beberapa file:
 **Trigger:** Click "Load More"  
 **Request:** `music/load_more_music.php?offset=10&format=all&artist=all`  
 **Target:** `#music-list`  
-**Swap:** `beforeend`
+**Swap:** `beforeend`  
+**Pagination server-side** — search musik kini punya pagination (offset).
+
+### Books Search
+
+**Trigger:** Input pencarian  
+**Request:** `books/search_books.php?q=keyword&type=all&offset=0`  
+**Target:** `#book-grid`  
+**Swap:** `innerHTML`  
+**Pagination server-side** via `BookRepository::searchBooks()` (24 per halaman).
 
 ### Like/Dislike
 
@@ -830,6 +844,23 @@ Endpoint admin tersebar di beberapa file:
 **Request:** `controllers/like.php` with `hx-vals`  
 **Target:** `#like-dislike-container`  
 **Swap:** `outerHTML`
+
+---
+
+## Chess Multiplayer Endpoints (`arcade/chess/controller/`)
+
+API polling catur real-time via LAN. **Semua endpoint wajib login** (JSON `401` +
+`login_required: true`) dan **CSRF** pada panggilan yang mengubah state.
+
+| Endpoint | Method | Auth | Deskripsi |
+|----------|--------|------|-----------|
+| `create_room.php` | POST | login + CSRF | Buat room, return kode 6 karakter + warna `white` |
+| `join_room.php` | POST | login + CSRF | Gabung room pakai kode (`room` + `csrf_token` di FormData) |
+| `save_move.php` | POST | login + CSRF (body JSON) | Simpan langkah dengan validasi legal move; token tidak pernah disimpan di `move_data` |
+| `get_move.php?room=X&last=N` | GET | login | Poll langkah lawan (array JSON) |
+| `check_room_status.php?room=X` | GET | login | Status room: waiting/playing/ended |
+
+Helper client di `arcade/chess/assets/js/api.js` — saat `401` redirect ke login.
 
 ---
 

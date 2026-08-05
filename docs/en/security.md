@@ -101,6 +101,7 @@ Documentation about authentication, authorization, and protection systems in MEe
 | Advanced Upload | ✅ | ✅ (rate-limited) | ✅ (rate-limited) | ❌ |
 | Transcoder | ✅ | ✅ | ✅ | ❌ |
 | Admin Panel | ✅ | ❌ | ❌ | ❌ |
+| Chess Multiplayer | ✅ | ✅ | ✅ | ❌ |
 
 ---
 
@@ -111,10 +112,29 @@ Documentation about authentication, authorization, and protection systems in MEe
 ```php
 $timeout = 43200;              // 12 hours
 ini_set('session.gc_maxlifetime', $timeout);
-session_set_cookie_params($timeout, "/");
+
+// Hardened cookie flags (auto-detect HTTPS / X-Forwarded-Proto)
+$secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+
+session_set_cookie_params([
+    'lifetime' => $timeout,
+    'path'     => '/',
+    'secure'   => $secure_cookie,  // HTTPS only
+    'httponly' => true,            // not readable by JavaScript
+    'samesite' => 'Lax',           // CSRF mitigation
+]);
 session_name('meel');
 session_start();
 ```
+
+| Flag | Value | Protection |
+|------|-------|------------|
+| `Secure` | auto (HTTPS) | Cookie never sent over plain HTTP — prevents sniffing |
+| `HttpOnly` | `true` | XSS cannot steal the session cookie via JavaScript |
+| `SameSite` | `Lax` | Cross-site POST requests don't carry the cookie (CSRF layer 1) |
+
+Applied in both `auth/config.php` and `auth/auth_helpers.php` (`auth_boot_session()`).
 
 ### Session Hijacking Prevention
 
@@ -173,6 +193,31 @@ $token = $_SESSION['csrf_token'];
 echo "<input type='hidden' name='csrf_token' value='$token'>";
 ```
 
+### Admin Actions — POST Forms (not GET links)
+
+Admin state-changing actions (approve/reject/delete user, kick user, unban IP)
+were migrated from GET links to **POST forms with CSRF token** — a GET link can
+be triggered by a `<img>` tag (CSRF), a POST form cannot:
+
+```html
+<form method="POST" class="inline" onsubmit="return meelConfirmForm(event, {...})">
+    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+    <input type="hidden" name="approve_id" value="<?= (int)$u['id'] ?>">
+    <button type="submit">APPROVE</button>
+</form>
+```
+
+Handlers in `controllers/admin/admin_actions.php` now read `$_POST` and the
+chess admin `catur.php?auto_cleanup=1` endpoint requires a `csrf_token` too
+(`window.MEEL_ADMIN_CSRF` bridge).
+
+### Chess Multiplayer — Login + CSRF Guards
+
+All `arcade/chess/controller/*.php` endpoints require:
+- **Login** — JSON `401` + `login_required: true` (client `api.js` redirects to login).
+- **CSRF** — every state-changing POST carries `csrf_token` (JSON body for `save_move`, `FormData` for `create_room`/`join_room`).
+- The token is **never stored** in `moves.move_data` (not exposed to opponents).
+
 ---
 
 ## IP Banning & Firewall
@@ -193,6 +238,18 @@ function get_real_ip() {
     return $_SERVER["REMOTE_ADDR"];
 }
 ```
+
+### Trusted Proxy Gate (`MEEL_TRUST_PROXY_HEADERS`)
+
+Header proxy **hanya** boleh dipercaya jika request lewat proxy/CDN yang Anda
+kendalikan. Konfigurasi di `auth/settings.php`:
+
+```php
+define('MEEL_TRUST_PROXY_HEADERS', false); // default aman: pakai REMOTE_ADDR saja
+```
+
+> Jika diset `true` padahal server diakses langsung, attacker bisa memalsukan
+> `X-Forwarded-For` untuk mem-bypass IP-ban atau membanjiri activity log.
 
 ### Ban Check (Real-time)
 

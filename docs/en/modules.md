@@ -62,12 +62,13 @@ modules/
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
 │   ├── CommentRenderer.php # Nested comment rendering
-│   └── japanese.php        # Japanese text processing (MeCab)
+│   ├── japanese.php        # Japanese text processing (MeCab)
+│   └── SwPrecache.php      # PWA precache generator (service worker)
 ├── media/                  # Media query modules
 │   ├── MediaLibrary.php    # DB queries, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, comments, recommendations
 │   ├── MediaInteraction.php# Like/dislike, comment deletion
-│   └── SearchEngine.php    # FULLTEXT search with parameter filtering
+│   └── SearchEngine.php    # FULLTEXT search with sanitizer + parameter filtering
 ├── exceptions/             # Exception classes
 │   ├── ProcessException.php
 │   ├── DownloadException.php
@@ -75,6 +76,9 @@ modules/
 ├── transcoder/
 │   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT()
 └── autoload.php            # PSR-4-like autoloader
+
+# ── Di ROOT PROJECT (bukan di modules/) ────────────────────────────────
+sw.js.php                   # Service worker generator — served as /sw.js via .htaccess rewrite
 ```
 
 ---
@@ -93,12 +97,13 @@ class MediaLibrary {
     public function getVideosWithMeta(int $page = 1, int $perPage = 15): array;
     public function getVideos(int $limit, int $offset);
     public function countVideos(): int;
-    public function searchVideo(string $q, int $exclude, bool $sidebar, int $offset);
+    public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
     public function getMusicListWithMeta(string $format, string $artist, int $page = 1, int $perPage = 10): array;
     public function getMusicList(string $format, string $artist, int $limit, int $offset);
     public function countMusic(string $format, string $artist): int;
     public function getArtists();
-    public function searchMusic(string $q, int $exclude, bool $sidebar);
+    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
+    public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24);
     public function getUserPlaylists(int $user_id);
 }
 ```
@@ -115,6 +120,10 @@ class MediaLibrary {
     'to'          => 15,
 ]
 ```
+
+**Search resilience:** `searchVideo()`, `searchMusic()`, and `searchBooks()`
+wrap their FULLTEXT queries in `try/catch (\mysqli_sql_exception)` — a malformed
+boolean-mode query falls back to an empty result instead of a 500 error.
 
 ### 2. `modules/media/MediaViewer.php`
 
@@ -311,14 +320,30 @@ Used by `bootstrap.php` (`MEEL_BASE_URL` fallback), `auth/config.php`, `auth/con
 
 ### 16. `modules/media/SearchEngine.php`
 
-**Class:** `SearchEngine` — FULLTEXT search with parameter filtering:
+**Class:** `SearchEngine` — FULLTEXT search engine (video, music, books) with query sanitizer:
 
 ```php
 class SearchEngine {
+    public const VIDEO_LIMIT    = 20;
+    public const MUSIC_LIMIT    = 20;
+    public const MIN_SEARCH_QUERY = 3;   // Query pendek (< 3) tidak diproses
+    public const MAX_SEARCH_QUERY = 255; // Batas panjang query
+
+    public function __construct(mysqli $db_connection);
+    public function parseParams(): array;                    // q (sanitized), offset, dll.
+    public static function sanitizeQuery(string $q): string; // FULLTEXT-safe: buang operator murni, seimbangkan kutip, buang asterisk di awal token
     public function searchVideo(array $params): array;
     public function searchMusic(array $params): array;
+    public static function clearCache(): void;
 }
 ```
+
+**Key behaviors:**
+- `sanitizeQuery()` is **public static** — shared by every search entry point so
+  the FULLTEXT syntax is always valid (no `mysqli_sql_exception` on malformed input).
+- `parseParams()` reads `$_GET['search']` + `$_GET['offset']`; offset is included
+  in the **cache key**, so pagination never serves a stale page.
+- `MIN_SEARCH_QUERY = 3` — shorter queries are ignored (index efficiency).
 
 ### 17. `modules/autoload.php`
 
@@ -344,6 +369,8 @@ class MusicWatchController { public function getViewData(): array; public functi
 | **v7** | UNIQUE INDEX on users.username + schema sync |
 | **v8** | Role column `varchar(20)`, drop duplicate UNIQUE KEY, sync defaults |
 | **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
+| **v10** | Composite index `(video_id, created_at)` & `(music_id, created_at)` on `comments` |
+| **v11** | `interactions` unique keys split: `(user_id, video_id)` & `(user_id, music_id)` — NULL in a combined unique key did not prevent duplicate likes |
 
 ### 20. MFA System
 
@@ -380,6 +407,22 @@ Real-time LAN multiplayer chess:
 | `controller/save_move.php` | Save move with legal move validation |
 | `controller/check_room_status.php` | Check room status (waiting/playing/ended) |
 
+**Multiplayer flow (color picker):**
+
+```
+Klik "Multiplayer LAN" → konfirmasi SweetAlert
+  → overlay "Pilih Warna" (papan disembunyikan & terkunci)
+      ├── Putih = createRoom() → state "Menunggu Lawan" + room code
+      │        → lawan join → overlay tertutup → polling mulai
+      └── Hitam = joinRoom() (prompt kode) → sync papan → overlay tertutup
+```
+
+**Security guards (all controllers):**
+- Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirects to login).
+- Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
+- Token CSRF tidak pernah disimpan ke `moves.move_data`.
+- `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).
+
 ### Admin Activity Log Viewer
 
 `admin/activity_log.php` — audit trail viewer with:
@@ -388,6 +431,20 @@ Real-time LAN multiplayer chess:
 - Stats cards (7-day activity, unique users, total entries)
 - Color-coded action badges (login=blue, upload=green, ban=red)
 - Manual log cleanup (7–365 days) with CSRF
+
+### 22. PWA Service Worker (`sw.js.php` + `modules/core/SwPrecache.php`)
+
+The service worker is **generated dynamically by PHP** — see the full guide in
+[`pwa.md`](pwa.md).
+
+| Component | Role |
+|-----------|------|
+| `modules/core/SwPrecache.php` | `baseAssets()` + `moduleAssets()` (all `assets/css/*/manifest.php`) → `all()`; `version()` = content hash → auto SW update |
+| `sw.js.php` | Full SW script, `Content-Type: application/javascript`, deterministic output |
+| `.htaccess` | `RewriteRule ^sw\.js$ sw.js.php [L]` — URL `/sw.js` preserved |
+
+Adding a new module folder (`assets/css/<folder>/manifest.php`) automatically
+adds its CSS to the precache — **no manual SW changes needed**.
 
 ---
 

@@ -24,6 +24,7 @@ Choose your language / Pilih bahasa:
 - [🔧 Troubleshooting](en/troubleshooting.md) — Common issue solutions
 - [👨‍💻 Development Guide](en/development.md) — Coding standards & contribution
 - [📥 Advanced Upload Issues](en/upload_issue.md) — yt-dlp & queue issues
+- [📱 PWA](en/pwa.md) — Progressive Web App: dynamic service worker, offline
 - [📋 Project Analysis](en/analysis.md) — Full project analysis & metrics
 
 ### 🇮🇩 Dokumentasi Indonesia
@@ -38,6 +39,7 @@ Choose your language / Pilih bahasa:
 - [🔧 Troubleshooting](id/troubleshooting.md) — Solusi masalah umum
 - [👨‍💻 Panduan Development](id/development.md) — Standar koding & kontribusi
 - [📥 Advanced Upload Issues](id/upload_issue.md) — Masalah yt-dlp & queue
+- [📱 PWA](id/pwa.md) — Progressive Web App: service worker dinamis, offline
 - [📋 Analisis Proyek](id/deskripsi.md) — Analisis & metrik proyek
 
 ---

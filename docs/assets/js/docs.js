@@ -28,6 +28,7 @@ const DOCS = {
             ['problem-solved',    '🌍 Problems'],
             ['upload_issue',      '📥 Upload'],
             ['test',              '🧪 Test'],
+            ['pwa',               '📱 PWA'],
             ['analysis',          '📋 Analysis'],
         ]
     },
@@ -46,6 +47,7 @@ const DOCS = {
             ['problem-solved',    '🌍 Masalah'],
             ['upload_issue',      '📥 Upload'],
             ['test',              '🧪 Test'],
+            ['pwa',               '📱 PWA'],
             ['deskripsi',         '📋 Analisis'],
         ]
     }

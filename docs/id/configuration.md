@@ -38,7 +38,9 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 | `modules/core/base_url.php` | Perhitungan base URL terpusat (`meel_base_url_path()`) | `MEEL_BASE_URL` (via `bootstrap.php`/`config.php`) |
 | `modules/transcoder/FfmpegUtils.php` | **Trait** utilitas FFmpeg | `resolveBinary()`, `probeDuration()`, `generateSpriteAndVTT()` |
 | `modules/autoload.php` | PSR-4-like autoloader | Daftar direktori yang di-scan |
-| `database/migrate.php` | Database migration v1–v9 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA columns |
+| `modules/core/SwPrecache.php` | Generator precache PWA (service worker) | `baseAssets()`, `moduleAssets()`, `all()`, `version()` |
+| `sw.js.php` | Generator service worker dinamis (disajikan sebagai `/sw.js`) | `SW_VERSION`, `PRECACHE_URLS` (otomatis) |
+| `database/migrate.php` | Database migration v1–v11 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA, index comments, unique key interactions |
 
 ---
 
@@ -58,6 +60,7 @@ $db       = "MEeL";        // Nama database
 
 // auth/config.php — entry point membuat koneksi:
 $conn = new mysqli($server, $username, $password, $db);
+$conn->set_charset('utf8mb4'); // charset koneksi dipaksa utf8mb4
 ```
 
 ### Error Handling
@@ -80,10 +83,48 @@ Kamu belum mengisi konfigurasi database di file 'auth/config.php'.
 // Di auth/config.php
 $timeout = 43200;     // 12 jam session timeout
 ini_set('session.gc_maxlifetime', $timeout);
-session_set_cookie_params($timeout, "/");
+
+// Flag cookie aman (auto-detect HTTPS / X-Forwarded-Proto)
+$secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+
+session_set_cookie_params([
+    'lifetime' => $timeout,
+    'path'     => '/',
+    'secure'   => $secure_cookie,  // hanya terkirim via HTTPS
+    'httponly' => true,            // tidak bisa dibaca JavaScript
+    'samesite' => 'Lax',           // proteksi CSRF level-1
+]);
 session_name('meel');  // Session cookie name: "meel"
 session_start();
 ```
+
+> `auth/auth_helpers.php` (`auth_boot_session()`) menggunakan parameter cookie yang sama.
+
+### Trusted Proxy (`MEEL_TRUST_PROXY_HEADERS`)
+
+**File:** `auth/settings.example.php` (dan `auth/settings.php`)
+
+```php
+// false = (default, aman) hanya pakai REMOTE_ADDR
+// true  = percaya header proxy (hanya jika di belakang proxy terpercaya)
+define('MEEL_TRUST_PROXY_HEADERS', false);
+```
+
+Header `HTTP_X_FORWARDED_FOR` / `HTTP_CF_CONNECTING_IP` hanya boleh dipercaya
+jika request benar-benar lewat proxy/CDN yang Anda kendalikan (Cloudflare,
+Nginx reverse proxy). Jika diset `true` padahal server diakses langsung,
+attacker bisa memalsukan IP untuk mem-bypass IP-ban atau membanjiri activity log.
+
+### Charset Koneksi (`utf8mb4`)
+
+```php
+// auth/config.php & auth/config.example.php
+$conn->set_charset('utf8mb4');
+```
+
+Koneksi MySQL dipaksa `utf8mb4` agar cocok dengan schema — emoji, aksara
+Jepang, dan teks multibyte tersimpan/terbaca dengan benar.
 
 ### CSRF Protection
 

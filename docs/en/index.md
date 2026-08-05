@@ -18,6 +18,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | 8 | [👨‍💻 Development Guide](development.md) | Coding standards, contributions, and testing |
 | 9 | [📥 Advanced Upload Issues](upload_issue.md) | Handling yt-dlp & background queue problems |
 | 10 | [🧪 Testing Guide](test.md) | PHPUnit, Functional, Security test — complete guide |
+| 11 | [📱 PWA](pwa.md) | Progressive Web App: dynamic service worker, cache strategies, offline |
 
 ---
 
@@ -29,14 +30,16 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **Japanese Processor** | `modules/core/japanese.php` | MeCab + transliterator for Japanese text → Romaji filenames |
 | **Bootstrap** | `modules/core/bootstrap.php` | Environment detection (dev/prod), error reporting, timezone |
 | **CommentRenderer** | `modules/core/CommentRenderer.php` | Comment rendering with theme support (`video`/`music`) |
-| **SearchEngine** | `modules/media/SearchEngine.php` | FULLTEXT search engine for video & music |
+| **SearchEngine** | `modules/media/SearchEngine.php` | FULLTEXT search engine for video, music & books — with query sanitizer (`sanitizeQuery()`), min query length 3, offset cache key |
 | **GarbageCollector** | `modules/core/GarbageCollector.php` | Auto-cleanup of temporary files, guest accounts & expired rate limit cache |
 | **RateLimiter** | `modules/core/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, etc.) |
 | **WatchController** | `controllers/api/WatchController.php` | Combined Video + Music watch pages controller |
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 classes: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
-| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v8 (idempotent) |
+| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v11 (idempotent) |
+| **PWA Precache** | `modules/core/SwPrecache.php` | Dynamic service worker precache generator — reads `assets/css/*/manifest.php`, auto `SW_VERSION` from content hash |
+| **PWA Generator** | `sw.js.php` | Service worker generated per request (served as `/sw.js` via `.htaccess` rewrite) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
 | **Activity Logger** | `modules/core/activity_logger.php` | IP detection, session kick, guest auto-registration |
 | **MFA System** | `controllers/system/mfa.php` | MFA backend controller (TOTP verify, backup codes, email) |
@@ -56,6 +59,9 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | `database/schema.sql` | Standalone database schema — import directly via `mysql < database/schema.sql` |
 | `auth/config.example.php` | Entry point template (copy to `config.php`) |
 | `auth/settings.example.php` | Config data template (copy to `settings.php`) |
+| `sw.js.php` | Dynamic service worker generator (served as `/sw.js`) |
+| `modules/core/SwPrecache.php` | Precache list + auto version generator for the SW |
+| `assets/MEeL-{180,192,512}.png` | Real PWA icons (180/192/512 px) |
 
 ## 🔧 Recent Changes
 
@@ -64,7 +70,9 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Type hints:** Class properties and constructor parameters now use type hints (`\mysqli`, `int`, `string`, etc.)
 - **Activity Log Integration:** `log_activity()` function integrated at login, logout, upload, and admin actions — full audit trail to `activity_log` table
 - **Admin Activity Log Viewer:** `admin/activity_log.php` page for viewing, filtering, and cleaning audit trails
-- **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v8) — FULLTEXT, FK, UNIQUE KEY, activity_log, schema sync
+- **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v11) — FULLTEXT, FK, UNIQUE KEY, activity_log, MFA, comments composite indexes, interactions unique keys
+- **Migration v10:** Composite index `(video_id, created_at)` & `(music_id, created_at)` on `comments`
+- **Migration v11:** `interactions` unique keys split into `(user_id, video_id)` & `(user_id, music_id)` — NULL in a combined unique key did not prevent duplicates
 - **Anime Module Removed:** The "Coming Soon" placeholder module has been removed from the codebase
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` now return pagination metadata (`total_pages`, `from`, `to`) — UI displays page info
@@ -74,6 +82,12 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **UX Improvement:** Click vinyl disc → toggle mini-player; Hover overlay only on music thumbnail area; Skip resume modal when navigating from index mini-player
 - **Cache Busting:** Music watch.php JS scripts now use `filemtime()` — no more hard-refresh needed
 - **Arcade Chess:** Real-time LAN multiplayer chess — create/join room, turn-based, legal move validation
+- **Chess Color Picker:** In multiplayer mode the board is hidden behind a color picker overlay (White = create room & wait, Black = join with code) — board locked until the game starts
+- **Chess Auth & CSRF:** Multiplayer controllers now require login (JSON 401) and CSRF token on all state-changing calls; admin `auto_cleanup` endpoint verified with CSRF
+- **PWA Optimization:** Dynamic service worker (`sw.js.php` + `SwPrecache`) — precache list auto-generated from `manifest.php`, auto `SW_VERSION`, real 192/512/maskable icons, iOS standalone meta, auto-reload on SW update
+- **Search Improvements:** Query sanitizer (`sanitizeQuery()`), `MIN_SEARCH_QUERY = 3`, music search pagination, server-side books search (`BookRepository::searchBooks()`), cache key includes offset, `try/catch` around FULLTEXT queries
+- **Auth Hardening:** Session cookies now `Secure` (auto-detect HTTPS) + `HttpOnly` + `SameSite=Lax`; `MEEL_TRUST_PROXY_HEADERS` (default `false`) to prevent IP spoofing via proxy headers; DB connection charset forced to `utf8mb4`
+- **Admin CSRF:** Approve/reject/delete/kick/unban actions moved from GET links to POST forms with CSRF token
 
 ## 📖 About the Project
 

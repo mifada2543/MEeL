@@ -649,19 +649,24 @@ Phase 4: Done (links to media)
 
 ### User Management
 
+> ⚠️ All actions below are **POST forms with CSRF token** (they were migrated
+> from GET links — a GET link can be triggered by an `<img>` tag).
+
 | Action | Parameter | Method | Description |
 |--------|-----------|--------|-----------|
-| Approve User | `?approve_id=123` | GET | Set `is_active=1` |
-| Reject User | `?reject_id=123` | GET | Delete user (pending) |
-| Delete User | `?delete_user_id=123` | GET | Delete user (non-admin) |
-| Kick User | `?kick_user=username` | GET | Force user offline |
+| Approve User | `approve_id` | POST | Set `is_active=1` |
+| Reject User | `reject_id` | POST | Delete user (pending) |
+| Delete User | `delete_user_id` | POST | Delete user (non-admin) |
+| Kick User | `kick_user` | POST | Force user offline |
 
 ### IP Ban Management
 
 | Action | Parameter | Method | Description |
 |--------|-----------|--------|-----------|
 | Ban IP | `ban_ip=1` + `ip_target` + `ban_reason` | POST | Insert into ip_ban |
-| Unban IP | `?unban_ip=192.168.1.1` | GET | Delete from ip_ban |
+| Unban IP | `unban_ip` | POST | Delete from ip_ban |
+
+Every POST must carry `csrf_token`.
 
 ### Queue Management
 
@@ -675,6 +680,93 @@ Phase 4: Done (links to media)
 | Action | Parameter | Method | Description |
 |--------|-----------|--------|-----------|
 | Clean Logs | `clean_logs=1` + `days` | POST | Delete logs older than N days |
+
+---
+
+## HTMX Endpoints
+
+### Video Search
+
+**Trigger:** Enter key on search input  
+**Request:** `video/search_video.php?q=keyword`  
+**Target:** `#video-container`  
+**Swap:** `innerHTML`
+
+### Video Load More
+
+**Trigger:** Click "Load More"  
+**Request:** `video/load_more.php?offset=15`  
+**Target:** `#load-more-area`  
+**Swap:** `outerHTML`
+
+### Music Search
+
+**Trigger:** Enter key on search input  
+**Request:** `music/search_music.php?q=keyword`  
+**Target:** `#music-list`  
+**Swap:** `innerHTML`
+
+### Music Load More
+
+**Trigger:** Click "Load More"  
+**Request:** `music/load_more_music.php?offset=10&format=all&artist=all`  
+**Target:** `#music-list`  
+**Swap:** `beforeend`
+
+### Books Search
+
+**Trigger:** Search input  
+**Request:** `books/search_books.php?q=keyword&type=all&offset=0`  
+**Target:** `#book-grid`  
+**Swap:** `innerHTML`  
+**Server-side pagination** via `BookRepository::searchBooks()` (24 per page).
+
+### Like/Dislike
+
+**Trigger:** Click like/dislike button  
+**Request:** `controllers/like.php` with `hx-vals`  
+**Target:** `#like-dislike-container`  
+**Swap:** `outerHTML`
+
+---
+
+## Chess Multiplayer Endpoints (`arcade/chess/controller/`)
+
+Real-time LAN chess polling API. **All endpoints require login** (JSON `401` +
+`login_required: true`) and **CSRF** on state-changing calls.
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `create_room.php` | POST | login + CSRF | Create room, return 6-char room code + color `white` |
+| `join_room.php` | POST | login + CSRF | Join room with code (`room` + `csrf_token` in FormData) |
+| `save_move.php` | POST | login + CSRF (JSON body) | Save move with legal move validation; token never stored in `move_data` |
+| `get_move.php?room=X&last=N` | GET | login | Poll opponent moves (JSON array) |
+| `check_room_status.php?room=X` | GET | login | Room status: waiting/playing/ended |
+
+Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects to login.
+
+---
+
+## Drive API
+
+### Upload File
+
+**Endpoint:** `drive/upload.php`  
+**Method:** POST  
+**Auth:** Member/Admin
+
+### Download File
+
+**Endpoint:** `drive/download.php?file=xxx&type=video&scope=public&csrf_token=...`  
+**Method:** GET  
+**Auth:** Member/Admin
+
+### Delete File
+
+**Endpoint:** `drive/delete.php`  
+**Method:** POST  
+**Auth:** Member/Admin  
+**Body:** `csrf_token` + `file` + `type` + `scope`
 
 ---
 

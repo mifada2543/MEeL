@@ -62,12 +62,13 @@ modules/
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
 │   ├── CommentRenderer.php # Render komentar nested
-│   └── japanese.php        # Pemrosesan teks Jepang (MeCab)
+│   ├── japanese.php        # Pemrosesan teks Jepang (MeCab)
+│   └── SwPrecache.php      # Generator precache PWA (service worker)
 ├── media/                  # Modul query media
 │   ├── MediaLibrary.php    # Query DB, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, komentar, rekomendasi
 │   ├── MediaInteraction.php# Like/dislike, hapus komentar
-│   └── SearchEngine.php    # FULLTEXT search dengan parameter filtering
+│   └── SearchEngine.php    # FULLTEXT search dengan sanitizer + filtering
 ├── exceptions/             # Class exception
 │   ├── ProcessException.php
 │   ├── DownloadException.php
@@ -75,6 +76,9 @@ modules/
 ├── transcoder/
 │   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT()
 └── autoload.php            # PSR-4-like autoloader
+
+# ── Di ROOT PROJECT (bukan di modules/) ────────────────────────────────
+sw.js.php                   # Generator service worker — disajikan sebagai /sw.js via rewrite .htaccess
 ```
 
 ---
@@ -84,6 +88,16 @@ modules/
 **Class:** `MediaLibrary`, `BookRepository`, `BookUploader`
 
 Fungsi utama query database untuk katalog media — dengan **pagination metadata dan cache getCounts()**:
+
+```php
+public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
+public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
+public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24);
+```
+
+**Resilience search:** `searchVideo()`, `searchMusic()`, dan `searchBooks()`
+membungkus query FULLTEXT-nya dengan `try/catch (\mysqli_sql_exception)` —
+query boolean-mode yang malformed jatuh ke hasil kosong, bukan error 500.
 
 ### 2. `modules/media/MediaViewer.php`
 
@@ -216,7 +230,30 @@ Dipakai oleh `bootstrap.php` (fallback `MEEL_BASE_URL`), `auth/config.php`, `aut
 
 ### 16. `modules/media/SearchEngine.php`
 
-**Class:** `SearchEngine` — FULLTEXT search dengan parameter filtering.
+**Class:** `SearchEngine` — FULLTEXT search engine (video, music, books) dengan sanitizer query:
+
+```php
+class SearchEngine {
+    public const VIDEO_LIMIT    = 20;
+    public const MUSIC_LIMIT    = 20;
+    public const MIN_SEARCH_QUERY = 3;   // Query pendek (< 3) tidak diproses
+    public const MAX_SEARCH_QUERY = 255; // Batas panjang query
+
+    public function __construct(mysqli $db_connection);
+    public function parseParams(): array;                    // q (sanitized), offset, dll.
+    public static function sanitizeQuery(string $q): string; // FULLTEXT-safe: buang operator murni, seimbangkan kutip, buang asterisk di awal token
+    public function searchVideo(array $params): array;
+    public function searchMusic(array $params): array;
+    public static function clearCache(): void;
+}
+```
+
+**Perilaku kunci:**
+- `sanitizeQuery()` bersifat **public static** — dipakai semua entry point search
+  sehingga sintaks FULLTEXT selalu valid (tidak ada `mysqli_sql_exception` pada input malformed).
+- `parseParams()` membaca `$_GET['search']` + `$_GET['offset']`; offset ikut
+  dalam **cache key**, sehingga pagination tidak pernah menyajikan halaman basi.
+- `MIN_SEARCH_QUERY = 3` — query lebih pendek diabaikan (efisiensi index).
 
 ### 17. `modules/autoload.php`
 
@@ -242,6 +279,8 @@ class MusicWatchController { public function getViewData(): array; public functi
 | **v7** | UNIQUE INDEX (username) + schema sync |
 | **v8** | Role column `varchar(20)`, hapus duplicate UNIQUE KEY, sync defaults |
 | **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
+| **v10** | Index komposit `(video_id, created_at)` & `(music_id, created_at)` pada `comments` |
+| **v11** | Unique key `interactions` dipecah: `(user_id, video_id)` & `(user_id, music_id)` — NULL di unique key gabungan tidak mencegah like duplikat |
 
 ### 20. MFA System
 
@@ -278,9 +317,39 @@ Multiplayer catur real-time via LAN:
 | `controller/save_move.php` | Simpan langkah dengan validasi legal move |
 | `controller/check_room_status.php` | Cek status ruang (waiting/playing/ended) |
 
+**Alur multiplayer (color picker):**
+
+```
+Klik "Multiplayer LAN" → konfirmasi SweetAlert
+  → overlay "Pilih Warna" (papan disembunyikan & terkunci)
+      ├── Putih = createRoom() → state "Menunggu Lawan" + room code
+      │        → lawan join → overlay tertutup → polling mulai
+      └── Hitam = joinRoom() (prompt kode) → sync papan → overlay tertutup
+```
+
+**Security guards (semua controller):**
+- Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirect ke login).
+- Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
+- Token CSRF tidak pernah disimpan ke `moves.move_data`.
+- `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).
+
 ### Admin Activity Log Viewer
 
 `admin/activity_log.php` — filter, pagination (50/halaman), stats cards, color-coded badges, manual cleanup.
+
+### 22. PWA Service Worker (`sw.js.php` + `modules/core/SwPrecache.php`)
+
+Service worker **dibangkitkan dinamis oleh PHP** — panduan lengkap di
+[`pwa.md`](pwa.md).
+
+| Komponen | Peran |
+|----------|-------|
+| `modules/core/SwPrecache.php` | `baseAssets()` + `moduleAssets()` (semua `assets/css/*/manifest.php`) → `all()`; `version()` = hash konten → update SW otomatis |
+| `sw.js.php` | Skrip SW lengkap, `Content-Type: application/javascript`, output deterministik |
+| `.htaccess` | `RewriteRule ^sw\.js$ sw.js.php [L]` — URL `/sw.js` dipertahankan |
+
+Menambah folder modul baru (`assets/css/<folder>/manifest.php`) otomatis
+menambahkan CSS-nya ke precache — **tanpa perubahan SW manual**.
 
 ---
 

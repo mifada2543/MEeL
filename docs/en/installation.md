@@ -160,6 +160,130 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
 
 > 💡 If `www-data` doesn't work, try `daemon` or `nobody`.
+> ⚠️ `books/upload`, `music/upload`, `video/upload` are **git symlinks** pointing
+> to the storage HDD — check & fix them BEFORE creating the sub-directories below
+> (see [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+
+### 5a. Media Storage (MEEL_HDD_BASE) & Upload Symlinks
+
+All media paths are centralized in `auth/settings.php` — change **one line** and
+the whole system follows:
+
+```php
+// auth/settings.php
+// WAJIB DIGANTI sebelum produksi — nilai default adalah placeholder!
+define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
+
+// Path turunan (otomatis):
+//   MEEL_HDD_VIDEO_UPLOAD = MEEL_HDD_BASE . '/video/upload/'
+//   MEEL_HDD_VIDEO_DIR    = MEEL_HDD_BASE . '/video/upload/video/'
+//   MEEL_HDD_THUMB_DIR    = MEEL_HDD_BASE . '/video/upload/thumbnail/'
+//   MEEL_HDD_MUSIC_UPLOAD = MEEL_HDD_BASE . '/music/upload/'
+//   MEEL_HDD_BOOKS_UPLOAD = MEEL_HDD_BASE . '/books/upload/'
+//   MEEL_HDD_DRIVE        = MEEL_HDD_BASE . '/drive/'
+```
+
+#### How the upload symlinks work
+
+The repository tracks `books/upload`, `music/upload`, and `video/upload` as
+**symlinks** (git mode `120000`) pointing to the *previous owner's* HDD path
+(e.g. `/media/<user>/MEeL/media/books/upload`). On a fresh clone they are
+**broken** until you point them at **your** `MEEL_HDD_BASE`.
+
+#### 1. Mount / create the storage
+
+```bash
+df -h   # cek mount point yang tersedia
+
+# Contoh /etc/fstab untuk mount permanen (opsional):
+# /dev/sdb1  /media/<user>/MEeL/media  ext4  defaults,nofail  0 2
+sudo mount -a
+```
+
+#### 2. Create the storage tree
+
+```bash
+BASE=/media/<user>/MEeL/media   # ganti dengan path ANDA
+mkdir -p "$BASE"/video/upload/video "$BASE"/video/upload/thumbnail
+mkdir -p "$BASE"/music/upload/file   "$BASE"/music/upload/thumbnail
+mkdir -p "$BASE"/books/upload/manga  "$BASE"/books/upload/pdf "$BASE"/books/upload/thumbnail
+mkdir -p "$BASE"/drive
+```
+
+#### 3. Check the tracked symlinks
+
+```bash
+ls -la books/upload music/upload video/upload
+readlink books/upload
+```
+
+**Symptom of a broken symlink** (storage not mounted or path changed):
+
+```
+books/upload: broken symbolic link to /media/muhammaddaffa/MEeL/media/books/upload
+```
+
+#### 4. Recreate the symlinks for your path
+
+```bash
+cd /opt/lampp/htdocs/MEeL
+for d in books music video; do
+    rm -f "$d/upload"
+    ln -s "$BASE/$d/upload" "$d/upload"
+done
+ls -la books/upload music/upload video/upload   # harus menunjuk ke BASE Anda
+```
+
+#### 5. Permissions
+
+```bash
+sudo chown -R www-data:www-data "$BASE"
+sudo chmod -R 775 "$BASE"
+```
+
+#### 6. Security .htaccess in upload dirs (required)
+
+Every upload directory must contain a `.htaccess` that disables PHP execution
+(`php_flag engine off`), a `ForceType` MIME guard, and `Options -Indexes` — the
+same pattern as `data_drive/.htaccess`. `tests/security_test.php` verifies these:
+
+```bash
+php tests/security_test.php
+```
+
+> If storage is **not mounted** (or symlinks are broken), the security test
+> reports **6 FAILs** (`books/upload/`, `music/upload/`, `video/upload/` —
+> "TIDAK PUNYA .htaccess"). That is an **environment issue, not a code defect**:
+> the directories don't exist so their `.htaccess` cannot be verified. Once
+> storage is mounted and the upload dirs have their `.htaccess`, re-run the test
+> to confirm `72/72`.
+
+#### 7. Verify storage
+
+```bash
+df -h "$BASE"
+test -d "$BASE/video/upload/video" && echo "storage OK"
+php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : 'NOT SET';"
+```
+
+#### 8. Automated deployment check (one command)
+
+The project ships a CLI health-check that verifies the four deployment-critical
+areas in a single run — `MEEL_HDD_BASE`, upload symlinks, upload-dir `.htaccess`
+hardening, and the PWA `mod_rewrite` rule:
+
+```bash
+php tests/check_deploy.php                           # local check + auto HTTP probe
+php tests/check_deploy.php --url=http://localhost/MEeL   # explicit HTTP probe
+php tests/check_deploy.php --hdd=/tmp/meel-storage/media  # override MEEL_HDD_BASE (testing/CI)
+php tests/check_deploy.php --no-color                # no ANSI colors (for CI/logs)
+```
+
+Each item is reported as `PASS` / `WARN` / `FAIL` with a summary; exit code is
+`0` when healthy and `1` when at least one check fails (CI-friendly). If the
+storage is not mounted yet, the script reports the **same 6 FAILs** the security
+test reports — mount the storage, fix the symlinks, add the `.htaccess` files,
+then re-run until you see `✅ Deployment sehat.`
 
 ### 6. Apache Configuration
 
@@ -178,6 +302,21 @@ Edit `/etc/apache2/apache2.conf`:
     Require all granted
 </Directory>
 ```
+
+#### 📱 mod_rewrite & PWA (required)
+
+The **PWA depends on mod_rewrite + .htaccess processing**: the service worker
+is generated by `sw.js.php` and served as `/sw.js` via the root `.htaccess`
+rewrite. Verify it works:
+
+```bash
+curl -sI http://localhost/MEeL/sw.js | grep -i content-type
+# Content-Type: application/javascript; charset=utf-8   ← benar
+```
+
+If `.htaccess` is not processed (`AllowOverride` disabled), `/sw.js` returns
+404 and the PWA silently degrades — the site still works, but **offline mode and
+"Add to Home Screen" stop working**.
 
 #### ⚡ Enable mod_xsendfile (Optional — for streaming acceleration)
 
@@ -277,13 +416,13 @@ After all setup is complete, run the database migration to optimize the schema:
 /opt/lampp/bin/php database/migrate.php
 ```
 
-The migration is **idempotent** — safe to run multiple times. It will add:
-- **v1:** FULLTEXT index for video & music search (10-100× faster than LIKE)
-- **v2:** Performance index (upload_date) for sorting
-- **v4:** Foreign key constraints
-- **v6:** activity_log table for audit trail
-- **v7:** UNIQUE KEY on username
-- Automatic tracker in `db_version` table
+The migration is **idempotent** — safe to run multiple times. It manages
+**v1–v11** (automatic tracker in the `db_version` table):
+- **v1–v5:** FULLTEXT indexes, performance indexes, structural sync, foreign keys, title type
+- **v6–v7:** `activity_log` table, UNIQUE KEY on username
+- **v8–v9:** role column sync, **MFA columns** (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`)
+- **v10:** composite indexes on `comments` `(video_id, created_at)` & `(music_id, created_at)`
+- **v11:** `interactions` unique keys split into `(user_id, video_id)` & `(user_id, music_id)`
 
 ### 11. Setup cookies.txt (for yt-dlp)
 
@@ -328,12 +467,26 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 - Try: `mysql -u root -p -e "SHOW DATABASES;"`
 
 ### ❌ "Storage Offline" / Redirected to maintenance
-- Check HDD path in `auth/config.php`:
+- Check HDD path in `auth/settings.php`:
   ```php
   define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
   ```
 - Adjust to your mount point: `df -h` to check mounts
+- Make sure the storage is mounted and the upload symlinks are valid:
+  ```bash
+  readlink books/upload music/upload video/upload
+  ls -ld books/upload music/upload video/upload   # jangan "broken symbolic link"
+  ```
 - Or disable temporarily for development
+
+### ❌ Security test reports 6 FAIL on upload folders
+- **Symptom:** `php tests/security_test.php` → `books/upload/`, `music/upload/`,
+  `video/upload/` — "TIDAK PUNYA .htaccess!"
+- **Cause:** storage HDD (`MEEL_HDD_BASE`) not mounted, or the tracked upload
+  symlinks still point to the previous owner's path after cloning.
+- **Fix:** mount the storage, recreate the symlinks, and ensure each upload dir
+  has its `.htaccess` (see [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+  Re-run the test to confirm `72/72`.
 
 ### ❌ "403 Forbidden" on pages
 - Check `.htaccess` in the relevant directory
