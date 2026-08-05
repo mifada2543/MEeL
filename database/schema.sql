@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `custom_theme` varchar(50) DEFAULT 'default',
   `last_session_id` varchar(128) DEFAULT NULL,
   `access_via` varchar(100) DEFAULT NULL,
+  `mfa_secret` varchar(64) DEFAULT NULL,
+  `mfa_backup_codes` text DEFAULT NULL,
+  `mfa_enabled` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_username_unique` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -127,6 +130,8 @@ CREATE TABLE IF NOT EXISTS `comments` (
   KEY `user_id` (`user_id`),
   KEY `music_id` (`music_id`),
   KEY `fk_parent_comment` (`parent_id`),
+  KEY `idx_comments_video_created` (`video_id`, `created_at`),
+  KEY `idx_comments_music_created` (`music_id`, `created_at`),
   CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_parent_comment` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
@@ -144,7 +149,12 @@ CREATE TABLE IF NOT EXISTS `interactions` (
   `type` enum('like','dislike') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_interaction` (`user_id`,`video_id`,`music_id`),
+  -- Catatan: untuk baris video, music_id = NULL; untuk baris music, video_id = NULL.
+  -- Unique key gabungan (user_id, video_id, music_id) TIDAK mencegah duplikat karena
+  -- MySQL memperlakukan NULL sebagai nilai berbeda. Karena itu dipisah menjadi
+  -- dua unique key per media type.
+  UNIQUE KEY `unique_interaction_video` (`user_id`,`video_id`),
+  UNIQUE KEY `unique_interaction_music` (`user_id`,`music_id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

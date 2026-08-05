@@ -4,16 +4,22 @@
   "description": "Platform Media Hub Pribadi untuk Streaming Video, Musik, Buku Digital, dan Cloud Storage.",
   "icons": [
     {
-      "src": "MEeL.png",
+      "src": "MEeL-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "MEeL.png",
+      "src": "MEeL-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "MEeL-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "start_url": "../index.php?source=pwa",
@@ -30,35 +36,34 @@
   "edge_side_panel": {
     "preferred_width": 480
   },
-  "screenshots": [],
   "shortcuts": [
     {
       "name": "Video",
       "short_name": "Video",
       "description": "Jelajahi koleksi video",
       "url": "../video/index.php",
-      "icons": [{ "src": "MEeL.png", "sizes": "192x192" }]
+      "icons": [{ "src": "MEeL-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Music",
       "short_name": "Music",
       "description": "Putar musik favorit",
       "url": "../music/index.php",
-      "icons": [{ "src": "MEeL.png", "sizes": "192x192" }]
+      "icons": [{ "src": "MEeL-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Books",
       "short_name": "Books",
       "description": "Baca buku dan manga",
       "url": "../books/index.php",
-      "icons": [{ "src": "MEeL.png", "sizes": "192x192" }]
+      "icons": [{ "src": "MEeL-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Drive",
       "short_name": "Drive",
       "description": "Akses Cloud Drive",
       "url": "../drive/index.php",
-      "icons": [{ "src": "MEeL.png", "sizes": "192x192" }]
+      "icons": [{ "src": "MEeL-192.png", "sizes": "192x192" }]
     }
   ]
 }

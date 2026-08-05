@@ -1,0 +1,70 @@
+/* ============================================================
+ * cards.css — Music items, format pills, sidebar, rekomendasi
+ * ============================================================ */
+/* ── Format Pills ── */
+.format-pill {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: 0 0;
+  color: #6b7280;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+.format-pill:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.format-pill.active-orange {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+.format-pill.active-blue {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+.format-pill.active-green {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+/* ── Sidebar Links ── */
+.sidebar-link {
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+}
+.sidebar-link.active {
+  background: rgba(249, 115, 22, 0.08);
+  color: var(--orange);
+  border-left-color: var(--orange);
+}
+/* ── Items & Comments ── */
+.comment-row,
+.music-item,
+.rekomendasi-item {
+  border-left: 2px solid transparent;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.comment-row:hover,
+.music-item:hover,
+.rekomendasi-item:hover {
+  background: rgba(255, 255, 255, 0.025);
+  border-left-color: var(--orange);
+}
+.music-item:hover .play-btn {
+  opacity: 1;
+  transform: translateX(0);
+}
+.rekomendasi-item:hover .rec-thumb-img {
+  transform: scale(1.06);
+}
+.rec-thumb-img {
+  aspect-ratio: 1/1;
+}

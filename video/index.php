@@ -13,6 +13,17 @@ $data       = $meta['data'];
 $total      = $meta['total'];
 $page       = $meta['page'];
 $totalPages = $meta['total_pages'];
+
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
+// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -25,7 +36,10 @@ $totalPages = $meta['total_pages'];
     <meta property="og:description" content="Jelajahi koleksi video di MEeL Video Library. Streaming HLS dengan kualitas terbaik.">
     <title>MEeL Video | Library</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video.css">
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?><?= $__v('assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/video/index/main.css">
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -88,13 +102,10 @@ $totalPages = $meta['total_pages'];
             </div>
             <span class="text-[10px] text-gray-300 uppercase tracking-widest">
                 <?= $total ?> clips
-                <?php if ($totalPages > 1): ?>
-                    <span class="text-gray-600">· Page <?= $page ?>/<?= $totalPages ?></span>
-                <?php endif; ?>
             </span>
         </div>
 
-        <!-- [FIX] offset load_more sesuai $limit_init (8), bukan 10 -->
+        <!-- Catatan: offset load_more sesuai $limit_init (8), bukan 10 -->
         <div id="video-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5" title="Muat lebih banyak">
             <?php if ($data && $data->num_rows > 0): ?>
                 <?php while ($v = $data->fetch_assoc()): ?>
@@ -119,13 +130,8 @@ $totalPages = $meta['total_pages'];
 
     <?php include '../partials/footer.php'; ?>
 
-    <script src="../assets/js/htmx.min.js"></script>
-    <script>
-        lucide.createIcons();
-        document.body.addEventListener('htmx:afterOnLoad', function(evt) {
-            lucide.createIcons();
-        });
-    </script>
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
+    <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 </body>
 
 </html>

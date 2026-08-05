@@ -97,7 +97,7 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 // 5b. X-Sendfile — Apache langsung kirim file tanpa baca PHP chunk-by-chunk
-// 🚀 Jauh lebih efisien untuk file besar (FLAC 34MB+) karena tidak pakai RAM PHP.
+// Jauh lebih efisien untuk file besar (FLAC 34MB+) karena tidak pakai RAM PHP.
 // Cara aktivasi:
 //   1. Install mod_xsendfile (https://github.com/nmaier/mod_xsendfile)
 //   2. Aktifkan di httpd.conf:

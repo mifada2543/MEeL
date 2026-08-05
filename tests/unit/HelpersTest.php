@@ -153,6 +153,36 @@ class HelpersTest extends TestCase
         $this->assertStringEndsWith('/css/style.css', $result3);
     }
 
+    /**
+     * Fallback base_url() (saat MEEL_BASE_URL belum didefinisikan) harus berbasis
+     * root proyek, bukan dirname(SCRIPT_NAME). Regresi: halaman di subdirektori
+     * (mis. /MEeL/admin/index.php) pernah menghasilkan base /MEeL/admin, sehingga
+     * redirect auth mengarah ke /MEeL/admin/auth/login.php?next=... (salah).
+     * Dijalankan di subprocess karena base_url() memakai static cache + define().
+     */
+    public function testBaseUrlFallbackFromProjectRoot(): void
+    {
+        $helpers = realpath(__DIR__ . '/../../modules/core/helpers.php');
+        $this->assertNotFalse($helpers, 'modules/core/helpers.php tidak ditemukan');
+
+        $projectRoot = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/../..')), '/');
+        $docRoot     = dirname($projectRoot);
+        $expected    = '/' . basename($projectRoot);
+
+        $code = '$_SERVER["SCRIPT_NAME"]=' . var_export($expected . '/admin/index.php', true) . ';'
+            . '$_SERVER["DOCUMENT_ROOT"]=' . var_export($docRoot, true) . ';'
+            . 'require ' . var_export($helpers, true) . ';'
+            . 'echo base_url("/auth/login.php?next=x");';
+
+        $output = [];
+        $exit   = 0;
+        exec(PHP_BINARY . ' -d display_errors=0 -r ' . escapeshellarg($code) . ' 2>&1', $output, $exit);
+
+        $this->assertSame(0, $exit, 'Subprocess helpers gagal: ' . implode("\n", $output));
+        $this->assertCount(1, $output, 'Output subprocess tidak valid: ' . implode("\n", $output));
+        $this->assertSame($expected . '/auth/login.php?next=x', trim($output[0]));
+    }
+
     // ─── check_disk_space() ──────────────────────────────────────────────────
 
     public function testCheckDiskSpaceOnExistingPath(): void
@@ -211,6 +241,66 @@ class HelpersTest extends TestCase
         // Cleanup
         @unlink($testDir . '/test.txt');
         @rmdir($testDir);
+    }
+
+    // ─── generate_search_metadata() ──────────────────────────────────────────
+    // Helper ini butuh japanese.php + MeCab — sama seperti JapaneseTest.
+    // Memverifikasi format: original + romaji + english (lowercase), termasuk
+    // brand alias dari japanese_aliases.php.
+
+    public function testGenerateSearchMetadataWithAliases(): void
+    {
+        $result = generate_search_metadata('プロジェクトセカイ カラフルステージ!');
+        $this->assertStringContainsString('project sekai', $result);
+        $this->assertStringContainsString('colorful stage', $result);
+        $this->assertStringContainsString('purojekutosekai', $result); // romaji
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);   // lowercase
+    }
+
+    public function testGenerateSearchMetadataPlainText(): void
+    {
+        $result = generate_search_metadata('Hello World Test');
+        $this->assertStringContainsString('hello world test', $result);
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
+    }
+
+    // ─── lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label() ──
+
+    public function testLangMapHasAllLanguages(): void
+    {
+        $map = lang_map();
+        $this->assertCount(15, $map);
+        $this->assertSame('Indonesia', $map['id']);
+        $this->assertSame('English', $map['en']);
+        $this->assertSame('日本語', $map['ja']);
+        $this->assertArrayHasKey('vi', $map);
+    }
+
+    public function testLangLabelKnownLanguage(): void
+    {
+        $this->assertSame('Indonesia', lang_label('id'));
+        $this->assertSame('English', lang_label('EN')); // case-insensitive
+        $this->assertSame('日本語', lang_label('ja'));
+    }
+
+    public function testLangLabelUnknownFallsBackToUppercase(): void
+    {
+        $this->assertSame('XX', lang_label('xx'));
+        $this->assertSame('PT-BR', lang_label('pt-br'));
+    }
+
+    public function testLangLabelConsistentWithMap(): void
+    {
+        foreach (lang_map() as $code => $label) {
+            $this->assertSame($label, lang_label($code));
+        }
+    }
+
+    public function testSubtitleAliasesMatchGeneric(): void
+    {
+        $this->assertSame(lang_map(), subtitle_lang_map());
+        $this->assertSame(lang_label('ja'), subtitle_lang_label('ja'));
+        $this->assertSame(lang_label('pt-br'), subtitle_lang_label('pt-br'));
     }
 
     // ─── get_user_role() requires DB, skip basic test ────────────────────────

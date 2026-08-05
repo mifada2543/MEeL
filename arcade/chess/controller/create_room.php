@@ -1,12 +1,30 @@
 <?php
 require '../../../auth/config.php';
+header('Content-Type: application/json');
 
-// Gunakan random_bytes alih-alih md5(time()) untuk mencegah prediksi/tebakan kode room
-// random_bytes(4) = 8 hex chars → potong 6 karakter pertama
+// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    die(json_encode([
+        "success" => false,
+        "login_required" => true,
+        "message" => "Anda harus login untuk membuat room multiplayer."
+    ]));
+}
+
+// ── CSRF guard: semua POST wajib token valid ──
+if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false,
+        "message" => "CSRF token tidak valid."
+    ]));
+}
+
+// Room code acak 6 karakter
 $room = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 $sql = "INSERT INTO rooms (room_code) VALUES (?)";
 $stmt = $conn->prepare($sql);
-
 if (!$stmt) {
     http_response_code(500);
     die(json_encode([
@@ -14,12 +32,8 @@ if (!$stmt) {
         "error" => $conn->error
     ]));
 }
-
 $stmt->bind_param("s", $room);
 $stmt->execute();
-
-header('Content-Type: application/json');
-
 echo json_encode([
     "success" => true,
     "room" => $room,

@@ -36,34 +36,11 @@ if ($user->isMember()) {
     <meta property="og:description" content="MEeL Cloud Drive - Kelola dan simpan file Anda dengan aman di cloud pribadi.">
     <title>MEeL Cloud | Dashboard</title>
     <?php include '../partials/link.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <link rel="stylesheet" href="../assets/css/drive.css">
-    <style>
-        :root {
-            --bg-main: #0b0f1a;
-            --bg-card: #161b2a;
-            --accent-blue: #3b82f6;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: #f3f4f6;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .glass {
-            background: rgba(22, 27, 42, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-active {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid var(--accent-blue);
-            color: var(--accent-blue);
-        }
-    </style>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <?php foreach (require __DIR__ . '/../assets/css/drive/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/drive/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/drive/' . $__f) ?>">
+    <?php endforeach; ?>
 </head>
 
 <body class="antialiased">
@@ -192,18 +169,27 @@ if ($user->isMember()) {
                     <div class="flex-1">
                         <div class="flex justify-between text-[11px] font-bold uppercase mb-2">
                             <span class="text-gray-400">Penyimpanan Terpakai</span>
-                            <span class="<?= $usagePercentage > 80 ? 'text-red-500' : 'text-blue-500' ?>"><?= format_bytes($usage) ?> / 20 GB</span>
+                            <span id="storageUsageText" class="<?= $usagePercentage > 80 ? 'text-red-500' : 'text-blue-500' ?>"><?= format_bytes($usage) ?> / 20 GB</span>
                         </div>
                         <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-blue-500 to-blue-500 transition-all duration-500" style="width: <?= $usagePercentage ?>%"></div>
+                            <div id="storageUsageBar" class="h-full bg-gradient-to-r from-blue-500 to-blue-500 transition-all duration-500" style="width: <?= $usagePercentage ?>%"></div>
                         </div>
                     </div>
-                    <a href="index.php?scope=<?= urlencode($currentScope) ?>" class="p-2 hover:bg-gray-800 rounded-lg" title="Refresh halaman"><i data-lucide="refresh-cw" class="w-4 h-4"></i></a>
+                    <button id="refreshBtn" onclick="refreshDrive()" class="p-2 hover:bg-gray-800 rounded-lg transition-all" title="Refresh data (grid + penyimpanan)"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                 </div>
             <?php endif; ?>
 
-            <section class="glass rounded-2xl p-6 mb-8 border-dashed border-2 border-gray-800 hover:border-blue-500/50 transition-colors">
-                <form action="upload.php" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row items-center gap-6">
+            <section class="upload-dropzone glass rounded-2xl p-6 mb-8 border-dashed border-2 border-gray-800 hover:border-blue-500/50 transition-colors" id="uploadDropzone">
+                <!-- Drop hint overlay (visible saat drag) -->
+                <div class="dropzone-hint" id="dropzoneHint">
+                    <div class="dropzone-hint-icon">
+                        <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+                    </div>
+                    <span class="dropzone-hint-text">Lepaskan file untuk mengunggah</span>
+                    <span class="dropzone-hint-sub">atau klik area ini untuk memilih file</span>
+                </div>
+
+                <form id="uploadForm" action="upload.php?ajax=1" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row items-center gap-6">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8') ?>">
 
@@ -213,7 +199,7 @@ if ($user->isMember()) {
                             <span id="fileLabel" class="text-sm text-gray-400 font-medium">Tarik file atau klik untuk memilih</span>
                             <input type="file" name="file_drive" id="fileInput" class="hidden" onchange="updateFileName(this)" required>
                         </label>
-                    </div>                    <button type="submit" name="submit_upload" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20" title="Unggah file yang dipilih">
+                    </div>                    <button type="submit" name="submit_upload" id="uploadBtn" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20" title="Unggah file yang dipilih">
                         Unggah Berkas <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </button>
                 </form>
@@ -229,6 +215,72 @@ if ($user->isMember()) {
                 <?php $renderer->renderFileGrid($documents, '#10b981', 'file-text', 'dokumen', $currentScope); ?>
             </div>
         </main>
+    </div>
+
+    <!-- Floating Upload Progress Card -->
+    <div id="uploadProgressCard" class="upload-prog-card hidden">
+        <div class="upload-prog-header">
+            <div class="upload-prog-header-title" id="uploadProgToggle" title="Klik untuk detail">
+                <span class="upload-prog-toggle-icon">
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                </span>
+                <i data-lucide="cloud-upload" class="w-4 h-4 text-blue-400 flex-shrink-0 upload-prog-header-icon"></i>
+                <span id="uploadProgFilename" class="upload-prog-filename">unggah file...</span>
+            </div>
+            <button id="uploadProgClose" class="upload-prog-close" title="Tutup">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div class="upload-prog-body">
+            <!-- Progress bar -->
+            <div class="upload-prog-track">
+                <div id="uploadProgBar" class="upload-prog-fill" style="width: 0%"></div>
+            </div>
+
+            <!-- Percentage + status text -->
+            <div class="upload-prog-info">
+                <span id="uploadProgPercent" class="upload-prog-pct">0%</span>
+                <span id="uploadProgStatus" class="upload-prog-status">Mengunggah...</span>
+            </div>
+
+            <!-- Stats grid: speed, duration, size -->
+            <div class="upload-prog-stats">
+                <div class="upload-prog-stat">
+                    <span class="upload-prog-stat-label">Kecepatan</span>
+                    <span id="uploadProgSpeed" class="upload-prog-stat-val">—</span>
+                </div>
+                <div class="upload-prog-stat">
+                    <span class="upload-prog-stat-label">Durasi</span>
+                    <span id="uploadProgDuration" class="upload-prog-stat-val">—</span>
+                </div>
+                <div class="upload-prog-stat">
+                    <span class="upload-prog-stat-label">Ukuran</span>
+                    <span id="uploadProgSize" class="upload-prog-stat-val">—</span>
+                </div>
+            </div>
+
+            <!-- Done / Error state -->
+            <div id="uploadProgDone" class="upload-prog-result hidden">
+                <div class="upload-prog-result-icon upload-prog-result-success">
+                    <!-- Animated checkmark SVG -->
+                    <svg class="upload-checkmark" viewBox="0 0 52 52" width="28" height="28">
+                        <circle class="upload-checkmark-circle" cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="3"/>
+                        <path class="upload-checkmark-check" d="M14 27l7 7 16-16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="upload-prog-result-text">Unggah Selesai</span>
+            </div>
+            <div id="uploadProgError" class="upload-prog-result hidden">
+                <div class="upload-prog-result-icon upload-prog-result-error">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                </div>
+                <span class="upload-prog-result-text">Unggah Gagal</span>
+            </div>
+
+            <!-- Confetti container (triggered via JS on success) -->
+            <div id="uploadConfetti" class="upload-confetti hidden"></div>
+        </div>
     </div>
 
     <div id="previewModal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
@@ -249,210 +301,11 @@ if ($user->isMember()) {
         </div>
     </div>
 
-    <script>
-        lucide.createIcons();
-
-        const counts = {
-            video: document.querySelectorAll('#drive-video .glass').length,
-            audio: document.querySelectorAll('#drive-audio .glass').length,
-            dokumen: document.querySelectorAll('#drive-dokumen .glass').length
-        };
-
-        const accents = {
-            video: {
-                color: 'text-red-500',
-                label: 'Video'
-            },
-            audio: {
-                color: 'text-orange-500',
-                label: 'Audio'
-            },
-            dokumen: {
-                color: 'text-green-500',
-                label: 'Dokumen'
-            }
-        };
-
-        function showSection(id, btn, isMobile = false) {
-            document.querySelectorAll('.drive-section').forEach(section => section.classList.add('hidden'));
-
-            const target = document.getElementById('drive-' + id);
-            if (target) {
-                target.classList.remove('hidden');
-            }
-
-            document.querySelectorAll('.nav-btn-desktop').forEach(button => {
-                button.classList.remove('nav-active', 'text-blue-500');
-                button.classList.add('text-gray-400');
-            });
-            document.querySelectorAll('.nav-btn-mobile').forEach(button => {
-                button.classList.remove('bg-blue-500/10', 'border-blue-500', 'text-blue-500');
-                button.classList.add('bg-gray-800', 'border-transparent', 'text-gray-400');
-            });
-
-            if (btn) {
-                if(isMobile) {
-                    btn.classList.add('bg-blue-500/10', 'border-blue-500', 'text-blue-500');
-                    btn.classList.remove('bg-gray-800', 'border-transparent', 'text-gray-400');
-                    // Sync desktop button
-                    const dtBtn = document.querySelector(`.nav-btn-desktop[onclick*="'${id}'"]`);
-                    if(dtBtn) {
-                        dtBtn.classList.add('nav-active');
-                        dtBtn.classList.remove('text-gray-400');
-                    }
-                } else {
-                    btn.classList.add('nav-active');
-                    btn.classList.remove('text-gray-400');
-                    // Sync mobile button
-                    const mbBtn = document.querySelector(`.nav-btn-mobile[onclick*="'${id}'"]`);
-                    if(mbBtn) {
-                        mbBtn.classList.add('bg-blue-500/10', 'border-blue-500', 'text-blue-500');
-                        mbBtn.classList.remove('bg-gray-800', 'border-transparent', 'text-gray-400');
-                    }
-                }
-            }
-
-            const headingAccent = document.getElementById('sectionAccent');
-            if (headingAccent) {
-                headingAccent.innerText = accents[id].label;
-                headingAccent.className = accents[id].color;
-            }
-            
-            const headingAccentMobile = document.getElementById('sectionAccentMobile');
-            if (headingAccentMobile) {
-                headingAccentMobile.innerText = accents[id].label;
-                headingAccentMobile.className = accents[id].color;
-            }
-
-            const fileCount = document.getElementById('fileCount');
-            if (fileCount) fileCount.innerText = `${counts[id]} file ditemukan`;
-            
-            const fileCountMobile = document.getElementById('fileCountMobile');
-            if (fileCountMobile) fileCountMobile.innerText = `${counts[id]} file ditemukan`;
-            
-            lucide.createIcons();
-        }
-
-        function updateFileName(input) {
-            const label = document.getElementById('fileLabel');
-
-            if (input.files.length > 0) {
-                label.innerText = 'Siap unggah: ' + input.files[0].name;
-                label.classList.remove('text-gray-400');
-                label.classList.add('text-blue-400', 'font-bold');
-            }
-        }
-
-        function openPreview(path, type, name) {
-            const modal = document.getElementById('previewModal');
-            const content = document.getElementById('previewContent');
-            const title = document.getElementById('previewTitle');
-
-            title.innerText = name;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            content.innerHTML = '<div class="text-gray-500 flex flex-col items-center"><div class="animate-spin mb-2">⏳</div> Memuat pratinjau...</div>';
-
-            let html = '';
-            const ext = name.split('.').pop().toLowerCase();
-
-            if (type === 'video') {
-                html = `
-            <video controls autoplay class="max-w-full max-h-[75vh] rounded-lg shadow-2xl bg-black">
-                <source src="${path}" type="video/mp4">
-                <source src="${path}" type="video/webm">
-                Browser Anda tidak mendukung pratinjau video.
-            </video>`;
-            } else if (type === 'audio') {
-                html = `
-            <div class="bg-gray-900 p-10 rounded-2xl border border-gray-800 w-full max-w-md text-center shadow-2xl">
-                <div class="mb-6 inline-block p-4 bg-orange-500/10 rounded-full">
-                    <i data-lucide="music" class="w-12 h-12 text-orange-500"></i>
-                </div>
-                <audio controls autoplay class="w-full">
-                    <source src="${path}" type="audio/mpeg">
-                    <source src="${path}" type="audio/wav">
-                    Browser Anda tidak mendukung pratinjau audio.
-                </audio>
-                <p class="text-gray-500 text-xs mt-4 truncate">${name}</p>
-            </div>`;
-            } else if (type === 'dokumen') {
-                const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-                if (imageExtensions.includes(ext)) {
-                    html = `<img src="${path}" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl">`;
-                } else {
-                    html = `
-                <div class="text-center p-10 bg-gray-900 rounded-2xl border border-gray-800">
-                    <i data-lucide="file-warning" class="w-16 h-16 text-gray-600 mx-auto mb-4"></i>
-                    <p class="text-gray-400 mb-4">Pratinjau tidak tersedia untuk file .${ext}</p>
-                    <a href="${path}" download class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-bold">
-                        Unduh untuk Melihat
-                    </a>
-                </div>`;
-                }
-            }
-
-            setTimeout(() => {
-                content.innerHTML = html;
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
-            }, 200);
-        }
-
-        function closePreview() {
-            const modal = document.getElementById('previewModal');
-            const content = document.getElementById('previewContent');
-
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            content.innerHTML = '';
-        }
-
-        document.getElementById('previewModal').addEventListener('click', event => {
-            if (event.target.id === 'previewModal') {
-                closePreview();
-            }
-        });
-
-        function filterDriveFiles() {
-            const desktopInput = document.getElementById('search-input-desktop');
-            const mobileInput = document.getElementById('search-input-mobile');
-            const active = document.activeElement;
-
-            // Ambil nilai dari input yang sedang difokuskan user
-            const value = active === mobileInput
-                ? (mobileInput ? mobileInput.value : '')
-                : (desktopInput ? desktopInput.value : mobileInput ? mobileInput.value : '');
-
-            const keyword = value.toLowerCase();
-
-            // Sync kedua input agar konsisten saat resize layar
-            if (desktopInput && desktopInput !== active) desktopInput.value = value;
-            if (mobileInput && mobileInput !== active) mobileInput.value = value;
-
-            const activeSection = document.querySelector('.drive-section:not(.hidden)');
-            if (!activeSection) return;
-
-            activeSection.querySelectorAll('.glass').forEach(card => {
-                const fileName = card.querySelector('h3')?.innerText.toLowerCase() ?? '';
-                card.style.display = fileName.includes(keyword) ? 'block' : 'none';
-            });
-        }
-
-        // Filter hanya saat Enter ditekan
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Enter') {
-                const target = event.target;
-                if (target.id === 'search-input-desktop' || target.id === 'search-input-mobile') {
-                    event.preventDefault();
-                    filterDriveFiles();
-                }
-            }
-        });
-
-        showSection('video', document.querySelector('.nav-btn-desktop.active'));
-    </script>
+    <script src="../assets/js/drive/navigation.js?v=<?= filemtime('../assets/js/drive/navigation.js') ?>"></script>
+    <script src="../assets/js/drive/file-input.js?v=<?= filemtime('../assets/js/drive/file-input.js') ?>"></script>
+    <script src="../assets/js/drive/preview.js?v=<?= filemtime('../assets/js/drive/preview.js') ?>"></script>
+    <script src="../assets/js/drive/search.js?v=<?= filemtime('../assets/js/drive/search.js') ?>"></script>
+    <script src="../assets/js/drive/upload.js?v=<?= filemtime('../assets/js/drive/upload.js') ?>"></script>
     <?php include '../partials/footer.php'; ?>
 </body>
 

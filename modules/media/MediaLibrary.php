@@ -1,5 +1,5 @@
 <?php
-// File: auth/MediaLibrary.php
+// File: modules/media/MediaLibrary.php
 
 class MediaLibrary
 {
@@ -163,8 +163,16 @@ class MediaLibrary
             // Prepared statement handle escaping natively — aman untuk MySQL 5.7+
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        $stmt->execute();
-        return $stmt->get_result();
+        // FULLTEXT boolean mode bisa melempar mysqli_sql_exception (mis. query
+        // operator yang lolos sanitizer, atau syntax error 1064). Jangan sampai
+        // crash endpoint — fallback ke hasil kosong.
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return null;
+        }
+        $result = $stmt->get_result();
+        return $result ?: null;
     }
 
     // ── MUSIC ─────────────────────────────────────────────────────────────────
@@ -272,8 +280,16 @@ class MediaLibrary
             );
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        $stmt->execute();
-        return $stmt->get_result();
+        // FULLTEXT boolean mode bisa melempar mysqli_sql_exception (mis. query
+        // operator yang lolos sanitizer, atau syntax error 1064). Jangan sampai
+        // crash endpoint — fallback ke hasil kosong.
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return null;
+        }
+        $result = $stmt->get_result();
+        return $result ?: null;
     }
 
     // ── PRIVATE HELPER ────────────────────────────────────────────────────────
@@ -372,6 +388,55 @@ class BookRepository
 
         $stmt->execute();
         return (int)$stmt->get_result()->fetch_assoc()['total'];
+    }
+
+    /**
+     * Cari buku memakai FULLTEXT index ft_books_search (title, author).
+     * Query kosong → daftar buku terbaru (pagination biasa).
+     * Query yang gagal di FULLTEXT → null (endpoint menampilkan hasil kosong).
+     *
+     * @param string $q      Kata kunci pencarian (sudah di-sanitize)
+     * @param string $type   Filter tipe: 'all', 'manga', 'pdf' (dihormati dari pill filter)
+     * @param int    $offset Offset pagination
+     * @param int    $limit  Batas baris yang diambil
+     * @return \mysqli_result|null
+     */
+    public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24)
+    {
+        $allowed    = ['manga', 'pdf'];
+        $type_where = in_array($type, $allowed, true) ? " AND type = ?" : "";
+
+        if (empty($q)) {
+            $stmt = $this->conn->prepare(
+                "SELECT * FROM books WHERE 1=1{$type_where} ORDER BY upload_date DESC LIMIT ? OFFSET ?"
+            );
+            if ($type_where !== '') {
+                $stmt->bind_param("sii", $type, $limit, $offset);
+            } else {
+                $stmt->bind_param("ii", $limit, $offset);
+            }
+        } else {
+            $stmt = $this->conn->prepare(
+                "SELECT *, MATCH(title, author) AGAINST (? IN BOOLEAN MODE) AS rank
+                 FROM books
+                 WHERE MATCH(title, author) AGAINST (? IN BOOLEAN MODE){$type_where}
+                 ORDER BY rank DESC, upload_date DESC
+                 LIMIT ? OFFSET ?"
+            );
+            if ($type_where !== '') {
+                $stmt->bind_param("sssii", $q, $q, $type, $limit, $offset);
+            } else {
+                $stmt->bind_param("ssii", $q, $q, $limit, $offset);
+            }
+        }
+
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return null;
+        }
+        $result = $stmt->get_result();
+        return $result ?: null;
     }
 
     /**

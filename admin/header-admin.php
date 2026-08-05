@@ -1,14 +1,7 @@
 <?php
-// Tentukan role admin menggunakan helper terpusat get_user_role()
 if (!isset($is_admin)) {
-    $is_admin = false;
-    if (isset($_SESSION['user_id']) && isset($conn)) {
-        // Gunakan helper terpusat dengan session cache
-        $user_role = function_exists('get_user_role')
-            ? get_user_role($conn, (int)$_SESSION['user_id'])
-            : 'user';
-        $is_admin = ($user_role === 'admin');
-    }
+    $is_admin = (isset($_SESSION['user_id']) && isset($conn)
+        && function_exists('is_admin') && is_admin($conn));
 }
 
 // Default back URL if not set

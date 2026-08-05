@@ -57,16 +57,18 @@ modules/
 │   ├── Transcoder.php      # yt-dlp download & transcoding engine
 │   ├── helpers.php         # Global utility functions
 │   ├── bootstrap.php       # Environment detection & error reporting
+│   ├── base_url.php        # Centralized base URL computation (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
 │   ├── CommentRenderer.php # Nested comment rendering
-│   └── japanese.php        # Japanese text processing (MeCab)
+│   ├── japanese.php        # Japanese text processing (MeCab)
+│   └── SwPrecache.php      # PWA precache generator (service worker)
 ├── media/                  # Media query modules
 │   ├── MediaLibrary.php    # DB queries, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, comments, recommendations
 │   ├── MediaInteraction.php# Like/dislike, comment deletion
-│   └── SearchEngine.php    # FULLTEXT search with parameter filtering
+│   └── SearchEngine.php    # FULLTEXT search with sanitizer + parameter filtering
 ├── exceptions/             # Exception classes
 │   ├── ProcessException.php
 │   ├── DownloadException.php
@@ -74,6 +76,9 @@ modules/
 ├── transcoder/
 │   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT()
 └── autoload.php            # PSR-4-like autoloader
+
+# ── Di ROOT PROJECT (bukan di modules/) ────────────────────────────────
+sw.js.php                   # Service worker generator — served as /sw.js via .htaccess rewrite
 ```
 
 ---
@@ -92,12 +97,13 @@ class MediaLibrary {
     public function getVideosWithMeta(int $page = 1, int $perPage = 15): array;
     public function getVideos(int $limit, int $offset);
     public function countVideos(): int;
-    public function searchVideo(string $q, int $exclude, bool $sidebar, int $offset);
+    public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
     public function getMusicListWithMeta(string $format, string $artist, int $page = 1, int $perPage = 10): array;
     public function getMusicList(string $format, string $artist, int $limit, int $offset);
     public function countMusic(string $format, string $artist): int;
     public function getArtists();
-    public function searchMusic(string $q, int $exclude, bool $sidebar);
+    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
+    public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24);
     public function getUserPlaylists(int $user_id);
 }
 ```
@@ -114,6 +120,10 @@ class MediaLibrary {
     'to'          => 15,
 ]
 ```
+
+**Search resilience:** `searchVideo()`, `searchMusic()`, and `searchBooks()`
+wrap their FULLTEXT queries in `try/catch (\mysqli_sql_exception)` — a malformed
+boolean-mode query falls back to an empty result instead of a 500 error.
 
 ### 2. `modules/media/MediaViewer.php`
 
@@ -200,7 +210,7 @@ Global utility functions — all wrapped in `function_exists()` guard:
 
 ```php
 function resolve_binary(array $candidates): string;     // Binary path discovery (with MEEL_*_PATH constant override)
-function base_url(string $path = ''): string;           // Dynamic base URL
+function base_url(string $path = ''): string;           // Dynamic base URL (fallback via meel_base_url_path(), see base_url.php)
 function detectProtocol(): string;                       // HTTPS detection with Cloudflare support
 function time_ago($timestamp);                           // Relative time (ID locale)
 function format_bytes($bytes);                           // Human-readable file size
@@ -221,9 +231,7 @@ function log_drive_operation(...);                       // Drive audit trail
 
 ### 9. `modules/core/CommentRenderer.php`
 
-**Functions:** `render_comments()`, `render_video_comments()`, `render_music_comments()`
-
-Nested comment rendering with 2 themes (video/music).
+**Functions:** `render_comments()` — nested comment rendering with 2 themes (video/music); `comment_preview()` — latest comment preview for the comment header.
 
 ### 10. `modules/core/GarbageCollector.php`
 
@@ -300,18 +308,55 @@ Centralized bootstrap for all entry points:
 - Sets `MEEL_BASE_URL` constant
 - Default timezone (Asia/Jakarta)
 
+### 15a. `modules/core/base_url.php`
+
+Centralized **base URL computation** — the single source of truth for the project's base URL path (relative to `DOCUMENT_ROOT`):
+
+```php
+function meel_base_url_path(): string;   // Project root relative to DOCUMENT_ROOT (e.g. "/MEeL")
+```
+
+Used by `bootstrap.php` (`MEEL_BASE_URL` fallback), `auth/config.php`, `auth/config.example.php`, and the `base_url()` fallback in `helpers.php`. Computed from this file's location (`dirname(__DIR__, 2)`) rather than `dirname(SCRIPT_NAME)` — consistent for all pages in subdirectories (admin/, video/, etc.).
+
 ### 16. `modules/media/SearchEngine.php`
 
-**Class:** `SearchEngine` — FULLTEXT search with parameter filtering:
+**Class:** `SearchEngine` — FULLTEXT search engine (video, music, books) with query sanitizer:
 
 ```php
 class SearchEngine {
+    public const VIDEO_LIMIT    = 20;
+    public const MUSIC_LIMIT    = 20;
+    public const MIN_SEARCH_QUERY = 3;   // Query pendek (< 3) tidak diproses
+    public const MAX_SEARCH_QUERY = 255; // Batas panjang query
+
+    public function __construct(mysqli $db_connection);
+    public function parseParams(): array;                    // q (sanitized), offset, dll.
+    public static function sanitizeQuery(string $q): string; // FULLTEXT-safe: buang operator murni, seimbangkan kutip, buang asterisk di awal token
     public function searchVideo(array $params): array;
     public function searchMusic(array $params): array;
+    public static function clearCache(): void;
 }
 ```
 
-### 17. Migration System (`database/migrate.php`)
+**Key behaviors:**
+- `sanitizeQuery()` is **public static** — shared by every search entry point so
+  the FULLTEXT syntax is always valid (no `mysqli_sql_exception` on malformed input).
+- `parseParams()` reads `$_GET['search']` + `$_GET['offset']`; offset is included
+  in the **cache key**, so pagination never serves a stale page.
+- `MIN_SEARCH_QUERY = 3` — shorter queries are ignored (index efficiency).
+
+### 17. `modules/autoload.php`
+
+PSR-4-like autoloader via `spl_autoload_register()`. Auto-loads classes from `modules/core/`, `modules/media/`, `drive/`, etc.
+
+### 18. WatchController (`controllers/api/WatchController.php`)
+
+```php
+class VideoWatchController { public function getViewData(): array; }
+class MusicWatchController { public function getViewData(): array; public function requireMedia(): void; }
+```
+
+### 19. Migration System (`database/migrate.php`)
 
 | Version | Changes |
 |-------|-----------|
@@ -321,7 +366,62 @@ class SearchEngine {
 | **v4** | Foreign key constraints |
 | **v5** | title VARCHAR → TEXT |
 | **v6** | activity_log table |
-| **v7** | UNIQUE INDEX on users.username |
+| **v7** | UNIQUE INDEX on users.username + schema sync |
+| **v8** | Role column `varchar(20)`, drop duplicate UNIQUE KEY, sync defaults |
+| **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
+| **v10** | Composite index `(video_id, created_at)` & `(music_id, created_at)` on `comments` |
+| **v11** | `interactions` unique keys split: `(user_id, video_id)` & `(user_id, music_id)` — NULL in a combined unique key did not prevent duplicate likes |
+
+### 20. MFA System
+
+Multi-Factor Authentication (TOTP) protects user accounts:
+
+| File | Function |
+|------|--------|
+| `auth/mfa_setup.php` | MFA Setup — generate secret, scan QR/barcode, verify TOTP, backup codes |
+| `auth/mfa_verify.php` | TOTP verification after login — rate limit 10 failed attempts, lock 5 minutes |
+| `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
+| `controllers/system/mfa.php` | Backend controller — AJAX verify, regenerate backup codes, email backup |
+
+**Flow:** `login.php` → check `mfa_enabled` → redirect `mfa_verify.php` → valid TOTP → set full session
+
+**Helper functions** (in `modules/core/helpers.php`):
+```php
+function generate_mfa_secret(): string;      // Base32 random secret
+function generate_totp(string $secret): string;// TOTP 6-digit code
+function verify_totp(string $secret, string $code): bool; // Verify with window ±1
+function generate_backup_codes(): array;      // 8 backup codes (SHA256 hashed)
+function verify_backup_code(string $stored, string $code): array; // Verify + consume code
+```
+
+### 21. Chess Multiplayer (`arcade/chess/`)
+
+Real-time LAN multiplayer chess:
+
+| File | Function |
+|------|--------|
+| `index.php` | Chess board with drag-and-drop, timer, chat, sound effects |
+| `controller/create_room.php` | Create new room, return room code |
+| `controller/join_room.php` | Join room with code |
+| `controller/get_move.php` | Fetch opponent's move (polling) |
+| `controller/save_move.php` | Save move with legal move validation |
+| `controller/check_room_status.php` | Check room status (waiting/playing/ended) |
+
+**Multiplayer flow (color picker):**
+
+```
+Klik "Multiplayer LAN" → konfirmasi SweetAlert
+  → overlay "Pilih Warna" (papan disembunyikan & terkunci)
+      ├── Putih = createRoom() → state "Menunggu Lawan" + room code
+      │        → lawan join → overlay tertutup → polling mulai
+      └── Hitam = joinRoom() (prompt kode) → sync papan → overlay tertutup
+```
+
+**Security guards (all controllers):**
+- Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirects to login).
+- Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
+- Token CSRF tidak pernah disimpan ke `moves.move_data`.
+- `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).
 
 ### Admin Activity Log Viewer
 
@@ -331,6 +431,20 @@ class SearchEngine {
 - Stats cards (7-day activity, unique users, total entries)
 - Color-coded action badges (login=blue, upload=green, ban=red)
 - Manual log cleanup (7–365 days) with CSRF
+
+### 22. PWA Service Worker (`sw.js.php` + `modules/core/SwPrecache.php`)
+
+The service worker is **generated dynamically by PHP** — see the full guide in
+[`pwa.md`](pwa.md).
+
+| Component | Role |
+|-----------|------|
+| `modules/core/SwPrecache.php` | `baseAssets()` + `moduleAssets()` (all `assets/css/*/manifest.php`) → `all()`; `version()` = content hash → auto SW update |
+| `sw.js.php` | Full SW script, `Content-Type: application/javascript`, deterministic output |
+| `.htaccess` | `RewriteRule ^sw\.js$ sw.js.php [L]` — URL `/sw.js` preserved |
+
+Adding a new module folder (`assets/css/<folder>/manifest.php`) automatically
+adds its CSS to the precache — **no manual SW changes needed**.
 
 ---
 

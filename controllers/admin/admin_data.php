@@ -12,6 +12,13 @@
  *   $orphans, $pending_users, $result_monitor, $all_users
  */
 
+// ─── Guard Direct Access ───────────────────────────────────────────────────
+// Hanya boleh di-include dari admin/index.php (sudah melewati require_admin())
+// — bukan diakses langsung via URL.
+if (!defined('MEEL_ADMIN_CONTEXT')) {
+    die(include __DIR__ . '/../../err/denied.php');
+}
+
 // ─── BANNED IPS ────────────────────────────────────────────────────────────
 $banned_ips = $conn->query("SELECT * FROM ip_ban ORDER BY banned_at DESC");
 

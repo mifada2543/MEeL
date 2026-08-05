@@ -1,0 +1,41 @@
+/* ============================================================
+ * layout.css — Tata letak struktural halaman admin
+ * Top nav, responsive
+ * ============================================================ */
+/* ── Sticky Top Nav ── */
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(8, 11, 17, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 0 12px;
+  }
+}
+/* ── Page Layout ── */
+.admin-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+@media (min-width: 768px) {
+  .admin-page {
+    padding: 2rem 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .admin-page {
+    padding: 2rem 4rem;
+  }
+}

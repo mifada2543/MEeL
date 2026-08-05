@@ -28,6 +28,7 @@ const DOCS = {
             ['problem-solved',    '🌍 Problems'],
             ['upload_issue',      '📥 Upload'],
             ['test',              '🧪 Test'],
+            ['pwa',               '📱 PWA'],
             ['analysis',          '📋 Analysis'],
         ]
     },
@@ -46,6 +47,7 @@ const DOCS = {
             ['problem-solved',    '🌍 Masalah'],
             ['upload_issue',      '📥 Upload'],
             ['test',              '🧪 Test'],
+            ['pwa',               '📱 PWA'],
             ['deskripsi',         '📋 Analisis'],
         ]
     }
@@ -126,6 +128,11 @@ async function loadDoc(lang, file) {
     const mdPath = `${lang}/${file}.md`;
 
     try {
+        // Check if marked library is loaded
+        if (typeof marked === 'undefined') {
+            throw new Error('Markdown parser (marked.js) not loaded. Check network tab to verify the library is accessible.');
+        }
+
         const res = await fetch(mdPath);
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 

@@ -12,6 +12,7 @@
  *  - Config Check (auth/config.php, session settings)
  *  - Directory Structure (upload, temp, log folder)
  *  - Database Connectivity (jika auth/config.php tersedia)
+ *  - Error Pages (path konsisten: tanpa hardcode /MEeL/, include __DIR__-based)
  *
  * Cara pakai:
  *   /opt/lampp/bin/php tests/functional_test.php
@@ -24,7 +25,7 @@
 
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'assets/dict', 'data_drive']);
-define('EXCLUDE_FILES', ['config.example.php', 'test.php', '.gitkeep']);
+define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
 
 require_once __DIR__ . '/helpers.php';
 
@@ -83,9 +84,10 @@ function testFileIntegrity(): void {
     $critical = [
         // Config & Auth
         '.htaccess', 'index.php', 'auth/config.php', 'auth/auth.php',
-        'auth/login.php', 'auth/logout.php', 'auth/register.php',
+        'auth/login.php', 'auth/logout.php', 'auth/register.php', 'auth/auth_helpers.php',
         // Modules
-        'modules/core/helpers.php', 'modules/core/activity_logger.php', 'modules/core/System.php',
+        'modules/core/helpers.php', 'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
+        'modules/core/activity_logger.php', 'modules/core/System.php',
         'modules/core/Uploader.php', 'modules/core/Transcoder.php', 'modules/core/japanese.php',
         'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php',
@@ -192,22 +194,22 @@ function testFunctionExistence(): void {
     print_header('TEST 4: Function Existence — Helper Functions');
 
     $functions = [
-        // helpers.php
-        'time_ago'              => 'modules/core/helpers.php',
-        'format_bytes'          => 'modules/core/helpers.php',
-        'music_thumbnail_url'   => 'modules/core/helpers.php',
-        'get_user_usage'        => 'modules/core/helpers.php',
-        'get_csrf_token'        => 'modules/core/helpers.php',
-        'verify_csrf_token'     => 'modules/core/helpers.php',
-        'log_drive_operation'   => 'modules/core/helpers.php',
+        // helpers.php (dipecah ke modules/core/helpers/ — modul per domain)
+        'time_ago'              => 'modules/core/helpers/url.php',
+        'format_bytes'          => 'modules/core/helpers/url.php',
+        'music_thumbnail_url'   => 'modules/core/helpers/storage.php',
+        'get_user_usage'        => 'modules/core/helpers/user.php',
+        'get_csrf_token'        => 'modules/core/helpers/csrf.php',
+        'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
+        'log_drive_operation'   => 'modules/core/helpers/storage.php',
+        'generate_search_metadata' => 'modules/core/helpers/metadata.php',
         // japanese.php
         'getRomajiName'         => 'modules/core/japanese.php',
         'analyzeJapaneseText'   => 'modules/core/japanese.php',
-        'getEnglishTranslation' => 'modules/core/japanese.php',
         // activity_logger.php — hanya di docs/security.md, belum diimplementasi
         'log_activity'          => 'modules/core/activity_logger.php',
-        // helpers.php (CSRF) — verify_csrf_token is the canonical function
-        'verify_csrf_token'     => 'modules/core/helpers.php',
+        // helpers/csrf.php — verify_csrf_token is the canonical function
+        'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
     ];
 
     $warning_funcs = ['log_activity']; // fungsi ini boleh warning, bukan failure
@@ -441,7 +443,7 @@ function testSecurityShellEscape(): void {
     $files = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/helpers/storage.php' => ['shell_exec'], // dir_size() — dipecah dari helpers.php
         'modules/core/System.php'       => ['shell_exec'],
         'modules/core/japanese.php'     => ['proc_open'],
     ];
@@ -649,10 +651,17 @@ function testConfigCheck(): void {
     $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
     $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
     
+    // Refactor v2: credentials dipindah ke auth/settings.php — ikut dicek
+    $settingsFile = PROJECT_ROOT . '/auth/settings.php';
+    if (file_exists($settingsFile)) {
+        $settingsContent = file_get_contents($settingsFile);
+        $hasServerVar = $hasServerVar || preg_match('/\\$server\\s*=\\s*"[^"]*"/', $settingsContent);
+    }
+
     if ($hasServerVar || $hasDirectConn) {
         record("Database server terkonfigurasi ✓", true);
     } else {
-        record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/config.php");
+        record("Database server belum dikonfigurasi ⚠", true, true, "Isi \$server, \$username, \$password, \$db di auth/settings.php");
     }
 }
 
@@ -700,9 +709,26 @@ function testModifiedFiles(): void {
     // File-file yang telah dimodifikasi selama patch keamanan
     $modified_files = [
         'admin/catur.php' => [
-            'role check'    => ['pattern' => '/role.*!==.*admin/', 'label' => 'Role check admin'],
+            // Guard terpusat via require_admin() (authz.php) — lebih aman daripada
+            // pola manual role.*!==.*admin karena membaca role langsung dari DB.
+            'role check'    => ['pattern' => '/require_admin\s*\(/', 'label' => 'Role check admin (require_admin)'],
             'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
             'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
+        ],
+        'controllers/admin/admin_actions.php' => [
+            // Refactor: manual role query diganti helper terpusat is_admin() (authz.php)
+            'role check is_admin' => ['pattern' => '/is_admin\s*\(\s*\$conn\s*\)/', 'label' => 'Role check via is_admin()'],
+            // Guard direct-access: hanya boleh di-include dari admin/*.php
+            'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
+        ],
+        'controllers/admin/admin_data.php' => [
+            'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
+        ],
+        'admin/index.php' => [
+            'context define' => ['pattern' => "/define\('MEEL_ADMIN_CONTEXT'/", 'label' => 'Define MEEL_ADMIN_CONTEXT sebelum include'],
+        ],
+        'admin/mfa_reset.php' => [
+            'context define' => ['pattern' => "/define\('MEEL_ADMIN_CONTEXT'/", 'label' => 'Define MEEL_ADMIN_CONTEXT sebelum include'],
         ],
         'modules/core/Uploader.php' => [
             'magic bytes'   => ['pattern' => '/validateVideoMagicBytes/', 'label' => 'Magic bytes validation'],
@@ -730,7 +756,7 @@ function testModifiedFiles(): void {
         'modules/core/japanese.php' => [
             'escapeshellarg getRomajiName' => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getRomajiName)'],
             'escapeshellarg analyze'       => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
-            'escapeshellarg translate'     => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getEnglishTranslation)'],
+            'escapeshellarg translate'     => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
         ],
         'music/stream.php' => [
             'basename'      => ['pattern' => '/basename\\(\\$v/', 'label' => 'basename() untuk file path'],
@@ -849,6 +875,59 @@ function testIndexPages(): void {
 }
 
 // ============================================================================
+// TEST 12: ERROR PAGES — Path Consistency & Depth-Independence
+// ============================================================================
+
+function testErrorPages(): void {
+    print_header('TEST 12: Error Pages — Path Consistency');
+
+    $err_pages = [
+        'err/denied.php',
+        'err/banned.php',
+        'err/maintance.php',
+        'err/revoked.php',
+        'err/not_found.php',
+    ];
+
+    foreach ($err_pages as $file) {
+        $full = PROJECT_ROOT . '/' . $file;
+        if (!file_exists($full)) {
+            record("{$file} — tidak ditemukan", false, false, 'File error page hilang');
+            continue;
+        }
+
+        // Strip komentar agar keyword di docblock/komentar tidak jadi false positive
+        $code   = stripPhpComments(file_get_contents($full));
+        $issues = [];
+
+        // 1. Path asset harus dinamis via meel_base_url_path() — bukan hardcoded /MEeL/
+        if (strpos($code, '/MEeL/') !== false) {
+            $issues[] = 'path hardcoded /MEeL/ ditemukan'; // harus pakai base dinamis
+        }
+        if (strpos($code, 'meel_base_url_path()') === false) {
+            $issues[] = 'meel_base_url_path() tidak dipakai'; // helper base URL terpusat
+        }
+
+        // 2. Include partial wajib __DIR__-based — bukan CWD-relative '../partials/...'
+        //    (include CWD-relative gagal senyap saat halaman di-include dari subdirektori)
+        if (preg_match("/include\s*['\"]\.\.\/partials\//", $code)) {
+            $issues[] = 'include partials CWD-relative (../partials/) ditemukan';
+        }
+        if (preg_match('/\.\.\/partials\//', $code) && strpos($code, "__DIR__ . '/../partials/") === false) {
+            $issues[] = 'include partials tidak __DIR__-based';
+        }
+
+        if (empty($issues)) {
+            record("{$file} — path konsisten & depth-independent ✓", true);
+        } else {
+            foreach ($issues as $issue) {
+                record("{$file} — {$issue}", false, false, 'Pakai meel_base_url_path() + include __DIR__-based');
+            }
+        }
+    }
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
@@ -878,6 +957,7 @@ function run(): int {
     testDatabaseConnectivity();
     testModifiedFiles();
     testIndexPages();
+    testErrorPages();
 
     // ─── SUMMARY ───
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";

@@ -219,6 +219,104 @@ $migrations = [
             },
         ],
     ],
+    9 => [
+        'description' => 'Tambah kolom MFA (multi-factor authentication) ke tabel users',
+        'sql' => [
+            function($conn) {
+                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT NULL AFTER last_session_id");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
+                        echo "[MEeL] ⚠ Warning (mfa_secret): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_backup_codes TEXT DEFAULT NULL AFTER mfa_secret");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
+                        echo "[MEeL] ⚠ Warning (mfa_backup_codes): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_enabled TINYINT(1) DEFAULT 0 AFTER mfa_backup_codes");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
+                        echo "[MEeL] ⚠ Warning (mfa_enabled): {$err}\n";
+                    }
+                }
+            },
+        ],
+    ],
+    10 => [
+        'description' => 'Tambah index komposit (video_id, created_at) & (music_id, created_at) pada tabel comments',
+        'sql' => [
+            function($conn) {
+                $conn->query("ALTER TABLE comments ADD INDEX idx_comments_video_created (video_id, created_at)");
+            },
+            function($conn) {
+                $conn->query("ALTER TABLE comments ADD INDEX idx_comments_music_created (music_id, created_at)");
+            },
+        ],
+    ],
+    11 => [
+        'description' => 'Perbaiki unique key tabel interactions — pisah jadi (user_id, video_id) & (user_id, music_id) karena NULL di unique key gabungan tidak mencegah duplikat',
+        'sql' => [
+            function($conn) {
+                // Step 1: Hapus duplikat interaksi video (user_id + video_id sama, music_id NULL)
+                // Sisakan baris dengan id terbesar.
+                $conn->query("DELETE i1 FROM interactions i1
+                    INNER JOIN interactions i2
+                    WHERE i1.id < i2.id
+                    AND i1.user_id = i2.user_id
+                    AND i1.video_id = i2.video_id
+                    AND i1.video_id IS NOT NULL
+                    AND i2.video_id IS NOT NULL");
+            },
+            function($conn) {
+                // Step 2: Hapus duplikat interaksi music (user_id + music_id sama, video_id NULL)
+                $conn->query("DELETE i1 FROM interactions i1
+                    INNER JOIN interactions i2
+                    WHERE i1.id < i2.id
+                    AND i1.user_id = i2.user_id
+                    AND i1.music_id = i2.music_id
+                    AND i1.music_id IS NOT NULL
+                    AND i2.music_id IS NOT NULL");
+            },
+            function($conn) {
+                // Step 3: Drop unique key lama (jika masih ada)
+                $result = $conn->query("ALTER TABLE interactions DROP INDEX unique_interaction");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'drop index') && !str_contains($err, "can't DROP") && !str_contains($err, 'check that column/key exists')) {
+                        echo "[MEeL] ⚠ Warning (drop unique_interaction): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                // Step 4: Tambah unique key per media type — cegah like duplikat
+                $result = $conn->query("ALTER TABLE interactions ADD UNIQUE INDEX unique_interaction_video (user_id, video_id)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (unique_interaction_video): {$err}\n";
+                    }
+                }
+            },
+            function($conn) {
+                $result = $conn->query("ALTER TABLE interactions ADD UNIQUE INDEX unique_interaction_music (user_id, music_id)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (unique_interaction_music): {$err}\n";
+                    }
+                }
+            },
+        ],
+    ],
 ];
 // ═══════════════════════════════════════════════════════════════════════════
 // Catatan Sinkronisasi
@@ -234,6 +332,8 @@ $migrations = [
 //   v6 — CREATE TABLE activity_log
 //   v7 — UNIQUE KEY idx_username_unique pada users.username
 //   v8 — users.role→varchar(20), hapus duplicate UNIQUE KEY, sync defaults
+//   v9 — Tambah kolom MFA (mfa_secret, mfa_backup_codes, mfa_enabled) ke tabel users
+//   v10 — Index komposit comments (video_id, created_at) & (music_id, created_at)
 //
 // Catatan: schema.sql (fresh install) sudah mencakup semua CREATE TABLE
 // dengan FK, INDEX, dan UNIQUE KEY langsung — migration ini hanya untuk

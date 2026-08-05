@@ -57,16 +57,18 @@ modules/
 │   ├── Transcoder.php      # Engine download yt-dlp & transcoding
 │   ├── helpers.php         # Fungsi utilitas global
 │   ├── bootstrap.php       # Environment detection & error reporting
+│   ├── base_url.php        # Perhitungan base URL terpusat (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
 │   ├── CommentRenderer.php # Render komentar nested
-│   └── japanese.php        # Pemrosesan teks Jepang (MeCab)
+│   ├── japanese.php        # Pemrosesan teks Jepang (MeCab)
+│   └── SwPrecache.php      # Generator precache PWA (service worker)
 ├── media/                  # Modul query media
 │   ├── MediaLibrary.php    # Query DB, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, komentar, rekomendasi
 │   ├── MediaInteraction.php# Like/dislike, hapus komentar
-│   └── SearchEngine.php    # FULLTEXT search dengan parameter filtering
+│   └── SearchEngine.php    # FULLTEXT search dengan sanitizer + filtering
 ├── exceptions/             # Class exception
 │   ├── ProcessException.php
 │   ├── DownloadException.php
@@ -74,6 +76,9 @@ modules/
 ├── transcoder/
 │   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT()
 └── autoload.php            # PSR-4-like autoloader
+
+# ── Di ROOT PROJECT (bukan di modules/) ────────────────────────────────
+sw.js.php                   # Generator service worker — disajikan sebagai /sw.js via rewrite .htaccess
 ```
 
 ---
@@ -83,6 +88,16 @@ modules/
 **Class:** `MediaLibrary`, `BookRepository`, `BookUploader`
 
 Fungsi utama query database untuk katalog media — dengan **pagination metadata dan cache getCounts()**:
+
+```php
+public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
+public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0);
+public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24);
+```
+
+**Resilience search:** `searchVideo()`, `searchMusic()`, dan `searchBooks()`
+membungkus query FULLTEXT-nya dengan `try/catch (\mysqli_sql_exception)` —
+query boolean-mode yang malformed jatuh ke hasil kosong, bukan error 500.
 
 ### 2. `modules/media/MediaViewer.php`
 
@@ -129,7 +144,7 @@ Fitur: Guest auto-registration (ON DUPLICATE KEY UPDATE), session kick detection
 
 Semua fungsi dibungkus `function_exists()` guard:
 - `resolve_binary(array): string` — Binary path (MEEL_*_PATH override)
-- `base_url(string): string` — Dynamic base URL
+- `base_url(string): string` — Dynamic base URL (fallback via `meel_base_url_path()`, lihat `base_url.php`)
 - `detectProtocol(): string` — HTTPS + Cloudflare
 - `time_ago($timestamp)` — Waktu relatif (ID)
 - `format_bytes($bytes)` — Ukuran file readable
@@ -147,7 +162,7 @@ Semua fungsi dibungkus `function_exists()` guard:
 
 ### 9. `modules/core/CommentRenderer.php`
 
-**Fungsi:** `render_comments()`, `render_video_comments()`, `render_music_comments()` — render komentar nested dengan 2 tema (video/music).
+**Fungsi:** `render_comments()` — render komentar nested dengan 2 tema (video/music); `comment_preview()` — preview komentar terbaru untuk header kolom komentar.
 
 ### 10. `modules/core/GarbageCollector.php`
 
@@ -203,9 +218,42 @@ function getMecabPath(): string;                         // MeCab binary resolve
 
 Bootstrap terpusat: auto-detect `MEEL_ENV`, konfigurasi error reporting per environment, set `MEEL_BASE_URL`, default timezone.
 
+### 15a. `modules/core/base_url.php`
+
+Perhitungan **base URL terpusat** — satu-satunya sumber kebenaran untuk path base URL proyek (relatif terhadap `DOCUMENT_ROOT`):
+
+```php
+function meel_base_url_path(): string;   // Root proyek relatif DOCUMENT_ROOT (mis. "/MEeL")
+```
+
+Dipakai oleh `bootstrap.php` (fallback `MEEL_BASE_URL`), `auth/config.php`, `auth/config.example.php`, dan fallback `base_url()` di `helpers.php`. Dihitung dari lokasi file ini (`dirname(__DIR__, 2)`), bukan dari `dirname(SCRIPT_NAME)` — sehingga konsisten untuk semua halaman di subdirektori (admin/, video/, dll).
+
 ### 16. `modules/media/SearchEngine.php`
 
-**Class:** `SearchEngine` — FULLTEXT search dengan parameter filtering.
+**Class:** `SearchEngine` — FULLTEXT search engine (video, music, books) dengan sanitizer query:
+
+```php
+class SearchEngine {
+    public const VIDEO_LIMIT    = 20;
+    public const MUSIC_LIMIT    = 20;
+    public const MIN_SEARCH_QUERY = 3;   // Query pendek (< 3) tidak diproses
+    public const MAX_SEARCH_QUERY = 255; // Batas panjang query
+
+    public function __construct(mysqli $db_connection);
+    public function parseParams(): array;                    // q (sanitized), offset, dll.
+    public static function sanitizeQuery(string $q): string; // FULLTEXT-safe: buang operator murni, seimbangkan kutip, buang asterisk di awal token
+    public function searchVideo(array $params): array;
+    public function searchMusic(array $params): array;
+    public static function clearCache(): void;
+}
+```
+
+**Perilaku kunci:**
+- `sanitizeQuery()` bersifat **public static** — dipakai semua entry point search
+  sehingga sintaks FULLTEXT selalu valid (tidak ada `mysqli_sql_exception` pada input malformed).
+- `parseParams()` membaca `$_GET['search']` + `$_GET['offset']`; offset ikut
+  dalam **cache key**, sehingga pagination tidak pernah menyajikan halaman basi.
+- `MIN_SEARCH_QUERY = 3` — query lebih pendek diabaikan (efisiensi index).
 
 ### 17. `modules/autoload.php`
 
@@ -222,17 +270,86 @@ class MusicWatchController { public function getViewData(): array; public functi
 
 | Versi | Perubahan |
 |-------|-----------|
-| **v1** | FULLTEXT index |
-| **v2** | Performance index |
+| **v1** | FULLTEXT index (video, music, books) |
+| **v2** | Performance index (upload_date) |
 | **v3** | Sinkronisasi struktural |
 | **v4** | Foreign key constraints |
 | **v5** | title VARCHAR → TEXT |
 | **v6** | activity_log table |
-| **v7** | UNIQUE INDEX on username |
+| **v7** | UNIQUE INDEX (username) + schema sync |
+| **v8** | Role column `varchar(20)`, hapus duplicate UNIQUE KEY, sync defaults |
+| **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
+| **v10** | Index komposit `(video_id, created_at)` & `(music_id, created_at)` pada `comments` |
+| **v11** | Unique key `interactions` dipecah: `(user_id, video_id)` & `(user_id, music_id)` — NULL di unique key gabungan tidak mencegah like duplikat |
+
+### 20. MFA System
+
+Multi-Factor Authentication (TOTP) melindungi akun user:
+
+| File | Fungsi |
+|------|--------|
+| `auth/mfa_setup.php` | Setup MFA — generate secret, scan QR/barcode, verifikasi TOTP, backup codes |
+| `auth/mfa_verify.php` | Verifikasi TOTP setelah login — rate limit 10 percobaan gagal, lock 5 menit |
+| `admin/mfa_reset.php` | Admin reset MFA user yang kehilangan akses Authenticator |
+| `controllers/system/mfa.php` | Backend controller — AJAX verify, regenerate backup codes, email backup |
+
+**Flow:** `login.php` → cek `mfa_enabled` → redirect `mfa_verify.php` → valid TOTP → set session penuh
+
+**Helper functions** (di `modules/core/helpers.php`):
+```php
+function generate_mfa_secret(): string;      // Base32 random secret
+function generate_totp(string $secret): string;// TOTP kode 6 digit
+function verify_totp(string $secret, string $code): bool; // Verifikasi dengan window ±1
+function generate_backup_codes(): array;      // 8 backup codes (SHA256 hashed)
+function verify_backup_code(string $stored, string $code): array; // Verify + consume code
+```
+
+### 21. Chess Multiplayer (`arcade/chess/`)
+
+Multiplayer catur real-time via LAN:
+
+| File | Fungsi |
+|------|--------|
+| `index.php` | Board catur dengan drag-and-drop, timer, chat, sound effects |
+| `controller/create_room.php` | Buat ruang baru, return room code |
+| `controller/join_room.php` | Gabung ruang dengan kode |
+| `controller/get_move.php` | Ambil langkah lawan (polling) |
+| `controller/save_move.php` | Simpan langkah dengan validasi legal move |
+| `controller/check_room_status.php` | Cek status ruang (waiting/playing/ended) |
+
+**Alur multiplayer (color picker):**
+
+```
+Klik "Multiplayer LAN" → konfirmasi SweetAlert
+  → overlay "Pilih Warna" (papan disembunyikan & terkunci)
+      ├── Putih = createRoom() → state "Menunggu Lawan" + room code
+      │        → lawan join → overlay tertutup → polling mulai
+      └── Hitam = joinRoom() (prompt kode) → sync papan → overlay tertutup
+```
+
+**Security guards (semua controller):**
+- Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirect ke login).
+- Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
+- Token CSRF tidak pernah disimpan ke `moves.move_data`.
+- `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).
 
 ### Admin Activity Log Viewer
 
 `admin/activity_log.php` — filter, pagination (50/halaman), stats cards, color-coded badges, manual cleanup.
+
+### 22. PWA Service Worker (`sw.js.php` + `modules/core/SwPrecache.php`)
+
+Service worker **dibangkitkan dinamis oleh PHP** — panduan lengkap di
+[`pwa.md`](pwa.md).
+
+| Komponen | Peran |
+|----------|-------|
+| `modules/core/SwPrecache.php` | `baseAssets()` + `moduleAssets()` (semua `assets/css/*/manifest.php`) → `all()`; `version()` = hash konten → update SW otomatis |
+| `sw.js.php` | Skrip SW lengkap, `Content-Type: application/javascript`, output deterministik |
+| `.htaccess` | `RewriteRule ^sw\.js$ sw.js.php [L]` — URL `/sw.js` dipertahankan |
+
+Menambah folder modul baru (`assets/css/<folder>/manifest.php`) otomatis
+menambahkan CSS-nya ke precache — **tanpa perubahan SW manual**.
 
 ---
 
@@ -309,9 +426,33 @@ Validasi username & password
   ↓
 Gagal 5x? → Lock 5 menit
   ↓ Berhasil
-Set session variables
+Cek MFA (mfa_enabled)
+  ↓
+Aktif? → Simpan mfa_temp_uid → Redirect ke mfa_verify.php
+  ↓ Tidak
+Set session variables (user_id, username, role)
   ↓
 Update last_session_id
+  ↓
+Redirect ke index.php
+```
+
+### MFA Verification Flow
+
+```
+POST mfa_verify.php
+  ↓
+Rate limit: max 10 gagal, lock 5 menit
+  ↓
+Verifikasi TOTP 6 digit
+  ↓
+Gagal? → Increment fail count
+  ↓ Valid
+Set session lengkap (user_id, username, role)
+  ↓
+Set mfa_verified = true
+  ↓
+Hapus mfa_temp_uid dari session
   ↓
 Redirect ke index.php
 ```

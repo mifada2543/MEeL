@@ -1,5 +1,5 @@
 <?php
-// File: auth/Transcoder.php
+// File: modules/core/Transcoder.php
 // Optimized for: Intel Core i3-1220P (10 core / 12 thread), Dual-Channel RAM, USB HDD storage
 // VA-API: Intel iHD 24.1.0 — H264/HEVC/VP9 encode+decode tersedia, tapi tidak dipakai di HLS
 //         karena pipeline ini sudah pakai -codec copy (stream copy, tanpa re-encode)
@@ -44,6 +44,11 @@ class Transcoder
 
     // Download timeout (detik)
     private const DOWNLOAD_TIMEOUT      = 900;
+
+    // Ambang deteksi timeout fragment yt-dlp: berapa kali pesan
+    // "Retrying fragment N (1/10)" muncul sebelum proses dihentikan.
+    // 1 = hentikan segera begitu pola retry fragment terdeteksi.
+    private const FRAGMENT_RETRY_LIMIT  = 1;
 
     // ─── ENV PREFIX ───────────────────────────────────────────────────────────
     // Didefinisikan di class (bukan trait) karena PHP 8.0 tidak support trait constants
@@ -239,7 +244,7 @@ class Transcoder
      */
     private function renderMetadataDebug(string $url, string $cmd, int $return_var, string $output): void
     {
-        // 🔒 SECURITY: Hanya admin yang boleh melihat info debug ini
+        // SECURITY: Hanya admin yang boleh melihat info debug ini
         // Info ini mengekspos path absolut ffmpeg/ffprobe dan path sistem lainnya
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             error_log('[MEeL] Debug info attempted by non-admin');
@@ -281,7 +286,7 @@ class Transcoder
             return "bestvideo[height<=1080]+bestaudio/best";
         }
         if (strpos($host, 'tiktok.com') !== false) {
-            // [FIX] 'bestvideo1' bukan format string yang valid — diganti ke format standar
+            // Catatan: 'bestvideo1' bukan format string yang valid — diganti ke format standar
             return "bestvideo+bestaudio/best";
         }
         return "bestvideo[height<=1080]+bestaudio/best";
@@ -322,7 +327,7 @@ class Transcoder
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk sebelum download (queue belum di-lock)
+        // PRE-FLIGHT: Cek ruang disk sebelum download (queue belum di-lock)
         require_disk_space(512 * 1024 * 1024, $this->getShmTempPath(), 'RAM disk staging');
         $hdd_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : dirname(__DIR__, 2);
         require_disk_space(2 * 1024 * 1024 * 1024, $hdd_path, 'HDD storage');
@@ -339,7 +344,20 @@ class Transcoder
             throw $e;
         }
 
-        $title       = $meta['title']                                     ?? "Upload_" . time();
+        // YouTube (via yt-dlp) terkadang memotong judul panjang dengan '...'
+        // pada field `title`/`fulltitle` (sering terjadi pada video musik).
+        // Field `track`/`alt_title` biasanya memuat judul LENGKAP — ambil
+        // kandidat terpanjang yang tidak berakhiran '...' agar judul utuh
+        // tersimpan ke database. Pemotongan visual '...' saat ditampilkan
+        // ditangani CSS (text-overflow: ellipsis) di halaman library.
+        // Catatan: bila title terpotong DAN track/alt_title tidak ada, judul
+        // terpotong tetap tersimpan — tidak ada sumber lengkap untuk diperbaiki.
+        $title_candidates = array_values(array_filter(
+            [$meta['title'] ?? '', $meta['fulltitle'] ?? '', $meta['alt_title'] ?? '', $meta['track'] ?? ''],
+            fn($t) => $t !== '' && mb_substr(trim($t), -3) !== '...'
+        ));
+        usort($title_candidates, fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+        $title       = $title_candidates[0] ?? $meta['title'] ?? "Upload_" . time();
         $artist      = $meta['artist']      ?? ($meta['uploader']         ?? 'Unknown Artist');
         $album       = $meta['album']                                     ?? 'Single';
         $duration    = (int)($meta['duration']                            ?? 0);
@@ -354,7 +372,9 @@ class Transcoder
 
         if ($type === 'music') {
             $shm_temp  = $this->getShmTempPath();
-            $temp_id   = "raw_" . time();
+            // temp_id unik per download — cegah bentrok file & marker pkill antar
+            // proses yang mulai di detik yang sama (pola sama seperti video).
+            $temp_id   = "raw_" . time() . "_" . substr(md5(uniqid('', true)), 0, 4);
             $temp_path = "$shm_temp/$temp_id.%(ext)s";
             $cmd_dl    = $this->base_cmd
                 . "-f bestaudio -o " . escapeshellarg($temp_path)
@@ -389,8 +409,7 @@ class Transcoder
 
         $error_log = "";
         $start     = time();
-        // Tambahkan -N 4 (4 koneksi paralel untuk mempercepat download, aman untuk server single-user)
-        // 🔒 FIX SECURITY: Set env via putenv() agar popen() tidak perlu shell metacharacters
+        // Tambahkan -N 4 (4 koneksi paralel untuk mempercepat download, aman untuk server single-user)            // Set env via putenv() agar popen() tidak perlu shell metacharacters
         putenv('PATH=/usr/local/bin:/usr/bin:/bin');
         putenv('LC_ALL=en_US.UTF-8');
         // $cmd_dl sudah berisi args yang di-escape dengan escapeshellarg() + filter_var() untuk URL
@@ -405,9 +424,16 @@ class Transcoder
 
         echo str_repeat(' ', 1024);
 
+        // Marker unik milik proses ini — dipakai pkill -f untuk menghentikan
+        // SELURUH tree proses yt-dlp (termasuk node runtime) saat timeout fragment.
+        $kill_marker = ($type === 'music') ? ($temp_id ?? '') : ($basename ?? '');
+
         // Contoh output yt-dlp:
         // [download]  63.2% of   45.23MiB at    4.20MiB/s ETA 00:42 (frag 3/5)
-        $frag_total = 0;
+        // [download] Got error: HTTP Error 429: Too Many Requests. Retrying fragment 3 (1/10)...
+        // [download] Got error: HTTP Error 403: Forbidden. Retrying fragment 3 (2/10)...
+        $frag_retry_abort = false;
+        $frag_total       = 0;
         while (!feof($handle)) {
             if (time() - $start > self::DOWNLOAD_TIMEOUT) {
                 $error_log .= "\n[ERROR] Timeout exceeded";
@@ -417,6 +443,18 @@ class Transcoder
             if ($line === false) break;
 
             $error_log .= $line;
+
+            // ── TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst") ──
+            // Begitu pola "Retrying fragment N (1/10)" terdeteksi (ambang FRAGMENT_RETRY_LIMIT),
+            // proses dihentikan otomatis — jangan biarkan yt-dlp retry terus menerus.
+            if (preg_match('/Retrying\s+fragment[s]?\b/i', $line)) {
+                $frag_total++;
+                if ($frag_total >= self::FRAGMENT_RETRY_LIMIT) {
+                    $error_log .= "\n[ERROR] Fragment retry timeout (yt-dlp retrying repeatedly)";
+                    $frag_retry_abort = true;
+                    break;
+                }
+            }
 
             if (preg_match('/\[download\]\s+(\d+(?:\.\d+)?)%\s+of\s+([\d.]+\s*\S+)\s+at\s+([\d.]+\s*\S+\/s)(?:\s+ETA\s+([\d:]+))?(?:\s+\(frag\s+(\d+)\/(\d+)\))?/', $line, $m)) {
                 $pct   = (int)$m[1];
@@ -435,11 +473,35 @@ class Transcoder
             }
         }
 
+        // ── TIMEOUT FRAGMENT: hentikan proses yt-dlp + node + bersihkan partial ──
+        // pkill -f dengan marker unik (temp_id / basename) memastikan SELURUH tree
+        // proses milik download ini mati, bukan hanya keluar dari loop baca.
+        if ($frag_retry_abort) {
+            if ($kill_marker !== '') {
+                // preg_quote: pkill -f memperlakukan pattern sebagai REGEX (ERE),
+                // bukan string literal — marker dari judul bisa mengandung meta-karakter.
+                // Catatan: pkill ikut mencocokkan wrapper shell-nya sendiri (cmdline-nya
+                // memuat marker) — tidak berbahaya; signal sudah terkirim lebih dulu, dan
+                // cmdline proses PHP (upload_advanced.php) tidak memuat marker.
+                // TERM dulu, lalu KILL sebagai fallback bila yt-dlp mengabaikan SIGTERM,
+                // agar pclose() di bawah tidak keblok sampai backstop `timeout 900`.
+                @shell_exec('pkill -TERM -f ' . escapeshellarg(preg_quote($kill_marker)) . ' 2>/dev/null');
+                usleep(300000); // grace period 300ms
+                @shell_exec('pkill -KILL -f ' . escapeshellarg(preg_quote($kill_marker)) . ' 2>/dev/null');
+            }
+            // Hapus file partial download dari staging agar tidak jadi sampah
+            if ($type === 'music' && !empty($temp_id)) {
+                foreach (glob($shm_temp . "/$temp_id.*") ?: [] as $f) @unlink($f);
+            } elseif ($type === 'video' && !empty($basename)) {
+                foreach (glob($staging_dir . $basename . ".*") ?: [] as $f) @unlink($f);
+            }
+        }
+
         $exit_code = pclose($handle);
 
         // Validasi hasil download
         $is_success = false;
-        // 🔴 BUG SEBELUMNYA: glob() pakai `{$this->base_path}/temp/` tapi yt-dlp simpan file di `$shm_temp` (/dev/shm/meel/temp/)
+        // BUG SEBELUMNYA: glob() pakai `{$this->base_path}/temp/` tapi yt-dlp simpan file di `$shm_temp` (/dev/shm/meel/temp/)
         if ($type === 'music') {
             $files      = glob("$shm_temp/$temp_id.*");
             $is_success = !empty($files);
@@ -452,10 +514,16 @@ class Transcoder
             $this->releaseQueue($queue_id, 'failed');
             file_put_contents('/tmp/ytdlp_error.log', $error_log);
 
-            $error_msg  = "Download gagal. Detail disimpan di server.";
-            $last_lines = array_slice(explode("\n", $error_log), -3);
-            $detail     = trim(implode(" | ", $last_lines));
-            if ($detail) $error_msg = substr($detail, 0, 200);
+            if ($frag_retry_abort) {
+                // Pesan spesifik untuk timeout fragment — lebih jelas daripada pesan generik
+                $error_msg = "Timeout: yt-dlp gagal mengunduh fragment berulang kali (retry 1/10, 2/10, dst). "
+                    . "Proses dihentikan otomatis. Coba lagi nanti atau gunakan URL lain.";
+            } else {
+                $error_msg  = "Download gagal. Detail disimpan di server.";
+                $last_lines = array_slice(explode("\n", $error_log), -3);
+                $detail     = trim(implode(" | ", $last_lines));
+                if ($detail) $error_msg = substr($detail, 0, 200);
+            }
 
             $this->jsError($error_msg);
             return "";
@@ -466,7 +534,7 @@ class Transcoder
         if ($type === 'music') {
             return $this->finalizeMusic($temp_id, $title, $artist, $album, $duration, $description);
         }
-        return $this->finalizeVideo($basename, $basename . ".webp", $title, $artist, $duration, $description);
+        return $this->finalizeVideo($basename, $basename . ".webp", $title, $duration, $description);
     }
 
     // ─── FINALIZE MUSIC ───────────────────────────────────────────────────────
@@ -491,15 +559,29 @@ class Transcoder
         }
 
         if ($raw_file) {
-            $params = http_build_query([
-                'temp_file'   => $raw_file,
+            // Metadata dikirim lewat SESSION (bukan query string URL) agar judul
+            // dan deskripsi panjang tidak terpotong atau memicu error 414 oleh
+            // batas URL server (Apache LimitRequestLine ~8190 byte).
+            $meta_key = pathinfo($raw_file, PATHINFO_FILENAME);
+            if (!isset($_SESSION['meel_pending_music']) || !is_array($_SESSION['meel_pending_music'])) {
+                $_SESSION['meel_pending_music'] = [];
+            }
+            // Buang entri basi (> 1 jam) agar session tidak menumpuk
+            foreach ($_SESSION['meel_pending_music'] as $k => $v) {
+                if (($v['ts'] ?? 0) < time() - 3600) unset($_SESSION['meel_pending_music'][$k]);
+            }
+            $_SESSION['meel_pending_music'][$meta_key] = [
+                'ts'          => time(),
                 'title'       => $title,
                 'artist'      => $artist,
                 'album'       => $album,
                 'duration'    => $duration,
                 'description' => $description,
-            ]);
-            echo "<script>window.location.href = 'controllers/api/post_encode.php?$params';</script>";
+            ];
+            // Tulis session sekarang juga agar data pasti tersimpan sebelum
+            // browser mengeksekusi redirect (mencegah race condition).
+            session_write_close();
+            echo "<script>window.location.href = 'controllers/api/post_encode.php?temp_file=" . rawurlencode($raw_file) . "';</script>";
             exit;
         }
 
@@ -512,7 +594,6 @@ class Transcoder
         string $basename,
         string $db_thumb,
         string $title,
-        string $artist,
         int    $duration,
         string $description = 'Upload by MEeL Engine'
     ): string {
@@ -538,7 +619,7 @@ class Transcoder
         flush();
 
         // ── Tentukan nama folder unik di HDD ──────────────────────────────────
-        // 🔒 FIX SECURITY: Lock untuk serialisasi folder — cegah TOCTOU race condition
+        // Lock untuk serialisasi folder — cegah TOCTOU race condition
         $flock_path = sys_get_temp_dir() . '/meel_transcode_folder.lock';
         $lock_fp    = @fopen($flock_path, 'c');
         $locked     = $lock_fp && flock($lock_fp, LOCK_EX);
@@ -589,7 +670,7 @@ class Transcoder
         // -codec copy: stream copy (tidak re-encode), sehingga QSV tidak relevan.
         // -threads hanya berlaku untuk muxer/demuxer I/O; tetap set untuk konsistensi.
         $work_m3u8  = $work_folder . $folder_name . ".m3u8";
-        // 🔒 FIX SECURITY: proc_open dengan array arguments + env vars — bypasses shell entirely
+        // proc_open dengan array arguments + env vars — bypasses shell entirely
         $hls_env = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $hls_cmd = [
             $this->ffmpeg_bin,
@@ -720,8 +801,9 @@ class Transcoder
             return "";
         }
 
-        $analysis = analyzeJapaneseText($title); // 1x MeCab, hasilkan romaji + english sekaligus
-        $metadata = mb_strtolower(trim("$title $artist {$analysis['romaji']} {$analysis['english']}"), 'UTF-8');
+        // Generate search_metadata — helper terpusat (romaji + english + alias),
+        // konsisten dengan Uploader, backfill & admin/edit-*.php
+        $metadata = generate_search_metadata($title);
         $views    = 0;
 
         $stmt = $this->conn->prepare(
@@ -759,7 +841,7 @@ class Transcoder
         putenv("LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/lib");
         putenv("PATH=/usr/local/bin:/usr/bin:/bin");
 
-        // 🟢 PRE-FLIGHT: Cek HDD untuk output encode — butuh minimal 500MB
+        // PRE-FLIGHT: Cek HDD untuk output encode — butuh minimal 500MB
         $music_dir = "{$this->base_path}/music/upload/file";
         if (!is_dir($music_dir)) @mkdir($music_dir, 0755, true);
         $hdd_free = @disk_free_space($music_dir);
@@ -811,12 +893,9 @@ class Transcoder
             @unlink($leftover);
         }
 
-        $title_analysis  = analyzeJapaneseText($title);  // 1x MeCab (romaji + english title)
-        $artist_analysis = analyzeJapaneseText($artist); // 1x MeCab (romaji + english artist)
-        $metadata        = mb_strtolower(trim(
-            "$title $artist $album {$title_analysis['romaji']} {$artist_analysis['romaji']} "
-                . "{$title_analysis['english']} {$artist_analysis['english']}"
-        ), 'UTF-8');
+        // Generate search_metadata — helper terpusat (romaji + english + alias),
+        // 1x MeCab saja (sebelumnya 2x terpisah), konsisten dengan Uploader/backfill
+        $metadata = generate_search_metadata($title, $artist, $album);
 
         $stmt = $this->conn->prepare(
             "INSERT INTO music (title, artist, album, description, search_metadata, filename, thumbnail, duration, user_id, upload_date)
@@ -950,7 +1029,7 @@ class Transcoder
         $output_dir = $this->getShmTranscodePath() . '/';
         if (!is_dir($output_dir)) mkdir($output_dir, 0755, true);
 
-        // 🟢 PRE-FLIGHT: Cek RAM disk untuk output transcode — butuh minimal 256MB
+        // PRE-FLIGHT: Cek RAM disk untuk output transcode — butuh minimal 256MB
         $shm_free = @disk_free_space($output_dir);
         if ($shm_free !== false && $shm_free < 256 * 1024 * 1024) {
             return ['status' => 'error', 'msg' => 'RAM disk tidak mencukupi untuk transcode. Hanya tersedia ' . sprintf('%.1f', $shm_free / (1024 ** 3)) . ' GB.'];
@@ -1024,7 +1103,7 @@ class Transcoder
         $output_filename = $this->sanitizeFilename($v_data['title']) . '.' . $format;
         $output_path     = $output_dir . $output_filename;
 
-        // 🔒 FIX SECURITY: Marker file — atomic check-then-create untuk cegah duplikat transcode
+        // Marker file — atomic check-then-create untuk cegah duplikat transcode
         // Pendekatan ini lebih baik dari flock() yang di-hold lama karena FFmpeg bisa memakan waktu menit.
         $marker_file = $output_path . '.processing';
 
@@ -1121,7 +1200,7 @@ class Transcoder
             . " -metadata artist='MEeL Transcoder'"
             . " " . escapeshellarg($output_path) . " 2>&1";
 
-        // 🔒 FIX SECURITY: proc_open dengan array arguments + env vars — bypasses shell entirely
+        // proc_open dengan array arguments + env vars — bypasses shell entirely
         // Daripada popen() yang melewati shell (rentan shell injection meski args sudah di-escape)
         $tc_env  = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $tc_cmd  = [$this->ffmpeg_bin,

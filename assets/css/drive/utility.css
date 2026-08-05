@@ -1,0 +1,167 @@
+/* ============================================================
+ * utility.css — Utility classes, animasi, icon buttons
+ * Modul: Drive (MEeL Cloud)
+ * ============================================================ */
+/* ── Glass Panel ── */
+.glass-panel {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+/* ── Badge ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* ── Progress Track (generic) ── */
+.progress-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s;
+}
+/* ── Fade Up Animation ── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 0.35s ease-out forwards;
+}
+/* ── Icon Buttons ── */
+.icon-btn {
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.icon-btn.blue:hover {
+  color: var(--accent-b);
+}
+.icon-btn.red:hover {
+  color: var(--accent-r);
+}
+.icon-btn.cyan:hover {
+  color: #22d3ee;
+}
+/* ── Scrollbar Hide (utility) ── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+/* ── Transition Helpers ── */
+.transition-all {
+  transition: all 0.2s ease;
+}
+.transition-transform {
+  transition: transform 0.2s ease;
+}
+.transition-opacity {
+  transition: opacity 0.2s ease;
+}
+/* ── Storage Bar ── */
+.storage-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.storage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-b), #60a5fa);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+/* ── Preview Modal ── */
+.preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.preview-modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 64rem;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+}
+.preview-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+.preview-modal-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #d1d5db;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+@media (min-width: 768px) {
+  .preview-modal-title {
+    max-width: 28rem;
+  }
+}
+.preview-modal-close {
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preview-modal-close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.preview-modal-body {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}

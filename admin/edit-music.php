@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $curr_role = get_user_role($conn, (int)$user_id);
-$is_admin   = ($curr_role === 'admin');
+$is_admin   = is_admin($conn);
 
 // Tolak guest
 if ($curr_role === 'guest') {
@@ -38,28 +38,22 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         if (!$should_exclude) $back_url = $ref;
     }
 }
-
-// Validasi ID Musik
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $stmt_music = $conn->prepare("SELECT m.*, u.username AS uploader, u.profile_picture AS uploader_pfp FROM music m JOIN users u ON m.user_id = u.id WHERE m.id = ? LIMIT 1");
 $stmt_music->bind_param("i", $id);
 $stmt_music->execute();
 $music = $stmt_music->get_result()->fetch_assoc();
-
 if (!$music) {
     die("<div style='color:orange; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Musik tidak ditemukan!</h2><a href='../music/index.php' style='color:#f97316;'>Kembali ke Musik</a></div>");
 }
-
 // Cek kepemilikan: admin bisa edit semua, uploader hanya miliknya
 $is_owner = ((int)$music['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
     header("Location: ../err/denied.php");
     exit();
 }
-
 $status = "";
 $error_message = "";
-
 if (isset($_POST['update'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
@@ -76,8 +70,7 @@ if (isset($_POST['update'])) {
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file cover maksimal 5MB.';
             }
-
-            // Validasi MIME type — finfo() cek magic bytes, lebih aman dari $_FILES['type']
+            // Validasi MIME type — finfo() cek magic bytes
             if (empty($error_message)) {
                 $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -87,8 +80,7 @@ if (isset($_POST['update'])) {
                     $error_message = 'File cover harus berupa gambar (JPEG, PNG, WebP, GIF, atau AVIF).';
                 }
             }
-
-            // Proses thumbnail hanya jika validasi lolos
+            // Proses thumbnail lolos
             if (empty($error_message)) {
                 $target_dir = __DIR__ . '/../music/upload/thumbnail/';
                 if (!is_dir($target_dir)) {
@@ -112,9 +104,7 @@ if (isset($_POST['update'])) {
                 exec($cmd, $out, $ret);
                 if ($ret === 0 && file_exists($upload_path) && filesize($upload_path) > 0) {
                     $thumbnail_url = $new_name;
-                    // CATATAN: Thumbnail akan di-update bersama query utama di bawah, tidak perlu UPDATE terpisah
                 } else {
-                    // Fallback: simpan file asli jika ffmpeg gagal
                     if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $upload_path)) {
                         $thumbnail_url = $new_name;
                     } else {
@@ -123,15 +113,11 @@ if (isset($_POST['update'])) {
                 }
             }
         }
-
         if ($title === '') {
             $error_message = "Judul lagu tidak boleh kosong.";
         } else {
-            // Generate search_metadata baru
-            $meta_string = trim("$title $artist $album");
-            $romaji = getRomajiName($meta_string);
-            $meta = mb_strtolower($meta_string . " " . $romaji, 'UTF-8');
-
+            // Generate search_metadata — helper terpusat (romaji + english + alias),
+            $meta = generate_search_metadata($title, $artist, $album);
             $stmt_update = $conn->prepare("UPDATE music SET title = ?, artist = ?, album = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
             $stmt_update->bind_param("ssssssi", $title, $artist, $album, $description, $thumbnail_url, $meta, $id);
             if ($stmt_update->execute()) {
@@ -171,9 +157,12 @@ $thumb_src = !empty($music['thumbnail'])
     <meta name="twitter:card" content="summary_large_image">
     <title>Edit Musik | MEeL Admin</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link rel="stylesheet" href="../assets/css/em.css">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
+    <link rel="stylesheet" href="../assets/css/shared/design-tokens.css?v=<?= filemtime('../assets/css/shared/design-tokens.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/upload-form.css?v=<?= filemtime('../assets/css/shared/upload-form.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/edit/shared/main.css?v=<?= filemtime('../assets/css/admin/edit/shared/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/edit/music/main.css?v=<?= filemtime('../assets/css/admin/edit/music/main.css') ?>">
+    <link href="../assets/css/tailwind.min.css?v=<?= filemtime('../assets/css/tailwind.min.css') ?>" rel="stylesheet">
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
 
 </head>
 
@@ -194,7 +183,7 @@ $thumb_src = !empty($music['thumbnail'])
             <aside class="sidebar-panel">
                 <!-- Cover — klik atau drag untuk ganti -->
                 <div class="cover-wrap" id="cover-wrap">
-                    <!-- File input dipindahkan ke dalam form (ID: cover-file-hidden) -->
+                    <!-- File input (ID: cover-file-hidden) -->
                     <img src="<?= $thumb_src ?>"
                         alt="Cover <?= htmlspecialchars($music['title']) ?>"
                         class="cover-img"
@@ -324,7 +313,7 @@ $thumb_src = !empty($music['thumbnail'])
                 <form id="edit-form" method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
-                    <input type="file" name="thumbnail" accept="image/*" id="cover-file-hidden" style="display:none">
+                        <input type="file" name="thumbnail" accept="image/*" id="cover-file-hidden" style="display:none">
                     <?php endif; ?>
 
                     <!-- Judul -->
@@ -355,7 +344,6 @@ $thumb_src = !empty($music['thumbnail'])
                     </div>
 
                     <!-- Deskripsi -->
-                    <!-- Deskripsi — mengisi sisa ruang -->
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description" placeholder="Masukkan deskripsi musik..."
@@ -376,11 +364,13 @@ $thumb_src = !empty($music['thumbnail'])
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/admin/edit/shared/form.js?v=<?= filemtime('../assets/js/admin/edit/shared/form.js') ?>"></script>
+    <script src="../assets/js/admin/edit/shared/thumbnail.js?v=<?= filemtime('../assets/js/admin/edit/shared/thumbnail.js') ?>"></script>
+    <script src="../assets/js/admin/edit/shared/dragdrop.js?v=<?= filemtime('../assets/js/admin/edit/shared/dragdrop.js') ?>"></script>
+    <script src="../assets/js/admin/edit/music.js?v=<?= filemtime('../assets/js/admin/edit/music.js') ?>"></script>
     <script>
-        lucide.createIcons();
-
         <?php if ($status === "success"): ?>
             Swal.fire({
                 title: 'Berhasil!',
@@ -391,65 +381,6 @@ $thumb_src = !empty($music['thumbnail'])
                 color: '#fff'
             });
         <?php endif; ?>
-
-        function handleSubmit() {
-            const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin2 .7s linear infinite;"></div> Menyimpan...';
-            btn.style.opacity = '.6';
-            btn.style.pointerEvents = 'none';
-        }
-
-        // Hidden file input di dalam form — trigger via klik/drop di sidebar
-        const coverHidden = document.getElementById('cover-file-hidden');
-
-        function handleCoverChange(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('cover-preview').src = e.target.result;
-                    document.getElementById('cover-changed-badge').style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // Klik pada area cover → trigger hidden input
-        document.getElementById('cover-wrap').addEventListener('click', function(e) {
-            if (e.target === coverHidden) return;
-            coverHidden.click();
-        });
-
-        // Hidden input change → preview
-        coverHidden.addEventListener('change', function() {
-            handleCoverChange(this);
-        });
-
-        // Drag-and-drop onto cover
-        const coverWrap = document.getElementById('cover-wrap');
-
-        coverWrap.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            coverWrap.classList.add('drag-over');
-        });
-        coverWrap.addEventListener('dragleave', function() {
-            coverWrap.classList.remove('drag-over');
-        });
-        coverWrap.addEventListener('drop', function(e) {
-            e.preventDefault();
-            coverWrap.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files && files[0] && files[0].type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                coverHidden.files = dt.files;
-                handleCoverChange(coverHidden);
-            }
-        });
-
-        // Inject keyframe for spin
-        const style = document.createElement('style');
-        style.textContent = '@keyframes spin2 { to { transform: rotate(360deg); } }';
-        document.head.appendChild(style);
     </script>
 </body>
 

@@ -3,7 +3,6 @@ export class ChessSoundEffects {
     this.ctx = null;
     this.initialized = false;
   }
-
   init() {
     if (!this.initialized) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -11,21 +10,26 @@ export class ChessSoundEffects {
       if (this.ctx.state === "suspended") this.ctx.resume();
     }
   }
-
   /** Play a single tone with optional pitch bend and ADSR envelope */
-  playTone({ type, freq1, freq2, duration, vol = 0.15, attack = 0.005, release = 0.05 }) {
+  playTone({
+    type,
+    freq1,
+    freq2,
+    duration,
+    vol = 0.15,
+    attack = 0.005,
+    release = 0.05,
+  }) {
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-
       osc.type = type;
       osc.frequency.setValueAtTime(freq1, now);
       if (freq2) {
         osc.frequency.exponentialRampToValueAtTime(freq2, now + duration);
       }
-
       // ADSR envelope: smooth attack, sustain, release
       gain.gain.setValueAtTime(0, now);
       gain.gain.linearRampToValueAtTime(vol, now + attack);
@@ -40,7 +44,6 @@ export class ChessSoundEffects {
       console.warn("Audio error:", e);
     }
   }
-
   /** Gentle 'wood tap' — piece slides to a square */
   playMove() {
     this.init();
@@ -63,11 +66,9 @@ export class ChessSoundEffects {
       release: 0.01,
     });
   }
-
   /** Crisp 'clack' — piece captures another */
   playCapture() {
     this.init();
-    // impact sound: sharp high-to-low 'thwack'
     this.playTone({
       type: "square",
       freq1: 380,
@@ -98,13 +99,14 @@ export class ChessSoundEffects {
       release: 0.015,
     });
   }
-
   /** Rising alert — king is in check */
   playCheck() {
     this.init();
     const now = this.ctx.currentTime;
-    // Two-note urgent chime
-    [{ f: 660, t: 0.12 }, { f: 880, t: 0.18 }].forEach(({ f, t }) => {
+    [
+      { f: 660, t: 0.12 },
+      { f: 880, t: 0.18 },
+    ].forEach(({ f, t }) => {
       try {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -119,7 +121,6 @@ export class ChessSoundEffects {
       } catch (e) {}
     });
   }
-
   /** Castling sound — smooth swoosh */
   playCastle() {
     this.init();
@@ -142,7 +143,6 @@ export class ChessSoundEffects {
       release: 0.04,
     });
   }
-
   /** Pawn promotion — bright ascending chime */
   playPromotion() {
     this.init();
@@ -163,7 +163,6 @@ export class ChessSoundEffects {
       } catch (e) {}
     });
   }
-
   /** Game over — dramatic descending fanfare */
   playGameOver() {
     this.init();
@@ -186,5 +185,4 @@ export class ChessSoundEffects {
     });
   }
 }
-
 export const sounds = new ChessSoundEffects();

@@ -1,4 +1,11 @@
-<?php $back_url = '../index.php';
+<?php
+// Base path root proyek — dipakai untuk URL asset absolut & back-link default.
+// denied.php bisa di-include dari direktori sedalam controllers/admin/
+// (guard direct-access), jadi path relatif seperti ../assets/ akan dihitung
+// salah oleh browser terhadap URL halaman pemanggil.
+require_once __DIR__ . '/../modules/core/base_url.php';
+$meel_base = meel_base_url_path();
+$back_url = $meel_base . '/index.php';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref = $_SERVER['HTTP_REFERER'];
     $host = $_SERVER['HTTP_HOST'];
@@ -27,9 +34,9 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     <meta property="og:title" content="Access Denied | MEeL">
     <meta property="og:description" content="Akses ditolak. Anda tidak memiliki izin untuk mengakses halaman ini.">
     <title>Access Denied | MEeL</title>
-    <?php include '../partials/link.php'; ?>
+    <?php include __DIR__ . '/../partials/link.php'; ?>
     <style>
-        @import url('../assets/css/font.css');
+        @import url("<?= $meel_base ?>/assets/css/font.css");
 
         body {
             font-family: 'JetBrains Mono', monospace, sans-serif;
@@ -120,7 +127,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 
     <!-- Footer Area -->
     <div class="w-full text-center pb-6 relative z-20">
-        <?php include '../partials/footer.php'; ?>
+        <?php include __DIR__ . '/../partials/footer.php'; ?>
     </div>
 
     <!-- Lucide Icon Initialization -->

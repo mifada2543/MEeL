@@ -30,8 +30,9 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="manifest" href="assets/manifest.json">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/htmx.min.js"></script>
-    <script src="assets/js/lucide.js"></script>
+    <script src="assets/js/compatibilitas/htmx.min.js"></script>
+    <script src="assets/js/compatibilitas/lucide.js"></script>
+    <?php include 'partials/scripts.php'; ?>
     <link rel="stylesheet" href="assets/css/up.css">
 </head>
 
@@ -115,9 +116,9 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
                                             <button onclick="openEditModal(<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>)" style="background:none;border:none;cursor:pointer;color:#60a5fa;" title="Edit Update">
                                                 <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
                                             </button>
-                                            <form action="update.php" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus update versi <?= htmlspecialchars($row['version']) ?> ini?');" style="display:inline;">
+                                            <form action="update.php" method="POST" onsubmit="return meelConfirmForm(event, { title:'Hapus Update', text:'Apakah Anda yakin ingin menghapus update versi <?= htmlspecialchars($row['version']) ?> ini?', confirmButtonText:'HAPUS' });" style="display:inline;">
                                                 <input type="hidden" name="action" value="delete_update">
-                                                <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                                <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                                 <button type="submit" style="background:none;border:none;cursor:pointer;color:#ef4444;" title="Hapus Update">
                                                     <i data-lucide="trash-2" style="width:14px;height:14px;"></i>

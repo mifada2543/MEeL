@@ -23,7 +23,7 @@
 
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'tests', 'temp', 'assets/dict', 'data_drive']);
-define('EXCLUDE_FILES', ['config.example.php', 'test.php', '.gitkeep']);
+define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
 
 require_once __DIR__ . '/helpers.php';
 
@@ -338,7 +338,7 @@ function testHtaccessSecurity(): void {
     $sensitiveDirs = [
         // PHP-include only folders
         'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
-        'modules', 'modules/core', 'modules/media', 'modules/transcoder', 'modules/exceptions',
+        'modules', 'modules/core', 'modules/core/helpers', 'modules/media', 'modules/transcoder', 'modules/exceptions',
         'partials', 'drive/templates', 'docs/partials',
         // Auth & config
         'auth', 'database',
@@ -491,7 +491,7 @@ function testCommandInjection(): void {
     $risky = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/helpers/storage.php' => ['shell_exec'], // dir_size() — dipecah dari helpers.php
         'modules/core/System.php'       => ['shell_exec'],
         'auth/config.example.php'  => ['proc_open', 'shell_exec'],
         'modules/core/japanese.php'     => ['proc_open'],
@@ -527,11 +527,12 @@ function testPasswordPolicy(): void {
     print_header('TEST 11: Password Policy & Strength');
 
     $checks = [
-        ['Min 8 karakter password',          'auth/register.php', '/strlen.*pass.*8|min.*8/'],
+        // Validasi register dipindah ke auth/auth_helpers.php (refactor modular)
+        ['Min 8 karakter password',          'auth/auth_helpers.php', '/strlen.*pass.*8|min.*8/'],
         ['Brute force lockout',              'auth/login.php',    '/login_fail_count/'],
         ['Lockout timeout',                  'auth/login.php',    '/lockout_time/'],
-        ['Username regex (alpha numeric)',   'auth/register.php', '/preg_match.*a-zA-Z0-9/'],
-        ['Guest username blacklist',         'auth/register.php', '/stripos.*guest/'],
+        ['Username regex (alpha numeric)',   'auth/auth_helpers.php', '/preg_match.*a-zA-Z0-9/'],
+        ['Guest username blacklist',         'auth/auth_helpers.php', '/stripos.*guest/'],
     ];
 
     foreach ($checks as $c) {
@@ -555,7 +556,9 @@ function testFileIntegrity(): void {
 
     $critical = [
         '.htaccess', 'auth/config.php', 'auth/auth.php', 'auth/login.php',
-        'auth/logout.php', 'auth/register.php', 'modules/core/helpers.php',
+        'auth/logout.php', 'auth/register.php', 'auth/auth_helpers.php',
+        'modules/core/helpers.php',
+        'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
         'modules/core/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php', 'modules/core/japanese.php',

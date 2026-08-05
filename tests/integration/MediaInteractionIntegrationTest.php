@@ -18,6 +18,7 @@ class MediaInteractionIntegrationTest extends TestCase
     private MediaInteraction $interaction;
     private MediaInteraction $memberInteraction;
     private MediaInteraction $adminInteraction;
+    private MediaInteraction $admin2Interaction;
 
     protected function setUp(): void
     {
@@ -30,6 +31,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->interaction = new MediaInteraction($this->conn, DbTestHelper::REGULAR_USER_ID);
         $this->memberInteraction = new MediaInteraction($this->conn, DbTestHelper::MEMBER_USER_ID);
         $this->adminInteraction = new MediaInteraction($this->conn, DbTestHelper::ADMIN_USER_ID);
+        $this->admin2Interaction = new MediaInteraction($this->conn, DbTestHelper::ADMIN2_USER_ID);
     }
 
     protected function tearDown(): void
@@ -267,6 +269,93 @@ class MediaInteractionIntegrationTest extends TestCase
         // Admin deletes own comment — should succeed
         $result = $this->adminInteraction->deleteComment($commentId);
         $this->assertTrue($result['success']);
+    }
+
+    public function testUploaderCanDeleteOtherUsersCommentOnMusic(): void
+    {
+        // ADMIN2_USER_ID (9) adalah uploader MUSIC_ID_1 (49)
+        // Buat komentar oleh user lain (REGULAR 39) di media milik uploader
+        $commentId = $this->dbHelper->createTestComment(
+            DbTestHelper::REGULAR_USER_ID,
+            DbTestHelper::MUSIC_ID_1,
+            null,
+            'Comment by regular user on uploader music'
+        );
+
+        // Uploader (bukan pemilik komentar) berhak menghapus komentar di media-nya
+        $result = $this->admin2Interaction->deleteComment($commentId);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(200, $result['http_code']);
+        $this->assertSame('Komentar berhasil dihapus', $result['message']);
+    }
+
+    public function testUploaderCanDeleteOtherUsersCommentOnVideo(): void
+    {
+        // ADMIN2_USER_ID (9) adalah uploader VIDEO_ID_1 (4)
+        // Buat komentar oleh user lain (MEMBER 10) di video milik uploader
+        $commentId = $this->dbHelper->createTestComment(
+            DbTestHelper::MEMBER_USER_ID,
+            null,
+            DbTestHelper::VIDEO_ID_1,
+            'Comment by member on uploader video'
+        );
+
+        $result = $this->admin2Interaction->deleteComment($commentId);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(200, $result['http_code']);
+    }
+
+    public function testNonUploaderCannotDeleteOtherUsersComment(): void
+    {
+        // REGULAR_USER_ID (39) BUKAN uploader MUSIC_ID_1 (49) dan bukan pemilik komentar
+        $commentId = $this->dbHelper->createTestComment(
+            DbTestHelper::MEMBER_USER_ID,
+            DbTestHelper::MUSIC_ID_1,
+            null,
+            'Comment by member'
+        );
+
+        // Regular (bukan owner, bukan uploader) → tetap ditolak
+        $result = $this->interaction->deleteComment($commentId);
+
+        $this->assertFalse($result['success']);
+        $this->assertSame(404, $result['http_code']);
+    }
+
+    public function testAdminCanDeleteAnyCommentOnMusic(): void
+    {
+        // ADMIN_USER_ID (1) BUKAN uploader MUSIC_ID_1 (49) dan bukan pemilik komentar
+        $commentId = $this->dbHelper->createTestComment(
+            DbTestHelper::REGULAR_USER_ID,
+            DbTestHelper::MUSIC_ID_1,
+            null,
+            'Comment by regular user on someone else media'
+        );
+
+        // Admin (bukan owner, bukan uploader) tetap berhak menghapus komentar apa pun
+        $result = $this->adminInteraction->deleteComment($commentId);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(200, $result['http_code']);
+        $this->assertSame('Komentar berhasil dihapus', $result['message']);
+    }
+
+    public function testAdminCanDeleteAnyCommentOnVideo(): void
+    {
+        // ADMIN_USER_ID (1) BUKAN uploader VIDEO_ID_1 (4) dan bukan pemilik komentar
+        $commentId = $this->dbHelper->createTestComment(
+            DbTestHelper::MEMBER_USER_ID,
+            null,
+            DbTestHelper::VIDEO_ID_1,
+            'Comment by member on someone else video'
+        );
+
+        $result = $this->adminInteraction->deleteComment($commentId);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(200, $result['http_code']);
     }
 
     // ══════════════════════════════════════════════════════════════

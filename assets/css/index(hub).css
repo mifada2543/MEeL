@@ -308,18 +308,15 @@ body::before {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
-
 /* ─── NAVBAR SHIFT ─── */
 .demo-banner-active nav {
   top: var(--demo-banner-h, 48px) !important;
 }
-
 /* Transition for navbar */
 nav {
   transition: top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
-
-/* Responsive: layar kecil */
+/* Responsive */
 @media (max-width: 640px) {
   .demo-banner-inner {
     padding: 0.5rem 0.75rem;

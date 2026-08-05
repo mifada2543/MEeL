@@ -5,7 +5,7 @@ include '../auth/config.php';
 
 if (!isset($_SESSION['user_id'])) die('Silakan login terlebih dahulu.');
 
-// 🔒 FIX CSRF: Verifikasi token untuk semua aksi playlist
+// Verifikasi token untuk semua aksi playlist
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     die('CSRF Token tidak valid.');
 }
@@ -37,7 +37,7 @@ if ($action === 'create_playlist') {
     $music_id = (int) ($_POST['music_id'] ?? 0);
 
     if ($name !== '') {
-        // 🔒 TRANSACTION: Atomic playlist + track creation
+        // TRANSACTION: Atomic playlist + track creation
         $conn->begin_transaction();
         try {
             $stmt = $conn->prepare('INSERT INTO playlists (user_id, name) VALUES (?, ?)');
@@ -71,7 +71,7 @@ if ($action === 'add_to_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
     $music_id    = (int) ($_POST['music_id']    ?? 0);
 
-    // 🔒 TRANSACTION: Atomic check + insert — cegah duplicate race condition
+    // TRANSACTION: Atomic check + insert — cegah duplicate race condition
     $conn->begin_transaction();
     try {
         $check = $conn->prepare('SELECT id FROM playlist_tracks WHERE playlist_id = ? AND music_id = ?');
@@ -113,7 +113,7 @@ if ($action === 'remove_from_playlist') {
 if ($action === 'delete_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
 
-    // 🔒 TRANSACTION: Hapus playlist beserta semua track di dalamnya
+    // TRANSACTION: Hapus playlist beserta semua track di dalamnya
     $conn->begin_transaction();
     try {
         // Hapus semua track milik playlist ini

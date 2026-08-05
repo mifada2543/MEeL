@@ -13,6 +13,13 @@ Options -Indexes
     <FilesMatch "\.(png|jpg|jpeg|webp|gif|svg|ico|css|js)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
+
+    # MEeL.png sering diganti — jangan simpan cache immutable 1 tahun.
+    # Pakai revalidate (ETag/Last-Modified) agar perubahan logo langsung terlihat.
+    <FilesMatch "MEeL\.png$">
+        Header unset Cache-Control
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
 </IfModule>
 
 <FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|cookies\.txt|auth\.php|db\.php)$">

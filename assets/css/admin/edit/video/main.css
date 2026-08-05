@@ -1,0 +1,107 @@
+/* ============================================================
+ * edit/video/main.css — Edit Video Page Styles (Admin)
+ * Halaman: admin/edit-video.php
+ * ============================================================ */
+/* ── Video Theme ── */
+body.theme-video {
+  --accent: #ef4444;
+  --accent-hover: #f87171;
+  --accent-dim: rgba(239, 68, 68, 0.10);
+  --accent-border: rgba(239, 68, 68, 0.20);
+  --accent-overlay: rgba(239, 68, 68, 0.9);
+  --btn-text: #fff;
+  --btn-shadow: rgba(239, 68, 68, 0.22);
+  --btn-shadow-hover: rgba(239, 68, 68, 0.32);
+  --brightness-hover: 0.45;
+  --sidebar-width: 360px;
+  --sidebar-gap: 24px;
+  --divider-margin: 24px 0;
+}
+@media (min-width: 1200px) {
+  body.theme-video {
+    --sidebar-width: 420px;
+  }
+}
+body.theme-video .thumb-changed-badge {
+  color: #fff;
+}
+body.theme-video .uploader-avatar-fallback {
+  background: linear-gradient(135deg, var(--accent) 0%, #991b1b 100%);
+}
+body.theme-video .field-input:focus {
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+/* ── Subtitle drop zone: assets/css/video/upload/main.css (tempat .drop-zone base). */
+.drop-zone-subtitle {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 56px;
+  padding: 12px 18px;
+  border: 2px dashed rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.drop-zone-subtitle input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.drop-zone-subtitle:hover,
+.drop-zone-subtitle.drag-over {
+  border-color: var(--accent, #ef4444);
+  background: var(--accent-dim, rgba(239, 68, 68, 0.1));
+  transform: translateY(-1px);
+}
+.drop-zone-subtitle .drop-zone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-dim, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--accent-border, rgba(239, 68, 68, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.drop-zone-subtitle:hover .drop-zone-icon {
+  transform: scale(1.08);
+}
+.drop-zone-subtitle .drop-zone-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.drop-zone-subtitle .drop-zone-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #cbd5e1;
+  max-width: none;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drop-zone-subtitle .drop-zone-sub {
+  font-size: 9px;
+  color: #cbd5e1;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.drop-zone-subtitle.has-file .drop-zone-label {
+  color: var(--accent, #ef4444);
+}
+

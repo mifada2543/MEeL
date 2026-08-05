@@ -20,7 +20,33 @@ extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock agar range request streaming tidak terblokir
 session_write_close();
-?><!DOCTYPE html>
+
+// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
+// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
+
+// Versi folder JS = max filemtime semua file di folder (diteruskan ke sibling oleh main.js)
+$__vdir = function($dir) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $dir;
+    if (!isset($mtimeCache[$path])) {
+        $max = 0;
+        foreach (glob($path . '/*.js') ?: [] as $f) {
+            $max = max($max, (int)@filemtime($f));
+        }
+        $mtimeCache[$path] = $max;
+    }
+    return '?v=' . $mtimeCache[$path];
+};
+?>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -33,9 +59,12 @@ session_write_close();
     <?php include '../partials/link.php'; ?>
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
-    <link rel="stylesheet" href="../assets/css/plyr.css">
-    <link rel="stylesheet" href="../assets/css/music.css">
-    <script src="../assets/js/htmx.min.js" defer></script>
+    <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
+    <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -111,7 +140,7 @@ session_write_close();
 
                 <div class="flex flex-col sm:flex-row gap-5 p-4 sm:p-6 border-b border-white/[.04]">
                     <div class="flex-shrink-0 flex items-center justify-center sm:justify-start">
-                        <div class="vinyl-spin vinyl-disc">
+                        <div class="vinyl-spin vinyl-disc" onclick="event.stopPropagation();(window.goBackToLibrary ? window.goBackToLibrary() : window.toggleMiniPlayer?.())" style="cursor:pointer" title="Mini Player (I)">
                             <img src="<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>" alt="<?= htmlspecialchars($v['title']) ?> cover" width="512" height="512" class="w-full h-full object-cover" fetchpriority="high" decoding="async">
                         </div>
                     </div>
@@ -330,12 +359,40 @@ session_write_close();
 
             <?php if ($is_logged_in): ?>
                 <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section" style="content-visibility:auto;contain-intrinsic-size:200px">
-                    <div class="px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
+                    <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
+                        class="w-full px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2 cursor-pointer hover:bg-white/[.08] transition-colors text-left"
+                        title="Buka / tutup komentar">
                         <i data-lucide="message-square" class="w-3.5 h-3.5 text-orange-500"></i>
                         <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-500">Komentar</span>
+                        <i data-lucide="chevron-down" id="comment-chevron" class="w-3.5 h-3.5 ml-auto text-gray-500 transition-transform duration-300"></i>
+                    </button>
+                    <div id="comment-preview" class="px-4 sm:px-6 py-3">
+                        <?php
+                        // Preview mini: tampilkan 4 komentar terbaru (id terbesar),
+                        // atau ajakan jika belum ada komentar sama sekali.
+                        $preview       = comment_preview($comments_grouped ?? []);
+                        $preview_items = $preview['items'];
+                        ?>
+                        <div id="comment-preview-text" class="space-y-1 <?= empty($preview_items) ? 'italic' : '' ?>">
+                            <?php if (empty($preview_items)): ?>
+                                <span class="text-[10px] text-gray-500">Jadilah komentar pertama</span>
+                            <?php else: foreach ($preview_items as $_pc): ?>
+                                <div class="text-[10px] text-gray-500 line-clamp-1"
+                                    title="<?= htmlspecialchars('@' . ($_pc['username'] ?? 'Guest') . ': ' . preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? '')), ENT_QUOTES) ?>">
+                                    <span class="font-bold text-orange-400">@<?= htmlspecialchars($_pc['username'] ?? 'Guest') ?></span>: <?= htmlspecialchars(preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? ''))) ?>
+                                </div>
+                            <?php endforeach; endif; ?>
+                        </div>
                     </div>
-                    <div class="p-4 sm:p-6">
-                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6">
+                    <div id="comment-body">
+                        <div class="p-4 sm:p-6">
+                            <div id="comment-alert"></div>
+                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
+                            hx-post="../controllers/api/comment.php"
+                            hx-target="#comment-list"
+                            hx-swap="innerHTML"
+                            hx-vals='{"id":"<?= $id ?>","media_type":"music"<?= $playlist_context > 0 ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'
+                            hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('comment-alert')?.replaceChildren(); var l=document.getElementById('comment-list'); if (l) l.scrollTop = l.scrollHeight; }">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                             <textarea name="comments"
                                 class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-orange-500/40 min-h-[80px] resize-y transition-all"
@@ -348,18 +405,27 @@ session_write_close();
                             </div>
                         </form>
 
-                        <div class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                        <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                             <?php
+                            // Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
+                            $GLOBALS['uploader_id'] = (int)($v['user_id'] ?? 0);
                             if (empty($comments_grouped)) {
-                                echo "<div class='py-10 text-center text-[10px] text-gray-700 uppercase tracking-widest'>Belum ada komentar.</div>";
+                                render_comment_empty_state('music');
                             } else {
                                 render_comments(0, $comments_grouped, 0, 'music', $playlist_context);
                             }
                             ?>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            <?php endif; ?>
+                    </section>
+                    <script>
+                        // Progressive enhancement: collapse komentar hanya jika JS aktif.
+                        // Tanpa JS, section tetap terbuka (fallback form action tetap jalan).
+                        document.getElementById('comment-body')?.classList.add('collapsed');
+                    </script>
+                    <noscript><style>#comment-preview{display:none}</style></noscript>
+                <?php endif; ?>
 
         </div>
 
@@ -536,7 +602,6 @@ session_write_close();
         </div>
 
     </main> <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/script.min.js"></script>
     <script>
         window.MEEL_MUSIC_CONFIG = {
             id: <?= $id ?>,
@@ -553,7 +618,7 @@ session_write_close();
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            
+
             // Handle Enter key untuk music search
             const searchInput = document.getElementById('m-search-watch');
             const searchBtn = document.getElementById('m-search-btn');
@@ -567,9 +632,11 @@ session_write_close();
             }
         });
 
-        document.body.addEventListener('htmx:afterOnLoad', function() {
+        document.body.addEventListener('htmx:afterOnLoad', function(e) {
             if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+                // Scope ke elemen hasil swap saja (detail.target, bukan detail.elt
+                // yang merupakan elemen pemicu) — hindari scan seluruh DOM tiap request
+                lucide.createIcons({}, e.detail?.target || document.body);
             }
         });
 
@@ -599,9 +666,15 @@ session_write_close();
             if (options) options.classList.add('hidden');
         };
     </script>
-    <script src="../assets/js/plyr.min.js" defer></script>
-    <script src="../assets/js/sweetalert2.all.min.js" defer></script>
-    <script src="../assets/js/player_music.js" defer></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
+    <script src="../assets/js/shared/resume-modal.js<?= $__v('assets/js/shared/resume-modal.js') ?>"></script>
+    <script src="../assets/js/shared/mini-player-popstate.js<?= $__v('assets/js/shared/mini-player-popstate.js') ?>"></script>
+    <script src="../assets/js/music/watch/main.js<?= $__vdir('assets/js/music/watch') ?>"></script>
+    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
 </body>
 
 </html>

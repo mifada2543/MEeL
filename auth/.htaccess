@@ -7,7 +7,7 @@ DirectoryIndex index.php index.html
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-<FilesMatch "^(cookies\.txt|config\.php|.*\.sql|.*\.log|activity_logger\.php|auth\.php|db\.php)">
+<FilesMatch "^(cookies\.txt|config\.php|settings\.php|settings\.example\.php|.*\.sql|.*\.log|activity_logger\.php|auth\.php|db\.php)">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

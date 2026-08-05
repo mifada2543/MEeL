@@ -1,4 +1,7 @@
 <?php
+// Base path root proyek — URL asset absolut (independen dari kedalaman include)
+require_once __DIR__ . '/../modules/core/base_url.php';
+$meel_base = meel_base_url_path();
 $reason = isset($_GET['reason']) ? $_GET['reason'] : 'Akses dibatasi oleh sistem firewall.';
 ?>
 <!DOCTYPE html>
@@ -11,9 +14,9 @@ $reason = isset($_GET['reason']) ? $_GET['reason'] : 'Akses dibatasi oleh sistem
     <meta property="og:title" content="Akses Dibatasi | MEeL">
     <meta property="og:description" content="Akses Anda ke MEeL telah dibatasi oleh sistem keamanan.">
     <title>Akses Dibatasi | MEeL</title>
-    <?php include '../partials/link.php'; ?>
+    <?php include __DIR__ . '/../partials/link.php'; ?>
     <style>
-        @import url('../assets/css/font.css');
+        @import url("<?= $meel_base ?>/assets/css/font.css");
 
         body {
             font-family: 'JetBrains Mono', monospace, sans-serif;
@@ -102,7 +105,7 @@ $reason = isset($_GET['reason']) ? $_GET['reason'] : 'Akses dibatasi oleh sistem
 
     <!-- Footer Area -->
     <div class="w-full text-center pb-6 relative z-20">
-        <?php include '../partials/footer.php'; ?>
+        <?php include __DIR__ . '/../partials/footer.php'; ?>
     </div>
 
     <!-- Lucide Icon Initialization -->

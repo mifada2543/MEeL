@@ -190,6 +190,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             <div class="border-t border-white/[.05] py-1.5">
                 <a href="<?= $_nav_root ?>auth/logout.php"
                     data-meel-confirm-link
+                    data-meel-confirm-size="sm"
                     data-meel-confirm-title="Logout"
                     data-meel-confirm-text="Yakin mau logout?"
                     data-meel-confirm-button="LOGOUT"
@@ -347,6 +348,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         <div class="border-t border-white/[.05] p-5">
             <a href="<?= $_nav_root ?>auth/logout.php"
                 data-meel-confirm-link
+                data-meel-confirm-size="sm"
                 data-meel-confirm-title="Logout"
                 data-meel-confirm-text="Yakin mau logout?"
                 data-meel-confirm-button="LOGOUT"
@@ -460,8 +462,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </div>
 <?php endif; ?>
 
-<script src="<?= $_nav_root ?>assets/js/sweetalert2.all.min.js"></script>
-<script src="<?= $_nav_root ?>assets/js/script.min.js"></script>
+<?php $scripts_root = $_nav_root; include __DIR__ . '/scripts.php'; ?>
 <script>
     // ── Dropdown desktop ──
     function toggleNavDropdown() {

@@ -32,13 +32,13 @@ include '../../auth/config.php';
 include '../../modules/core/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
-// 🔒 FIX CSRF: Verifikasi token untuk AJAX POST
+// Verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     exit;
 }
 
-// ⚡ RATE LIMIT: 30 likes per menit per user
+// RATE LIMIT: 30 likes per menit per user
 $rateKey = 'user_' . ($_SESSION['user_id'] ?? 0);
 $rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
 $rateCheck = RateLimiter::check($rateKey, 'like', $rateRole);
@@ -69,7 +69,7 @@ $id         = isset($_POST['id'])         ? intval($_POST['id'])       : 0;
 $media_type = isset($_POST['media_type']) ? trim($_POST['media_type']) : '';
 $type       = isset($_POST['type'])       ? trim($_POST['type'])       : '';
 
-error_log("LIKE.PHP - POST: " . json_encode(['id' => $id, 'media_type' => $media_type, 'type' => $type]));
+if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - POST: " . json_encode(['id' => $id, 'media_type' => $media_type, 'type' => $type])); }
 
 $user_id = $_SESSION['user_id'] ?? null;
 
@@ -82,7 +82,7 @@ if ($user_id) {
 
     // Jika user tidak aktif atau perannya adalah guest, batalkan proses (Forbidden)
     if (!$user || $user['is_active'] != 1 || $user['role'] === 'guest') {
-        error_log("LIKE.PHP - BLOCKED: User ID $user_id is inactive or guest.");
+        if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - BLOCKED: User ID $user_id is inactive or guest."); }
         http_response_code(403); // HTTP 403 Forbidden
         exit;
     }
@@ -98,7 +98,7 @@ $result = $interaction->toggleLike($id, $media_type, $type);
 
 // Handle response
 if (!$result['success']) {
-    error_log("LIKE.PHP - ERROR: {$result['message']} (Code: {$result['http_code']})");
+    if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - ERROR: {$result['message']} (Code: {$result['http_code']})"); }
     http_response_code($result['http_code']);
     exit;
 }

@@ -1,0 +1,34 @@
+/* ============================================================
+ * edit/music/main.css — Edit Music Page Styles (Admin)
+ * Halaman: admin/edit-music.php
+ * ============================================================ */
+/* ── Music Theme ── */
+body.theme-music {
+  --accent: #f97316;
+  --accent-hover: #fb923c;
+  --accent-dim: rgba(249, 115, 22, 0.12);
+  --accent-border: rgba(249, 115, 22, 0.22);
+  --accent-overlay: rgba(249, 115, 22, 0.9);
+  --btn-text: #000;
+  --btn-shadow: rgba(249, 115, 22, 0.25);
+  --btn-shadow-hover: rgba(249, 115, 22, 0.35);
+  --brightness-hover: 0.55;
+  --sidebar-width: 340px;
+  --sidebar-gap: 28px;
+  --divider-margin: 28px 0;
+}
+@media (min-width: 1200px) {
+  body.theme-music {
+    --sidebar-width: 380px;
+  }
+}
+body.theme-music .field-input:focus {
+  background: rgba(249, 115, 22, 0.05);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.08);
+}
+body.theme-music .uploader-avatar-fallback {
+  background: linear-gradient(135deg, var(--accent) 0%, #c2410c 100%);
+}
+body.theme-music textarea.field-input {
+  min-height: 110px;
+}

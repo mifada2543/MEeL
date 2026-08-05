@@ -1,5 +1,5 @@
 <?php
-// File: auth/System.php
+// File: modules/core/System.php
 
 require_once __DIR__ . '/RateLimiter.php';
 

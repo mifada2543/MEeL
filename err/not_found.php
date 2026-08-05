@@ -1,6 +1,12 @@
 <?php
+// Base path root proyek — URL asset absolut & back-link default
+// (independen dari kedalaman direktori halaman yang me-include,
+// mis. books/read.php yang meng-include file ini).
+require_once __DIR__ . '/../modules/core/base_url.php';
+$meel_base = meel_base_url_path();
+
 http_response_code(404);
-$back_url = '../index.php';
+$back_url = $meel_base . '/index.php';
 
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref = $_SERVER['HTTP_REFERER'];
@@ -29,12 +35,12 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MEeL - Halaman tidak ditemukan.">
     <title>404 Not Found | MEeL</title>
-    <link rel="manifest" href="/MEeL/assets/manifest.json">
-    <link rel="icon" type="image/png" href="/MEeL/assets/MEeL.png">
-    <link href="/MEeL/assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="/MEeL/assets/js/lucide.js"></script>
+    <link rel="manifest" href="<?= $meel_base ?>/assets/manifest.json">
+    <link rel="icon" type="image/png" href="<?= $meel_base ?>/assets/MEeL.png">
+    <link href="<?= $meel_base ?>/assets/css/tailwind.min.css" rel="stylesheet">
+    <script src="<?= $meel_base ?>/assets/js/compatibilitas/lucide.js"></script>
     <style>
-        @import url('/MEeL/assets/css/font.css');
+        @import url("<?= $meel_base ?>/assets/css/font.css");
 
         body {
             font-family: 'JetBrains Mono', monospace, sans-serif;
@@ -113,7 +119,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     <i data-lucide="arrow-left" class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1"></i>
                     Kembali
                 </a>
-                <a href="/MEeL/index.php"
+                <a href="<?= $meel_base ?>/index.php"
                     class="group relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/[.04] border border-white/[.08] hover:bg-white/[.08] text-slate-300 font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0">
                     <i data-lucide="home" class="w-4 h-4"></i>
                     Ke Halaman Utama
@@ -131,7 +137,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 
     <!-- Footer Area -->
     <div class="w-full text-center pb-6 relative z-20">
-        <?php include '../partials/footer.php'; ?>
+        <?php include __DIR__ . '/../partials/footer.php'; ?>
     </div>
 
     <!-- Lucide Icon Initialization -->

@@ -42,7 +42,11 @@ $cleaned_count = cleanupPendingDeletions();
 // ── Handle delete action ──
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+    // Delete link membawa token di query string (GET), bukan POST body.
+    // Dukungan POST tetap dipertahankan untuk kompatibilitas.
+    $csrf_input = $_GET['csrf_token'] ?? ($_POST['csrf_token'] ?? null);
+    $csrf_input = is_string($csrf_input) ? $csrf_input : null;
+    if (!verify_csrf_token($csrf_input)) {
         $delete_msg = 'Token tidak valid.';
     } else {
         $del_id   = (int)$_GET['id'];
@@ -115,7 +119,9 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
     <meta property="og:description" content="Kelola konten video dan musik Anda di MEeL. Edit, hapus, dan pantau statistik.">
     <title>Kelola Konten | MEeL</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video.css">
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
     <style>
         body {
             background-color: #080a0f;
@@ -562,8 +568,8 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
     <?php include '../partials/footer.php'; ?>
 
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script>
         lucide.createIcons();
 

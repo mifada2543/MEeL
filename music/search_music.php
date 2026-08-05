@@ -40,6 +40,22 @@ if ($result['count'] > 0) {
             include 'music_item.php';
         }
     }
-} else {
+
+    // Pagination hasil pencarian — pola sama dengan video/search_video.php.
+    // Load-more menggantikan dirinya sendiri (outerHTML) dengan hasil berikutnya.
+    if (!$result['sidebar'] && $result['hasMore']) {
+        ?>
+        <div id="load-more-music-search"
+            class="py-4 border border-dashed border-white/[.06] rounded-xl text-center text-[10px] font-bold uppercase tracking-[.25em] text-gray-700 hover:text-orange-500 hover:border-orange-500/30 transition-all cursor-pointer"
+            hx-get="search_music.php?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
+            hx-target="#load-more-music-search"
+            hx-swap="outerHTML"
+            title="Muat lebih banyak lagu">
+            Muat Lebih Banyak
+        </div>
+        <?php
+    }
+} elseif ($result['offset'] === 0) {
+    // Jangan timpa hasil yang sudah dimuat saat load-more menemukan halaman kosong.
     echo '<div class="py-12 text-center text-[10px] text-gray-700 uppercase tracking-widest">Tidak ada lagu ditemukan.</div>';
 }

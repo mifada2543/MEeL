@@ -25,7 +25,7 @@ class UpdateManager
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
         if (($_SESSION['role'] ?? '') !== 'admin')  return;
 
-        // 🔒 FIX CSRF: Verifikasi token
+        // Verifikasi token
         if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
             $this->setFlash('error', 'CSRF Token tidak valid.');
             $this->redirect();
@@ -212,8 +212,9 @@ class UpdateManager
 
     private function redirect(): void
     {
-        $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-        header("Location: {$base}/update.php");
+        // Pakai base_url() (berbasis MEEL_BASE_URL/root proyek) agar konsisten,
+        // bukan dirname(SCRIPT_NAME) yang ikut direktori halaman aktif.
+        header("Location: " . base_url('/update.php'));
         exit;
     }
 }
