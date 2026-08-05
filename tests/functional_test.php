@@ -12,6 +12,7 @@
  *  - Config Check (auth/config.php, session settings)
  *  - Directory Structure (upload, temp, log folder)
  *  - Database Connectivity (jika auth/config.php tersedia)
+ *  - Error Pages (path konsisten: tanpa hardcode /MEeL/, include __DIR__-based)
  *
  * Cara pakai:
  *   /opt/lampp/bin/php tests/functional_test.php
@@ -714,6 +715,21 @@ function testModifiedFiles(): void {
             'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
             'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
         ],
+        'controllers/admin/admin_actions.php' => [
+            // Refactor: manual role query diganti helper terpusat is_admin() (authz.php)
+            'role check is_admin' => ['pattern' => '/is_admin\s*\(\s*\$conn\s*\)/', 'label' => 'Role check via is_admin()'],
+            // Guard direct-access: hanya boleh di-include dari admin/*.php
+            'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
+        ],
+        'controllers/admin/admin_data.php' => [
+            'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
+        ],
+        'admin/index.php' => [
+            'context define' => ['pattern' => "/define\('MEEL_ADMIN_CONTEXT'/", 'label' => 'Define MEEL_ADMIN_CONTEXT sebelum include'],
+        ],
+        'admin/mfa_reset.php' => [
+            'context define' => ['pattern' => "/define\('MEEL_ADMIN_CONTEXT'/", 'label' => 'Define MEEL_ADMIN_CONTEXT sebelum include'],
+        ],
         'modules/core/Uploader.php' => [
             'magic bytes'   => ['pattern' => '/validateVideoMagicBytes/', 'label' => 'Magic bytes validation'],
             'ffprobe fix'   => ['pattern' => '/duration.*<=.*0/', 'label' => 'FFprobe failure handling'],
@@ -859,6 +875,59 @@ function testIndexPages(): void {
 }
 
 // ============================================================================
+// TEST 12: ERROR PAGES — Path Consistency & Depth-Independence
+// ============================================================================
+
+function testErrorPages(): void {
+    print_header('TEST 12: Error Pages — Path Consistency');
+
+    $err_pages = [
+        'err/denied.php',
+        'err/banned.php',
+        'err/maintance.php',
+        'err/revoked.php',
+        'err/not_found.php',
+    ];
+
+    foreach ($err_pages as $file) {
+        $full = PROJECT_ROOT . '/' . $file;
+        if (!file_exists($full)) {
+            record("{$file} — tidak ditemukan", false, false, 'File error page hilang');
+            continue;
+        }
+
+        // Strip komentar agar keyword di docblock/komentar tidak jadi false positive
+        $code   = stripPhpComments(file_get_contents($full));
+        $issues = [];
+
+        // 1. Path asset harus dinamis via meel_base_url_path() — bukan hardcoded /MEeL/
+        if (strpos($code, '/MEeL/') !== false) {
+            $issues[] = 'path hardcoded /MEeL/ ditemukan'; // harus pakai base dinamis
+        }
+        if (strpos($code, 'meel_base_url_path()') === false) {
+            $issues[] = 'meel_base_url_path() tidak dipakai'; // helper base URL terpusat
+        }
+
+        // 2. Include partial wajib __DIR__-based — bukan CWD-relative '../partials/...'
+        //    (include CWD-relative gagal senyap saat halaman di-include dari subdirektori)
+        if (preg_match("/include\s*['\"]\.\.\/partials\//", $code)) {
+            $issues[] = 'include partials CWD-relative (../partials/) ditemukan';
+        }
+        if (preg_match('/\.\.\/partials\//', $code) && strpos($code, "__DIR__ . '/../partials/") === false) {
+            $issues[] = 'include partials tidak __DIR__-based';
+        }
+
+        if (empty($issues)) {
+            record("{$file} — path konsisten & depth-independent ✓", true);
+        } else {
+            foreach ($issues as $issue) {
+                record("{$file} — {$issue}", false, false, 'Pakai meel_base_url_path() + include __DIR__-based');
+            }
+        }
+    }
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
@@ -888,6 +957,7 @@ function run(): int {
     testDatabaseConnectivity();
     testModifiedFiles();
     testIndexPages();
+    testErrorPages();
 
     // ─── SUMMARY ───
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
