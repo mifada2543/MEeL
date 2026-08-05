@@ -8,6 +8,9 @@ include_once '../modules/core/helpers.php';
 include_once '../modules/core/activity_logger.php';
 // Guard terpusat: harus login + role admin
 require_admin($conn);
+// Konteks include untuk controllers/admin/admin_actions.php
+// (hanya boleh dijalankan dari halaman admin yang sudah melewati require_admin())
+define('MEEL_ADMIN_CONTEXT', true);
 include '../controllers/admin/admin_actions.php';
 $msg      = $_GET['msg'] ?? '';
 $msg_user = $_GET['user'] ?? '';

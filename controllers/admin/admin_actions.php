@@ -3,22 +3,23 @@
  * controllers/admin_actions.php
  *
  * Handler aksi admin — ban/unban, user management, queue, orphan cleanup, kick.
- * Di-include oleh admin/index.php.
+ * Di-include oleh admin/index.php (atau admin/mfa_reset.php).
  * Semua aksi akan redirect setelah selesai (tidak render view).
  */
 
-// ── Verifikasi Role Admin ──────────────────────────────────────────────────
-$__uid = $_SESSION['user_id'] ?? 0;
-$__q   = $conn->prepare("SELECT role FROM users WHERE id = ?");
-$__q->bind_param("i", $__uid);
-$__q->execute();
-$__user_data = $__q->get_result()->fetch_assoc();
-
-if (!$__user_data || $__user_data['role'] !== 'admin') {
-    header("Location: ../index.php?error=ditolak");
-    exit();
+// ── Guard Direct Access ────────────────────────────────────────────────────
+// Hanya boleh di-include dari halaman admin yang sudah melewati require_admin()
+// (admin/index.php, admin/mfa_reset.php) — bukan diakses langsung via URL.
+if (!defined('MEEL_ADMIN_CONTEXT')) {
+    die(include __DIR__ . '/../../err/denied.php');
 }
-unset($__uid, $__q, $__user_data);
+
+// ── Verifikasi Role Admin ──────────────────────────────────────────────────
+// Helper terpusat (modules/core/helpers/authz.php) — konsisten dengan
+// require_admin() yang dipakai di semua halaman admin lainnya.
+if (!is_admin($conn)) {
+    die(include __DIR__ . '/../../err/denied.php');
+}
 
 // ── CSRF Guard ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_token'] ?? null)) {

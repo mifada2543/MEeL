@@ -9,6 +9,10 @@ include_once '../modules/core/RateLimiter.php';
 // Guard terpusat: harus login + role admin
 require_admin($conn);
 
+// Konteks include untuk controllers/admin/* — file controller hanya boleh
+// dieksekusi dari sini (sudah melewati require_admin()), bukan via URL langsung.
+define('MEEL_ADMIN_CONTEXT', true);
+
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';
 
