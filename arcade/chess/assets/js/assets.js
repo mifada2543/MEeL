@@ -20,3 +20,14 @@ export const UNICODE_PIECES = {
   q: "♛",
   k: "♚",
 };
+// Simbol Unicode bidak PUTIH (outline) — dipakai di panel captured-black
+// (bidak putih yang ditangkap oleh hitam). Sebelumnya ikut memakai
+// UNICODE_PIECES (simbol hitam) sehingga kedua panel terlihat sama.
+export const UNICODE_PIECES_WHITE = {
+  p: "♙",
+  r: "♖",
+  n: "♘",
+  b: "♗",
+  q: "♕",
+  k: "♔",
+};

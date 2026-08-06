@@ -740,8 +740,9 @@ Real-time LAN chess polling API. **All endpoints require login** (JSON `401` +
 | `create_room.php` | POST | login + CSRF | Create room, return 6-char room code + color `white` |
 | `join_room.php` | POST | login + CSRF | Join room with code (`room` + `csrf_token` in FormData) |
 | `save_move.php` | POST | login + CSRF (JSON body) | Save move with legal move validation; token never stored in `move_data` |
-| `get_move.php?room=X&last=N` | GET | login | Poll opponent moves (JSON array) |
+| `get_move.php?room=X&last=N` | GET | login | Poll moves + opponent connectivity: `{moves, opponent_online}` |
 | `check_room_status.php?room=X` | GET | login | Room status: waiting/playing/ended |
+| `game_action.php` | POST | login + CSRF | `resign`, `draw_offer`, `draw_accept`, `draw_decline`, `disconnect_win` (claim win — server verifies opponent offline via `users.last_activity`), `game_over` (client records checkmate/stalemate so finished games are kept) |
 
 Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects to login.
 

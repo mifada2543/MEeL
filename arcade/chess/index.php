@@ -122,6 +122,10 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
             </div>
           </div>
         </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-offer-draw" class="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-sm font-bold transition-all active:scale-95 border border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed" title="Tawarkan hasil seri kepada lawan">Tawarkan Seri</button>
+          <button id="btn-resign" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-sm font-bold transition-all active:scale-95 border border-rose-500/30 disabled:opacity-40 disabled:cursor-not-allowed" title="Mengalah — akhiri permainan dan menangkan lawan">Mengalah</button>
+        </div>
         <button id="btn-leave-room" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-bold transition-all active:scale-95 border border-slate-700" title="Keluar dari mode multiplayer">Keluar</button>
       </div>
       <!-- Status Panel -->
@@ -145,7 +149,7 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
             <div id="captured-white" class="flex flex-wrap justify-end gap-1 text-lg min-h-[28px] w-full ml-2"></div>
           </div>
           <div class="flex items-center justify-between bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/50">
-            <i data-lucide="swords" class="w-4 h-4 text-emerald-600/50"></i>
+            <i data-lucide="swords" class="w-4 h-4 text-slate-600"></i>
             <div id="captured-black" class="flex flex-wrap justify-end gap-1 text-lg min-h-[28px] w-full ml-2"></div>
           </div>
         </div>

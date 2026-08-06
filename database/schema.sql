@@ -9,9 +9,9 @@
 -- Atau dari MySQL CLI:
 --   mysql> SOURCE /path/to/database/schema.sql;
 -- =============================================================================
-
-CREATE DATABASE IF NOT EXISTS `MEeL`
-  DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE IF NOT EXISTS `MEeL` DEFAULT CHARACTER
+SET
+  utf8mb4 COLLATE utf8mb4_general_ci;
 
 USE `MEeL`;
 
@@ -19,345 +19,379 @@ USE `MEeL`;
 -- TABEL: users
 -- Menyimpan data pengguna, peran, dan sesi.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) NOT NULL,
-  `role` varchar(20) DEFAULT 'user',
-  `ip_address` varchar(45) DEFAULT 'Unknown',
-  `password` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `last_activity` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `last_page` varchar(255) DEFAULT 'Index',
-  `user_agent` varchar(255) DEFAULT NULL,
-  `is_active` tinyint(1) DEFAULT 0,
-  `bio` text DEFAULT NULL,
-  `profile_picture` varchar(255) DEFAULT 'default_avatar.png',
-  `favorite_genre` varchar(100) DEFAULT NULL,
-  `custom_theme` varchar(50) DEFAULT 'default',
-  `last_session_id` varchar(128) DEFAULT NULL,
-  `access_via` varchar(100) DEFAULT NULL,
-  `mfa_secret` varchar(64) DEFAULT NULL,
-  `mfa_backup_codes` text DEFAULT NULL,
-  `mfa_enabled` tinyint(1) DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_username_unique` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `users` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `username` varchar(50) NOT NULL,
+    `role` varchar(20) DEFAULT 'user',
+    `ip_address` varchar(45) DEFAULT 'Unknown',
+    `password` varchar(255) NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `last_activity` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    `last_page` varchar(255) DEFAULT 'Index',
+    `user_agent` varchar(255) DEFAULT NULL,
+    `is_active` tinyint (1) DEFAULT 0,
+    `bio` text DEFAULT NULL,
+    `profile_picture` varchar(255) DEFAULT 'default_avatar.png',
+    `favorite_genre` varchar(100) DEFAULT NULL,
+    `custom_theme` varchar(50) DEFAULT 'default',
+    `last_session_id` varchar(128) DEFAULT NULL,
+    `access_via` varchar(100) DEFAULT NULL,
+    `mfa_secret` varchar(64) DEFAULT NULL,
+    `mfa_backup_codes` text DEFAULT NULL,
+    `mfa_enabled` tinyint (1) DEFAULT 0,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_username_unique` (`username`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Default admin user (password: Admin#123)
 -- Ganti password segera setelah pertama login!
-INSERT INTO `users` (`id`, `username`, `role`, `password`, `is_active`) VALUES
-(1, 'Admin', 'admin', '$2a$12$5cRghghOdj6ZQIAQ5dCGfOZcXUFvWhaAhwdq08r6bMIVNRY0gjAVm', 1);
+INSERT INTO
+  `users` (`id`, `username`, `role`, `password`, `is_active`)
+VALUES
+  (
+    1,
+    'Admin',
+    'admin',
+    '$2a$12$5cRghghOdj6ZQIAQ5dCGfOZcXUFvWhaAhwdq08r6bMIVNRY0gjAVm',
+    1
+  );
 
 -- =============================================================================
 -- TABEL: video
 -- Metadata video dengan dukungan HLS streaming.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `video` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` text NOT NULL,
-  `description` text DEFAULT NULL,
-  `filename` text NOT NULL,
-  `thumbnail` varchar(255) DEFAULT NULL,
-  `duration` int(11) DEFAULT 0,
-  `views` int(11) DEFAULT 0,
-  `likes` int(11) DEFAULT 0,
-  `dislikes` int(11) DEFAULT 0,
-  `search_metadata` text DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `video_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `video` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `title` text NOT NULL,
+    `description` text DEFAULT NULL,
+    `filename` text NOT NULL,
+    `thumbnail` varchar(255) DEFAULT NULL,
+    `duration` int (11) DEFAULT 0,
+    `views` int (11) DEFAULT 0,
+    `likes` int (11) DEFAULT 0,
+    `dislikes` int (11) DEFAULT 0,
+    `search_metadata` text DEFAULT NULL,
+    `user_id` int (11) DEFAULT NULL,
+    `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `video_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: music
 -- Metadata trek audio (MP3, FLAC, OGG, M4A).
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `music` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` text NOT NULL,
-  `artist` varchar(100) DEFAULT NULL,
-  `album` varchar(100) DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `filename` text NOT NULL,
-  `thumbnail` varchar(255) DEFAULT NULL,
-  `duration` int(11) DEFAULT 0,
-  `views` int(11) DEFAULT 0,
-  `likes` int(11) DEFAULT 0,
-  `dislikes` int(11) DEFAULT 0,
-  `search_metadata` text DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `music_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `music` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `title` text NOT NULL,
+    `artist` varchar(100) DEFAULT NULL,
+    `album` varchar(100) DEFAULT NULL,
+    `description` text DEFAULT NULL,
+    `filename` text NOT NULL,
+    `thumbnail` varchar(255) DEFAULT NULL,
+    `duration` int (11) DEFAULT 0,
+    `views` int (11) DEFAULT 0,
+    `likes` int (11) DEFAULT 0,
+    `dislikes` int (11) DEFAULT 0,
+    `search_metadata` text DEFAULT NULL,
+    `user_id` int (11) DEFAULT NULL,
+    `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `music_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: books
 -- Metadata buku digital / manga (ZIP/CBZ & PDF).
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `books` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` text NOT NULL,
-  `author` varchar(100) DEFAULT NULL,
-  `type` enum('manga','pdf') NOT NULL,
-  `has_chapters` tinyint(1) DEFAULT 0,
-  `category` varchar(50) DEFAULT NULL,
-  `path_folder` text DEFAULT NULL,
-  `thumbnail` varchar(255) DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `books_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `books` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `title` text NOT NULL,
+    `author` varchar(100) DEFAULT NULL,
+    `type` enum ('manga', 'pdf') NOT NULL,
+    `has_chapters` tinyint (1) DEFAULT 0,
+    `category` varchar(50) DEFAULT NULL,
+    `path_folder` text DEFAULT NULL,
+    `thumbnail` varchar(255) DEFAULT NULL,
+    `user_id` int (11) DEFAULT NULL,
+    `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `books_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: comments
 -- Sistem komentar bersarang (nested) untuk video & musik.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `comments` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `video_id` int(11) DEFAULT NULL,
-  `music_id` int(11) DEFAULT NULL,
-  `parent_id` int(11) DEFAULT NULL,
-  `comment` text NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `music_id` (`music_id`),
-  KEY `fk_parent_comment` (`parent_id`),
-  KEY `idx_comments_video_created` (`video_id`, `created_at`),
-  KEY `idx_comments_music_created` (`music_id`, `created_at`),
-  CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_parent_comment` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `comments` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) NOT NULL,
+    `video_id` int (11) DEFAULT NULL,
+    `music_id` int (11) DEFAULT NULL,
+    `parent_id` int (11) DEFAULT NULL,
+    `comment` text NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    KEY `music_id` (`music_id`),
+    KEY `fk_parent_comment` (`parent_id`),
+    KEY `idx_comments_video_created` (`video_id`, `created_at`),
+    KEY `idx_comments_music_created` (`music_id`, `created_at`),
+    CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_parent_comment` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: interactions
 -- Menyimpan status like/dislike per user per konten.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `interactions` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `video_id` int(11) DEFAULT NULL,
-  `music_id` int(11) DEFAULT NULL,
-  `type` enum('like','dislike') NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  -- Catatan: untuk baris video, music_id = NULL; untuk baris music, video_id = NULL.
-  -- Unique key gabungan (user_id, video_id, music_id) TIDAK mencegah duplikat karena
-  -- MySQL memperlakukan NULL sebagai nilai berbeda. Karena itu dipisah menjadi
-  -- dua unique key per media type.
-  UNIQUE KEY `unique_interaction_video` (`user_id`,`video_id`),
-  UNIQUE KEY `unique_interaction_music` (`user_id`,`music_id`),
-  KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `interactions` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) NOT NULL,
+    `video_id` int (11) DEFAULT NULL,
+    `music_id` int (11) DEFAULT NULL,
+    `type` enum ('like', 'dislike') NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    -- Catatan: untuk baris video, music_id = NULL; untuk baris music, video_id = NULL.
+    -- Unique key gabungan (user_id, video_id, music_id) TIDAK mencegah duplikat karena
+    -- MySQL memperlakukan NULL sebagai nilai berbeda. Karena itu dipisah menjadi
+    -- dua unique key per media type.
+    UNIQUE KEY `unique_interaction_video` (`user_id`, `video_id`),
+    UNIQUE KEY `unique_interaction_music` (`user_id`, `music_id`),
+    KEY `user_id` (`user_id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: playlists
 -- Daftar putar musik untuk setiap pengguna.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `playlists` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `playlists_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `playlists` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `name` varchar(100) NOT NULL,
+    `user_id` int (11) DEFAULT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `playlists_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: playlist_tracks
 -- Relasi banyak-ke-banyak antara playlist dan track musik.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `playlist_tracks` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `playlist_id` int(11) NOT NULL,
-  `music_id` int(11) NOT NULL,
-  `added_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `playlist_id` (`playlist_id`),
-  KEY `music_id` (`music_id`),
-  CONSTRAINT `playlist_tracks_ibfk_1` FOREIGN KEY (`playlist_id`) REFERENCES `playlists` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `playlist_tracks_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `playlist_tracks` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `playlist_id` int (11) NOT NULL,
+    `music_id` int (11) NOT NULL,
+    `added_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `playlist_id` (`playlist_id`),
+    KEY `music_id` (`music_id`),
+    CONSTRAINT `playlist_tracks_ibfk_1` FOREIGN KEY (`playlist_id`) REFERENCES `playlists` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `playlist_tracks_ibfk_2` FOREIGN KEY (`music_id`) REFERENCES `music` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: upload_queue
 -- Antrean download dari URL (yt-dlp).
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `upload_queue` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `url` text NOT NULL,
-  `media_type` varchar(20) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `status` enum('processing','completed','failed') DEFAULT 'processing',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `upload_queue_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `upload_queue` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `url` text NOT NULL,
+    `media_type` varchar(20) NOT NULL,
+    `user_id` int (11) NOT NULL,
+    `status` enum ('processing', 'completed', 'failed') DEFAULT 'processing',
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `upload_queue_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: transcode_queue
 -- Antrean transcoding video ke audio.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `transcode_queue` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `status` enum('processing','completed','failed') DEFAULT 'processing',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `transcode_queue_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `transcode_queue` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) NOT NULL,
+    `status` enum ('processing', 'completed', 'failed') DEFAULT 'processing',
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `transcode_queue_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: view_logs
 -- Mencatat kunjungan user ke konten (encegah view inflation).
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `view_logs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `video_id` int(11) DEFAULT NULL,
-  `music_id` int(11) DEFAULT NULL,
-  `viewed_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_view` (`user_id`,`video_id`,`music_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `view_logs` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) NOT NULL,
+    `video_id` int (11) DEFAULT NULL,
+    `music_id` int (11) DEFAULT NULL,
+    `viewed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `unique_view` (`user_id`, `video_id`, `music_id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: ip_ban
 -- Daftar alamat IP yang diblokir.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `ip_ban` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ip_address` varchar(45) NOT NULL,
-  `reason` varchar(255) DEFAULT NULL,
-  `banned_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `ip_address` (`ip_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `ip_ban` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `ip_address` varchar(45) NOT NULL,
+    `reason` varchar(255) DEFAULT NULL,
+    `banned_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ip_address` (`ip_address`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: updates
 -- Catatan changelog / riwayat pembaruan sistem.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `updates` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `version` varchar(20) NOT NULL,
-  `content` text NOT NULL,
-  `created_at` date NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `updates` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `version` varchar(20) NOT NULL,
+    `content` text NOT NULL,
+    `created_at` date NOT NULL,
+    PRIMARY KEY (`id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: sidebar_settings
 -- Konten pengumuman dan informasi penting di sidebar.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `sidebar_settings` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `important_content` text DEFAULT NULL,
-  `announcement_content` text DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `sidebar_settings` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `important_content` text DEFAULT NULL,
+    `announcement_content` text DEFAULT NULL,
+    PRIMARY KEY (`id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: activity_log
 -- Log aktivitas pengguna untuk audit dan keamanan.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `activity_log` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) DEFAULT NULL,
-  `action` varchar(50) NOT NULL,
-  `media_type` varchar(20) DEFAULT NULL,
-  `media_id` int(11) DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT 'Unknown',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `activity_log` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) DEFAULT NULL,
+    `action` varchar(50) NOT NULL,
+    `media_type` varchar(20) DEFAULT NULL,
+    `media_id` int (11) DEFAULT NULL,
+    `ip_address` varchar(45) DEFAULT 'Unknown',
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: db_version
 -- Migration tracker — mencatat versi skema database yang sudah dijalankan.
 -- Dibuat secara otomatis oleh database/migrate.php.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `db_version` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `version` int(11) NOT NULL,
-  `applied_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `db_version` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `version` int (11) NOT NULL,
+    `applied_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: drive_files
 -- Cloud Drive — file publik & privat per pengguna.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `drive_files` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `filename` varchar(255) NOT NULL,
-  `file_size` bigint(20) DEFAULT 0,
-  `file_type` varchar(50) DEFAULT NULL,
-  `scope` enum('public','private') DEFAULT 'private',
-  `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `drive_files_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `drive_files` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) NOT NULL,
+    `filename` varchar(255) NOT NULL,
+    `file_size` bigint (20) DEFAULT 0,
+    `file_type` varchar(50) DEFAULT NULL,
+    `scope` enum ('public', 'private') DEFAULT 'private',
+    `upload_date` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `user_id` (`user_id`),
+    CONSTRAINT `drive_files_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: login_attempts
 -- Melacak percobaan login gagal berdasarkan IP untuk mencegah brute force.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `login_attempts` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ip_address` varchar(45) NOT NULL,
-  `attempts` int(11) NOT NULL DEFAULT 1,
-  `last_attempt_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `locked_until` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `ip_address` (`ip_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `login_attempts` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `ip_address` varchar(45) NOT NULL,
+    `attempts` int (11) NOT NULL DEFAULT 1,
+    `last_attempt_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `locked_until` timestamp NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ip_address` (`ip_address`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: rooms
 -- Ruang permainan catur online (multiplayer LAN).
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `rooms` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `room_code` varchar(10) NOT NULL,
-  `black_joined` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `room_code` (`room_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `rooms` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `room_code` varchar(10) NOT NULL,
+    `white_user_id` int (11) DEFAULT NULL,
+    `black_user_id` int (11) DEFAULT NULL,
+    `black_joined` tinyint (1) NOT NULL DEFAULT 0,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `room_code` (`room_code`),
+    KEY `idx_rooms_white_user` (`white_user_id`),
+    KEY `idx_rooms_black_user` (`black_user_id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
 -- TABEL: moves
 -- Riwayat langkah permainan catur.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `moves` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `room_code` varchar(10) NOT NULL,
-  `from_r` tinyint(3) unsigned NOT NULL,
-  `from_c` tinyint(3) unsigned NOT NULL,
-  `to_r` tinyint(3) unsigned NOT NULL,
-  `to_c` tinyint(3) unsigned NOT NULL,
-  `piece` char(1) NOT NULL,
-  `color` char(1) NOT NULL,
-  `captured` char(1) DEFAULT NULL,
-  `promoted_piece_type` char(1) DEFAULT NULL,
-  `move_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`move_data`)),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `idx_room_id` (`room_code`,`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE
+  IF NOT EXISTS `moves` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `room_code` varchar(10) NOT NULL,
+    `from_r` tinyint (3) unsigned NOT NULL,
+    `from_c` tinyint (3) unsigned NOT NULL,
+    `to_r` tinyint (3) unsigned NOT NULL,
+    `to_c` tinyint (3) unsigned NOT NULL,
+    `piece` char(1) NOT NULL,
+    `color` char(1) NOT NULL,
+    `captured` char(1) DEFAULT NULL,
+    `promoted_piece_type` char(1) DEFAULT NULL,
+    `move_data` longtext CHARACTER
+    SET
+      utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid (`move_data`)),
+      `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+      PRIMARY KEY (`id`),
+      KEY `idx_room_id` (`room_code`, `id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 COMMIT;

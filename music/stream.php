@@ -9,30 +9,65 @@ session_start();
 // File besar seperti FLAC 34MB+ butuh waktu streaming lama
 session_write_close();
 
-// Hotlink Protection: Mencegah akses langsung ke file audio dari domain lain
-// Catatan: Referer header bisa di-spoof, ini hanya lapisan keamanan tambahan.
+// ── Referer Gate (ketat): stream HANYA boleh diminta DARI halaman musik MEeL ──
+// Audio element di watch.php / index.php / view_playlist.php mengirim header
+// Referer = URL halaman itu sendiri (same-origin, policy strict-origin-when-
+// cross-origin mengirim URL penuh untuk same-origin). Membuka URL stream
+// langsung (ketik di tab baru, curl, hotlink dari situs lain) → Referer
+// kosong atau bukan halaman musik MEeL → DITOLAK.
+// Catatan: Referer bisa di-spoof, jadi ini lapisan keamanan tambahan di atas
+// cek marker session (is_stream_authorized) di bawah.
 $referer = $_SERVER['HTTP_REFERER'] ?? '';
 $currentHost = $_SERVER['HTTP_HOST'] ?? '';
-if (!empty($referer) && !empty($currentHost)) {
-    $refererHost = parse_url($referer, PHP_URL_HOST);
-    if ($refererHost && strtolower($refererHost) !== strtolower($currentHost)) {
-        // Akses dari domain lain, blokir
-        header("Location: ../err/denied.php");
-        exit;
+$refererOk = false;
+
+if ($referer !== '' && $currentHost !== '') {
+    $refParts = parse_url($referer);
+    if ($refParts && isset($refParts['host'])) {
+        // Normalisasi host: HTTP_HOST bisa menyertakan port (mis. localhost:8080)
+        // sedangkan parse_url() host tidak menyertakan port — bandingkan tanpa port.
+        $currentHostNorm = strtolower(parse_url('http://' . $currentHost, PHP_URL_HOST) ?: $currentHost);
+        if (strtolower($refParts['host']) === $currentHostNorm) {
+            // Path harus halaman musik yang sah (bukan file acak di host yang sama)
+            $refPath      = $refParts['path'] ?? '';
+            $refPage      = basename($refPath);
+            $allowedPages = ['watch.php', 'index.php', 'view_playlist.php'];
+            if (strpos($refPath, '/music/') !== false && in_array($refPage, $allowedPages, true)) {
+                $refererOk = true;
+            }
+        }
     }
 }
-// Jika tidak ada Referer, tetap izinkan (karena beberapa browser/ad-blocker menghapusnya)
-// Streaming langsung dari halaman yang sama tetap bisa jalan.
+if (!$refererOk) {
+    header("Location: ../err/denied.php");
+    exit;
+}
 
-include '../auth/config.php';
-require_once '../modules/core/helpers.php';
-include '../modules/media/MediaViewer.php';
+// ── Fail-fast: otorisasi session SEBELUM include config.php / koneksi DB ──
+// Helper dimuat lebih awal di sini — isinya hanya definisi fungsi, aman tanpa
+// config. Ini mencegah request yang tidak sah (hotlink/curl) membuka koneksi
+// DB dan menjalankan activity_logger sebelum akhirnya ditolak.
+require_once __DIR__ . '/../modules/core/helpers.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     header("HTTP/1.1 400 Bad Request");
     exit("ID Media tidak valid.");
 }
+
+// Otorisasi session: hanya browser yang baru saja membuka halaman musik
+// MEeL (watch/index/search/playlist) yang boleh streaming id ini.
+// Akses langsung ke URL stream (ketik address bar, curl, hotlink tanpa
+// konteks halaman) → ditolak secara konsisten. Marker di-set oleh
+// authorize_stream() saat halaman merender media tsb (lihat helpers/stream_auth.php).
+if (!is_stream_authorized($id)) {
+    header("Location: ../err/denied.php");
+    exit;
+}
+
+include '../auth/config.php';
+require_once '../modules/core/helpers.php';
+include '../modules/media/MediaViewer.php';
 
 // 2. Ambil data nama berkas asli dari database lewat MediaViewer
 $viewer = new MediaViewer($conn, $_SESSION['user_id'], 'music', $id);

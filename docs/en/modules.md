@@ -238,6 +238,10 @@ function log_drive_operation(...);                       // Drive audit trail
 **Class:** `GarbageCollector` (static methods) — auto-cleanup:
 - Temp files in RAM disk (`/dev/shm/meel/*`) and project `temp/`
 - Guest accounts (>2 hours inactive) with throttle (1x/hour)
+- Abandoned multiplayer chess rooms via `cleanChessRooms()` (throttle 1x/hour):
+  - Stale lobby: `black_joined = 0` and created >24 hours ago
+  - Abandoned mid-game: started, **no terminal event** (`resign`/`draw_accept`/`disconnect`/`game_over`) and no activity for >7 days (moves history removed too)
+  - **Finished games are never deleted** — their history is preserved
 - Expired rate limit cache via `RateLimiter::cleanup()`
 - Timeboxed execution (max 3 seconds)
 
@@ -403,9 +407,11 @@ Real-time LAN multiplayer chess:
 | `index.php` | Chess board with drag-and-drop, timer, chat, sound effects |
 | `controller/create_room.php` | Create new room, return room code |
 | `controller/join_room.php` | Join room with code |
-| `controller/get_move.php` | Fetch opponent's move (polling) |
+| `controller/get_move.php` | Fetch opponent's move + `opponent_online` flag (polling) |
 | `controller/save_move.php` | Save move with legal move validation |
 | `controller/check_room_status.php` | Check room status (waiting/playing/ended) |
+| `controller/game_action.php` | Resign / draw offer / accept / decline / `disconnect_win` / `game_over` (checkmate & stalemate) |
+| `controller/chess_helpers.php` | Shared helper: `chess_opponent_online()` (offline detection) |
 
 **Multiplayer flow (color picker):**
 
@@ -416,6 +422,12 @@ Klik "Multiplayer LAN" → konfirmasi SweetAlert
       │        → lawan join → overlay tertutup → polling mulai
       └── Hitam = joinRoom() (prompt kode) → sync papan → overlay tertutup
 ```
+
+**Disconnect detection:**
+- `get_move.php` returns `opponent_online` based on `users.last_activity` (updated on every request by `activity_logger`).
+- Offline threshold: `CHESS_OPPONENT_OFFLINE_SECONDS` (default 90s) — above background-tab timer throttling.
+- `game_action.php` action `disconnect_win`: claim win, **server re-verifies** the opponent is actually offline before recording a `disconnect` terminal event.
+- `game_action.php` action `game_over`: client records checkmate/stalemate (only detectable client-side) so the GC preserves finished games.
 
 **Security guards (all controllers):**
 - Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirects to login).

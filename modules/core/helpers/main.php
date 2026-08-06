@@ -23,3 +23,4 @@ require_once __DIR__ . '/audio.php';
 require_once __DIR__ . '/metadata.php';
 require_once __DIR__ . '/mfa.php';
 require_once __DIR__ . '/subtitle.php';
+require_once __DIR__ . '/stream_auth.php';

@@ -23,28 +23,40 @@ if (!$room) {
         'message' => 'Room kosong'
     ]));
 }
-$stmt = $conn->prepare("UPDATE rooms SET black_joined = 1 WHERE room_code = ?");
+$user_id = (int)$_SESSION['user_id'];
+
+// Cegah join room sendiri (pembuat room mencoba jadi hitam juga di akun yang sama).
+$ownCheck = $conn->prepare("SELECT white_user_id FROM rooms WHERE room_code = ?");
+$ownCheck->bind_param("s", $room);
+$ownCheck->execute();
+$ownRow = $ownCheck->get_result()->fetch_assoc();
+if (!$ownRow) {
+    die(json_encode(['success' => false, 'message' => 'Room tidak wujud.']));
+}
+if ((int)$ownRow['white_user_id'] === $user_id) {
+    die(json_encode(['success' => false, 'message' => 'Tidak bisa bergabung ke room sendiri.']));
+}
+
+// black_user_id diisi bersamaan dengan black_joined=1 dalam satu UPDATE
+// atomik (WHERE black_joined = 0) — mencegah dua user join bersamaan
+// (race condition) sekaligus mengikat identitas pemain hitam di server.
+$stmt = $conn->prepare(
+    "UPDATE rooms SET black_joined = 1, black_user_id = ? WHERE room_code = ? AND black_joined = 0"
+);
 if (!$stmt) {
     die(json_encode([
         'success' => false,
         'message' => $conn->error
     ]));
 }
-$stmt->bind_param("s", $room);
+$stmt->bind_param("is", $user_id, $room);
 $stmt->execute();
 if ($stmt->affected_rows > 0) {
     echo json_encode([
         'success' => true,
-        'room' => $room
+        'room' => $room,
+        'color' => 'black'
     ]);
 } else {
-    $check = $conn->prepare("SELECT black_joined FROM rooms WHERE room_code = ?");
-    $check->bind_param("s", $room);
-    $check->execute();
-    $row = $check->get_result()->fetch_assoc();
-    if (!$row) {
-        echo json_encode(['success' => false, 'message' => 'Room tidak wujud.']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Room sudah penuh.']);
-    }
+    echo json_encode(['success' => false, 'message' => 'Room sudah penuh.']);
 }

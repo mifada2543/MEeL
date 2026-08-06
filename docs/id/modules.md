@@ -169,6 +169,10 @@ Semua fungsi dibungkus `function_exists()` guard:
 **Class:** `GarbageCollector` (static methods) — auto-cleanup:
 - Temp files di RAM disk (`/dev/shm/meel/*`) dan project `temp/`
 - Guest accounts (>2 jam) dengan throttle (1x/jam)
+- Room catur multiplayer terbengkalai via `cleanChessRooms()` (throttle 1x/jam):
+  - Lobby basi: `black_joined = 0` dan dibuat >24 jam yang lalu
+  - Game ditinggalkan di tengah: sudah dimulai, **tanpa event terminal** (`resign`/`draw_accept`/`disconnect`/`game_over`) dan tanpa aktivitas >7 hari (beserta riwayat `moves`)
+  - **Game yang sudah selesai TIDAK pernah dihapus** — riwayatnya dipertahankan
 - Expired rate limit cache via `RateLimiter::cleanup()`
 - Timeboxed execution (max 3 detik)
 
@@ -313,9 +317,11 @@ Multiplayer catur real-time via LAN:
 | `index.php` | Board catur dengan drag-and-drop, timer, chat, sound effects |
 | `controller/create_room.php` | Buat ruang baru, return room code |
 | `controller/join_room.php` | Gabung ruang dengan kode |
-| `controller/get_move.php` | Ambil langkah lawan (polling) |
+| `controller/get_move.php` | Ambil langkah lawan + flag `opponent_online` (polling) |
 | `controller/save_move.php` | Simpan langkah dengan validasi legal move |
 | `controller/check_room_status.php` | Cek status ruang (waiting/playing/ended) |
+| `controller/game_action.php` | Resign / tawaran seri / terima / tolak / `disconnect_win` / `game_over` (checkmate & stalemate) |
+| `controller/chess_helpers.php` | Helper bersama: `chess_opponent_online()` (deteksi offline) |
 
 **Alur multiplayer (color picker):**
 
@@ -326,6 +332,12 @@ Klik "Multiplayer LAN" → konfirmasi SweetAlert
       │        → lawan join → overlay tertutup → polling mulai
       └── Hitam = joinRoom() (prompt kode) → sync papan → overlay tertutup
 ```
+
+**Deteksi disconnect lawan:**
+- `get_move.php` mengembalikan `opponent_online` berdasarkan `users.last_activity` (diperbarui di setiap request oleh `activity_logger`).
+- Ambang offline: `CHESS_OPPONENT_OFFLINE_SECONDS` (default 90 detik) — di atas throttle timer tab background browser.
+- Aksi `disconnect_win` di `game_action.php`: klaim kemenangan, **server memverifikasi ulang** lawan benar-benar offline sebelum mencatat event terminal `disconnect`.
+- Aksi `game_over` di `game_action.php`: client mencatat checkmate/stalemate (hanya bisa dideteksi di sisi client) agar GC mempertahankan game yang sudah selesai.
 
 **Security guards (semua controller):**
 - Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirect ke login).

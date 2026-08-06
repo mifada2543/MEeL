@@ -180,7 +180,7 @@ MEeL/
 │   │   ├── System.php     # Queue management & monitoring
 │   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
 │   │   ├── Uploader.php   # File upload & validation
-│   │   ├── GarbageCollector.php # Auto-cleanup temp files + rate limit cache
+│   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
 │   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
 │   │   ├── CommentRenderer.php # Nested comment rendering
 │   │   ├── activity_logger.php # Activity logging & IP ban check
