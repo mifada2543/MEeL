@@ -32,6 +32,35 @@ if (empty($data['csrf_token']) || !verify_csrf_token($data['csrf_token'])) {
     ]));
 }
 
+// ── Otorisasi pemain: verifikasi user login ini benar-benar white/black
+// di room ini, dan JANGAN percaya $data['color'] dari client — warna
+// ditentukan dari identitas server-side, bukan input client. Ini mencegah
+// user mana pun yang tahu room_code mengirim langkah sebagai warna
+// siapa pun, atau menyuntik langkah ke game orang lain. ──
+$user_id = (int)$_SESSION['user_id'];
+$room_code = $data['room'] ?? '';
+$roomStmt = $conn->prepare("SELECT white_user_id, black_user_id FROM rooms WHERE room_code = ?");
+$roomStmt->bind_param("s", $room_code);
+$roomStmt->execute();
+$roomRow = $roomStmt->get_result()->fetch_assoc();
+
+if (!$roomRow) {
+    http_response_code(404);
+    die(json_encode(["success" => false, "message" => "Room tidak ditemukan."]));
+}
+
+if ((int)$roomRow['white_user_id'] === $user_id) {
+    $server_color = 'w';
+} elseif ((int)$roomRow['black_user_id'] === $user_id) {
+    $server_color = 'b';
+} else {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false,
+        "message" => "Anda bukan pemain di room ini."
+    ]));
+}
+
 $stmt = $conn->prepare(
     "INSERT INTO moves
 (room_code, from_r, from_c, to_r, to_c, piece, color, captured, promoted_piece_type, move_data)
@@ -46,6 +75,10 @@ if (!$stmt) {
 // Jangan simpan token CSRF ke DB (move_data) — token session-bound
 // tidak boleh ikut tersimpan & terkirim ke pemain lain via get_move.php.
 unset($data['csrf_token']);
+// Timpa color di move_data juga dengan versi yang tervalidasi server,
+// supaya move_data (JSON mentah yang dikirim balik ke lawan) konsisten
+// dengan kolom color di DB — bukan nilai mentah dari client.
+$data['color'] = $server_color;
 $json = json_encode($data);
 $captured = $data['captured'] ?? null;
 $promoted = $data['promotedPieceType'] ?? null;
@@ -57,7 +90,7 @@ $stmt->bind_param(
     $data['toR'],
     $data['toC'],
     $data['piece'],
-    $data['color'],
+    $server_color,
     $captured,
     $promoted,
     $json

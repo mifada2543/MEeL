@@ -23,7 +23,11 @@ if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
 
 // Room code acak 6 karakter
 $room = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
-$sql = "INSERT INTO rooms (room_code) VALUES (?)";
+$user_id = (int)$_SESSION['user_id'];
+// white_user_id diisi di sini — pembuat room SELALU jadi putih, dan ini
+// diikat server-side (bukan cuma asumsi client) supaya save_move.php bisa
+// memverifikasi identitas pengirim langkah nanti.
+$sql = "INSERT INTO rooms (room_code, white_user_id) VALUES (?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     http_response_code(500);
@@ -32,7 +36,7 @@ if (!$stmt) {
         "error" => $conn->error
     ]));
 }
-$stmt->bind_param("s", $room);
+$stmt->bind_param("si", $room, $user_id);
 $stmt->execute();
 echo json_encode([
     "success" => true,

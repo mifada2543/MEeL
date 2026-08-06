@@ -179,8 +179,10 @@ function tungguLawanBergabung(code) {
         hideColorPicker(); // game dimulai — papan aktif & bisa diklik
         document.getElementById("room-status").innerText =
           "Lawan bergabung! Menunggu langkah...";
-        document.getElementById("player-black-name").innerText =
-          "Pemain Hitam (Online)";
+        // #player-black-name TIDAK ada di HTML arcade/chess/index.php —
+        // akses tanpa guard melempar TypeError & membatalkan startPolling()
+        // (langkah lawan tidak pernah ter-poll). Guard sama seperti tempat lain.
+        if (blackName) blackName.innerText = "Pemain Hitam (Online)";
         startPolling();
       }
     } catch (err) {
