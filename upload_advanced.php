@@ -11,6 +11,7 @@ require_once 'auth/auth.php';
 require_once 'auth/config.php';
 require_once 'modules/core/activity_logger.php';
 require_once 'modules/core/Transcoder.php';
+require_once 'modules/core/BrowserProgressObserver.php';
 require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
@@ -36,7 +37,12 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-$transcoder     = new Transcoder($conn, $_SESSION['user_id']);
+// Transcoder dipasangi BrowserProgressObserver (presentation layer) — semua
+// output overlay/JS kini ditangani observer, bukan class bisnis. Hook shutdown
+// menghentikan proses anak (yt-dlp/ffmpeg) yang masih berjalan bila request
+// berakhir abnormal (fatal error, timeout server, dsb).
+$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
 require_once 'modules/core/System.php';
 $sys     = new System($conn);
@@ -98,6 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
             try {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
+
+                // Aliran musik: observer sudah meng-stream window.location.href
+                // ke post_encode.php — hentikan render sisa halaman agar tidak
+                // ikut terkirim ke browser (caller memutuskan, bukan lapisan bisnis).
+                if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
+                    exit;
+                }
             } catch (Exception $e) {
                 echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
                 echo str_repeat(' ', 1024);

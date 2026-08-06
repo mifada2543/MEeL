@@ -22,6 +22,15 @@ let pendingCaptureSvg = null;
 // State resign & draw (multiplayer)
 let drawOfferPending = false; // tawaran seri saya sedang menunggu jawaban
 let drawModalShown = false; // modal terima/tolak seri sedang terbuka
+// State rematch (tanding ulang, multiplayer)
+let rematchOfferPending = false; // tawaran tanding ulang saya sedang menunggu jawaban
+let rematchModalShown = false; // modal terima/tolak tanding ulang sedang terbuka
+let rematchLeaving = false; // sedang keluar dari sesi online (redirect 5 dtk) — kunci tombol
+const REMATCH_WAIT_MS = 30000; // batas tunggu jawaban tanding ulang (30 dtk)
+let rematchTimeoutTimer = null; // timer batas tunggu — cegah menunggu jawaban selamanya
+// Referensi ke leaveRoom() (didefinisikan di dalam DOMContentLoaded) — dipakai
+// fungsi top-level saat keluar dari sesi online ke mode "Lawan Rakan".
+let exitToLocalModeFn = null;
 let opponentJoined = false; // lawan sudah bergabung (tombol seri/menyerah baru muncul setelah ada langkah)
 // State deteksi lawan terputus (dari flag opponent_online di get_move.php)
 let opponentOnline = true; // status koneksi lawan (versi terakhir dari server)
@@ -678,6 +687,14 @@ function updateGameStatus(result) {
       opponentOfflineModalOpen = false;
       window.Swal.close();
     }
+    // Aksi pasca-game: multiplayer → tanding ulang / keluar; lokal/AI → main semula.
+    const restartOverlayBtn = document.getElementById("btn-restart-overlay");
+    const rematchActions = document.getElementById("rematch-actions");
+    if (restartOverlayBtn)
+      restartOverlayBtn.classList.toggle("hidden", game.gameMode === "online");
+    if (rematchActions)
+      rematchActions.classList.toggle("hidden", game.gameMode !== "online");
+    updateRematchButton();
   }
   updateActionButtons();
 }
@@ -695,15 +712,23 @@ function updateActionButtons() {
     colorPickerOverlay &&
     !colorPickerOverlay.classList.contains("hidden");
   const myTurn = online && !!myColor && game.turn === myColor && !game.isGameOver;
-  offerBtn.disabled = !myTurn || drawOfferPending || drawModalShown || waiting;
-  offerBtn.innerText = drawOfferPending ? "Menunggu jawaban..." : "Tawarkan Seri";
-  resignBtn.disabled = !online || !roomCode || game.isGameOver || waiting;
   // Tombol seri/menyerah hanya muncul setelah lawan bergabung DAN sudah ada
   // minimal satu langkah (permainan benar-benar dimulai). Saat baru masuk mode
   // multiplayer / masih menunggu lawan / belum ada langkah, tombol disembunyikan.
   const showActions = online && opponentJoined && game.history.length > 0;
-  offerBtn.classList.toggle("hidden", !showActions);
+  // Tombol "Tawarkan Seri" HANYA tampil saat giliran pemain (FIDE 9.1.2) —
+  // kalau bukan gilirannya, disembunyikan total agar tidak membingungkan
+  // (tombol terlihat tapi tidak bisa diklik). Saat tawaran seri saya masih
+  // pending, tombol tetap tampil sebagai "Menunggu jawaban..." (disabled).
+  const offerVisible = showActions && myTurn && !waiting;
+  offerBtn.classList.toggle("hidden", !offerVisible);
+  offerBtn.disabled = !myTurn || drawOfferPending || drawModalShown || waiting;
+  offerBtn.innerText = drawOfferPending ? "Menunggu jawaban..." : "Tawarkan Seri";
   resignBtn.classList.toggle("hidden", !showActions);
+  // Saat tombol seri disembunyikan, "Mengalah" melebar penuh (2 kolom) agar
+  // grid tidak meninggalkan kolom kosong.
+  resignBtn.classList.toggle("col-span-2", showActions && !offerVisible);
+  resignBtn.disabled = !online || !roomCode || game.isGameOver || waiting;
 }
 // Proses event non-langkah dari polling / sync. silent=true dipakai saat sync
 // (jangan munculkan modal). Mengembalikan result terminal atau null.
@@ -745,6 +770,61 @@ function handleGameEvent(payload, silent = false) {
     if (!isSelf) {
       drawOfferPending = false; // lawan menolak tawaran saya
       updateActionButtons();
+      // Alert pemberitahuan: lawan menolak tawaran seri saya (bukan echo
+      // sendiri). silent=true (sync saat reload) tidak memunculkan alert.
+      if (!silent) {
+        window.meelAlert({
+          title: "Tawaran Seri Ditolak",
+          text: "Lawan menolak tawaran seri anda.",
+          icon: "warning",
+        });
+      }
+    }
+    return null;
+  }
+  if (type === "rematch_offer") {
+    if (isSelf) {
+      // Echo tawaran sendiri. Saat sync (reload), PULIHKAN state pending agar
+      // penawar yang me-refresh halaman tetap tahu tawarannya sedang menunggu
+      // jawaban — bila lawan lalu menolak, pesan "Lawan menolak tawaran
+      // tanding ulang anda." tetap akurat. Timer anti-stuck ikut diaktifkan
+      // ulang supaya waktu tunggu tetap dibatasi setelah reload.
+      if (silent) {
+        rematchOfferPending = true;
+        updateRematchButton();
+        startRematchTimeout();
+      }
+      return null;
+    }
+    if (!silent && !rematchModalShown && game.isGameOver) showRematchModal();
+    return null;
+  }
+  if (type === "rematch_accept") {
+    if (!silent && isSelf) return null; // echo sendiri — sudah di-reset lokal
+    startRematch(); // lawan menerima → mulai game baru di room yang sama
+    return null;
+  }
+  if (type === "rematch_decline") {
+    if (isSelf) {
+      // Echo sendiri (saya membatalkan tawaran). Bersihkan state pending —
+      // penting saat sync: tawaran saya di-pulihkan lebih dulu oleh echo
+      // rematch_offer, lalu decline sendiri ini harus meng-clear-nya lagi
+      // supaya tidak tersisa "Menunggu jawaban..." yang basi.
+      rematchOfferPending = false;
+      updateRematchButton();
+      return null;
+    }
+    if (rematchOfferPending) {
+      // Tawaran saya yang sedang pending → lawan MENOLAK tawaran saya.
+      // Alert serupa dengan penolakan tawaran seri, lalu countdown keluar.
+      showRematchRejectedThenExit(
+        "Lawan menolak tawaran tanding ulang anda.",
+        "Tawaran Tanding Ulang Ditolak",
+        "warning",
+      );
+    } else {
+      // Tawaran lawan yang pending → lawan MEMBATALKAN / sudah keluar.
+      showRematchRejectedThenExit();
     }
     return null;
   }
@@ -843,6 +923,184 @@ function handleResign() {
         updateGameStatus({ status: "resign", winner: myColor === "w" ? "b" : "w" });
       });
     });
+}
+// ── REMATCH (TANDING ULANG) — multiplayer pasca-game ────────────────────────
+// Game selesai → overlay menawarkan "Tanding Lagi?" / "Keluar".
+//  - Tanding Lagi? → kirim rematch_offer → lawan dapat modal Terima/Tolak.
+//      TERIMA → rematch_accept (server reset riwayat) → kedua papan di-reset.
+//      TOLAK  → rematch_decline → penawar lihat alert "Tawaran Tanding Ulang
+//               Ditolak" (lawan menolak) lalu otomatis kembali ke mode
+//               "Lawan Rakan" dalam 5 detik.
+//  - Keluar → batalkan tawaran bila pending, lalu langsung ke mode lokal.
+function updateRematchButton() {
+  const btn = document.getElementById("btn-rematch");
+  const exitBtn = document.getElementById("btn-exit-game");
+  if (btn) {
+    btn.disabled = rematchOfferPending || rematchModalShown || rematchLeaving;
+    btn.innerText = rematchOfferPending ? "Menunggu jawaban..." : "Tanding Lagi?";
+  }
+  if (exitBtn) exitBtn.disabled = rematchLeaving;
+}
+function startRematch() {
+  clearRematchTimeout();
+  rematchOfferPending = false;
+  rematchModalShown = false;
+  restartGame(); // reset papan + sembunyikan overlay + status "Online"
+}
+// Timer batas tunggu jawaban tanding ulang: lawan yang tidak menjawab dalam
+// REMATCH_WAIT_MS (mis. sudah keluar / menutup tab) membuat tawaran dibatalkan
+// dan pemain kembali ke mode lokal — tidak ada yang terjebak menunggu.
+function clearRematchTimeout() {
+  if (rematchTimeoutTimer) {
+    clearTimeout(rematchTimeoutTimer);
+    rematchTimeoutTimer = null;
+  }
+}
+function startRematchTimeout() {
+  clearRematchTimeout();
+  rematchTimeoutTimer = setTimeout(async () => {
+    rematchTimeoutTimer = null;
+    // Batalkan tawaran agar server bersih. Kalau pembatalan gagal (tawaran
+    // sudah tidak pending = lawan baru saja MENERIMA), biarkan alur accept
+    // berjalan lewat polling — jangan keluar.
+    try {
+      const d = roomCode
+        ? await sendGameActionAPI(roomCode, "rematch_decline")
+        : null;
+      if (d && !d.success) {
+        rematchOfferPending = false;
+        updateRematchButton();
+        return;
+      }
+    } catch {
+      rematchOfferPending = false;
+      updateRematchButton();
+      return;
+    }
+    rematchOfferPending = false;
+    showRematchRejectedThenExit("Lawan tidak menjawab tawaran tanding ulang.");
+  }, REMATCH_WAIT_MS);
+}
+function showRematchModal() {
+  if (rematchModalShown || !game.isGameOver) return;
+  rematchModalShown = true;
+  updateRematchButton();
+  window.Swal.fire({
+    title: "Tawaran Tanding Ulang",
+    html: "Lawan mengajukan tanding ulang.<br>Adakah anda mahu menerimanya?",
+    icon: "question",
+    background: "#0f172a",
+    color: "#fff",
+    showCancelButton: true,
+    confirmButtonText: "TERIMA",
+    cancelButtonText: "TOLAK",
+    reverseButtons: true,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+  }).then((result) => {
+    rematchModalShown = false;
+    updateRematchButton();
+    if (result.isConfirmed) {
+      sendGameActionAPI(roomCode, "rematch_accept")
+        .then((d) => {
+          if (d && d.success) {
+            startRematch();
+            return;
+          }
+          if (d && d.opponent_gone) {
+            // Penawar sudah keluar — jangan biarkan pemain menunggu sendirian.
+            // Judul + ikon khusus (serupa alert penolakan), bukan "Tamat"/info.
+            showRematchRejectedThenExit(
+              "Lawan sudah keluar dari permainan.",
+              "Lawan Keluar",
+              "warning",
+            );
+            return;
+          }
+          if (d && d.message === "Tidak ada tawaran tanding ulang yang menunggu.") {
+            // Lawan sudah menolak/membatalkan saat kita menekan TERIMA.
+            showRematchRejectedThenExit();
+            return;
+          }
+          // Gagal lain (jaringan/server) — tawaran masih pending, buka lagi
+          // modal agar bisa mencoba sekali lagi (hindari deadlock accept).
+          showRematchModal();
+        })
+        .catch(() => {
+          showRematchModal(); // gagal jaringan — tawaran masih pending
+        });
+    } else if (result.dismiss === window.Swal.DismissReason.cancel) {
+      sendGameActionAPI(roomCode, "rematch_decline").then(() => {});
+      exitToLocalMode();
+    }
+  });
+}
+function handleRematch() {
+  if (game.gameMode !== "online" || !roomCode || !game.isGameOver) return;
+  if (rematchOfferPending || rematchModalShown || rematchLeaving) return;
+  sendGameActionAPI(roomCode, "rematch_offer").then((d) => {
+    if (!d.success) {
+      if (d.opponent_gone) {
+        // Race condition: lawan sudah keluar (last_activity membeku). Jangan
+        // biarkan pemain menunggu — langsung beri tahu + keluar ke mode lokal.
+        // Judul + ikon khusus (serupa alert penolakan), bukan "Tamat"/info.
+        showRematchRejectedThenExit(
+          "Lawan sudah keluar dari permainan.",
+          "Lawan Keluar",
+          "warning",
+        );
+        return;
+      }
+      window.meelAlert({
+        title: "Gagal",
+        text: d.message || "Gagal menawarkan tanding ulang.",
+        icon: "error",
+      });
+      return;
+    }
+    rematchOfferPending = true;
+    updateRematchButton();
+    startRematchTimeout(); // lawan yang tidak menjawab → batalkan + keluar
+  });
+}
+function handleExitGame() {
+  if (game.gameMode !== "online" || rematchLeaving) return;
+  rematchLeaving = true;
+  updateRematchButton();
+  clearRematchTimeout();
+  // Pembatalan tawaran tanding ulang (punya saya ATAU lawan) ditangani oleh
+  // stopOnlineSession → leaveRoom — satu titik untuk semua jalur keluar.
+  exitToLocalMode();
+}
+function showRematchRejectedThenExit(
+  message = "Permainan telah keluar.",
+  title = "Tamat",
+  icon = "info",
+) {
+  rematchOfferPending = false;
+  rematchModalShown = false;
+  rematchLeaving = true; // kunci tombol overlay selama countdown keluar
+  clearRematchTimeout();
+  updateRematchButton();
+  if (window.Swal) window.Swal.close(); // tutup modal tawaran bila terbuka
+  window.Swal.fire({
+    title,
+    html: `${message}<br>Kembali ke mode <b>Lawan Rakan</b> dalam 5 saat...`,
+    icon,
+    background: "#0f172a",
+    color: "#fff",
+    timer: 5000,
+    timerProgressBar: true,
+    showConfirmButton: false,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+  });
+  setTimeout(() => {
+    if (game.gameMode === "online") exitToLocalMode();
+  }, 5000);
+}
+function exitToLocalMode() {
+  if (typeof exitToLocalModeFn === "function") exitToLocalModeFn();
 }
 // ── DETEKSI LAWAN TERPUTUS (disconnect) ────────────────────────────────────
 // Server mengirim opponent_online=false (dari get_move.php) hanya jika
@@ -955,6 +1213,10 @@ function restartGame() {
   localBoardFlipped = false;
   drawOfferPending = false;
   drawModalShown = false;
+  rematchOfferPending = false;
+  rematchModalShown = false;
+  rematchLeaving = false;
+  clearRematchTimeout();
   opponentOnline = true;
   opponentOfflineNotified = false;
   opponentOfflineNextPromptAt = 0;
@@ -1008,6 +1270,28 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       proceed();
     }
+  }
+
+  // Konfirmasi keluar dari mode multiplayer — gaya sama dengan alert ganti
+  // mode (confirmSwitchMode): SweetAlert KELUAR/BATAL sebelum benar-benar
+  // meninggalkan sesi online (room, polling, dan tawaran pending dibatalkan
+  // lewat stopOnlineSession setelah konfirmasi).
+  function confirmExitMultiplayer(proceed, html) {
+    window.Swal.fire({
+      title: "Keluar dari Mode Multiplayer?",
+      html:
+        html ||
+        "Anda akan kembali ke mode <b>Lawan Rakan</b>.<br>Permainan saat ini akan berakhir.",
+      icon: "warning",
+      background: "#0f172a",
+      color: "#fff",
+      showCancelButton: true,
+      confirmButtonText: "KELUAR",
+      cancelButtonText: "BATAL",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) proceed();
+    });
   }
 
   if (onlineBtn) {
@@ -1193,7 +1477,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Bersihkan session online (polling, room, overlay) tanpa mengganti mode.
+  // Semua jalur keluar dari multiplayer lewat sini (Keluar, Keluar Room,
+  // pindah ke mode Lawan Rakan / AI) — jadi pembatalan tawaran tanding ulang
+  // yang pending ditaruh DI SINI, satu tempat, agar lawan tidak pernah
+  // terjebak menunggu jawaban setelah kita pergi. Kalau tidak ada tawaran
+  // pending, server menolak dengan aman (diabaikan).
   function stopOnlineSession() {
+    if (game.gameMode === "online" && roomCode) {
+      sendGameActionAPI(roomCode, "rematch_decline").catch(() => {});
+    }
     if (roomStatusTimer) {
       clearInterval(roomStatusTimer);
       roomStatusTimer = null;
@@ -1225,6 +1517,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateRoomUI();
   }
 
+  // Ekspos leaveRoom() ke fungsi top-level (rematch / handleGameEvent).
+  exitToLocalModeFn = leaveRoom;
+
   // Batal saat menunggu lawan → kembali ke pilihan warna (tetap di multiplayer).
   function cancelWaiting() {
     if (roomStatusTimer) {
@@ -1237,6 +1532,9 @@ document.addEventListener("DOMContentLoaded", () => {
     lastMoveId = 0;
     drawOfferPending = false;
     drawModalShown = false;
+    rematchOfferPending = false;
+    rematchModalShown = false;
+    rematchLeaving = false;
     opponentJoined = false;
     document.getElementById("room-code-display").innerText = "-";
     document.getElementById("room-color").innerText = "-";
@@ -1250,11 +1548,28 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCancelWaiting) btnCancelWaiting.addEventListener("click", cancelWaiting);
   document
     .getElementById("btn-leave-room")
-    .addEventListener("click", leaveRoom);
+    // Masih di tengah sesi online — keluar berarti mengakhiri permainan.
+    .addEventListener("click", () =>
+      confirmExitMultiplayer(
+        leaveRoom,
+        "Anda akan kembali ke mode <b>Lawan Rakan</b>.<br>Permainan saat ini akan berakhir.",
+      ),
+    );
   const btnOfferDraw = document.getElementById("btn-offer-draw");
   const btnResign = document.getElementById("btn-resign");
   if (btnOfferDraw) btnOfferDraw.addEventListener("click", handleOfferDraw);
   if (btnResign) btnResign.addEventListener("click", handleResign);
+  const btnRematch = document.getElementById("btn-rematch");
+  const btnExitGame = document.getElementById("btn-exit-game");
+  if (btnRematch) btnRematch.addEventListener("click", handleRematch);
+  if (btnExitGame)
+    // Sudah pasca-game (overlay) — tidak perlu menyebut permainan berakhir.
+    btnExitGame.addEventListener("click", () =>
+      confirmExitMultiplayer(
+        handleExitGame,
+        "Anda akan kembali ke mode <b>Lawan Rakan</b>.",
+      ),
+    );
   document.getElementById("btn-restart").addEventListener("click", () => {
     // Fitur: Tampilkan alert konfirmasi jika permainan sedang berjalan
     if (game.history.length > 0 && !game.isGameOver) {

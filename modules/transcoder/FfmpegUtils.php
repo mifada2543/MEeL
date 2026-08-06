@@ -48,6 +48,58 @@ trait FfmpegUtils
     // ══════════════════════════════════════════════════════════════════════════
 
     /**
+     * Buat direktori (rekursif) dengan pengecekan proaktif + logging.
+     *
+     * @param string $dir  Path direktori yang akan dibuat
+     * @param int    $perms Permission (default 0755)
+     * @return bool True jika direktori ada / berhasil dibuat
+     */
+    protected function ensureDir(string $dir, int $perms = 0755): bool
+    {
+        if (is_dir($dir)) {
+            return true;
+        }
+        if (!mkdir($dir, $perms, true) && !is_dir($dir)) {
+            error_log("[MEeL] ensureDir GAGAL: {$dir}");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Hapus satu file dengan pengecekan proaktif + logging.
+     *
+     * @param string $path Path file
+     */
+    protected function removeFile(string $path): void
+    {
+        if (!is_file($path) && !is_link($path)) {
+            return;
+        }
+        if (!unlink($path)) {
+            error_log("[MEeL] removeFile GAGAL: {$path}");
+        }
+    }
+
+    /**
+     * Hapus semua isi direktori lalu direktori itu sendiri (flat directory).
+     *
+     * @param string $dir Path direktori
+     */
+    protected function removeDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        foreach (glob(rtrim($dir, '/') . "/*") ?: [] as $f) {
+            $this->removeFile($f);
+        }
+        if (!rmdir($dir)) {
+            error_log("[MEeL] removeDir GAGAL: {$dir}");
+        }
+    }
+
+    /**
      * Pindahkan file lintas filesystem (untuk USB HDD).
      * PHP rename() tidak bisa lintas device — wajib copy() + unlink().
      *
@@ -57,18 +109,48 @@ trait FfmpegUtils
      */
     protected function moveFile(string $src, string $dst): bool
     {
-        // Coba rename dulu (cepat, jika sama filesystem)
-        error_clear_last();
-        if (@rename($src, $dst)) return true;
+        if (!is_file($src)) {
+            error_log(sprintf('[MEeL] moveFile GAGAL (sumber tidak ada): src=%s dst=%s', $src, $dst));
+            return false;
+        }
+        if (!is_dir(dirname($dst)) || !is_writable(dirname($dst))) {
+            error_log(sprintf(
+                '[MEeL] moveFile GAGAL (direktori tujuan tidak writable): src=%s dst=%s',
+                $src,
+                $dst
+            ));
+            return false;
+        }
 
-        // Tangkap alasan nyata kegagalan rename (EXDEV, ENOENT, EACCES, dll.)
-        $rename_err = error_get_last();
-        $rename_msg = is_array($rename_err) ? ($rename_err['message'] ?? 'unknown') : 'unknown';
+        // Proactive device check: bila src & dst berada di filesystem berbeda
+        // (kasus NORMAL: RAM disk /dev/shm → USB HDD), rename() pasti gagal
+        // dengan EXDEV "Invalid cross-device link". Lewati rename langsung ke
+        // copy+unlink — warning palsu tersebut tidak perlu membanjiri log
+        // (requirement: angkat error NYATA seperti permission, bukan jalur normal).
+        $src_stat = stat($src);
+        $dst_stat = stat(dirname($dst));
+        $crossDevice = $src_stat !== false
+            && $dst_stat !== false
+            && ($src_stat['dev'] ?? 0) !== ($dst_stat['dev'] ?? 0);
+
+        if (!$crossDevice) {
+            // Coba rename dulu (cepat, jika sama filesystem)
+            error_clear_last();
+            if (rename($src, $dst)) return true;
+
+            // Tangkap alasan nyata kegagalan rename (EXDEV, ENOENT, EACCES, dll.)
+            $rename_err = error_get_last();
+            $rename_msg = is_array($rename_err) ? ($rename_err['message'] ?? 'unknown') : 'unknown';
+        } else {
+            $rename_msg = 'skipped (cross-device: src/dst berbeda filesystem) — langsung copy';
+        }
 
         // Fallback: copy + unlink (untuk USB/cross-device)
         error_clear_last();
-        if (@copy($src, $dst)) {
-            @unlink($src);
+        if (copy($src, $dst)) {
+            if (!unlink($src)) {
+                error_log("[MEeL] moveFile: source tidak terhapus setelah copy: {$src}");
+            }
             return true;
         }
 
@@ -88,15 +170,13 @@ trait FfmpegUtils
 
     /**
      * Hapus semua isi direktori tanpa rekursif (flat directory).
+     * Alias dari removeDir() — dipertahankan untuk kompatibilitas.
      *
      * @param string $dir Path direktori
      */
     protected function cleanupDir(string $dir): void
     {
-        foreach (glob(rtrim($dir, '/') . "/*") as $f) {
-            @unlink($f);
-        }
-        @rmdir($dir);
+        $this->removeDir($dir);
     }
 
     /**

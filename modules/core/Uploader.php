@@ -52,7 +52,7 @@ class Uploader
             return false;
         }
 
-        $handle = @fopen($filePath, 'rb');
+        $handle = fopen($filePath, 'rb');
         if (!$handle) {
             return false;
         }
@@ -86,16 +86,16 @@ class Uploader
         $lock_file    = sys_get_temp_dir() . '/meel_upload_counter.lock';
         $counter_file = sys_get_temp_dir() . '/meel_upload_count.dat';
 
-        $fp = @fopen($lock_file, 'c');
+        $fp = fopen($lock_file, 'c');
         if (!$fp) return true; // fallback: allow jika gagal lock
         flock($fp, LOCK_EX);
 
         // TTL auto-reset: jika counter file lebih dari 5 menit, reset ke 0
         if (file_exists($counter_file) && (time() - filemtime($counter_file)) > 300) {
-            @unlink($counter_file);
+            $this->removeFile($counter_file);
         }
 
-        $current = (int)@file_get_contents($counter_file);
+        $current = (int)(is_file($counter_file) ? file_get_contents($counter_file) : 0);
         if ($current >= 3) {
             flock($fp, LOCK_UN);
             fclose($fp);
@@ -108,10 +108,10 @@ class Uploader
 
         // Register shutdown function untuk decrement
         register_shutdown_function(function () use ($lock_file, $counter_file) {
-            $fp2 = @fopen($lock_file, 'c');
+            $fp2 = fopen($lock_file, 'c');
             if ($fp2) {
                 flock($fp2, LOCK_EX);
-                $count = max(0, (int)@file_get_contents($counter_file) - 1);
+                $count = max(0, (int)(is_file($counter_file) ? file_get_contents($counter_file) : 0) - 1);
                 file_put_contents($counter_file, $count);
                 flock($fp2, LOCK_UN);
                 fclose($fp2);
@@ -174,8 +174,8 @@ class Uploader
 
         // Lock untuk serialisasi penamaan file — cegah TOCTOU race condition
         $lock_file = sys_get_temp_dir() . '/meel_music_upload.lock';
-        $lock_fp   = @fopen($lock_file, 'c');
-        $locked    = $lock_fp && flock($lock_fp, LOCK_EX);
+        $lock_fp   = fopen($lock_file, 'c');
+        $locked    = $lock_fp !== false && flock($lock_fp, LOCK_EX);
 
         $file_name   = $this->getUniqueFilename($clean_name, $ext, $base_dir . "upload/file/");
         $target_file = $base_dir . "upload/file/" . $file_name;
@@ -245,8 +245,8 @@ class Uploader
             $opus_file = pathinfo($file_name, PATHINFO_FILENAME) . ".ogg";
             $opus_path = $base_dir . "upload/file/" . $opus_file;
 
-            $lock_tc = @fopen(sys_get_temp_dir() . '/meel_music_transcode.lock', 'c');
-            $tc_locked = $lock_tc && flock($lock_tc, LOCK_EX);
+            $lock_tc = fopen(sys_get_temp_dir() . '/meel_music_transcode.lock', 'c');
+            $tc_locked = $lock_tc !== false && flock($lock_tc, LOCK_EX);
 
             exec("export LD_LIBRARY_PATH=''; " . escapeshellarg($this->ffmpeg_bin) . " -y -i " . escapeshellarg($target_file) . " -c:a libopus -vbr on -compression_level 10 " . escapeshellarg($opus_path), $out, $ret);
 
@@ -282,11 +282,11 @@ class Uploader
             $this->conn->rollback();
             // Bersihkan file yang sudah terlanjur dipindahkan
             $target_file = $base_dir . "upload/file/" . $file_name;
-            if (file_exists($target_file)) @unlink($target_file);
+            $this->removeFile($target_file);
             // Hapus thumbnail juga jika bukan default
             if ($thumb_name !== 'music_default.png') {
                 $thumb_path = $base_dir . "upload/thumbnail/" . $thumb_name;
-                if (file_exists($thumb_path)) @unlink($thumb_path);
+                $this->removeFile($thumb_path);
             }
             return ['status' => 'error', 'msg' => "Database error! [" . $e->getMessage() . "]"];
         }
@@ -367,16 +367,16 @@ class Uploader
             $shm_path  = '/dev/shm';
             $use_shm   = false;
             if (is_dir($shm_path) && is_writable($shm_path)) {
-                $free = @disk_free_space($shm_path);
+                $free = disk_free_space($shm_path);
                 if ($free !== false && $free >= 512 * 1024 * 1024) {
                     $use_shm = true;
                 }
             }
 
             $meel_base   = $use_shm ? ($shm_path . '/meel/upload') : (dirname(__DIR__, 2) . '/temp');
-            if (!is_dir($meel_base)) @mkdir($meel_base, 0755, true);
+            if (!is_dir($meel_base)) $this->ensureDir($meel_base);
             $work_folder = $meel_base . '/' . $folder_name . '/';
-            @mkdir($work_folder, 0755, true);
+            $this->ensureDir($work_folder);
         } finally {
             flock($lock_fp, LOCK_UN);
             fclose($lock_fp);
@@ -385,7 +385,7 @@ class Uploader
         // Stage file upload ke work_folder agar ekstensi tersedia untuk FFmpeg
         $staged_video = $work_folder . $clean_name . "_staged." . $ext;
         if (!copy($temp_video, $staged_video)) {
-            @rmdir($work_folder);
+            $this->removeDir($work_folder);
             return ['status' => 'error', 'msg' => 'Gagal menyalin file upload ke staging area.', 'alert' => true];
         }
 
@@ -479,14 +479,14 @@ class Uploader
             $sub_allowed = ['vtt', 'srt'];
 
             if (in_array($sub_ext, $sub_allowed, true) && validate_subtitle_file($files['subtitle']['tmp_name'])) {
-                $sub_content = (string)@file_get_contents($files['subtitle']['tmp_name']);
+                $sub_content = (string)file_get_contents($files['subtitle']['tmp_name']);
                 if ($sub_content !== '') {
                     if ($sub_ext === 'srt') {
                         $sub_content = convert_srt_to_vtt($sub_content);
                     }
                     $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
                     $sub_target  = $work_folder . $folder_name . '.' . $sub_lang . '.vtt';
-                    if (@file_put_contents($sub_target, $sub_content, LOCK_EX) === false) {
+                    if (file_put_contents($sub_target, $sub_content, LOCK_EX) === false) {
                         error_log("[MEeL] Gagal menulis subtitle ke work_folder: " . $sub_target);
                     }
                 }
@@ -497,12 +497,11 @@ class Uploader
         }
 
         // Hapus staged video setelah FFmpeg selesai
-        @unlink($staged_video);
+        $this->removeFile($staged_video);
 
         if ($result !== 0) {
             // Bersihkan work_folder jika FFmpeg gagal
-            foreach (glob($work_folder . "*") as $f) @unlink($f);
-            @rmdir($work_folder);
+            $this->removeDir($work_folder);
             return ['status' => 'error', 'msg' => 'FFmpeg Error: ' . implode("\n", $output)];
         }
 
@@ -549,14 +548,13 @@ class Uploader
             fclose($lock_move);
         }
 
-        @rmdir($work_folder);
+        $this->removeDir($work_folder);
 
         if ($move_failed) {
             // Rollback: hapus file yang sudah terlanjur dipindahkan
-            foreach (glob($hdd_target_folder . "*") as $f) @unlink($f);
-            @rmdir($hdd_target_folder);
+            $this->removeDir($hdd_target_folder);
             // Hapus thumbnail (baik dari user maupun auto-generated)
-            @unlink($hdd_thumb_dir . $thumb_name);
+            $this->removeFile($hdd_thumb_dir . $thumb_name);
             return ['status' => 'error', 'msg' => 'Gagal memindahkan file ke storage. Cek permission HDD.', 'alert' => true];
         }
 
@@ -591,13 +589,10 @@ class Uploader
 
             // Bersihkan semua file HLS yang sudah terlanjur dipindahkan ke HDD
             $hdd_target_folder = $hdd_video_dir . $folder_name . "/";
-            if (is_dir($hdd_target_folder)) {
-                foreach (glob($hdd_target_folder . "*") as $f) @unlink($f);
-                @rmdir($hdd_target_folder);
-            }
+            $this->removeDir($hdd_target_folder);
             // Hapus thumbnail (auto-generated atau dari user)
             $hdd_thumb_dir = $this->base_dir . "thumbnail/";
-            @unlink($hdd_thumb_dir . $thumb_name);
+            $this->removeFile($hdd_thumb_dir . $thumb_name);
 
             return ['status' => 'error', 'msg' => 'Database error! [' . $e->getMessage() . '] | title_len=' . strlen($title) . ' meta_len=' . strlen($meta) . ' filename=' . $db_filename];
         }

@@ -3,8 +3,13 @@ require_once 'modules/core/helpers.php';
 require_once 'auth/auth.php';
 require_once 'auth/config.php';
 require_once 'modules/core/Transcoder.php';
+require_once 'modules/core/BrowserProgressObserver.php';
 
-$transcoder      = new Transcoder($conn, $_SESSION['user_id']);
+// Transcoder dipasangi BrowserProgressObserver (presentation layer) — overlay
+// progress transcode di-stream oleh observer. Hook shutdown menghentikan
+// ffmpeg yang masih berjalan bila request berakhir abnormal.
+$transcoder      = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 $download_link   = null;
 $output_filename = "";
 $format          = "mp3";

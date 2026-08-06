@@ -43,8 +43,11 @@ class RateLimiter
     {
         if (self::$storageDir === '') {
             self::$storageDir = __DIR__ . '/../../temp/ratelimit/';
-            if (!is_dir(self::$storageDir)) {
-                @mkdir(self::$storageDir, 0755, true);
+            if (!is_dir(self::$storageDir)
+                && !mkdir(self::$storageDir, 0755, true)
+                && !is_dir(self::$storageDir)
+            ) {
+                error_log("[MEeL] RateLimiter: gagal membuat storage dir: " . self::$storageDir);
             }
         }
     }
@@ -65,10 +68,13 @@ class RateLimiter
      */
     private static function readFile(string $path): array
     {
-        if (!file_exists($path)) {
+        // is_readable (bukan file_exists): file yang ada tapi tak terbaca
+        // (mis. milik user lain) tidak boleh memicu warning file_get_contents().
+        if (!is_readable($path)) {
             return ['count' => 0, 'window_start' => time()];
         }
-        $data = @json_decode(@file_get_contents($path), true);
+        $content = file_get_contents($path);
+        $data    = $content !== false ? json_decode($content, true) : null;
         if (!is_array($data) || !isset($data['count'], $data['window_start'])) {
             return ['count' => 0, 'window_start' => time()];
         }
@@ -122,7 +128,15 @@ class RateLimiter
         $filePath    = self::filePath($key, $endpoint);
 
         // Lock file untuk race condition safety
-        $fp = @fopen($filePath, 'c+');
+        // Guard proaktif: hanya buka file bila storage dir ada & writable, dan
+        // file target (jika sudah ada) juga writable — menghindari warning
+        // fopen() pada path yang tidak valid / file milik user lain.
+        $fp = null;
+        if (is_dir(self::$storageDir) && is_writable(self::$storageDir)) {
+            if (!is_file($filePath) || is_writable($filePath)) {
+                $fp = fopen($filePath, 'c+');
+            }
+        }
         if (!$fp) {
             // Fallback: jika file tak bisa dibuka, izinkan request
             return ['allowed' => true, 'remaining' => $maxRequests, 'reset' => time() + $window, 'limit' => $maxRequests];
@@ -189,8 +203,15 @@ class RateLimiter
     {
         self::init();
         $cleaned = 0;
-        $files = @scandir(self::$storageDir);
-        if (!$files) return 0;
+        if (!is_dir(self::$storageDir)) {
+            error_log("[MEeL] RateLimiter: storage dir tidak ada: " . self::$storageDir);
+            return 0;
+        }
+        $files = scandir(self::$storageDir);
+        if ($files === false) {
+            error_log("[MEeL] RateLimiter: gagal membaca storage dir: " . self::$storageDir);
+            return 0;
+        }
 
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') continue;
@@ -200,7 +221,9 @@ class RateLimiter
             $data = self::readFile($path);
             $maxWindow = 3600; // 1 jam max window
             if ((time() - $data['window_start']) > $maxWindow) {
-                @unlink($path);
+                if (!unlink($path)) {
+                    error_log("[MEeL] RateLimiter: gagal menghapus file rate limit: {$path}");
+                }
                 $cleaned++;
             }
         }
@@ -216,8 +239,15 @@ class RateLimiter
     {
         self::init();
         $stats = [];
-        $files = @scandir(self::$storageDir);
-        if (!$files) return $stats;
+        if (!is_dir(self::$storageDir)) {
+            error_log("[MEeL] RateLimiter: storage dir tidak ada: " . self::$storageDir);
+            return $stats;
+        }
+        $files = scandir(self::$storageDir);
+        if ($files === false) {
+            error_log("[MEeL] RateLimiter: gagal membaca storage dir: " . self::$storageDir);
+            return $stats;
+        }
 
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') continue;

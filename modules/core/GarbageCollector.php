@@ -56,8 +56,8 @@ class GarbageCollector
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_guest_last_run.txt';
 
         // Throttle: cek apakah sudah jalan dalam < interval
-        if (file_exists($throttleFile)) {
-            $lastRun = (int) @file_get_contents($throttleFile);
+        if (is_readable($throttleFile)) {
+            $lastRun = (int) file_get_contents($throttleFile);
             if ($lastRun > 0 && (time() - $lastRun) < self::GUEST_CLEANUP_INTERVAL) {
                 return 0; // Masih dalam cooldown
             }
@@ -104,7 +104,7 @@ class GarbageCollector
         }
 
         // Simpan timestamp throttle
-        @file_put_contents($throttleFile, time());
+        self::writeThrottleFile($throttleFile);
 
         return $totalCleaned;
     }
@@ -133,8 +133,8 @@ class GarbageCollector
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_chess_last_run.txt';
 
         // Throttle: cek apakah sudah jalan dalam < interval
-        if (file_exists($throttleFile)) {
-            $lastRun = (int) @file_get_contents($throttleFile);
+        if (is_readable($throttleFile)) {
+            $lastRun = (int) file_get_contents($throttleFile);
             if ($lastRun > 0 && (time() - $lastRun) < self::CHESS_CLEANUP_INTERVAL) {
                 return 0; // Masih dalam cooldown
             }
@@ -205,9 +205,27 @@ class GarbageCollector
         }
 
         // Simpan timestamp throttle
-        @file_put_contents($throttleFile, time());
+        self::writeThrottleFile($throttleFile);
 
         return $totalCleaned;
+    }
+
+    /**
+     * Tulis timestamp throttle terakhir dengan pengecekan proaktif.
+     * Gagal menulis tidak menggagalkan cleanup — hanya dicatat ke log.
+     *
+     * @param string $throttleFile Path file throttle
+     */
+    private static function writeThrottleFile(string $throttleFile): void
+    {
+        $dir = dirname($throttleFile);
+        if (!is_dir($dir) || !is_writable($dir)) {
+            error_log("[MEeL] GarbageCollector: throttle file tidak bisa ditulis: {$throttleFile}");
+            return;
+        }
+        if (file_put_contents($throttleFile, time()) === false) {
+            error_log("[MEeL] GarbageCollector: gagal menulis throttle file: {$throttleFile}");
+        }
     }
 
     /**
@@ -285,14 +303,15 @@ class GarbageCollector
             if ($basename === 'ytdlp-cache') continue;
 
             // ── Skip file yang masih baru (mtime dalam 5 menit) ──────────────
-            $mtime = @filemtime($item);
+            if (!file_exists($item)) continue; // lenyap antara glob & stat
+            $mtime = filemtime($item);
             if ($mtime === false || $mtime > $cutoff) continue;
 
             // ── Hapus file/folder stale ──────────────────────────────────────
             if (is_dir($item)) {
                 self::removeDirectory($item);
             } else {
-                @unlink($item);
+                self::removeFile($item);
             }
         }
     }
@@ -302,12 +321,54 @@ class GarbageCollector
      */
     private static function removeDirectory(string $dir): void
     {
-        $items = glob(rtrim($dir, '/') . '/*');
-        if ($items) {
-            foreach ($items as $item) {
-                is_dir($item) ? self::removeDirectory($item) : @unlink($item);
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        // unlink/rmdir butuh hak tulis pada direktori PARENT — cek proaktif
+        // sebelum operasi agar kegagalan permission (mis. folder milik user
+        // lain) tercatat sekali, bukan menjadi warning di setiap file.
+        $parent = dirname($dir);
+        if (!is_dir($parent) || !is_writable($parent)) {
+            error_log("[MEeL] GarbageCollector: direktori tidak writable, dilewati: {$dir}");
+            return;
+        }
+
+        foreach (glob(rtrim($dir, '/') . '/*') ?: [] as $item) {
+            if (is_dir($item)) {
+                self::removeDirectory($item);
+            } else {
+                self::removeFile($item);
             }
         }
-        @rmdir($dir);
+
+        // Hanya rmdir bila sudah kosong — hindari warning "Directory not empty"
+        // ketika ada file yang gagal dihapus (permission, immutable, dll).
+        $remaining = glob(rtrim($dir, '/') . '/*') ?: [];
+        if (empty($remaining) && !rmdir($dir)) {
+            error_log("[MEeL] GarbageCollector: Gagal menghapus direktori: {$dir}");
+        }
+    }
+
+    /**
+     * Hapus satu file dengan pengecekan proaktif + logging.
+     *
+     * @param string $path Path file
+     */
+    private static function removeFile(string $path): void
+    {
+        if (!is_file($path) && !is_link($path)) {
+            return;
+        }
+
+        $parent = dirname($path);
+        if (!is_dir($parent) || !is_writable($parent)) {
+            error_log("[MEeL] GarbageCollector: direktori tidak writable, file dilewati: {$path}");
+            return;
+        }
+
+        if (!unlink($path)) {
+            error_log("[MEeL] GarbageCollector: Gagal menghapus file: {$path}");
+        }
     }
 }

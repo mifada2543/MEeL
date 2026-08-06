@@ -26,7 +26,7 @@ $room   = $_POST['room'] ?? '';
 $action = $_POST['action'] ?? '';
 $user_id = (int)$_SESSION['user_id'];
 
-$allowed = ['resign', 'draw_offer', 'draw_accept', 'draw_decline', 'disconnect_win', 'game_over'];
+$allowed = ['resign', 'draw_offer', 'draw_accept', 'draw_decline', 'disconnect_win', 'game_over', 'rematch_offer', 'rematch_accept', 'rematch_decline'];
 if (!in_array($action, $allowed, true)) {
     die(json_encode(["success" => false, "message" => "Aksi tidak dikenal."]));
 }
@@ -59,7 +59,34 @@ if ((int)$roomRow['black_joined'] !== 1) {
 }
 
 // ── Cek permainan sudah berakhir (event terminal apa pun) ──
-if (chess_has_terminal_event($conn, $room)) {
+$gameEnded = chess_has_terminal_event($conn, $room);
+
+// ── Rematch (tanding ulang) — hanya boleh SETELAH game selesai ────────────
+// Alur: salah satu pemain menawar (rematch_offer) → lawan MENERIMA
+// (rematch_accept: riwayat di-reset → game baru di room yang sama, warna
+// tetap) atau MENOLAK (rematch_decline: kedua pemain kembali ke mode lokal;
+// penawar diberi tahu "permainan telah keluar"). Pengirim juga boleh
+// membatalkan tawarannya lewat rematch_decline. Logika inti ada di
+// chess_rematch() (chess_helpers.php) agar bisa diuji.
+if (in_array($action, ['rematch_offer', 'rematch_accept', 'rematch_decline'], true)) {
+    $opponentId = ($server_color === 'w')
+        ? (int)$roomRow['black_user_id']
+        : (int)$roomRow['white_user_id'];
+    $result = chess_rematch($conn, $room, $server_color, $action, $opponentId);
+    if (!$result['success']) {
+        $resp = ["success" => false, "message" => $result['message']];
+        // Flag khusus: lawan sudah keluar (race condition) — client langsung
+        // memberi tahu pemain & keluar ke mode lokal (bukan sekadar alert).
+        if (!empty($result['opponent_gone'])) {
+            $resp['opponent_gone'] = true;
+        }
+        die(json_encode($resp));
+    }
+    echo json_encode(["success" => true, "id" => $result['id']]);
+    exit;
+}
+
+if ($gameEnded) {
     die(json_encode(["success" => false, "message" => "Permainan sudah berakhir."]));
 }
 
@@ -118,24 +145,13 @@ if ($action === 'game_over') {
 $lastMoveColor = chess_last_move_color($conn, $room);
 $turn = $lastMoveColor ? ($lastMoveColor === 'w' ? 'b' : 'w') : 'w';
 
-// ── Event seri terakhir (untuk melacak tawaran yang sedang pending) ──
-$lastEvStmt = $conn->prepare(
-    "SELECT move_data, color FROM moves
-     WHERE room_code = ?
-       AND JSON_UNQUOTE(JSON_EXTRACT(move_data, '$.type')) IS NOT NULL
-     ORDER BY id DESC LIMIT 1"
-);
-$lastEvStmt->bind_param("s", $room);
-$lastEvStmt->execute();
-$lastEv = $lastEvStmt->get_result()->fetch_assoc();
+// ── Event terakhir (untuk melacak tawaran seri yang sedang pending) ──
+$lastEv = chess_last_event($conn, $room);
 $pendingOffer = false;
 $pendingBy    = null;
-if ($lastEv) {
-    $evData = json_decode($lastEv['move_data'], true);
-    if (($evData['type'] ?? '') === 'draw_offer') {
-        $pendingOffer = true;
-        $pendingBy    = $lastEv['color'];
-    }
+if ($lastEv && $lastEv['type'] === 'draw_offer') {
+    $pendingOffer = true;
+    $pendingBy    = $lastEv['color'];
 }
 
 // ── Tawarkan seri: hanya pemain yang gilirannya (FIDE 9.1.2), satu pending ──
