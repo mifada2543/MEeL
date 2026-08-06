@@ -857,8 +857,9 @@ API polling catur real-time via LAN. **Semua endpoint wajib login** (JSON `401` 
 | `create_room.php` | POST | login + CSRF | Buat room, return kode 6 karakter + warna `white` |
 | `join_room.php` | POST | login + CSRF | Gabung room pakai kode (`room` + `csrf_token` di FormData) |
 | `save_move.php` | POST | login + CSRF (body JSON) | Simpan langkah dengan validasi legal move; token tidak pernah disimpan di `move_data` |
-| `get_move.php?room=X&last=N` | GET | login | Poll langkah lawan (array JSON) |
+| `get_move.php?room=X&last=N` | GET | login | Poll langkah + status koneksi lawan: `{moves, opponent_online}` |
 | `check_room_status.php?room=X` | GET | login | Status room: waiting/playing/ended |
+| `game_action.php` | POST | login + CSRF | `resign`, `draw_offer`, `draw_accept`, `draw_decline`, `disconnect_win` (klaim menang — server verifikasi lawan offline via `users.last_activity`), `game_over` (client mencatat checkmate/stalemate agar game selesai dipertahankan) |
 
 Helper client di `arcade/chess/assets/js/api.js` — saat `401` redirect ke login.
 

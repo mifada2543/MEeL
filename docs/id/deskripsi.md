@@ -57,7 +57,7 @@ MEeL/
   - `modules/core/Uploader.php` — Upload dan validasi file (dengan magic bytes, pre-flight disk space, RAM disk)
   - `modules/core/Transcoder.php` — Transcoding HLS, ekstraksi audio, download yt-dlp
   - `modules/core/System.php` — Queue management, storage monitoring, rate limit
-  - `modules/core/GarbageCollector.php` — Pembersihan temporary files + expired rate limit cache
+  - `modules/core/GarbageCollector.php` — Pembersihan temporary files + guest + chess rooms + expired rate limit cache
   - `modules/core/RateLimiter.php` — File-based API rate limiter (30 likes/min, 10 comments/min)
   - `modules/core/helpers.php` — Fungsi utilitas global (resolve_binary, base_url, get_user_role, require_disk_space, dll.)
   - `modules/core/activity_logger.php` — IP detection, session kick, guest auto-registration
