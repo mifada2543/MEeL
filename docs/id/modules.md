@@ -11,6 +11,8 @@ Dokumentasi mendalam tentang arsitektur modul, class diagram, dan business logic
 - [Media Pipeline](#media-pipeline)
 - [Autentikasi Flow](#autentikasi-flow)
 - [Upload & Transcoding Flow](#upload--transcoding-flow)
+- [Arsitektur ProgressObserver](#arsitektur-progressobserver)
+- [Konvensi Keamanan Filesystem (tanpa @)](#konvensi-keamanan-filesystem-tanpa-)
 
 ---
 
@@ -61,6 +63,8 @@ modules/
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
+│   ├── ProgressObserver.php # Kontrak event progress (interface + adapter callable)
+│   ├── BrowserProgressObserver.php # Presenter browser — event progress → overlay/JS
 │   ├── CommentRenderer.php # Render komentar nested
 │   ├── japanese.php        # Pemrosesan teks Jepang (MeCab)
 │   └── SwPrecache.php      # Generator precache PWA (service worker)
@@ -118,11 +122,37 @@ query boolean-mode yang malformed jatuh ke hasil kosong, bukan error 500.
 
 ### 5. `modules/core/Transcoder.php`
 
-**Class:** `Transcoder` (menggunakan `FfmpegUtils` trait) — download URL & transcoding:
-- RAM disk priority (`/dev/shm/meel/`) dengan fallback
-- Per-platform format resolution
-- Real-time progress overlay
-- Cached directory size
+**Class:** `Transcoder` (menggunakan `FfmpegUtils` trait) — engine download URL & transcoding.
+**Business logic murni — tanpa output HTML/JS:** progress dilaporkan lewat
+`ProgressObserver` (lihat [Arsitektur ProgressObserver](#arsitektur-progressobserver)),
+sehingga engine yang sama berjalan bersih di browser, script CLI, cron, maupun endpoint API.
+
+```php
+class Transcoder {
+    public function __construct(\mysqli $db_connection, int $session_user_id,
+                                callable|ProgressObserver|null $progressListener = null);
+    public function setProgressListener(callable|ProgressObserver|null $listener): void;
+    public function terminateAllProcesses(): void;   // Hook shutdown yang graceful
+    public function processDownload(string $url, string $type): string;
+    public function encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
+    public function transcodeVideo(int $video_id, string $format): array;
+}
+```
+
+Fitur:
+- RAM disk priority (`/dev/shm/meel/`) dengan fallback otomatis
+- Per-platform format resolution (YouTube H.264+AAC, NicoNico, TikTok)
+- Real-time progress via event `ProgressObserver` — overlay browser
+  (`partials/ui.php` + JS `meel*`) dirender oleh `BrowserProgressObserver`, bukan class ini
+- **Finalisasi transaksional** — `finalizeVideo()` memindahkan file HLS ke USB HDD
+  *dan* memasukkan record database di dalam satu transaksi MySQL. Kegagalan apa pun
+  di-rollback dan otomatis menghapus folder HLS/thumbnail yang sudah tersalin ke
+  HDD (tidak ada file yatim di storage)
+- **Terminasi proses berbasis PID** — proses anak (yt-dlp, ffmpeg) di-spawn via
+  `proc_open()` dan dilacak dengan PID/process-group; timeout dihentikan dengan
+  `posix_kill()` (SIGTERM → grace period → SIGKILL) menggantikan pencocokan string
+  `pkill -f`. Caller mendaftarkan `terminateAllProcesses()` sebagai shutdown function
+- Cached directory size via `dir_size()`
 - Thumbnail sprite + VTT
 
 ### 6. `modules/core/System.php`
@@ -175,6 +205,9 @@ Semua fungsi dibungkus `function_exists()` guard:
   - **Game yang sudah selesai TIDAK pernah dihapus** — riwayatnya dipertahankan
 - Expired rate limit cache via `RateLimiter::cleanup()`
 - Timeboxed execution (max 3 detik)
+- Static helper `removeFile()`/`removeDirectory()` dengan guard `is_writable()`
+  proaktif — subtree milik user lain (mis. `temp/cache/` milik proses lain)
+  dilewati dengan error log, bukan warning PHP
 
 ### 11. `modules/core/RateLimiter.php`
 
@@ -206,8 +239,20 @@ trait FfmpegUtils {
     protected function resolveBinary(array $candidates): string;
     protected function probeDuration(string $file): int;
     protected function generateSpriteAndVTT(string $video, string $work_folder): void;
+
+    // Helper filesystem — tanpa @ suppression (lihat Konvensi Keamanan Filesystem)
+    protected function ensureDir(string $dir, int $perms = 0755): bool;
+    protected function removeFile(string $path): void;
+    protected function removeDir(string $dir): void;
+    protected function moveFile(string $src, string $dst): bool;  // Aman lintas device (RAM → HDD)
+    protected function cleanupDir(string $dir): void;             // Alias removeDir() (backward compat)
 }
 ```
+
+Helper `moveFile()` membandingkan device ID `stat()` sebelum mencoba
+`rename()`: pemindahan dari RAM disk (`/dev/shm`) ke USB HDD adalah kasus
+lintas-device yang *normal*, sehingga kegagalan `EXDEV` yang diduga dilewati
+sama sekali dan fallback copy+unlink berjalan tanpa warning menyesatkan.
 
 ### 14. `modules/core/japanese.php`
 
@@ -468,6 +513,94 @@ Hapus mfa_temp_uid dari session
   ↓
 Redirect ke index.php
 ```
+
+---
+
+## Arsitektur ProgressObserver
+
+`Transcoder` adalah class **business-layer murni** — tidak pernah meng-echo HTML/JS.
+Progress dilaporkan sebagai event terstruktur ke `ProgressObserver`, sehingga engine
+yang sama berjalan bersih di browser, script CLI, cron, maupun endpoint API tanpa
+mencemari output buffer.
+
+### File
+
+| File | Peran |
+|------|------|
+| `modules/core/ProgressObserver.php` | Interface `ProgressObserver` + adapter `CallableProgressObserver` |
+| `modules/core/BrowserProgressObserver.php` | Presenter browser: memetakan event ke overlay MEeL (`partials/ui.php`) + panggilan JS `meel*` |
+
+### Penggunaan
+
+```php
+// CLI / cron / API — tanpa output sama sekali
+$tc = new Transcoder($conn, $uid);
+
+// Overlay streaming browser (upload_advanced.php, transcode.php)
+require_once 'modules/core/BrowserProgressObserver.php';
+$tc = new Transcoder($conn, $uid, new BrowserProgressObserver());
+
+// Observer kustom atau callable mentah
+$tc = new Transcoder($conn, $uid, function (string $stage, array $data): void {
+    fwrite(STDERR, "[{$stage}] " . json_encode($data) . PHP_EOL);
+});
+```
+
+### Kontrak event — `ProgressObserver::onProgress(string $stage, array $data)`
+
+| Stage | Payload | Arti |
+|-------|---------|------|
+| `download_start` | `['url' => string]` | Unduh dimulai (titik injeksi overlay) |
+| `transcode_start` | `[]` | Transcode dimulai (titik injeksi overlay) |
+| `phase` | `['phase' => string]` | Pergantian fase overlay (`transcode`, `sprite`, ...) |
+| `download_progress` | `['pct' => int]` + opsional `eta`, `speed`, `size`, `frag` | Progress yt-dlp |
+| `transcode_progress` | `['pct' => int, 'label' => ?string]` | Progress FFmpeg |
+| `sprite_progress` | `['pct' => int, 'label' => ?string]` | Progress sprite/VTT |
+| `done` | `['title' => string, 'url' => string]` | Video selesai difinalisasi |
+| `done_transcode` | `['title' => string, 'download_link' => string]` | Transcode audio selesai |
+| `redirect` | `['url' => string]` | Navigasi browser (music → `post_encode.php`) |
+| `error` | `['message' => string]` | Error fatal yang ditampilkan ke user |
+
+**Jaminan:**
+- Exception observer ditangkap dan di-log di dalam `emit()` — tidak pernah merambat
+  ke pipeline media (tidak ada proses yatim atau file setengah pindah).
+- Tanpa observer terpasang, `emit()` adalah no-op — nol polusi output buffer.
+- Download musik mengembalikan string berawalan `REDIRECT:` sehingga *caller* yang
+  memutuskan kelanjutan (tidak ada `exit` di business layer).
+
+---
+
+## Konvensi Keamanan Filesystem (tanpa @)
+
+Setelah audit engine pemrosesan media, codebase **tidak pernah memakai operator
+`@` (error suppression) pada operasi filesystem** (`unlink`, `rmdir`, `mkdir`,
+`copy`, `rename`, `fopen`, `scandir`, `file_put_contents`, ...). `@` yang serampangan
+menyembunyikan kegagalan permission/IO yang nyata — mis. USB HDD yang ter-mount
+read-only, atau folder temp milik proses lain — dan membuat debugging mustahil.
+
+Setiap akses filesystem mengikuti tiga aturan:
+
+1. **Cek keberadaan & permission secara proaktif** — guard dengan `is_file()`,
+   `is_dir()`, `is_readable()`, `is_writable()` sebelum menyentuh filesystem.
+   Ingat: `unlink`/`rmdir` butuh **parent directory yang writable**, bukan hanya
+   file yang ada.
+2. **Cek nilai balik** — perlakukan `false`/`null` sebagai kegagalan dan log via
+   `error_log()` (atau logger khusus) termasuk path yang terlibat.
+3. **Pakai helper bersama, bukan `@` inline** — gunakan helper terpusat di bawah
+   daripada menebar suppression ad-hoc.
+
+### Helper filesystem bersama
+
+| Helper | Lokasi | Tujuan |
+|--------|--------|--------|
+| `ensureDir()` | trait `FfmpegUtils` | Pembuatan ala `mkdir -p` dengan logging |
+| `removeFile()` | trait `FfmpegUtils` | unlink ber-guard (keberadaan + parent writable) |
+| `removeDir()` | trait `FfmpegUtils` | Pembersihan dir datar (glob → removeFile → rmdir) |
+| `moveFile()` | trait `FfmpegUtils` | Pindah lintas-device dengan cek device `stat()` |
+| `cleanupDir()` | trait `FfmpegUtils` | Alias `removeDir()` (backward compat) |
+| `GarbageCollector::removeFile()` | `GarbageCollector.php` | unlink statis ber-guard |
+| `GarbageCollector::removeDirectory()` | `GarbageCollector.php` | Pembersihan rekursif ber-guard (melewati subtree non-writable, `rmdir` hanya saat kosong) |
+| `meel_write_cache_file()` | `helpers/storage.php` | Tulis cache ber-guard dengan `LOCK_EX` |
 
 ---
 

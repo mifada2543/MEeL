@@ -333,6 +333,10 @@ music ──1:N── playlist_tracks
 3. **CSRF Token** — Setiap form POST wajib
 4. **Role Check** — Sebelum aksi sensitif
 5. **Input Validation** — Tipe, ukuran, ekstensi file
+6. **Tanpa `@` (error suppression) pada operasi filesystem** — gunakan guard proaktif
+   `is_file()`/`is_dir()`/`is_readable()`/`is_writable()`, cek nilai balik, dan pakai
+   helper bersama (trait `FfmpegUtils`, `GarbageCollector::removeFile()`/`removeDirectory()`,
+   `meel_write_cache_file()`). Lihat [Konvensi Keamanan Filesystem](modules.md#konvensi-keamanan-filesystem-tanpa-).
 
 ### File Structure per Modul
 
@@ -720,6 +724,8 @@ if (!headers_sent()) {
 | `modules/core/Uploader.php` | Proses upload file |
 | `modules/core/System.php` | Queue & monitoring |
 | `modules/core/RateLimiter.php` | API Rate Limiter |
+| `modules/core/ProgressObserver.php` | Kontrak event progress (interface + adapter callable) — lihat `modules.md` |
+| `modules/core/BrowserProgressObserver.php` | Presenter browser — memetakan event engine ke overlay/JS `meel*` |
 | `modules/core/GarbageCollector.php` | Auto-cleanup |
 | `modules/media/SearchEngine.php` | FULLTEXT Search engine |
 | `modules/core/japanese.php` | Japanese text processing |

@@ -11,6 +11,8 @@ In-depth documentation of module architecture, class diagrams, and business logi
 - [Media Pipeline](#media-pipeline)
 - [Authentication Flow](#authentication-flow)
 - [Upload & Transcoding Flow](#upload--transcoding-flow)
+- [ProgressObserver Architecture](#progressobserver-architecture)
+- [Filesystem Safety Convention (no @ suppression)](#filesystem-safety-convention-no--suppression)
 
 ---
 
@@ -61,6 +63,8 @@ modules/
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
 │   ├── RateLimiter.php     # File-based API rate limiter
+│   ├── ProgressObserver.php# Progress event contract (interface + callable adapter)
+│   ├── BrowserProgressObserver.php # Browser presenter — progress events → overlay/JS
 │   ├── CommentRenderer.php # Nested comment rendering
 │   ├── japanese.php        # Japanese text processing (MeCab)
 │   └── SwPrecache.php      # PWA precache generator (service worker)
@@ -163,10 +167,17 @@ class Uploader {
 
 ### 5. `modules/core/Transcoder.php`
 
-**Class:** `Transcoder` (uses `FfmpegUtils` trait) — URL download & transcoding:
+**Class:** `Transcoder` (uses `FfmpegUtils` trait) — URL download & transcoding engine.
+**Pure business logic — no HTML/JS output:** progress is reported through a
+`ProgressObserver` (see [ProgressObserver Architecture](#progressobserver-architecture)),
+so the same engine runs cleanly in browsers, CLI scripts, cron jobs, and API endpoints.
 
 ```php
 class Transcoder {
+    public function __construct(\mysqli $db_connection, int $session_user_id,
+                                callable|ProgressObserver|null $progressListener = null);
+    public function setProgressListener(callable|ProgressObserver|null $listener): void;
+    public function terminateAllProcesses(): void;   // Graceful shutdown hook
     public function processDownload(string $url, string $type): string;
     public function encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
     public function transcodeVideo(int $video_id, string $format): array;
@@ -176,7 +187,16 @@ class Transcoder {
 Features:
 - RAM disk priority (`/dev/shm/meel/`) with automatic fallback
 - Per-platform format resolution (YouTube H.264+AAC, NicoNico, TikTok)
-- Real-time progress overlay with yt-dlp streaming
+- Real-time progress via `ProgressObserver` events — the browser overlay
+  (`partials/ui.php` + `meel*` JS) is rendered by `BrowserProgressObserver`, not by this class
+- **Transactional finalization** — `finalizeVideo()` moves HLS files to the USB HDD
+  *and* inserts the database record inside a single MySQL transaction. Any failure
+  rolls back and automatically deletes the HLS folder/thumbnail already copied to
+  the HDD (no orphaned files on storage)
+- **PID-based process termination** — child processes (yt-dlp, ffmpeg) are spawned
+  via `proc_open()` and tracked by PID/process-group; timeout aborts use
+  `posix_kill()` (SIGTERM → grace period → SIGKILL) instead of `pkill -f` string
+  matching. Callers register `terminateAllProcesses()` as a shutdown function
 - Cached directory size via `dir_size()`
 - Thumbnail sprite + VTT generation
 
@@ -244,6 +264,9 @@ function log_drive_operation(...);                       // Drive audit trail
   - **Finished games are never deleted** — their history is preserved
 - Expired rate limit cache via `RateLimiter::cleanup()`
 - Timeboxed execution (max 3 seconds)
+- Static `removeFile()`/`removeDirectory()` helpers with proactive `is_writable()`
+  guards — subtrees owned by other users (e.g. `temp/cache/` owned by another
+  process) are skipped with an error log instead of a PHP warning
 
 ### 11. `modules/core/RateLimiter.php`
 
@@ -289,8 +312,20 @@ trait FfmpegUtils {
     protected function resolveBinary(array $candidates): string;
     protected function probeDuration(string $file): int;
     protected function generateSpriteAndVTT(string $video, string $work_folder): void;
+
+    // Filesystem helpers — no @ suppression (see Filesystem Safety Convention)
+    protected function ensureDir(string $dir, int $perms = 0755): bool;
+    protected function removeFile(string $path): void;
+    protected function removeDir(string $dir): void;
+    protected function moveFile(string $src, string $dst): bool;  // Cross-device safe (RAM → HDD)
+    protected function cleanupDir(string $dir): void;             // Alias of removeDir() (backward compat)
 }
 ```
+
+The `moveFile()` helper compares `stat()` device IDs before attempting
+`rename()`: moving from the RAM disk (`/dev/shm`) to the USB HDD is the *normal*
+cross-device case, so the expected `EXDEV` failure is skipped entirely and the
+copy+unlink fallback runs without emitting a misleading warning.
 
 ### 14. `modules/core/japanese.php`
 
@@ -457,6 +492,93 @@ The service worker is **generated dynamically by PHP** — see the full guide in
 
 Adding a new module folder (`assets/css/<folder>/manifest.php`) automatically
 adds its CSS to the precache — **no manual SW changes needed**.
+
+---
+
+## ProgressObserver Architecture
+
+`Transcoder` is a **pure business-layer** class — it never echoes HTML/JS. Progress
+is reported as structured events to a `ProgressObserver`, letting the same engine
+run cleanly in browsers, CLI scripts, cron jobs, or API endpoints without polluting
+output buffers.
+
+### Files
+
+| File | Role |
+|------|------|
+| `modules/core/ProgressObserver.php` | `ProgressObserver` interface + `CallableProgressObserver` adapter |
+| `modules/core/BrowserProgressObserver.php` | Browser presenter: maps events to the MEeL overlay (`partials/ui.php`) + `meel*` JS calls |
+
+### Usage
+
+```php
+// CLI / cron / API — no output at all
+$tc = new Transcoder($conn, $uid);
+
+// Browser streaming overlay (upload_advanced.php, transcode.php)
+require_once 'modules/core/BrowserProgressObserver.php';
+$tc = new Transcoder($conn, $uid, new BrowserProgressObserver());
+
+// Custom observer or raw callable
+$tc = new Transcoder($conn, $uid, function (string $stage, array $data): void {
+    fwrite(STDERR, "[{$stage}] " . json_encode($data) . PHP_EOL);
+});
+```
+
+### Event contract — `ProgressObserver::onProgress(string $stage, array $data)`
+
+| Stage | Payload | Meaning |
+|-------|---------|---------|
+| `download_start` | `['url' => string]` | Download begins (overlay injection point) |
+| `transcode_start` | `[]` | Transcode begins (overlay injection point) |
+| `phase` | `['phase' => string]` | Overlay phase switch (`transcode`, `sprite`, ...) |
+| `download_progress` | `['pct' => int]` + optional `eta`, `speed`, `size`, `frag` | yt-dlp progress |
+| `transcode_progress` | `['pct' => int, 'label' => ?string]` | FFmpeg progress |
+| `sprite_progress` | `['pct' => int, 'label' => ?string]` | Sprite/VTT progress |
+| `done` | `['title' => string, 'url' => string]` | Video finalized |
+| `done_transcode` | `['title' => string, 'download_link' => string]` | Audio transcode complete |
+| `redirect` | `['url' => string]` | Browser navigation (music → `post_encode.php`) |
+| `error` | `['message' => string]` | Fatal error shown to the user |
+
+**Guarantees:**
+- An observer exception is caught and logged inside `emit()` — it never propagates
+  into the media pipeline (no orphaned processes or half-moved files).
+- With no observer attached, `emit()` is a no-op — zero output-buffer pollution.
+- Music downloads return a `REDIRECT:`-prefixed string so the *caller* decides how
+  to continue (no `exit` call in the business layer).
+
+---
+
+## Filesystem Safety Convention (no @ suppression)
+
+Following the media-processing engine audit, the codebase **never uses the `@`
+error-suppression operator on filesystem operations** (`unlink`, `rmdir`, `mkdir`,
+`copy`, `rename`, `fopen`, `scandir`, `file_put_contents`, ...). A blanket `@`
+hides real permission/IO failures — e.g. a USB HDD mounted read-only, or a temp
+folder owned by another process — and makes debugging impossible.
+
+Every filesystem access follows three rules:
+
+1. **Proactive existence & permission checks** — guard with `is_file()`, `is_dir()`,
+   `is_readable()`, `is_writable()` before touching the filesystem. Remember that
+   `unlink`/`rmdir` require a writable **parent** directory, not just an existing file.
+2. **Return-value checks** — treat `false`/`null` returns as failures and log them
+   via `error_log()` (or a dedicated logger) including the path involved.
+3. **Shared helpers instead of inline `@`** — reuse the centralized helpers below
+   rather than scattering ad-hoc suppression.
+
+### Shared filesystem helpers
+
+| Helper | Location | Purpose |
+|--------|----------|---------|
+| `ensureDir()` | `FfmpegUtils` trait | `mkdir -p`-style creation with logging |
+| `removeFile()` | `FfmpegUtils` trait | Guarded unlink (existence + writable parent) |
+| `removeDir()` | `FfmpegUtils` trait | Flat-dir cleanup (glob → removeFile → rmdir) |
+| `moveFile()` | `FfmpegUtils` trait | Cross-device move with `stat()` device check |
+| `cleanupDir()` | `FfmpegUtils` trait | Alias of `removeDir()` (backward compat) |
+| `GarbageCollector::removeFile()` | `GarbageCollector.php` | Static guarded unlink |
+| `GarbageCollector::removeDirectory()` | `GarbageCollector.php` | Recursive guarded cleanup (skips non-writable subtrees, `rmdir` only when empty) |
+| `meel_write_cache_file()` | `helpers/storage.php` | Guarded cache write with `LOCK_EX` |
 
 ---
 

@@ -175,6 +175,10 @@ music ──1:N── playlist_tracks
 3. **CSRF Token** — Every POST form required
 4. **Role Check** — Before sensitive actions
 5. **Input Validation** — Type, size, file extension
+6. **No `@` suppression on filesystem ops** — use proactive `is_file()`/`is_dir()`/
+   `is_readable()`/`is_writable()` guards, check return values, and reuse the shared
+   helpers (`FfmpegUtils` trait, `GarbageCollector::removeFile()`/`removeDirectory()`,
+   `meel_write_cache_file()`). See the [Filesystem Safety Convention](modules.md#filesystem-safety-convention-no--suppression).
 
 ### File Structure per Module
 
@@ -427,6 +431,8 @@ main (stable)
 | `modules/core/Uploader.php` | File upload process |
 | `modules/core/System.php` | Queue & monitoring |
 | `modules/core/RateLimiter.php` | API Rate Limiter |
+| `modules/core/ProgressObserver.php` | Progress event contract (interface + callable adapter) — see `modules.md` |
+| `modules/core/BrowserProgressObserver.php` | Browser presenter — maps engine events to the overlay/`meel*` JS |
 | `modules/core/GarbageCollector.php` | Auto-cleanup |
 | `modules/media/SearchEngine.php` | FULLTEXT Search engine |
 | `modules/core/japanese.php` | Japanese text processing |

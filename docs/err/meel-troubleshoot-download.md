@@ -12,13 +12,16 @@
 upload_advanced.php (form POST)
   → Transcoder::processDownload($url, $type)
     → fetchMetadata()          [yt-dlp --skip-download --print-json]
-    → showMEeLOverlay()        [include partials/ui.php → streaming UI]
-    → popen("timeout 900 yt-dlp ...")
-    → finalizeVideo()          [HLS transcode + sprite + move to HDD]
-      → meelDone() JS
+    → emit('download_start')   [BrowserProgressObserver → inject overlay partials/ui.php]
+    → proc_open("exec setsid timeout 900 sh -c '<export …; yt-dlp …>'")
+                               [PID/PGID tracked; the sh -c wrapper is REQUIRED — exec
+                                replaces the shell instantly, so without it the export
+                                prefix and the yt-dlp command would never run]
+    → finalizeVideo()          [HLS transcode + sprite + move to HDD — transactional, auto-rollback]
+      → emit('done')           [BrowserProgressObserver → meelDone() JS]
 ```
 
-**Key classes:** `modules/core/Transcoder.php`, `modules/core/Uploader.php`  
+**Key classes:** `modules/core/Transcoder.php` (pure business logic), `modules/core/BrowserProgressObserver.php` (presentation layer), `modules/core/Uploader.php`  
 **Key dependencies:** yt-dlp, FFmpeg, FFprobe, node, cookies.txt
 
 ---
@@ -74,10 +77,14 @@ php -v                # Must be 7.0+ (for dirname($path, 2))
 
 ### Step 2: Check PHP Functions
 ```bash
-php -r "echo function_exists('popen') ? 'YES' : 'NO';"
+php -r "echo function_exists('proc_open') ? 'YES' : 'NO';"
+php -r "echo function_exists('posix_kill') ? 'YES' : 'NO';"   # posix extension
 php -r "echo ini_get('disable_functions') ?: 'none';"
 ```
-Required: `popen`, `exec`, `shell_exec`, `proc_open`, `proc_close` must NOT be disabled.
+Required: `proc_open`, `proc_close` must NOT be disabled (called with array
+arguments + env vars, no shell). `posix_kill()` is used for precise termination
+(SIGTERM → grace → SIGKILL); if the `posix` extension is missing, the fallback
+`kill -- -PGID` via `shell_exec` is used. `popen` is no longer used by Transcoder.
 
 ### Step 3: Check Storage Paths
 ```bash
@@ -110,18 +117,37 @@ Compare the file's depth from project root. If file is at `modules/core/X.php`, 
 
 ## 4. ⚠️ Other Common Issues
 
-### Double `ui.php` include
-`showMEeLOverlay()` includes `ui.php`, then the main template includes it again.
-**Fix:** Wrap the body include with a condition:
-```php
-<?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
-    <?php include 'partials/ui.php'; ?>
-<?php endif; ?>
-```
+### Overlay doesn't appear / `meelPhase is not defined`
+Since the refactor, the overlay is no longer included by Transcoder. `Transcoder`
+only reports events; `BrowserProgressObserver` injects `partials/ui.php` mid-stream
+when the first **`download_start`** (or `transcode_start`) event arrives — guarded
+by an `$overlayInjected` flag so it can never be double-included.
 
-### Early error handlers before overlay loads
-The global error handler and try-catch blocks call `meelError()`, but if it's called before `showMEeLOverlay()` includes `ui.php`, the function is undefined.
-**Fix:** Add a fallback in the catch blocks:
+If the overlay never appears:
+- Make sure the page attaches the observer: `new Transcoder($conn, $uid, new BrowserProgressObserver())`
+  (see `upload_advanced.php` / `transcode.php`). Without an observer, `emit()` is a no-op.
+- Make sure `download_start` is actually emitted (fetchMetadata succeeded).
+- The main template (`upload_advanced.php`) still includes `partials/ui.php` for
+  non-POST / busy / rate_limit pages — that is normal, not a double include.
+
+**Path bug (fixed):** `BrowserProgressObserver::injectOverlay()` must include
+`partials/ui.php` via **`dirname(__DIR__, 2) . '/partials/ui.php'`**. The observer
+lives in `modules/core/` (two levels below the project root); using
+`__DIR__ . '/../partials/...'` resolves to the non-existent `modules/partials/`
+(`file_exists = false` → include silently skipped → the streamed response only
+contains the padding + `<script>meelPhase(...)` with **no `#meel-overlay` markup**,
+so nothing is displayed). Symptom: the POST response starts with a run of spaces
+instead of `<link` CSS tags.
+
+### Error handlers before overlay loads
+Errors now flow as **`error`** events → the observer calls `meelError()`. If the
+overlay hasn't been injected yet (the `download_start` event hasn't fired), the JS
+`meelError` function is undefined. That's why the caller (`upload_advanced.php`)
+keeps its own try-catch with a plain HTML/JS fallback, and the global error
+handler (`set_error_handler` + `register_shutdown_function`) emits `meelError()`
+directly.
+
+**Fix (caller-side):** make sure the following fallback exists before calling the engine:
 ```php
 echo "<script>
   if (typeof meelError === 'function') {
@@ -150,12 +176,17 @@ After making changes:
 
 2. **Browser test** (browser-use agent) with a real YouTube video URL
 
-3. **Check for**:
-   - Overlay appears immediately → `meelPhase('download')`
-   - Progress updates → `meelDlPct(...)`
-   - Transcode begins → `meelPhase('transcode')`
-   - Completion → `meelPhase('done')`
+3. **Check for** (phases are driven by `BrowserProgressObserver` from engine events):
+   - Overlay appears immediately → `meelPhase('download')` (event `download_start`)
+   - Progress updates → `meelDlPct(...)` (event `download_progress`)
+   - Transcode begins → `meelPhase('transcode')` (event `phase`)
+   - Completion → `meelPhase('done')` (event `done` → `meelDone(...)`)
+   - Error → `meelError(...)` (event `error`)
    - No console errors
+
+   Quick debug: if `meelPhase`/`meelDlPct` are never called, check whether the
+   observer is attached (see "Overlay doesn't appear") and whether the events are
+   actually emitted.
 
 4. **Check error log** if download fails:
    ```bash
