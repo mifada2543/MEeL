@@ -1,4 +1,8 @@
-<?php /** @var array $v Data musik dari hasil query (music/index.php) */ ?>
+<?php /** @var array $v Data musik dari hasil query (music/index.php) */
+// Otorisasi stream: setiap kartu yang dirender menandai id-nya diizinkan
+// di-stream (diperiksa oleh music/stream.php — lihat helpers/stream_auth.php)
+authorize_stream((int)$v['id']);
+?>
 <div class="music-item flex items-center gap-3 px-3 py-2.5 rounded-xl htmx-added"
      data-id="<?= $v['id'] ?>"
      data-title="<?= htmlspecialchars($v['title']) ?>"

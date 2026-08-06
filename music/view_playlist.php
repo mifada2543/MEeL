@@ -124,6 +124,9 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             $idx = 0;
             while ($s = $songs_query->fetch_assoc()):
                 $idx++;
+                // Otorisasi stream: tandai id lagu ini boleh di-stream
+                // (diperiksa oleh music/stream.php — lihat helpers/stream_auth.php)
+                authorize_stream((int)$s['id']);
                 $s_ext   = strtolower(pathinfo($s['filename'], PATHINFO_EXTENSION));
                 $s_lbl   = $s_ext === 'ogg' ? 'opus' : $s_ext;
                 $watch_url = "watch.php?id={$s['id']}&playlist_id={$playlist_id}";

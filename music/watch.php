@@ -11,6 +11,10 @@ $id          = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id     = $_SESSION['user_id'] ?? null;
 $playlist_id = isset($_GET['playlist_id']) ? (int)$_GET['playlist_id'] : 0;
 
+// Otorisasi stream: tandai id ini boleh di-stream dari halaman ini
+// (diperiksa oleh music/stream.php — lihat helpers/stream_auth.php)
+authorize_stream($id);
+
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
 
