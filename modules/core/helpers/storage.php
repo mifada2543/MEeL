@@ -93,7 +93,7 @@ function check_disk_space(int $required_bytes, string $path): array
         $path = $parent;
     }
 
-    $free_bytes = @disk_free_space($path);
+    $free_bytes = disk_free_space($path);
     if ($free_bytes === false) {
         return [
             'ok'       => false,
@@ -154,8 +154,9 @@ function dir_size(string $path, int $cache_ttl = 300): float
     $cache_file = dirname(__DIR__, 3) . '/temp/' . $cache_key . '.cache';
 
     // Cek cache
-    if (file_exists($cache_file)) {
-        $cached = @json_decode(@file_get_contents($cache_file), true);
+    if (is_readable($cache_file)) {
+        $content = file_get_contents($cache_file);
+        $cached  = $content !== false ? json_decode($content, true) : null;
         if ($cached && isset($cached['size'], $cached['time'])) {
             if (time() - $cached['time'] < $cache_ttl) {
                 return (float)$cached['size'];
@@ -166,11 +167,11 @@ function dir_size(string $path, int $cache_ttl = 300): float
     if (!is_dir($path)) return 0.0;
 
     // Metode 1: du -sb (cepat)
-    $output = @shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
+    $output = shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
     if ($output && preg_match('/^(\d+)/', $output, $m)) {
         $size = (float)$m[1];
         // Simpan cache
-        @file_put_contents($cache_file, json_encode(['size' => $size, 'time' => time()]), LOCK_EX);
+        meel_write_cache_file($cache_file, json_encode(['size' => $size, 'time' => time()]));
         return $size;
     }
 
@@ -184,7 +185,7 @@ function dir_size(string $path, int $cache_ttl = 300): float
             }
         }
         // Simpan cache
-        @file_put_contents($cache_file, json_encode(['size' => $size, 'time' => time()]), LOCK_EX);
+        meel_write_cache_file($cache_file, json_encode(['size' => $size, 'time' => time()]));
     } catch (RuntimeException $e) {
         return 0.0;
     }
@@ -203,11 +204,34 @@ function invalidate_dir_size_cache(string $username): void
 {
     $userPath = dirname(__DIR__, 3) . '/data_drive/private_admins/' . $username;
     $cacheFile = dirname(__DIR__, 3) . '/temp/dirsize_' . md5($userPath) . '.cache';
-    if (file_exists($cacheFile)) {
-        @unlink($cacheFile);
+    if (is_file($cacheFile)) {
+        if (!is_writable(dirname($cacheFile))) {
+            error_log("[MEeL] invalidate_dir_size_cache: direktori tidak writable: " . dirname($cacheFile));
+        } elseif (!unlink($cacheFile)) {
+            error_log("[MEeL] invalidate_dir_size_cache: gagal menghapus cache: {$cacheFile}");
+        }
     }
 }
 } // end function_exists('invalidate_dir_size_cache')
+
+if (!function_exists('meel_write_cache_file')) {
+/**
+ * Tulis file cache dengan pengecekan proaktif.
+ * Gagal menulis tidak fatal — hanya dicatat ke error log.
+ *
+ * @param string $path    Path file cache
+ * @param string $content Isi file
+ */
+function meel_write_cache_file(string $path, string $content): void
+{
+    $dir = dirname($path);
+    if (!is_dir($dir) || !is_writable($dir)) {
+        error_log("[MEeL] storage.php: cache file tidak bisa ditulis: {$path}");
+        return;
+    }
+    file_put_contents($path, $content, LOCK_EX);
+}
+} // end function_exists('meel_write_cache_file')
 
 if (!function_exists('log_drive_operation')) {
 function log_drive_operation(int $userId, string $username, string $operation, string $filename, string $type, string $scope, string $status = 'success'): void
@@ -215,8 +239,8 @@ function log_drive_operation(int $userId, string $username, string $operation, s
     global $conn;
 
     $logDir = dirname(__DIR__, 3) . '/logs';
-    if (!is_dir($logDir)) {
-        @mkdir($logDir, 0755, true);
+    if (!is_dir($logDir) && !mkdir($logDir, 0755, true) && !is_dir($logDir)) {
+        error_log("[MEeL] log_drive_operation: gagal membuat log dir: {$logDir}");
     }
 
     $logFile = $logDir . '/drive_audit.log';
@@ -237,6 +261,10 @@ function log_drive_operation(int $userId, string $username, string $operation, s
         'user_agent' => $userAgent
     ]) . "\n";
 
-    @file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+    if (!is_dir($logDir) || !is_writable($logDir)) {
+        error_log("[MEeL] log_drive_operation: log dir tidak writable: {$logDir}");
+    } elseif (file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX) === false) {
+        error_log("[MEeL] log_drive_operation: gagal menulis log: {$logFile}");
+    }
 }
 } // end function_exists('log_drive_operation')
