@@ -117,6 +117,12 @@ class SwPrecache
         // Kode generator itu sendiri (perubahan logika → versi berubah)
         $parts[] = md5_file(__FILE__);
 
+        // sw.js.php (fetch-handler & strategi cache) — perubahan logika SW
+        // (mis. pindah strategi ke network-first) harus menaikkan versi supaya
+        // cache lama di-purge & update SW terdeteksi browser.
+        $swFile = self::root() . '/sw.js.php';
+        $parts[] = is_file($swFile) ? md5_file($swFile) : 'MISSING:sw.js.php';
+
         return 'v2-' . substr(md5(implode('|', $parts)), 0, 10);
     }
 }

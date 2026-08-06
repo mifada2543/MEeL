@@ -135,6 +135,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // ── ES modules catur (arcade/chess/assets/js/*.js) → Network-first ──
+  // main.js dimuat dengan cache-buster (?v=filemtime) TAPI import relatifnya
+  // (assets.js, engine.js, api.js, audio.js) TIDAK berversi. Strategi
+  // stale-while-revalidate (untuk aset tanpa ?v=) menyajikan modul LAMA dari
+  // cache saat main.js sudah BARU → error link module (ekspor baru hilang,
+  // mis. UNICODE_PIECES_WHITE / sendGameActionAPI) → main.js gagal total →
+  // papan catur tidak dirender. Gejala: ctrl+r papan hilang, ctrl+f5 normal.
+  // Network-first: selalu fresh saat online, tetap ada fallback cache offline.
+  // Pakai PAGE_CACHE (bukan STATIC_CACHE) — sama seperti rule avatar di atas:
+  // networkFirst memanggil trimCache() pada cache yang ditulisnya, dan
+  // STATIC_CACHE berisi aset precache lama yang tidak boleh ikut di-evict.
+  if (url.pathname.includes('/arcade/chess/assets/js/')) {
+    event.respondWith(networkFirst(request, PAGE_CACHE));
+    return;
+  }
+
   // ── Static assets (CSS, JS, fonts, images) ──
   if (isStaticAsset(url)) {
     // Aset dengan cache-buster (?v=filemtime) = immutable → cache-first.
