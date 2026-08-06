@@ -18,6 +18,8 @@ include '../controllers/admin/admin_data.php';
 
 // Auto-cleanup guest stale (adaptive — throttle 1 jam via GarbageCollector)
 GarbageCollector::cleanGuests($conn);
+// Auto-cleanup room catur multiplayer yang terbengkalai (throttle 1 jam)
+GarbageCollector::cleanChessRooms($conn);
 
 /** * --- IDE Type Hinting for Intelephense ---
  * These variables are initialized in '../controllers/fun.php'
