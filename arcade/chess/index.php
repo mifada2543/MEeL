@@ -171,6 +171,15 @@ $chess_csrf = $_SESSION['csrf_token'] ?? '';
             </div>
             <h3 class="text-2xl font-extrabold text-slate-100 mb-2 tracking-tight">Tamat Permainan</h3>
             <p id="game-over-result" class="text-sm font-medium text-slate-400 mb-6 bg-slate-950 py-2 px-4 rounded-lg inline-block border border-slate-800">Pemain Putih memenangi perlawanan!</p>
+            <!-- Aksi pasca-game multiplayer: tanding ulang atau keluar ke mode Lawan Rakan -->
+            <div id="rematch-actions" class="hidden flex flex-col gap-2 w-full">
+              <button id="btn-rematch" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition-all text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-900/20 flex justify-center items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed" title="Minta tanding ulang kepada lawan">
+                <i data-lucide="refresh-ccw" class="w-4 h-4"></i> Tanding Lagi?
+              </button>
+              <button id="btn-exit-game" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-[0.98] transition-all text-slate-200 font-bold py-3 px-4 rounded-xl border border-slate-700 flex justify-center items-center gap-2" title="Akhiri sesi dan kembali ke mode Lawan Rakan">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Keluar
+              </button>
+            </div>
             <button id="btn-restart-overlay" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition-all text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-900/20 flex justify-center items-center gap-2" title="Mulai ulang permainan dari awal">
               <i data-lucide="play" class="w-4 h-4"></i> Main Semula
             </button>

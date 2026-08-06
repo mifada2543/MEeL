@@ -163,3 +163,129 @@ function insertGameEvent(\mysqli $conn, string $room, string $color, string $typ
         die(json_encode(["success" => false, "message" => $stmt->error]));
     }
 }
+
+/**
+ * Ambil event non-langkah TERAKHIR di room (resign / draw / rematch / dll).
+ *
+ * Event = baris moves dengan move_data JSON berisi 'type'. Langkah catur asli
+ * (tanpa 'type') diabaikan. Dipakai untuk melacak tawaran seri / tanding ulang
+ * yang sedang pending.
+ *
+ * @param \mysqli $conn Koneksi database aktif
+ * @param string  $room Room code
+ * @return array{type: string|null, color: string|null}|null null bila belum ada event
+ */
+function chess_last_event(\mysqli $conn, string $room): ?array
+{
+    $stmt = $conn->prepare(
+        "SELECT move_data, color FROM moves
+         WHERE room_code = ?
+           AND JSON_UNQUOTE(JSON_EXTRACT(move_data, '$.type')) IS NOT NULL
+         ORDER BY id DESC LIMIT 1"
+    );
+    if (!$stmt) {
+        return null;
+    }
+    $stmt->bind_param("s", $room);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$row) {
+        return null;
+    }
+    $data = json_decode($row['move_data'], true);
+    return [
+        'type'  => is_array($data) ? ($data['type'] ?? null) : null,
+        'color' => $row['color'],
+    ];
+}
+
+/**
+ * Hapus seluruh riwayat langkah room — dipakai untuk memulai game baru
+ * (tanding ulang) di room yang sama. Warna pemain (white/black) tidak berubah.
+ *
+ * @param \mysqli $conn Koneksi database aktif
+ * @param string  $room Room code
+ */
+function chess_reset_room_game(\mysqli $conn, string $room): void
+{
+    $stmt = $conn->prepare("DELETE FROM moves WHERE room_code = ?");
+    if (!$stmt) {
+        die(json_encode(["success" => false, "message" => $conn->error]));
+    }
+    $stmt->bind_param("s", $room);
+    if (!$stmt->execute()) {
+        die(json_encode(["success" => false, "message" => $stmt->error]));
+    }
+    $stmt->close();
+}
+
+/**
+ * Proses aksi tanding ulang (rematch) untuk room yang SUDAH SELESAI.
+ *
+ * Alur dua pemain:
+ *   1. rematch_offer  — salah satu pemain menawarkan tanding ulang. Hanya satu
+ *                       tawaran pending; pemain lain harus menjawab.
+ *   2. rematch_accept — lawan MENERIMA → riwayat langkah di-reset (game baru di
+ *                       room yang sama, warna tetap) + event rematch_accept
+ *                       dicatat supaya client penawar ikut me-reset papannya.
+ *   3. rematch_decline— lawan MENOLAK, atau pengirim MEMBATALKAN tawarannya.
+ *                       Lawan yang menerima event ini tahu "permainan telah
+ *                       keluar" dan kembali ke mode lokal.
+ *
+ * @param \mysqli $conn   Koneksi database aktif
+ * @param string  $room   Room code
+ * @param string  $color  Warna pemain yang mengirim aksi ('w'/'b')
+ * @param string  $action rematch_offer | rematch_accept | rematch_decline
+ * @return array{success:bool, message?:string, id?:int}
+ */
+function chess_rematch(\mysqli $conn, string $room, string $color, string $action): array
+{
+    // Rematch hanya masuk akal SETELAH game selesai (ada event terminal).
+    if (!chess_has_terminal_event($conn, $room)) {
+        return ["success" => false, "message" => "Permainan belum selesai."];
+    }
+
+    // Tawaran pending = event terakhir bertipe rematch_offer.
+    $lastEvent = chess_last_event($conn, $room);
+    $pending   = $lastEvent !== null && $lastEvent['type'] === 'rematch_offer';
+    $pendingBy = $pending ? $lastEvent['color'] : null;
+
+    if ($action === 'rematch_offer') {
+        if ($pending) {
+            return ["success" => false, "message" => "Masih ada tawaran tanding ulang yang menunggu jawaban."];
+        }
+        insertGameEvent($conn, $room, $color, 'rematch_offer');
+        return ["success" => true, "id" => $conn->insert_id];
+    }
+
+    if ($action === 'rematch_accept') {
+        if (!$pending) {
+            return ["success" => false, "message" => "Tidak ada tawaran tanding ulang yang menunggu."];
+        }
+        if ($pendingBy === $color) {
+            return ["success" => false, "message" => "Anda tidak dapat menjawab tawaran anda sendiri."];
+        }
+        // Mulai game baru: hapus riwayat lama, lalu catat event accept agar
+        // client penawar ikut me-reset papannya (sinkron via polling).
+        // Catatan: TIDAK memakai transaksi — begin_transaction di tengah
+        // transaksi aktif (mis. dari integration test) akan COMMIT transaksi
+        // tersebut secara implisit. Window race (draw_offer curang di antara
+        // reset & insert) dapat diabaikan: client tidak mengirim aksi balasan
+        // setelah game selesai (UI memblokir).
+        chess_reset_room_game($conn, $room);
+        insertGameEvent($conn, $room, $color, 'rematch_accept');
+        return ["success" => true, "id" => $conn->insert_id];
+    }
+
+    if ($action === 'rematch_decline') {
+        if (!$pending) {
+            return ["success" => false, "message" => "Tidak ada tawaran tanding ulang yang menunggu."];
+        }
+        // Boleh dari lawan (menolak) ATAU dari pengirim (membatalkan).
+        insertGameEvent($conn, $room, $color, 'rematch_decline');
+        return ["success" => true, "id" => $conn->insert_id];
+    }
+
+    return ["success" => false, "message" => "Aksi tidak dikenal."];
+}
