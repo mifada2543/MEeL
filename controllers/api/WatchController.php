@@ -122,9 +122,24 @@ abstract class AbstractWatchController
 
 class VideoWatchController extends AbstractWatchController
 {
+    private ?array $mediaData = null;
+
     public function __construct(\mysqli $conn, ?int $user_id, int $id)
     {
         parent::__construct($conn, $user_id, $id, 'video');
+    }
+
+    /**
+     * Ambil media data, redirect jika tidak ditemukan.
+     */
+    public function requireMedia(): void
+    {
+        $v = $this->viewer->getMediaData();
+        if (!$v) {
+            header('Location: index.php');
+            exit;
+        }
+        $this->mediaData = $v;
     }
 
     /**
@@ -133,7 +148,8 @@ class VideoWatchController extends AbstractWatchController
      */
     public function getViewData(): array
     {
-        $v = $this->viewer->getMediaData();
+        $this->requireMedia();
+        $v = $this->mediaData;
 
         $video_src = 'upload/' . $v['filename'];
         $is_hls    = (pathinfo($video_src, PATHINFO_EXTENSION) === 'm3u8');
