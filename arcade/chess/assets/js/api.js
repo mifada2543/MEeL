@@ -43,9 +43,15 @@ export async function fetchMovesAPI(roomCode, afterId = 0) {
   const res = await fetch(
     `controller/get_move.php?room=${encodeURIComponent(roomCode)}&last=${afterId}`,
   );
-  if (!(await guardedFetch(res))) return [];
+  if (!(await guardedFetch(res))) return { moves: [], opponentOnline: true };
   const data = await res.json();
-  return Array.isArray(data) ? data : [];
+  // Fallback: respons lama berbentuk array murni (server belum di-update).
+  if (Array.isArray(data)) return { moves: data, opponentOnline: true };
+  return {
+    moves: Array.isArray(data.moves) ? data.moves : [],
+    opponentOnline:
+      typeof data.opponent_online === "boolean" ? data.opponent_online : true,
+  };
 }
 
 export async function checkRoomStatusAPI(roomCode) {
@@ -72,6 +78,21 @@ export async function joinRoomAPI(code) {
   form.append("room", code.trim().toUpperCase());
   form.append("csrf_token", csrfToken());
   const res = await fetch("controller/join_room.php", {
+    method: "POST",
+    body: form,
+  });
+  if (!(await guardedFetch(res))) return { success: false };
+  return await res.json();
+}
+
+export async function sendGameActionAPI(roomCode, action, extra = {}) {
+  const form = new FormData();
+  form.append("room", roomCode);
+  form.append("action", action);
+  // Field tambahan (mis. color + reason untuk event game_over).
+  for (const [key, value] of Object.entries(extra)) form.append(key, value);
+  form.append("csrf_token", csrfToken());
+  const res = await fetch("controller/game_action.php", {
     method: "POST",
     body: form,
   });
