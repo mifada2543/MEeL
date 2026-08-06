@@ -223,7 +223,19 @@ class GarbageCollector
             error_log("[MEeL] GarbageCollector: throttle file tidak bisa ditulis: {$throttleFile}");
             return;
         }
-        if (file_put_contents($throttleFile, time()) === false) {
+
+        // File throttle bisa dibuat oleh user berbeda (web server vs cron/CLI).
+        // Jika file lama milik user lain tidak writable, hapus dulu lalu buat
+        // ulang — hak tulis pada direktori cukup untuk unlink, sehingga
+        // throttle tetap berfungsi di kedua konteks tanpa warning PHP.
+        if (is_file($throttleFile) && !is_writable($throttleFile)) {
+            if (!@unlink($throttleFile)) {
+                error_log("[MEeL] GarbageCollector: throttle file tidak writable & gagal dihapus: {$throttleFile}");
+                return;
+            }
+        }
+
+        if (@file_put_contents($throttleFile, time()) === false) {
             error_log("[MEeL] GarbageCollector: gagal menulis throttle file: {$throttleFile}");
         }
     }

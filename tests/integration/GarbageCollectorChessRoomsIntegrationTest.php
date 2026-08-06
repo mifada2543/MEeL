@@ -337,4 +337,32 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $this->assertSame(0, $cleaned);
         $this->assertTrue($this->roomExists($code));
     }
+
+    public function testThrottleFileNotWritableIsReclaimedWithoutWarning(): void
+    {
+        // Simulasi file throttle milik user lain (mis. dibuat cron/CLI): file
+        // ada tapi tidak writable oleh proses ini. writeThrottleFile() harus
+        // menghapus & membuat ulang — TANPA memicu warning PHP.
+        $file = $this->throttleFile;
+        @file_put_contents($file, '123');
+        chmod($file, 0444);
+        $this->assertFalse(is_writable($file));
+
+        $warnings = [];
+        set_error_handler(static function (int $no, string $str) use (&$warnings): bool {
+            $warnings[] = $str;
+            return true;
+        });
+
+        try {
+            GarbageCollector::cleanChessRooms($this->conn);
+        } finally {
+            restore_error_handler();
+            @chmod($file, 0644); // pulihkan agar tearDown() bisa restore backup
+        }
+
+        $this->assertSame([], $warnings, 'Throttle file yang tidak writable tidak boleh memicu warning PHP.');
+        $this->assertTrue(is_file($file), 'Throttle file harus dibuat ulang.');
+        $this->assertGreaterThan(time() - 5, (int) @file_get_contents($file), 'Throttle file harus berisi timestamp terbaru.');
+    }
 }
