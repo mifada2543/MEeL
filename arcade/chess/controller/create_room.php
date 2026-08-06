@@ -38,6 +38,12 @@ if (!$stmt) {
 }
 $stmt->bind_param("si", $room, $user_id);
 $stmt->execute();
+
+// Cleanup room multiplayer basi (throttle 1 jam via GarbageCollector) —
+// sampah catur dibersihkan saat ada yang bermain, tanpa menunggu admin.
+// GarbageCollector sudah ter-autoload lewat auth/config.php.
+GarbageCollector::cleanChessRooms($conn);
+
 echo json_encode([
     "success" => true,
     "room" => $room,

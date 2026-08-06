@@ -1,5 +1,6 @@
 <?php
 require '../../../auth/config.php';
+require_once __DIR__ . '/chess_helpers.php';
 header('Content-Type: application/json');
 
 // ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
@@ -48,4 +49,17 @@ $moves = [];
 while ($row = $result->fetch_assoc()) {
     $moves[] = $row;
 }
-echo json_encode($moves);
+
+// ── Status koneksi lawan (deteksi disconnect) ─────────────────────────────
+// users.last_activity diperbarui di SETIAP request (activity_logger), jadi
+// lawan yang masih polling get_move.php selalu fresh; yang keluar membeku.
+// Client memakai flag ini untuk notifikasi + tawaran klaim kemenangan.
+$opponentId = ((int)$roomRow['white_user_id'] === $user_id)
+    ? (int)$roomRow['black_user_id']
+    : (int)$roomRow['white_user_id'];
+$opponentOnline = chess_opponent_online($conn, $opponentId);
+
+echo json_encode([
+    "moves"           => $moves,
+    "opponent_online" => $opponentOnline,
+]);
