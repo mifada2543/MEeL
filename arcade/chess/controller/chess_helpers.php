@@ -233,17 +233,40 @@ function chess_reset_room_game(\mysqli $conn, string $room): void
  *                       Lawan yang menerima event ini tahu "permainan telah
  *                       keluar" dan kembali ke mode lokal.
  *
- * @param \mysqli $conn   Koneksi database aktif
- * @param string  $room   Room code
- * @param string  $color  Warna pemain yang mengirim aksi ('w'/'b')
- * @param string  $action rematch_offer | rematch_accept | rematch_decline
- * @return array{success:bool, message?:string, id?:int}
+ * Anti-stuck (race condition): pada rematch_offer & rematch_accept, kehadiran
+ * lawan diverifikasi lewat users.last_activity. Kalau lawan sudah keluar /
+ * menutup tab (last_activity membeku > CHESS_OPPONENT_OFFLINE_SECONDS), aksi
+ * ditolak dengan flag opponent_gone sehingga penawar tidak terjebak menunggu
+ * jawaban selamanya. Catatan: lawan yang BARU keluar masih terlihat "online"
+ * selama ambang offline (90 dtk) — celah itu ditutup timeout 30 dtk di client.
+ *
+ * @param \mysqli   $conn       Koneksi database aktif
+ * @param string    $room       Room code
+ * @param string    $color      Warna pemain yang mengirim aksi ('w'/'b')
+ * @param string    $action     rematch_offer | rematch_accept | rematch_decline
+ * @param int|null  $opponentId user_id lawan untuk validasi kehadiran; null =
+ *                              validasi dilewati (dipakai unit/integration test
+ *                              yang memanggil helper langsung).
+ * @return array{success:bool, message?:string, id?:int, opponent_gone?:bool}
  */
-function chess_rematch(\mysqli $conn, string $room, string $color, string $action): array
+function chess_rematch(\mysqli $conn, string $room, string $color, string $action, ?int $opponentId = null): array
 {
     // Rematch hanya masuk akal SETELAH game selesai (ada event terminal).
     if (!chess_has_terminal_event($conn, $room)) {
         return ["success" => false, "message" => "Permainan belum selesai."];
+    }
+
+    // Validasi kehadiran lawan — cegah penawar terjebak menunggu lawan yang
+    // sudah pergi (race condition). Berlaku untuk offer (lawan harus ada untuk
+    // menjawab) dan accept (penawar harus ada untuk menerima reset).
+    if (($action === 'rematch_offer' || $action === 'rematch_accept')
+        && $opponentId !== null
+        && !chess_opponent_online($conn, $opponentId)) {
+        return [
+            "success"       => false,
+            "opponent_gone" => true,
+            "message"       => "Lawan sudah keluar dari permainan.",
+        ];
     }
 
     // Tawaran pending = event terakhir bertipe rematch_offer.

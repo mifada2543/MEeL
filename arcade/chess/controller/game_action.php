@@ -69,9 +69,18 @@ $gameEnded = chess_has_terminal_event($conn, $room);
 // membatalkan tawarannya lewat rematch_decline. Logika inti ada di
 // chess_rematch() (chess_helpers.php) agar bisa diuji.
 if (in_array($action, ['rematch_offer', 'rematch_accept', 'rematch_decline'], true)) {
-    $result = chess_rematch($conn, $room, $server_color, $action);
+    $opponentId = ($server_color === 'w')
+        ? (int)$roomRow['black_user_id']
+        : (int)$roomRow['white_user_id'];
+    $result = chess_rematch($conn, $room, $server_color, $action, $opponentId);
     if (!$result['success']) {
-        die(json_encode(["success" => false, "message" => $result['message']]));
+        $resp = ["success" => false, "message" => $result['message']];
+        // Flag khusus: lawan sudah keluar (race condition) — client langsung
+        // memberi tahu pemain & keluar ke mode lokal (bukan sekadar alert).
+        if (!empty($result['opponent_gone'])) {
+            $resp['opponent_gone'] = true;
+        }
+        die(json_encode($resp));
     }
     echo json_encode(["success" => true, "id" => $result['id']]);
     exit;

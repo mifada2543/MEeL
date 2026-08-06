@@ -82,6 +82,21 @@ class ChessRematchIntegrationTest extends TestCase
         return 'RM' . strtoupper(substr(uniqid('', true), -6));
     }
 
+    /** Buat user test dengan last_activity yang dikendalikan (rollback otomatis). */
+    private function insertUser(int $lastActivityTs): int
+    {
+        $username = 'rm_test_' . substr(uniqid('', true), -8);
+        $lastActivity = date('Y-m-d H:i:s', $lastActivityTs);
+        $stmt = $this->conn->prepare(
+            "INSERT INTO users (username, last_activity) VALUES (?, ?)"
+        );
+        $stmt->bind_param("ss", $username, $lastActivity);
+        $stmt->execute();
+        $id = (int)$stmt->insert_id;
+        $stmt->close();
+        return $id;
+    }
+
     private function countMoves(string $code): int
     {
         $stmt = $this->conn->prepare("SELECT COUNT(*) AS n FROM moves WHERE room_code = ?");
@@ -326,5 +341,62 @@ class ChessRematchIntegrationTest extends TestCase
 
         $this->assertFalse($result['success']);
         $this->assertSame('Aksi tidak dikenal.', $result['message']);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // VALIDASI KEHADIRAN LAWAN (race condition: lawan sudah keluar)
+    // ══════════════════════════════════════════════════════════════
+
+    public function testOfferRejectedWhenOpponentOffline(): void
+    {
+        $code = $this->newCode();
+        $this->insertFinishedGame($code);
+        $oppId = $this->insertUser(time() - 7200); // last_activity 2 jam lalu
+
+        $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer', $oppId);
+
+        $this->assertFalse($result['success']);
+        $this->assertTrue($result['opponent_gone']);
+        $this->assertSame('Lawan sudah keluar dari permainan.', $result['message']);
+        // Tidak ada tawaran yang dicatat — room tetap bersih dari event rematch.
+        $this->assertSame('game_over', chess_last_event($this->conn, $code)['type']);
+    }
+
+    public function testOfferSucceedsWhenOpponentOnline(): void
+    {
+        $code = $this->newCode();
+        $this->insertFinishedGame($code);
+        $oppId = $this->insertUser(time()); // baru saja aktif
+
+        $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer', $oppId);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('rematch_offer', chess_last_event($this->conn, $code)['type']);
+    }
+
+    public function testAcceptRejectedWhenOffererOffline(): void
+    {
+        $code = $this->newCode();
+        $this->insertFinishedGame($code);
+        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); // tawaran sukses
+        $offererId = $this->insertUser(time() - 7200); // penawar sudah pergi
+
+        $result = chess_rematch($this->conn, $code, 'b', 'rematch_accept', $offererId);
+
+        $this->assertFalse($result['success']);
+        $this->assertTrue($result['opponent_gone']);
+        // Riwayat game lama TIDAK dihapus — tidak ada reset yang terjadi.
+        $this->assertTrue(chess_has_terminal_event($this->conn, $code));
+    }
+
+    public function testPresenceCheckSkippedWhenOpponentIdNull(): void
+    {
+        $code = $this->newCode();
+        $this->insertFinishedGame($code);
+
+        // opponentId null = validasi dilewati (helper dipanggil langsung).
+        $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer');
+
+        $this->assertTrue($result['success']);
     }
 }
