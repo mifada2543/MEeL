@@ -57,9 +57,15 @@ if (!function_exists('getRomajiName')) {
         $text = str_replace($search, $replace, $text);
 
         // 2. Eksekusi MeCab — path absolut biar tidak bergantung PATH environment
+        // Penting: kosongkan LD_LIBRARY_PATH. Di XAMPP/LAMPP, environment Apache
+        // mewarisi LD_LIBRARY_PATH=/opt/lampp/lib yang berisi libstdc++.so.6 versi
+        // LAMA — MeCab sistem (/usr/bin/mecab) gagal load GLIBCXX_3.4.32 dari sana
+        // (error: version `GLIBCXX_*' not found). Konsisten dgn pola `export
+        // LD_LIBRARY_PATH=''` yang dipakai Uploader/auto_metadata utk ffmpeg/ffprobe.
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
-        $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
+        $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
+        $process = proc_open($mecab_cmd, $descriptorspec, $pipes);
 
         $parsedText = '';
         if (is_resource($process)) {
@@ -134,9 +140,13 @@ if (!function_exists('analyzeJapaneseText')) {
         }
 
         // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
+        // LD_LIBRARY_PATH dikosongkan (sama seperti getRomajiName): di XAMPP,
+        // environment Apache berisi LD_LIBRARY_PATH=/opt/lampp/lib yang merusak
+        // load libstdc++ MeCab sistem (GLIBCXX_* not found) → MeCab gagal total.
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
-        $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
+        $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
+        $process = proc_open($mecab_cmd, $descriptorspec, $pipes);
         if (!is_resource($process)) {
             $result['romaji'] = getRomajiName($text);
             // Alias tetap dipakai walau MeCab gagal dibuka (tidak menyentuh logic MeCab)
