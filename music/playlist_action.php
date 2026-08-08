@@ -31,7 +31,7 @@ function redirect(string $url): never
     exit;
 }
 
-// ── 1. BUAT PLAYLIST BARU ─────────────────────────────────────────────────
+// ─── 1. BUAT PLAYLIST BARU ───
 if ($action === 'create_playlist') {
     $name     = trim($_POST['playlist_name'] ?? '');
     $music_id = (int) ($_POST['music_id'] ?? 0);
@@ -66,12 +66,11 @@ if ($action === 'create_playlist') {
     redirect("watch.php?id=$music_id&msg=playlist_created");
 }
 
-// ── 2. TAMBAH LAGU KE PLAYLIST ────────────────────────────────────────────
+// ─── 2. TAMBAH LAGU KE PLAYLIST ───
 if ($action === 'add_to_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
     $music_id    = (int) ($_POST['music_id']    ?? 0);
 
-    // TRANSACTION: Atomic check + insert — cegah duplicate race condition
     $conn->begin_transaction();
     try {
         $check = $conn->prepare('SELECT id FROM playlist_tracks WHERE playlist_id = ? AND music_id = ?');
@@ -97,7 +96,7 @@ if ($action === 'add_to_playlist') {
     redirect("watch.php?id=$music_id&msg=added_to_playlist");
 }
 
-// ── 3. HAPUS LAGU DARI PLAYLIST ───────────────────────────────────────────
+// ─── 3. HAPUS LAGU DARI PLAYLIST ───
 if ($action === 'remove_from_playlist') {
     $pivot_id    = (int) ($_POST['pivot_id']    ?? 0);
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
@@ -109,7 +108,7 @@ if ($action === 'remove_from_playlist') {
     redirect("view_playlist.php?id=$playlist_id");
 }
 
-// ── 4. HAPUS TOTAL PLAYLIST ───────────────────────────────────────────────
+// ─── 4. HAPUS TOTAL PLAYLIST ───
 if ($action === 'delete_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
 

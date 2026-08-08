@@ -25,11 +25,10 @@ class MediaViewer
         }
     }
 
-    // --- 1. LOGIKA VIEWS ---
+    // ─── 1. LOGIKA VIEWS ───
     public function recordView() {
         if (!$this->user_id || !$this->media_id) return false;
 
-        // Gunakan data user yang sudah ditarik di construct — tidak perlu query ulang
         $user = $this->user_data;
 
         if ($user && $user['is_active'] == 1 && $user['role'] !== 'guest') {
@@ -49,7 +48,7 @@ class MediaViewer
         return false;
     }
 
-    // --- 2. AMBIL DATA MEDIA UTAMA ---
+    // ─── 2. AMBIL DATA MEDIA UTAMA ───
     public function getMediaData()
     {
         // DIUBAH: Menggunakan prepared statement untuk m.id
@@ -64,7 +63,7 @@ class MediaViewer
         return ($result && $result->num_rows > 0) ? $result->fetch_assoc() : null;
     }
 
-    // --- 3. LOGIKA INTERAKSI (LIKE/DISLIKE) ---
+    // ─── 3. LOGIKA INTERAKSI (LIKE/DISLIKE) ───
     public function getUserInteraction()
     {
         if (!$this->user_id) return null;
@@ -76,7 +75,7 @@ class MediaViewer
         return ($row = $res->fetch_assoc()) ? $row['type'] : null;
     }
 
-    // --- 4. MANAJEMEN KOMENTAR ---
+    // ─── 4. MANAJEMEN KOMENTAR ───
     public function addComment($post_data)
     {
         if (!$this->user_id || empty(trim($post_data['comments']))) return false;
@@ -98,7 +97,7 @@ class MediaViewer
     public function getComments(int $limit = 200)
     {
         $col = ($this->media_type === 'video') ? 'video_id' : 'music_id';
-        // u.role disertakan agar renderer bisa menampilkan badge admin/member
+
         $stmt = $this->conn->prepare("SELECT c.*, u.username, u.role FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.$col = ? ORDER BY c.created_at ASC LIMIT ?");
         $stmt->bind_param("ii", $this->media_id, $limit);
         $stmt->execute();
@@ -114,12 +113,10 @@ class MediaViewer
         return ['grouped' => $grouped, 'user_map' => $user_map];
     }
 
-    // --- 5. REKOMENDASI ---
+    // ─── 5. REKOMENDASI ───
     public function getRecommendations($limit = 10)
     {
-        // DIUBAH: Ganti ORDER BY RAND() (full-table sort, lambat di library besar)
-        // dengan pola MAX(id) + random offset — sama seperti MediaLibrary::searchVideo().
-        // Query memanfaatkan PRIMARY KEY index, tanpa full table scan/sort.
+
         $limit = (int)$limit;
         $table = $this->table; // sudah tervalidasi di constructor: 'video' | 'music'
 
@@ -128,14 +125,13 @@ class MediaViewer
         $max_id  = (int)($max_res ? $max_res->fetch_assoc()['max_id'] : 0);
 
         if ($max_id <= 1) {
-            // Library kosong atau hanya berisi 1 item → kembalikan result kosong
+
             return $this->conn->query(
                 "SELECT m.*, u.username AS uploader FROM {$table} m
                  JOIN users u ON m.user_id = u.id WHERE 1 = 0"
             );
         }
 
-        // Offset acak — dibatasi agar masih ada >= $limit baris setelahnya
         $random_offset = rand(0, max(0, $max_id - $limit));
 
         $stmt = $this->conn->prepare(
@@ -150,7 +146,7 @@ class MediaViewer
         return $stmt->get_result();
     }
 
-    // --- 6. KHUSUS MUSIC: PLAYLIST QUEUE ---
+    // ─── 6. KHUSUS MUSIC: PLAYLIST QUEUE ───
     public function getPlaylistQueue($playlist_id)
     {
         if ($this->media_type !== 'music' || !$playlist_id) return null;

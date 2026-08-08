@@ -53,7 +53,6 @@ $nav_id         = $id ?? 0;
             <span class="text-[11px] font-semibold text-gray-200"><?= htmlspecialchars($nav_page_title) ?></span>
         <?php endif; ?>
     <?php endif; ?>
-
     <div class="ml-auto flex items-center gap-2">
         <?php if ($nav_id > 0): ?>
             <?php

@@ -5,7 +5,7 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// ── Validasi ID ──────────────────────────────────────────────────────────────
+// ─── Validasi ID ───
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     header("Location: index.php");
     exit();
@@ -20,20 +20,17 @@ if (!$book) {
     exit;
 }
 
-// ── Sanitasi chapter — cegah path traversal ─────────────────────────────────
-// Gunakan basename() yang secara alami mencegah path traversal
-// dan tetap mempertahankan semua karakter valid dalam nama folder (termasuk
-// tanda kurung, titik dua, kurung siku, karakter multi-byte, dll.)
+// ─── Sanitasi chapter — cegah path traversal ───
 $raw_chapter     = $_GET['ch'] ?? '';
 $current_chapter = basename($raw_chapter);
-// basename('..') returns '..' on Linux — cegah directory traversal
+
 if ($current_chapter === '..') {
     $current_chapter = '';
 }
 
 $book_id = (int)$book['id'];
 
-// ── Hitung total halaman (manga mode) ──
+// ─── Hitung total halaman (manga mode) ───
 $total_pages = 0;
 if ($book['type'] !== 'pdf') {
     $ch_base = "upload/manga/" . $book['path_folder'];
@@ -51,9 +48,7 @@ if ($book['type'] !== 'pdf') {
     }
 }
 
-// ── Helper: scan direktori untuk file gambar ─────────────────────────────────
-// Menggantikan glob() karena glob() menginterpretasi karakter spesial
-// seperti [], {}, * sebagai pattern glob, bukan literal path.
+// ─── Helper: scan direktori untuk file gambar ───
 function _scanImages(string $dir): array {
     if (!is_dir($dir)) return [];
     $extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'JPG', 'PNG'];
@@ -244,7 +239,6 @@ function _scanSubdirs(string $dir): array {
                         <?php else: ?>
                             <div></div>
                         <?php endif; ?>
-
                         <span class="text-[9px] text-gray-700 uppercase tracking-widest">
                             <?= $current_idx + 1 ?> / <?= count($ch_list) ?>
                         </span>
@@ -260,7 +254,6 @@ function _scanSubdirs(string $dir): array {
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
-
                     <!-- Chapter selector (atas) — custom dropdown -->
                     <div class="sticky top-14 z-30 py-3 px-4 bg-gradient-to-b from-[#080a0f] to-transparent">
                         <div class="max-w-4xl mx-auto ch-dropdown" id="ch-dropdown-top">
@@ -289,9 +282,8 @@ function _scanSubdirs(string $dir): array {
                         </div>
                     </div>
                 <?php endif; ?>
-
                 <?php
-                // ── Tentukan path gambar ─────────────────────────────────────
+                // ─── Tentukan path gambar ───
                 $target_path = $ch_base;
 
                 if ($book['has_chapters'] == 1) {
@@ -316,7 +308,7 @@ function _scanSubdirs(string $dir): array {
                     }
                 }
 
-                // ── Render gambar dengan Intersection Observer ──────────────
+                // ─── Render gambar dengan Intersection Observer ───
                 if ($target_path !== null && is_dir($target_path)):
                     $images = _scanImages($target_path);
                     natsort($images);
@@ -346,7 +338,6 @@ function _scanSubdirs(string $dir): array {
                                     decoding="async">
                             <?php endif; ?>
                         <?php endforeach; ?>
-
                         <!-- Chapter navigation bawah -->
                         <?php if ($book['has_chapters'] == 1 && !empty($chapters)): ?>
                             <div class="max-w-4xl mx-auto px-4 mt-4 mb-8 flex items-center justify-between gap-2">
@@ -359,7 +350,6 @@ function _scanSubdirs(string $dir): array {
                                 <?php else: ?>
                                     <div></div>
                                 <?php endif; ?>
-
                                 <a href="index.php"
                                     class="text-[9px] text-gray-700 hover:text-green-500 uppercase tracking-widest transition-colors">
                                     Kembali ke Library
@@ -404,7 +394,6 @@ function _scanSubdirs(string $dir): array {
                                 </div>
                             </div>
                         <?php endif; ?>
-
                     <?php else: ?>
                         <div class="max-w-4xl mx-auto px-4 py-20 text-center">
                             <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-white/[.03] border border-white/[.06] flex items-center justify-center">
@@ -430,10 +419,8 @@ function _scanSubdirs(string $dir): array {
                         </p>
                     </div>
                 <?php endif; ?>
-
             </div><!-- /manga-container -->
         <?php endif; ?>
-
         <?php include '../partials/footer.php'; ?>
     </div><!-- /scroll-container -->
 
@@ -443,7 +430,6 @@ function _scanSubdirs(string $dir): array {
         Halaman <span class="current" id="current-page-display">1</span> / <?= $total_pages ?>
     </div>
     <?php endif; ?>
-
     <!-- Scroll to top button -->
     <button id="scroll-top-btn" onclick="scrollToTop()" title="Ke atas">
         <i data-lucide="chevron-up" class="w-4 h-4"></i>
@@ -814,7 +800,8 @@ function _scanSubdirs(string $dir): array {
     </script>
 
     <!-- Mode Sehat 20-20-20: halaman baca = aktivitas membaca (tanpa media) -->
-    <script>window.meelHealthActivityMode = "reading";</script>
+    <script>window.meelHealthActivityMode = "reading";
+</script>
     <script src="../assets/js/shared/health-reminder.js?v=<?= filemtime(__DIR__ . '/../assets/js/shared/health-reminder.js') ?>"></script>
 </body>
 

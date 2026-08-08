@@ -1,7 +1,3 @@
-/* ============================================================
- * recovery.js — Auto-recovery: deteksi video 'macet'/stuck, error HLS/HTML5, reconnect indicator, watchdog timer.
- * Depends on: state.js
- * ============================================================ */
 function stopPlaybackStartTimeout() {
   playbackStartTimeout &&
     (clearTimeout(playbackStartTimeout), (playbackStartTimeout = null));

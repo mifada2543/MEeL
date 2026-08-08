@@ -1,7 +1,3 @@
-/* ============================================================
- * audio-state.js — Simpan snapshot posisi/status audio ke sessionStorage & localStorage (buat resume & mini-player).
- * Depends on: state.js
- * ============================================================ */
 function saveAudioState() {
   if (!window.MEEL_MUSIC_CONFIG) return;
   const e = window.MEEL_MUSIC_CONFIG,

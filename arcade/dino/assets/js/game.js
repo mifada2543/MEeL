@@ -1,7 +1,5 @@
-// ==========================================
 // FILE: game.js
 // FUNGSI: Logika Game Utama, Fisika, dan Kontrol UI
-// ==========================================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 // 1. STATE & KONFIGURASI GLOBAL

@@ -1,24 +1,11 @@
 <?php
-
-/**
- * MEeL-HUB — Database Migration System
- * 
- * Simple versioned migration tanpa library eksternal.
- * Hanya bisa dijalankan dari CLI (terminal), bukan via web browser.
- * Jalankan: php database/migrate.php
- * 
- * Cara menambah migrasi baru:
- *   1. Tambah entry baru di array $migrations dengan key versi berikutnya
- *   2. Jalankan ulang migrate.php
- */
-
-// ── Keamanan: hanya dari CLI ────────────────────────────────────────────────
+// ─── Keamanan: hanya dari CLI ───
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     die('Access denied. Jalankan dari terminal: php database/migrate.php');
 }
 
-// ─── Bootstrap ────────────────────────────────────────────────────────────────
+// ─── Bootstrap ───
 require_once __DIR__ . '/../auth/config.php';
 
 // Validasi koneksi database
@@ -27,9 +14,7 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
     exit(1);
 }
 
-// ─── Migration Registry ──────────────────────────────────────────────────────
-// Key = versi integer, Value = SQL query(s)
-// Hanya tambah di AKHIR array, jangan pernah mengubah migrasi yang sudah ada!
+// ─── Migration Registry ───
 $migrations = [
     1 => [
         'description' => 'Tambah FULLTEXT index untuk pencarian',
@@ -70,7 +55,7 @@ $migrations = [
         'description' => 'Tambah FK constraint untuk tabel tanpa referensi',
         'sql' => [
             function ($conn) {
-                // Bersihkan orphaned rows dulu sebelum tambah FK — cegah error "cannot add foreign key constraint"
+
                 $conn->query("DELETE FROM upload_queue WHERE user_id NOT IN (SELECT id FROM users)");
                 $result = $conn->query("ALTER TABLE upload_queue ADD CONSTRAINT fk_upload_queue_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE");
                 if (!$result) {
@@ -154,7 +139,7 @@ $migrations = [
         'description' => 'Tambah UNIQUE KEY pada users.username — cegah bloat guest, optimasi ON DUPLICATE KEY',
         'sql' => [
             function ($conn) {
-                // Step 1: Hapus duplikat guest — sisakan 1 baris per username (yang terbaru)
+
                 $conn->query("DELETE g1 FROM users g1
                     INNER JOIN users g2
                     WHERE g1.id < g2.id
@@ -187,7 +172,7 @@ $migrations = [
         'description' => 'Sinkronisasi kolom & default values dengan actual DB — role→varchar(20), hapus duplicate UNIQUE KEY, defaults konsisten',
         'sql' => [
             function ($conn) {
-                // Step 1: Ubah users.role dari enum ke varchar(20) — dukung role 'guest' dan 'member'
+
                 $result = $conn->query("ALTER TABLE users MODIFY COLUMN role varchar(20) DEFAULT 'user'");
                 if (!$result) {
                     $err = $conn->error;
@@ -197,8 +182,7 @@ $migrations = [
                 }
             },
             function ($conn) {
-                // Step 2: Hapus duplicate UNIQUE KEY 'username' — sisakan 'idx_username_unique'
-                // Guard: cek keberadaan index dulu agar tidak error di fresh install
+
                 $check = $conn->query("SHOW INDEX FROM users WHERE Key_name = 'username'");
                 if ($check && $check->num_rows > 0) {
                     $conn->query("ALTER TABLE users DROP INDEX username");
@@ -267,7 +251,6 @@ $migrations = [
         'description' => 'Perbaiki unique key tabel interactions — pisah jadi (user_id, video_id) & (user_id, music_id) karena NULL di unique key gabungan tidak mencegah duplikat',
         'sql' => [
             function ($conn) {
-                // Step 1: Hapus duplikat interaksi video (user_id + video_id sama, music_id NULL)
                 // Sisakan baris dengan id terbesar.
                 $conn->query("DELETE i1 FROM interactions i1
                     INNER JOIN interactions i2
@@ -278,7 +261,7 @@ $migrations = [
                     AND i2.video_id IS NOT NULL");
             },
             function ($conn) {
-                // Step 2: Hapus duplikat interaksi music (user_id + music_id sama, video_id NULL)
+
                 $conn->query("DELETE i1 FROM interactions i1
                     INNER JOIN interactions i2
                     WHERE i1.id < i2.id
@@ -298,7 +281,7 @@ $migrations = [
                 }
             },
             function ($conn) {
-                // Step 4: Tambah unique key per media type — cegah like duplikat
+
                 $result = $conn->query("ALTER TABLE interactions ADD UNIQUE INDEX unique_interaction_video (user_id, video_id)");
                 if (!$result) {
                     $err = $conn->error;
@@ -360,33 +343,7 @@ $migrations = [
         ],
     ],
 ];
-// ═══════════════════════════════════════════════════════════════════════════
 // Catatan Sinkronisasi
-// ====================
-// schema.sql dan migrate.php telah diverifikasi selaras pada 25 Juli 2026.
-//
-// Ringkasan alignment:
-//   v1 — FULLTEXT index (video, music, books)
-//   v2 — Index upload_date (video, music, books, drive_files)
-//   v3 — db_version table (oleh runner)
-//   v4 — FK constraint (upload_queue, transcode_queue, drive_files)
-//   v5 — Ubah kolom title ke TEXT
-//   v6 — CREATE TABLE activity_log
-//   v7 — UNIQUE KEY idx_username_unique pada users.username
-//   v8 — users.role→varchar(20), hapus duplicate UNIQUE KEY, sync defaults
-//   v9 — Tambah kolom MFA (mfa_secret, mfa_backup_codes, mfa_enabled) ke tabel users
-//   v10 — Index komposit comments (video_id, created_at) & (music_id, created_at)
-//   v11 — Perbaiki unique key interactions (pisah video/music)
-//   v12 — Ikat identitas user ke room catur (white_user_id, black_user_id)
-//
-// Catatan: schema.sql (fresh install) sudah mencakup semua CREATE TABLE
-// dengan FK, INDEX, dan UNIQUE KEY langsung — migration ini hanya untuk
-// upgrade database yang sudah ada (existing DB).
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ─── Runner ───────────────────────────────────────────────────────────────────
-
-// Pastikan tabel db_version ada
 $conn->query("CREATE TABLE IF NOT EXISTS db_version (
     id INT AUTO_INCREMENT PRIMARY KEY,
     version INT NOT NULL,
@@ -406,7 +363,7 @@ foreach ($migrations as $version => $migration) {
 
         foreach ($migration['sql'] as $migration_step) {
             if (is_callable($migration_step)) {
-                // Closure-based migration — try/catch untuk kompatibilitas luas
+
                 try {
                     $migration_step($conn);
                     $err = $conn->error;

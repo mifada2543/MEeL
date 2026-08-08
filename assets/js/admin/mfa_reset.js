@@ -1,19 +1,11 @@
-/** MEeL Admin — MFA Reset (mfa_reset.php)
- * confirmResetMFA() — SweetAlert dialog dengan styling khusus
- * Dependencies:
- *   - compatibilitas/lucide.js
- *   - compatibilitas/sweetalert2.all.min.js **/
+/* MEeL Admin — MFA Reset (mfa_reset.php) */
 (function () {
   "use strict";
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
   });
 })();
-/**
- * Opens SweetAlert confirm dialog untuk reset MFA user
- * @param {number} userId
- * @param {string} username
- */
+/* * * Opens SweetAlert confirm dialog untuk reset MFA user * @param {number} userId * @param {string} username */
 function confirmResetMFA(userId, username) {
   if (typeof Swal === "undefined") return;
   Swal.fire({

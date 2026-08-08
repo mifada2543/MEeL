@@ -1,13 +1,10 @@
-/* ============================================================
- * index/main.css — Page-specific styles untuk Drive Dashboard
- * Halaman: drive/index.php
- * ============================================================ */
-/* ── Dashboard specific variables ── */
+/* index/main.css — Page-specific styles untuk Drive Dashboard */
+/* ─── Dashboard specific variables ─── */
 .drive-dashboard {
   background-color: var(--bg-main, #0b0f1a);
   color: var(--text-heading, #f3f4f6);
 }
-/* ── Sidebar footer ── */
+/* ─── Sidebar footer ─── */
 .drive-sidebar-footer {
   margin-top: auto;
   padding: 16px;
@@ -44,7 +41,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-/* ── Heading Accents per category ── */
+/* ─── Heading Accents per category ─── */
 .text-accent-video {
   color: #ef4444;
 }
@@ -54,7 +51,7 @@
 .text-accent-dokumen {
   color: #10b981;
 }
-/* ── Desktop header ── */
+/* ─── Desktop header ─── */
 .drive-heading {
   font-size: 1.875rem;
   font-weight: 800;
@@ -66,7 +63,7 @@
   color: var(--text-muted);
   margin-top: 4px;
 }
-/* ── Mobile scope toggle ── */
+/* ─── Mobile scope toggle ─── */
 .scope-toggle-mobile {
   display: flex;
   gap: 8px;
@@ -81,7 +78,7 @@
   transition: all 0.2s;
   text-decoration: none;
 }
-/* ── Upload button ── */
+/* ─── Upload button ─── */
 .upload-btn {
   background: #3b82f6;
   color: #fff;
@@ -100,7 +97,7 @@
 .upload-btn:hover {
   background: #2563eb;
 }
-/* ── Page title mobile ── */
+/* ─── Page title mobile ─── */
 @media (max-width: 768px) {
   .drive-heading {
     font-size: 1.25rem;

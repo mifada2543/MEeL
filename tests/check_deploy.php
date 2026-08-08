@@ -1,29 +1,5 @@
 #!/usr/bin/env php
 <?php
-/**
- * MEeL-HUB — Deployment Health Check (CLI)
- * ========================================
- * Memverifikasi 4 hal penting sebelum/sesudah deployment:
- *
- *   1. MEEL_HDD_BASE        — konstanta storage & direktori dapat diakses
- *   2. Upload symlinks      — books/upload, music/upload, video/upload
- *                             menunjuk ke storage terpusat (MEEL_HDD_BASE)
- *   3. .htaccess upload dirs— hardening: php engine off + ForceType +
- *                             Options -Indexes (cek security_test.php §7b)
- *   4. mod_rewrite & PWA    — rewrite sw.js → sw.js.php aktif (mod_rewrite
- *                             + AllowOverride + probe HTTP nyata)
- *
- * Penggunaan:
- *   php tests/check_deploy.php
- *   php tests/check_deploy.php --url=http://localhost/MEeL   # probe HTTP
- *   php tests/check_deploy.php --hdd=/path/to/storage/media  # override MEEL_HDD_BASE (testing/CI)
- *   php tests/check_deploy.php --no-color                     # untuk CI/log
- *   php tests/check_deploy.php --help
- *
- * Exit code: 0 = semua sehat, 1 = ada FAIL (cocok untuk CI pipeline).
- * WARN tidak menggagalkan exit code — hanya informasi tambahan.
- */
-
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     die('Access denied. Jalankan dari terminal: php tests/check_deploy.php');
@@ -31,7 +7,7 @@ if (PHP_SAPI !== 'cli') {
 
 define('MEEL_ROOT', rtrim(realpath(__DIR__ . '/..') ?: (__DIR__ . '/..'), '/'));
 
-// ── Argumen sederhana ────────────────────────────────────────────────────────
+// ─── Argumen sederhana ───
 $url         = null;   // URL basis project untuk probe HTTP (opsional)
 $hddOverride = null;   // override MEEL_HDD_BASE untuk testing/CI (opsional)
 $color       = true;
@@ -67,7 +43,7 @@ HELP);
     }
 }
 
-// ── State & helper output ────────────────────────────────────────────────────
+// ─── State & helper output ───
 $passed = 0;
 $warned = 0;
 $failed = 0;
@@ -105,9 +81,7 @@ function cmd_output(string $cmd): ?string
     return is_string($out) && trim($out) !== '' ? $out : null;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
 // 1. MEEL_HDD_BASE
-// ═════════════════════════════════════════════════════════════════════════════
 section('1. MEEL_HDD_BASE (Media Storage)');
 
 $settingsFile = MEEL_ROOT . '/auth/settings.php';
@@ -124,13 +98,10 @@ if (!is_file($settingsFile)) {
     }
 }
 
-// Nilai efektif: override --hdd (jika ada) menang atas konstanta settings.php.
 $hdd = $hddOverride !== null
     ? $hddOverride
     : (defined('MEEL_HDD_BASE') ? (string) MEEL_HDD_BASE : '');
 
-// Saat override aktif, tetap lapor kondisi nilai ASLI di settings.php agar
-// testing/CI tidak memberi kepercayaan palsu pada konfigurasi yang sebenarnya
 // dibaca aplikasi (aplikasi tidak tahu apa-apa tentang --hdd).
 if ($hddOverride !== null && defined('MEEL_HDD_BASE') && (string) MEEL_HDD_BASE !== '') {
     $realHdd = (string) MEEL_HDD_BASE;
@@ -157,7 +128,7 @@ if ($hdd === '') {
 } else {
     report('PASS', "MEEL_HDD_BASE OK: {$hdd}" . ($hddOverride !== null ? ' (override --hdd)' : ''));
 
-    // ── Direktori turunan ──
+    // ─── Direktori turunan ───
     $derived = [
         'MEEL_HDD_VIDEO_UPLOAD' => 'video/upload',
         'MEEL_HDD_VIDEO_DIR'    => 'video/upload/video',
@@ -167,8 +138,7 @@ if ($hdd === '') {
         'MEEL_HDD_DRIVE'        => 'drive',
     ];
     foreach ($derived as $const => $rel) {
-        // Saat override aktif, path turunan dihitung dari override (konstanta
-        // settings.php menunjuk ke storage asli yang mungkin tidak ada).
+
         $dir = ($hddOverride !== null || !defined($const))
             ? $hdd . '/' . $rel
             : rtrim((string) constant($const), '/');
@@ -179,9 +149,7 @@ if ($hdd === '') {
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
 // 2. Upload Symlinks (books / music / video)
-// ═════════════════════════════════════════════════════════════════════════════
 section('2. Upload Symlinks (books / music / video)');
 
 foreach (['books', 'music', 'video'] as $m) {
@@ -211,9 +179,6 @@ foreach (['books', 'music', 'video'] as $m) {
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 3. .htaccess Upload Dirs (hardening — mirror cek security_test.php §7b)
-// ═════════════════════════════════════════════════════════════════════════════
 section('3. .htaccess Upload Dirs (hardening)');
 
 $requiredDirs = ['php_flag engine off', 'ForceType', 'Options -Indexes'];
@@ -241,9 +206,7 @@ foreach (['books/upload', 'music/upload', 'video/upload'] as $u) {
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
 // 4. mod_rewrite & PWA (sw.js → sw.js.php)
-// ═════════════════════════════════════════════════════════════════════════════
 section('4. mod_rewrite & PWA (sw.js → sw.js.php)');
 
 // 4a. Aturan rewrite di .htaccess root
@@ -300,7 +263,7 @@ $body = @file_get_contents($probeUrl, false, $ctx);
 $status = 0;
 $ct     = '';
 if (isset($http_response_header) && is_array($http_response_header)) {
-    // Ambil hanya kode status 3 digit dari baris pertama (mis. "HTTP/1.1 200 OK")
+
     if (preg_match('/\s(\d{3})\s/', $http_response_header[0] ?? '', $m)) {
         $status = (int) $m[1];
     }
@@ -326,9 +289,7 @@ if ($body === false) {
         : 'kode 404/403 — coba --url yang tepat untuk konfirmasi');
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
 // Ringkasan
-// ═════════════════════════════════════════════════════════════════════════════
 section('Ringkasan');
 echo '  PASS: ' . c('1;32', (string) $passed)
    . '  WARN: ' . c('1;33', (string) $warned)

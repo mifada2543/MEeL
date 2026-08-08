@@ -1,7 +1,4 @@
-/* ============================================================
- * mini-player.js — Mode mini-player
- * Depends on: state.js, player-init.js, shared/mini-player-popstate.js (meelMiniPlayerPopstate)
- * ============================================================ */
+/* mini-player.js — Mode mini-player */
 let isMiniPlayerActive = !1,
   watchUrl = window.location.href,
   savedWatchScrollY = 0,

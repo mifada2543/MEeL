@@ -3,23 +3,10 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers SwPrecache
- * Tests for manifest.php di setiap subfolder assets/css (daftar modul CSS)
- * dan generator precache service worker (SwPrecache):
- *  1. Setiap entri manifest harus merujuk file yang benar-benar ada.
- *  2. SEMUA folder modul yang punya manifest.php harus masuk precache SW —
- *     generator dinamis (SwPrecache) mengambilnya otomatis dari manifest.php,
- *     jadi menambah folder modul baru tidak perlu menyentuh sw.js lagi.
- *  3. Semua entri precache (aset tetap + modul) harus merujuk file yang ada.
- *  4. SW_VERSION hasil generator harus deterministik (tidak berubah antar
- *     pemanggilan) — penting agar browser tidak update SW tiap kunjungan.
  */
 class CssManifestTest extends TestCase
 {
-    /**
-     * Semua manifest.php di assets/css/<folder>/.
-     *
-     * @return array<string, array{0: string}>
-     */
+    /* @return array<string, array{0: string}> */
     public static function manifestProvider(): array
     {
         $out = [];
@@ -52,10 +39,6 @@ class CssManifestTest extends TestCase
     }
 
     /**
-     * Semua folder modul (yang punya manifest.php) harus ter-precache.
-     * Generator SwPrecache::moduleAssets() mengambilnya otomatis dari
-     * manifest.php — test ini menjaga agar list tetap sinkron.
-     *
      * @dataProvider manifestProvider
      */
     public function testAllManifestFoldersArePrecached(string $manifest): void
@@ -82,11 +65,6 @@ class CssManifestTest extends TestCase
         );
     }
 
-    /**
-     * Setiap entri precache (aset tetap + semua modul) harus ada di disk —
-     * mencegah daftar basi di SwPrecache::baseAssets() atau modul yang lupa
-     * di-upload merusak install service worker (cache.addAll gagal total).
-     */
     public function testAllPrecacheEntriesResolveToFile(): void
     {
         $missing = [];
@@ -102,11 +80,6 @@ class CssManifestTest extends TestCase
         );
     }
 
-    /**
-     * SW_VERSION harus deterministik: dua pemanggilan menghasilkan nilai sama.
-     * Format: v2-<hash 10 char>. Kalau tidak deterministik, browser akan
-     * melakukan update service worker pada SETIAP kunjungan.
-     */
     public function testSwVersionIsDeterministic(): void
     {
         $v1 = SwPrecache::version();

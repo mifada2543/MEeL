@@ -1,20 +1,11 @@
 <?php
-/**
- * fun-manage.php — Backend functions for user content management
- * 
- * Dipisah dari view (manage.php) agar lebih modular.
- * Menangani:
- * - Delete video/music (DB record only, files cleaned up later)
- * - Cleanup file yang dihapus >30 menit yang lalu
- */
-
-// ── Cegah akses langsung ─────────────────────────────────────────────────────
+// ─── Cegah akses langsung ───
 if (!defined('MEEL_MANAGE_ACCESS')) {
     header('HTTP/1.0 403 Forbidden');
     exit('Direct access not allowed.');
 }
 
-// ── Hapus Video ─────────────────────────────────────────────────────────────
+// ─── Hapus Video ───
 function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
 {
     // 1. Ambil data video (hanya jika milik user ini)
@@ -79,7 +70,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
     return ['success' => true, 'message' => 'Video dihapus. File akan dibersihkan otomatis.'];
 }
 
-// ── Hapus Music ─────────────────────────────────────────────────────────────
+// ─── Hapus Music ───
 function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
 {
     // 1. Ambil data music
@@ -135,7 +126,7 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
     return ['success' => true, 'message' => 'Musik dihapus. File akan dibersihkan otomatis.'];
 }
 
-// ── Simpan daftar file yang akan dihapus nanti ──────────────────────────────
+// ─── Simpan daftar file yang akan dihapus nanti ───
 function savePendingDeletions(array $pending): void
 {
     $file = __DIR__ . '/../../temp/pending_delete.json';
@@ -162,7 +153,7 @@ function savePendingDeletions(array $pending): void
     @file_put_contents($file, json_encode($existing, JSON_PRETTY_PRINT), LOCK_EX);
 }
 
-// ── Bersihkan file yang sudah >30 menit sejak dihapus ───────────────────────
+// ─── Bersihkan file yang sudah >30 menit sejak dihapus ───
 function cleanupPendingDeletions(): int
 {
     $file = __DIR__ . '/../../temp/pending_delete.json';
@@ -208,7 +199,7 @@ function cleanupPendingDeletions(): int
     return $cleaned;
 }
 
-// ── Hapus folder rekursif ───────────────────────────────────────────────────
+// ─── Hapus folder rekursif ───
 function removeDirectoryRecursive(string $dir): void
 {
     if (!is_dir($dir)) return;
@@ -221,7 +212,7 @@ function removeDirectoryRecursive(string $dir): void
     @rmdir($dir);
 }
 
-// ── Log activity ────────────────────────────────────────────────────────────
+// ─── Log activity ───
 function logActivity(mysqli $conn, int $user_id, string $action, string $media_type, int $media_id): void
 {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';

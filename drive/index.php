@@ -24,7 +24,6 @@ if ($user->isMember()) {
     $usagePercentage = min(100, ($usage / $limit) * 100);
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id" class="dark">
 
@@ -178,7 +177,6 @@ if ($user->isMember()) {
                     <button id="refreshBtn" onclick="refreshDrive()" class="p-2 hover:bg-gray-800 rounded-lg transition-all" title="Refresh data (grid + penyimpanan)"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                 </div>
             <?php endif; ?>
-
             <section class="upload-dropzone glass rounded-2xl p-6 mb-8 border-dashed border-2 border-gray-800 hover:border-blue-500/50 transition-colors" id="uploadDropzone">
                 <!-- Drop hint overlay (visible saat drag) -->
                 <div class="dropzone-hint" id="dropzoneHint">

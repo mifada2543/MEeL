@@ -1,15 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * index/main.js — Entry point folder index/ (halaman music/index.php).
- * PENTING:
- *  - main.js HARUS di-include TANPA atribut defer/async — document.write
- *    dari script async/defer diabaikan browser.
- *  - Versi (?v=) pada URL main.js diteruskan ke tiap sibling agar
- *    cache-busting (SW cache-first + Cache-Control immutable) tetap
- *    berfungsi. Halaman mem-pass versi = max filemtime seluruh folder.
- * ──────────────────────────────────────────────────────────────── */
+/* index/main.js — Entry point folder index/ (halaman music/index.php). */
 (function () {
   'use strict';
   if (document.readyState !== 'loading') return;

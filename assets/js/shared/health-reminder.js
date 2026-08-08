@@ -1,13 +1,9 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ============================================================
- * health-reminder.js — Mode Sehat 20-20-20 (pengingat istirahat mata)
- * Aturan 20-20-20: setiap 20 menit menatap layar, istirahatlah
- * dengan memandang objek sejauh ≥ 6 meter (20 kaki) selama 20 detik.
- * ============================================================ */
-/* ── State global (variabel global agar konsisten antar fungsi) ─────────── */
-var healthReminderTimer = null;          
+/* health-reminder.js — Mode Sehat 20-20-20 (pengingat istirahat mata) */
+/* ─── State global (variabel global agar konsisten antar fungsi) ─── */
+var healthReminderTimer = null;
 var HEALTH_INTERVAL_MS  = 12e5;          // 1.200.000 ms = 20 menit
 function formatHealthRemaining(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -23,11 +19,8 @@ function logHealthDebug(msg) {
 }
 window.meelHealthAlertActive = false;
 window.meelHealthReminderStarted = false;
-/* ============================================================
- * 1) TOGGLE — tombol "Mode 20-20-20" di halaman hub (index.php)
- * ============================================================ */
-/** Balik status mode sehat ON/OFF lalu simpan ke localStorage.
- * Asli (minified): toggleHealth */
+/* 1) TOGGLE — tombol "Mode 20-20-20" di halaman hub (index.php) */
+/* Balik status mode sehat ON/OFF lalu simpan ke localStorage. */
 function toggleHealth() {
   const enabled = !(localStorage.getItem("health_reminder") === "true");
   localStorage.setItem("health_reminder", String(enabled));
@@ -42,8 +35,7 @@ function toggleHealth() {
     window.meelHealthReminderStarted = false;
   }
 }
-/** Sinkronkan tampilan tombol #healthToggle (pill hijau "ON" / merah "OFF")
- * dan pasang handler klik pada tombol tersebut. */
+/* Sinkronkan tampilan tombol #healthToggle (pill hijau "ON" / merah "OFF") */
 function updateHealthToggleButton() {
   const btn = document.getElementById("healthToggle");
   if (!btn) return;
@@ -62,14 +54,9 @@ function updateHealthToggleButton() {
     btn.innerText = "OFF";
   }
 }
-/* ============================================================
- * 2) PENJADWALAN — hitung mundur menuju alarm berikutnya
- * ============================================================ */
+/* 2) PENJADWALAN — hitung mundur menuju alarm berikutnya */
 
-/**
- * Jadwalkan alarm berikutnya: target = sekarang + 20 menit.
- * Asli (minified): scheduleNextHealthAlert
- */
+/* Jadwalkan alarm berikutnya: target = sekarang + 20 menit. */
 function scheduleNextHealthAlert() {
   const target = Date.now() + HEALTH_INTERVAL_MS;
   localStorage.setItem("health_target_time", String(target));
@@ -80,11 +67,7 @@ function scheduleNextHealthAlert() {
   startHealthCountdown();
 }
 
-/**
- * Pasang setTimeout hingga target waktu tercapai. Target tersimpan di
- * localStorage sehingga countdown bertahan walau pindah halaman.
- * Asli (minified): startHealthCountdown
- */
+/* Pasang setTimeout hingga target waktu tercapai. Target tersimpan di */
 function startHealthCountdown() {
   clearTimeout(healthReminderTimer);
 
@@ -107,12 +90,7 @@ function startHealthCountdown() {
   }
 }
 
-/**
- * Inisialisasi reminder pada tiap halaman (dipanggil saat DOM ready).
- * Hanya aktif jika mode sedang ON di localStorage, dan hanya dijalankan
- * sekali per sesi halaman (guard `meelHealthReminderStarted`).
- * Asli (minified): startHealthReminder
- */
+/* Inisialisasi reminder pada tiap halaman (dipanggil saat DOM ready). */
 function startHealthReminder() {
   if (window.meelHealthReminderStarted) return;
   if (localStorage.getItem("health_reminder") !== "true") return;
@@ -121,16 +99,9 @@ function startHealthReminder() {
   startHealthCountdown();
 }
 
-/* ============================================================
- * 3) DETEKSI PLAYER AKTIF
- * ============================================================ */
+/* 3) DETEKSI PLAYER AKTIF */
 
-/**
- * Cek apakah ada media (video/audio) yang sedang diputar.
- * Alarm TIDAK muncul jika tidak ada yang sedang ditonton/didengar —
- * ini menghindari gangguan saat user sekadar browsing.
- * Asli (minified): isPlayerActive
- */
+/* Cek apakah ada media (video/audio) yang sedang diputar. */
 function isPlayerActive() {
   const hasAnyMedia =
     window.player ||
@@ -159,12 +130,8 @@ function isPlayerActive() {
   return false;
 }
 
-/* ============================================================
- * 3b) KOORDINASI ANTAR-TAB — cegah alarm ganda
- * ============================================================ */
+/* 3b) KOORDINASI ANTAR-TAB — cegah alarm ganda */
 
-// Saluran antar-tab: memberitahu tab lain untuk pause/resume pemutaran saat
-// alarm tampil (BroadcastChannel). Jika tidak didukung → diabaikan dengan
 // aman (perilaku lama: hanya tab pemenang yang dijeda).
 var healthAlertChannel = null;
 if (typeof BroadcastChannel !== "undefined") {
@@ -172,7 +139,6 @@ if (typeof BroadcastChannel !== "undefined") {
     healthAlertChannel = new BroadcastChannel("meel_health_alert");
     healthAlertChannel.onmessage = function (event) {
       if (event.data === "pause") {
-        // Tab lain ikut masuk "mode jeda": kunci keyboard & tolak semua
         // pemutaran di tab ini juga (bukan hanya pause sekali).
         window.meelHealthAlertActive = true;
         startBreakEnforcement();
@@ -188,8 +154,6 @@ if (typeof BroadcastChannel !== "undefined") {
   }
 }
 
-// Media di tab ini yang di-pause karena perintah antar-tab (untuk di-resume
-// setelah jeda selesai). null = tidak ada media yang di-pause perintah ini.
 var healthPausedMedia = null;
 
 function broadcastHealthCommand(cmd) {
@@ -223,13 +187,7 @@ function resumeMediaAfterHealthBreak() {
   else if (m.el) m.el.play().catch(() => {});
 }
 
-/**
- * Amankan "lock" antar-tab via Web Locks API: hanya satu tab yang boleh
- * menampilkan alarm pada satu waktu. Lock ditahan selama Promise yang
- * dikembalikan `task` belum selesai (seluruh rangkaian modal).
- * Fallback: browser tanpa Web Locks → `task` langsung dijalankan
- * (perilaku lama / tab tunggal).
- */
+/* Amankan "lock" antar-tab via Web Locks API: hanya satu tab yang boleh */
 function acquireHealthAlertLock(task) {
   if (
     typeof navigator !== "undefined" &&
@@ -253,14 +211,7 @@ function acquireHealthAlertLock(task) {
   task(); // tanpa Web Locks → perilaku lama
 }
 
-/* ── Penegakan mode jeda: tolak SEMUA pemutaran media ──
- * Dipakai oleh tab pemenang (saat alarm tampil) dan oleh tab lain
- * (via pesan BroadcastChannel 'pause'). Cara kerja:
- *   1. Intercept event 'play'/'playing' di level document (capture) —
- *      elemen media apa pun yang mencoba berputar langsung di-pause.
- *   2. Watchdog tiap 500 ms — mem-pause ulang media yang lolos
- *      (loop, autoplay programatik, resume otomatis, dsb).
- * Berhenti otomatis saat flag meelHealthAlertActive menjadi false. */
+/* ─── Penegakan mode jeda: tolak SEMUA pemutaran media ─── */
 var breakEnforceTimer = null;
 var breakPlayBlock = null;
 
@@ -300,29 +251,7 @@ function stopBreakEnforcement() {
   }
 }
 
-/* ============================================================
- * 3c) MODE MEMBACA (books) — BANNER 20-20-20 yang lembut
- * ============================================================
- * Halaman buku (books/read.php) TIDAK memutar media apa pun, sehingga
- * isPlayerActive() selalu false dan alarm biasa tidak pernah muncul.
- * Halaman tersebut menyetel `window.meelHealthActivityMode = "reading"`
- * (inline, sebelum health-reminder.js di-load).
- *
- * Saat mode membaca aktif dan alarm tiba, kita menampilkan BANNER di
- * bagian atas halaman — bukan modal paksa. Banner:
- *   - meluncur masuk dari atas, terlihat selama 20 detik, lalu hilang
- *     sendiri ("seperti iklan lewat"), tanpa mengharuskan klik;
- *   - punya garis countdown hijau di paling atas yang menyusut 100% → 0%
- *     selama 20 detik, sinkron dengan timer auto-hide;
- *   - bisa ditutup manual lewat tombol ✕;
- *   - TIDAK memblokir keyboard / scroll / pemutaran apa pun;
- *   - setelah selesai → jadwalkan alarm berikutnya (+20 menit).
- *
- * "Sedang membaca?" ditentukan via deteksi idle: ada aktivitas
- * (scroll/klik/ketik) dalam 60 detik terakhir. Jika user meninggalkan
- * halaman (idle), banner tidak muncul — konsisten dengan filosofi
- * isPlayerActive() yang tidak mengganggu saat tidak ada aktivitas.
- */
+/* 3c) MODE MEMBACA (books) — BANNER 20-20-20 yang lembut */
 
 var healthReadingLastActivity = 0;    // ts (ms) aktivitas baca terakhir
 var HEALTH_READING_IDLE_MS = 6e4;     // 60.000 ms = 1 menit idle
@@ -332,28 +261,24 @@ var healthBannerResolve = null;       // resolve Promise lock banner
 var healthBannerRemoving = false;     // true saat banner sedang fade-out
 var HEALTH_BANNER_MS = 2e4;           // 20.000 ms banner tampil
 
-/** Mode membaca aktif? (diset halaman books via window flag). */
+/* * Mode membaca aktif? (diset halaman books via window flag). */
 function isReadingModeActive() {
   return window.meelHealthActivityMode === "reading";
 }
 
-/** Tandai aktivitas baca terakhir (dipanggil tiap scroll/klik/ketik). */
+/* * Tandai aktivitas baca terakhir (dipanggil tiap scroll/klik/ketik). */
 function markHealthReadingActivity() {
   healthReadingLastActivity = Date.now();
 }
 
-/**
- * Apakah user sedang aktif membaca? (aktivitas dalam 60 detik terakhir
- * dan halaman masih terlihat). Jika belum pernah ada aktivitas tercatat
- * → anggap aktif (halaman baru).
- */
+/* Apakah user sedang aktif membaca? (aktivitas dalam 60 detik terakhir */
 function isReadingActivityActive() {
   if (document.hidden) return false; // tab tidak aktif → jangan ganggu
   if (!healthReadingLastActivity) return true;
   return Date.now() - healthReadingLastActivity <= HEALTH_READING_IDLE_MS;
 }
 
-/** Pasang pendeteksi aktivitas baca (hanya jika mode reading). */
+/* * Pasang pendeteksi aktivitas baca (hanya jika mode reading). */
 function setupReadingActivityTracking() {
   if (!isReadingModeActive()) return;
   var mark = markHealthReadingActivity;
@@ -363,11 +288,7 @@ function setupReadingActivityTracking() {
   markHealthReadingActivity();
 }
 
-/**
- * Tampilkan banner 20-20-20 (mode membaca). Mengembalikan Promise agar
- * lock antar-tab ditahan sampai banner selesai (cegah banner ganda).
- * Banner auto-hide setelah HEALTH_BANNER_MS dan bisa ditutup manual.
- */
+/* Tampilkan banner 20-20-20 (mode membaca). Mengembalikan Promise agar */
 function runReadingHealthBanner() {
   if (healthBannerEl || healthBannerRemoving) return Promise.resolve(); // sudah ada banner
 
@@ -394,9 +315,6 @@ function runReadingHealthBanner() {
     "overflow:hidden;" + // garis progress di top:0 tidak keluar dari sudut membulat
     "color:#fff;font-family:ui-sans-serif,system-ui,sans-serif;";
   banner.innerHTML =
-    // Garis countdown hijau di paling atas banner: menyusut 100% → 0% selama
-    // HEALTH_BANNER_MS (20 detik), sinkron dengan auto-hide. Elemen dibuat di
-    // sini dengan width awal 100%; lebar-nya diubah ke 0% di rAF di bawah agar
     // transisi linear berjalan dari penuh → kosong.
     '<div id="meel-health-banner-progress" style="position:absolute;top:0;left:0;' +
     'height:3px;width:100%;background:#10b981;' +
@@ -422,11 +340,9 @@ function runReadingHealthBanner() {
   (document.body || document.head).appendChild(banner);
   healthBannerEl = banner;
 
-  // Animasi masuk (rAF agar transition/animasi berjalan di browser).
   if (typeof requestAnimationFrame !== "undefined") {
     requestAnimationFrame(function () {
       banner.style.animation = "meelBannerSlideIn .35s ease forwards";
-      // Mulai countdown garis hijau: dari penuh (100%) menyusut ke 0% selama
       // 20 detik — transisi linear, sinkron dengan timer auto-hide.
       var prog = banner.querySelector("#meel-health-banner-progress");
       if (prog) prog.style.width = "0%";
@@ -437,7 +353,6 @@ function runReadingHealthBanner() {
     if (progFallback) progFallback.style.width = "0%";
   }
 
-  // Auto-hide 20 detik + tombol tutup manual → jalur dismiss yang sama.
   healthBannerHideTimer = setTimeout(dismissHealthReadingBanner, HEALTH_BANNER_MS);
   var closeBtn = banner.querySelector(".meel-health-banner-close");
   if (closeBtn) closeBtn.addEventListener("click", dismissHealthReadingBanner);
@@ -448,11 +363,7 @@ function runReadingHealthBanner() {
   });
 }
 
-/**
- * Tutup/hilangkan banner, lalu jadwalkan alarm berikutnya.
- * Dipanggil oleh timer auto-hide (20 detik) dan tombol tutup.
- * `doSchedule=false` dipakai saat mode dimatikan (jangan buat target baru).
- */
+/* Tutup/hilangkan banner, lalu jadwalkan alarm berikutnya. */
 function dismissHealthReadingBanner(doSchedule) {
   if (!healthBannerEl || healthBannerRemoving) return;
   clearTimeout(healthBannerHideTimer);
@@ -474,12 +385,7 @@ function dismissHealthReadingBanner(doSchedule) {
   }
 }
 
-/**
- * Jalur ramping untuk pagehide: halaman sedang dibongkar, jadi animasi
- * fade-out + timer 300ms tidak perlu. Langsung jadwalkan ulang +20 menit,
- * lepas state banner, dan resolve lock — tanpa meninggalkan
- * `healthBannerRemoving` yang menggantung (aman untuk bfcache restore).
- */
+/* Jalur ramping untuk pagehide: halaman sedang dibongkar, jadi animasi */
 function finalizeReadingBannerOnLeave() {
   if (!healthBannerEl || healthBannerRemoving) return;
   clearTimeout(healthBannerHideTimer);
@@ -497,23 +403,10 @@ function finalizeReadingBannerOnLeave() {
   }
 }
 
-/* ============================================================
- * 4) ALARM UTAMA — pause, tampilkan modal 20-20-20, countdown 20s
- * ============================================================ */
+/* 4) ALARM UTAMA — pause, tampilkan modal 20-20-20, countdown 20s */
 
-/**
- * Pemicu utama mode sehat:
- *   1. Pause pemutar & blokir kontrol selama jeda.
- *   2. Keluar dari fullscreen agar user bisa memandang ke kejauhan.
- *   3. Tampilkan modal instruksi 20-20-20 (auto-dismiss 5 menit).
- *   4. Jika user memilih "SAYA MAU JEDA" → countdown 20 detik.
- *   5. Resume pemutaran + kembali fullscreen + jadwalkan alarm berikutnya.
- *
- * Asli (minified): triggerPremiumHealthAlert
- */
+/* Pemicu utama mode sehat: */
 function triggerPremiumHealthAlert() {
-  // Jika target alarm sudah bergeser ke masa depan, berarti tab lain sudah
-  // menangani siklus ini → cukup sinkronkan timer, JANGAN tampilkan alarm
   // lagi (mencegah alarm ganda saat beberapa tab terbuka).
   const targetRaw = localStorage.getItem("health_target_time");
   if (targetRaw && parseInt(targetRaw, 10) - Date.now() > 0) {
@@ -523,13 +416,12 @@ function triggerPremiumHealthAlert() {
 
   // Tidak ada media yang diputar:
   if (!isPlayerActive()) {
-    // Mode membaca (books): tidak butuh media & tidak butuh SweetAlert2 →
     // tampilkan BANNER lembut jika user sedang aktif membaca.
     if (isReadingModeActive() && isReadingActivityActive()) {
       acquireHealthAlertLock(() => runReadingHealthBanner());
       return;
     }
-    // Tidak ada aktivitas baca / bukan mode membaca → tunda 30 detik, coba lagi.
+
     healthReminderTimer = setTimeout(triggerPremiumHealthAlert, 3e4); // 30.000 ms
     return;
   }
@@ -540,22 +432,14 @@ function triggerPremiumHealthAlert() {
     return;
   }
 
-  // Lock antar-tab (Web Locks API): hanya SATU tab yang boleh menampilkan
-  // alarm pada satu waktu. Tab yang kalah tidak menampilkan apa pun — ia
-  // akan disinkronkan ulang lewat event 'storage' saat tab pemenang selesai.
   acquireHealthAlertLock(() => {
     runHealthAlertFlow();
   });
 }
 
-/**
- * Rangkaian alarm lengkap (pause → modal 20-20-20 → countdown → resume +
- * jadwalkan ulang). Hanya dipanggil oleh tab PEMENANG lock. Mengembalikan
- * Promise agar lock ditahan selama proses berlangsung.
- * Asli (minified): isi dari triggerPremiumHealthAlert
- */
+/* Rangkaian alarm lengkap (pause → modal 20-20-20 → countdown → resume + */
 function runHealthAlertFlow() {
-  // Cari elemen media aktif (urutan: video utama, audio utama, fullscreen, lainnya).
+
   let media = document.getElementById("main-video") || document.getElementById("main-player");
   if (!media && document.fullscreenElement) {
     media = document.fullscreenElement.querySelector("video, audio");
@@ -567,17 +451,12 @@ function runHealthAlertFlow() {
     }
   }
 
-  // Tandai jeda aktif (player lain memakai flag ini untuk memblokir kontrol).
   window.meelHealthAlertActive = true;
 
-  // Tolak SEMUA bentuk pemutaran selama jeda (play/playing dari elemen
-  // media mana pun, loop, autoplay, dsb.) via listener capture + watchdog.
   startBreakEnforcement();
 
-  // Beri tahu tab lain agar ikut masuk mode jeda (tanpa menampilkan modal).
   broadcastHealthCommand("pause");
 
-  // Play-trap: jika ada upaya play selama modal terbuka, langsung pause lagi.
   const pauseTrap = function () {
     if (window.meelHealthAlertActive) {
       if (window.player) window.player.pause();
@@ -587,7 +466,6 @@ function runHealthAlertFlow() {
   if (window.player) window.player.on("play", pauseTrap);
   else if (media) media.addEventListener("play", pauseTrap);
 
-  // Pause sekarang — catat apakah tadi sedang diputar agar bisa di-resume.
   let wasPlaying = false;
   if (window.player) {
     if (!window.player.paused) { window.player.pause(); wasPlaying = true; }
@@ -596,7 +474,6 @@ function runHealthAlertFlow() {
     wasPlaying = true;
   }
 
-  // Helper resume: lepas play-trap, lanjutkan putar bila tadi diputar.
   const resume = () => {
     window.meelHealthAlertActive = false;
     stopBreakEnforcement();
@@ -610,12 +487,10 @@ function runHealthAlertFlow() {
     broadcastHealthCommand("resume");
   };
 
-  // Apakah sedang fullscreen? (keluar saat jeda, masuk lagi setelah selesai)
   const wasFullscreen =
     !!document.fullscreenElement ||
     (window.player && window.player.fullscreen && window.player.fullscreen.active);
 
-  // Helper re-enter fullscreen (dipakai di semua cabang penyelesaian).
   const reenterFullscreen = () => {
     if (!wasFullscreen) return;
     if (window.player && window.player.fullscreen) {
@@ -625,7 +500,7 @@ function runHealthAlertFlow() {
     }
   };
 
-  // ── Modal 1: instruksi 20-20-20 ──
+  // ─── Modal 1: instruksi 20-20-20 ───
   return Swal.fire({
     title: "WAKTUNYA ISTIRAHATKAN MATA!",
     html: `
@@ -658,8 +533,6 @@ function runHealthAlertFlow() {
     buttonsStyling: false,
     allowOutsideClick: false,
     timer: 3e5, // 300.000 ms = 5 menit (auto-tutup jika user tidak merespons)
-    // Progress bar bawaan SweetAlert: menampilkan durasi menunggu 5 menit
-    // secara visual (menyusut dari 100% → 0% seiring berjalannya waktu).
     timerProgressBar: true,
     customClass: {
       popup: "border border-red-600/25 border-t-2 border-t-red-600 rounded-2xl shadow-2xl",
@@ -670,11 +543,11 @@ function runHealthAlertFlow() {
       cancelButton: "flex-1 bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-black uppercase tracking-wider py-2.5 rounded-xl border border-white/10 cursor-pointer transition-all",
     },
     didOpen: () => {
-      // Warna progress bar bawaan mengikuti tema merah peringatan modal ini.
+
       const tpBar = document.querySelector(".swal2-timer-progress-bar");
       if (tpBar) tpBar.style.background = "#dc2626";
       if (typeof lucide !== "undefined") lucide.createIcons();
-      // Keluar dari fullscreen agar user benar-benar bisa memandang ke kejauhan.
+
       if (wasFullscreen) {
         if (window.player && window.player.fullscreen && window.player.fullscreen.active) {
           window.player.fullscreen.exit();
@@ -685,7 +558,7 @@ function runHealthAlertFlow() {
     },
   }).then((result) => {
     if (result.isConfirmed) {
-      // ── Modal 2: countdown 20 detik relaksasi ──
+      // ─── Modal 2: countdown 20 detik relaksasi ───
       let countdownInterval;
       Swal.fire({
         title: "RELAKSASI DIMULAI",
@@ -700,7 +573,6 @@ function runHealthAlertFlow() {
         background: "#141820",
         color: "#ffffff",
         timer: 2e4, // 20.000 ms = 20 detik (durasi relaksasi 20-20-20)
-        // Progress bar bawaan SweetAlert: menampilkan durasi 20 detik secara
         // visual (menyusut dari 100% → 0% seiring berjalannya waktu).
         timerProgressBar: true,
         showConfirmButton: false,
@@ -724,7 +596,7 @@ function runHealthAlertFlow() {
           clearInterval(countdownInterval);
         },
       }).then(() => {
-        // ── Modal 3: konfirmasi selesai, lalu resume ──
+        // ─── Modal 3: konfirmasi selesai, lalu resume ───
         Swal.fire({
           title: "SELESAI!",
           text: "Mata Anda kembali bugar. Selamat menonton kembali!",
@@ -753,10 +625,7 @@ function runHealthAlertFlow() {
       reenterFullscreen();
       scheduleNextHealthAlert();
     } else if (result.dismiss === Swal.DismissReason.timer) {
-      // Auto-dismiss 5 menit (user tidak merespons) → resume & jadwalkan
       // alarm berikutnya, konsisten dengan cabang confirm/cancel.
-      // (Perbaikan disengaja: versi minified asli TIDAK menjadwalkan ulang
-      // di cabang ini, sehingga alarm berhenti total sampai halaman di-reload.)
       resume();
       reenterFullscreen();
       scheduleNextHealthAlert();
@@ -764,18 +633,9 @@ function runHealthAlertFlow() {
   });
 }
 
-/* ============================================================
- * 5) BLOKIR SHORTCUT PLAYER — selama modal jeda terbuka
- * ============================================================ */
+/* 5) BLOKIR SHORTCUT PLAYER — selama modal jeda terbuka */
 
-// Mode agresif: blokir SEMUA input keyboard selama modal jeda terbuka.
-// - Tombol shortcut player apa pun (spasi, k, j, l, m, f, n, panah, dst.)
-// - Escape (mencegah keluar paksa dari modal sebelum istirahat selesai)
-// - Tombol lain apa pun yang bisa memicu auto-next / loop / expand player
-// Kecuali: mengetik di kolom teks (INPUT/TEXTAREA/contenteditable) agar
 // user tidak terkunci saat mengetik komentar di tab lain.
-// Dipasang di window (capture) DAN document (capture) agar menang lebih
-// dulu dari handler player mana pun — health-reminder.js dimuat lebih awal
 // daripada script player di halaman music/video.
 function meelHealthKeydownBlock(e) {
   if (!window.meelHealthAlertActive) return;
@@ -794,18 +654,13 @@ function meelHealthKeydownBlock(e) {
 window.addEventListener("keydown", meelHealthKeydownBlock, true);
 document.addEventListener("keydown", meelHealthKeydownBlock, true);
 
-/* ============================================================
- * 6) INIT — jalankan saat DOM siap di tiap halaman
- * ============================================================ */
+/* 6) INIT — jalankan saat DOM siap di tiap halaman */
 document.addEventListener("DOMContentLoaded", () => {
   startHealthReminder();      // lanjutkan countdown dari localStorage (jika mode ON)
   updateHealthToggleButton(); // sinkronkan tombol toggle (halaman hub)
   setupReadingActivityTracking(); // mode membaca (books): deteksi idle 60s
 });
 
-// Sinkronisasi antar-tab: event 'storage' hanya terpicu di tab LAIN ketika
-// sebuah tab menulis ke localStorage. Tab yang kalah lock memakai ini untuk
-// menyelaraskan timer begitu tab pemenang selesai (target diperbarui), atau
 // berhenti total jika mode dimatikan dari tab lain.
 window.addEventListener("storage", function (e) {
   if (e.key !== "health_target_time" && e.key !== "health_reminder") return;
@@ -815,17 +670,11 @@ window.addEventListener("storage", function (e) {
   } else {
     clearTimeout(healthReminderTimer);
     window.meelHealthReminderStarted = false;
-    // Mode dimatikan dari tab lain → tutup banner yang mungkin tampil.
+
     dismissHealthReadingBanner(false);
   }
 });
 
-// Jika user PINDAH halaman (klik "Selanjutnya" chapter, refresh, atau tutup
-// tab) saat banner reading masih tampil → perlakukan banner sebagai "sudah
-// lewat": jadwalkan ulang alarm +20 menit. Tanpa ini, target lama (masa lalu)
-// terbawa ke halaman berikutnya sehingga "Target sudah lewat → langsung
-// menampilkan alarm" muncul lagi di tiap chapter — padahal user menganggap
-// banner sudah ia lewati. Hanya memengaruhi banner reading (healthBannerEl),
 // tidak menyentuh jalur media video/music.
 window.addEventListener("pagehide", function () {
   finalizeReadingBannerOnLeave();

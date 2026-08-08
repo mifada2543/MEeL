@@ -1,15 +1,11 @@
 <?php
-
-/** auth/partials/auth_mfa_footer.php — penutup halaman MFA (setup & verify)
- * Digunakan oleh: auth/mfa_setup.php, auth/mfa_verify.php */
 ?>
 <!-- Copyright -->
 <p class="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
 </main>
 
 <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-<script>
-    lucide.createIcons();
+<script>    lucide.createIcons();
     const mfaCodeInput = document.getElementById('code');
     if (mfaCodeInput) {
         mfaCodeInput.focus();

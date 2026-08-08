@@ -1,14 +1,5 @@
 <?php
-/**
- * modules/exceptions/ProcessException.php
- *
- * Exception spesifik untuk kegagalan proses eksternal
- * (yt-dlp, FFmpeg, ffprobe, shell commands).
- *
- * Menyimpan konteks tambahan: command, return code, output.
- *
- * @package MEeL\Exceptions
- */
+/* @package MEeL\Exceptions */
 
 class ProcessException extends \RuntimeException
 {
@@ -45,9 +36,7 @@ class ProcessException extends \RuntimeException
         return $this->output;
     }
 
-    /**
-     * Buat ProcessException dari hasil exec().
-     */
+    /* Buat ProcessException dari hasil exec(). */
     public static function fromExec(string $command, int $exitCode, array $output): self
     {
         $lastLines = implode(' | ', array_slice($output, -3));
@@ -59,9 +48,7 @@ class ProcessException extends \RuntimeException
         );
     }
 
-    /**
-     * Buat ProcessException dari hasil proc_close().
-     */
+    /* Buat ProcessException dari hasil proc_close(). */
     public static function fromProcClose(string $command, int $exitCode, string $output = ''): self
     {
         $lastLines = implode(' | ', array_slice(explode("\n", $output), -3));

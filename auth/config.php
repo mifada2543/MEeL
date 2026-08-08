@@ -1,5 +1,4 @@
 <?php
-
 /**
  * MEeL-HUB — Konfigurasi Aplikasi (Entry Point)
  *
@@ -15,9 +14,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-// ════════════════════════════════════════════════════════════════
 // PURE CONFIG (DATA) — DB credentials + MEEL_* constants
-// ════════════════════════════════════════════════════════════════
 $meel_settings = __DIR__ . '/settings.php';
 if (!file_exists($meel_settings)) {
     die("[MEeL SYSTEM ERROR]\nFile auth/settings.php tidak ditemukan.\n"
@@ -25,13 +22,9 @@ if (!file_exists($meel_settings)) {
         . "  cp auth/settings.example.php auth/settings.php");
 }
 require_once $meel_settings;
-// ════════════════════════════════════════════════════════════════
 // BOOTSTRAP (Error Handling)
-// ════════════════════════════════════════════════════════════════
 require_once __DIR__ . '/../modules/core/bootstrap.php';
-// ════════════════════════════════════════════════════════════════
 // DATABASE CONNECTION
-// ════════════════════════════════════════════════════════════════
 // Hanya connect jika $conn belum ada — aman di-include berkali-kali
 // Credentials diambil dari settings.php ($server, $username, dll.)
 /** @var string $server   Host DB (dari settings.php) */
@@ -47,16 +40,12 @@ if (!isset($conn) || $conn === null) {
     // Jepang, dll. tersimpan/terbaca dengan benar).
     $conn->set_charset('utf8mb4');
 }
-// ════════════════════════════════════════════════════════════════
 // BASE URL (PATH PORTABILITY)
-// ════════════════════════════════════════════════════════════════
 if (!defined('MEEL_BASE_URL')) {
     require_once __DIR__ . '/../modules/core/base_url.php';
     define('MEEL_BASE_URL', meel_base_url_path());
 }
-// ════════════════════════════════════════════════════════════════
 // SESSION CONFIGURATION
-// ════════════════════════════════════════════════════════════════
 if (session_status() === PHP_SESSION_NONE) {
     $timeout = 43200; // 12 jam
     ini_set('session.gc_maxlifetime', $timeout);
@@ -72,13 +61,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_name('meel');
     session_start();
 }
-// ════════════════════════════════════════════════════════════════
 // AUTOLOADER & HELPERS
-// ════════════════════════════════════════════════════════════════
 require_once __DIR__ . '/../modules/autoload.php';
 // Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
 require_once __DIR__ . '/../modules/core/helpers.php';
-// ── Security Headers ──
+// ─── Security Headers ───
 if (!headers_sent()) {
     header("X-Frame-Options: SAMEORIGIN");
     header("X-Content-Type-Options: nosniff");
@@ -95,11 +82,11 @@ if (!headers_sent()) {
     $csp_worker_src = "worker-src 'self' blob:";
     header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-src 'self' blob:; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; {$csp_script_src}; {$csp_worker_src}");
 }
-// ── CSRF Token ──
+// ─── CSRF Token ───
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-// ── Session Timeout Check (12 jam) ──
+// ─── Session Timeout Check (12 jam) ───
 if (isset($_SESSION['LAST_ACTIVITY'])) {
     $elapsed_time = time() - $_SESSION['LAST_ACTIVITY'];
     if ($elapsed_time > 43200) {
@@ -110,7 +97,7 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
     }
 }
 $_SESSION['LAST_ACTIVITY'] = time();
-// ── Activity Logger (skip di CLI — tidak ada HTTP request) ──
+// ─── Activity Logger (skip di CLI — tidak ada HTTP request) ───
 if (PHP_SAPI !== 'cli') {
     include_once __DIR__ . '/../modules/core/activity_logger.php';
 }

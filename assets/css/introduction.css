@@ -39,7 +39,7 @@ body {
   display: flex;
   flex-direction: row;
 }
-/* ── Noise texture overlay ── */
+/* ─── Noise texture overlay ─── */
 body::before {
   content: "";
   position: fixed;
@@ -48,7 +48,7 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-/* ── Animated scanline glow ── */
+/* ─── Animated scanline glow ─── */
 body::after {
   content: "";
   position: fixed;
@@ -69,7 +69,7 @@ body::after {
     opacity: 0.8;
   }
 }
-/* ── Reading Progress Bar ── */
+/* ─── Reading Progress Bar ─── */
 #reading-progress {
   position: fixed;
   top: 0;
@@ -81,7 +81,7 @@ body::after {
   transition: width 0.1s linear;
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
-/* ── Mobile Hamburger ── */
+/* ─── Mobile Hamburger ─── */
 #hamburger {
   display: none;
   position: fixed;
@@ -115,7 +115,7 @@ body::after {
   transform: rotate(90deg);
   color: var(--white);
 }
-/* ── Sidebar Overlay (mobile) ── */
+/* ─── Sidebar Overlay (mobile) ─── */
 #sidebar-overlay {
   display: none;
   position: fixed;
@@ -129,7 +129,7 @@ body::after {
 #sidebar-overlay.open {
   opacity: 1;
 }
-/* ── SIDEBAR ── */
+/* ─── SIDEBAR ─── */
 .sidebar {
   width: 256px;
   flex-shrink: 0;
@@ -322,7 +322,7 @@ body::after {
   border-color: rgba(255, 255, 255, 0.12);
   color: var(--text);
 }
-/* ── MAIN ── */
+/* ─── MAIN ─── */
 .main {
   flex: 1;
   height: 100vh;
@@ -349,7 +349,7 @@ body::after {
   margin: 0 auto;
   padding: 44px 32px 64px;
 }
-/* ── GUIDE SECTIONS ── */
+/* ─── GUIDE SECTIONS ─── */
 .guide-section {
   display: none;
 }
@@ -411,7 +411,7 @@ body::after {
   line-height: 1.7;
   max-width: 560px;
 }
-/* ── CONTENT CARDS ── */
+/* ─── CONTENT CARDS ─── */
 .content-card {
   background: rgba(13, 16, 23, 0.75);
   backdrop-filter: blur(20px);
@@ -453,7 +453,7 @@ body::after {
 .content-card:nth-child(4) {
   animation-delay: 180ms;
 }
-/* ── Card Header ── */
+/* ─── Card Header ─── */
 .content-card-header {
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
@@ -486,7 +486,7 @@ body::after {
   color: var(--muted);
   margin-top: 2px;
 }
-/* ── Screenshots ── */
+/* ─── Screenshots ─── */
 .screenshot-wrap {
   padding: 16px;
   background: rgba(0, 0, 0, 0.2);
@@ -534,7 +534,7 @@ body::after {
   transform: scale(1.015);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
-/* ── Annotations ── */
+/* ─── Annotations ─── */
 .annotation-list {
   padding: 14px 20px 18px;
   display: flex;
@@ -602,7 +602,7 @@ body::after {
   color: var(--muted);
   line-height: 1.55;
 }
-/* ── Keyboard Shortcuts ── */
+/* ─── Keyboard Shortcuts ─── */
 .shortcuts-grid {
   padding: 16px 20px;
   display: grid;
@@ -659,7 +659,7 @@ body::after {
   color: var(--muted);
   line-height: 1.4;
 }
-/* ── LIGHTBOX ── */
+/* ─── LIGHTBOX ─── */
 #lightbox {
   display: none;
   position: fixed;
@@ -726,7 +726,7 @@ body::after {
 #lightbox-close:active {
   transform: scale(0.92);
 }
-/* ── RESPONSIVE: < 768px ── */
+/* ─── RESPONSIVE: < 768px ─── */
 @media (max-width: 768px) {
   #hamburger {
     display: flex;
@@ -799,7 +799,7 @@ body::after {
     padding: 12px 16px;
   }
 }
-/* ── SMALL MOBILE: < 480px ── */
+/* ─── SMALL MOBILE: < 480px ─── */
 @media (max-width: 480px) {
   .sidebar {
     width: 100%;

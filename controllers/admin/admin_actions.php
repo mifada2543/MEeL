@@ -1,33 +1,21 @@
 <?php
-/**
- * controllers/admin_actions.php
- *
- * Handler aksi admin — ban/unban, user management, queue, orphan cleanup, kick.
- * Di-include oleh admin/index.php (atau admin/mfa_reset.php).
- * Semua aksi akan redirect setelah selesai (tidak render view).
- */
-
-// ── Guard Direct Access ────────────────────────────────────────────────────
-// Hanya boleh di-include dari halaman admin yang sudah melewati require_admin()
-// (admin/index.php, admin/mfa_reset.php) — bukan diakses langsung via URL.
+// ─── Guard Direct Access ───
 if (!defined('MEEL_ADMIN_CONTEXT')) {
     die(include __DIR__ . '/../../err/denied.php');
 }
 
-// ── Verifikasi Role Admin ──────────────────────────────────────────────────
-// Helper terpusat (modules/core/helpers/authz.php) — konsisten dengan
-// require_admin() yang dipakai di semua halaman admin lainnya.
+// ─── Verifikasi Role Admin ───
 if (!is_admin($conn)) {
     die(include __DIR__ . '/../../err/denied.php');
 }
 
-// ── CSRF Guard ─────────────────────────────────────────────────────────────
+// ─── CSRF Guard ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_token'] ?? null)) {
     header("Location: index.php?msg=CSRF_Token_Invalid");
     exit();
 }
 
-// ─── BAN IP ────────────────────────────────────────────────────────────────
+// ─── BAN IP ───
 if (isset($_POST['ban_ip'])) {
     $ip   = $_POST['ip_target'];
     $reason = !empty($_POST['ban_reason']) ? $_POST['ban_reason'] : "Manual Ban by Admin";
@@ -40,7 +28,7 @@ if (isset($_POST['ban_ip'])) {
     exit();
 }
 
-// ─── UNBAN IP ──────────────────────────────────────────────────────────────
+// ─── UNBAN IP ───
 if (isset($_POST['unban_ip'])) {
     $stmt = $conn->prepare("DELETE FROM ip_ban WHERE ip_address = ?");
     $stmt->bind_param("s", $_POST['unban_ip']);
@@ -50,7 +38,7 @@ if (isset($_POST['unban_ip'])) {
     exit();
 }
 
-// ─── CLEAR INACTIVE GUESTS ─────────────────────────────────────────────────
+// ─── CLEAR INACTIVE GUESTS ───
 if (isset($_POST['clear_all_guests'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE role = 'guest' AND is_active = 0");
     if ($stmt->execute()) {
@@ -66,7 +54,7 @@ if (isset($_POST['clear_all_guests'])) {
     exit();
 }
 
-// ─── CLEAN STUCK QUEUES ────────────────────────────────────────────────────
+// ─── CLEAN STUCK QUEUES ───
 if (isset($_POST['clean_stuck_queues'])) {
     require_once __DIR__ . '/../../modules/core/System.php';
     $sys     = new System($conn);
@@ -81,7 +69,7 @@ if (isset($_POST['clean_stuck_queues'])) {
     exit();
 }
 
-// ─── FORCE STOP QUEUE ──────────────────────────────────────────────────────
+// ─── FORCE STOP QUEUE ───
 if (isset($_POST['force_stop_queue'])) {
     require_once __DIR__ . '/../../modules/core/System.php';
     $sys = new System($conn);
@@ -96,13 +84,13 @@ if (isset($_POST['force_stop_queue'])) {
     exit();
 }
 
-// ─── APPROVE USER ──────────────────────────────────────────────────────────
+// ─── APPROVE USER ───
 if (isset($_POST['approve_id'])) {
     $stmt = $conn->prepare("UPDATE users SET is_active = 1 WHERE id = ?");
     $stmt->bind_param("i", $_POST['approve_id']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'approve_user', 'user', (int)$_POST['approve_id']);
-    // Invalidate role cache agar session role ter-update untuk user yang di-approve
+
     if (function_exists('invalidate_user_role_cache')) {
         invalidate_user_role_cache();
     }
@@ -110,7 +98,7 @@ if (isset($_POST['approve_id'])) {
     exit();
 }
 
-// ─── REJECT USER ───────────────────────────────────────────────────────────
+// ─── REJECT USER ───
 if (isset($_POST['reject_id'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND is_active = 2");
     $stmt->bind_param("i", $_POST['reject_id']);
@@ -120,7 +108,7 @@ if (isset($_POST['reject_id'])) {
     exit();
 }
 
-// ─── DELETE USER ───────────────────────────────────────────────────────────
+// ─── DELETE USER ───
 if (isset($_POST['delete_user_id'])) {
     $id = (int)$_POST['delete_user_id'];
 
@@ -147,7 +135,7 @@ if (isset($_POST['delete_user_id'])) {
     exit();
 }
 
-// ─── CLEAN ORPHAN FILES ────────────────────────────────────────────────────
+// ─── CLEAN ORPHAN FILES ───
 if (isset($_POST['clean_orphans'])) {
     $files = json_decode($_POST['files_to_delete'], true);
     foreach ((array)$files as $f) {
@@ -157,7 +145,7 @@ if (isset($_POST['clean_orphans'])) {
     exit();
 }
 
-// ─── KICK USER ─────────────────────────────────────────────────────────────
+// ─── KICK USER ───
 if (isset($_POST['kick_user'])) {
     $stmt = $conn->prepare("UPDATE users SET 
         last_session_id = 'KICKED',
@@ -171,7 +159,7 @@ if (isset($_POST['kick_user'])) {
     exit();
 }
 
-// ─── RESET MFA USER ─────────────────────────────────────────────────────────
+// ─── RESET MFA USER ───
 if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
     // CSRF guard
     if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
@@ -181,7 +169,6 @@ if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
 
     $target_id = (int)$_GET['user_id'];
 
-    // Cek apakah target adalah admin (jangan biarkan admin lain di-reset MFA-nya)
     $check = $conn->prepare("SELECT id, username, role FROM users WHERE id = ?");
     $check->bind_param("i", $target_id);
     $check->execute();

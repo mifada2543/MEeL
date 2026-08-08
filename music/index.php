@@ -63,7 +63,6 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
 <?php
 }
 
-// Cek playlist_id dari URL (fallback dari redirect goBackToLibrary())
 $playlist_id_from_url = isset($_GET['playlist_id']) ? (int)$_GET['playlist_id'] : 0;
 
 // Check audio state dari sessionStorage (via hidden input)
@@ -77,8 +76,6 @@ if (isset($_GET['content_only'])) {
     exit;
 }
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $f;
@@ -88,7 +85,6 @@ $__v = function($f) {
     return '?v=' . $mtimeCache[$path];
 };
 
-// Versi folder JS = max filemtime semua file di folder (diteruskan ke sibling oleh main.js)
 $__vdir = function($dir) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $dir;
@@ -262,7 +258,6 @@ $__vdir = function($dir) {
                         </div>
                     </div>
                 <?php endif; ?>
-
                 <!-- MOBILE FILTERS & MENUS (Select/Dropdowns) -->
                 <div class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
                     <!-- Format Pills (Mobile) -->

@@ -1,28 +1,18 @@
 <?php
 require_once '../modules/core/helpers.php';
-/**
- * read_pdf.php — PDF viewer dengan PWA support
- * 
- * Menyajikan file PDF dalam halaman HTML yang menyertakan manifest, logo,
- * dan meta tags untuk PWA. Cocok untuk akses langsung di HP (tab baru).
- * 
- * Dua mode:
- *  - Normal (?id=X):      Tampilkan halaman HTML dengan navbar + iframe PDF
- *  - Raw    (?id=X&raw=1): Serve file PDF langsung (digunakan oleh <iframe>)
- */
 
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
-// ── Validasi ID ──────────────────────────────────────────────────────────────
+// ─── Validasi ID ───
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id < 1) {
     header("Location: index.php");
     exit();
 }
 
-// ── Ambil data buku dari database ────────────────────────────────────────────
+// ─── Ambil data buku dari database ───
 $repo  = new BookRepository($conn);
 $book  = $repo->getBookById($id);
 
@@ -31,12 +21,7 @@ if (!$book || $book['type'] !== 'pdf') {
     exit();
 }
 
-// ── RAW MODE: Serve PDF langsung untuk <iframe> ─────────────────────────────
-// Keuntungan:
-//   - Request via <iframe> adalah navigation request (bukan subresource),
-//     sehingga mobile browser tetap mengirim cookie session.
-//   - URL same-origin langsung (bukan blob:) → didukung PDF viewer mobile.
-//   - Tidak perlu fetch JavaScript + blob URL yang bermasalah di HP.
+// ─── RAW MODE: Serve PDF langsung untuk <iframe> ───
 if (isset($_GET['raw']) && $_GET['raw'] === '1') {
     $pdf_path = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
     if (!file_exists($pdf_path) || !is_readable($pdf_path)) {
@@ -55,7 +40,7 @@ if (isset($_GET['raw']) && $_GET['raw'] === '1') {
     exit;
 }
 
-// ── Ambil ukuran file ────────────────────────────────────────────────────────
+// ─── Ambil ukuran file ───
 $pdf_path   = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
 $pdf_size   = is_file($pdf_path) ? filesize($pdf_path) : 0;
 $pdf_size_f = $pdf_size > 1048576
@@ -170,6 +155,7 @@ $title = htmlspecialchars($book['title']);
     })();
     </script>
     <script src="../assets/js/compatibilitas/lucide.js"></script>
-    <script>lucide.createIcons();</script>
+    <script>lucide.createIcons();
+</script>
 </body>
 </html>

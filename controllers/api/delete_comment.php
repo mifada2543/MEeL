@@ -1,33 +1,4 @@
 <?php
-/**
- * controllers/api/delete_comment.php
- *
- * Hapus komentar (dengan ownership check).
- *
- * Dua mode:
- *   1. AJAX (HTMX, hx-post): hapus lalu render ulang daftar komentar
- *      (#comment-list innerHTML) — tanpa reload halaman.
- *   2. Fallback non-JS (GET): hapus lalu redirect balik ke referer.
- *
- * Request:
- *   - id          (int, required) ID komentar yang akan dihapus
- *   - media_type  (string) 'video' | 'music' (untuk render ulang AJAX)
- *   - media_id    (int) ID media (untuk render ulang AJAX)
- *   - playlist_id (int, optional) konteks playlist music
- *   - csrf_token  (string, required untuk mode AJAX/POST)
- *
- * Security:
- *   - Ownership check via MediaInteraction::deleteComment()
- *   - CSRF verification untuk request POST (HTMX)
- *   - Open redirect protection via validasi HTTP_HOST pada fallback
- *
- * Dependencies:
- *   - auth/config.php ($conn, $_SESSION)
- *   - modules/media/MediaInteraction.php
- *   - modules/media/MediaViewer.php (render ulang AJAX)
- *   - modules/core/CommentRenderer.php (render ulang AJAX)
- */
-
 define('ACCESS_GRANTED', true);
 require_once '../../modules/core/helpers.php';
 
@@ -42,7 +13,6 @@ include '../../modules/media/MediaInteraction.php';
 
 $is_ajax = !empty($_SERVER['HTTP_HX_REQUEST']);
 
-// CSRF: wajib untuk jalur POST (AJAX). GET fallback tetap apa adanya (historis).
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
         if ($is_ajax) {
@@ -113,7 +83,7 @@ if (!$result['success']) {
     exit;
 }
 
-// ── Mode AJAX: render ulang daftar komentar ────────────────────────────────
+// ─── Mode AJAX: render ulang daftar komentar ───
 if ($is_ajax) {
     require_once __DIR__ . '/../../modules/media/MediaViewer.php';
     require_once __DIR__ . '/../../modules/core/CommentRenderer.php';
@@ -135,11 +105,9 @@ if ($is_ajax) {
     $grouped       = $comments_data['grouped'];
     $user_map      = $comments_data['user_map'];
 
-    // Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
     $media_row = $viewer->getMediaData();
     $GLOBALS['uploader_id'] = (int)($media_row['user_id'] ?? 0);
 
-    // render_comments() membaca global $id, $user_map, dan $uploader_id
     $GLOBALS['id']       = $media_id;
     $GLOBALS['user_map'] = $user_map;
 
@@ -151,7 +119,7 @@ if ($is_ajax) {
     exit;
 }
 
-// ── Fallback non-JS: flash message + redirect balik (dengan validasi host) ──
+// ─── Fallback non-JS: flash message + redirect balik (dengan validasi host) ───
 $_SESSION['success'] = $result['message'];
 
 $ref_url = $_SERVER['HTTP_REFERER'] ?? '';

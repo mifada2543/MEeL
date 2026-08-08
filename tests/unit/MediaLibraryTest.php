@@ -31,7 +31,7 @@ class MediaLibraryTest extends TestCase
 
     public function testClearCountsCacheIsSafe(): void
     {
-        // Should not throw even if file doesn't exist or isn't writable
+
         MediaLibrary::clearCountsCache();
         $this->assertTrue(true);
     }
@@ -99,7 +99,7 @@ class MediaLibraryTest extends TestCase
         $this->assertSame(0, $result['total']);
     }
 
-    // ─── BookRepository Tests ────────────────────────────────────────────────
+    // ─── BookRepository Tests ───
 
     public function testBookRepositoryConstructs(): void
     {

@@ -3,7 +3,7 @@ require '../../../auth/config.php';
 require_once __DIR__ . '/chess_helpers.php';
 header('Content-Type: application/json');
 
-// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+// ─── Auth guard: wajib login (JSON 401, tanpa redirect) ───
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode([
@@ -17,9 +17,7 @@ $room = $_GET['room'] ?? '';
 $last = intval($_GET['after'] ?? $_GET['last'] ?? 0);
 $user_id = (int)$_SESSION['user_id'];
 
-// ── Otorisasi: hanya white/black di room ini yang boleh membaca riwayat
-// langkah — mencegah user luar meng-intip/polling game orang lain lewat
-// room_code yang bocor/ditebak. ──
+// ─── Otorisasi: hanya white/black di room ini yang boleh membaca riwayat ───
 $roomStmt = $conn->prepare("SELECT white_user_id, black_user_id FROM rooms WHERE room_code = ?");
 $roomStmt->bind_param("s", $room);
 $roomStmt->execute();
@@ -50,10 +48,7 @@ while ($row = $result->fetch_assoc()) {
     $moves[] = $row;
 }
 
-// ── Status koneksi lawan (deteksi disconnect) ─────────────────────────────
-// users.last_activity diperbarui di SETIAP request (activity_logger), jadi
-// lawan yang masih polling get_move.php selalu fresh; yang keluar membeku.
-// Client memakai flag ini untuk notifikasi + tawaran klaim kemenangan.
+// ─── Status koneksi lawan (deteksi disconnect) ───
 $opponentId = ((int)$roomRow['white_user_id'] === $user_id)
     ? (int)$roomRow['black_user_id']
     : (int)$roomRow['white_user_id'];

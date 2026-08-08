@@ -1,8 +1,5 @@
-/* ============================================================
- * watch/main.css — Page-specific CSS untuk Watch Page
- * Halaman: video/watch.php
- * ============================================================ */
-/* ── Mobile (portrait): ── */
+/* watch/main.css — Page-specific CSS untuk Watch Page */
+/* ─── Mobile (portrait): ─── */
 @media (max-width: 639px) {
   #video-glow-container {
     position: sticky;
@@ -24,13 +21,13 @@
     margin-left: -1rem;
   }
 }
-/* ── Mobile portrait ── */
+/* ─── Mobile portrait ─── */
 @media (max-width: 639px) {
   #main-video-wrapper {
     max-height: 80vh;
   }
 }
-/* ── Jarak simetris untuk title * ─────────────────────────────────────────────────────────── */
+/* ─── Jarak simetris untuk title * ─── */
 #video-info {
   padding-top: 0.5rem;
   padding-left: 0;

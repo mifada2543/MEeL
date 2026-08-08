@@ -1,11 +1,4 @@
 <?php
-
-/** MEeL — Authentication Guard
- * ═══════════════════════════════════════════════════════════════
- * CATATAN MFA:
- *   Autentikasi dua faktor (TOTP) di-handle SEPENUHNYA di
- *   auth/login.php dan auth/mfa_verify.php.
- * ═══════════════════════════════════════════════════════════════*/
 include 'config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 if (session_status() === PHP_SESSION_NONE) {

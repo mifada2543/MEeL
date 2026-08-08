@@ -14,8 +14,6 @@ $total      = $meta['total'];
 $page       = $meta['page'];
 $totalPages = $meta['total_pages'];
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $f;
@@ -112,7 +110,6 @@ $__v = function($f) {
                     <?php include 'video_card.php'; ?>
                 <?php endwhile; ?>
             <?php endif; ?>
-
             <?php if ($total > $perPage): ?>
                 <button type="button" id="load-more-area"
                     class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
@@ -129,7 +126,6 @@ $__v = function($f) {
     </main>
 
     <?php include '../partials/footer.php'; ?>
-
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
     <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 </body>

@@ -1,5 +1,4 @@
 <?php
-// Base path root proyek — URL asset absolut (independen dari kedalaman include)
 require_once __DIR__ . '/../modules/core/base_url.php';
 $meel_base = meel_base_url_path();
 ?>
@@ -110,9 +109,8 @@ $meel_base = meel_base_url_path();
     </div>
 
     <!-- Lucide Icon Initialization -->
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

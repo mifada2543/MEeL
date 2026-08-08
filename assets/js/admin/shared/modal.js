@@ -1,7 +1,7 @@
-/** MEeL Admin — Shared: Delete Confirmation Modal **/
+/* * MEeL Admin — Shared: Delete Confirmation Modal * */
 (function () {
   'use strict';
-  // ── Delete Modal ──
+  // ─── Delete Modal ───
   document.addEventListener('DOMContentLoaded', function () {
     var deleteModal = document.getElementById('delete-modal');
     if (deleteModal) {
@@ -15,7 +15,7 @@
       if (e.key === 'Escape') closeDeleteModal();
     });
   });
-  /** Opens the delete confirmation modal **/
+  /* * Opens the delete confirmation modal * */
   window.confirmDelete = function (id, type, title) {
     var idEl = document.getElementById('modal-media-id');
     var typeEl = document.getElementById('modal-media-type');
@@ -36,7 +36,7 @@
     }
     if (modal) modal.classList.add('open');
   };
-  /** Closes the delete confirmation modal **/
+  /* * Closes the delete confirmation modal * */
   window.closeDeleteModal = function () {
     var modal = document.getElementById('delete-modal');
     if (modal) modal.classList.remove('open');

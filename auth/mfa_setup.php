@@ -1,11 +1,4 @@
 <?php
-
-/** MEeL — MFA Setup (TOTP via Google Authenticator / Authy)
- * Alur:
- *   1. Generate secret key + QR code
- *   2. Verifikasi dengan scan & input kode 6 digit
- *   3. Tampilkan backup codes (sekali saja)
- *   4. Simpan mfa_enabled = 1 */
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
@@ -15,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_id   = (int)$_SESSION['user_id'];
 $username  = $_SESSION['username'] ?? '';
-// ── Cek apakah MFA sudah di-set sebelumnya ──
+// ─── Cek apakah MFA sudah di-set sebelumnya ───
 $stmt = $conn->prepare("SELECT mfa_enabled FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -25,7 +18,7 @@ $step = 'setup'; // setup | verify | backup | done
 $error = '';
 $secret = '';
 $otpauth = '';
-// ─── HANDLE DISABLE MFA ───────────────────────────────────────
+// ─── HANDLE DISABLE MFA ───
 if (isset($_POST['disable_mfa']) && $mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -39,7 +32,7 @@ if (isset($_POST['disable_mfa']) && $mfa_enabled) {
         $step = 'setup';
     }
 }
-// ─── STEP 1: GENERATE SECRET ───────────────────────────────────
+// ─── STEP 1: GENERATE SECRET ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_secret']) && !$mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -51,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_secret']) &&
         $step = 'verify';
     }
 }
-// ─── STEP 2: VERIFY WITH CODE ──────────────────────────────────
+// ─── STEP 2: VERIFY WITH CODE ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_code']) && !$mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -86,13 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_code']) && !$m
         }
     }
 }
-// ─── STEP 3: BACKUP CODES (once) ───────────────────────────────
+// ─── STEP 3: BACKUP CODES (once) ───
 $backup_codes = $_SESSION['mfa_backup_codes_show'] ?? [];
 if ($step === 'backup' && isset($_POST['backup_done'])) {
     unset($_SESSION['mfa_backup_codes_show']);
     $step = 'done';
 }
-// ─── QR CODE ───────────────────────────────
+// ─── QR CODE ───
 if ($mfa_enabled && $step === 'setup') {
     $stmt = $conn->prepare("SELECT mfa_secret FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
@@ -103,7 +96,7 @@ if ($mfa_enabled && $step === 'setup') {
         $otpauth = generate_otpauth_url($existing_secret, $username);
     }
 }
-// ─── HTML ─────────────────────────
+// ─── HTML ───
 $auth_title       = "Keamanan Akun | MEeL";
 $auth_description = "MEeL - Kelola autentikasi dua faktor (MFA) akun Anda.";
 $auth_og_title    = "Keamanan Akun | MEeL";

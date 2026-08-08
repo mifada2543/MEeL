@@ -1,30 +1,4 @@
 <?php
-/**
- * ═══════════════════════════════════════════════════════════════
- * partials/ui.php — MEeL Engine Overlay (ASSEMBLER)
- * ═══════════════════════════════════════════════════════════════
- *
- * Overlay progres download/transcode. File ini HANYA perakit
- * (assembler): meng-emit <link> CSS + <script> JS + shell overlay,
- * lalu meng-include fase-fase dari partials/engine/.
- *
- *   CSS  → assets/css/engine/manifest.php (daftar modul → <link> paralel)
- *   JS   → assets/js/engine/main.js     (entry document.write sibling)
- *   Fase → partials/engine/{download,transcode,sprite,done,error}.php
- *
- * ⚠️ PENTING — file ini juga di-include oleh Transcoder::
- *    showMEeLOverlay() DI TENGAH aliran respons (setelah
- *    ob_end_clean() membuang <head>). Karena itu assembler ini
- *    WAJIB meng-emit <link>/<script src> sendiri setiap kali
- *    di-include, agar CSS/JS overlay selalu tersedia baik saat
- *    page load biasa maupun saat di-stream sebagai dokumen baru.
- *    Jangan pernah pindahkan aset engine ke <head> halaman saja.
- *
- * ═══════════════════════════════════════════════════════════════
- */
-
-// Cache-buster versi aset engine (pola filemtime halaman lain).
-// Dihitung relatif ke file ini agar sama untuk semua konteks include.
 $__meel_engine_v = function (string $asset): string {
     static $cache = [];
     $path = __DIR__ . '/../' . $asset;
@@ -34,10 +8,6 @@ $__meel_engine_v = function (string $asset): string {
     return '?v=' . $cache[$path];
 };
 
-// Bundle CSS overlay: baca manifest.php dan emit <link> per modul (paralel,
-// bukan @import). Urutan <link> mengikuti daftar di manifest.php (cascade
-// CSS tetap terjaga). Aman juga saat di-include mid-stream oleh
-// Transcoder::showMEeLOverlay() — assembler ini selalu meng-emit asetnya.
 $__meel_css_bundle = function (string $dir, string $baseUrl) use ($__meel_engine_v) {
     $manifest = __DIR__ . '/../' . $dir . '/manifest.php';
     if (!file_exists($manifest)) return;
@@ -62,7 +32,6 @@ $__meel_css_bundle('assets/css/engine', 'assets/css/engine/');
     <?php include __DIR__ . '/engine/sprite.php'; ?>
     <?php include __DIR__ . '/engine/done.php'; ?>
     <?php include __DIR__ . '/engine/error.php'; ?>
-
   </div>
 </div>
 <script src="assets/js/engine/main.js<?= $__meel_engine_v('assets/js/engine/main.js') ?>"></script>

@@ -1,13 +1,5 @@
-/* ============================================================
- * shared/upload-form.css — Shared Form/Upload Design Patterns
- * Digunakan oleh:
- *   - admin/edit/shared/main.css   (Edit Video & Music)
- *   - video/upload/main.css        (Upload Video)
- *   - music/upload/main.css        (Upload Music)
- * ============================================================ */
-/* ──────────────────────────────────────────────
- * 1. PAGE WRAP
- * ────────────────────────────────────────────── */
+/* shared/upload-form.css — Shared Form/Upload Design Patterns */
+/* 1. PAGE WRAP */
 .page-wrap {
   --page-wrap-rows: auto 1fr;
   position: relative;
@@ -16,9 +8,7 @@
   display: grid;
   grid-template-rows: var(--page-wrap-rows);
 }
-/* ──────────────────────────────────────────────
- * 2. TOP NAVIGATION
- * ────────────────────────────────────────────── */
+/* 2. TOP NAVIGATION */
 .top-nav {
   height: 56px;
   background: rgba(8, 11, 17, 0.9);
@@ -70,9 +60,7 @@
   color: var(--nav-chevron-color);
   font-size: 14px;
 }
-/* ──────────────────────────────────────────────
- * 3. SIDEBAR PANEL
- * ────────────────────────────────────────────── */
+/* 3. SIDEBAR PANEL */
 .sidebar-panel {
   background: var(--bg-panel);
   border-right: 1px solid var(--border);
@@ -89,9 +77,7 @@
     gap: 16px;
   }
 }
-/* ──────────────────────────────────────────────
- * 4. STATS STRIP
- * ────────────────────────────────────────────── */
+/* 4. STATS STRIP */
 .stats-strip {
   display: flex;
   gap: 8px;
@@ -123,9 +109,7 @@
   color: var(--stat-label-color);
   margin-top: 4px;
 }
-/* ──────────────────────────────────────────────
- * 5. FORM PANEL
- * ────────────────────────────────────────────── */
+/* 5. FORM PANEL */
 .form-panel {
   background: var(--bg-card);
   padding: 36px 40px;
@@ -148,9 +132,7 @@
     max-height: calc(100vh - 56px);
   }
 }
-/* ──────────────────────────────────────────────
- * 6. FORM HEADER
- * ────────────────────────────────────────────── */
+/* 6. FORM HEADER */
 .form-header {
   display: flex;
   align-items: flex-start;
@@ -186,9 +168,7 @@
   color: #454e5e;
   margin-top: 4px;
 }
-/* ──────────────────────────────────────────────
- * 7. FORM FIELDS
- * ────────────────────────────────────────────── */
+/* 7. FORM FIELDS */
 .field-group {
   display: flex;
   flex-direction: column;
@@ -236,9 +216,7 @@
     grid-template-columns: 1fr;
   }
 }
-/* ──────────────────────────────────────────────
- * 8. ALERTS
- * ────────────────────────────────────────────── */
+/* 8. ALERTS */
 .alert {
   padding: 14px 16px;
   border-radius: 14px;
@@ -258,9 +236,7 @@
   border: 1px solid rgba(239, 68, 68, 0.2);
   color: #f87171;
 }
-/* ──────────────────────────────────────────────
- * 9. BUTTONS
- * ────────────────────────────────────────────── */
+/* 9. BUTTONS */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -317,9 +293,7 @@
   color: #e2e6ef;
   border-color: rgba(255, 255, 255, 0.2);
 }
-/* ──────────────────────────────────────────────
- * 10. DIVIDER
- * ────────────────────────────────────────────── */
+/* 10. DIVIDER */
 .divider {
   height: 1px;
   background: var(--border);
@@ -331,9 +305,7 @@
     margin: 18px 0;
   }
 }
-/* ──────────────────────────────────────────────
- * 11. ADMIN BADGE
- * ────────────────────────────────────────────── */
+/* 11. ADMIN BADGE */
 .admin-badge {
   display: inline-flex;
   align-items: center;

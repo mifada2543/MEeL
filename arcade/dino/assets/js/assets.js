@@ -1,7 +1,5 @@
-// ==========================================
 // FILE: assets.js
 // FUNGSI: Menyimpan variabel warna dan data SVG murni
-// ==========================================
 // Miku HD
 const MIKU_COLORS = {
   hair: "#39C5BB",
@@ -28,7 +26,7 @@ const TETO_COLORS = {
   pink: "#FFD700",
   eye: "#C2185B",
 };
-// --- DEFINISI SVG ASSET TEMA MIKU & TETO ---
+// ─── DEFINISI SVG ASSET TEMA MIKU & TETO ───
 const mikuRun1Svg = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="80" viewBox="0 0 64 80">
   <path d="M 16,24 C 6,12 -8,22 -3,42 C 0,55 8,58 13,46 C 16,36 17,28 16,24 Z" fill="${MIKU_COLORS.hairDark}" />
   <path d="M 12,25 C 5,16 -4,24 0,38 C 2,47 8,49 11,40 C 13,32 13,27 12,25 Z" fill="${MIKU_COLORS.hair}" />

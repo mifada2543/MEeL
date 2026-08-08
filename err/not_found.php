@@ -1,6 +1,4 @@
 <?php
-// Base path root proyek — URL asset absolut & back-link default
-// (independen dari kedalaman direktori halaman yang me-include,
 // mis. books/read.php yang meng-include file ini).
 require_once __DIR__ . '/../modules/core/base_url.php';
 $meel_base = meel_base_url_path();
@@ -141,8 +139,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     </div>
 
     <!-- Lucide Icon Initialization -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+    <script>        document.addEventListener('DOMContentLoaded', function() {
             if (typeof lucide !== 'undefined' && lucide.createIcons) {
                 lucide.createIcons();
             } else {
@@ -156,7 +153,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                 setTimeout(function() { clearInterval(checkLucide); }, 5000);
             }
         });
-    </script>
+</script>
 </body>
 
 </html>

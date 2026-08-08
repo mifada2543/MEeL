@@ -22,7 +22,6 @@ $qFormat = urlencode($format);
 $qArtist = urlencode($artist);
 
 while ($v = $data->fetch_assoc()) include 'music_item.php'; ?>
-
 <?php if ($next < $total): ?>
     <div class="lm-meta" hidden
          data-next-url="load_more_music.php?offset=<?= $next ?>&page=<?= $nextPage ?>&format=<?= $qFormat ?>&artist=<?= $qArtist ?>"

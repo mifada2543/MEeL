@@ -1,7 +1,4 @@
-/* ============================================================
- * cards.css — Kartu file, grid layout, hover effects
- * Modul: Drive (MEeL Cloud)
- * ============================================================ */
+/* cards.css — Kartu file, grid layout, hover effects */
 .file-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -16,7 +13,7 @@
   border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
 }
-/* ── File Card Icons ── */
+/* ─── File Card Icons ─── */
 .file-icon-wrapper {
   padding: 12px;
   border-radius: 12px;
@@ -26,7 +23,7 @@
 .file-card:hover .file-icon-wrapper {
   background: rgba(59, 130, 246, 0.1);
 }
-/* ── File Action Buttons (hover reveal) ── */
+/* ─── File Action Buttons (hover reveal) ─── */
 .file-actions {
   display: flex;
   gap: 4px;
@@ -60,7 +57,7 @@
   color: #f87171;
   background: rgba(239, 68, 68, 0.15);
 }
-/* ── File Meta ── */
+/* ─── File Meta ─── */
 .file-name {
   font-size: 0.875rem;
   font-weight: 700;
@@ -79,7 +76,7 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
-/* ── Empty State ── */
+/* ─── Empty State ─── */
 .drive-empty {
   display: flex;
   flex-direction: column;

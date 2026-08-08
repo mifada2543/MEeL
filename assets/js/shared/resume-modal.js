@@ -1,9 +1,4 @@
-/* ============================================================
- * resume-modal.js — Modal "Lanjutkan Sesi?" bersama untuk video
- * & music watch. Satu sumber kebenaran untuk logika resume:
- * cek posisi tersimpan (>10s & < duration-margin), countdown 15s
- * auto-restart, tombol Lanjut/Ulangi.
- * ============================================================ */
+/* resume-modal.js — Modal "Lanjutkan Sesi?" bersama untuk video */
 window.meelResumeModal = function (options) {
   const o = options || {};
   const modal = document.getElementById("resume-modal"),

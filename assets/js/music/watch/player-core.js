@@ -1,9 +1,3 @@
-/* ============================================================
- * player-core.js — Inti player musik, jalan saat DOMContentLoaded: init Plyr, deteksi FLAC & loading overlay, resume posisi terakhir, visualizer canvas (cava-style bar), dan mode mini-player
- * (shell, kontrol play/pause/seek/next/prev, ganti lagu tanpa reload).
- * Yang tersisa di sini: init Plyr, FLAC loading overlay, resume posisi, visualizer, bitrate, dan handler play/pause/ended.
- * Depends on: state.js, utils.js, loop-ui.js, audio-state.js, equalizer.js, shared/plyr-config.js (MEEL_PLYR_COMMON), mini-player.js (updateMiniPlayerUI), shared/resume-modal.js (meelResumeModal)
- * ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
   if (
     ((watchUrl = window.location.href),
@@ -18,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "undefined" == typeof Plyr)
   )
     return void console.error("❌ Plyr not loaded");
-  // ── Deteksi FLAC & tambahkan event handler error/timeout ──
+  // ─── Deteksi FLAC & tambahkan event handler error/timeout ───
   const isFlac =
     audio.querySelector('source[type="audio/flac"]') !== null ||
     window.MEEL_MUSIC_CONFIG?.filename?.toLowerCase().endsWith(".flac");
@@ -440,7 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }),
     player.on("loadedmetadata", window.updateMiniPlayerUI),
     player.on("ended", () => {
-      // Jeda kesehatan (20-20-20) aktif → jangan auto-next ke lagu lain.
+
       if (window.meelHealthAlertActive) return;
       const isGenuineEnd =
         audioEndedNaturally ||

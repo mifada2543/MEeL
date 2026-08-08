@@ -5,8 +5,6 @@ require_once 'auth/config.php';
 require_once 'modules/core/Transcoder.php';
 require_once 'modules/core/BrowserProgressObserver.php';
 
-// Transcoder dipasangi BrowserProgressObserver (presentation layer) — overlay
-// progress transcode di-stream oleh observer. Hook shutdown menghentikan
 // ffmpeg yang masih berjalan bila request berakhir abnormal.
 $transcoder      = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
 register_shutdown_function([$transcoder, 'terminateAllProcesses']);
@@ -78,8 +76,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
     <script src="assets/js/compatibilitas/script.min.js"></script>
 
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <style>
-        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
+    <style>        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
         body::before {
             content: '';
             position: fixed;
@@ -100,7 +97,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
             z-index: 100;
             animation: glow 3s ease-in-out infinite;
         }
-    </style>
+</style>
 </head>
 
 <body class="bg-bg text-[#c9cdd6] font-sans min-h-screen flex flex-col relative">
@@ -143,7 +140,6 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                                 <?= htmlspecialchars(mb_substr($video_title, 0, 40)) ?><?= mb_strlen($video_title) > 40 ? '…' : '' ?>
                             </div>
                         <?php endif; ?>
-
                         <div class="text-[11px] text-muted max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap">
                             <?= htmlspecialchars($output_filename) ?>
                         </div>
@@ -246,7 +242,6 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                 </div>
 
             <?php endif; ?>
-
             <div class="h-px bg-white/[.06]"></div>
             <div class="p-4 pb-5 flex items-center justify-center gap-5">
                 <a href="video/index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Video</a>
@@ -257,7 +252,6 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
     </div>
 
     <?php include 'partials/footer.php'; ?>
-
     <script>
         lucide.createIcons();
 
@@ -269,7 +263,6 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                 redirectUrl: 'transcode.php<?= $video_id_value ? "?id=$video_id_value" : "" ?>'
             });
         <?php endif; ?>
-
         // ── Submit animation ──
         function startProcess() {
             const btn = document.getElementById('btn-submit');

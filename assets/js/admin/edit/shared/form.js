@@ -1,12 +1,7 @@
-/**
- * MEeL Admin — Edit Shared: Form Submit Handler (Spinner)
- * Digunakan oleh edit-video.php dan edit-music.php
- */
+/* MEeL Admin — Edit Shared: Form Submit Handler (Spinner) */
 (function () {
   "use strict";
-  /**
-   * Handles form submit — shows spinner on save button
-   */
+  /* Handles form submit — shows spinner on save button */
   window.handleSubmit = function () {
     var btn = document.getElementById("btn-save");
     if (!btn) return;

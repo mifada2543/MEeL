@@ -2,12 +2,6 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * Integration tests for GarbageCollector::cleanChessRooms() with a real
- * database connection.
- *
- * Each test runs inside a database transaction that is rolled back
- * in tearDown(), ensuring no test pollutes the database.
- *
  * @requires extension mysqli
  * @group integration
  * @covers GarbageCollector::cleanChessRooms
@@ -17,7 +11,6 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
     private DbTestHelper $dbHelper;
     private mysqli $conn;
 
-    // Throttle file dipakai method yang di-test — backup & pulihkan agar
     // test tidak bergantung pada state throttle prod.
     private string $throttleFile;
     private ?string $throttleBackup = null;
@@ -30,7 +23,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $this->conn = $this->dbHelper->getConnection();
 
         $this->throttleFile = MEEL_ROOT . '/temp/gc_chess_last_run.txt';
-        // Hapus throttle sementara supaya cleanup benar-benar berjalan.
+
         if (is_file($this->throttleFile)) {
             $this->throttleBackup = (string) @file_get_contents($this->throttleFile);
             @unlink($this->throttleFile);
@@ -51,7 +44,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    /** Buat room test dengan room_code unik (hindari bentrok data asli). */
+    /* Buat room test dengan room_code unik (hindari bentrok data asli). */
     private function insertRoom(string $code, bool $blackJoined, string $createdAt): void
     {
         $stmt = $this->conn->prepare(
@@ -65,7 +58,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $stmt->close();
     }
 
-    /** Buat baris moves test (move_data harus JSON valid — ada CHECK constraint). */
+    /* Buat baris moves test (move_data harus JSON valid — ada CHECK constraint). */
     private function insertMove(string $code, string $createdAt): void
     {
         $stmt = $this->conn->prepare(
@@ -79,7 +72,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $stmt->close();
     }
 
-    /** Buat event terminal (resign / game_over dll) seperti insertGameEvent(). */
+    /* Buat event terminal (resign / game_over dll) seperti insertGameEvent(). */
     private function insertEvent(string $code, string $type, string $color = 'w', string $createdAt = ''): void
     {
         if ($createdAt === '') $createdAt = date('Y-m-d H:i:s', time() - 8 * 86400);
@@ -119,10 +112,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         return 'ZZ' . strtoupper(substr(uniqid('', true), -6));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // LOBBY BASI — lawan tak pernah join (black_joined = 0)
-    // ══════════════════════════════════════════════════════════════
-
     public function testLobbyOlderThan24HoursIsDeleted(): void
     {
         $code = $this->newCode();
@@ -144,10 +134,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $this->assertTrue($this->roomExists($code));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // GAME DITINGGALKAN — sudah dimulai tapi tanpa aktivitas
-    // ══════════════════════════════════════════════════════════════
-
     public function testStartedGameWithStaleLastMoveIsDeletedWithMoves(): void
     {
         $code = $this->newCode();
@@ -187,10 +174,6 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $this->assertFalse($this->roomExists($code));
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // GAME SELESAI — harus DI-PERTAHANKAN walau tidak ada aktivitas
-    // ══════════════════════════════════════════════════════════════
-
     public function testFinishedGameWithResignEventIsKept(): void
     {
         $code = $this->newCode();
@@ -207,7 +190,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testFinishedGameWithGameOverEventIsKept(): void
     {
-        // Checkmate/stalemate dicatat via event game_over → game SELESAI.
+
         $code = $this->newCode();
         $this->insertRoom($code, true, date('Y-m-d H:i:s', time() - 30 * 86400));
         $this->insertMove($code, date('Y-m-d H:i:s', time() - 8 * 86400));
@@ -233,8 +216,6 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testStaleLobbyWithMovesCleansBoth(): void
     {
-        // save_move.php tidak memeriksa black_joined — secara teori Putih bisa
-        // mengirim langkah sebelum lawan join. Lobby basi dengan moves harus
         // tetap dibersihkan BESERTA moves-nya (defensive deletion).
         $code = $this->newCode();
         $this->insertRoom($code, false, date('Y-m-d H:i:s', time() - 2 * 86400));
@@ -250,7 +231,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testFinishedGameWithResignIsKept(): void
     {
-        // Game macet 30 hari + event resign → SUDAH SELESAI → tidak dihapus.
+
         $code = $this->newCode();
         $this->insertRoom($code, true, date('Y-m-d H:i:s', time() - 30 * 86400));
         $this->insertMove($code, date('Y-m-d H:i:s', time() - 8 * 86400));
@@ -264,7 +245,7 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testFinishedGameWithGameOverIsKept(): void
     {
-        // Checkmate: client mencatat event game_over → game selesai → dipertahankan.
+
         $code = $this->newCode();
         $this->insertRoom($code, true, date('Y-m-d H:i:s', time() - 30 * 86400));
         $this->insertMove($code, date('Y-m-d H:i:s', time() - 8 * 86400));
@@ -278,7 +259,6 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testMixedRunKeepsFinishedAndCleansStuckInSameCall(): void
     {
-        // Satu run yang sama: room selesai (ada game_over) DI-PERTAHANKAN,
         // room macet di tengah (tanpa event terminal) DIHAPUS.
         $finished = $this->newCode();
         $this->insertRoom($finished, true, date('Y-m-d H:i:s', time() - 30 * 86400));
@@ -300,7 +280,6 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testMixedRunOnlyRemovesStaleRooms(): void
     {
-        // Satu run membersihkan hanya room basi — room segar (lobby & game
         // aktif) harus tetap utuh dalam run yang sama.
         $stale = $this->newCode();
         $this->insertRoom($stale, false, date('Y-m-d H:i:s', time() - 2 * 86400));
@@ -321,13 +300,10 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
         $this->assertSame(1, $this->moveCount($activeGame));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // THROTTLE
-    // ══════════════════════════════════════════════════════════════
-
     public function testThrottleSkipsCleanupWhenRecentlyRun(): void
     {
-        // Tulis throttle "baru saja jalan" → method harus langsung return 0.
+
         @file_put_contents($this->throttleFile, time());
         $code = $this->newCode();
         $this->insertRoom($code, false, date('Y-m-d H:i:s', time() - 2 * 86400));
@@ -340,8 +316,6 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
 
     public function testThrottleFileNotWritableIsReclaimedWithoutWarning(): void
     {
-        // Simulasi file throttle milik user lain (mis. dibuat cron/CLI): file
-        // ada tapi tidak writable oleh proses ini. writeThrottleFile() harus
         // menghapus & membuat ulang — TANPA memicu warning PHP.
         $file = $this->throttleFile;
         @file_put_contents($file, '123');

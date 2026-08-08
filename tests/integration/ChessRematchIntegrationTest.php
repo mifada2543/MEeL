@@ -4,13 +4,6 @@ require_once MEEL_ROOT . '/arcade/chess/controller/chess_helpers.php';
 use PHPUnit\Framework\TestCase;
 
 /**
- * Integration tests for fitur tanding ulang (rematch) multiplayer catur:
- * chess_rematch() beserta helper-nya chess_last_event() dan
- * chess_reset_room_game().
- *
- * Memakai DB asli — setiap test berjalan di dalam transaksi yang di-rollback
- * di tearDown(), jadi tidak mencemari data produksi.
- *
  * @requires extension mysqli
  * @group integration
  * @covers chess_rematch
@@ -36,7 +29,7 @@ class ChessRematchIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    /** Buat room test dengan black sudah join (black_joined=1). */
+    /* Buat room test dengan black sudah join (black_joined=1). */
     private function insertRoom(string $code): void
     {
         $stmt = $this->conn->prepare(
@@ -48,7 +41,7 @@ class ChessRematchIntegrationTest extends TestCase
         $stmt->close();
     }
 
-    /** Buat langkah catur asli (bukan event) — move_data JSON tanpa 'type'. */
+    /* Buat langkah catur asli (bukan event) — move_data JSON tanpa 'type'. */
     private function insertMove(string $code, string $color): void
     {
         $stmt = $this->conn->prepare(
@@ -62,14 +55,14 @@ class ChessRematchIntegrationTest extends TestCase
         $stmt->close();
     }
 
-    /** Buat event seperti insertGameEvent(). */
+    /* Buat event seperti insertGameEvent(). */
     private function insertEvent(string $code, string $type, string $color = 'w', string $reason = null): void
     {
         $extra = $reason !== null ? ['reason' => $reason] : [];
         insertGameEvent($this->conn, $code, $color, $type, $extra);
     }
 
-    /** Skenario umum: room dengan game sudah selesai (checkmate via game_over). */
+    /* Skenario umum: room dengan game sudah selesai (checkmate via game_over). */
     private function insertFinishedGame(string $code): void
     {
         $this->insertRoom($code);
@@ -82,7 +75,7 @@ class ChessRematchIntegrationTest extends TestCase
         return 'RM' . strtoupper(substr(uniqid('', true), -6));
     }
 
-    /** Buat user test dengan last_activity yang dikendalikan (rollback otomatis). */
+    /* Buat user test dengan last_activity yang dikendalikan (rollback otomatis). */
     private function insertUser(int $lastActivityTs): int
     {
         $username = 'rm_test_' . substr(uniqid('', true), -8);
@@ -107,10 +100,7 @@ class ChessRematchIntegrationTest extends TestCase
         return (int) $row['n'];
     }
 
-    // ══════════════════════════════════════════════════════════════
     // REMATCH HANYA SETELAH GAME SELESAI
-    // ══════════════════════════════════════════════════════════════
-
     public function testOfferRejectedWhenGameNotFinished(): void
     {
         $code = $this->newCode();
@@ -159,10 +149,7 @@ class ChessRematchIntegrationTest extends TestCase
         $this->assertTrue($result['success']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // SATU TAWARAN PENDING
-    // ══════════════════════════════════════════════════════════════
-
     public function testSecondOfferWhilePendingIsRejected(): void
     {
         $code = $this->newCode();
@@ -175,10 +162,7 @@ class ChessRematchIntegrationTest extends TestCase
         $this->assertSame('Masih ada tawaran tanding ulang yang menunggu jawaban.', $result['message']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // TERIMA (ACCEPT) → RESET GAME
-    // ══════════════════════════════════════════════════════════════
-
     public function testAcceptWithoutOfferIsRejected(): void
     {
         $code = $this->newCode();
@@ -214,7 +198,7 @@ class ChessRematchIntegrationTest extends TestCase
         // Riwayat lama dihapus; hanya tersisa event rematch_accept.
         $this->assertSame(1, $this->countMoves($code));
         $this->assertSame('rematch_accept', chess_last_event($this->conn, $code)['type']);
-        // Game baru: belum ada event terminal & belum ada langkah → giliran putih.
+
         $this->assertFalse(chess_has_terminal_event($this->conn, $code));
         $this->assertNull(chess_last_move_color($this->conn, $code));
     }
@@ -226,17 +210,13 @@ class ChessRematchIntegrationTest extends TestCase
         chess_rematch($this->conn, $code, 'w', 'rematch_offer');
         chess_rematch($this->conn, $code, 'b', 'rematch_accept');
 
-        // Game baru: langkah + game_over bisa dicatat lagi, dan rematch kedua
         // juga bisa ditawarkan setelahnya.
         $this->insertMove($code, 'w');
         $this->assertTrue(chess_record_game_over($this->conn, $code, 'b', 'checkmate')['success']);
         $this->assertTrue(chess_rematch($this->conn, $code, 'b', 'rematch_offer')['success']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // TOLAK (DECLINE) / BATAL
-    // ══════════════════════════════════════════════════════════════
-
     public function testDeclineByOpponentIsAllowed(): void
     {
         $code = $this->newCode();
@@ -301,10 +281,7 @@ class ChessRematchIntegrationTest extends TestCase
         $this->assertSame('Tidak ada tawaran tanding ulang yang menunggu.', $result['message']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // HELPER PENDUKUNG
-    // ══════════════════════════════════════════════════════════════
-
     public function testLastEventIgnoresRealMoves(): void
     {
         $code = $this->newCode();
@@ -343,10 +320,6 @@ class ChessRematchIntegrationTest extends TestCase
         $this->assertSame('Aksi tidak dikenal.', $result['message']);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // VALIDASI KEHADIRAN LAWAN (race condition: lawan sudah keluar)
-    // ══════════════════════════════════════════════════════════════
-
     public function testOfferRejectedWhenOpponentOffline(): void
     {
         $code = $this->newCode();
@@ -358,7 +331,7 @@ class ChessRematchIntegrationTest extends TestCase
         $this->assertFalse($result['success']);
         $this->assertTrue($result['opponent_gone']);
         $this->assertSame('Lawan sudah keluar dari permainan.', $result['message']);
-        // Tidak ada tawaran yang dicatat — room tetap bersih dari event rematch.
+
         $this->assertSame('game_over', chess_last_event($this->conn, $code)['type']);
     }
 
@@ -385,7 +358,7 @@ class ChessRematchIntegrationTest extends TestCase
 
         $this->assertFalse($result['success']);
         $this->assertTrue($result['opponent_gone']);
-        // Riwayat game lama TIDAK dihapus — tidak ada reset yang terjadi.
+
         $this->assertTrue(chess_has_terminal_event($this->conn, $code));
     }
 
@@ -394,7 +367,6 @@ class ChessRematchIntegrationTest extends TestCase
         $code = $this->newCode();
         $this->insertFinishedGame($code);
 
-        // opponentId null = validasi dilewati (helper dipanggil langsung).
         $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer');
 
         $this->assertTrue($result['success']);

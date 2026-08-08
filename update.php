@@ -78,7 +78,6 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
                 </button>
             </div>
         <?php endif; ?>
-
         <div class="main-grid">
 
             <main>
@@ -99,7 +98,6 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
                         <?= htmlspecialchars($flash['msg']) ?>
                     </div>
                 <?php endif; ?>
-
                 <?php if ($updates): ?>
                     <?php foreach ($updates as $row): ?>
                         <article class="entry">
@@ -196,7 +194,6 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
     </div>
 
     <?php if ($is_admin): ?>
-
         <div id="modal-add-update" class="modal-backdrop" onclick="handleBackdropClick(event, 'modal-add-update')">
             <div class="modal-box">
                 <div class="modal-title">TAMBAH <span>UPDATE</span></div>
@@ -278,9 +275,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
         </div>
 
     <?php endif; ?>
-
-    <script>
-        lucide.createIcons();
+    <script>        lucide.createIcons();
 
         function openModal(id) {
             document.getElementById(id).classList.add('open');
@@ -315,9 +310,8 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
             btns.announcement.className = 'tab-btn' + (t === 'announcement' ? ' active-blue' : '');
         }
 
-        // Fungsi JavaScript Baru untuk Mengisi Data & Membuka Modal Edit Update
         function openEditModal(data) {
-            // Helper untuk decode HTML entities (menghindari teks mentah &lt;script&gt; ter-double encode saat di-save ulang)
+
             const decodeHtml = (html) => {
                 const txt = document.createElement("textarea");
                 txt.innerHTML = html;
@@ -328,7 +322,6 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
             document.getElementById('edit-version').value = decodeHtml(data.version);
             document.getElementById('edit-content').value = decodeHtml(data.content);
 
-            // Format tanggal agar sesuai dengan input type="date" (YYYY-MM-DD)
             if (data.created_at) {
                 const dateOnly = data.created_at.split(' ')[0];
                 document.getElementById('edit-created-at').value = dateOnly;
@@ -336,7 +329,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
 
             openModal('modal-edit-update');
         }
-    </script>
+</script>
     <?php include 'partials/footer.php'; ?>
 </body>
 

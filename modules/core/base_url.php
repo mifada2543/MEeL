@@ -19,10 +19,10 @@
 if (!function_exists('meel_base_url_path')) {
     /**
      * Hitung path base URL proyek relatif terhadap DOCUMENT_ROOT.
-     *
+ *
      * Contoh: proyek di /opt/lampp/htdocs/MEeL dengan DOCUMENT_ROOT
      * /opt/lampp/htdocs → "/MEeL". Jika proyek = DOCUMENT_ROOT → "".
-     *
+ *
      * @return string Path base URL tanpa trailing slash (bisa kosong).
      */
     function meel_base_url_path(): string

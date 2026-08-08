@@ -1,6 +1,3 @@
-/* ============================================================
- * load-more.js — Observasi .lm-meta di <main> untuk update URL tombol "Load More" + auto-scroll ke bawah saat konten playlist ditambahkan via load_more_music.php.
- * ============================================================ */
 (function () {
   var _main = document.querySelector("main");
   if (!_main) return;

@@ -1,9 +1,5 @@
-/* ============================================================
- * view_playlist.js — UI halaman Playlist (view_playlist.php): highlight playlist aktif di sidebar, dropdown artist/playlist (mobile), klik di luar untuk menutup dropdown, dan boot handler mini player + klik track playlist.
- * Depends on: shared/utils.js, shared/mini-player.js, htmx, lucide
- * ============================================================ */
 if (typeof lucide !== "undefined") lucide.createIcons();
-// ── Sidebar: Playlist Active Highlight ──
+// ─── Sidebar: Playlist Active Highlight ───
 window.setActivePlaylistSidebar = function (id) {
   document.querySelectorAll(".sidebar-link.pl-link").forEach(function (el) {
     if (parseInt(el.dataset.playlistId) === id) {
@@ -26,7 +22,7 @@ window.setActivePlaylistSidebar = function (id) {
     }
   });
 };
-// ── Mobile Artist Dropdown ──
+// ─── Mobile Artist Dropdown ───
 window.toggleArtistDropdownPL = function () {
   var dd = document.getElementById("artist-options-pl");
   if (!dd) return;
@@ -69,7 +65,7 @@ window.navigateToArtistPL = function (artist) {
     window.location.href = "index.php?artist=" + encodeURIComponent(artist);
   }
 };
-// ── Mobile Playlist Dropdown ──
+// ─── Mobile Playlist Dropdown ───
 window.togglePlaylistDropdownPL = function () {
   const dropdown = document.getElementById("playlist-options-pl");
   if (dropdown) {
@@ -113,7 +109,7 @@ window.navigateToPlaylistPL = function (id) {
     pushUrl: "view_playlist.php?id=" + id,
   });
 };
-// ── Close dropdowns on outside click ──
+// ─── Close dropdowns on outside click ───
 document.addEventListener("click", function (e) {
   const artistDropdown = document.getElementById("artist-options-pl");
   const artistTrigger = e.target.closest("#custom-artist-dropdown-pl");
@@ -134,7 +130,7 @@ document.addEventListener("click", function (e) {
     closePlaylistDropdownPL();
   }
 });
-// ── Boot: mini player (shared) + klik track playlist ──
+// ─── Boot: mini player (shared) + klik track playlist ───
 function bootPlaylistPage() {
   initMiniPlayerIndex();
   setupPlaylistItemClicks();

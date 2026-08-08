@@ -17,23 +17,13 @@
  */
 class SwPrecache
 {
-    /**
-     * Root project — dihitung dari lokasi file ini (modules/core/).
-     * Tidak bergantung pada konstanta MEEL_ROOT yang hanya ada di lingkungan
-     * test, sehingga aman dipakai langsung dari sw.js.php (produksi).
-     */
+
     private static function root(): string
     {
         return dirname(__DIR__, 2);
     }
 
-    /**
-     * Aset tetap (non-modul) yang selalu di-pre-cache.
-     * Termasuk CSS "shared" yang tidak punya manifest.php sendiri
-     * (list paralel <link>, bukan @import).
-     *
-     * @return string[] Path relatif ke root project.
-     */
+    /* @return string[] Path relatif ke root project. */
     public static function baseAssets(): array
     {
         return [
@@ -64,13 +54,7 @@ class SwPrecache
         ];
     }
 
-    /**
-     * CSS modul — otomatis dari SEMUA manifest.php di subfolder assets/css.
-     * Folder modul baru (yang punya manifest.php) langsung ikut ter-precache
-     * tanpa perlu mengubah kode apa pun.
-     *
-     * @return string[] Path relatif ke root project.
-     */
+    /* @return string[] Path relatif ke root project. */
     public static function moduleAssets(): array
     {
         $out = [];
@@ -83,27 +67,16 @@ class SwPrecache
         return $out;
     }
 
-    /**
-     * Daftar precache lengkap (aset tetap + semua modul CSS).
-     *
-     * @return string[] Path relatif ke root project.
-     */
+    /* @return string[] Path relatif ke root project. */
     public static function all(): array
     {
         return array_merge(self::baseAssets(), self::moduleAssets());
     }
 
-    /**
-     * Versi SW otomatis — hash isi semua input precache + kode generator.
-     * Format: v2-<hash 10 char>. Deterministik: output identik selama tidak
-     * ada konten yang berubah, sehingga browser tidak melakukan update SW
-     * yang tidak perlu pada setiap kunjungan.
-     */
     public static function version(): string
     {
         $parts = [];
 
-        // Isi semua aset precache (file hilang → penanda 'MISSING:' beda hash)
         foreach (self::all() as $rel) {
             $abs = self::root() . '/' . $rel;
             $parts[] = is_file($abs) ? md5_file($abs) : 'MISSING:' . $rel;
@@ -114,11 +87,8 @@ class SwPrecache
             $parts[] = md5_file($manifest);
         }
 
-        // Kode generator itu sendiri (perubahan logika → versi berubah)
         $parts[] = md5_file(__FILE__);
 
-        // sw.js.php (fetch-handler & strategi cache) — perubahan logika SW
-        // (mis. pindah strategi ke network-first) harus menaikkan versi supaya
         // cache lama di-purge & update SW terdeteksi browser.
         $swFile = self::root() . '/sw.js.php';
         $parts[] = is_file($swFile) ? md5_file($swFile) : 'MISSING:sw.js.php';

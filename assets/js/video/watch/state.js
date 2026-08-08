@@ -1,7 +1,4 @@
-/* ============================================================
- * state.js — Konfigurasi player & seluruh state global (shared)
- * Depends on: shared/plyr-config.js
- * ============================================================ */
+/* state.js — Konfigurasi player & seluruh state global (shared) */
 const config = window.playerConfig || {};
 let videoElement,
   player,
@@ -48,7 +45,7 @@ let glowTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowStopFn = null,
   glowEnabled = "false" !== localStorage.getItem("meel_glow_enabled"),
   glowNavbar = null;
-/* ── Auto Next ── */
+/* ─── Auto Next ─── */
 const _meelAutoNavFlag = sessionStorage.getItem("meel_autonav") === "1";
 sessionStorage.removeItem("meel_autonav");
 let autoNextEnabled = localStorage.getItem("meel_autonext_enabled") === "true";

@@ -1,8 +1,3 @@
-/* ============================================================
- * index.js — Bootstrap halaman Music Library (music/index.php): init lucide, boot handler (mini player + klik item + scroll), dan sinkronisasi setelah swap HTMX (search, filter, load-more).
- * Depends on: shared/utils.js, shared/mini-player.js,
- *            index/library-ui.js, index/load-more.js
- * ============================================================ */
 if (typeof lucide !== "undefined") lucide.createIcons();
 document.addEventListener("DOMContentLoaded", () => {
   bootPlayerIndex();

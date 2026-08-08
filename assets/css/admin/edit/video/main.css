@@ -1,8 +1,5 @@
-/* ============================================================
- * edit/video/main.css — Edit Video Page Styles (Admin)
- * Halaman: admin/edit-video.php
- * ============================================================ */
-/* ── Video Theme ── */
+/* edit/video/main.css — Edit Video Page Styles (Admin) */
+/* ─── Video Theme ─── */
 body.theme-video {
   --accent: #ef4444;
   --accent-hover: #f87171;
@@ -32,7 +29,7 @@ body.theme-video .field-input:focus {
   background: var(--accent-dim);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
 }
-/* ── Subtitle drop zone: assets/css/video/upload/main.css (tempat .drop-zone base). */
+/* ─── Subtitle drop zone: assets/css/video/upload/main.css (tempat .drop-zone base). ─── */
 .drop-zone-subtitle {
   position: relative;
   display: flex;
@@ -104,4 +101,3 @@ body.theme-video .field-input:focus {
 .drop-zone-subtitle.has-file .drop-zone-label {
   color: var(--accent, #ef4444);
 }
-

@@ -1,7 +1,5 @@
-/* ============================================================
- * utility.css — Glass effects, badges, action buttons, back button, filter button
- * ============================================================ */
-/* ── Glass Effects ── */
+/* utility.css — Glass effects, badges, action buttons, back button, filter button */
+/* ─── Glass Effects ─── */
 .glass {
   background: var(--admin-surface);
   backdrop-filter: blur(16px);
@@ -12,7 +10,7 @@
   background: var(--admin-glass);
   border: 1px solid var(--admin-border-light);
 }
-/* ── Badges ── */
+/* ─── Badges ─── */
 .badge-video {
   background: rgba(239, 68, 68, 0.1);
   color: var(--admin-red);
@@ -23,7 +21,7 @@
   color: var(--admin-orange);
   border: 1px solid rgba(249, 115, 22, 0.2);
 }
-/* ── Action Buttons ── */
+/* ─── Action Buttons ─── */
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -57,7 +55,7 @@
   background: var(--admin-red);
   color: #fff;
 }
-/* ── Back Button ── */
+/* ─── Back Button ─── */
 .btn-back {
   display: inline-flex;
   align-items: center;
@@ -78,7 +76,7 @@
   color: var(--admin-text);
   background: rgba(255, 255, 255, 0.07);
 }
-/* ── Clear Filter Button ── */
+/* ─── Clear Filter Button ─── */
 .btn-clear-filter {
   display: inline-flex;
   align-items: center;
@@ -99,7 +97,7 @@
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.3);
 }
-/* ── Scrollable Table ── */
+/* ─── Scrollable Table ─── */
 .scroll-table {
   overflow: auto;
   scrollbar-width: thin;
@@ -124,7 +122,7 @@
 .scroll-table thead th {
   background: var(--admin-bg);
 }
-/* ── Action Badge (for activity log) ── */
+/* ─── Action Badge (for activity log) ─── */
 .action-badge {
   display: inline-flex;
   align-items: center;
@@ -137,7 +135,7 @@
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
-/* ── Pill Buttons ── */
+/* ─── Pill Buttons ─── */
 .pill-btn {
   display: inline-flex;
   align-items: center;
@@ -175,7 +173,7 @@
   border-color: rgba(34, 197, 94, 0.25);
   color: #86efac;
 }
-/* ── Action Dropdown (activity log) ── */
+/* ─── Action Dropdown (activity log) ─── */
 .action-dropdown-btn {
   background: #131720;
   border: 1px solid rgba(255, 255, 255, 0.08);

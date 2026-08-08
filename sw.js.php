@@ -23,7 +23,6 @@ require_once __DIR__ . '/modules/core/SwPrecache.php';
 $sw_precache_urls = SwPrecache::all();
 $sw_version       = SwPrecache::version();
 
-// Wajib sebelum output apa pun: browser menolak SW yang MIME-nya bukan JS.
 header('Content-Type: application/javascript; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');

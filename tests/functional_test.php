@@ -1,28 +1,4 @@
 <?php
-/**
- * MEeL Functional Test Suite v1.0
- * ================================
- * Comprehensive functional testing untuk memverifikasi:
- *  - PHP Syntax seluruh file
- *  - File Integrity (semua file kritis ada)
- *  - Class Loading (semua class bisa di-load)
- *  - Function Existence (semua fungsi kunci ada)
- *  - Security Fixes (magic bytes, CSRF, prepared stmt, basename, escapeshellarg)
- *  - File Permissions (.htaccess, direktori)
- *  - Config Check (auth/config.php, session settings)
- *  - Directory Structure (upload, temp, log folder)
- *  - Database Connectivity (jika auth/config.php tersedia)
- *  - Error Pages (path konsisten: tanpa hardcode /MEeL/, include __DIR__-based)
- *
- * Cara pakai:
- *   /opt/lampp/bin/php tests/functional_test.php
- *
- * Exit codes:
- *   0 = Semua test PASS
- *   1 = Ada WARNING (lulus dengan catatan)
- *   2 = Ada FAIL (gagal, perlu perbaikan)
- */
-
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'assets/dict', 'data_drive']);
 define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
@@ -37,10 +13,7 @@ $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 $GLOBALS['test_timestamp'] = date('Y-m-d H:i:s');
 
-// ============================================================================
 // TEST 1: PHP SYNTAX — Semua file PHP
-// ============================================================================
-
 function testPhpSyntax(): void {
     print_header('TEST 1: PHP Syntax — Semua File PHP');
 
@@ -74,10 +47,7 @@ function testPhpSyntax(): void {
     }
 }
 
-// ============================================================================
 // TEST 2: FILE INTEGRITY — Semua file kritis ada
-// ============================================================================
-
 function testFileIntegrity(): void {
     print_header('TEST 2: File Integrity — Critical Files');
 
@@ -138,10 +108,7 @@ function testFileIntegrity(): void {
     }
 }
 
-// ============================================================================
 // TEST 3: CLASS LOADING — Semua class bisa di-load
-// ============================================================================
-
 function testClassLoading(): void {
     print_header('TEST 3: Class Loading — Instantiation Check');
 
@@ -186,15 +153,12 @@ function testClassLoading(): void {
     }
 }
 
-// ============================================================================
 // TEST 4: FUNCTION EXISTENCE — Semua fungsi kunci ada
-// ============================================================================
-
 function testFunctionExistence(): void {
     print_header('TEST 4: Function Existence — Helper Functions');
 
     $functions = [
-        // helpers.php (dipecah ke modules/core/helpers/ — modul per domain)
+
         'time_ago'              => 'modules/core/helpers/url.php',
         'format_bytes'          => 'modules/core/helpers/url.php',
         'music_thumbnail_url'   => 'modules/core/helpers/storage.php',
@@ -206,9 +170,9 @@ function testFunctionExistence(): void {
         // japanese.php
         'getRomajiName'         => 'modules/core/japanese.php',
         'analyzeJapaneseText'   => 'modules/core/japanese.php',
-        // activity_logger.php — hanya di docs/security.md, belum diimplementasi
+
         'log_activity'          => 'modules/core/activity_logger.php',
-        // helpers/csrf.php — verify_csrf_token is the canonical function
+
         'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
     ];
 
@@ -227,7 +191,7 @@ function testFunctionExistence(): void {
             record("Fungsi {$name}() didefinisikan di {$file} ✓", true);
         } else {
             $isWarn = in_array($name, $warning_funcs);
-            // Bisa jadi didefinisikan di file lain (config.example.php fallback)
+
             $altFull = PROJECT_ROOT . '/auth/config.example.php';
             if (file_exists($altFull)) {
                 $altContent = file_get_contents($altFull);
@@ -242,10 +206,7 @@ function testFunctionExistence(): void {
     }
 }
 
-// ============================================================================
 // TEST 5A: SECURITY FIXES — Magic Bytes Validation
-// ============================================================================
-
 function testSecurityMagicBytes(): void {
     print_header('TEST 5A: Security Fix — Magic Bytes Validation');
 
@@ -273,10 +234,7 @@ function testSecurityMagicBytes(): void {
     }
 }
 
-// ============================================================================
 // TEST 5B: SECURITY FIXES — CSRF Protection
-// ============================================================================
-
 function testSecurityCsrf(): void {
     print_header('TEST 5B: Security Fix — CSRF Protection');
 
@@ -323,14 +281,10 @@ function testSecurityCsrf(): void {
     }
 }
 
-// ============================================================================
 // TEST 5C: SECURITY FIXES — Prepared Statements
-// ============================================================================
-
 function testSecurityPreparedStmts(): void {
     print_header('TEST 5C: Security Fix — Prepared Statements');
 
-    // Files with direct SQL queries (verified to use prepared statements)
     $critical_sql_files = [
         'music/view_playlist.php',
         'music/playlist_action.php',
@@ -403,15 +357,10 @@ function testSecurityPreparedStmts(): void {
     }
 }
 
-// ============================================================================
 // TEST 5D: SECURITY FIXES — basename() untuk Path Traversal
-// ============================================================================
-
 function testSecurityBasename(): void {
     print_header('TEST 5D: Security Fix — basename() Path Traversal');
 
-    // Hanya file yang menerima file path dari user input (GET/POST)
-    // music/watch.php & video/watch.php: file path dari DATABASE, aman
     $checks = [
         'music/stream.php'      => 'basename(',
         'drive/download.php'    => 'basename(',
@@ -432,10 +381,6 @@ function testSecurityBasename(): void {
         }
     }
 }
-
-// ============================================================================
-// TEST 5E: SECURITY FIXES — escapeshellarg() untuk Shell Safety
-// ============================================================================
 
 function testSecurityShellEscape(): void {
     print_header('TEST 5E: Security Fix — escapeshellarg() Shell Safety');
@@ -469,7 +414,6 @@ function testSecurityShellEscape(): void {
         }
     }
 
-    // Cek khusus proc_open di Transcoder.php — memverifikasi array arguments
     $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
     if (file_exists($transcoderFile)) {
         $tcContent = file_get_contents($transcoderFile);
@@ -484,10 +428,7 @@ function testSecurityShellEscape(): void {
     }
 }
 
-// ============================================================================
 // TEST 5F: SECURITY FIXES — Upload Concurrency & Rate Limiting
-// ============================================================================
-
 function testSecurityUploadLimit(): void {
     print_header('TEST 5F: Security Fix — Upload Concurrency & Rate Limit');
 
@@ -530,10 +471,7 @@ function testSecurityUploadLimit(): void {
     }
 }
 
-// ============================================================================
 // TEST 6: FILE PERMISSIONS & .HTACCESS
-// ============================================================================
-
 function testHtaccessSecurity(): void {
     print_header('TEST 6: File Permissions & .htaccess');
 
@@ -575,10 +513,7 @@ function testHtaccessSecurity(): void {
     }
 }
 
-// ============================================================================
 // TEST 7: DIRECTORY STRUCTURE
-// ============================================================================
-
 function testDirectoryStructure(): void {
     print_header('TEST 7: Directory Structure & Permissions');
 
@@ -609,10 +544,7 @@ function testDirectoryStructure(): void {
     }
 }
 
-// ============================================================================
 // TEST 8: CONFIG CHECK
-// ============================================================================
-
 function testConfigCheck(): void {
     print_header('TEST 8: Config Check — auth/config.php');
 
@@ -644,14 +576,12 @@ function testConfigCheck(): void {
         }
     }
 
-    // Cek apakah config memiliki nilai database yang diisi (bukan template kosong)
     // Mendukung dua pola:
-    //   - Pola variabel: $server = "localhost" (config.example.php)
-    //   - Pola langsung: new mysqli("localhost", ...) (config.php)
+    // - Pola variabel: $server = "localhost" (config.example.php)
+    // - Pola langsung: new mysqli("localhost", ...) (config.php)
     $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
     $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
-    
-    // Refactor v2: credentials dipindah ke auth/settings.php — ikut dicek
+
     $settingsFile = PROJECT_ROOT . '/auth/settings.php';
     if (file_exists($settingsFile)) {
         $settingsContent = file_get_contents($settingsFile);
@@ -665,10 +595,7 @@ function testConfigCheck(): void {
     }
 }
 
-// ============================================================================
 // TEST 9: DATABASE CONNECTIVITY
-// ============================================================================
-
 function testDatabaseConnectivity(): void {
     print_header('TEST 9: Database Connectivity Check');
 
@@ -682,7 +609,6 @@ function testDatabaseConnectivity(): void {
     // Coba include config.php — CATATAN: ini akan memulai session!
     // Kita lakukan dengan try-catch di environment terisolasi
     try {
-        // Jangan include langsung karena bisa memulai session dan mengubah state
         // Baca file dan cek variabel saja
         $content = file_get_contents($configFile);
 
@@ -699,24 +625,20 @@ function testDatabaseConnectivity(): void {
     }
 }
 
-// ============================================================================
 // TEST 10: MODIFIED FILES VERIFICATION
-// ============================================================================
-
 function testModifiedFiles(): void {
     print_header('TEST 10: Modified Files — Security Patch Verification');
 
     // File-file yang telah dimodifikasi selama patch keamanan
     $modified_files = [
         'admin/catur.php' => [
-            // Guard terpusat via require_admin() (authz.php) — lebih aman daripada
-            // pola manual role.*!==.*admin karena membaca role langsung dari DB.
+
             'role check'    => ['pattern' => '/require_admin\s*\(/', 'label' => 'Role check admin (require_admin)'],
             'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
             'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
         ],
         'controllers/admin/admin_actions.php' => [
-            // Refactor: manual role query diganti helper terpusat is_admin() (authz.php)
+
             'role check is_admin' => ['pattern' => '/is_admin\s*\(\s*\$conn\s*\)/', 'label' => 'Role check via is_admin()'],
             // Guard direct-access: hanya boleh di-include dari admin/*.php
             'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
@@ -796,18 +718,12 @@ function testModifiedFiles(): void {
     record("Patch verification: {$found_patches}/{$total_patches} patches terverifikasi", ($found_patches === $total_patches), false);
 }
 
-// ============================================================================
 // TEST 11: INDEX PAGE CHECKS
-// ============================================================================
-
 function testIndexPages(): void {
     print_header('TEST 11: Index Pages — HTML Structure');
 
     // Mapping: nama partial yang dicek (tanpa ekstensi .php)
     // Catatan:
-    //   - Project menggunakan 'partials/head.php' BUKAN 'partials/header.php'
-    //   - Sebagian page me-load head.php secara tidak langsung via 'partials/link.php'
-    //   - Admin menggunakan 'header-admin.php' dari direktori yang sama
     $index_pages = [
         'index.php'             => ['head', 'footer'],
         'video/index.php'       => ['head', 'footer'],
@@ -832,13 +748,12 @@ function testIndexPages(): void {
             $found = false;
 
             if ($partial === 'header-admin') {
-                // Admin: file header-admin.php ada di direktori admin/, bukan partials/
+
                 if (strpos($content, 'header-admin.php') !== false) {
                     $found = true;
                 }
             } elseif ($partial === 'head') {
-                // Head diterima secara langsung (head.php) atau tidak langsung (link.php)
-                // karena partials/link.php di dalamnya me-load partials/head.php
+
                 $found = (
                     strpos($content, 'partials/head.php') !== false ||
                     strpos($content, 'partials/link.php') !== false
@@ -874,10 +789,7 @@ function testIndexPages(): void {
     }
 }
 
-// ============================================================================
 // TEST 12: ERROR PAGES — Path Consistency & Depth-Independence
-// ============================================================================
-
 function testErrorPages(): void {
     print_header('TEST 12: Error Pages — Path Consistency');
 
@@ -896,11 +808,9 @@ function testErrorPages(): void {
             continue;
         }
 
-        // Strip komentar agar keyword di docblock/komentar tidak jadi false positive
         $code   = stripPhpComments(file_get_contents($full));
         $issues = [];
 
-        // 1. Path asset harus dinamis via meel_base_url_path() — bukan hardcoded /MEeL/
         if (strpos($code, '/MEeL/') !== false) {
             $issues[] = 'path hardcoded /MEeL/ ditemukan'; // harus pakai base dinamis
         }
@@ -908,8 +818,6 @@ function testErrorPages(): void {
             $issues[] = 'meel_base_url_path() tidak dipakai'; // helper base URL terpusat
         }
 
-        // 2. Include partial wajib __DIR__-based — bukan CWD-relative '../partials/...'
-        //    (include CWD-relative gagal senyap saat halaman di-include dari subdirektori)
         if (preg_match("/include\s*['\"]\.\.\/partials\//", $code)) {
             $issues[] = 'include partials CWD-relative (../partials/) ditemukan';
         }
@@ -927,10 +835,7 @@ function testErrorPages(): void {
     }
 }
 
-// ============================================================================
 // MAIN
-// ============================================================================
-
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
@@ -940,7 +845,7 @@ function run(): int {
     echo CLR_GRAY . "  Path : " . PROJECT_ROOT . "\n";
     echo "  Time : " . $GLOBALS['test_timestamp'] . "\n" . CLR_RESET;
 
-    // === RUN ALL TESTS ===
+    // ─── RUN ALL TESTS ───
     testPhpSyntax();
     testFileIntegrity();
     testClassLoading();

@@ -1,15 +1,9 @@
 <?php
-
-// ════════════════════════════════════════════════════════════════
 // helpers/user.php — User Role & Usage Helpers
-//
 // Bagian dari pecahan modules/core/helpers.php.
 // Dimuat oleh helpers/main.php.
-//
 // Semua fungsi dibungkus function_exists() guard sebagai
 // defense-in-depth terhadap double-include.
-// ════════════════════════════════════════════════════════════════
-
 if (!function_exists('get_user_usage')) {
 function get_user_usage(string $username): int|float
 {
@@ -18,25 +12,11 @@ function get_user_usage(string $username): int|float
     $path = dirname(__DIR__, 3) . "/data_drive/private_admins/" . $username;
     if (!is_dir($path)) return 0;
 
-    // Delegasikan ke dir_size() yang sudah memiliki cache + fallback
     return dir_size($path);
 }
 } // end function_exists('get_user_usage')
 
-/**
- * Get user role dengan cache session + static cache per request.
- * Prioritas:
- *   1. Static cache (per-request, tercepat)
- *   2. $_SESSION['role'] (lintas request, mengurangi query DB)
- *   3. Query DB (jika belum ada di cache)
- *
- * Setelah role diambil dari DB, simpan ke session agar request
- * berikutnya tidak perlu query ulang.
- *
- * @param \mysqli $conn   Koneksi database
- * @param int     $user_id ID user
- * @return string Role user ('admin', 'member', 'user', 'guest')
- */
+/* @param \mysqli $conn Koneksi database; @param int $user_id ID user; @return string Role user ('admin', 'member', 'user', 'guest') */
 if (!function_exists('get_user_role')) {
 function get_user_role(mysqli $conn, int $user_id): string
 {
@@ -46,7 +26,6 @@ function get_user_role(mysqli $conn, int $user_id): string
         return $cache[$user_id];
     }
 
-    // Level 2: Session cache (lintas request, cegah query tiap halaman)
     if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $user_id && isset($_SESSION['role'])) {
         $role = $_SESSION['role'];
         $cache[$user_id] = $role;
@@ -72,9 +51,7 @@ function get_user_role(mysqli $conn, int $user_id): string
 }
 } // end function_exists('get_user_role')
 
-/**
- * Invalidate role cache di session — panggil saat role user berubah.
- */
+/* Invalidate role cache di session — panggil saat role user berubah. */
 if (!function_exists('invalidate_user_role_cache')) {
 function invalidate_user_role_cache(): void
 {

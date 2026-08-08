@@ -1,8 +1,4 @@
-/* ============================================================
- * misc.js — Util kecil: toggle deskripsi video, update parameter
- * exclude pada search box navbar, dan shortcut keyboard global (L = toggle loop, A = toggle auto-next — sama seperti klik item Settings → Loop Playback / Auto Next).
- * Depends on: state.js, player-events.js (window.toggleLoop / toggleAutoNext), shared/keyboard.js
- * ============================================================ */
+/* misc.js — Util kecil: toggle deskripsi video, update parameter */
 document.addEventListener("keydown", (e) => {
   if (window.meelKeyShortcutIgnored?.(e)) return;
   const n = e.key.toLowerCase();

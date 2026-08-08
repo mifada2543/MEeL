@@ -1,19 +1,9 @@
-/* ============================================================
- * mini-player.js — Mini player (Spotify-style) yang dipakai
- * BERSAMA oleh music/index.php & music/view_playlist.php.
- * Satu sumber kebenaran: state lintas halaman lewat
- * sessionStorage 'meel_audio_state' + localStorage 'meel_global_loop'.
- * Fungsi khusus halaman (setupMusicItemClicks, loadPlaylistById,
- * dropdown library) TIDAK ada di sini — ada di
- * index/library-ui.js & view_playlist/view_playlist.js.
- * Depends on: shared/format-time.js (formatTime), shared/keyboard.js
- * (meelKeyShortcutIgnored), htmx (window.htmx), lucide
- * ============================================================ */
+/* mini-player.js — Mini player (Spotify-style) yang dipakai */
 const miniPlayerIndex = document.getElementById("mini-player-index");
 let audioPlayer = null;
 let isMiniPlayerIndexActive = false;
 let currentState = null;
-// --- Helpers ---
+// ─── Helpers ───
 function saveIndexState() {
   if (!currentState || !audioPlayer) return;
   currentState.currentTime = audioPlayer.currentTime;
@@ -21,7 +11,7 @@ function saveIndexState() {
   currentState.isLooping = isMiniLoopIndexActive;
   sessionStorage.setItem("meel_audio_state", JSON.stringify(currentState));
 }
-// --- Buat / ganti audio element ---
+// ─── Buat / ganti audio element ───
 function loadAudio(state, autoplay) {
   if (!audioPlayer) {
     audioPlayer = document.createElement("audio");
@@ -53,7 +43,7 @@ function loadAudio(state, autoplay) {
     audioPlayer.play().catch(() => {});
   }
 }
-// --- Update seluruh UI ---
+// ─── Update seluruh UI ───
 let _idxEls = null;
 function _getIdxEls() {
   if (!_idxEls) {
@@ -103,7 +93,7 @@ function setPlayIcon(icon) {
     lucide.createIcons();
   }
 }
-// --- Init: baca sessionStorage ---
+// ─── Init: baca sessionStorage ───
 function initMiniPlayerIndex() {
   const miniPlayerBar = document.getElementById("mini-player-index");
   if (miniPlayerBar) {
@@ -165,14 +155,14 @@ function initMiniPlayerIndex() {
     console.warn("Mini player init error:", e);
   }
 }
-// --- Play / Pause ---
+// ─── Play / Pause ───
 window.miniPlayPauseIndex = function () {
   if (!audioPlayer) return;
-  // Jeda kesehatan (20-20-20) aktif → jangan izinkan memulai pemutaran baru.
+
   if (window.meelHealthAlertActive && audioPlayer.paused) return;
   audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
 };
-// --- Seek ---
+// ─── Seek ───
 window.miniSeekIndex = function (event) {
   if (!audioPlayer) return;
   const rect = event.currentTarget.getBoundingClientRect();
@@ -182,10 +172,10 @@ window.miniSeekIndex = function (event) {
     Math.min(pct * audioPlayer.duration, audioPlayer.duration),
   );
 };
-// --- Next: Cari lagu berikutnya ---
+// ─── Next: Cari lagu berikutnya ───
 window.miniNextIndex = function () {
   if (!audioPlayer) return;
-  // Jeda kesehatan (20-20-20) aktif → tolak auto-next / pindah lagu.
+
   if (window.meelHealthAlertActive) return;
   if (audioPlayer.loop) return;
   if (currentState && currentState.filename) {
@@ -208,7 +198,7 @@ window.miniNextIndex = function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
   }
 };
-// --- Prev: restart jika > 3 detik ---
+// ─── Prev: restart jika > 3 detik ───
 window.miniPrevIndex = function () {
   if (!audioPlayer) return;
   if (audioPlayer.currentTime > 3) {
@@ -251,7 +241,7 @@ function expandPlayerFromMiniPlayer() {
     }
   }
 }
-// --- Loop toggle untuk mini player ---
+// ─── Loop toggle untuk mini player ───
 let isMiniLoopIndexActive = localStorage.getItem("meel_global_loop") === "true";
 window.toggleMiniLoopIndex = function () {
   isMiniLoopIndexActive = !isMiniLoopIndexActive;
@@ -271,7 +261,7 @@ function updateMiniLoopUIIndex() {
     btn.style.opacity = "0.5";
   }
 }
-// --- Tutup ---
+// ─── Tutup ───
 window.closeMiniPlayerIndex = function () {
   if (audioPlayer) audioPlayer.pause();
   miniPlayerIndex.classList.remove("active");
@@ -279,7 +269,7 @@ window.closeMiniPlayerIndex = function () {
   isMiniPlayerIndexActive = false;
   currentState = null;
 };
-// ── Setup playlist items (dipakai index & view_playlist) ──────────
+// ─── Setup playlist items (dipakai index & view_playlist) ───
 function setupPlaylistItemClicks() {
   document.querySelectorAll(".music-pl-item").forEach(function (item) {
     if (item.dataset.plListenerAdded) return;

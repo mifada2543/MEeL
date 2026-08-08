@@ -1,6 +1,4 @@
-/* ============================================================
- * mini-player.css — Mini player shell, info, responsive
- * ============================================================ */
+/* mini-player.css — Mini player shell, info, responsive */
 #mini-player-shell {
   position: fixed !important;
   bottom: 24px !important;
@@ -23,7 +21,7 @@
     0 28px 64px rgba(0, 0, 0, 0.95),
     0 0 0 1px rgba(220, 38, 38, 0.35) !important;
 }
-/* ── Mini-player mode (inside shell) ── */
+/* ─── Mini-player mode (inside shell) ─── */
 .mini-player-mode {
   position: relative !important;
   width: 100% !important;
@@ -86,7 +84,7 @@
 .mini-player-mode .plyr__progress input[type="range"] {
   cursor: pointer !important;
 }
-/* ── Close & Expand buttons ── */
+/* ─── Close & Expand buttons ─── */
 #mini-close-btn,
 #mini-expand-btn {
   position: absolute;
@@ -128,7 +126,7 @@
   background: rgba(220, 38, 38, 0.75);
   transform: scale(1.1);
 }
-/* ── Mini-player info ── */
+/* ─── Mini-player info ─── */
 #mini-player-info {
   padding: 10px 12px 12px;
   display: flex;
@@ -165,7 +163,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* ── Responsive: 640px ── */
+/* ─── Responsive: 640px ─── */
 @media (max-width: 640px) {
   #mini-player-shell {
     width: 280px !important;
@@ -196,7 +194,7 @@
     font-size: 9px;
   }
 }
-/* ── Responsive: 480px ── */
+/* ─── Responsive: 480px ─── */
 @media (max-width: 480px) {
   #mini-player-shell {
     width: 240px !important;

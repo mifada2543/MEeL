@@ -1,10 +1,8 @@
-// ==========================================
 // FILE: game.js
 // FUNGSI: Snake Game — Logika, Fisika, Kontrol
-// ==========================================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-// ── KONFIGURASI ──────────────────────────────
+// ─── KONFIGURASI ───
 const GRID_SIZE = 20;
 const CELL_SIZE = canvas.width / GRID_SIZE;
 const gameState = {
@@ -15,7 +13,7 @@ const gameState = {
   speed: 150,
   minSpeed: 60,
 };
-// ── STATE SNAKE ──────────────────────────────
+// ─── STATE SNAKE ───
 let snake = [];
 let food = {};
 let direction = "RIGHT";
@@ -32,7 +30,7 @@ const newHighScoreEl = document.getElementById("newHighScore");
 function updateHiScoreDisplay() {
   hiScoreEl.textContent = String(gameState.hiScore).padStart(5, "0");
 }
-// ── FUNGSI GAME ──────────────────────────────
+// ─── FUNGSI GAME ───
 function initGame() {
   snake = [
     { x: 10, y: 10 },
@@ -127,7 +125,7 @@ function endGame() {
   gameOverScreen.style.pointerEvents = "auto";
   draw();
 }
-// ── Helper (cross-browser) ──
+// ─── Helper (cross-browser) ───
 function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -142,7 +140,7 @@ function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
   ctx.fill();
 }
-// ── RENDER ──────────────────────────────────
+// ─── RENDER ───
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // Background grid
@@ -288,7 +286,7 @@ function draw() {
     }
   });
 }
-// ── INPUT ────────────────────────────────────
+// ─── INPUT ───
 window.addEventListener("keydown", (e) => {
   const key = e.key;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
@@ -399,7 +397,7 @@ document.getElementById("restartBtn").addEventListener("click", initGame);
 startScreen.addEventListener("click", () => {
   if (!gameState.isPlaying) initGame();
 });
-// ── DRAW ON LOAD ─────────────────────────────
+// ─── DRAW ON LOAD ───
 function drawEmptyBoard() {
   ctx.fillStyle = "#0d1117";
   ctx.fillRect(0, 0, canvas.width, canvas.height);

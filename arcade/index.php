@@ -151,7 +151,6 @@ $games = [
   </div>
 
   <?php include "../partials/footer.php"; ?>
-
   <script>
     const games = (() => {
       const init = <?= json_encode($games) ?>,

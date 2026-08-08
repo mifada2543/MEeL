@@ -20,7 +20,7 @@ if ($curr_role === 'guest') {
     exit();
 }
 
-// ── Back URL (smart referer) ──
+// ─── Back URL (smart referer) ───
 $back_url = $is_admin ? 'cookies.php' : '../music/index.php';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -46,7 +46,7 @@ $music = $stmt_music->get_result()->fetch_assoc();
 if (!$music) {
     die("<div style='color:orange; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Musik tidak ditemukan!</h2><a href='../music/index.php' style='color:#f97316;'>Kembali ke Musik</a></div>");
 }
-// Cek kepemilikan: admin bisa edit semua, uploader hanya miliknya
+
 $is_owner = ((int)$music['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
     header("Location: ../err/denied.php");
@@ -97,7 +97,7 @@ if (isset($_POST['update'])) {
                 }
                 $upload_path = $target_dir . $new_name;
                 $ffmpeg_bin = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-                // Konversi ke WebP — 500×500 square, scale+pad agar tidak distorsi
+
                 $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
                     . " -vf \"scale=500:500:force_original_aspect_ratio=decrease,pad=500:500:(ow-iw)/2:(oh-ih)/2\" -c:v libwebp -q:v 78 "
                     . escapeshellarg($upload_path) . " 2>&1";
@@ -116,7 +116,7 @@ if (isset($_POST['update'])) {
         if ($title === '') {
             $error_message = "Judul lagu tidak boleh kosong.";
         } else {
-            // Generate search_metadata — helper terpusat (romaji + english + alias),
+
             $meta = generate_search_metadata($title, $artist, $album);
             $stmt_update = $conn->prepare("UPDATE music SET title = ?, artist = ?, album = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
             $stmt_update->bind_param("ssssssi", $title, $artist, $album, $description, $thumbnail_url, $meta, $id);
@@ -175,7 +175,6 @@ $thumb_src = !empty($music['thumbnail'])
         $media_type = 'music';
         include 'header-admin.php';
         ?>
-
         <!-- Main edit layout -->
         <div class="edit-layout">
 
@@ -302,20 +301,17 @@ $thumb_src = !empty($music['thumbnail'])
                         Detail musik berhasil diperbarui!
                     </div>
                 <?php endif; ?>
-
                 <?php if ($error_message !== ""): ?>
                     <div class="alert alert-error" style="margin-bottom:20px;">
                         <i data-lucide="alert-triangle" style="width:15px;height:15px;flex-shrink:0;"></i>
                         <?= htmlspecialchars($error_message) ?>
                     </div>
                 <?php endif; ?>
-
                 <form id="edit-form" method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                         <input type="file" name="thumbnail" accept="image/*" id="cover-file-hidden" style="display:none">
                     <?php endif; ?>
-
                     <!-- Judul -->
                     <div class="field-group">
                         <label class="field-label" for="f-title">Judul Lagu</label>

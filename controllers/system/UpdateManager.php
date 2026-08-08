@@ -1,9 +1,5 @@
 <?php
-
-/**
- * UpdateManager
- * Menangani aksi admin: simpan sidebar_settings & CRUD update entry.
- */
+/* UpdateManager Menangani aksi admin: simpan sidebar_settings & CRUD update entry. */
 class UpdateManager
 {
     private mysqli $db;
@@ -14,12 +10,8 @@ class UpdateManager
         $this->db = $db;
     }
 
-    /* ── Entry point ──────────────────────────────────────────── */
+    /* ─── Entry point ─── */
 
-    /**
-     * Tangani POST request bila ada.
-     * Redirect kembali ke update.php setelah selesai.
-     */
     public function handle(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
@@ -43,7 +35,7 @@ class UpdateManager
         };
     }
 
-    /* ── Aksi: sidebar ────────────────────────────────────────── */
+    /* ─── Aksi: sidebar ─── */
 
     private function saveSidebar(): void
     {
@@ -66,7 +58,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ── Aksi: tambah update entry (Create) ────────────────────── */
+    /* ─── Aksi: tambah update entry (Create) ─── */
 
     private function saveUpdate(): void
     {
@@ -101,7 +93,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ── Aksi: edit update entry (Update) ─────────────────────── */
+    /* ─── Aksi: edit update entry (Update) ─── */
 
     private function saveEditUpdate(): void
     {
@@ -137,7 +129,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ── Aksi: hapus update entry (Delete) ────────────────────── */
+    /* ─── Aksi: hapus update entry (Delete) ─── */
 
     private function deleteUpdate(): void
     {
@@ -164,7 +156,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ── Query helpers ────────────────────────────────────────── */
+    /* ─── Query helpers ─── */
 
     public function getSidebarData(): array
     {
@@ -181,7 +173,7 @@ class UpdateManager
         return $rows;
     }
 
-    /* ── Flash message ────────────────────────────────────────── */
+    /* ─── Flash message ─── */
 
     public function getFlash(): array
     {
@@ -202,18 +194,17 @@ class UpdateManager
         $_SESSION['flash']         = $this->flash;
     }
 
-    /* ── Utilities ────────────────────────────────────────────── */
+    /* ─── Utilities ─── */
 
     private function clean(string $val): string
     {
-        // htmlspecialchars di sini mengamankan tag <script> agar disimpan sebagai entities aman
+
         return htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
     }
 
     private function redirect(): void
     {
-        // Pakai base_url() (berbasis MEEL_BASE_URL/root proyek) agar konsisten,
-        // bukan dirname(SCRIPT_NAME) yang ikut direktori halaman aktif.
+
         header("Location: " . base_url('/update.php'));
         exit;
     }

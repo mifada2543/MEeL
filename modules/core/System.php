@@ -12,7 +12,7 @@ class System
         $this->conn = $db_connection;
     }
 
-    // ─── MONITORING ──────────────────────────────────────────────────────────
+    // ─── MONITORING ───
 
     public function getActiveQueues(): array
     {
@@ -76,7 +76,7 @@ class System
         if (!$full_path || !file_exists($full_path)) {
             return 0.0;
         }
-        // Pastikan helpers.php termuat (dir_size sudah memiliki cache + fallback)
+
         require_once __DIR__ . '/helpers.php';
         return dir_size($full_path);
     }
@@ -134,7 +134,7 @@ class System
         ];
     }
 
-    // ─── LIMITING ────────────────────────────────────────────────────────────
+    // ─── LIMITING ───
 
     public function isServerBusy(): bool
     {
@@ -157,7 +157,6 @@ class System
             $max_upload = 10; // Drive biasanya lebih banyak file kecil
         }
 
-        // Gunakan method pusat dari RateLimiter untuk role-based adjustment
         $max_upload = RateLimiter::getRoleLimit($max_upload, $user_role);
 
         $sql = "SELECT upload_date FROM $type 
@@ -177,7 +176,7 @@ class System
         return ['allowed' => true];
     }
 
-    // ─── MANAGEMENT ──────────────────────────────────────────────────────────
+    // ─── MANAGEMENT ───
 
     public function cleanStuckQueues(): int
     {

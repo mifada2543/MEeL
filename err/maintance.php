@@ -1,5 +1,4 @@
 <?php
-// Base path root proyek — URL asset absolut (independen dari kedalaman include)
 require_once __DIR__ . '/../modules/core/base_url.php';
 $meel_base = meel_base_url_path();
 
@@ -33,12 +32,12 @@ if ($user_role === 'admin') {
     $action    = "PLEASE_WAIT";
 }
 
-// ── Path dari config.php (dideklarasikan di sini agar scope global) ──────────
+// ─── Path dari config.php (dideklarasikan di sini agar scope global) ───
 $hdd_base_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : '/path/to/your/media';
 $hdd_dir       = dirname($hdd_base_path);
 $media_root    = dirname($hdd_dir);
 
-// ── DEBUG DATA (admin only) ─────────────────────────────────────────────────
+// ─── DEBUG DATA (admin only) ───
 $debug = [];
 if ($user_role === 'admin') {
     // PHP process user
@@ -47,7 +46,7 @@ if ($user_role === 'admin') {
     $debug['referer']         = $_SERVER['HTTP_REFERER'] ?? '(tidak ada referer)';
 
     // Paths to check (dari config.php terpusat)
-    
+
     $paths = [
         '/media',
         $media_root,
@@ -87,7 +86,6 @@ if ($user_role === 'admin') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -297,10 +295,8 @@ sudo setfacl -R -m u:daemon:rx <?= htmlspecialchars($hdd_base_path) ?></pre>
             </div>
         </div>
     <?php endif; ?>
-
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

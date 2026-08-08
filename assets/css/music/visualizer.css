@@ -1,6 +1,4 @@
-/* ============================================================
- * visualizer.css — Visualizer bars (cava-style)
- * ============================================================ */
+/* visualizer.css — Visualizer bars (cava-style) */
 #cava-container {
   display: flex;
   align-items: flex-end;

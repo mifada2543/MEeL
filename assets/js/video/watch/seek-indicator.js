@@ -1,7 +1,3 @@
-/* ============================================================
- * seek-indicator.js — Indikator visual '-10s'/'+10s' saat double-tap seek di gestur mobile.
- * Depends on: video/watch
- * ============================================================ */
 const _sisiIndicators = { rewind: null, forward: null },
   _sisiHideTimeouts = { rewind: null, forward: null },
   _sisiRippleCounts = { rewind: 0, forward: 0 };

@@ -1,17 +1,10 @@
 <?php
-
-/** MEeL — MFA Verification (after password login)
- * Alur:
- *   1. User login dengan password benar + MFA enabled
- *   2. login.php redirect ke sini (mfa_temp_uid sudah di session)
- *   3. User input kode 6-digit atau backup code
- *   4. Valid → session lengkap (user_id, username, role) + mfa_verified */
 require_once __DIR__ . '/auth_helpers.php';
 auth_boot_session();
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
-// ── Rate limit ──
+// ─── Rate limit ───
 $max_mfa_attempts = 10;
 $mfa_lockout_time = 300; // 5 menit
 $is_loopback = auth_is_loopback(); // localhost bebas rate-limit saat debug
@@ -25,7 +18,7 @@ if (!$is_loopback && isset($_SESSION['mfa_locked_until'])) {
         $mfa_remaining = $_SESSION['mfa_locked_until'] - time();
     }
 }
-// ── Cek pending MFA ──
+// ─── Cek pending MFA ───
 if (!isset($_SESSION['mfa_temp_uid'])) {
     if (isset($_SESSION['user_id'])) {
         header("Location: ../index.php");
@@ -36,7 +29,7 @@ if (!isset($_SESSION['mfa_temp_uid'])) {
 }
 $error = '';
 $temp_username = $_SESSION['mfa_temp_username'] ?? 'User';
-// ─── HANDLE FORM ───────────────────────────────────────────────
+// ─── HANDLE FORM ───
 if (isset($_POST['verify']) || isset($_POST['code'])) {
     if ($mfa_locked) {
         $error = 'Terlalu banyak percobaan. Silakan coba lagi dalam ' . $mfa_remaining . ' detik.';
@@ -115,7 +108,7 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
     }
 }
 
-// ─── HTML (shell bersama via partials) ─────────────────────────
+// ─── HTML (shell bersama via partials) ───
 $auth_title       = "Verifikasi MFA | MEeL";
 $auth_description = "MEeL — Verifikasi autentikasi dua faktor.";
 $auth_og_title    = "MEeL | Verifikasi MFA";

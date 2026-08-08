@@ -1,15 +1,14 @@
-// ── Helpers auth: kirim token CSRF & tangani 401 ─────────────────────────
+// ─── Helpers auth: kirim token CSRF & tangani 401 ───
 function csrfToken() {
   return window.MEEL_CSRF || "";
 }
 
 function requireLogin() {
-  // Redirect ke halaman login (login.php tidak memakai param `next`)
+
   window.location.href = "../../auth/login.php";
   return false;
 }
 
-// Cek status HTTP; jika 401 (butuh login) arahkan ke halaman login.
 async function guardedFetch(res) {
   if (res.status === 401) {
     requireLogin();
@@ -45,7 +44,7 @@ export async function fetchMovesAPI(roomCode, afterId = 0) {
   );
   if (!(await guardedFetch(res))) return { moves: [], opponentOnline: true };
   const data = await res.json();
-  // Fallback: respons lama berbentuk array murni (server belum di-update).
+
   if (Array.isArray(data)) return { moves: data, opponentOnline: true };
   return {
     moves: Array.isArray(data.moves) ? data.moves : [],

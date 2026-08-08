@@ -9,21 +9,16 @@ include_once '../modules/core/RateLimiter.php';
 // Guard terpusat: harus login + role admin
 require_admin($conn);
 
-// Konteks include untuk controllers/admin/* — file controller hanya boleh
-// dieksekusi dari sini (sudah melewati require_admin()), bukan via URL langsung.
 define('MEEL_ADMIN_CONTEXT', true);
 
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';
 
-// Auto-cleanup guest stale (adaptive — throttle 1 jam via GarbageCollector)
 GarbageCollector::cleanGuests($conn);
-// Auto-cleanup room catur multiplayer yang terbengkalai (throttle 1 jam)
+
 GarbageCollector::cleanChessRooms($conn);
 
-/** * --- IDE Type Hinting for Intelephense ---
- * These variables are initialized in '../controllers/fun.php'
- * * @var float $ssd_free
+/**
  * @var float $ssd_used
  * @var float $ssd_total
  * @var float $hdd_free
@@ -50,7 +45,6 @@ GarbageCollector::cleanChessRooms($conn);
  * @var array $chart_activity
  */
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -87,7 +81,6 @@ GarbageCollector::cleanChessRooms($conn);
     $back_url = '../index.php';
     include 'header-admin.php';
     ?>
-
     <div class="max-w-5xl mx-auto px-4 md:px-8 py-8">
 
         <div class="flex items-center gap-4 mb-8">
@@ -182,7 +175,6 @@ GarbageCollector::cleanChessRooms($conn);
                         <p class="text-[9px] font-black text-gray-600 uppercase mb-3 tracking-tighter">Most Viewed Content</p>
                         <div class="space-y-2">
                             <?php
-                            // Ambil maksimal 1 video & 1 music dengan views tertinggi dari hasil $top_media
                             $top_picks = ['video' => null, 'music' => null];
                             while ($tm = $top_media->fetch_assoc()) {
                                 if (array_key_exists($tm['type'], $top_picks) && $top_picks[$tm['type']] === null) {
@@ -283,7 +275,6 @@ GarbageCollector::cleanChessRooms($conn);
                 </table>
             </div>
         <?php endif; ?>
-
         <div class="glass p-6 rounded-3xl mb-8">
             <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Database Sync Check</h3>
             <?php if (count($orphans) > 0): ?>
@@ -452,7 +443,6 @@ GarbageCollector::cleanChessRooms($conn);
                     </button>
                 </form>
             </div>
-
 
             <div class="scrollable-table-wrap" style="max-height:520px;">
                 <table class="w-full text-left text-xs">

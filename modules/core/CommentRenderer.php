@@ -1,35 +1,13 @@
 <?php
-/**
- * modules/core/CommentRenderer.php
- *
- * Comment rendering helpers untuk video & music.
- * render_video_comments() dan render_music_comments() digabung menjadi
- * render_comments() dengan parameter $theme untuk menentukan warna.
- *
- * @package MEeL
- */
+/* @package MEeL */
 
 if (!function_exists('render_comments')) {
 /**
- * Render nested comments untuk video atau music.
- *
- * @param int    $parent_id        ID parent comment (0 untuk root)
- * @param array  $grouped          Comments yang sudah dikelompokkan per parent
- * @param int    $level            Level nesting (internal, untuk rekursi)
- * @param string $theme            'video' (merah) atau 'music' (oranye)
- * @param int    $playlist_context ID playlist untuk link navigasi (0 jika tidak ada)
- *
- * Global yang dibaca:
- *   - $id          ID media (video/music) untuk link hapus
- *   - $user_map    Map id komentar → username (untuk label balasan)
- *   - $uploader_id ID user uploader media — menentukan siapa yang boleh
- *     menghapus komentar (pemilik komentar ATAU uploader media ATAU admin).
- *     Default 0 = tanpa konteks uploader (hanya pemilik komentar & admin).
- *
- * Hak hapus (berlaku di semua pemanggil):
- *   - Pemilik komentar
- *   - Uploader media (via global $uploader_id)
- *   - Admin (via $_SESSION['role'] === 'admin')
+ * @param int $parent_id ID parent comment (0 untuk root)
+ * @param array $grouped Comments yang sudah dikelompokkan per parent
+ * @param int $level Level nesting (internal, untuk rekursi)
+ * @param string $theme 'video' (merah) atau 'music' (oranye)
+ * @param int $playlist_context ID playlist untuk link navigasi (0 jika tidak ada)
  */
 function render_comments(int $parent_id, array $grouped, int $level = 0, string $theme = 'video', int $playlist_context = 0): void
 {
@@ -37,7 +15,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
     $uploader_id = (int)($uploader_id ?? 0);
     if (!isset($grouped[$parent_id])) return;
 
-    // ── Theme color mapping ──────────────────────────────────────────────
+    // ─── Theme color mapping ───
     $is_video = ($theme === 'video');
 
     $c_avatar_from    = $is_video ? 'from-red-600' : 'from-orange-500';
@@ -69,7 +47,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-[11px] font-bold <?= $c_author ?> truncate">@<?= htmlspecialchars($author) ?></span>
                         <?php
-                        // ── Badge role: admin (merah) / member (biru) ──
+                        // ─── Badge role: admin (merah) / member (biru) ───
                         $_c_role = $c['role'] ?? '';
                         if ($_c_role === 'admin' || $_c_role === 'member'):
                             $_badge_color = ($_c_role === 'admin')
@@ -84,14 +62,14 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         <span class="text-[10px] <?= $author_time_color ?> flex-shrink-0"><?= time_ago($c['created_at']) ?></span>
                     </div>
                     <?php
-                        // ── Hak hapus: pemilik komentar ATAU uploader media ATAU admin ──
+                        // ─── Hak hapus: pemilik komentar ATAU uploader media ATAU admin ───
                         $is_owner   = (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)$c['user_id']);
                         $is_uploader = ($uploader_id > 0 && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $uploader_id);
                         $is_admin    = (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'admin');
                         $can_delete = $is_owner || $is_uploader || $is_admin;
 
                         if ($can_delete):
-                        // ── Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi) ──
+                        // ─── Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi) ───
                         $_c_snippet = trim(preg_replace('/\s+/', ' ', (string)($c['comment'] ?? '')));
                         if (function_exists('mb_strlen') && mb_strlen($_c_snippet) > 60) {
                             $_c_snippet = mb_substr($_c_snippet, 0, 60) . '…';
@@ -170,21 +148,11 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
 }
 } // end function_exists('render_comments')
 
-// ── Preview komentar terbaru ────────────────────────────────────────────────
-
 if (!function_exists('comment_preview')) {
 /**
- * Preview komentar terbaru untuk header kolom komentar.
- *
- * Dipakai bersama oleh halaman watch video & music (video/watch.php, music/watch.php)
- * sehingga logika pencarian komentar terbaru tidak diduplikasi per view.
- *
  * @param array $grouped Comments yang sudah dikelompokkan per parent
- * @param int   $limit   Berapa komentar terbaru yang dikembalikan (default 4)
+ * @param int $limit Berapa komentar terbaru yang dikembalikan (default 4)
  * @return array{text: string, latest_comment: ?array, items: array}
- *   - text           : preview satu baris komentar TERBARU (untuk title/tooltip)
- *   - latest_comment : komentar terbaru (null jika kosong)
- *   - items          : hingga $limit komentar terbaru (urut id menurun)
  */
 function comment_preview(array $grouped, int $limit = 4): array
 {
@@ -192,7 +160,6 @@ function comment_preview(array $grouped, int $limit = 4): array
     $latest_comment = null;
     $items          = [];
 
-    // Kumpulkan semua komentar, lalu urutkan id menurun (terbaru di depan)
     $all = [];
     foreach ($grouped as $_grp) {
         foreach ($_grp as $_c) {
@@ -214,17 +181,8 @@ function comment_preview(array $grouped, int $limit = 4): array
 }
 } // end function_exists('comment_preview')
 
-// ── Empty state komentar ────────────────────────────────────────────────────
-
 if (!function_exists('render_comment_empty_state')) {
-/**
- * Empty state untuk daftar komentar yang belum ada isinya.
- *
- * Warna mengikuti tema: video = text-gray-300, music = text-gray-700
- * (satu sumber warna agar konsisten di semua halaman & endpoint AJAX).
- *
- * @param string $theme 'video' (merah) atau 'music' (oranye)
- */
+/* @param string $theme 'video' (merah) atau 'music' (oranye) */
 function render_comment_empty_state(string $theme = 'video'): void
 {
     $color = ($theme === 'music') ? 'text-gray-700' : 'text-gray-300';

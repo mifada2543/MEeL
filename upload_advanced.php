@@ -16,7 +16,7 @@ require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
-// ─── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────
+// ─── GLOBAL ERROR HANDLER ───
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
@@ -37,9 +37,6 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-// Transcoder dipasangi BrowserProgressObserver (presentation layer) — semua
-// output overlay/JS kini ditangani observer, bukan class bisnis. Hook shutdown
-// menghentikan proses anak (yt-dlp/ffmpeg) yang masih berjalan bila request
 // berakhir abnormal (fatal error, timeout server, dsb).
 $transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
 register_shutdown_function([$transcoder, 'terminateAllProcesses']);
@@ -59,7 +56,7 @@ $is_admin  = ($user_role === 'admin');
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
-// ── Hitung sisa kuota upload per jam ──
+// ─── Hitung sisa kuota upload per jam ───
 $quota_video_used = 0;
 $quota_music_used = 0;
 $upload_max = 2;
@@ -93,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     if ($is_busy) {
         $message = 'busy';
     } else {
-        // ── Rate limit check (sama seperti Uploader.php) ────────────────
+        // ─── Rate limit check (sama seperti Uploader.php) ───
         $type        = $_POST['type'] ?? '';
         $limit_table = ($type === 'music') ? 'music' : 'video';
         $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
@@ -105,9 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
 
-                // Aliran musik: observer sudah meng-stream window.location.href
                 // ke post_encode.php — hentikan render sisa halaman agar tidak
-                // ikut terkirim ke browser (caller memutuskan, bukan lapisan bisnis).
                 if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
                     exit;
                 }
@@ -126,8 +121,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     }
 }
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function ($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/' . $f;
@@ -167,7 +160,6 @@ $__v = function ($f) {
     <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
         <?php include 'partials/ui.php'; ?>
     <?php endif; ?>
-
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
 
@@ -212,7 +204,6 @@ $__v = function ($f) {
                     </a>
                 </div>
             <?php endif; ?>
-
             <!-- ── Main grid ── -->
             <div class="page-grid">
 
@@ -254,7 +245,6 @@ $__v = function ($f) {
                             </div>
                         </div>
                     <?php endif; ?>
-
                     <div class="form-card">
                         <!-- Card header -->
                         <div class="form-card-header">
@@ -281,7 +271,6 @@ $__v = function ($f) {
                                 <?php if (isset($_SESSION['csrf_token'])): ?>
                                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <?php endif; ?>
-
                                 <!-- URL input -->
                                 <div>
                                     <label class="f-label">URL Sumber</label>
@@ -527,7 +516,6 @@ $__v = function ($f) {
     </main>
 
     <?php include 'partials/footer.php'; ?>
-
     <script src="assets/js/up/main.js<?= $__v('assets/js/up/main.js') ?>"></script>
 </body>
 

@@ -1,7 +1,3 @@
-/* ============================================================
- * lifecycle.js — Listener siklus hidup halaman: bfcache (pageshow), visibilitychange (pause/resume glow), DOMContentLoaded (init), dan integrasi HTMX (beforeSwap/afterSwap) untuk auto-recovery.
- * Depends on: state.js, player-init.js, recovery.js, mini-player.js
- * ============================================================ */
 (window.addEventListener("pageshow", (e) => {
   if (e.persisted) {
     window.location.reload();

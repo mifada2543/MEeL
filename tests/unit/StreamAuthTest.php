@@ -4,10 +4,6 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers authorize_stream
  * @covers is_stream_authorized
- *
- * Otorisasi streaming audio (modules/core/helpers/stream_auth.php):
- * halaman MEeL menandai id media via authorize_stream(), dan
- * music/stream.php hanya melayani id yang sudah ditandai.
  */
 class StreamAuthTest extends TestCase
 {

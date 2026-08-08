@@ -1,12 +1,5 @@
 <?php
-/**
- * modules/core/japanese.php
- * Fungsi pemrosesan teks Jepang (MeCab + transliterasi Romaji + kamus offline JMdict).
- * Hanya di-include di halaman yang membutuhkan (upload/transcode/admin edit).
- * Tidak dibebankan ke setiap request seperti sebelumnya di config.php.
- */
-
-// ─── HELPER: Resolve MeCab binary (static cache per request) ───────────────
+// ─── HELPER: Resolve MeCab binary (static cache per request) ───
 if (!function_exists('getMecabPath')) {
     function getMecabPath(): string
     {
@@ -34,13 +27,12 @@ if (!function_exists('getMecabPath')) {
     }
 }
 
-// ─── ROMAJI CONVERTER ──────────────────────────────────────────────────────────
+// ─── ROMAJI CONVERTER ───
 if (!function_exists('getRomajiName')) {
     function getRomajiName(string $text): string
     {
         if (empty($text)) return 'untitled';
 
-        // Simpan input asli sebagai cadangan jika MeCab/transliterasi gagal
         $original_text = $text;
 
         // 1. Kamus Koreksi Karakter Spesifik & Simbol
@@ -56,12 +48,6 @@ if (!function_exists('getRomajiName')) {
         ];
         $text = str_replace($search, $replace, $text);
 
-        // 2. Eksekusi MeCab — path absolut biar tidak bergantung PATH environment
-        // Penting: kosongkan LD_LIBRARY_PATH. Di XAMPP/LAMPP, environment Apache
-        // mewarisi LD_LIBRARY_PATH=/opt/lampp/lib yang berisi libstdc++.so.6 versi
-        // LAMA — MeCab sistem (/usr/bin/mecab) gagal load GLIBCXX_3.4.32 dari sana
-        // (error: version `GLIBCXX_*' not found). Konsisten dgn pola `export
-        // LD_LIBRARY_PATH=''` yang dipakai Uploader/auto_metadata utk ffmpeg/ffprobe.
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
         $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
@@ -99,7 +85,6 @@ if (!function_exists('getRomajiName')) {
         $clean = preg_replace('/[^a-z0-9\-]/u', '-', $text);
         $clean = preg_replace('/-+/', '-', trim($clean, '-'));
 
-        // Fallback: jika hasil processing kosong, gunakan sanitasi dari teks asli
         if (empty($clean)) {
             $fallback = preg_replace('/[^a-z0-9\-]/u', '-', $original_text);
             $fallback = preg_replace('/-+/', '-', trim($fallback, '-'));
@@ -110,7 +95,7 @@ if (!function_exists('getRomajiName')) {
     }
 }
 
-// ─── ANALISIS GABUNGAN (romaji + english) ─────────────────────────────────────
+// ─── ANALISIS GABUNGAN (romaji + english) ───
 if (!function_exists('analyzeJapaneseText')) {
     function analyzeJapaneseText(string $text): array
     {
@@ -123,12 +108,11 @@ if (!function_exists('analyzeJapaneseText')) {
         $original_text = $text; // Simpan asli untuk fallback
         $clean_text = str_replace($search, $replace, $text);
 
-        // 1b. Alias lookup (brand/franchise/nama di luar JMdict) — substring match
         static $aliases = null;
         if ($aliases === null) {
             $alias_path = __DIR__ . '/japanese_aliases.php';
             $aliases = file_exists($alias_path) ? require $alias_path : [];
-            // Frasa terpanjang dulu — cegah duplikasi untuk substring yang tumpang tindih
+
             uksort($aliases, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
         }
 
@@ -140,16 +124,13 @@ if (!function_exists('analyzeJapaneseText')) {
         }
 
         // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
-        // LD_LIBRARY_PATH dikosongkan (sama seperti getRomajiName): di XAMPP,
-        // environment Apache berisi LD_LIBRARY_PATH=/opt/lampp/lib yang merusak
-        // load libstdc++ MeCab sistem (GLIBCXX_* not found) → MeCab gagal total.
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
         $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
         $process = proc_open($mecab_cmd, $descriptorspec, $pipes);
         if (!is_resource($process)) {
             $result['romaji'] = getRomajiName($text);
-            // Alias tetap dipakai walau MeCab gagal dibuka (tidak menyentuh logic MeCab)
+
             $result['english'] = trim(implode(' ', array_unique($alias_glosses)));
             return $result;
         }
@@ -162,8 +143,7 @@ if (!function_exists('analyzeJapaneseText')) {
         // 3. Koneksi kamus offline (static — sekali per request)
         static $pdo = null, $dict_ready = null, $dict_stmt = null;
         if ($dict_ready === null) {
-            // File ini berada di modules/core/, jadi naik 2 level ke root project
-            // (sebelumnya ../ saja → resolve ke modules/assets/ yang tidak ada).
+
             $dict_path = __DIR__ . '/../../assets/dict/jmdict.sqlite3';
             if (file_exists($dict_path)) {
                 try {
@@ -218,7 +198,6 @@ if (!function_exists('analyzeJapaneseText')) {
         $clean = preg_replace('/[^a-z0-9\-]/u', '-', $romaji_text);
         $clean = preg_replace('/-+/', '-', trim($clean, '-'));
 
-        // Fallback: jika hasil processing kosong, gunakan sanitasi dari teks asli
         if (empty($clean)) {
             $fallback = preg_replace('/[^a-z0-9\-]/u', '-', $original_text);
             $fallback = preg_replace('/-+/', '-', trim($fallback, '-'));
@@ -233,4 +212,3 @@ if (!function_exists('analyzeJapaneseText')) {
         return $result;
     }
 }
-

@@ -1,7 +1,4 @@
 <?php
-// Base path root proyek — dipakai untuk URL asset absolut & back-link default.
-// denied.php bisa di-include dari direktori sedalam controllers/admin/
-// (guard direct-access), jadi path relatif seperti ../assets/ akan dihitung
 // salah oleh browser terhadap URL halaman pemanggil.
 require_once __DIR__ . '/../modules/core/base_url.php';
 $meel_base = meel_base_url_path();
@@ -131,9 +128,8 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     </div>
 
     <!-- Lucide Icon Initialization -->
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

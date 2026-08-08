@@ -1,18 +1,10 @@
 <?php
-/**
- * controllers/auto_metadata.php
- * 
- * AJAX endpoint untuk membaca metadata file audio via ffprobe.
- * Dipanggil dari music/upload.php saat user klik tombol "Auto".
- * Mengembalikan JSON: { status, title, artist, album, cover (base64) }
- */
-
 require_once __DIR__ . '/../../modules/core/helpers.php';
 require_once __DIR__ . '/../../auth/config.php';
 
 header('Content-Type: application/json');
 
-// ── Cek login ─────────────────────────────────────────────────────────────
+// ─── Cek login ───
 include __DIR__ . '/../../auth/auth.php';
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -20,21 +12,20 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// ── CSRF ──────────────────────────────────────────────────────────────────
+// ─── CSRF ───
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'CSRF token tidak valid.']);
     exit;
 }
 
-// ── Validasi file upload ──────────────────────────────────────────────────
+// ─── Validasi file upload ───
 if (empty($_FILES['audio']['tmp_name']) || !is_uploaded_file($_FILES['audio']['tmp_name'])) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Tidak ada file audio yang diterima.']);
     exit;
 }
 
-// Cek error PHP upload (mis. UPLOAD_ERR_INI_SIZE saat melebihi upload_max_filesize)
 if (isset($_FILES['audio']['error']) && (int)$_FILES['audio']['error'] !== UPLOAD_ERR_OK) {
     http_response_code(400);
     $upload_errors = [
@@ -54,7 +45,6 @@ if (!in_array($ext, $allowed, true)) {
     exit;
 }
 
-// Batasi ukuran file — konsisten dgn Uploader::processMusic() (50MB user / 200MB admin)
 $user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $max_size  = ($user_role === 'admin') ? 200 * 1024 * 1024 : 50 * 1024 * 1024;
 if ((int)($_FILES['audio']['size'] ?? 0) > $max_size) {
@@ -63,9 +53,7 @@ if ((int)($_FILES['audio']['size'] ?? 0) > $max_size) {
     exit;
 }
 
-// ── Resolve binary — pastikan benar-benar executable (bukan fallback path palsu) ──
-// ffprobe wajib ada (untuk baca tag). ffmpeg hanya untuk ekstrak cover —
-// jika tidak ada, biarkan cover kosong (degradasi halus, tag tetap terbaca).
+// ─── Resolve binary — pastikan benar-benar executable (bukan fallback path palsu) ───
 $ffprobe = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 $ffmpeg  = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
 
@@ -75,7 +63,7 @@ if (!is_executable($ffprobe)) {
     exit;
 }
 
-// ── Simpan ke temp ────────────────────────────────────────────────────────
+// ─── Simpan ke temp ───
 $temp_dir  = sys_get_temp_dir() . '/meel_auto_meta';
 if (!is_dir($temp_dir)) @mkdir($temp_dir, 0755, true);
 
@@ -91,9 +79,7 @@ $album       = '';
 $description = '';
 $cover_b64   = '';
 
-// ── Baca metadata via ffprobe (JSON output → robust) ──────────────────────
-// Baca tag dari format DAN stream — sebagian file (FLAC/OGG tertentu)
-// menaruh judul/artis di level stream, bukan format.
+// ─── Baca metadata via ffprobe (JSON output → robust) ───
 $meta_cmd = 'export LD_LIBRARY_PATH=\'\'; '
     . escapeshellarg($ffprobe)
     . ' -v error -show_entries format_tags=title,artist,album,comment,description:stream_tags=title,artist,album,comment,description'
@@ -113,10 +99,7 @@ if ($meta_json) {
     $album  = trim($tags['album']  ?? '');
     $description = trim($tags['comment'] ?? ($tags['description'] ?? ''));
 
-    // Fallback: gabungkan tag di level stream per-field (FLAC/OGG tertentu
     // menaruh sebagian tag di stream, sebagian di format).
-    // HANYA stream audio yang relevan — stream picture cover (attached_pic)
-    // punya tag comment seperti "Cover (front)" yang bukan deskripsi lagu.
     foreach (($parsed['streams'] ?? []) as $stream) {
         if (($stream['codec_type'] ?? '') !== 'audio') continue;
         $st = array_change_key_case($stream['tags'] ?? [], CASE_LOWER);
@@ -129,7 +112,7 @@ if ($meta_json) {
     }
 }
 
-// ── Ekstrak cover art via ffmpeg (opsional — dilewati jika ffmpeg tidak ada) ──
+// ─── Ekstrak cover art via ffmpeg (opsional — dilewati jika ffmpeg tidak ada) ───
 if (is_executable($ffmpeg)) {
     $cover_path = $temp_dir . '/' . uniqid('cover_', true) . '.jpg';
     $cover_cmd  = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($ffmpeg)
@@ -145,12 +128,12 @@ if (is_executable($ffmpeg)) {
     }
 }
 
-// ── Cleanup ───────────────────────────────────────────────────────────────
+// ─── Cleanup ───
 @unlink($temp_file);
 if (!empty($cover_path) && file_exists($cover_path)) @unlink($cover_path);
 @rmdir($temp_dir);
 
-// ── Response ──────────────────────────────────────────────────────────────
+// ─── Response ───
 echo json_encode([
     'status'      => 'success',
     'title'       => $title,

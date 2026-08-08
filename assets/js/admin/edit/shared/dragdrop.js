@@ -1,20 +1,7 @@
-/**
- * MEeL Admin — Edit Shared: Drag & Drop Thumbnail / Cover
- * Setup drag-drop event listeners pada elemen thumbnail/cover wrap.
- * Usage:
- *   setupImageDragDrop('thumb-wrap', 'thumb-file-hidden', 'thumb-preview', 'thumb-changed-badge', handleThumbChange)
- *   setupImageDragDrop('cover-wrap', 'cover-file-hidden', 'cover-preview', 'cover-changed-badge', handleCoverChange)
- */
+/* MEeL Admin — Edit Shared: Drag & Drop Thumbnail / Cover */
 (function () {
   'use strict';
-  /**
-   * Setup drag-drop pada image wrap element
-   * @param {string} wrapId - ID container element (click/drag target)
-   * @param {string} inputId - ID hidden file input
-   * @param {string} previewId - ID img preview
-   * @param {string} badgeId - ID changed badge
-   * @param {Function} onChange - callback saat file berubah
-   */
+  /* * * Setup drag-drop pada image wrap element * @param {string} wrapId - ID container element (click/drag target) * @param {string} inputId - ID hidden file input * @param {string} previewId - ID img preview * @param {string} badgeId - ID changed badge * @param {Function} onChange - callback saat file berubah */
   window.setupImageDragDrop = function (wrapId, inputId, previewId, badgeId, onChange) {
     var wrap = document.getElementById(wrapId);
     var input = document.getElementById(inputId);

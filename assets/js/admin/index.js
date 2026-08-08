@@ -1,16 +1,9 @@
-/** MEeL Admin — Dashboard (index.php)
- * Chart.js 7-Day Activity Chart + Auto-refresh
- * Dependencies:
- *   - compatibilitas/lucide.js
- *   - compatibilitas/chart.umd.min.js
- *   - admin/main.js (this file should load after main.js)
- * Global data:
- *   - window.activityData (JSON dari PHP: chart_activity) **/
+/* MEeL Admin — Dashboard (index.php) */
 (function () {
   "use strict";
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
-    // ── 7-DAY ACTIVITY BAR CHART ──
+    // ─── 7-DAY ACTIVITY BAR CHART ───
     var ctx2 = document.getElementById("activityChart");
     if (
       ctx2 &&
@@ -93,7 +86,7 @@
         });
       }
     }
-    // ── Auto-refresh every 60 seconds ──
+    // ─── Auto-refresh every 60 seconds ───
     setTimeout(function () {
       location.reload();
     }, 60000);

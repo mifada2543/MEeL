@@ -1,19 +1,9 @@
 <?php
 // File: modules/core/Transcoder.php
-// Optimized for: Intel Core i3-1220P (10 core / 12 thread), Dual-Channel RAM, USB HDD storage
-// VA-API: Intel iHD 24.1.0 — H264/HEVC/VP9 encode+decode tersedia, tapi tidak dipakai di HLS
-//         karena pipeline ini sudah pakai -codec copy (stream copy, tanpa re-encode)
-//
 // Arsitektur (refactor media-processing engine):
-//   - Lapisan BISNIS murni: tidak ada echo/flush HTML/JS di class ini.
-//     Progress dilaporkan lewat ProgressObserver (lihat emit()).
-//   - Lapisan PRESENTASI: modules/core/BrowserProgressObserver.php
-//     mengubah event progress menjadi overlay browser (meel*).
-//   - Terminasi proses memakai PID/process-group presisi (posix_kill),
-//     bukan pkill -f berbasis marker string.
-//   - finalizeVideo() memindahkan file + INSERT database dalam satu
-//     transaksi MySQL — gagal salah satu → rollback + cleanup otomatis.
-
+// Progress dilaporkan lewat ProgressObserver (lihat emit()).
+// mengubah event progress menjadi overlay browser (meel*).
+// bukan pkill -f berbasis marker string.
 // Pastikan konstanta path terdefinisi (dari auth/config.php)
 if (!defined('MEEL_HDD_BASE')) {
     define('MEEL_HDD_BASE', '/path/to/your/media');
@@ -47,20 +37,12 @@ class Transcoder
     private string $ffmpeg_bin;
     private string $ffprobe_bin;
 
-    /**
-     * Observer progress (presentation layer). Null = tidak ada output
-     * (aman untuk CLI script / cron / API).
-     */
     private ?ProgressObserver $progressObserver = null;
 
-    /**
-     * Daftar proses anak yang sedang berjalan, untuk terminasi presisi.
-     *
-     * @var array<int, array{pid:int, group:bool, label:string, started:int}>
-     */
+    /* @var array<int, array{pid:int, group:bool, label:string, started:int}> */
     private array $childProcesses = [];
 
-    // ─── KONSTANTA HARDWARE ───────────────────────────────────────────────────
+    // ─── KONSTANTA HARDWARE ───
     private const FFMPEG_THREADS        = 8;
 
     // HLS: durasi tiap segment (detik)
@@ -70,12 +52,10 @@ class Transcoder
     private const DOWNLOAD_TIMEOUT      = 900;
 
     // Ambang deteksi timeout fragment yt-dlp: berapa kali pesan
-    // "Retrying fragment N (1/10)" muncul sebelum proses dihentikan.
     // 1 = hentikan segera begitu pola retry fragment terdeteksi.
     private const FRAGMENT_RETRY_LIMIT  = 1;
 
-    // ─── ENV PREFIX ───────────────────────────────────────────────────────────
-    // Didefinisikan di class (bukan trait) karena PHP 8.0 tidak support trait constants
+    // ─── ENV PREFIX ───
     private const ENV_PREFIX = "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
 
     public function __construct(
@@ -111,14 +91,7 @@ class Transcoder
         $this->setProgressListener($progressListener);
     }
 
-    /**
-     * Pasang (atau lepas) listener progress.
-     *
-     * Menerima instance ProgressObserver ATAU callable polos
-     * (dibungkus CallableProgressObserver). Null = tanpa output.
-     *
-     * @param callable(string $stage, array $data): void|ProgressObserver|null $listener
-     */
+    /* @param callable(string $stage, array $data): void|ProgressObserver|null $listener */
     public function setProgressListener(callable|ProgressObserver|null $listener): void
     {
         if ($listener instanceof ProgressObserver) {
@@ -135,16 +108,7 @@ class Transcoder
         return $this->user_role;
     }
 
-    /**
-     * Laporkan event progress ke observer (jika ada).
-     *
-     * Exception dari observer DITELAN dan dicatat — observer (lapisan
-     * presentasi) tidak boleh menggagalkan pipeline media di tengah jalan
-     * (mis. menyisakan proses anak hidup atau file setengah terpindah).
-     *
-     * @param string $stage Nama stage (lihat ProgressObserver docblock)
-     * @param array<string, mixed> $data Payload event
-     */
+    /* @param string $stage Nama stage (lihat ProgressObserver docblock); @param array<string, mixed> $data Payload event */
     private function emit(string $stage, array $data = []): void
     {
         try {
@@ -158,20 +122,11 @@ class Transcoder
         }
     }
 
-    // ─── PROCESS CONTROL (PID-BASED TERMINATION) ─────────────────────────────
-    // Pengganti `pkill -f <marker>` yang berisiko mematikan proses PHP/ffmpeg
-    // milik request lain pada sistem multi-tenant. Setiap proses anak dicatat
-    // PID-nya; terminasi memakai posix_kill() (atau fallback `kill -- -PGID`)
-    // terhadap PID/process-group yang presisi, dengan urutan:
-    //   SIGTERM → grace period → SIGKILL.
-
+    // ─── PROCESS CONTROL (PID-BASED TERMINATION) ───
     /**
-     * Catat proses anak yang sedang berjalan.
-     *
-     * @param int    $pid          PID (atau PGID bila $processGroup true)
-     * @param bool   $processGroup True bila proses adalah session/group leader
-     *                             (seluruh tree bisa dihentikan via kill -PGID)
-     * @param string $label        Label deskriptif untuk logging
+     * @param int $pid PID (atau PGID bila $processGroup true)
+     * @param bool $processGroup True bila proses adalah session/group leader
+     * @param string $label Label deskriptif untuk logging
      */
     private function trackChildProcess(int $pid, bool $processGroup, string $label): void
     {
@@ -185,11 +140,7 @@ class Transcoder
         }
     }
 
-    /**
-     * Lepas catatan proses anak setelah selesai normal.
-     *
-     * @param int $pid PID yang dicatat oleh trackChildProcess()
-     */
+    /* @param int $pid PID yang dicatat oleh trackChildProcess() */
     private function untrackChildProcess(int $pid): void
     {
         foreach ($this->childProcesses as $i => $proc) {
@@ -200,17 +151,7 @@ class Transcoder
         $this->childProcesses = array_values($this->childProcesses);
     }
 
-    /**
-     * Hentikan satu proses anak (atau seluruh process-group) secara presisi.
-     *
-     * Urutan: SIGTERM → grace period 300ms → SIGKILL (fallback graceful
-     * shutdown). Saat $processGroup = true, target = -$pid (semua proses
-     * dalam group — dipakai untuk tree yt-dlp + node runtime).
-     *
-     * @param int    $pid          PID target
-     * @param string $label        Label untuk logging
-     * @param bool   $processGroup True = kill seluruh process group (-$pid)
-     */
+    /* @param int $pid PID target; @param string $label Label untuk logging; @param bool $processGroup True = kill seluruh process group (-$pid) */
     private function terminateChildProcess(int $pid, string $label, bool $processGroup = false): void
     {
         if ($pid <= 0) {
@@ -225,7 +166,6 @@ class Transcoder
             $termSent = posix_kill($target, SIGTERM);
         }
         if (!$termSent) {
-            // Fallback (posix tidak tersedia): kill util presisi per PID/PGID,
             // bukan pkill -f dengan pencocokan string/regex.
             shell_exec('kill -TERM -- ' . $prefix . $pid . ' 2>/dev/null');
         }
@@ -246,12 +186,6 @@ class Transcoder
         ));
     }
 
-    /**
-     * Fallback graceful shutdown: hentikan SEMUA proses anak yang masih
-     * tercatat. Dipanggil via register_shutdown_function() oleh caller
-     * (upload_advanced.php, transcode.php) — hanya membunuh proses yang
-     * belum selesai; proses yang sudah untrack tidak terpengaruh.
-     */
     public function terminateAllProcesses(): void
     {
         foreach ($this->childProcesses as $proc) {
@@ -260,19 +194,7 @@ class Transcoder
         $this->childProcesses = [];
     }
 
-    /**
-     * Resolve path RAM disk (/dev/shm) dengan kriteria:
-     * 1. Direktori /dev/shm ada
-     * 2. Bisa ditulisi (writable)
-     * 3. Ruang kosong minimal 500MB
-     *
-     * Struktur direktori di RAM:
-     *   /dev/shm/meel/{subdir}
-     *
-     * Jika tidak memenuhi, fallback ke project temp/.
-     *
-     * @param string $subdir Subdirektori (misal: 'temp', 'upload', 'transcode')
-     */
+    /* @param string $subdir Subdirektori (misal: 'temp', 'upload', 'transcode') */
     private function resolveShmPath(string $subdir): string
     {
         // Bersihkan file sampah stale sebelum pakai temp directory
@@ -301,46 +223,31 @@ class Transcoder
         return $resolved[$subdir];
     }
 
-    /**
-     * Dapatkan path untuk temp/staging upload/download, prioritas RAM disk.
-     * Gunakan /dev/shm/meel/temp jika layak, fallback ke project temp/.
-     */
     private function getShmTempPath(): string
     {
         return $this->resolveShmPath('temp');
     }
 
-    /**
-     * Dapatkan path untuk temp/staging transcode (ekstrak audio dari video), prioritas RAM disk.
-     * Gunakan /dev/shm/meel/transcode jika layak, fallback ke project temp/.
-     */
     private function getShmTranscodePath(): string
     {
         return $this->resolveShmPath('transcode');
     }
 
-    /**
-     * Dapatkan full path file transcode untuk didownload. Public agar bisa diakses
-     * dari download proxy controller.
-     */
     public function getTranscodeFilePath(string $filename): ?string
     {
         $path = $this->getShmTranscodePath() . '/' . $filename;
         return file_exists($path) ? $path : null;
     }
 
-    // ─── BINARY RESOLVER ──────────────────────────────────────────────────────
+    // ─── BINARY RESOLVER ───
 
     private function resolveBinary(array $candidates): string
     {
         return resolve_binary($candidates);
     }
 
-    // ─── QUEUE MANAGEMENT ─────────────────────────────────────────────────────
+    // ─── QUEUE MANAGEMENT ───
 
-    /**
-     * @deprecated Gunakan System->getActiveQueues() atau System->isServerBusy()
-     */
     public function checkServerBusy(): ?array
     {
         $res = $this->conn->query(
@@ -373,7 +280,7 @@ class Transcoder
         $stmt->close();
     }
 
-    // ─── METADATA ─────────────────────────────────────────────────────────────
+    // ─── METADATA ───
 
     private function fetchMetadata(string $url): ?array
     {
@@ -410,30 +317,27 @@ class Transcoder
         );
     }
 
-    // ─── FORMAT RESOLVER ──────────────────────────────────────────────────────
+    // ─── FORMAT RESOLVER ───
 
     private function resolveVideoFormat(string $url): string
     {
         $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
 
         if (strpos($host, 'youtube.com') !== false || strpos($host, 'youtu.be') !== false) {
-            // YouTube: preferensikan H.264 + AAC/M4A agar bisa stream-copy ke HLS tanpa re-encode
+
             return "bestvideo[height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/best[height<=1080][vcodec^=avc1]";
         }
         if (strpos($host, 'nicovideo.jp') !== false || strpos($host, 'nico.ms') !== false) {
             return "bestvideo[height<=1080]+bestaudio/best";
         }
         if (strpos($host, 'tiktok.com') !== false) {
-            // Catatan: 'bestvideo1' bukan format string yang valid — diganti ke format standar
+
             return "bestvideo+bestaudio/best";
         }
         return "bestvideo[height<=1080]+bestaudio/best";
     }
 
-    // =========================================================
     // BAGIAN 1: DOWNLOAD & FINALISASI (processDownload)
-    // =========================================================
-
     public function processDownload(string $url, string $type): string
     {
         // Validasi input
@@ -447,7 +351,6 @@ class Transcoder
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
         }
 
-        // PRE-FLIGHT: Cek ruang disk sebelum download (queue belum di-lock)
         require_disk_space(512 * 1024 * 1024, $this->getShmTempPath(), 'RAM disk staging');
         $hdd_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : dirname(__DIR__, 2);
         require_disk_space(2 * 1024 * 1024 * 1024, $hdd_path, 'HDD storage');
@@ -464,14 +367,7 @@ class Transcoder
             throw $e;
         }
 
-        // YouTube (via yt-dlp) terkadang memotong judul panjang dengan '...'
-        // pada field `title`/`fulltitle` (sering terjadi pada video musik).
-        // Field `track`/`alt_title` biasanya memuat judul LENGKAP — ambil
-        // kandidat terpanjang yang tidak berakhiran '...' agar judul utuh
-        // tersimpan ke database. Pemotongan visual '...' saat ditampilkan
         // ditangani CSS (text-overflow: ellipsis) di halaman library.
-        // Catatan: bila title terpotong DAN track/alt_title tidak ada, judul
-        // terpotong tetap tersimpan — tidak ada sumber lengkap untuk diperbaiki.
         $title_candidates = array_values(array_filter(
             [$meta['title'] ?? '', $meta['fulltitle'] ?? '', $meta['alt_title'] ?? '', $meta['track'] ?? ''],
             fn($t) => $t !== '' && mb_substr(trim($t), -3) !== '...'
@@ -501,7 +397,7 @@ class Transcoder
                 . " --write-thumbnail --embed-thumbnail"
                 . " --newline " . escapeshellarg($url) . " 2>&1";
         } else {
-            // Download staging di RAM disk (/dev/shm) — lebih cepat untuk I/O yt-dlp
+
             $staging_dir = $this->getShmTempPath() . '/';
             $basename    = $clean;
 
@@ -520,29 +416,20 @@ class Transcoder
                 . escapeshellarg($url) . " 2>&1";
         }
 
-        // Kirim event mulai unduh (observer memutuskan cara menampilkannya)
         $this->emit('download_start', ['url' => $url]);
 
         $error_log = "";
         $start     = time();
-        // Tambahkan -N 4 (4 koneksi paralel untuk mempercepat download, aman untuk server single-user)
-        // Set env via putenv() agar proc_open() tidak perlu shell metacharacters
+
         putenv('PATH=/usr/local/bin:/usr/bin:/bin');
         putenv('LC_ALL=en_US.UTF-8');
         // $cmd_dl sudah berisi args yang di-escape dengan escapeshellarg() + filter_var() untuk URL
-        //
-        // `exec setsid timeout N sh -c '<cmd>'` — menjadikan child sebagai
         // session/process-group leader (PGID == PID yang dilaporkan
-        // proc_get_status()). Seluruh tree proses (yt-dlp + node runtime)
         // bisa dihentikan presisi via kill terhadap process group,
         // menggantikan pkill -f berbasis marker string.
-        //
-        // PENTING: pembungkus `sh -c` WAJIB. $cmd_dl diawali prefix env
-        // (`export PATH=...; export LC_ALL=...;`) dan `exec` menggantikan
         // shell saat itu juga. Tanpa sh -c, yang jalan hanya
         // `setsid timeout N export ...` (export bukan binary, langsung
         // "command not found"), shell sudah terganti oleh exec, dan
-        // perintah yt-dlp TIDAK PERNAH dieksekusi — download selalu gagal
         // diam-diam dengan error log kosong.
         $full_cmd = "exec setsid timeout " . self::DOWNLOAD_TIMEOUT
             . " sh -c " . escapeshellarg($cmd_dl);
@@ -563,9 +450,6 @@ class Transcoder
         $this->trackChildProcess($dl_pgid, true, 'yt-dlp download (' . $dl_label . ')');
 
         // Contoh output yt-dlp:
-        // [download]  63.2% of   45.23MiB at    4.20MiB/s ETA 00:42 (frag 3/5)
-        // [download] Got error: HTTP Error 429: Too Many Requests. Retrying fragment 3 (1/10)...
-        // [download] Got error: HTTP Error 403: Forbidden. Retrying fragment 3 (2/10)...
         $frag_retry_abort  = false;
         $php_timeout_abort = false;
         $frag_total        = 0;
@@ -581,9 +465,7 @@ class Transcoder
 
             $error_log .= $line;
 
-            // ── TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst") ──
-            // Begitu pola "Retrying fragment N (1/10)" terdeteksi (ambang FRAGMENT_RETRY_LIMIT),
-            // proses dihentikan otomatis — jangan biarkan yt-dlp retry terus menerus.
+            // ─── TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst") ───
             if (preg_match('/Retrying\s+fragment[s]?\b/i', $line)) {
                 $frag_total++;
                 if ($frag_total >= self::FRAGMENT_RETRY_LIMIT) {
@@ -612,16 +494,14 @@ class Transcoder
             }
         }
 
-        // ── TIMEOUT FRAGMENT / TIMEOUT SISI PHP: hentikan tree proses yt-dlp
-        // + node secara presisi (kill process group) dan bersihkan partial.
-        // `timeout` tetap ada sebagai backstop bila signal diabaikan.
+        // ─── TIMEOUT FRAGMENT / TIMEOUT SISI PHP: hentikan tree proses yt-dlp ───
         if ($frag_retry_abort || $php_timeout_abort) {
             $this->terminateChildProcess(
                 $dl_pgid,
                 'yt-dlp ' . ($frag_retry_abort ? 'fragment retry abort' : 'PHP timeout abort'),
                 true
             );
-            // Hapus file partial download dari staging agar tidak jadi sampah
+
             if ($type === 'music' && !empty($temp_id)) {
                 foreach (glob($shm_temp . "/$temp_id.*") ?: [] as $f) {
                     $this->removeFile($f);
@@ -639,7 +519,7 @@ class Transcoder
 
         // Validasi hasil download
         $is_success = false;
-        // BUG SEBELUMNYA: glob() pakai `{$this->base_path}/temp/` tapi yt-dlp simpan file di `$shm_temp` (/dev/shm/meel/temp/)
+
         if ($type === 'music') {
             $files      = glob("$shm_temp/$temp_id.*");
             $is_success = !empty($files);
@@ -653,7 +533,7 @@ class Transcoder
             file_put_contents('/tmp/ytdlp_error.log', $error_log);
 
             if ($frag_retry_abort) {
-                // Pesan spesifik untuk timeout fragment — lebih jelas daripada pesan generik
+
                 $error_msg = "Timeout: yt-dlp gagal mengunduh fragment berulang kali (retry 1/10, 2/10, dst). "
                     . "Proses dihentikan otomatis. Coba lagi nanti atau gunakan URL lain.";
             } else {
@@ -675,7 +555,7 @@ class Transcoder
         return $this->finalizeVideo($basename, $basename . ".webp", $title, $duration, $description);
     }
 
-    // ─── FINALIZE MUSIC ───────────────────────────────────────────────────────
+    // ─── FINALIZE MUSIC ───
 
     private function finalizeMusic(
         string $temp_id,
@@ -697,8 +577,6 @@ class Transcoder
         }
 
         if ($raw_file) {
-            // Metadata dikirim lewat SESSION (bukan query string URL) agar judul
-            // dan deskripsi panjang tidak terpotong atau memicu error 414 oleh
             // batas URL server (Apache LimitRequestLine ~8190 byte).
             $meta_key = pathinfo($raw_file, PATHINFO_FILENAME);
             if (!isset($_SESSION['meel_pending_music']) || !is_array($_SESSION['meel_pending_music'])) {
@@ -716,13 +594,8 @@ class Transcoder
                 'duration'    => $duration,
                 'description' => $description,
             ];
-            // Tulis session sekarang juga agar data pasti tersimpan sebelum
             // browser mengeksekusi redirect (mencegah race condition).
             session_write_close();
-            // Navigasi ke post_encode.php — event 'redirect' dipetakan observer
-            // menjadi window.location.href. Return sentinel 'REDIRECT:' + URL
-            // (bukan exit di lapisan bisnis) — caller/lapisan presentasi yang
-            // memutuskan kelanjutan; CLI/API aman menerima nilai ini sebagai
             // string biasa.
             $redirect_url = 'controllers/api/post_encode.php?temp_file=' . rawurlencode($raw_file);
             $this->emit('redirect', ['url' => $redirect_url]);
@@ -732,7 +605,7 @@ class Transcoder
         return "File audio tidak ditemukan setelah download.";
     }
 
-    // ─── FINALIZE VIDEO (HLS) ─────────────────────────────────────────────────
+    // ─── FINALIZE VIDEO (HLS) ───
 
     private function finalizeVideo(
         string $basename,
@@ -744,7 +617,6 @@ class Transcoder
         $shm_temp    = $this->getShmTempPath();
         $staging_mp4 = "$shm_temp/{$basename}.mp4";
 
-        // Cari file thumbnail dari yt-dlp (format asli, biasanya .webp)
         $dl_thumb_src = null;
         foreach (glob("$shm_temp/{$basename}.*") as $f) {
             $ext = pathinfo($f, PATHINFO_EXTENSION);
@@ -761,8 +633,7 @@ class Transcoder
 
         $this->emit('phase', ['phase' => 'transcode']);
 
-        // ── Tentukan nama folder unik di HDD ──────────────────────────────────
-        // Lock untuk serialisasi folder — cegah TOCTOU race condition
+        // ─── Tentukan nama folder unik di HDD ───
         $flock_path = sys_get_temp_dir() . '/meel_transcode_folder.lock';
         $lock_fp    = fopen($flock_path, 'c');
         $locked     = $lock_fp !== false && flock($lock_fp, LOCK_EX);
@@ -775,7 +646,7 @@ class Transcoder
         }
 
         $db_filename = "video/{$folder_name}/{$folder_name}.m3u8";
-        // HLS work folder di RAM disk — segmen .ts ditulis ke RAM, baru dipindah ke HDD
+
         $shm_temp    = $this->getShmTempPath();
         $work_folder = "$shm_temp/{$folder_name}/";
         if (!is_dir($work_folder)) {
@@ -787,10 +658,9 @@ class Transcoder
             fclose($lock_fp);
         }
 
-        // ── Kompres thumbnail ke WebP ────────────────────────────────────────
+        // ─── Kompres thumbnail ke WebP ───
         $work_thumb = $work_folder . $db_thumb;
         if ($dl_thumb_src && file_exists($dl_thumb_src)) {
-            // Konversi ke WebP — scale ke max 1280px, quality 78 (balance ukuran vs kualitas)
             // WebP rata-rata 30-50% lebih kecil dari JPG setara
             $cmd_compress = self::ENV_PREFIX . escapeshellarg($this->ffmpeg_bin)
                 . " -y -threads 1"
@@ -808,14 +678,12 @@ class Transcoder
         $thumb_generated = file_exists($work_thumb) && filesize($work_thumb) > 0;
         if (!$thumb_generated) $db_thumb = "default_thumb.webp";
 
-        // ── Dapatkan durasi video ─────────────────────────────────────────────
+        // ─── Dapatkan durasi video ───
         $file_dur = $this->probeDuration($staging_mp4);
 
-        // ── Transcode ke HLS ──────────────────────────────────────────────────
-        // -codec copy: stream copy (tidak re-encode), sehingga QSV tidak relevan.
-        // -threads hanya berlaku untuk muxer/demuxer I/O; tetap set untuk konsistensi.
+        // ─── Transcode ke HLS ───
         $work_m3u8  = $work_folder . $folder_name . ".m3u8";
-        // proc_open dengan array arguments + env vars — bypasses shell entirely
+
         $hls_env = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $hls_cmd = [
             $this->ffmpeg_bin,
@@ -864,12 +732,11 @@ class Transcoder
             return "";
         }
 
-        // ── Sprite & VTT (DIOPTIMALKAN KE RAM DISK) ──────────────────────────
+        // ─── Sprite & VTT (DIOPTIMALKAN KE RAM DISK) ───
         $this->emit('phase', ['phase' => 'sprite']);
         $this->emit('sprite_progress', ['pct' => 0, 'label' => 'Membuat thumbnail.vtt...']);
 
         // Buat folder kerja sementara di RAM Disk Linux (/dev/shm)
-        // Fallback ke /tmp jika /dev/shm tidak tersedia atau tidak writable
         $shm_base   = (is_writable('/dev/shm') ? '/dev/shm' : sys_get_temp_dir());
         $ram_folder = $shm_base . '/meel_sprite_' . uniqid() . '/';
         if (!is_dir($ram_folder)) {
@@ -879,7 +746,6 @@ class Transcoder
         // Jalankan pembuatan sprite di dalam RAM
         $this->generateSpriteAndVTT($staging_mp4, $ram_folder);
 
-        // Pindahkan hasil dari RAM ke work_folder — catat ke error_log jika gagal
         $sprite_src = $ram_folder . 'thumb_sprite.webp';
         $vtt_src    = $ram_folder . 'thumbnails.vtt';
 
@@ -906,14 +772,7 @@ class Transcoder
 
         $this->removeFile($staging_mp4);
 
-        // ── TRANSACTION: Pindahkan ke HDD + INSERT DB (atomik) ───────────────
-        // Wajib pakai moveFile() karena USB HDD = filesystem berbeda dari /tmp/work
-        // (rename() cross-device akan selalu gagal diam-diam di Linux).
-        //
-        // File HLS dipindahkan DI DALAM scope transaksi: bila salah satu file
-        // move atau INSERT database gagal, transaksi di-rollback dan routine
-        // cleanup otomatis menghapus folder HLS/thumbnail yang sudah terlanjur
-        // dipindah ke HDD — tidak ada orphaned file di storage.
+        // ─── TRANSACTION: Pindahkan ke HDD + INSERT DB (atomik) ───
         $hdd_target_folder = MEEL_HDD_VIDEO_DIR . $folder_name . "/";
 
         $this->conn->begin_transaction();
@@ -943,7 +802,7 @@ class Transcoder
 
             $this->removeDir($work_folder);
 
-            // ── Simpan ke database ────────────────────────────────────────────
+            // ─── Simpan ke database ───
             $hdd_m3u8_full  = MEEL_HDD_VIDEO_UPLOAD . $db_filename;
             $hdd_thumb_full = MEEL_HDD_THUMB_DIR . $db_thumb;
 
@@ -954,7 +813,6 @@ class Transcoder
                 throw new \RuntimeException("Thumbnail tidak ditemukan di HDD setelah dipindahkan: $hdd_thumb_full");
             }
 
-            // Generate search_metadata — helper terpusat (romaji + english + alias),
             // konsisten dengan Uploader, backfill & admin/edit-*.php
             $metadata = generate_search_metadata($title);
             $views    = 0;
@@ -974,13 +832,9 @@ class Transcoder
 
             $this->conn->commit();
         } catch (\Throwable $e) {
-            // mysqli::rollback() di luar transaksi aktif adalah no-op yang aman
-            // (MySQL ROLLBACK tanpa transaksi tidak error), jadi tidak perlu
-            // memeriksa status transaksi — metode inTransaction() bahkan tidak
-            // ada di ekstensi mysqli (itu milik PDO). Pola sama dengan Uploader.
+
             $this->conn->rollback();
 
-            // Cleanup otomatis: hapus HLS folder + thumbnail yang sudah terpindah ke HDD
             $this->rollbackFinalizeVideo($hdd_target_folder, $db_thumb, $thumb_generated);
             $this->removeDir($work_folder);
 
@@ -994,12 +848,9 @@ class Transcoder
     }
 
     /**
-     * Cleanup rutin setelah finalizeVideo gagal: hapus folder HLS dan
-     * thumbnail yang sudah terlanjur dipindahkan ke USB HDD selama sesi ini.
-     *
      * @param string $hdd_target_folder Folder video target di HDD
-     * @param string $db_thumb          Nama file thumbnail di database
-     * @param bool   $thumb_generated   Apakah thumbnail benar-benar dibuat (bukan default)
+     * @param string $db_thumb Nama file thumbnail di database
+     * @param bool $thumb_generated Apakah thumbnail benar-benar dibuat (bukan default)
      */
     private function rollbackFinalizeVideo(
         string $hdd_target_folder,
@@ -1009,17 +860,13 @@ class Transcoder
         if (is_dir($hdd_target_folder)) {
             $this->removeDir($hdd_target_folder);
         }
-        // Hanya hapus thumbnail bila memang dibuat sesi ini — jangan sentuh
         // default_thumb.webp milik bersama.
         if ($thumb_generated && $db_thumb !== 'default_thumb.webp') {
             $this->removeFile(MEEL_HDD_THUMB_DIR . $db_thumb);
         }
     }
 
-    // =========================================================
     // BAGIAN 2: POST ENCODE (post_encode.php)
-    // =========================================================
-
     public function encodeMusic(
         string $temp_file,
         string $title,
@@ -1031,7 +878,6 @@ class Transcoder
         putenv("LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/lib");
         putenv("PATH=/usr/local/bin:/usr/bin:/bin");
 
-        // PRE-FLIGHT: Cek HDD untuk output encode — butuh minimal 500MB
         $music_dir = "{$this->base_path}/music/upload/file";
         if (!is_dir($music_dir)) {
             $this->ensureDir($music_dir);
@@ -1057,9 +903,7 @@ class Transcoder
         $thumb_name = str_replace('.ogg', '.webp', $final_fname);
 
         // Encode ke Opus/OGG
-        // -compression_level 10: kualitas encoding terbaik (libopus default = 10, eksplisit untuk kejelasan)
         // -vbr on: Variable Bitrate, lebih efisien dari CBR
-        // -threads: libopus adalah single-threaded per stream, tapi ffmpeg bisa paralel demuxer
         $cmd = escapeshellarg($this->ffmpeg_bin)
             . " -y -threads " . self::FFMPEG_THREADS
             . " -i "                 . escapeshellarg($input_path)
@@ -1073,7 +917,6 @@ class Transcoder
             return ['status' => 'error', 'msg' => $log];
         }
 
-        // Ekstrak thumbnail (3 strategi: yt-dlp file → audio metadata → default)
         $temp_base    = pathinfo($temp_file, PATHINFO_FILENAME);
         $temp_dir     = $this->getShmTempPath();
         $thumb_result = $this->extractMusicThumbnail($input_path, $temp_dir, $temp_base, $thumb_name);
@@ -1085,8 +928,6 @@ class Transcoder
             $this->removeFile($leftover);
         }
 
-        // Generate search_metadata — helper terpusat (romaji + english + alias),
-        // 1x MeCab saja (sebelumnya 2x terpisah), konsisten dengan Uploader/backfill
         $metadata = generate_search_metadata($title, $artist, $album);
 
         $stmt = $this->conn->prepare(
@@ -1104,7 +945,7 @@ class Transcoder
         return ['status' => 'error', 'msg' => 'Database error: ' . $err];
     }
 
-    // ─── THUMBNAIL HELPERS ────────────────────────────────────────────────────
+    // ─── THUMBNAIL HELPERS ───
 
     private function extractMusicThumbnail(
         string $audio_file,
@@ -1149,8 +990,6 @@ class Transcoder
             }
         }
 
-        // Konversi ke WebP via ffmpeg — scale ke max 500px, -threads 1 cukup untuk gambar kecil
-        // WebP quality 78 memberikan kualitas visual setara JPG ~85 dengan ukuran 30-50% lebih kecil
         $cmd = self::ENV_PREFIX . escapeshellarg($this->ffmpeg_bin)
             . " -y -threads 1"
             . " -i "  . escapeshellarg($source_image)
@@ -1205,10 +1044,7 @@ class Transcoder
         return 'music_default.png';
     }
 
-    // =========================================================
     // BAGIAN 3: TRANSCODE VIDEO → AUDIO (transcode.php)
-    // =========================================================
-
     public function checkTranscodeQueue(): bool
     {
         $res = $this->conn->query(
@@ -1219,13 +1055,12 @@ class Transcoder
 
     public function transcodeVideo(int $video_id, string $format = 'mp3'): array
     {
-        // Output hanya di RAM disk (primer) — fallback ke project temp/
+
         $output_dir = $this->getShmTranscodePath() . '/';
         if (!is_dir($output_dir)) {
             $this->ensureDir($output_dir);
         }
 
-        // PRE-FLIGHT: Cek RAM disk untuk output transcode — butuh minimal 256MB
         $shm_free = disk_free_space($output_dir);
         if ($shm_free !== false && $shm_free < 256 * 1024 * 1024) {
             return ['status' => 'error', 'msg' => 'RAM disk tidak mencukupi untuk transcode. Hanya tersedia ' . sprintf('%.1f', $shm_free / (1024 ** 3)) . ' GB.'];
@@ -1238,7 +1073,6 @@ class Transcoder
             }
         }
 
-        // Bersihkan antrean macet (> 15 menit) — gunakan prepared statement
         $stmt_clean = $this->conn->prepare(
             "DELETE FROM transcode_queue WHERE created_at < NOW() - INTERVAL 15 MINUTE"
         );
@@ -1301,8 +1135,6 @@ class Transcoder
         $output_filename = $this->sanitizeFilename($v_data['title']) . '.' . $format;
         $output_path     = $output_dir . $output_filename;
 
-        // Marker file — atomic check-then-create untuk cegah duplikat transcode
-        // Pendekatan ini lebih baik dari flock() yang di-hold lama karena FFmpeg bisa memakan waktu menit.
         $marker_file = $output_path . '.processing';
 
         $mtx_path  = sys_get_temp_dir() . '/meel_transcode_marker.lock';
@@ -1312,14 +1144,12 @@ class Transcoder
         if (file_exists($output_path) && filesize($output_path) > 0) {
             if ($mtx_locked) { flock($mtx_fp, LOCK_UN); fclose($mtx_fp); }
             $download_link = "controllers/api/download_transcode.php?file=" . rawurlencode($output_filename);
-            // Pastikan overlay ter-inject sebelum done_transcode — bila langsung
             // meelDoneTranscode tanpa overlay, meel* JS belum terdefinisi.
             $this->emit('transcode_start');
             $this->emit('done_transcode', ['title' => $v_data['title'], 'download_link' => $download_link]);
             return ['status' => 'success', 'download_link' => $download_link];
         }
 
-        // Cek marker — jika ada, proses lain sedang mengerjakan output yang sama
         if (file_exists($marker_file)) {
             $marker_age = time() - filemtime($marker_file);
             if ($marker_age < 600) { // < 10 menit — masih wajar
@@ -1371,7 +1201,6 @@ class Transcoder
         // Konfigurasi codec per format
         switch ($format) {
             case 'ogg':
-                // libopus: single-threaded per stream, -threads tidak berdampak pada codec
                 // tapi tetap set untuk ffmpeg I/O
                 $codec     = "libopus";
                 $bitrate   = "-b:a 128k -vbr on";
@@ -1402,8 +1231,6 @@ class Transcoder
             . " -metadata artist='MEeL Transcoder'"
             . " " . escapeshellarg($output_path) . " 2>&1";
 
-        // proc_open dengan array arguments + env vars — bypasses shell entirely
-        // Daripada popen() yang melewati shell (rentan shell injection meski args sudah di-escape)
         $tc_env  = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $tc_cmd  = [$this->ffmpeg_bin,
             '-y', '-threads', (string)self::FFMPEG_THREADS,
@@ -1428,7 +1255,6 @@ class Transcoder
         $tc_cmd[] = '-metadata'; $tc_cmd[] = "artist=MEeL Transcoder";
         $tc_cmd[] = $output_path;
 
-        // Kirim event mulai transcode (observer memutuskan tampilan overlay)
         $this->emit('transcode_start');
 
         $desc = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
