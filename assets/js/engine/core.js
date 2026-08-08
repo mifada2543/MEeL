@@ -1,14 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * engine/core.js — State bersama & kontrol fase utama overlay.
- * Didefinisikan di sini (di-load pertama oleh main.js):
- *   - State global: _segsBuilt, _errorTimeout, meelSpriteTimer,
- *     meelSpriteCurrentPct (dipakai transcode.js juga)
- *   - window.meelPhase        → pindah fase overlay
- *   - startSpriteTrickle()    → animasi merayap progress sprite
- * ──────────────────────────────────────────────────────────────── */
+/* engine/core.js — State bersama & kontrol fase utama overlay. */
 
 // State bersama overlay (global — dipakai modul sibling)
 var _segsBuilt = false;
@@ -21,7 +14,7 @@ function startSpriteTrickle() {
   var t = document.getElementById("meel-sp-pct");
   meelSpriteCurrentPct = 0;
   clearInterval(meelSpriteTimer);
-  // Bergerak otomatis ke 95% dalam durasi ~13 detik (135ms x 95 langkah)
+
   meelSpriteTimer = setInterval(function () {
     if (meelSpriteCurrentPct < 95) {
       meelSpriteCurrentPct += 1;

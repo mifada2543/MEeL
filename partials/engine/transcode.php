@@ -1,9 +1,4 @@
 <?php
-/**
- * partials/engine/transcode.php — Fase TRANSCODE HLS overlay MEeL Engine.
- * Di-include oleh partials/ui.php (assembler).
- * Styling: assets/css/engine/ (modul transcode.css, progress.css).
- */
 ?>
 <!-- ── FASE: TRANSCODE HLS ── -->
 <div class="meel-phase" id="meel-phase-transcode">

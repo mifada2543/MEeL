@@ -1,6 +1,5 @@
 <?php
-
-/** MEeL Admin — Activity Log Viewer **/
+/* MEeL Admin — Activity Log Viewer */
 
 include '../auth/config.php';
 include '../auth/auth.php';
@@ -9,7 +8,7 @@ include_once '../modules/core/helpers.php';
 // Guard terpusat: harus login + role admin
 require_admin($conn);
 
-// ─── Filter & Pagination ───────────────────────────────────────
+// ─── Filter & Pagination ───
 $action_filter = $_GET['action'] ?? '';
 $search_q     = trim($_GET['q'] ?? '');
 $days         = max(1, min(365, (int)($_GET['days'] ?? 7)));
@@ -17,7 +16,7 @@ $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 50;
 $offset       = ($page - 1) * $per_page;
 
-// ─── Clear Old Logs (POST) ─────────────────────────────────────
+// ─── Clear Old Logs (POST) ───
 $clear_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
@@ -41,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
     }
 }
 
-// ─── Clear All Logs (POST) ──────────────────────────────────────
+// ─── Clear All Logs (POST) ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $clear_msg = 'CSRF Token tidak valid.';
@@ -54,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     }
 }
 
-// ─── Build Query ───────────────────────────────────────────────
+// ─── Build Query ───
 $where_conditions = ["1=1"];
 $params = [];
 $types  = "";
@@ -80,7 +79,7 @@ $types .= "i";
 
 $where_sql = implode(" AND ", $where_conditions);
 
-// ─── Count total ───────────────────────────────────────────────
+// ─── Count total ───
 $stmt_count = $conn->prepare("SELECT COUNT(*) AS total FROM activity_log al LEFT JOIN users u ON al.user_id = u.id WHERE {$where_sql}");
 if (!empty($params)) {
     $stmt_count->bind_param($types, ...$params);
@@ -92,7 +91,7 @@ $total_pages = max(1, (int)ceil($total_rows / $per_page));
 $page = min($page, $total_pages); // Cegah offset tak berguna
 $offset = ($page - 1) * $per_page;
 
-// ─── Fetch rows ────────────────────────────────────────────────
+// ─── Fetch rows ───
 $stmt_rows = $conn->prepare(
     "SELECT al.*, u.username
      FROM activity_log al
@@ -108,7 +107,7 @@ $stmt_rows->execute();
 $rows = $stmt_rows->get_result();
 $stmt_rows->close();
 
-// ─── Get distinct actions for filter dropdown ──────────────────
+// ─── Get distinct actions for filter dropdown ───
 $actions_res = $conn->query("SELECT DISTINCT action FROM activity_log ORDER BY action ASC");
 $all_actions = [];
 if ($actions_res) {
@@ -117,9 +116,9 @@ if ($actions_res) {
     }
 }
 
-// ─── Stats ─────────────────────────────────────────────────────
+// ─── Stats ───
 $stats_res = $conn->query("SELECT COUNT(*) AS total, COUNT(DISTINCT user_id) AS unique_users FROM activity_log WHERE created_at >= NOW() - INTERVAL 7 DAY");
-$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0]; // ─── Helper: Export Query ───────────────────────────────────────────
+$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0]; // ─── Helper: Export Query ───
 function export_query_data(mysqli $conn, string $where_sql, array $params, string $types): array
 {
     $stmt = $conn->prepare(
@@ -142,7 +141,7 @@ function export_query_data(mysqli $conn, string $where_sql, array $params, strin
     return $rows;
 }
 
-// ─── Multi-Format Export ─────────────────────────────────────────────
+// ─── Multi-Format Export ───
 $export_format = $_GET['export'] ?? '';
 if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $timestamp = date('Y-m-d_H-i-s');
@@ -150,7 +149,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $rows = export_query_data($conn, $where_sql, $params, $types);
 
     switch ($export_format) {
-        // ═══ CSV ═════════════════════════════════════════════════════
+        // ─── CSV ───
         case 'csv':
             header('Content-Type: text/csv; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.csv\"");
@@ -174,7 +173,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             fclose($output);
             break;
 
-        // ═══ JSON ════════════════════════════════════════════════════
+        // ─── JSON ───
         case 'json':
             header('Content-Type: application/json; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.json\"");
@@ -195,11 +194,11 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             echo json_encode($json_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
-        // ═══ XLS (XML Spreadsheet 2003) ════════════════════════════
+        // ─── XLS (XML Spreadsheet 2003) ───
         case 'xls':
             header('Content-Type: application/vnd.ms-excel; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.xls\"");
-            // XML Spreadsheet 2003 — kompatibel dengan Excel, LibreOffice, Google Sheets
+
             echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
             echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
@@ -252,7 +251,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     exit;
 }
 
-// ─── Preview Handler ─────────────────────────────────────────────
+// ─── Preview Handler ───
 if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['format'] ?? '', ['csv', 'json', 'xls'], true)) {
     $preview_format = $_GET['format'];
     $all_rows = export_query_data($conn, $where_sql, $params, $types);
@@ -361,7 +360,6 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
     $back_url = 'index.php';
     include 'header-admin.php';
     ?>
-
     <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 py-8">
 
         <!-- Header -->
@@ -405,7 +403,6 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                 <?= htmlspecialchars($clear_msg) ?>
             </div>
         <?php endif; ?>
-
         <!-- Filters -->
         <div class="glass p-6 md:p-8 rounded-2xl mb-8 filter-section relative z-40 overflow-visible" id="filter-section">
             <div class="flex flex-col lg:flex-row items-start justify-between gap-6 w-full min-w-0">
@@ -633,7 +630,6 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                         ‹ Prev
                     </a>
                 <?php endif; ?>
-
                 <?php
                 $start = max(1, $page - 2);
                 $end   = min($total_pages, $page + 2);
@@ -644,7 +640,6 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>
-
                 <?php if ($page < $total_pages): ?>
                     <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>"
                         class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] text-gray-400 hover:text-white hover:bg-white/10 transition-all">
@@ -653,7 +648,6 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['forma
                 <?php endif; ?>
             </div>
         <?php endif; ?>
-
         <!-- Clear Old Logs -->
         <div class="glass p-6 rounded-2xl mt-8 border border-red-500/20">
             <div class="flex items-center gap-3 mb-4">

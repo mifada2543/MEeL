@@ -1,11 +1,10 @@
 <?php
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
-// activity_logger loaded via auth/config.php 
-$back_url = '../index.php'; 
+// activity_logger loaded via auth/config.php
+$back_url = '../index.php';
 
-// ── Validasi Referer (Back URL) menggunakan MEEL_HOST constant ──
-// MEEL_HOST didefinisikan di auth/config.php (bisa di-hardcode untuk keamanan lebih)
+// ─── Validasi Referer (Back URL) menggunakan MEEL_HOST constant ───
 $allowed_hosts = [
     defined('MEEL_HOST') && !empty(MEEL_HOST) ? MEEL_HOST : ($_SERVER['HTTP_HOST'] ?? ''),
     'localhost',
@@ -27,11 +26,10 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     }
 
     if ($host_valid) {
-        
-        // 2. Ambil hanya bagian path-nya saja (misal: /profile/edit.php)
+
         $ref_path = parse_url($ref, PHP_URL_PATH);
         $excluded_pages = ['profile_edit.php', 'index.php', 'manage.php', 'mfa_setup.php', 'mfa_backup.php', 'edit-music.php', 'edit-video.php'];
-        
+
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -67,7 +65,6 @@ if (!$u) {
 // Sekarang $u['id'] sudah ada isinya
 $profile_id = $u['id'];
 
-// Hitung total Video (prepared statement untuk defense-in-depth)
 $stmt_vid = $conn->prepare("SELECT COUNT(*) as total FROM video WHERE user_id = ?");
 $stmt_vid->bind_param("i", $profile_id);
 $stmt_vid->execute();
@@ -84,7 +81,6 @@ $stmt_mus->close();
 $total_uploads = $total_video + $total_music;
 $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -96,8 +92,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
     <meta property="og:description" content="Profil <?= htmlspecialchars($u['username']) ?> di MEeL - Platform Media Hub Pribadi.">
     <title>MEeL Profile | <?= htmlspecialchars($u['username']) ?></title>
     <?php include '../partials/link.php'; ?>
-    <style>
-        body {
+    <style>        body {
             background-color: #0b0e14;
         }
 
@@ -107,9 +102,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* ════════════════════════════════════
-           MFA TOGGLE SWITCH
-           ════════════════════════════════════ */
+        /* MFA TOGGLE SWITCH */
         .mfa-switch {
             position: relative;
             display: inline-flex;
@@ -174,7 +167,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             display: block;
             margin-top: -1px;
         }
-    </style>
+</style>
 </head>
 
 <body class="text-gray-300">
@@ -245,7 +238,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 Backup Codes
                             </button>
                             <?php endif; ?>
-
                             <?php if (!$_mfa_on): ?>
                             <div></div>
                             <?php endif; ?>

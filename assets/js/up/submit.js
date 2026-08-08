@@ -1,11 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * up/submit.js — Handler submit form Advanced Upload: transisi tombol + memicu overlay fase download (dari engine/), lalu membiarkan form submit biasa berjalan (PHP streaming).
- * Dipanggil via onsubmit="return startAdvancedUpload(this)".
- * Bergantung pada window.meelPhase dari assets/js/engine/.
- * ──────────────────────────────────────────────────────────────── */
+
 function startAdvancedUpload(form) {
   var urlInput = document.getElementById("url-input");
   if (!urlInput) return false;

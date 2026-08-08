@@ -4,7 +4,7 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// ── Proteksi role admin ───────────────────────────────────────────────────────
+// ─── Proteksi role admin ───
 $repo    = new BookRepository($conn);
 $user_id = (int)$_SESSION['user_id'];
 $role    = $repo->getUserRole($user_id);
@@ -14,7 +14,7 @@ if ($role !== 'admin') {
     exit();
 }
 
-// ── Handle POST upload ────────────────────────────────────────────────────────
+// ─── Handle POST upload ───
 $message  = '';
 $val_title = htmlspecialchars($_GET['reup'] ?? '');
 
@@ -67,7 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
                 <?= htmlspecialchars($message) ?>
             </div>
         <?php endif; ?>
-
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
@@ -123,9 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
         </form>
     </div>
 
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

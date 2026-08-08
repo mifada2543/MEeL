@@ -1,39 +1,18 @@
 <?php
-/**
- * FfmpegUtils — Trait berisi utility function yang shared antara Transcoder dan Uploader.
- *
- * Trait ini mengekstrak fungsi-fungsi yang identik atau hampir identik
- * dari kedua class untuk menghilangkan duplikasi kode.
- *
- * CATATAN: PHP 8.0 tidak mendukung constants di trait (min. PHP 8.2).
- * Gunakan method getEnvPrefix() untuk mengakses prefix environment variable.
- *
- * @package MEeL\Transcoder
- */
+/* @package MEeL\Transcoder */
 
 require_once __DIR__ . '/../core/helpers.php';
 
 trait FfmpegUtils
 {
-    /**
-     * Dapatkan ENV prefix untuk shell command.
-     * Dipisahkan sebagai method karena PHP 8.0 tidak support trait constants.
-     */
+
     protected function getEnvPrefix(): string
     {
         return "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     // DURATION PROBE
-    // ══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Dapatkan durasi media (detik) via ffprobe.
-     *
-     * @param string $file_path Path ke file media
-     * @return float Durasi dalam detik
-     */
+    /* @param string $file_path Path ke file media; @return float Durasi dalam detik */
     protected function probeDuration(string $file_path): float
     {
         $cmd = $this->getEnvPrefix() . escapeshellarg($this->ffprobe_bin)
@@ -43,15 +22,10 @@ trait FfmpegUtils
         return (float)trim((string)shell_exec($cmd));
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     // FILE SYSTEM HELPERS
-    // ══════════════════════════════════════════════════════════════════════════
-
     /**
-     * Buat direktori (rekursif) dengan pengecekan proaktif + logging.
-     *
-     * @param string $dir  Path direktori yang akan dibuat
-     * @param int    $perms Permission (default 0755)
+     * @param string $dir Path direktori yang akan dibuat
+     * @param int $perms Permission (default 0755)
      * @return bool True jika direktori ada / berhasil dibuat
      */
     protected function ensureDir(string $dir, int $perms = 0755): bool
@@ -66,11 +40,7 @@ trait FfmpegUtils
         return true;
     }
 
-    /**
-     * Hapus satu file dengan pengecekan proaktif + logging.
-     *
-     * @param string $path Path file
-     */
+    /* @param string $path Path file */
     protected function removeFile(string $path): void
     {
         if (!is_file($path) && !is_link($path)) {
@@ -81,11 +51,7 @@ trait FfmpegUtils
         }
     }
 
-    /**
-     * Hapus semua isi direktori lalu direktori itu sendiri (flat directory).
-     *
-     * @param string $dir Path direktori
-     */
+    /* @param string $dir Path direktori */
     protected function removeDir(string $dir): void
     {
         if (!is_dir($dir)) {
@@ -99,14 +65,7 @@ trait FfmpegUtils
         }
     }
 
-    /**
-     * Pindahkan file lintas filesystem (untuk USB HDD).
-     * PHP rename() tidak bisa lintas device — wajib copy() + unlink().
-     *
-     * @param string $src Path sumber
-     * @param string $dst Path tujuan
-     * @return bool True jika sukses
-     */
+    /* @param string $src Path sumber; @param string $dst Path tujuan; @return bool True jika sukses */
     protected function moveFile(string $src, string $dst): bool
     {
         if (!is_file($src)) {
@@ -122,11 +81,6 @@ trait FfmpegUtils
             return false;
         }
 
-        // Proactive device check: bila src & dst berada di filesystem berbeda
-        // (kasus NORMAL: RAM disk /dev/shm → USB HDD), rename() pasti gagal
-        // dengan EXDEV "Invalid cross-device link". Lewati rename langsung ke
-        // copy+unlink — warning palsu tersebut tidak perlu membanjiri log
-        // (requirement: angkat error NYATA seperti permission, bukan jalur normal).
         $src_stat = stat($src);
         $dst_stat = stat(dirname($dst));
         $crossDevice = $src_stat !== false
@@ -138,7 +92,6 @@ trait FfmpegUtils
             error_clear_last();
             if (rename($src, $dst)) return true;
 
-            // Tangkap alasan nyata kegagalan rename (EXDEV, ENOENT, EACCES, dll.)
             $rename_err = error_get_last();
             $rename_msg = is_array($rename_err) ? ($rename_err['message'] ?? 'unknown') : 'unknown';
         } else {
@@ -154,7 +107,6 @@ trait FfmpegUtils
             return true;
         }
 
-        // Tangkap alasan nyata kegagalan copy — lebih berguna daripada pesan generik
         $copy_err = error_get_last();
         $copy_msg = is_array($copy_err) ? ($copy_err['message'] ?? 'unknown') : 'unknown';
 
@@ -168,24 +120,13 @@ trait FfmpegUtils
         return false;
     }
 
-    /**
-     * Hapus semua isi direktori tanpa rekursif (flat directory).
-     * Alias dari removeDir() — dipertahankan untuk kompatibilitas.
-     *
-     * @param string $dir Path direktori
-     */
+    /* @param string $dir Path direktori */
     protected function cleanupDir(string $dir): void
     {
         $this->removeDir($dir);
     }
 
-    /**
-     * Sanitasi judul untuk dijadikan nama file.
-     * Hapus karakter berbahaya, path separator, dan batasi panjang.
-     *
-     * @param string $title Judul yang akan disanitasi
-     * @return string Nama file yang aman
-     */
+    /* @param string $title Judul yang akan disanitasi; @return string Nama file yang aman */
     protected function sanitizeFilename(string $title): string
     {
         $name = trim($title);
@@ -205,16 +146,8 @@ trait FfmpegUtils
         return $name ?: 'untitled-media';
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     // SPRITE & VTT GENERATOR
-    // ══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Generate sprite thumbnail + VTT file dari video.
-     *
-     * @param string $video_path   Path ke file video sumber
-     * @param string $target_folder Folder tujuan untuk sprite .webp dan .vtt
-     */
+    /* @param string $video_path Path ke file video sumber; @param string $target_folder Folder tujuan untuk sprite .webp dan .vtt */
     protected function generateSpriteAndVTT(string $video_path, string $target_folder): void
     {
         $w    = 160;  // Lebar per thumbnail
@@ -226,13 +159,13 @@ trait FfmpegUtils
 
         // Tentukan interval dinamis berdasarkan durasi
         if ($duration > 3600) {
-            $interval = 300;   // > 1 jam   → tiap 5 menit
+            $interval = 300;   // > 1 jam → tiap 5 menit
         } elseif ($duration > 1800) {
             $interval = 180;   // > 30 menit → tiap 3 menit
         } elseif ($duration > 300) {
-            $interval = 60;    // > 5 menit  → tiap 1 menit
+            $interval = 60;    // > 5 menit → tiap 1 menit
         } elseif ($duration > 0) {
-            $interval = 10;    // ≤ 5 menit  → tiap 10 detik
+            $interval = 10;    // ≤ 5 menit → tiap 10 detik
         } else {
             $interval = 10;    // fallback jika durasi 0
         }
@@ -243,7 +176,6 @@ trait FfmpegUtils
         $sprite_file = $target_folder . 'thumb_sprite.webp';
         $vtt_file    = $target_folder . 'thumbnails.vtt';
 
-        // Buat sprite — fps filter + scale + tile (CPU/software decode)
         $filter     = "fps=1/$interval,scale=$w:$h,tile={$cols}x{$rows}";
         $cmd_sprite = $this->getEnvPrefix() . escapeshellarg($this->ffmpeg_bin)
             . " -y -threads 8"

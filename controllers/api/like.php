@@ -1,26 +1,4 @@
 <?php
-/**
- * controllers/api/like.php
- * 
- * POST /api/like — Toggle like/dislike untuk video atau music.
- *
- * Request:
- *   - id         (int, required) ID media
- *   - media_type (string, required) 'video' | 'music'
- *   - type       (string, required) 'like' | 'dislike'
- *   - csrf_token (string, required) CSRF token dari session
- *
- * Response (HTML partial):
- *   - Hanya mengembalikan HTML untuk #like-dislike-container (HTMX swap)
- *   - HTTP 403 jika CSRF invalid atau user tidak aktif/guest
- *   - HTTP 401 jika user belum login
- *
- * Dependencies:
- *   - helpers.php (verify_csrf_token)
- *   - auth/config.php ($conn, $_SESSION)
- *   - modules/media/MediaInteraction.php
- */
-
 require_once '../../modules/core/helpers.php';
 // Pastikan session sudah dimulai jika menggunakan $_SESSION
 if (session_status() === PHP_SESSION_NONE) {
@@ -80,7 +58,6 @@ if ($user_id) {
     $stmt_user->execute();
     $user = $stmt_user->get_result()->fetch_assoc();
 
-    // Jika user tidak aktif atau perannya adalah guest, batalkan proses (Forbidden)
     if (!$user || $user['is_active'] != 1 || $user['role'] === 'guest') {
         if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - BLOCKED: User ID $user_id is inactive or guest."); }
         http_response_code(403); // HTTP 403 Forbidden
@@ -109,7 +86,6 @@ $likes            = $result['data']['likes'];
 $dislikes         = $result['data']['dislikes'];
 $table = ($media_type === 'music') ? 'music' : 'video';
 
-// Konfigurasi style Tailwind yang ditulis penuh (Hardcoded class names)
 $like_active_class = ($media_type === 'music')
     ? 'bg-orange-500/15 border-orange-500/30 text-orange-400'
     : 'bg-red-500/15 border-red-500/30 text-red-400';
@@ -120,7 +96,6 @@ $dislike_active_class = ($media_type === 'music')
 
 $inactive_class = 'bg-gray-900/40 border-gray-800 text-gray-400 hover:bg-gray-800/60 hover:text-gray-300';
 ?>
-
 <div id="like-dislike-container" class="flex items-center gap-2 mt-4 sm:mt-0" hx-get-trigger="load">
     <button
         hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"

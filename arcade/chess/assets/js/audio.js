@@ -10,7 +10,7 @@ export class ChessSoundEffects {
       if (this.ctx.state === "suspended") this.ctx.resume();
     }
   }
-  /** Play a single tone with optional pitch bend and ADSR envelope */
+  /* * Play a single tone with optional pitch bend and ADSR envelope */
   playTone({
     type,
     freq1,
@@ -44,7 +44,7 @@ export class ChessSoundEffects {
       console.warn("Audio error:", e);
     }
   }
-  /** Gentle 'wood tap' — piece slides to a square */
+  /* * Gentle 'wood tap' — piece slides to a square */
   playMove() {
     this.init();
     this.playTone({
@@ -66,7 +66,7 @@ export class ChessSoundEffects {
       release: 0.01,
     });
   }
-  /** Crisp 'clack' — piece captures another */
+  /* * Crisp 'clack' — piece captures another */
   playCapture() {
     this.init();
     this.playTone({
@@ -99,7 +99,7 @@ export class ChessSoundEffects {
       release: 0.015,
     });
   }
-  /** Rising alert — king is in check */
+  /* * Rising alert — king is in check */
   playCheck() {
     this.init();
     const now = this.ctx.currentTime;
@@ -121,7 +121,7 @@ export class ChessSoundEffects {
       } catch (e) {}
     });
   }
-  /** Castling sound — smooth swoosh */
+  /* * Castling sound — smooth swoosh */
   playCastle() {
     this.init();
     this.playTone({
@@ -143,7 +143,7 @@ export class ChessSoundEffects {
       release: 0.04,
     });
   }
-  /** Pawn promotion — bright ascending chime */
+  /* * Pawn promotion — bright ascending chime */
   playPromotion() {
     this.init();
     const now = this.ctx.currentTime;
@@ -163,7 +163,7 @@ export class ChessSoundEffects {
       } catch (e) {}
     });
   }
-  /** Game over — dramatic descending fanfare */
+  /* * Game over — dramatic descending fanfare */
   playGameOver() {
     this.init();
     const now = this.ctx.currentTime;

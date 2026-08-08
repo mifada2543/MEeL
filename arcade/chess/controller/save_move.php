@@ -2,7 +2,7 @@
 require '../../../auth/config.php';
 header('Content-Type: application/json');
 
-// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+// ─── Auth guard: wajib login (JSON 401, tanpa redirect) ───
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode([
@@ -23,7 +23,7 @@ if (!$data) {
     ]));
 }
 
-// ── CSRF guard: token dikirim dalam body JSON ──
+// ─── CSRF guard: token dikirim dalam body JSON ───
 if (empty($data['csrf_token']) || !verify_csrf_token($data['csrf_token'])) {
     http_response_code(403);
     die(json_encode([
@@ -32,11 +32,7 @@ if (empty($data['csrf_token']) || !verify_csrf_token($data['csrf_token'])) {
     ]));
 }
 
-// ── Otorisasi pemain: verifikasi user login ini benar-benar white/black
-// di room ini, dan JANGAN percaya $data['color'] dari client — warna
-// ditentukan dari identitas server-side, bukan input client. Ini mencegah
-// user mana pun yang tahu room_code mengirim langkah sebagai warna
-// siapa pun, atau menyuntik langkah ke game orang lain. ──
+// ─── Otorisasi pemain: verifikasi user login ini benar-benar white/black ───
 $user_id = (int)$_SESSION['user_id'];
 $room_code = $data['room'] ?? '';
 $roomStmt = $conn->prepare("SELECT white_user_id, black_user_id FROM rooms WHERE room_code = ?");
@@ -72,11 +68,8 @@ if (!$stmt) {
         "message" => $conn->error
     ]));
 }
-// Jangan simpan token CSRF ke DB (move_data) — token session-bound
-// tidak boleh ikut tersimpan & terkirim ke pemain lain via get_move.php.
+
 unset($data['csrf_token']);
-// Timpa color di move_data juga dengan versi yang tervalidasi server,
-// supaya move_data (JSON mentah yang dikirim balik ke lawan) konsisten
 // dengan kolom color di DB — bukan nilai mentah dari client.
 $data['color'] = $server_color;
 $json = json_encode($data);

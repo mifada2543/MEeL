@@ -1,7 +1,4 @@
-/* ============================================================
- * shared/comment.css — CSS bersama untuk section komentar.
- * Dipakai oleh video/watch.php & music/watch.php.
- * ============================================================ */
+/* shared/comment.css — CSS bersama untuk section komentar. */
 #comment-body {
   display: grid;
   grid-template-rows: 1fr;

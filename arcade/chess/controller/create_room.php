@@ -2,7 +2,7 @@
 require '../../../auth/config.php';
 header('Content-Type: application/json');
 
-// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+// ─── Auth guard: wajib login (JSON 401, tanpa redirect) ───
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode([
@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
     ]));
 }
 
-// ── CSRF guard: semua POST wajib token valid ──
+// ─── CSRF guard: semua POST wajib token valid ───
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     die(json_encode([
@@ -24,8 +24,6 @@ if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
 // Room code acak 6 karakter
 $room = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 $user_id = (int)$_SESSION['user_id'];
-// white_user_id diisi di sini — pembuat room SELALU jadi putih, dan ini
-// diikat server-side (bukan cuma asumsi client) supaya save_move.php bisa
 // memverifikasi identitas pengirim langkah nanti.
 $sql = "INSERT INTO rooms (room_code, white_user_id) VALUES (?, ?)";
 $stmt = $conn->prepare($sql);
@@ -39,8 +37,6 @@ if (!$stmt) {
 $stmt->bind_param("si", $room, $user_id);
 $stmt->execute();
 
-// Cleanup room multiplayer basi (throttle 1 jam via GarbageCollector) —
-// sampah catur dibersihkan saat ada yang bermain, tanpa menunggu admin.
 // GarbageCollector sudah ter-autoload lewat auth/config.php.
 GarbageCollector::cleanChessRooms($conn);
 

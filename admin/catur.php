@@ -5,7 +5,7 @@ include '../auth/auth.php';
 // Guard terpusat: harus login + role admin
 require_admin($conn);
 
-// ── Action handler ──────────────────────────────────────────────────────────
+// ─── Action handler ───
 $message = null;
 $message_type = 'success';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -54,7 +54,7 @@ if (isset($_GET['auto_cleanup'])) {
     exit;
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ───
 function purgeInactiveRooms(mysqli $conn): array
 {
     // Kumpulkan room_code yang mau dihapus
@@ -97,8 +97,7 @@ function logCleanup(mysqli $conn, array $result): void
     @file_put_contents(__DIR__ . '/../logs/chess_cleanup.log', $logLine, FILE_APPEND | LOCK_EX);
 }
 
-// ── Fetch data untuk tampilan ────────────────────────────────────────────────
-// Semua rooms
+// ─── Fetch data untuk tampilan ───
 $rooms_result = $conn->query("
     SELECT
         r.room_code,
@@ -154,7 +153,6 @@ $back_url    = 'index.php';
 <body class="min-h-screen">
 
     <?php require 'header-admin.php'; ?>
-
     <main class="max-w-7xl mx-auto px-6 py-8 space-y-6">
 
         <!-- Flash message -->
@@ -165,7 +163,6 @@ $back_url    = 'index.php';
                 <span><?= $message ?></span>
             </div>
         <?php endif; ?>
-
         <!-- Header row -->
         <div class="flex items-center justify-between">
             <div>

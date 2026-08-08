@@ -1,6 +1,4 @@
 <?php
-// books/search_books.php — Server-side search buku memakai FULLTEXT index
-// ft_books_search (title, author). Dipanggil via HTMX dari books/index.php,
 // dan juga menangani pagination (load-more) hasil pencarian.
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
@@ -16,7 +14,6 @@ $type   = in_array($type, ['manga', 'pdf'], true) ? $type : 'all';
 $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
 $limit  = 24;
 
-// Fetch limit+1 untuk deteksi hasMore tanpa COUNT query tambahan.
 $result = $repo->searchBooks($q, $type, $offset, $limit + 1);
 
 $rows    = [];
@@ -51,6 +48,6 @@ if (count($rows) > 0) {
         <?php
     }
 } elseif ($offset === 0) {
-    // Jangan timpa hasil yang sudah dimuat saat load-more menemukan halaman kosong.
+
     echo '<div class="col-span-full py-12 text-center text-[10px] text-gray-700 uppercase tracking-widest">Buku tidak ditemukan.</div>';
 }

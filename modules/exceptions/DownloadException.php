@@ -1,11 +1,5 @@
 <?php
-/**
- * modules/exceptions/DownloadException.php
- *
- * Exception spesifik untuk kegagalan download media (yt-dlp).
- *
- * @package MEeL\Exceptions
- */
+/* @package MEeL\Exceptions */
 
 class DownloadException extends \RuntimeException
 {

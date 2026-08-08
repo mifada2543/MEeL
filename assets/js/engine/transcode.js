@@ -1,12 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * engine/transcode.js — Progres fase transcode HLS + sprite/VTT.
- *   window.meelTcPct  → bar transcode + label + segmen TS (mseg*)
- *   window.meelSpPct  → progres sprite asli dari PHP (dengan trickle)
- * Bergantung pada state meelSpriteTimer/meelSpriteCurrentPct dari core.js (di-load lebih dulu oleh main.js).
- * ──────────────────────────────────────────────────────────────── */
+/* engine/transcode.js — Progres fase transcode HLS + sprite/VTT. */
 window.meelTcPct = function (pct, label) {
   var b = document.getElementById("meel-tc-bar");
   var t = document.getElementById("meel-tc-pct");

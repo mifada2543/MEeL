@@ -1,22 +1,11 @@
 <?php
-
-// ════════════════════════════════════════════════════════════════
 // helpers/mfa.php — MFA / TOTP Helpers
-//
 // Bagian dari pecahan modules/core/helpers.php.
 // Dimuat oleh helpers/main.php.
-//
 // Semua fungsi dibungkus function_exists() guard sebagai
 // defense-in-depth terhadap double-include.
-// ════════════════════════════════════════════════════════════════
-
 if (!function_exists('base32_decode')) {
-/**
- * Decode base32 string (RFC 4648) ke binary.
- *
- * @param string $input Base32-encoded string
- * @return string Decoded binary string
- */
+/* @param string $input Base32-encoded string; @return string Decoded binary string */
 function base32_decode(string $input): string
 {
     $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -43,11 +32,7 @@ function base32_decode(string $input): string
 } // end function_exists('base32_decode')
 
 if (!function_exists('generate_mfa_secret')) {
-/**
- * Generate random base32 secret untuk TOTP (32 karakter).
- *
- * @return string Base32 secret key
- */
+/* @return string Base32 secret key */
 function generate_mfa_secret(): string
 {
     $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -60,13 +45,7 @@ function generate_mfa_secret(): string
 } // end function_exists('generate_mfa_secret')
 
 if (!function_exists('generate_totp')) {
-/**
- * Generate kode TOTP 6-digit (RFC 6238) untuk secret & waktu tertentu.
- *
- * @param string   $secret     Base32 secret key
- * @param int|null $time_slice Unix timestamp / 30 (null = waktu sekarang)
- * @return string Kode 6-digit
- */
+/* @param string $secret Base32 secret key; @param int|null $time_slice Unix timestamp / 30 (null = waktu sekarang); @return string Kode 6-digit */
 function generate_totp(string $secret, ?int $time_slice = null): string
 {
     if ($time_slice === null) {
@@ -88,13 +67,7 @@ function generate_totp(string $secret, ?int $time_slice = null): string
 } // end function_exists('generate_totp')
 
 if (!function_exists('verify_totp')) {
-/**
- * Verifikasi kode TOTP dengan toleransi window ±1 interval (total 3 kemungkinan).
- *
- * @param string $secret Base32 secret key
- * @param string $code   Kode 6-digit yang dimasukkan user
- * @return bool True jika valid
- */
+/* @param string $secret Base32 secret key; @param string $code Kode 6-digit yang dimasukkan user; @return bool True jika valid */
 function verify_totp(string $secret, string $code): bool
 {
     $time_slice = (int)floor(time() / 30);
@@ -108,13 +81,7 @@ function verify_totp(string $secret, string $code): bool
 } // end function_exists('verify_totp')
 
 if (!function_exists('generate_otpauth_url')) {
-/**
- * Generate otpauth:// URL untuk ditampilkan sebagai QR code.
- *
- * @param string $secret   Base32 secret
- * @param string $username Username pengguna
- * @return string OTP Auth URL
- */
+/* @param string $secret Base32 secret; @param string $username Username pengguna; @return string OTP Auth URL */
 function generate_otpauth_url(string $secret, string $username): string
 {
     $issuer = 'MEeL';
@@ -124,18 +91,13 @@ function generate_otpauth_url(string $secret, string $username): string
 } // end function_exists('generate_otpauth_url')
 
 if (!function_exists('generate_backup_codes')) {
-/**
- * Generate 8 backup codes (masing-masing 8 digit angka) dan return
- * array dengan codes plain text + hashed.
- *
- * @return array ['plain' => string[], 'hashed' => string[]]
- */
+/* @return array ['plain' => string[], 'hashed' => string[]] */
 function generate_backup_codes(): array
 {
     $plain = [];
     $hashed = [];
     for ($i = 0; $i < 8; $i++) {
-        // 6 digit angka acak — kompatibel dengan input field maxlength=6 di halaman verifikasi
+
         $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $plain[] = $code;
         $hashed[] = password_hash($code, PASSWORD_DEFAULT);
@@ -146,10 +108,8 @@ function generate_backup_codes(): array
 
 if (!function_exists('verify_backup_code')) {
 /**
- * Verifikasi backup code, dan return array sisa kode jika valid.
- *
  * @param string $hashed_json JSON array of hashed backup codes dari DB
- * @param string $input       Input user
+ * @param string $input Input user
  * @return array ['valid' => bool, 'remaining' => string[]|null]
  */
 function verify_backup_code(string $hashed_json, string $input): array

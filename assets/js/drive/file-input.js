@@ -1,5 +1,4 @@
-/** MEeL Drive — File Input Label Update
- * Updates the label text when a file is selected. **/
+/* MEeL Drive — File Input Label Update */
 function updateFileName(input) {
   var label = document.getElementById("fileLabel");
   if (!label || !input.files || input.files.length === 0) return;

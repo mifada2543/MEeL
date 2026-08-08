@@ -1,26 +1,4 @@
 <?php
-/**
- * MEeL Security Test Suite v1.1
- * ==============================
- * Automated security scanning untuk verifikasi:
- *  - SQL Injection (raw queries tanpa prepared statement)
- *  - display_errors (ekspos error ke user)
- *  - CSRF Token (form protection)
- *  - XSS Protection (htmlspecialchars)
- *  - Path Traversal (file download validation)
- *  - File Upload (extension & type validation)
- *  - .htaccess Security (headers, directory listing)
- *  - Session Security (cookie params, timeout)
- *
- * Cara pakai:
- *   /opt/lampp/bin/php tests/security_test.php
- *
- * Exit codes:
- *   0 = Semua test PASS
- *   1 = Ada WARNING (lulus dengan catatan)
- *   2 = Ada FAIL (gagal, perlu perbaikan)
- */
-
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'tests', 'temp', 'assets/dict', 'data_drive']);
 define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
@@ -35,10 +13,7 @@ $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 
 // Check if file has a function call pattern
-// ============================================================================
 // TEST 1: SQL INJECTION SCAN
-// ============================================================================
-
 function testSqlInjection(): void {
     print_header('TEST 1: SQL Injection ' . chr(8212) . ' Prepared Statement Analysis');
 
@@ -66,8 +41,6 @@ function testSqlInjection(): void {
 
         $examined++;
 
-        // Find ->query( calls that contain variable interpolation ($var or {$var})
-        // This regex finds query() calls where the SQL string contains a $ sign
         preg_match_all('/\->query\s*\(\s*((["\'])(?:(?!\2).)*?\$.*?\2)\s*\)\s*;/s', $content, $qMatches);
 
         $rawWithVars = array_map('trim', $qMatches[1] ?? []);
@@ -120,10 +93,7 @@ function testSqlInjection(): void {
     }
 }
 
-// ============================================================================
 // TEST 2: display_errors SCAN
-// ============================================================================
-
 function testDisplayErrors(): void {
     print_header('TEST 2: Error Handling ' . chr(8212) . ' display_errors Setting');
 
@@ -143,7 +113,6 @@ function testDisplayErrors(): void {
     }
 
     // stream.php uses error_reporting(0) which is acceptable
-    // bootstrap.php uses environment detection: display_errors=1 hanya untuk dev mode
     $enabled = array_values(array_filter($enabled, fn($f) => !in_array($f, [
         'music/stream.php',
         'modules/core/bootstrap.php',
@@ -160,10 +129,7 @@ function testDisplayErrors(): void {
     }
 }
 
-// ============================================================================
 // TEST 3: CSRF PROTECTION
-// ============================================================================
-
 function testCsrfProtection(): void {
     print_header('TEST 3: CSRF Protection ' . chr(8212) . ' Anti-CSRF Token');
 
@@ -206,10 +172,7 @@ function testCsrfProtection(): void {
     }
 }
 
-// ============================================================================
 // TEST 4: XSS PROTECTION
-// ============================================================================
-
 function testXssProtection(): void {
     print_header('TEST 4: XSS Protection ' . chr(8212) . ' htmlspecialchars Usage');
 
@@ -243,7 +206,6 @@ function testXssProtection(): void {
         $totalOut += $rawOut;
         $totalHs  += $hsCount;
 
-        // Flag only if there are many outputs but zero or very few htmlspecialchars
         if ($rawOut > 10 && $hsCount === 0) {
             $issues[] = ['file' => $rel, 'out' => $rawOut, 'hs' => $hsCount];
         }
@@ -264,10 +226,7 @@ function testXssProtection(): void {
     }
 }
 
-// ============================================================================
 // TEST 5: FILE UPLOAD SECURITY
-// ============================================================================
-
 function testFileUploadSecurity(): void {
     print_header('TEST 5: File Upload Security');
 
@@ -297,10 +256,7 @@ function testFileUploadSecurity(): void {
     }
 }
 
-// ============================================================================
 // TEST 6: PATH TRAVERSAL
-// ============================================================================
-
 function testPathTraversal(): void {
     print_header('TEST 6: Path Traversal Protection');
 
@@ -327,14 +283,11 @@ function testPathTraversal(): void {
     }
 }
 
-// ============================================================================
 // TEST 7: .HTACCESS SECURITY
-// ============================================================================
-
 function testHtaccessSecurity(): void {
     print_header('TEST 7: .htaccess & HTTP Security Headers');
 
-    // ── 7a: Cek semua folder sensitif wajib punya .htaccess ──
+    // ─── 7a: Cek semua folder sensitif wajib punya .htaccess ───
     $sensitiveDirs = [
         // PHP-include only folders
         'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
@@ -366,7 +319,7 @@ function testHtaccessSecurity(): void {
         }
     }
 
-    // ── 7b: Verifikasi directive spesifik per folder ──
+    // ─── 7b: Verifikasi directive spesifik per folder ───
     $checks = [
         '.htaccess'                 => ['Options -Indexes', 'X-Content-Type-Options', 'Deny from all'],
         'auth/.htaccess'            => ['Options -Indexes', 'Deny from all'],
@@ -407,10 +360,7 @@ function testHtaccessSecurity(): void {
     }
 }
 
-// ============================================================================
 // TEST 8: SESSION SECURITY
-// ============================================================================
-
 function testSessionSecurity(): void {
     print_header('TEST 8: Session & Authentication Security');
 
@@ -443,10 +393,7 @@ function testSessionSecurity(): void {
     }
 }
 
-// ============================================================================
 // TEST 9: HTTP SECURITY HEADERS (CSP)
-// ============================================================================
-
 function testCspHeaders(): void {
     print_header('TEST 9: HTTP Security Headers & CSP');
 
@@ -481,10 +428,7 @@ function testCspHeaders(): void {
     }
 }
 
-// ============================================================================
 // TEST 10: COMMAND INJECTION (SHELL EXEC)
-// ============================================================================
-
 function testCommandInjection(): void {
     print_header('TEST 10: Command Injection ' . chr(8212) . ' Shell Execution Safety');
 
@@ -519,15 +463,12 @@ function testCommandInjection(): void {
     }
 }
 
-// ============================================================================
 // TEST 11: PASSWORD POLICY
-// ============================================================================
-
 function testPasswordPolicy(): void {
     print_header('TEST 11: Password Policy & Strength');
 
     $checks = [
-        // Validasi register dipindah ke auth/auth_helpers.php (refactor modular)
+
         ['Min 8 karakter password',          'auth/auth_helpers.php', '/strlen.*pass.*8|min.*8/'],
         ['Brute force lockout',              'auth/login.php',    '/login_fail_count/'],
         ['Lockout timeout',                  'auth/login.php',    '/lockout_time/'],
@@ -547,10 +488,7 @@ function testPasswordPolicy(): void {
     }
 }
 
-// ============================================================================
 // TEST 12: FILE INTEGRITY
-// ============================================================================
-
 function testFileIntegrity(): void {
     print_header('TEST 12: File Integrity ' . chr(8212) . ' Critical Files');
 
@@ -581,10 +519,7 @@ function testFileIntegrity(): void {
     }
 }
 
-// ============================================================================
 // MAIN
-// ============================================================================
-
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";

@@ -1,7 +1,5 @@
-/* ============================================================
- * fullscreen.css — True Fullscreen: ignore notch, fill screen
- * ============================================================ */
-/* ── Plyr fallback fullscreen (background) ── */
+/* fullscreen.css — True Fullscreen: ignore notch, fill screen */
+/* ─── Plyr fallback fullscreen (background) ─── */
 .plyr--fullscreen-fallback {
   background: #000 !important;
 }
@@ -12,7 +10,7 @@
   --plyr-video-background: #000 !important;
   background: #000 !important;
 }
-/* ── Plyr fallback fullscreen (layout) ── */
+/* ─── Plyr fallback fullscreen (layout) ─── */
 .plyr--fullscreen-fallback {
   position: fixed !important;
   top: 0 !important;
@@ -68,7 +66,7 @@
 .plyr:fullscreen .plyr__control--overlaid {
   margin-top: 0 !important;
 }
-/* ── Body lock ketika fullscreen aktif ── */
+/* ─── Body lock ketika fullscreen aktif ─── */
 body.meel-fs-active {
   overflow: hidden !important;
   position: fixed !important;
@@ -110,7 +108,7 @@ body.meel-fs-active .plyr {
   background-color: #000 !important;
   z-index: 999999 !important;
 }
-/* ── Auto-next overlay inside fullscreen ── */
+/* ─── Auto-next overlay inside fullscreen ─── */
 body.meel-fs-active #autonext-overlay {
   z-index: 100 !important;
 }

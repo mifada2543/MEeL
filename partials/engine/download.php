@@ -1,9 +1,4 @@
 <?php
-/**
- * partials/engine/download.php — Fase DOWNLOAD overlay MEeL Engine.
- * Di-include oleh partials/ui.php (assembler).
- * Styling: assets/css/engine/ (modul download.css).
- */
 ?>
 <!-- ── FASE: DOWNLOAD ── -->
 <div class="meel-phase" id="meel-phase-download">

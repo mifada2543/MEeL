@@ -1,7 +1,5 @@
-/* ============================================================
- * cards.css — Music items, format pills, sidebar, rekomendasi
- * ============================================================ */
-/* ── Format Pills ── */
+/* cards.css — Music items, format pills, sidebar, rekomendasi */
+/* ─── Format Pills ─── */
 .format-pill {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
@@ -33,7 +31,7 @@
   border-color: #16a34a;
   color: #fff;
 }
-/* ── Sidebar Links ── */
+/* ─── Sidebar Links ─── */
 .sidebar-link {
   border-left: 2px solid transparent;
   transition: all 0.2s;
@@ -43,7 +41,7 @@
   color: var(--orange);
   border-left-color: var(--orange);
 }
-/* ── Items & Comments ── */
+/* ─── Items & Comments ─── */
 .comment-row,
 .music-item,
 .rekomendasi-item {

@@ -41,8 +41,6 @@ if ($result['count'] > 0) {
         }
     }
 
-    // Pagination hasil pencarian — pola sama dengan video/search_video.php.
-    // Load-more menggantikan dirinya sendiri (outerHTML) dengan hasil berikutnya.
     if (!$result['sidebar'] && $result['hasMore']) {
         ?>
         <div id="load-more-music-search"
@@ -56,6 +54,6 @@ if ($result['count'] > 0) {
         <?php
     }
 } elseif ($result['offset'] === 0) {
-    // Jangan timpa hasil yang sudah dimuat saat load-more menemukan halaman kosong.
+
     echo '<div class="py-12 text-center text-[10px] text-gray-700 uppercase tracking-widest">Tidak ada lagu ditemukan.</div>';
 }

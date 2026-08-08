@@ -1,16 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * engine/main.js — Entry point folder engine/ (overlay download/
- * transcode dari partials/ui.php).
- * PENTING:
- *  - main.js HARUS di-include TANPA atribut defer/async — document.write
- *    dari script async/defer diabaikan browser.
- *  - Versi (?v=) pada URL main.js diteruskan ke tiap sibling agar
- *    cache-busting (SW cache-first + Cache-Control immutable) tetap
- *    berfungsi. partials/ui.php me-pass versi = max filemtime aset.
- * ──────────────────────────────────────────────────────────────── */
+/* engine/main.js — Entry point folder engine/ (overlay download/ */
 (function () {
   "use strict";
   if (document.readyState !== "loading") return;

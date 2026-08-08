@@ -1,30 +1,18 @@
 <?php
-/**
- * modules/core/japanese_aliases.php
- * Alias manual untuk brand/franchise/nama yang TIDAK ada di JMdict
- * (kamus umum tidak mencakup nama produk/karakter/game).
- *
- * Format: 'frasa Jepang persis' => 'terjemahan/nama Inggris'
- * Cocokkan berdasarkan SUBSTRING pada teks asli (case-sensitive untuk
- * karakter Jepang), bukan per-token MeCab — karena brand/franchise name
- * biasanya diparsing MeCab sebagai satu token utuh yang gagal match JMdict.
- *
- * Tambahkan entri baru di sini kapan saja tanpa perlu ubah kode lain.
- */
 return [
-    // ── Project Sekai — Franchise & Nickname ────────────────────────────────
+    // ─── Project Sekai — Franchise & Nickname ───
     'プロジェクトセカイ'   => 'Project Sekai',
     'カラフルステージ'     => 'Colorful Stage',
     'プロセカ'            => 'Project Sekai',
 
-    // ── Project Sekai — Unit ────────────────────────────────────────────────
+    // ─── Project Sekai — Unit ───
     'ワンダーランズ×ショウタイム' => 'Wonderlands x Showtime',
     'ワンダーランズ'       => 'Wonderlands',
     'ワンオポ'            => 'Wonderlands x Showtime',
     '25時、ナイトコードで'  => 'Nightcord at 25:00',
     'ナイトコード'         => 'Nightcord',
 
-    // ── Project Sekai — Karakter (grup pertama: menonjol di katalog) ────────
+    // ─── Project Sekai — Karakter (grup pertama: menonjol di katalog) ───
     '初音ミク'            => 'Hatsune Miku',
     '鏡音リン'            => 'Kagamine Rin',
     '鏡音レン'            => 'Kagamine Len',
@@ -51,7 +39,7 @@ return [
     '東雲彰人'            => 'Shinonome Akito',
     '青柳冬弥'            => 'Aoyagi Toya',
 
-    // ── Franchise / Game / Platform lain di katalog ─────────────────────────
+    // ─── Franchise / Game / Platform lain di katalog ───
     '東方'                => 'Touhou',
     'あんさんぶるスターズ'  => 'Ensemble Stars',
     'ミルグラム'           => 'MILGRAM',

@@ -1,13 +1,10 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversNothing
- * Tests for standalone helper functions in modules/core/helpers.php
- */
+/* @coversNothing */
 class HelpersTest extends TestCase
 {
-    // ─── format_bytes() ───────────────────────────────────────────────────────
+    // ─── format_bytes() ───
 
     /** @dataProvider bytesProvider */
     public function testFormatBytes(int|float $bytes, int $precision, string $expected): void
@@ -30,7 +27,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── time_ago() ──────────────────────────────────────────────────────────
+    // ─── time_ago() ───
 
     /** @dataProvider timeAgoProvider */
     public function testTimeAgo(int $secondsAgo, string $expectedRegex): void
@@ -53,7 +50,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_mime_type() ───────────────────────────────────────────────
+    // ─── get_audio_mime_type() ───
 
     /** @dataProvider mimeTypeProvider */
     public function testGetAudioMimeType(string $ext, string $expected): void
@@ -75,7 +72,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_format_label() ───────────────────────────────────────────
+    // ─── get_audio_format_label() ───
 
     /** @dataProvider formatLabelProvider */
     public function testGetAudioFormatLabel(string $ext, string $expected): void
@@ -95,7 +92,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_format_description() ─────────────────────────────────────
+    // ─── get_audio_format_description() ───
 
     /** @dataProvider formatDescriptionProvider */
     public function testGetAudioFormatDescription(string $ext, string $expectedContains): void
@@ -116,7 +113,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── detectProtocol() ────────────────────────────────────────────────────
+    // ─── detectProtocol() ───
 
     public function testDetectProtocolDefaultHttp(): void
     {
@@ -136,7 +133,7 @@ class HelpersTest extends TestCase
         if ($origForwardedProto !== null) $_SERVER['HTTP_X_FORWARDED_PROTO'] = $origForwardedProto;
     }
 
-    // ─── base_url() ──────────────────────────────────────────────────────────
+    // ─── base_url() ───
 
     public function testBaseUrl(): void
     {
@@ -153,13 +150,6 @@ class HelpersTest extends TestCase
         $this->assertStringEndsWith('/css/style.css', $result3);
     }
 
-    /**
-     * Fallback base_url() (saat MEEL_BASE_URL belum didefinisikan) harus berbasis
-     * root proyek, bukan dirname(SCRIPT_NAME). Regresi: halaman di subdirektori
-     * (mis. /MEeL/admin/index.php) pernah menghasilkan base /MEeL/admin, sehingga
-     * redirect auth mengarah ke /MEeL/admin/auth/login.php?next=... (salah).
-     * Dijalankan di subprocess karena base_url() memakai static cache + define().
-     */
     public function testBaseUrlFallbackFromProjectRoot(): void
     {
         $helpers = realpath(__DIR__ . '/../../modules/core/helpers.php');
@@ -183,11 +173,11 @@ class HelpersTest extends TestCase
         $this->assertSame($expected . '/auth/login.php?next=x', trim($output[0]));
     }
 
-    // ─── check_disk_space() ──────────────────────────────────────────────────
+    // ─── check_disk_space() ───
 
     public function testCheckDiskSpaceOnExistingPath(): void
     {
-        // Test on a real directory (this temp dir should exist from bootstrap)
+
         $result = check_disk_space(1, MEEL_ROOT);
         $this->assertArrayHasKey('ok', $result);
         $this->assertArrayHasKey('free', $result);
@@ -204,7 +194,7 @@ class HelpersTest extends TestCase
         $this->assertArrayHasKey('path', $result);
     }
 
-    // ─── CSRF functions ──────────────────────────────────────────────────────
+    // ─── CSRF functions ───
 
     public function testCsrfTokenFunctions(): void
     {
@@ -218,7 +208,7 @@ class HelpersTest extends TestCase
         $this->assertFalse(verify_csrf_token('wrong_token'));
     }
 
-    // ─── dir_size() ──────────────────────────────────────────────────────────
+    // ─── dir_size() ───
 
     public function testDirSizeOnNonExistentPath(): void
     {
@@ -243,11 +233,7 @@ class HelpersTest extends TestCase
         @rmdir($testDir);
     }
 
-    // ─── generate_search_metadata() ──────────────────────────────────────────
-    // Helper ini butuh japanese.php + MeCab — sama seperti JapaneseTest.
-    // Memverifikasi format: original + romaji + english (lowercase), termasuk
-    // brand alias dari japanese_aliases.php.
-
+    // ─── generate_search_metadata() ───
     public function testGenerateSearchMetadataWithAliases(): void
     {
         $result = generate_search_metadata('プロジェクトセカイ カラフルステージ!');
@@ -264,7 +250,7 @@ class HelpersTest extends TestCase
         $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
     }
 
-    // ─── lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label() ──
+    // ─── lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label() ───
 
     public function testLangMapHasAllLanguages(): void
     {
@@ -303,6 +289,5 @@ class HelpersTest extends TestCase
         $this->assertSame(lang_label('pt-br'), subtitle_lang_label('pt-br'));
     }
 
-    // ─── get_user_role() requires DB, skip basic test ────────────────────────
-    // ─── is_dir() is a native function, not tested here ──────────────────────
-}
+    // ─── get_user_role() requires DB, skip basic test ───
+    }

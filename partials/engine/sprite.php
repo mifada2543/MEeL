@@ -1,9 +1,4 @@
 <?php
-/**
- * partials/engine/sprite.php — Fase SPRITE / VTT overlay MEeL Engine.
- * Di-include oleh partials/ui.php (assembler).
- * Styling: assets/css/engine/ (modul progress.css).
- */
 ?>
 <!-- ── FASE: SPRITE / VTT ── -->
 <div class="meel-phase" id="meel-phase-sprite">

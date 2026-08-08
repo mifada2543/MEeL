@@ -1,7 +1,4 @@
-/* ============================================================
- * state.js — State global player musik & data preset EQ.
- * WAJIB dimuat PALING PERTAMA (shared global scope).
- * ============================================================ */
+/* state.js — State global player musik & data preset EQ. */
 let player,
   audio,
   storageKeyMusic,

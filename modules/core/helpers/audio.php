@@ -1,22 +1,11 @@
 <?php
-
-// ════════════════════════════════════════════════════════════════
 // helpers/audio.php — Audio MIME & Format Helpers
-//
 // Bagian dari pecahan modules/core/helpers.php.
 // Dimuat oleh helpers/main.php.
-//
 // Semua fungsi dibungkus function_exists() guard sebagai
 // defense-in-depth terhadap double-include.
-// ════════════════════════════════════════════════════════════════
-
 if (!function_exists('get_audio_mime_type')) {
-/**
- * Dapatkan MIME type untuk ekstensi file audio.
- *
- * @param string $ext Ekstensi file (mp3, ogg, flac, dll)
- * @return string MIME type yang sesuai
- */
+/* @param string $ext Ekstensi file (mp3, ogg, flac, dll); @return string MIME type yang sesuai */
 function get_audio_mime_type(string $ext): string
 {
     return match (strtolower($ext)) {
@@ -31,12 +20,7 @@ function get_audio_mime_type(string $ext): string
 } // end function_exists('get_audio_mime_type')
 
 if (!function_exists('get_audio_format_label')) {
-/**
- * Dapatkan label format audio yang user-friendly.
- *
- * @param string $ext Ekstensi file (mp3, ogg, flac, dll)
- * @return string Label format (MP3, OPUS, FLAC, dll)
- */
+/* @param string $ext Ekstensi file (mp3, ogg, flac, dll); @return string Label format (MP3, OPUS, FLAC, dll) */
 function get_audio_format_label(string $ext): string
 {
     $lower = strtolower($ext);
@@ -45,12 +29,7 @@ function get_audio_format_label(string $ext): string
 } // end function_exists('get_audio_format_label')
 
 if (!function_exists('get_audio_format_description')) {
-/**
- * Dapatkan deskripsi singkat untuk format audio.
- *
- * @param string $ext Ekstensi file
- * @return string Deskripsi format
- */
+/* @param string $ext Ekstensi file; @return string Deskripsi format */
 function get_audio_format_description(string $ext): string
 {
     return match (strtolower($ext)) {

@@ -1,11 +1,4 @@
 <?php
-/**
- * MEeL Drive — AJAX Refresh Endpoint
- * Invalidates dir_size cache and returns fresh storage usage data as JSON.
- *
- * GET /controllers/api/ajax_refresh.php
- * Response: { status, storage_usage, storage_percentage, formatted_usage }
- */
 require '../../auth/auth.php';
 require '../../auth/config.php';
 require '../../modules/core/helpers.php';

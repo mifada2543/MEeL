@@ -1,29 +1,4 @@
 <?php
-/**
- * controllers/api/comment.php
- *
- * POST /api/comment — Kirim komentar video/music via AJAX (HTMX).
- *
- * Request (form-urlencoded, di-serialisasi oleh HTMX):
- *   - comments    (string, required) teks komentar
- *   - parent_id   (int, optional) ID komentar yang dibalas (0/null = root)
- *   - csrf_token  (string, required) token CSRF dari session
- *   - media_type  (string) 'video' | 'music' (default 'video')
- *   - id          (int, required) ID media
- *
- * Response (HTML partial):
- *   - Sukses : innerHTML untuk #comment-list (seluruh daftar komentar
- *     dirender ulang, termasuk komentar baru di bagian bawah)
- *   - Error  : HTTP 4xx + snippet HTML untuk #comment-alert (HX-Retarget)
- *
- * Dependencies:
- *   - helpers.php (verify_csrf_token, get_user_role)
- *   - auth/config.php ($conn, $_SESSION)
- *   - modules/core/RateLimiter.php
- *   - modules/media/MediaViewer.php
- *   - modules/core/CommentRenderer.php
- */
-
 require_once '../../modules/core/helpers.php';
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -83,20 +58,16 @@ if (!$viewer->addComment($_POST)) {
     exit;
 }
 
-// Render ulang seluruh daftar komentar (komentar baru otomatis di bagian bawah,
 // sesuai urutan ASC created_at pada getComments())
 $comments_data = $viewer->getComments();
 $grouped       = $comments_data['grouped'];
 $user_map      = $comments_data['user_map'];
 
-// Konteks playlist (khusus music) agar link navigasi pada render ulang tetap utuh
 $playlist_context = (int)($_POST['playlist_id'] ?? 0);
 
-// Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
 $media_row = $viewer->getMediaData();
 $GLOBALS['uploader_id'] = (int)($media_row['user_id'] ?? 0);
 
-// render_comments() membaca global $id, $user_map, dan $uploader_id
 $GLOBALS['id']        = $media_id;
 $GLOBALS['user_map']  = $user_map;
 

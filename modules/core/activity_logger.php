@@ -1,5 +1,4 @@
 <?php
-
 function trust_proxy_headers(): bool
 {
     return defined('MEEL_TRUST_PROXY_HEADERS') && MEEL_TRUST_PROXY_HEADERS === true;
@@ -36,7 +35,7 @@ function validate_and_format_ip($ip)
     if ($ip === '::1') {
         return ['ip' => 'LOCAL', 'display' => 'Local Access (IPv6)', 'is_local' => true, 'version' => 'ipv6'];
     }
-    
+
     // Handle IPv4-mapped IPv6 addresses (::ffff:192.168.1.1)
     if (strpos($ip, '::ffff:') === 0) {
         $ipv4 = substr($ip, 7); // Extract IPv4 part
@@ -44,22 +43,22 @@ function validate_and_format_ip($ip)
             return ['ip' => $ipv4, 'display' => $ipv4 . ' (IPv4-mapped)', 'is_local' => false, 'version' => 'ipv4-mapped'];
         }
     }
-    
+
     // Filter localhost
     if ($ip === 'localhost') {
         return ['ip' => 'LOCAL', 'display' => 'Local Access (localhost)', 'is_local' => true, 'version' => 'hostname'];
     }
-    
+
     // Validasi IPv6 format
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
         return ['ip' => $ip, 'display' => $ip . ' (IPv6)', 'is_local' => false, 'version' => 'ipv6'];
     }
-    
+
     // Validasi IPv4 format
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
         return ['ip' => $ip, 'display' => $ip . ' (IPv4)', 'is_local' => false, 'version' => 'ipv4'];
     }
-    
+
     return ['ip' => 'Unknown', 'display' => 'Unknown', 'is_local' => false, 'version' => 'unknown'];
 }
 
@@ -89,27 +88,22 @@ function get_access_method()
 function get_connection_protocol()
 {
     $ip = get_real_ip();
-    
+
     // Check if IPv6 (includes IPv4-mapped IPv6)
     if (strpos($ip, ':') !== false) {
         return 'IPv6';
     }
-    
+
     return 'IPv4';
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 5. log_activity() — INSERT ke tabel activity_log untuk audit trail
-// ═══════════════════════════════════════════════════════════════════════════
 if (!function_exists('log_activity')) {
     /**
-     * Catat aktivitas user ke tabel activity_log.
-     *
-     * @param mysqli  $conn       Koneksi database
-     * @param int     $user_id    ID user (0 untuk guest)
-     * @param string  $action     Tipe aksi (login, logout, upload_video, etc)
-     * @param string  $media_type Tipe media (video, music, books, user, dll) — opsional
-     * @param int|null $media_id  ID media terkait — opsional
+     * @param mysqli $conn Koneksi database
+     * @param int $user_id ID user (0 untuk guest)
+     * @param string $action Tipe aksi (login, logout, upload_video, etc)
+     * @param string $media_type Tipe media (video, music, books, user, dll) — opsional
+     * @param int|null $media_id ID media terkait — opsional
      */
     function log_activity(mysqli $conn, int $user_id, string $action, string $media_type = '', ?int $media_id = null): void
     {
@@ -120,7 +114,6 @@ if (!function_exists('log_activity')) {
             $ip = $_SERVER['REMOTE_ADDR'];
         }
 
-        // Handle null media_id — gunakan prepared statement berbeda agar NULL dikirim, bukan 0
         if ($media_id === null) {
             $stmt = $conn->prepare(
                 "INSERT INTO activity_log (user_id, action, media_type, ip_address, created_at)
@@ -145,8 +138,6 @@ if (!function_exists('log_activity')) {
     }
 }
 
-// CLI guard — cegah warning $_SERVER undefined saat di CLI (migration, cron, dll)
-// Fungsi-fungsi di atas tetap terdefinisi, hanya LOGIC eksekusi yang di-skip
 if (PHP_SAPI === 'cli') {
     return;
 }
@@ -158,11 +149,8 @@ $connection_protocol = get_connection_protocol();
 
 // Debug info (optional, bisa di-remove nanti)
 // Uncomment line di bawah untuk debugging
-// error_log("[MEeL-Logger] IP: $user_ip | Raw: " . get_real_ip() . " | Protocol: $connection_protocol | Method: $access_method");
-
 if (isset($conn)) {
 
-    // Ambil role langsung dari DB jika di session tidak ada, supaya lebih akurat
     $session_role = $_SESSION['role'] ?? null;
     // Cek apakah IP user masuk dalam daftar ban
     $check_ban = $conn->prepare("SELECT reason FROM ip_ban WHERE ip_address = ?");
@@ -190,7 +178,7 @@ if (isset($conn)) {
     $dir_name = basename(dirname($_SERVER['PHP_SELF']));
     $id_get = isset($_GET['id']) ? $_GET['id'] : null;
 
-    // --- 1. LOGIKA DETEKSI JUDUL KONTEN ---
+    // ─── 1. LOGIKA DETEKSI JUDUL KONTEN ───
     if ($id_get) {
         if ($current_page == 'watch.php') {
             $table = ($dir_name == 'music') ? 'music' : 'video';
@@ -229,8 +217,6 @@ if (isset($conn)) {
                 }
             }
         } elseif ($current_page == 'stream.php' && $dir_name == 'music') {
-            // Stream.php dipanggil berkali-kali (range requests) selama playback.
-            // Throttle: hanya query DB jika lagu berganti, supaya tidak membebani
             // server dengan query berulang untuk lagu yang sama.
             $last_stream_id = $_SESSION['_last_stream_id'] ?? null;
             if ($last_stream_id !== $id_get) {
@@ -247,7 +233,6 @@ if (isset($conn)) {
                     }
                 }
             } elseif (isset($_SESSION['_last_stream_page'])) {
-                // Range request berikutnya untuk lagu yang sama — pakai title yang
                 // sudah di-cache di session, bukan query ulang ke DB.
                 $current_page = $_SESSION['_last_stream_page'];
             }
@@ -256,9 +241,7 @@ if (isset($conn)) {
             $current_page = "Viewing Profile: " . htmlspecialchars($target_user);
         }
     } elseif ($current_page == 'index.php') {
-        // --- 2. LOGIKA DETEKSI HALAMAN INDEX (BROWSING LIBRARY) ---
-        // Saat user membuka index di folder video, music, books, dll.
-        // $dir_name = basename(dirname(...)) — bisa kosong '' untuk root HUB
+        // ─── 2. LOGIKA DETEKSI HALAMAN INDEX (BROWSING LIBRARY) ───
         switch ($dir_name) {
             case 'video':
                 $current_page = "Browsing Video Library";
@@ -279,7 +262,7 @@ if (isset($conn)) {
                 $current_page = "Browsing Profiles";
                 break;
             default:
-                // Root index.php (HUB) — dir_name bisa kosong '' atau nama folder proyek
+
                 $current_page = "Browsing HUB";
                 break;
         }
@@ -306,9 +289,6 @@ if (isset($conn)) {
         $stmt_check->execute();
         $user_status = $stmt_check->get_result()->fetch_assoc();
 
-        // 2. LOGIKA KICK: Jika SID di DB berbeda dengan browser, langsung tendang!
-        // Kita kecualikan Admin agar admin tidak menendang dirinya sendiri secara tidak sengaja
-        // HANYA kick jika last_session_id TIDAK KOSONG dan BERBEDA dengan current SID
         if ($current_page !== 'banned.php' && $current_page !== 'revoked.php') {
             if ($user_status && $user_status['role'] !== 'admin') {
                 if (!empty($user_status['last_session_id']) && $user_status['last_session_id'] !== $current_sid) {
@@ -324,8 +304,7 @@ if (isset($conn)) {
                 }
             }
         }
-        
-        // 3. Update session ID HANYA jika kosong di database (first time)
+
         if (empty($user_status['last_session_id'])) {
             $stmt_update_sid = $conn->prepare("UPDATE users SET last_session_id = ? WHERE id = ?");
             $stmt_update_sid->bind_param("si", $current_sid, $uid);
@@ -337,9 +316,7 @@ if (isset($conn)) {
         $stmt->bind_param("ssssi", $current_page, $device, $access_via, $user_ip, $uid);
         $stmt->execute();
     } else {
-        // LOGIKA GUEST — 1 query (INSERT ON DUPLICATE KEY) bukan 2 query (SELECT + INSERT/UPDATE)
-        // Gunakan hash dari full session_id sebagai username unik agar ON DUPLICATE KEY benar-benar bekerja
-        // saat UNIQUE KEY pada kolom username sudah ditambahkan via migrasi v7
+
         $guest_id = "g_" . substr(md5(session_id()), 0, 10);
         $role     = 'guest';
         $guest_upd = $conn->prepare(

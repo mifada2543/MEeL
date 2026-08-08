@@ -1,22 +1,10 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ============================================================
- * mini-player.js — Mode mini-player music (Spotify-style) untuk
- * halaman music/watch.php. Dipisah dari player-core.js agar
- * konsisten dengan pola video (watch/mini-player.js).
- * Semua fungsi global di sini dipanggil dari HTML onclick
- * (toggleMiniPlayer, miniPlayPause, miniSeek, miniNext, miniPrev,
- * goBackToLibrary) dan player-core.js (updateMiniPlayerUI).
- * Depends on: state.js (player, isMiniPlayerActive, miniEls,
- * watchUrl, isNavigating, skipResumeModalOnce), audio-state.js
- * (saveAudioState), shared/format-time.js (formatTime),
- * shared/temp-index.js (meelLoadTempIndex),
- * shared/mini-player-popstate.js (meelMiniPlayerPopstate)
- * ============================================================ */
+/* mini-player.js — Mode mini-player music (Spotify-style) untuk */
 // Track state paused terakhir untuk update ikon play/pause
 let _mpPrevPaused = null;
-// ── Update UI mini-player ──────────
+// ─── Update UI mini-player ───
 window.updateMiniPlayerUI = function () {
   if (!isMiniPlayerActive) return;
   miniEls ||
@@ -39,7 +27,7 @@ window.updateMiniPlayerUI = function () {
     n && (n.textContent = formatTime(player.currentTime)),
     a && (a.textContent = formatTime(player.duration)));
 };
-// ── Toggle mini-player ──────
+// ─── Toggle mini-player ───
 window.toggleMiniPlayer = async function () {
   const e = document.getElementById("player-container"),
     t = document.querySelector(
@@ -85,7 +73,7 @@ window.toggleMiniPlayer = async function () {
 setInterval(() => {
   isMiniPlayerActive && saveAudioState();
 }, 5e3);
-// ── Kontrol mini-player ──
+// ─── Kontrol mini-player ───
 window.miniPlayPause = function () {
   player &&
     (window.meelHealthAlertActive ||

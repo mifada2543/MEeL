@@ -1,33 +1,11 @@
 <?php
-/**
- * controllers/api/WatchController.php
- *
- * Action handlers untuk halaman watch video & music.
- * Mengekstrak semua business logic, query, dan data preparation
- * dari view (video/watch.php, music/watch.php) agar view tetap tipis (thin view).
- *
- * Endpoints:
- *   - VideoWatchController::class → video/watch.php
- *   - MusicWatchController::class → music/watch.php
- *
- * Struktur:
- *   AbstractWatchController — base class: state bersama (conn, user_id, id, viewer),
- *       handleRequest() (view + komentar + CSRF + rate limit), isLoggedIn(),
- *       dan baseViewData() untuk key data yang sama di semua halaman watch.
- *   VideoWatchController  — subclass video (subtitle detection, HLS, VTT thumbnail).
- *   MusicWatchController  — subclass music (playlist queue, format audio, next song).
- *
- * @package MEeL\Controllers
- */
+/* @package MEeL\Controllers */
 
 require_once __DIR__ . '/../../modules/core/helpers.php';
 require_once __DIR__ . '/../../modules/core/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 
-// ════════════════════════════════════════════════════════════════
 // ABSTRACT BASE: WATCH CONTROLLER
-// ════════════════════════════════════════════════════════════════
-
 abstract class AbstractWatchController
 {
     protected \mysqli $conn;
@@ -47,10 +25,7 @@ abstract class AbstractWatchController
         $this->viewer  = new MediaViewer($conn, $user_id, $media_type, $id);
     }
 
-    /**
-     * Catat view + handle comment POST.
-     * Panggil sebelum output apapun.
-     */
+    /* Catat view + handle comment POST. Panggil sebelum output apapun. */
     public function handleRequest(): void
     {
         $this->viewer->recordView();
@@ -77,10 +52,6 @@ abstract class AbstractWatchController
         }
     }
 
-    /**
-     * URL redirect setelah komentar POST.
-     * Subclass boleh override untuk menambah parameter (mis. playlist_id).
-     */
     protected function commentRedirectUrl(): string
     {
         return "watch.php?id={$this->id}#comment-section";
@@ -91,14 +62,10 @@ abstract class AbstractWatchController
         return isset($this->user_id);
     }
 
-    /**
-     * Key data yang sama di semua halaman watch.
-     * @param mixed $rekom Result rekomendasi yang sudah di-fetch (opsional,
-     *                     untuk menghindari query ganda); null = fetch di sini.
-     */
+    /* @param mixed $rekom Result rekomendasi yang sudah di-fetch (opsional, */
     protected function baseViewData(array $v, $rekom = null): array
     {
-        // Guest tidak melihat komentar — skip query berat (full scan comments)
+
         $comments_data = $this->isLoggedIn()
             ? $this->viewer->getComments()
             : ['grouped' => [], 'user_map' => []];
@@ -116,10 +83,7 @@ abstract class AbstractWatchController
     }
 }
 
-// ════════════════════════════════════════════════════════════════
 // VIDEO WATCH CONTROLLER
-// ════════════════════════════════════════════════════════════════
-
 class VideoWatchController extends AbstractWatchController
 {
     private ?array $mediaData = null;
@@ -129,9 +93,7 @@ class VideoWatchController extends AbstractWatchController
         parent::__construct($conn, $user_id, $id, 'video');
     }
 
-    /**
-     * Ambil media data, redirect jika tidak ditemukan.
-     */
+    /* Ambil media data, redirect jika tidak ditemukan. */
     public function requireMedia(): void
     {
         $v = $this->viewer->getMediaData();
@@ -142,10 +104,7 @@ class VideoWatchController extends AbstractWatchController
         $this->mediaData = $v;
     }
 
-    /**
-     * Kumpulkan semua data yang dibutuhkan view video.
-     * @return array Semua variabel untuk template
-     */
+    /* @return array Semua variabel untuk template */
     public function getViewData(): array
     {
         $this->requireMedia();
@@ -158,9 +117,7 @@ class VideoWatchController extends AbstractWatchController
             ? $video_dir . '/thumbnails.vtt'
             : '';
 
-        // ── Subtitle: deteksi semua file .vtt di folder video ──────────────
-        // Konvensi penamaan: {folder}.{lang}.vtt (mis. video-folder.id.vtt)
-        // thumbnails.vtt di-exclude karena itu untuk preview thumbnail.
+        // ─── Subtitle: deteksi semua file .vtt di folder video ───
         $subtitles = [];
         foreach (glob($video_dir . '/*.vtt') ?: [] as $sub_file) {
             $sub_base = basename($sub_file);
@@ -195,10 +152,7 @@ class VideoWatchController extends AbstractWatchController
     }
 }
 
-// ════════════════════════════════════════════════════════════════
 // MUSIC WATCH CONTROLLER
-// ════════════════════════════════════════════════════════════════
-
 class MusicWatchController extends AbstractWatchController
 {
     private int $playlist_id;
@@ -219,9 +173,7 @@ class MusicWatchController extends AbstractWatchController
         return "watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section";
     }
 
-    /**
-     * Ambil media data, redirect jika tidak ditemukan.
-     */
+    /* Ambil media data, redirect jika tidak ditemukan. */
     public function requireMedia(): void
     {
         $v = $this->viewer->getMediaData();
@@ -232,10 +184,7 @@ class MusicWatchController extends AbstractWatchController
         $this->mediaData = $v;
     }
 
-    /**
-     * Kumpulkan semua data yang dibutuhkan view music.
-     * @return array Semua variabel untuk template
-     */
+    /* @return array Semua variabel untuk template */
     public function getViewData(): array
     {
         $this->requireMedia();

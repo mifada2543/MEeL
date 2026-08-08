@@ -5,12 +5,11 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// ── Bootstrap ────────────────────────────────────────────────────────────────
+// ─── Bootstrap ───
 $repo  = new BookRepository($conn);
 $u_id  = (int)$_SESSION['user_id'];
 $role  = $repo->getUserRole($u_id);
 
-// Sanitasi filter dari URL — hanya nilai yang diizinkan yang diteruskan
 $raw_filter = $_GET['type'] ?? 'all';
 $filter     = in_array($raw_filter, ['manga', 'pdf'], true) ? $raw_filter : 'all';
 $bookPage   = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -188,7 +187,6 @@ $totalPagesBooks = $meta_books['total_pages'];
                     <i data-lucide="chevron-left" class="w-3.5 h-3.5 inline -ml-1"></i> Prev
                 </a>
             <?php endif; ?>
-
             <?php
             $startPage = max(1, $bookPage - 2);
             $endPage = min($totalPagesBooks, $bookPage + 2);
@@ -198,7 +196,6 @@ $totalPagesBooks = $meta_books['total_pages'];
                     <?= $i ?>
                 </a>
             <?php endfor; ?>
-
             <?php if ($bookPage < $totalPagesBooks): ?>
                 <a href="index.php?type=<?= $filter ?>&page=<?= $bookPage + 1 ?>"
                     class="px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-green-500 hover:border-green-500/30 transition-all">
@@ -207,13 +204,10 @@ $totalPagesBooks = $meta_books['total_pages'];
             <?php endif; ?>
         </div>
     <?php endif; ?>
-
     <?php include '../partials/footer.php'; ?>
+    <script>        lucide.createIcons();
 
-    <script>
-        lucide.createIcons();
-
-        // ── CONTINUE READING (localStorage) ──
+        // ─── CONTINUE READING (localStorage) ───
         (function() {
             var banner = document.getElementById('continueBanner');
             var titleEl = document.getElementById('continueTitle');
@@ -263,7 +257,7 @@ $totalPagesBooks = $meta_books['total_pages'];
         document.body.addEventListener('htmx:afterOnLoad', function() {
             lucide.createIcons();
         });
-    </script>
+</script>
 </body>
 
 </html>

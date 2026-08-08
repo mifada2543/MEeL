@@ -1,19 +1,9 @@
 <?php
-
-// ════════════════════════════════════════════════════════════════
 // helpers/storage.php — Storage, Disk & Thumbnail Helpers
-//
 // Bagian dari pecahan modules/core/helpers.php.
 // Dimuat oleh helpers/main.php.
-//
-// Catatan path: file ini berada di modules/core/helpers/, sehingga
-// semua path absolut yang sebelumnya dirname(__DIR__, 2) / __DIR__.'/../..'
-// kini perlu SATU level tambahan (dirname(__DIR__, 3) / __DIR__.'/../../..').
-//
 // Semua fungsi dibungkus function_exists() guard sebagai
 // defense-in-depth terhadap double-include.
-// ════════════════════════════════════════════════════════════════
-
 if (!function_exists('music_thumbnail_url')) {
 function music_thumbnail_url(?string $thumbnail): string
 {
@@ -61,10 +51,6 @@ function music_thumbnail_url(?string $thumbnail): string
 }
 } // end function_exists('music_thumbnail_url')
 
-// ─── HDD Check Side Effect ────────────────────────────────────
-// Versi ringan: hanya log warning, TIDAK redirect ke maintenance.
-// Redirect terlalu agresif — membuat semua page error jika HDD path belum dikonfig.
-// Cek HDD yang sesungguhnya sudah dilakukan di Uploader/Transcoder via require_disk_space().
 if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
     define('MEEL_HDD_CHECKED', true);
     if (defined('MEEL_HDD_BASE') && !is_dir(MEEL_HDD_BASE)) {
@@ -73,16 +59,14 @@ if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
 }
 
 /**
- * Periksa apakah path memiliki ruang disk yang cukup.
- *
- * @param int    $required_bytes Jumlah byte yang dibutuhkan
- * @param string $path           Path untuk diperiksa (file atau direktori)
+ * @param int $required_bytes Jumlah byte yang dibutuhkan
+ * @param string $path Path untuk diperiksa (file atau direktori)
  * @return array ['ok' => bool, 'free' => float, 'required' => float, 'path' => string]
  */
 if (!function_exists('check_disk_space')) {
 function check_disk_space(int $required_bytes, string $path): array
 {
-    // Jika path bukan direktori (kemungkinan file), ambil direktori parent-nya
+
     if (!is_dir($path)) {
         $path = dirname($path);
         // Traverse up jika parent tidak ditemukan
@@ -115,11 +99,9 @@ function check_disk_space(int $required_bytes, string $path): array
 } // end function_exists('check_disk_space')
 
 /**
- * Pre-flight check: lempar RuntimeException jika ruang disk tidak cukup.
- *
- * @param int    $required_bytes Jumlah byte minimum yang diperlukan
- * @param string $path           Path tujuan (folder HDD, RAM disk, dll)
- * @param string $label          Label deskriptif (contoh: 'video storage', 'RAM disk')
+ * @param int $required_bytes Jumlah byte minimum yang diperlukan
+ * @param string $path Path tujuan (folder HDD, RAM disk, dll)
+ * @param string $label Label deskriptif (contoh: 'video storage', 'RAM disk')
  * @throws \RuntimeException Jika disk space tidak mencukupi
  */
 if (!function_exists('require_disk_space')) {
@@ -136,16 +118,11 @@ function require_disk_space(int $required_bytes, string $path, string $label): v
 }
 } // end function_exists('require_disk_space')
 
-/**
- * Log drive operations untuk audit trail
- */
+/* Log drive operations untuk audit trail */
 if (!function_exists('dir_size')) {
 /**
- * Hitung ukuran direktori dengan cache.
- * Menggantikan duplikasi shell_exec("du -sb ...") di helpers/storage.php dan System.php.
- *
- * @param string $path       Path direktori
- * @param int    $cache_ttl  Cache TTL dalam detik (default 300 = 5 menit)
+ * @param string $path Path direktori
+ * @param int $cache_ttl Cache TTL dalam detik (default 300 = 5 menit)
  * @return float Ukuran dalam bytes, atau 0 jika gagal
  */
 function dir_size(string $path, int $cache_ttl = 300): float
@@ -194,12 +171,7 @@ function dir_size(string $path, int $cache_ttl = 300): float
 } // end function_exists('dir_size')
 
 if (!function_exists('invalidate_dir_size_cache')) {
-/**
- * Hapus cache dir_size() untuk user tertentu.
- * Memaksa fresh scan pada next get_user_usage() call.
- *
- * @param string $username Nama user
- */
+/* @param string $username Nama user */
 function invalidate_dir_size_cache(string $username): void
 {
     $userPath = dirname(__DIR__, 3) . '/data_drive/private_admins/' . $username;
@@ -215,13 +187,7 @@ function invalidate_dir_size_cache(string $username): void
 } // end function_exists('invalidate_dir_size_cache')
 
 if (!function_exists('meel_write_cache_file')) {
-/**
- * Tulis file cache dengan pengecekan proaktif.
- * Gagal menulis tidak fatal — hanya dicatat ke error log.
- *
- * @param string $path    Path file cache
- * @param string $content Isi file
- */
+/* @param string $path Path file cache; @param string $content Isi file */
 function meel_write_cache_file(string $path, string $content): void
 {
     $dir = dirname($path);

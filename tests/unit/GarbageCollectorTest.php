@@ -36,7 +36,6 @@ class GarbageCollectorTest extends TestCase
 
     public function testCleanGuestsWithoutDb(): void
     {
-        // cleanGuests requires a mysqli connection, test that it handles
         // gracefully (or skip if no DB available)
         $this->expectNotToPerformAssertions();
     }

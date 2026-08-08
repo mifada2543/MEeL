@@ -12,7 +12,6 @@ $user          = $_SESSION['username'];
 $user_id       = $_SESSION['user_id'];
 $alert_message = "";
 
-// Ambil role user — via shared helper (cache otomatis per request)
 $user_role = get_user_role($conn, $user_id);
 $is_admin  = ($user_role === 'admin');
 
@@ -53,8 +52,6 @@ if (isset($_POST['upload'])) {
     }
 }
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $f;
@@ -184,12 +181,10 @@ $__v = function($f) {
                         Video berhasil diupload dan sedang diproses!
                     </div>
                 <?php endif; ?>
-
                 <form method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                     <?php endif; ?>
-
                     <!-- Judul -->
                     <div class="field-group">
                         <label class="field-label" for="f-title">Judul Video</label>
@@ -301,7 +296,6 @@ $__v = function($f) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
-
     <!-- ── Upload Overlay ── -->
     <div id="upload-overlay">
         <div class="overlay-card">
@@ -340,7 +334,6 @@ $__v = function($f) {
                 redirectUrl: 'upload.php'
             });
         <?php endif; ?>
-
         <?php if ($status === "success"): ?>
             Swal.fire({
                 title: 'Berhasil!',

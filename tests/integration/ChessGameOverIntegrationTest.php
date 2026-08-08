@@ -4,13 +4,6 @@ require_once MEEL_ROOT . '/arcade/chess/controller/chess_helpers.php';
 use PHPUnit\Framework\TestCase;
 
 /**
- * Integration tests for chess_record_game_over() (validasi pecundang + dedup)
- * beserta helper-nya: chess_has_terminal_event(), chess_last_move_color(),
- * insertGameEvent().
- *
- * Memakai DB asli — setiap test berjalan di dalam transaksi yang di-rollback
- * di tearDown(), jadi tidak mencemari data produksi.
- *
  * @requires extension mysqli
  * @group integration
  * @covers chess_record_game_over
@@ -36,7 +29,7 @@ class ChessGameOverIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    /** Buat room test dengan black sudah join (black_joined=1). */
+    /* Buat room test dengan black sudah join (black_joined=1). */
     private function insertRoom(string $code): void
     {
         $stmt = $this->conn->prepare(
@@ -48,7 +41,7 @@ class ChessGameOverIntegrationTest extends TestCase
         $stmt->close();
     }
 
-    /** Buat langkah catur asli (bukan event) — move_data JSON tanpa 'type'. */
+    /* Buat langkah catur asli (bukan event) — move_data JSON tanpa 'type'. */
     private function insertMove(string $code, string $color): void
     {
         $stmt = $this->conn->prepare(
@@ -62,7 +55,7 @@ class ChessGameOverIntegrationTest extends TestCase
         $stmt->close();
     }
 
-    /** Buat event (resign / game_over dll) seperti insertGameEvent(). */
+    /* Buat event (resign / game_over dll) seperti insertGameEvent(). */
     private function insertEvent(string $code, string $type, string $color = 'w', string $reason = null): void
     {
         $extra = $reason !== null ? ['reason' => $reason] : [];
@@ -82,7 +75,7 @@ class ChessGameOverIntegrationTest extends TestCase
         return 'GO' . strtoupper(substr(uniqid('', true), -6));
     }
 
-    /** Jumlah event dengan type tertentu di room. */
+    /* Jumlah event dengan type tertentu di room. */
     private function countEvents(string $code, string $type): int
     {
         $stmt = $this->conn->prepare(
@@ -97,7 +90,7 @@ class ChessGameOverIntegrationTest extends TestCase
         return (int) $row['n'];
     }
 
-    /** Isi move_data event game_over terakhir. */
+    /* Isi move_data event game_over terakhir. */
     private function lastGameOverData(string $code): ?array
     {
         $stmt = $this->conn->prepare(
@@ -113,10 +106,7 @@ class ChessGameOverIntegrationTest extends TestCase
         return $row ? json_decode($row['move_data'], true) : null;
     }
 
-    // ══════════════════════════════════════════════════════════════
     // VALIDASI PECUNDANG
-    // ══════════════════════════════════════════════════════════════
-
     public function testValidCheckmateAfterWhiteMoveRecordsBlackLoser(): void
     {
         $code = $this->newCode();
@@ -199,10 +189,7 @@ class ChessGameOverIntegrationTest extends TestCase
         $this->assertSame(0, $this->countEvents($code, 'game_over'));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // DEDUP — game sudah berakhir harus menolak event baru
-    // ══════════════════════════════════════════════════════════════
-
     public function testDuplicateGameOverIsRejected(): void
     {
         $code = $this->newCode();
@@ -260,10 +247,7 @@ class ChessGameOverIntegrationTest extends TestCase
         $this->assertSame(0, $this->countEvents($code, 'game_over'));
     }
 
-    // ══════════════════════════════════════════════════════════════
     // HELPER PENDUKUNG
-    // ══════════════════════════════════════════════════════════════
-
     public function testHasTerminalEventReflectsGameState(): void
     {
         $code = $this->newCode();

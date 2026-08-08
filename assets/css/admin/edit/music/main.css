@@ -1,8 +1,5 @@
-/* ============================================================
- * edit/music/main.css — Edit Music Page Styles (Admin)
- * Halaman: admin/edit-music.php
- * ============================================================ */
-/* ── Music Theme ── */
+/* edit/music/main.css — Edit Music Page Styles (Admin) */
+/* ─── Music Theme ─── */
 body.theme-music {
   --accent: #f97316;
   --accent-hover: #fb923c;

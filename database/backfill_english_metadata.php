@@ -1,28 +1,11 @@
 <?php
-/**
- * MEeL-HUB — Backfill search_metadata (english translation)
- *
- * One-off CLI script untuk mengisi ulang search_metadata yang bagian
- * english-nya kosong, akibat bug path dictionary jmdict.sqlite3 di
- * modules/core/japanese.php (sekarang sudah diperbaiki).
- *
- * Jalankan: php database/backfill_english_metadata.php
- * Opsi:
- *   --dry-run   : tampilkan apa yang akan di-update tanpa menulis DB
- *   --limit=N   : proses maksimal N baris per tabel (untuk uji coba dulu)
- *
- * Script ini IDEMPOTENT — aman dijalankan berulang karena selalu
- * re-generate dari title/artist/album asli (deterministik).
- * Boleh dihapus setelah selesai dipakai.
- */
-
-// ── Keamanan: hanya dari CLI ────────────────────────────────────────────
+// ─── Keamanan: hanya dari CLI ───
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     die('Access denied. Jalankan dari terminal: php database/backfill_english_metadata.php');
 }
 
-// ─── Parse argumen CLI ──────────────────────────────────────────────────
+// ─── Parse argumen CLI ───
 $dryRun = false;
 $limit  = null;
 foreach (array_slice($argv, 1) as $arg) {
@@ -33,7 +16,7 @@ foreach (array_slice($argv, 1) as $arg) {
     }
 }
 
-// ─── Bootstrap (pola sama dengan database/migrate.php) ──────────────────
+// ─── Bootstrap (pola sama dengan database/migrate.php) ───
 require_once __DIR__ . '/../auth/config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 require_once __DIR__ . '/../modules/core/japanese.php';
@@ -45,7 +28,7 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
 
 echo "[MEeL] " . ($dryRun ? 'DRY-RUN (tidak menulis DB)' : 'BACKFILL') . " dimulai...\n";
 
-// ─── Proses satu tabel dalam batch kecil ─────────────────────────────────
+// ─── Proses satu tabel dalam batch kecil ───
 function backfill_process_table(\mysqli $conn, string $table, string $columns, int $batchSize, ?int $limit, bool $dryRun, array &$stats): void
 {
     $offset    = 0;
@@ -53,7 +36,7 @@ function backfill_process_table(\mysqli $conn, string $table, string $columns, i
     $updated   = 0;
 
     while (true) {
-        // Batch kecil (default 50) — cegah query besar + beban MeCab bertumpuk
+
         $fetchLimit = $batchSize;
         if ($limit !== null) {
             $remaining  = $limit - $processed;
@@ -72,7 +55,6 @@ function backfill_process_table(\mysqli $conn, string $table, string $columns, i
             $id    = (int)$row['id'];
             $title = trim((string)($row['title'] ?? ''));
 
-            // generate_search_metadata() — helper terpusat (romaji + english + alias),
             // konsisten dengan Uploader dan admin/edit-*.php
             if ($table === 'video') {
                 $meta = generate_search_metadata($title);
@@ -102,7 +84,6 @@ function backfill_process_table(\mysqli $conn, string $table, string $columns, i
                 echo "[MEeL] {$table}: {$processed} baris diproses...\n";
             }
 
-            // Jeda 100ms antar baris — jangan membebani MeCab/proc_open sekaligus
             usleep(100000);
         }
 

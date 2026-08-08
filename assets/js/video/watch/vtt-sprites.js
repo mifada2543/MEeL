@@ -1,7 +1,3 @@
-/* ============================================================
- * vtt-sprites.js — Refresh sprite gambar thumbnail preview (VTT) pada progress bar Plyr.
- * Depends on: state.js
- * ============================================================ */
 const _vttSpriteCache = {};
 function refreshVttSprites(e) {
   if (!player) return;

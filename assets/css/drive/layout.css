@@ -1,8 +1,5 @@
-/* ============================================================
- * layout.css — Tata letak struktural halaman Drive
- * Sidebar, main-content, topbar, overlay, responsive, tabs
- * ============================================================ */
-/* ── Sidebar ── */
+/* layout.css — Tata letak struktural halaman Drive */
+/* ─── Sidebar ─── */
 #sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -17,7 +14,7 @@
 #sidebar.closed {
   transform: translateX(-100%);
 }
-/* ── Main Content ── */
+/* ─── Main Content ─── */
 #main-content {
   margin-left: 260px;
   min-height: 100vh;
@@ -26,11 +23,11 @@
 #main-content.full {
   margin-left: 0;
 }
-/* ── Topbar (mobile) ── */
+/* ─── Topbar (mobile) ─── */
 #topbar {
   display: none;
 }
-/* ── Overlay ── */
+/* ─── Overlay ─── */
 #overlay {
   display: none;
   position: fixed;
@@ -43,7 +40,7 @@
 #overlay.active {
   display: block;
 }
-/* ── Section Tabs (mobile bottom nav) ── */
+/* ─── Section Tabs (mobile bottom nav) ─── */
 #section-tabs {
   display: none;
 }
@@ -69,7 +66,7 @@
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
 }
-/* ── Header Layout ── */
+/* ─── Header Layout ─── */
 .drive-header {
   display: flex;
   flex-direction: column;
@@ -88,7 +85,7 @@
     transform: translateY(0);
   }
 }
-/* ── Responsive: Mobile ── */
+/* ─── Responsive: Mobile ─── */
 @media (max-width: 768px) {
   #sidebar {
     width: 280px;

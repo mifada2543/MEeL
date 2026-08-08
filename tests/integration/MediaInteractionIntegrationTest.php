@@ -2,11 +2,6 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * Integration tests for MediaInteraction with a real database connection.
- *
- * Each test runs inside a database transaction that is rolled back
- * in tearDown(), ensuring no test pollutes the database.
- *
  * @requires extension mysqli
  * @group integration
  * @covers MediaInteraction
@@ -42,10 +37,7 @@ class MediaInteractionIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    // ══════════════════════════════════════════════════════════════
     // LIKE / DISLIKE — MUSIC
-    // ══════════════════════════════════════════════════════════════
-
     public function testLikeMusic(): void
     {
         $result = $this->interaction->toggleLike(
@@ -81,7 +73,7 @@ class MediaInteractionIntegrationTest extends TestCase
         );
 
         $this->assertTrue($result['success']);
-        // After toggle OFF, user_interaction should be null (no interaction)
+
         $this->assertNull($result['data']['user_interaction']);
     }
 
@@ -125,10 +117,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->assertNull($status);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // LIKE / DISLIKE — VIDEO
-    // ══════════════════════════════════════════════════════════════
-
     public function testLikeVideo(): void
     {
         $result = $this->interaction->toggleLike(
@@ -178,10 +167,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->assertArrayHasKey('dislikes', $result['data']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // GET LIKES COUNT
-    // ══════════════════════════════════════════════════════════════
-
     public function testGetLikesCountForMusic(): void
     {
         $counts = $this->interaction->getLikesCount('music', DbTestHelper::MUSIC_ID_1);
@@ -202,10 +188,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->assertIsInt($counts['dislikes']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // COMMENT DELETION
-    // ══════════════════════════════════════════════════════════════
-
     public function testDeleteOwnComment(): void
     {
         // Create a comment as regular user
@@ -274,7 +257,6 @@ class MediaInteractionIntegrationTest extends TestCase
     public function testUploaderCanDeleteOtherUsersCommentOnMusic(): void
     {
         // ADMIN2_USER_ID (9) adalah uploader MUSIC_ID_1 (49)
-        // Buat komentar oleh user lain (REGULAR 39) di media milik uploader
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::REGULAR_USER_ID,
             DbTestHelper::MUSIC_ID_1,
@@ -282,7 +264,6 @@ class MediaInteractionIntegrationTest extends TestCase
             'Comment by regular user on uploader music'
         );
 
-        // Uploader (bukan pemilik komentar) berhak menghapus komentar di media-nya
         $result = $this->admin2Interaction->deleteComment($commentId);
 
         $this->assertTrue($result['success']);
@@ -293,7 +274,6 @@ class MediaInteractionIntegrationTest extends TestCase
     public function testUploaderCanDeleteOtherUsersCommentOnVideo(): void
     {
         // ADMIN2_USER_ID (9) adalah uploader VIDEO_ID_1 (4)
-        // Buat komentar oleh user lain (MEMBER 10) di video milik uploader
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::MEMBER_USER_ID,
             null,
@@ -309,7 +289,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testNonUploaderCannotDeleteOtherUsersComment(): void
     {
-        // REGULAR_USER_ID (39) BUKAN uploader MUSIC_ID_1 (49) dan bukan pemilik komentar
+
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::MEMBER_USER_ID,
             DbTestHelper::MUSIC_ID_1,
@@ -326,7 +306,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testAdminCanDeleteAnyCommentOnMusic(): void
     {
-        // ADMIN_USER_ID (1) BUKAN uploader MUSIC_ID_1 (49) dan bukan pemilik komentar
+
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::REGULAR_USER_ID,
             DbTestHelper::MUSIC_ID_1,
@@ -334,7 +314,6 @@ class MediaInteractionIntegrationTest extends TestCase
             'Comment by regular user on someone else media'
         );
 
-        // Admin (bukan owner, bukan uploader) tetap berhak menghapus komentar apa pun
         $result = $this->adminInteraction->deleteComment($commentId);
 
         $this->assertTrue($result['success']);
@@ -344,7 +323,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testAdminCanDeleteAnyCommentOnVideo(): void
     {
-        // ADMIN_USER_ID (1) BUKAN uploader VIDEO_ID_1 (4) dan bukan pemilik komentar
+
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::MEMBER_USER_ID,
             null,
@@ -358,10 +337,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->assertSame(200, $result['http_code']);
     }
 
-    // ══════════════════════════════════════════════════════════════
     // EDGE CASES
-    // ══════════════════════════════════════════════════════════════
-
     public function testMultipleInteractionsOnDifferentMedia(): void
     {
         // Like multiple items as the same user
@@ -406,9 +382,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->assertSame($initial['dislikes'] + 1, $afterDislike['dislikes']);
     }
 
-    /**
-     * Test that guest (user_id=0) cannot interact.
-     */
+    /* Test that guest (user_id=0) cannot interact. */
     public function testGuestCannotInteract(): void
     {
         $guestInteraction = new MediaInteraction($this->conn, 0);

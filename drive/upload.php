@@ -11,7 +11,7 @@ $user->authorize();
 $isAjax = (isset($_GET['ajax']) && $_GET['ajax'] === '1');
 
 if ($isAjax) {
-    // AJAX: FormData via JS — submit_upload TIDAK termasuk, hanya andalkan file_drive
+
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['file_drive'])) {
         http_response_code(400);
         header('Content-Type: application/json');
@@ -139,4 +139,3 @@ try {
     http_response_code(400);
     echo htmlspecialchars($errMsg, ENT_QUOTES, 'UTF-8');
 }
-

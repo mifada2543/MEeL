@@ -1,21 +1,4 @@
-/**
- * MEeL — Custom Language Dropdown (shared)
- * Dipakai di:
- *   - video/upload.php        (Bahasa Subtitle)
- *   - admin/edit-video.php    (Bahasa Subtitle)
- *   - modul lain yang butuh pilihan bahasa (cukup set data-name)
- * Struktur HTML yang diharapkan:
- *   <div class="lang-dropdown" id="..." data-name="subtitle_lang">
- *     <button type="button" class="lang-trigger" aria-haspopup="listbox" aria-expanded="false">
- *       <span class="lang-trigger-label">Indonesia</span>
- *       <i data-lucide="chevron-down" class="lang-trigger-chevron"></i>
- *     </button>
- *     <div class="lang-options hidden" role="listbox">
- *       <button type="button" class="lang-option active" data-lang="id" role="option">Indonesia</button>
- *       ...
- *     </div>
- *   </div>
- *   <input type="hidden" name="subtitle_lang" value="id"> */
+/* MEeL — Custom Language Dropdown (shared) */
 (function () {
   "use strict";
   function setOpen(dd, open) {

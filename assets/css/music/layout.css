@@ -1,6 +1,4 @@
-/* ============================================================
- * layout.css — CLS Prevention & Layout Stability
- * ============================================================ */
+/* layout.css — CLS Prevention & Layout Stability */
 #player-container {
   min-height: 280px;
   contain: content;

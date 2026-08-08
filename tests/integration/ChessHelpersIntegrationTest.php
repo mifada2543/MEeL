@@ -4,11 +4,6 @@ require_once MEEL_ROOT . '/arcade/chess/controller/chess_helpers.php';
 use PHPUnit\Framework\TestCase;
 
 /**
- * Integration tests for chess_opponent_online() (deteksi disconnect lawan).
- *
- * Memakai users.last_activity asli — setiap test berjalan di dalam transaksi
- * yang di-rollback di tearDown(), jadi tidak mencemari data produksi.
- *
  * @requires extension mysqli
  * @group integration
  * @covers chess_opponent_online
@@ -34,7 +29,7 @@ class ChessHelpersIntegrationTest extends TestCase
 
     public function testRecentlyActiveUserIsOnline(): void
     {
-        // last_activity = NOW() → jauh di bawah ambang 90 detik → online.
+
         $this->conn->query(
             "UPDATE users SET last_activity = NOW() WHERE id = " . DbTestHelper::REGULAR_USER_ID
         );

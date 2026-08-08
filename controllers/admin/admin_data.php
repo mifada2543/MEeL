@@ -1,33 +1,18 @@
 <?php
-/**
- * controllers/admin_data.php
- *
- * Penyedia data untuk admin dashboard.
- * Mendefinisikan semua variabel yang dipakai di view admin/index.php:
- *   $banned_ips, $stats, $top_media, $sys, $storage_usage,
- *   $ssd_free, $ssd_total, $ssd_used, $ssd_perc,
- *   $hdd_free, $hdd_total,
- *   $sz_vid, $sz_mus, $sz_book, $sz_d_pub, $sz_d_prv, $sz_drive_total,
- *   $p_vid, $p_mus, $p_book, $p_drive,
- *   $orphans, $pending_users, $result_monitor, $all_users
- */
-
-// ─── Guard Direct Access ───────────────────────────────────────────────────
-// Hanya boleh di-include dari admin/index.php (sudah melewati require_admin())
-// — bukan diakses langsung via URL.
+// ─── Guard Direct Access ───
 if (!defined('MEEL_ADMIN_CONTEXT')) {
     die(include __DIR__ . '/../../err/denied.php');
 }
 
-// ─── BANNED IPS ────────────────────────────────────────────────────────────
+// ─── BANNED IPS ───
 $banned_ips = $conn->query("SELECT * FROM ip_ban ORDER BY banned_at DESC");
 
-// ─── ALL NON-GUEST USERS ──────────────────────────────────────────────────
+// ─── ALL NON-GUEST USERS ───
 $all_users = $conn->query(
     "SELECT id, username, role, is_active, created_at FROM users WHERE role != 'guest' ORDER BY role ASC, username ASC"
 );
 
-// ─── STATISTICS ────────────────────────────────────────────────────────────
+// ─── STATISTICS ───
 if (!function_exists('__admin_get_count')) {
     function __admin_get_count(mysqli $conn, string $query): int
     {
@@ -47,14 +32,14 @@ $stats = [
     'pending'       => __admin_get_count($conn, "SELECT COUNT(*) FROM users WHERE is_active = 2"),
 ];
 
-// ─── TOP MEDIA ─────────────────────────────────────────────────────────────
+// ─── TOP MEDIA ───
 $top_media = $conn->query("
     (SELECT id, title, views, 'video' AS type FROM video ORDER BY views DESC LIMIT 1)
     UNION ALL
     (SELECT id, title, views, 'music' AS type FROM music ORDER BY views DESC LIMIT 1)
 ");
 
-// ─── STORAGE USAGE ─────────────────────────────────────────────────────────
+// ─── STORAGE USAGE ───
 require_once __DIR__ . '/../../modules/core/System.php';
 $sys           = new System($conn);
 $storage_usage = $sys->getStorageUsage();
@@ -79,7 +64,7 @@ $p_mus   = $storage_usage['percentages']['music'];
 $p_book  = $storage_usage['percentages']['books'];
 $p_drive = $storage_usage['percentages']['drive'];
 
-// ─── ORPHAN CHECK ──────────────────────────────────────────────────────────
+// ─── ORPHAN CHECK ───
 $orphans   = [];
 $check_map = [
     'video/upload/video/'       => 'video',
@@ -189,16 +174,16 @@ foreach ($check_map as $rel_path => $table) {
     }
 }
 
-// ─── PENDING USERS ─────────────────────────────────────────────────────────
+// ─── PENDING USERS ───
 $pending_users = $conn->query("SELECT id, username, created_at FROM users WHERE is_active = 2");
 
-// ─── ACTIVITY MONITOR ─────────────────────────────────────────────────────
+// ─── ACTIVITY MONITOR ───
 $result_monitor = $conn->query(
     "SELECT username, role, last_activity, last_page, user_agent, access_via, ip_address
      FROM users ORDER BY last_activity DESC LIMIT 10"
 );
 
-// ─── CHART DATA: 7-Day Activity ─────────────────────────────────────────
+// ─── CHART DATA: 7-Day Activity ───
 $chart_activity = [];
 for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime("-$i days"));

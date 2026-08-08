@@ -1,9 +1,4 @@
-/* ============================================================
- * shared/comment.js — JS bersama untuk section komentar.
- * Dipakai oleh video/watch.php & music/watch.php.
- * Berisi: toggleReply (form balasan), meelConfirmHtmx (konfirmasi INLINE untuk hx-confirm — hanya di baris komentar, bukan modal layar penuh), dan toggleCommentSection (expand/collapse section + preview komentar terbaru saat mini).
- * Depends on: htmx, meelConfirm (dari script.min.js, fallback)
- * ============================================================ */
+/* shared/comment.js — JS bersama untuk section komentar. */
 window.toggleReply = function (e) {
   const t = document.getElementById(e);
   if (!t) return;

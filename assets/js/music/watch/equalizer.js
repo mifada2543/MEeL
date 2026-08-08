@@ -1,7 +1,3 @@
-/* ============================================================
- * equalizer.js — Semua logic equalizer: normalisasi nilai, simpan/muat state EQ, terapkan gain ke filter Web Audio, render UI band & preset EQ.
- * Depends on: state.js, loop-ui.js (pakai _setTogglePillUI)
- * ============================================================ */
 function normalizeEqValue(e) {
   const t = Number(e);
   return Number.isFinite(t) ? Math.max(-12, Math.min(12, t)) : 0;

@@ -14,14 +14,11 @@ $ctrl = new VideoWatchController($conn, $user_id, $id);
 $ctrl->handleRequest();
 
 // Semua variabel template diekstrak dari controller
-// EXTR_SKIP mencegah overwrite variabel yang sudah ada di scope
 extract($ctrl->getViewData(), EXTR_SKIP);
 
 // Lepas session lock sesegera mungkin
 session_write_close();
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $f;
@@ -31,7 +28,6 @@ $__v = function($f) {
     return '?v=' . $mtimeCache[$path];
 };
 
-// Versi folder JS = max filemtime semua file di folder (diteruskan ke sibling oleh main.js)
 $__vdir = function($dir) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $dir;
@@ -271,13 +267,12 @@ $__vdir = function($dir) {
                             Selengkapnya
                         </button>
                     </div>
-                    <script>
-                        requestAnimationFrame(function() {
+                    <script>                        requestAnimationFrame(function() {
                             var d = document.getElementById('desc-text'),
                                 b = document.getElementById('btn-read-more');
                             if (d && b && d.scrollHeight > d.clientHeight) b.classList.remove('hidden');
                         });
-                    </script>
+</script>
 
                 <?php endif; ?>
                 <?php if ($is_logged_in): ?>
@@ -331,7 +326,6 @@ $__vdir = function($dir) {
 
                             <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                                 <?php
-                                // Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
                                 $GLOBALS['uploader_id'] = (int)($v['user_id'] ?? 0);
                                 if (empty($comments_grouped)) {
                                     render_comment_empty_state('video');
@@ -343,12 +337,10 @@ $__vdir = function($dir) {
                             </div>
                         </div>
                     </section>
-                    <script>
-                        // Progressive enhancement: collapse komentar hanya jika JS aktif.
-                        // Tanpa JS, section tetap terbuka (fallback form action tetap jalan).
-                        document.getElementById('comment-body')?.classList.add('collapsed');
-                    </script>
-                    <noscript><style>#comment-preview{display:none}</style></noscript>
+                    <script>                        document.getElementById('comment-body')?.classList.add('collapsed');
+</script>
+                    <noscript><style>#comment-preview{display:none}
+</style></noscript>
                 <?php endif; ?>
             </div>
         </div>
@@ -386,7 +378,6 @@ $__vdir = function($dir) {
     </main>
 
     <?php include '../partials/footer.php'; ?>
-
     <script src="../assets/js/compatibilitas/plyr.min.js"></script>
 
     <script>
@@ -409,8 +400,7 @@ $__vdir = function($dir) {
     <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
     <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 
-    <script>
-        // Handle Enter key untuk video search
+    <script>        // Handle Enter key untuk video search
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = ['v-search-watch', 'v-search-mobile'];
             searchInputs.forEach(id => {
@@ -425,7 +415,7 @@ $__vdir = function($dir) {
                 }
             });
         });
-    </script>
+</script>
 </body>
 
 </html>

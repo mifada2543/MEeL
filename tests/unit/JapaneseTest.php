@@ -1,13 +1,7 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversNothing
- * Tests for Japanese text processing functions in modules/core/japanese.php
- *
- * Note: These tests depend on MeCab being installed. If MeCab is not
- * available, the functions fall back to basic processing.
- */
+/* @coversNothing */
 class JapaneseTest extends TestCase
 {
     protected function setUp(): void
@@ -61,7 +55,7 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('Colorful Stage', $result['english']);
     }
 
-    // ─── Alias baru (japanese_aliases.php) ──────────────────────────────────
+    // ─── Alias baru (japanese_aliases.php) ───
 
     public function testAnalyzeJapaneseTextWithTouhouAlias(): void
     {

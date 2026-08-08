@@ -17,7 +17,7 @@ if ($curr_role === 'guest') {
     header("Location: ../index.php");
     exit();
 }
-// ── Back URL (smart referer) ──
+// ─── Back URL (smart referer) ───
 $back_url = $is_admin ? 'cookies.php' : '../video/index.php';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -44,7 +44,7 @@ $video = $stmt_video->get_result()->fetch_assoc();
 if (!$video) {
     die("<div style='color:red; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Video tidak ditemukan!</h2><a href='../video/index.php' style='color:#ef4444;'>Kembali ke Video</a></div>");
 }
-// Cek kepemilikan: admin bisa edit semua, uploader hanya miliknya
+
 $is_owner = ((int)$video['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
     header("Location: ../err/denied.php");
@@ -92,7 +92,7 @@ if (isset($_POST['update'])) {
                 }
                 $upload_path = $target_dir . $new_name;
                 $ffmpeg_bin = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-                // Konversi ke WebP — 500×500 square, scale+pad agar tidak distorsi
+
                 $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
                     . " -vf \"scale=500:500:force_original_aspect_ratio=decrease,pad=500:500:(ow-iw)/2:(oh-ih)/2\" -c:v libwebp -q:v 78 "
                     . escapeshellarg($upload_path) . " 2>&1";
@@ -108,7 +108,7 @@ if (isset($_POST['update'])) {
                 }
             }
         }
-        // ── SUBTITLE (OPSIONAL): Upload / timpa file subtitle ── Konvensi nama: {folder}.{lang}.vtt di dalam folder HLS video.
+        // ─── SUBTITLE (OPSIONAL): Upload / timpa file subtitle ── Konvensi nama... ───
         if (empty($error_message) && isset($_FILES['subtitle']) && $_FILES['subtitle']['error'] === UPLOAD_ERR_OK) {
             $sub_ext     = strtolower(pathinfo($_FILES['subtitle']['name'], PATHINFO_EXTENSION));
             $sub_lang    = sanitize_subtitle_lang($_POST['subtitle_lang'] ?? 'id');
@@ -145,7 +145,7 @@ if (isset($_POST['update'])) {
         if ($title === '') {
             $error_message = "Judul video tidak boleh kosong.";
         } elseif ($error_message === '') {
-            // Generate search_metadata — helper terpusat (romaji + english + alias),
+
             $meta = generate_search_metadata($title);
             $stmt_update = $conn->prepare("UPDATE video SET title = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
             $stmt_update->bind_param("ssssi", $title, $description, $thumbnail_url, $meta, $id);
@@ -158,7 +158,7 @@ if (isset($_POST['update'])) {
                 $error_message = "Gagal menyimpan perubahan ke database.";
             }
         }
-        // ── ROLLBACK THUMBNAIL ────────────────────────────────────────────────
+        // ─── ROLLBACK THUMBNAIL ───
         if ($error_message !== '' && $thumbnail_url !== $video['thumbnail']) {
             $orphan_thumb = __DIR__ . '/../video/upload/thumbnail/' . basename($thumbnail_url);
             if (is_file($orphan_thumb)) {
@@ -167,7 +167,7 @@ if (isset($_POST['update'])) {
         }
     }
 }
-// ── SUBTITLE: Hapus file subtitle berdasarkan bahasa (handler terpisah) ──
+// ─── SUBTITLE: Hapus file subtitle berdasarkan bahasa (handler terpisah) ───
 if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== '') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
@@ -187,7 +187,7 @@ if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== 
     }
 }
 
-// ── DAFTAR SUBTITLE EXISTING format {folder}.{lang}.vtt.
+// ─── DAFTAR SUBTITLE EXISTING format {folder}.{lang}.vtt. ───
 $existing_subtitles = [];
 $hls_folder_dir    = basename(dirname($video['filename']));
 $sub_scan_dir      = __DIR__ . '/../video/upload/video/' . $hls_folder_dir . '/';
@@ -238,7 +238,6 @@ $thumb_src = !empty($video['thumbnail'])
         $media_type = 'video';
         include 'header-admin.php';
         ?>
-
         <div class="edit-layout">
 
             <!-- ── LEFT: Sidebar ── -->
@@ -349,20 +348,17 @@ $thumb_src = !empty($video['thumbnail'])
                         Detail video berhasil diperbarui!
                     </div>
                 <?php endif; ?>
-
                 <?php if ($error_message !== ""): ?>
                     <div class="alert alert-error" style="margin-bottom:20px;">
                         <i data-lucide="alert-triangle" style="width:15px;height:15px;flex-shrink:0;"></i>
                         <?= htmlspecialchars($error_message) ?>
                     </div>
                 <?php endif; ?>
-
                 <form id="edit-form" method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                         <input type="file" name="thumbnail" accept="image/*" id="thumb-file-hidden" style="display:none">
                     <?php endif; ?>
-
                     <!-- Judul -->
                     <div class="field-group">
                         <label class="field-label" for="f-title">Judul Video</label>

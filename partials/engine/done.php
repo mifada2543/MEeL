@@ -1,9 +1,4 @@
 <?php
-/**
- * partials/engine/done.php — Fase SELESAI overlay MEeL Engine.
- * Di-include oleh partials/ui.php (assembler).
- * Styling: assets/css/engine/ (modul buttons.css).
- */
 ?>
 <!-- ── FASE: SELESAI ── -->
 <div class="meel-phase" id="meel-phase-done">

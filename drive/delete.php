@@ -56,5 +56,3 @@ try {
     http_response_code(400);
     echo htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8');
 }
-
-

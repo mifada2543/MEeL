@@ -1,5 +1,4 @@
-/** MEeL Drive — File Search / Filter
- * Filters file cards by keyword, syncing desktop & mobile search inputs. **/
+/* MEeL Drive — File Search / Filter */
 function filterDriveFiles() {
   var desktopInput = document.getElementById("search-input-desktop");
   var mobileInput = document.getElementById("search-input-mobile");

@@ -1,5 +1,4 @@
-/** MEeL Drive — Navigation & Section Switching
- * Handles category tabs (Video/Audio/Dokumen), heading updates, file counts. **/
+/* MEeL Drive — Navigation & Section Switching */
 (function () {
   lucide.createIcons();
   window.counts = {

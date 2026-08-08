@@ -1,31 +1,11 @@
 <?php
-/**
- * modules/core/RateLimiter.php
- *
- * File-based rate limiter untuk proteksi endpoint dari abuse.
- * Menggunakan file storage di temp/ratelimit/ — tanpa perlu schema DB tambahan.
- *
- * Cara pakai:
- *   require_once 'modules/core/RateLimiter.php';
- *   $check = RateLimiter::check('user_'.$userId, 'like');
- *   if (!$check['allowed']) {
- *       http_response_code(429);
- *       header('Retry-After: ' . $check['reset']);
- *       exit;
- *   }
- *
- * @package MEeL\Modules
- */
+/* @package MEeL\Modules */
 
 class RateLimiter
 {
-    /** Direktori penyimpanan file rate limit */
+    /* Direktori penyimpanan file rate limit */
     private static string $storageDir = '';
 
-    /**
-     * Definisi limit per endpoint.
-     *   key   => ['requests' => max request, 'window' => window in seconds]
-     */
     private static array $limits = [
         // Endpoint spesifik
         'like'        => ['requests' => 30, 'window' => 60],  // 30 likes/menit
@@ -36,9 +16,7 @@ class RateLimiter
         'api'         => ['requests' => 60, 'window' => 60],   // 60 request/menit
     ];
 
-    /**
-     * Inisialisasi storage directory.
-     */
+    /* Inisialisasi storage directory. */
     private static function init(): void
     {
         if (self::$storageDir === '') {
@@ -52,9 +30,7 @@ class RateLimiter
         }
     }
 
-    /**
-     * Dapatkan path file untuk key + endpoint tertentu.
-     */
+    /* Dapatkan path file untuk key + endpoint tertentu. */
     private static function filePath(string $key, string $endpoint): string
     {
         self::init();
@@ -63,13 +39,10 @@ class RateLimiter
         return self::$storageDir . $hash . '.cache';
     }
 
-    /**
-     * Parse file cache menjadi array data.
-     */
+    /* Parse file cache menjadi array data. */
     private static function readFile(string $path): array
     {
-        // is_readable (bukan file_exists): file yang ada tapi tak terbaca
-        // (mis. milik user lain) tidak boleh memicu warning file_get_contents().
+
         if (!is_readable($path)) {
             return ['count' => 0, 'window_start' => time()];
         }
@@ -82,10 +55,8 @@ class RateLimiter
     }
 
     /**
-     * Single source of truth untuk role-based limit adjustment.
-     *
-     * @param int    $baseLimit Limit dasar untuk user biasa
-     * @param string $role      Role user ('member', 'user', dll)
+     * @param int $baseLimit Limit dasar untuk user biasa
+     * @param string $role Role user ('member', 'user', dll)
      * @return int Limit yang sudah disesuaikan dengan role
      */
     public static function getRoleLimit(int $baseLimit, string $role = 'user'): int
@@ -99,16 +70,14 @@ class RateLimiter
     }
 
     /**
-     * Periksa apakah request diizinkan.
-     *
-     * @param string $key      Identifier unik (misal: 'user_5', 'ip_192.168.1.1')
+     * @param string $key Identifier unik (misal: 'user_5', 'ip_192.168.1.1')
      * @param string $endpoint Nama endpoint ('like', 'comment', 'api', etc.)
-     * @param string $role     Role user ('admin', 'member', 'user'). Admin bebas limit, member 2x lipat.
+     * @param string $role Role user ('admin', 'member', 'user'). Admin bebas limit, member 2x lipat.
      * @return array ['allowed' => bool, 'remaining' => int, 'reset' => int, 'limit' => int]
      */
     public static function check(string $key, string $endpoint = 'api', string $role = 'user'): array
     {
-        // ── Admin bebas dari rate limiter ───────────────────────────────────
+        // ─── Admin bebas dari rate limiter ───
         if ($role === 'admin') {
             $limitConfig = self::$limits[$endpoint] ?? self::$limits['api'];
             $window = $limitConfig['window'];
@@ -128,8 +97,6 @@ class RateLimiter
         $filePath    = self::filePath($key, $endpoint);
 
         // Lock file untuk race condition safety
-        // Guard proaktif: hanya buka file bila storage dir ada & writable, dan
-        // file target (jika sudah ada) juga writable — menghindari warning
         // fopen() pada path yang tidak valid / file milik user lain.
         $fp = null;
         if (is_dir(self::$storageDir) && is_writable(self::$storageDir)) {
@@ -177,9 +144,7 @@ class RateLimiter
         ];
     }
 
-    /**
-     * Dapatkan sisa request tanpa increment counter (read-only).
-     */
+    /* Dapatkan sisa request tanpa increment counter (read-only). */
     public static function getRemaining(string $key, string $endpoint = 'api'): int
     {
         $filePath = self::filePath($key, $endpoint);
@@ -194,11 +159,7 @@ class RateLimiter
         return max(0, $maxRequests - $data['count']);
     }
 
-    /**
-     * Bersihkan file rate limit yang expired (panggil dari GarbageCollector).
-     *
-     * @return int Jumlah file yang dibersihkan
-     */
+    /* @return int Jumlah file yang dibersihkan */
     public static function cleanup(): int
     {
         self::init();
@@ -230,11 +191,7 @@ class RateLimiter
         return $cleaned;
     }
 
-    /**
-     * Dapatkan summary rate limit untuk admin dashboard.
-     *
-     * @return array ['endpoint' => ['key_count' => int, 'active' => int], ...]
-     */
+    /* @return array ['endpoint' => ['key_count' => int, 'active' => int], ...] */
     public static function getStats(): array
     {
         self::init();
@@ -273,9 +230,7 @@ class RateLimiter
         return $stats;
     }
 
-    /**
-     * Dapatkan konfigurasi limits untuk display.
-     */
+    /* Dapatkan konfigurasi limits untuk display. */
     public static function getLimitsConfig(): array
     {
         return self::$limits;

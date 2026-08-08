@@ -1,32 +1,14 @@
 <?php
-
-// ════════════════════════════════════════════════════════════════
 // helpers/url.php — URL, Protocol & Format Helpers
-//
 // Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php (jangan require langsung kecuali
 // hanya butuh fungsi di file ini).
-//
 // Semua fungsi dibungkus function_exists() guard sebagai
 // defense-in-depth terhadap double-include.
-// ════════════════════════════════════════════════════════════════
-
 if (!function_exists('resolve_binary')) {
-    /**
-     * Resolve binary path dari daftar kandidat.
-     *
-     * Urutan prioritas:
-     *   1. Konstanta MEEL_FFMPEG_PATH/MEEL_FFPROBE_PATH/MEEL_NODE_PATH/MEEL_YTDLP_PATH
-     *      (path absolut dari config — cegah binary-hijacking)
-     *   2. Cek executable path absolut dari kandidat
-     *   3. Auto-discovery via command -v (development mode)
-     *
-     * @param array $candidates Daftar kandidat path binary
-     * @return string Path binary yang ditemukan
-     */
+    /* @param array $candidates Daftar kandidat path binary; @return string Path binary yang ditemukan */
     function resolve_binary(array $candidates): string
 {
-    // Level 1: Cek konstanta MEEL_*_PATH dari config (prioritas tertinggi — aman)
+
     static $const_map = null;
     if ($const_map === null) {
         $const_map = [];
@@ -59,25 +41,16 @@ if (!function_exists('resolve_binary')) {
 } // end function_exists('resolve_binary')
 
 if (!function_exists('base_url')) {
-/**
- * Generate base URL untuk path portability.
- * Menggantikan hardcoded /MEeL/ prefix dengan path dinamis.
- */
+
 function base_url(string $path = ''): string
 {
     static $base = null;
     if ($base === null) {
-        // Prioritas: konstanta MEEL_BASE_URL (didefinisikan di config.php)
-        // Fallback: root proyek relatif terhadap DOCUMENT_ROOT, konsisten dengan
-        // modules/core/bootstrap.php. BUKAN dirname(SCRIPT_NAME) — karena
-        // SCRIPT_NAME ikut direktori halaman aktif (mis. /MEeL/admin/index.php →
-        // /MEeL/admin), sehingga base yang dihasilkan salah untuk halaman di
         // subdirektori (admin/, video/, dll).
         if (defined('MEEL_BASE_URL')) {
             $base = rtrim(MEEL_BASE_URL, '/');
         } else {
-            // Fallback terpusat di modules/core/base_url.php (root proyek relatif
-            // terhadap DOCUMENT_ROOT), konsisten dengan bootstrap.php & config.php.
+
             require_once __DIR__ . '/../base_url.php';
             $base = meel_base_url_path();
         }
@@ -87,20 +60,14 @@ function base_url(string $path = ''): string
 } // end function_exists('base_url')
 
 if (!function_exists('detectProtocol')) {
-/**
- * Deteksi protokol HTTPS/HTTP dengan dukungan proxy/Cloudflare.
- * Cloudflare Tunnel menghubungkan origin via HTTP, sehingga $_SERVER['HTTPS']
- * tidak ter-set. Sebagai gantinya, Cloudflare mengirim header:
- *   - HTTP_X_FORWARDED_PROTO: https
- *   - HTTP_CF_VISITOR: {"scheme":"https"}
- */
+
 function detectProtocol(): string
 {
     // 1. Standard HTTPS
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         return 'https';
     }
-    // 2. Forwarded proto (Cloudflare, Nginx, Apache mod_proxy, dll)
+
     if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
         return 'https';
     }

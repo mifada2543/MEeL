@@ -1,16 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * shared/temp-index.js — Helper memuat konten index.php ke elemen #temp-index-content TANPA reload (pola mini-player).
- * Dipakai BERSAMA oleh modul music (watch/player-core.js) & video (watch/mini-player.js) — sebelumnya pola fetch → DOMParser → querySelector('main') → pushState → createIcons → htmx.process diduplikasi di kedua file. window.meelLoadTempIndex(options) → Promise<Element|null>
- *   options.container    : elemen induk tempat append div baru. Jika null,
- *                          default: insert sebelum <footer> / elemen body terakhir.
- *   options.useOuterHTML : true → pakai main.outerHTML (video); false (default)
- *                          → main.innerHTML (music).
- *   options.onLoad       : callback(el) setelah konten berhasil dimuat — juga
- *                          dipanggil jika elemen sudah ada (cabang display-only).
- * ──────────────────────────────────────────────────────────────── */
+
 window.meelLoadTempIndex = async function (options) {
   const opts = options || {};
   const container = opts.container || null;

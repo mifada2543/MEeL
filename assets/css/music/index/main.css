@@ -1,11 +1,8 @@
-/* ============================================================
- * index/main.css — Page-specific untuk Music Library
- * Halaman: music/index.php
- * ============================================================ */
+/* index/main.css — Page-specific untuk Music Library */
 .artist-dropdown-active .music-item {
   pointer-events: none !important;
 }
-/* Smoothly blur and dim the main discovery content when the mobile dropdown is active */
+
 main {
   transition: filter 0.2s ease, opacity 0.2s ease;
 }

@@ -1,5 +1,4 @@
 <?php
-
 class MediaInteraction {
     private \mysqli $conn;
     private int $user_id;
@@ -11,13 +10,8 @@ class MediaInteraction {
         $this->user_id = (int)$session_user_id;
     }
 
-    // ============================================================
     // LIKE / DISLIKE FUNCTIONALITY
-    // ============================================================
-
     /**
-     * Toggle like/dislike untuk music atau video
-     * 
      * @param int $media_id ID dari music atau video
      * @param string $media_type 'music' atau 'video'
      * @param string $like_type 'like' atau 'dislike'
@@ -55,26 +49,14 @@ class MediaInteraction {
         }
     }
 
-    /**
-     * Get status interaksi user saat ini
-     * 
-     * @param int $media_id
-     * @param string $media_type
-     * @return array|null
-     */
+    /* @param int $media_id; @param string $media_type; @return array|null */
     public function getUserInteractionStatus(int $media_id, string $media_type): ?string {
         $col = ($media_type === 'music') ? 'music_id' : 'video_id';
         $existing = $this->getExistingInteraction($col, $media_id);
         return $existing ? $existing['TYPE'] : null;
     }
 
-    /**
-     * Get likes/dislikes count
-     * 
-     * @param string $table
-     * @param int $media_id
-     * @return array
-     */
+    /* @param string $table; @param int $media_id; @return array */
     public function getLikesCount(string $table, int $media_id): array {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM $table WHERE id = ?");
         $stmt->bind_param("i", $media_id);
@@ -89,24 +71,8 @@ class MediaInteraction {
         ];
     }
 
-    // ============================================================
     // COMMENT FUNCTIONALITY
-    // ============================================================
-
-    /**
-     * Delete comment dengan ownership check.
-     *
-     * Berhak menghapus:
-     *   1. Pemilik komentar itu sendiri.
-     *   2. Uploader media (video/music) tempat komentar berada — media
-     *      di-derive dari baris komentar (video_id/music_id), BUKAN dari
-     *      input client, sehingga otorisasi tidak bisa dimanipulasi request.
-     *   3. Admin — dapat menghapus komentar apa pun di semua media
-     *      (role diperiksa langsung ke tabel users, bukan dari session).
-     *
-     * @param int $comment_id
-     * @return array Status response
-     */
+    /* @param int $comment_id; @return array Status response */
     public function deleteComment(int $comment_id): array {
         // Validasi
         if (!$this->validateUser()) {
@@ -179,17 +145,8 @@ class MediaInteraction {
         }
     }
 
-    // ============================================================
     // PRIVATE HELPER FUNCTIONS
-    // ============================================================
-
     /**
-     * Cek apakah user adalah uploader dari media tempat komentar berada.
-     *
-     * Media di-derive dari kolom video_id/music_id pada baris komentar
-     * (bukan dari input client) sehingga otorisasi tetap aman meskipun
-     * request dipalsukan.
-     *
      * @param int|null $video_id ID video tempat komentar (0/null = tidak ada)
      * @param int|null $music_id ID music tempat komentar (0/null = tidak ada)
      * @return bool True jika user ini adalah uploader media tsb
@@ -223,14 +180,7 @@ class MediaInteraction {
         return false;
     }
 
-    /**
-     * Cek apakah user adalah admin.
-     *
-     * Role diperiksa langsung ke tabel users (bukan dari session) agar
-     * otorisasi tetap aman meskipun data session tidak dipercaya.
-     *
-     * @return bool True jika user ini admin
-     */
+    /* @return bool True jika user ini admin */
     private function isAdmin(): bool
     {
         $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ?");
@@ -340,10 +290,7 @@ class MediaInteraction {
         ];
     }
 
-    // ============================================================
     // GETTERS
-    // ============================================================
-
     public function getError(): string {
         return $this->error;
     }

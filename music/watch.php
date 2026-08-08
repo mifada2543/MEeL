@@ -11,22 +11,16 @@ $id          = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id     = $_SESSION['user_id'] ?? null;
 $playlist_id = isset($_GET['playlist_id']) ? (int)$_GET['playlist_id'] : 0;
 
-// Otorisasi stream: tandai id ini boleh di-stream dari halaman ini
-// (diperiksa oleh music/stream.php — lihat helpers/stream_auth.php)
 authorize_stream($id);
 
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
 
 // Semua variabel template diekstrak dari controller
-// EXTR_SKIP mencegah overwrite variabel yang sudah ada di scope
 extract($ctrl->getViewData(), EXTR_SKIP);
 
-// Lepas session lock agar range request streaming tidak terblokir
 session_write_close();
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $f;
@@ -36,7 +30,6 @@ $__v = function($f) {
     return '?v=' . $mtimeCache[$path];
 };
 
-// Versi folder JS = max filemtime semua file di folder (diteruskan ke sibling oleh main.js)
 $__vdir = function($dir) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $dir;
@@ -321,8 +314,7 @@ $__vdir = function($dir) {
                     </button>
                 </div>
 
-                <script>
-                    function toggleDescriptionMusic() {
+                <script>                    function toggleDescriptionMusic() {
                         const descText = document.getElementById('desc-text-music');
                         const btn = document.getElementById('btn-read-more-music');
 
@@ -358,9 +350,8 @@ $__vdir = function($dir) {
                     document.addEventListener('DOMContentLoaded', checkDescriptionLengthMusic);
                     document.body.addEventListener('htmx:afterOnLoad', checkDescriptionLengthMusic);
                     window.addEventListener('resize', checkDescriptionLengthMusic);
-                </script>
+</script>
             <?php endif; ?>
-
             <?php if ($is_logged_in): ?>
                 <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section" style="content-visibility:auto;contain-intrinsic-size:200px">
                     <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
@@ -411,7 +402,6 @@ $__vdir = function($dir) {
 
                         <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                             <?php
-                            // Konteks uploader: pemilik media berhak menghapus komentar orang lain di media-nya
                             $GLOBALS['uploader_id'] = (int)($v['user_id'] ?? 0);
                             if (empty($comments_grouped)) {
                                 render_comment_empty_state('music');
@@ -423,14 +413,11 @@ $__vdir = function($dir) {
                             </div>
                         </div>
                     </section>
-                    <script>
-                        // Progressive enhancement: collapse komentar hanya jika JS aktif.
-                        // Tanpa JS, section tetap terbuka (fallback form action tetap jalan).
-                        document.getElementById('comment-body')?.classList.add('collapsed');
-                    </script>
-                    <noscript><style>#comment-preview{display:none}</style></noscript>
+                    <script>                        document.getElementById('comment-body')?.classList.add('collapsed');
+</script>
+                    <noscript><style>#comment-preview{display:none}
+</style></noscript>
                 <?php endif; ?>
-
         </div>
 
         <div class="w-full lg:w-80 flex-shrink-0 space-y-6 px-4 sm:px-5 lg:px-0 rekomendasi-sidebar" style="content-visibility:auto;contain-intrinsic-size:500px;min-height:300px">
@@ -465,7 +452,6 @@ $__vdir = function($dir) {
                     </div>
                 </div>
             <?php endif; ?>
-
             <div class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden">
                 <div class="px-5 py-3.5 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
                     <i data-lucide="shuffle" class="w-3.5 h-3.5 text-gray-600"></i>
@@ -556,7 +542,6 @@ $__vdir = function($dir) {
                 </div>
             </div>
         <?php endif; ?>
-
         <div id="mini-player" aria-label="Mini Player">
             <div class="mp-seekbar" id="mp-seekbar" onclick="miniSeek(event)" title="Klik untuk seek">
                 <div class="mp-seekbar-fill" id="mp-seekbar-fill"></div>

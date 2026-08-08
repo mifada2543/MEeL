@@ -1,9 +1,4 @@
 <?php
-/**
- * partials/engine/error.php — Fase ERROR overlay MEeL Engine.
- * Di-include oleh partials/ui.php (assembler).
- * Styling: assets/css/engine/ (modul buttons.css).
- */
 ?>
 <!-- ── FASE: ERROR ── -->
 <div class="meel-phase" id="meel-phase-error">

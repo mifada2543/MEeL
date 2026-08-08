@@ -1,26 +1,13 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversNothing
- * Tests for environment-based constant definitions in modules/core/bootstrap.php.
- *
- * Khususnya relasi:  APP_DEBUG === (MEEL_ENV === 'development')
- *
- * NOTE: bootstrap.php memakai define() yang hanya bisa dijalankan SEKALI per
- * proses PHP. Karena itu setiap skenario diuji dalam subprocess terisolasi
- * (PHP_BINARY) — pola yang sama dengan tests/functional_test.php.
- */
+/* @coversNothing */
 class BootstrapTest extends TestCase
 {
     /**
-     * Jalankan bootstrap.php dalam subprocess dengan $_SERVER yang disimulasikan.
-     *
      * @param string $remoteAddr Nilai $_SERVER['REMOTE_ADDR']
      * @param string $serverName Nilai $_SERVER['SERVER_NAME']
-     * @param string $prelude    Kode PHP yang dijalankan SEBELUM require bootstrap
-     *                           (untuk menguji override manual define('APP_DEBUG', ...)
-     *                           atau define('MEEL_ENV', ...)).
+     * @param string $prelude Kode PHP yang dijalankan SEBELUM require bootstrap
      * @return array{0: string, 1: bool} [MEEL_ENV, APP_DEBUG(bool)]
      */
     private function probe(string $remoteAddr, string $serverName, string $prelude = ''): array
@@ -47,11 +34,6 @@ class BootstrapTest extends TestCase
     }
 
     /**
-     * Fallback MEEL_BASE_URL harus berbasis root proyek, bukan dirname(SCRIPT_NAME).
-     * Regresi: halaman di subdirektori (mis. /MEeL/admin/index.php) pernah
-     * menghasilkan MEEL_BASE_URL = /MEeL/admin, sehingga redirect auth
-     * mengarah ke /MEeL/admin/auth/login.php?next=... (salah).
-     *
      * @dataProvider baseUrlProvider
      */
     public function testBaseUrlFallbackFromProjectRoot(
@@ -78,7 +60,7 @@ class BootstrapTest extends TestCase
 
     public static function baseUrlProvider(): array
     {
-        // Turunkan nilai dari root proyek asli agar test valid di instalasi mana pun.
+
         $projectRoot = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/../..')), '/');
         $docRoot     = dirname($projectRoot);
         $expected    = '/' . basename($projectRoot);
@@ -112,7 +94,6 @@ class BootstrapTest extends TestCase
         $this->assertSame($expectedEnv, $env);
         $this->assertSame($expectedDebug, $debug);
 
-        // Invariant utama: tanpa override manual, APP_DEBUG === (MEEL_ENV === 'development')
         if ($expectInvariant) {
             $this->assertSame($env === 'development', $debug);
         }

@@ -1,14 +1,7 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
- * engine/result.js — Fase selesai & error overlay + penangkap error
- * global.
- *   window.meelDone          → tampilkan fase done + judul
- *   window.meelError         → tampilkan fase error + log
- *   window.meelDoneTranscode → fase done khusus hasil transcode audio
- *                              (ganti tombol nav jadi "Simpan File")
- * ──────────────────────────────────────────────────────────────── */
+/* engine/result.js — Fase selesai & error overlay + penangkap error */
 window.meelDone = function (title, homeUrl) {
   meelPhase("done");
   var el = document.getElementById("meel-done-title");

@@ -2,7 +2,7 @@
 require '../../../auth/config.php';
 header('Content-Type: application/json');
 
-// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+// ─── Auth guard: wajib login (JSON 401, tanpa redirect) ───
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode([
@@ -25,7 +25,6 @@ if (!$room) {
 }
 $user_id = (int)$_SESSION['user_id'];
 
-// Cegah join room sendiri (pembuat room mencoba jadi hitam juga di akun yang sama).
 $ownCheck = $conn->prepare("SELECT white_user_id FROM rooms WHERE room_code = ?");
 $ownCheck->bind_param("s", $room);
 $ownCheck->execute();
@@ -37,9 +36,6 @@ if ((int)$ownRow['white_user_id'] === $user_id) {
     die(json_encode(['success' => false, 'message' => 'Tidak bisa bergabung ke room sendiri.']));
 }
 
-// black_user_id diisi bersamaan dengan black_joined=1 dalam satu UPDATE
-// atomik (WHERE black_joined = 0) — mencegah dua user join bersamaan
-// (race condition) sekaligus mengikat identitas pemain hitam di server.
 $stmt = $conn->prepare(
     "UPDATE rooms SET black_joined = 1, black_user_id = ? WHERE room_code = ? AND black_joined = 0"
 );

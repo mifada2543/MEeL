@@ -10,7 +10,7 @@ class MediaLibrary
         $this->conn = $db_connection;
     }
 
-    // ── HUB ──────────────────────────────────────────────────────────────────
+    // ─── HUB ───
     public function getCounts(): array
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
@@ -49,10 +49,6 @@ class MediaLibrary
         return $counts;
     }
 
-    /**
-     * Hapus cache counts — panggil setelah upload/delete agar data segar.
-     * Static agar bisa dipanggil tanpa instansiasi MediaLibrary.
-     */
     public static function clearCountsCache(): void
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
@@ -61,14 +57,12 @@ class MediaLibrary
         }
     }
 
-    // ── PAGINATION HELPER ─────────────────────────────────────────────────────
+    // ─── PAGINATION HELPER ───
     /**
-     * Bungkus result set + count menjadi array pagination metadata.
-     *
-     * @param mysqli_result|false $result   Result set dari query data
-     * @param int                 $total    Total record
-     * @param int                 $page     Halaman saat ini (1-based)
-     * @param int                 $perPage  Item per halaman
+     * @param mysqli_result|false $result Result set dari query data
+     * @param int $total Total record
+     * @param int $page Halaman saat ini (1-based)
+     * @param int $perPage Item per halaman
      * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
      */
     protected function paginateResult($result, int $total, int $page, int $perPage): array
@@ -88,9 +82,7 @@ class MediaLibrary
     }
 
     /**
-     * Ambil video dengan pagination metadata.
-     *
-     * @param int $page    Halaman (1-based)
+     * @param int $page Halaman (1-based)
      * @param int $perPage Item per halaman (default 15)
      * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
      */
@@ -102,7 +94,7 @@ class MediaLibrary
         return $this->paginateResult($data, $total, $page, $perPage);
     }
 
-    // ── VIDEO ─────────────────────────────────────────────────────────────────
+    // ─── VIDEO ───
     public function getVideos(int $limit = 15, int $offset = 0)
     {
         $stmt = $this->conn->prepare("SELECT * FROM video ORDER BY upload_date DESC LIMIT ? OFFSET ?");
@@ -124,11 +116,10 @@ class MediaLibrary
 
         if (empty($q)) {
             if ($sidebar) {
-                // Optimized: Replace ORDER BY RAND() dengan more efficient approach
                 // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM video");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
-                
+
                 if ($max_id > 15) {
                     $random_offset = rand(0, max(0, $max_id - 15));
                 } else {
@@ -160,11 +151,9 @@ class MediaLibrary
                  WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AND v.id != ?
                  ORDER BY rank DESC, v.upload_date DESC LIMIT ? OFFSET ?"
             );
-            // Prepared statement handle escaping natively — aman untuk MySQL 5.7+
+
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        // FULLTEXT boolean mode bisa melempar mysqli_sql_exception (mis. query
-        // operator yang lolos sanitizer, atau syntax error 1064). Jangan sampai
         // crash endpoint — fallback ke hasil kosong.
         try {
             $stmt->execute();
@@ -175,16 +164,13 @@ class MediaLibrary
         return $result ?: null;
     }
 
-    // ── MUSIC ─────────────────────────────────────────────────────────────────
+    // ─── MUSIC ───
 
-    // DIUBAH: Fungsi ini sekarang mengirim parameter ke buildMusicWhere untuk prepared statement
     /**
-     * Ambil musik dengan pagination metadata.
-     *
-     * @param string $format  Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
-     * @param string $artist  Filter artist ('all' atau nama artist)
-     * @param int    $page    Halaman (1-based)
-     * @param int    $perPage Item per halaman (default 10)
+     * @param string $format Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
+     * @param string $artist Filter artist ('all' atau nama artist)
+     * @param int $page Halaman (1-based)
+     * @param int $perPage Item per halaman (default 10)
      * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
      */
     public function getMusicListWithMeta(string $format = 'all', string $artist = 'all', int $page = 1, int $perPage = 10): array
@@ -200,7 +186,6 @@ class MediaLibrary
         $data = $this->buildMusicWhere($format, $artist);
         $stmt = $this->conn->prepare("SELECT * FROM music WHERE {$data['where']} ORDER BY id DESC LIMIT ? OFFSET ?");
 
-        // Gabungkan parameter dari buildMusicWhere dengan limit & offset
         $params = array_merge($data['params'], [$limit, $offset]);
         $types = $data['types'] . "ii";
 
@@ -242,11 +227,10 @@ class MediaLibrary
 
         if (empty($q)) {
             if ($sidebar) {
-                // Optimized: Replace ORDER BY RAND() dengan more efficient approach
                 // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM music");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
-                
+
                 if ($max_id > 15) {
                     $random_offset = rand(0, max(0, $max_id - 15));
                 } else {
@@ -260,7 +244,7 @@ class MediaLibrary
                 );
                 $stmt->bind_param("ii", $exclude, $random_offset);
             } else {
-                // Optimized: Fetch limit+1 untuk check hasMore + support pagination
+
                 $stmt = $this->conn->prepare(
                     "SELECT m.*, u.username AS uploader FROM music m
                      JOIN users u ON m.user_id = u.id
@@ -280,8 +264,6 @@ class MediaLibrary
             );
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        // FULLTEXT boolean mode bisa melempar mysqli_sql_exception (mis. query
-        // operator yang lolos sanitizer, atau syntax error 1064). Jangan sampai
         // crash endpoint — fallback ke hasil kosong.
         try {
             $stmt->execute();
@@ -292,9 +274,8 @@ class MediaLibrary
         return $result ?: null;
     }
 
-    // ── PRIVATE HELPER ────────────────────────────────────────────────────────
+    // ─── PRIVATE HELPER ───
 
-    // DIUBAH: Sekarang mengembalikan array berisi string WHERE, parameter, dan tipe data
     private function buildMusicWhere(string $format, string $artist): array
     {
         $allowed_formats = ['mp3', 'ogg', 'm4a', 'opus', 'flac', 'wav'];
@@ -322,9 +303,7 @@ class MediaLibrary
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // BookRepository — Query layer untuk tabel `books`
-// ═══════════════════════════════════════════════════════════════════════════════
 class BookRepository
 {
     private $conn;
@@ -334,13 +313,7 @@ class BookRepository
         $this->conn = $db_connection;
     }
 
-    /**
-     * Ambil semua buku, atau filter berdasarkan tipe ('manga' / 'pdf' / 'all').
-     *
-     * @param string $filter  Filter tipe ('manga', 'pdf', 'all')
-     * @param int    $limit   Batas item (0 = no limit)
-     * @param int    $offset  Offset untuk pagination
-     */
+    /* @param string $filter Filter tipe ('manga', 'pdf', 'all'); @param int $limit Batas item (0 = no limit); @param int $offset Offset untuk pagination */
     public function getBooks(string $filter = 'all', int $limit = 0, int $offset = 0)
     {
         $allowed = ['manga', 'pdf'];
@@ -369,12 +342,7 @@ class BookRepository
         return $stmt->get_result();
     }
 
-    /**
-     * Hitung total buku (dengan filter opsional).
-     *
-     * @param string $filter Filter tipe ('manga', 'pdf', 'all')
-     * @return int
-     */
+    /* @param string $filter Filter tipe ('manga', 'pdf', 'all'); @return int */
     public function countBooks(string $filter = 'all'): int
     {
         $allowed = ['manga', 'pdf'];
@@ -391,14 +359,10 @@ class BookRepository
     }
 
     /**
-     * Cari buku memakai FULLTEXT index ft_books_search (title, author).
-     * Query kosong → daftar buku terbaru (pagination biasa).
-     * Query yang gagal di FULLTEXT → null (endpoint menampilkan hasil kosong).
-     *
-     * @param string $q      Kata kunci pencarian (sudah di-sanitize)
-     * @param string $type   Filter tipe: 'all', 'manga', 'pdf' (dihormati dari pill filter)
-     * @param int    $offset Offset pagination
-     * @param int    $limit  Batas baris yang diambil
+     * @param string $q Kata kunci pencarian (sudah di-sanitize)
+     * @param string $type Filter tipe: 'all', 'manga', 'pdf' (dihormati dari pill filter)
+     * @param int $offset Offset pagination
+     * @param int $limit Batas baris yang diambil
      * @return \mysqli_result|null
      */
     public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24)
@@ -440,11 +404,9 @@ class BookRepository
     }
 
     /**
-     * Ambil buku dengan pagination metadata.
-     *
-     * @param string $filter  Filter tipe ('manga', 'pdf', 'all')
-     * @param int    $page    Halaman (1-based)
-     * @param int    $perPage Item per halaman (default 24)
+     * @param string $filter Filter tipe ('manga', 'pdf', 'all')
+     * @param int $page Halaman (1-based)
+     * @param int $perPage Item per halaman (default 24)
      * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
      */
     public function getBooksPaginated(string $filter = 'all', int $page = 1, int $perPage = 24): array
@@ -466,10 +428,6 @@ class BookRepository
         ];
     }
 
-    /**
-     * Ambil satu buku berdasarkan ID.
-     * Return array buku, atau null jika tidak ditemukan.
-     */
     public function getBookById(int $id): ?array
     {
         $stmt = $this->conn->prepare("SELECT * FROM books WHERE id = ? LIMIT 1");
@@ -479,10 +437,6 @@ class BookRepository
         return ($result && $result->num_rows > 0) ? $result->fetch_assoc() : null;
     }
 
-    /**
-     * Ambil role user berdasarkan ID.
-     * Return string role ('admin' / 'member'), atau null jika user tidak ada.
-     */
     public function getUserRole(int $user_id): ?string
     {
         $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
@@ -494,9 +448,6 @@ class BookRepository
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BookUploader — Menangani validasi, file handling, dan insert DB untuk buku
-// ═══════════════════════════════════════════════════════════════════════════════
 class BookUploader
 {
     private $conn;
@@ -509,10 +460,7 @@ class BookUploader
         $this->base_path = rtrim($base_path, '/');
     }
 
-    /**
-     * Entry point upload buku.
-     * Return array ['success' => bool, 'message' => string]
-     */
+    /* Entry point upload buku. Return array ['success' => bool, 'message' => string] */
     public function handleUpload(array $post, array $files): array
     {
         $title    = trim($post['title'] ?? '');
@@ -537,7 +485,6 @@ class BookUploader
             return $content; // Kembalikan pesan error dari handler
         }
 
-        // 3. Jika manga sudah ada di DB (re-upload chapter), tidak perlu insert ulang
         if (isset($content['existing']) && $content['existing'] === true) {
             return ['success' => true, 'message' => $content['message']];
         }
@@ -546,7 +493,7 @@ class BookUploader
         return $this->insertBook($title, $author, $type, $content['has_chapters'], $category, $content['path_result'], $thumb_name, $user_id);
     }
 
-    // ── PRIVATE HELPERS ──────────────────────────────────────────────────────
+    // ─── PRIVATE HELPERS ───
 
     private function handleThumbnail(array $file): string
     {
@@ -598,7 +545,6 @@ class BookUploader
         $manga_folder = $this->base_path . '/upload/manga/' . $clean;
         $has_chapters = 0;
 
-        // Cek apakah entry sudah ada di DB (re-upload / tambah chapter)
         $check = $this->conn->prepare("SELECT id FROM books WHERE path_folder = ? LIMIT 1");
         $check->bind_param("s", $clean);
         $check->execute();
@@ -616,13 +562,11 @@ class BookUploader
         $zip->extractTo($manga_folder);
         $first_entry = $zip->getNameIndex(0);
 
-        // Jika entry pertama mengandung '/', berarti ada subfolder (chapter)
         if (strpos($first_entry, '/') !== false) {
             $has_chapters = 1;
         }
         $zip->close();
 
-        // Manga sudah ada → hanya update flag has_chapters, tidak insert ulang
         if ($exists) {
             $stmt = $this->conn->prepare(
                 "UPDATE books SET has_chapters = 1 WHERE path_folder = ?"

@@ -1,12 +1,10 @@
-/* ============================================================
- * reader.css — Reader navigation, chapter dropdown, page counter
- * ============================================================ */
+/* reader.css — Reader navigation, chapter dropdown, page counter */
 .reader-nav {
   background: rgba(11, 14, 20, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-/* ── Chapter Custom Dropdown ── */
+/* ─── Chapter Custom Dropdown ─── */
 .ch-dropdown-open .ch-overlay {
   display: block;
 }

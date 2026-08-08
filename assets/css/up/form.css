@@ -1,7 +1,5 @@
-/* ============================================================
- * up/form.css — Kartu form: URL input, type selector, tombol submit
- * ============================================================ */
-/* ── Form card ── */
+/* up/form.css — Kartu form: URL input, type selector, tombol submit */
+/* ─── Form card ─── */
 .form-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -19,7 +17,7 @@
 .form-card-body {
   padding: 2rem;
 }
-/* ── URL input ── */
+/* ─── URL input ─── */
 .url-wrap {
   position: relative;
 }
@@ -52,7 +50,7 @@
 .url-input::placeholder {
   color: var(--muted);
 }
-/* ── Type selector ── */
+/* ─── Type selector ─── */
 .type-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -141,7 +139,7 @@
   color: #2a3040;
   text-transform: uppercase;
 }
-/* ── Submit button ── */
+/* ─── Submit button ─── */
 .submit-btn {
   width: 100%;
   display: flex;
@@ -173,7 +171,7 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
-/* ── Hover effects for type labels on mobile ── */
+/* ─── Hover effects for type labels on mobile ─── */
 @media (hover: none) {
   .type-label:active {
     opacity: 0.85;

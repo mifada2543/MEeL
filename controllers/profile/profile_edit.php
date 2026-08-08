@@ -18,7 +18,6 @@ if (isset($_POST['update_profile'])) {
     } else {
     $bio = trim($_POST['bio'] ?? '');
 
-    // TRANSACTION: Atomic profile update — bio + avatar adalah satu kesatuan
     $conn->begin_transaction();
     try {
         // 1. UPDATE BIO
@@ -32,7 +31,6 @@ if (isset($_POST['update_profile'])) {
         if (!empty($_FILES['avatar']['name'])) {
             $file_tmp  = $_FILES['avatar']['tmp_name'];
 
-            // Cek status upload dari server (file terlalu besar, terpotong, dsb.)
             if (isset($_FILES['avatar']['error']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
                 $upload_errors = [
                     UPLOAD_ERR_INI_SIZE   => 'File melebihi batas upload (upload_max_filesize).',
@@ -46,7 +44,6 @@ if (isset($_POST['update_profile'])) {
                 throw new \RuntimeException($upload_errors[$_FILES['avatar']['error']] ?? 'Gagal mengupload file.');
             }
 
-            // Validasi tipe file dari ISI file (server-side), bukan header dari client — cegah spoofing MIME
             $img_info = @getimagesize($file_tmp);
             if ($img_info === false || empty($img_info[0]) || empty($img_info[1]) || empty($img_info['mime'])) {
                 throw new \RuntimeException('Gambar tidak valid. Gunakan JPG, PNG, atau WebP.');
@@ -61,7 +58,6 @@ if (isset($_POST['update_profile'])) {
             $img_w = (int)$img_info[0];
             $img_h = (int)$img_info[1];
 
-            // Posisi crop dari drag preview (client). Default: center crop.
             $crop_x = isset($_POST['crop_x']) ? (int)$_POST['crop_x'] : -1;
             $crop_y = isset($_POST['crop_y']) ? (int)$_POST['crop_y'] : -1;
             $crop_size = min($img_w, $img_h);
@@ -72,7 +68,6 @@ if (isset($_POST['update_profile'])) {
                 $crop_y = (int)(($img_h - $crop_size) / 2);
             }
 
-            // Simpan avatar lama (jika ada) untuk dibersihkan setelah sukses menyimpan yang baru
             $stmt_old = $conn->prepare("SELECT profile_picture FROM users WHERE id = ?");
             $stmt_old->bind_param("i", $user_id);
             $stmt_old->execute();
@@ -99,14 +94,12 @@ if (isset($_POST['update_profile'])) {
                 : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
             $ffmpeg_ok = $ffmpeg_bin !== '' && is_executable($ffmpeg_bin);
 
-            // ── INPUT WEBP: langsung crop/resize ke 400x400, TANPA transcode format ──
-            // GD build ini tidak bisa baca WebP, jadi pakai ffmpeg langsung.
+            // ─── INPUT WEBP: langsung crop/resize ke 400x400, TANPA transcode format ───
             if ($real_mime === 'image/webp') {
                 if (!$ffmpeg_ok) {
                     throw new \RuntimeException('Format WebP membutuhkan ffmpeg untuk diproses.');
                 }
 
-                // Tulis ke file sementara lalu rename — aman menimpa file milik user lain
                 $tmp_out = $upload_dir . 'user_' . $user_id . '_tmp_' . bin2hex(random_bytes(4)) . '.webp';
                 $cmd = "export LD_LIBRARY_PATH=''; " . escapeshellarg($ffmpeg_bin)
                     . " -y -i " . escapeshellarg($file_tmp)
@@ -125,7 +118,7 @@ if (isset($_POST['update_profile'])) {
                     throw new \RuntimeException('Gagal menyimpan foto profil.');
                 }
             } else {
-                // ── INPUT JPG/PNG: GD center-crop 400x400 lalu transcode ke WebP ──
+                // ─── INPUT JPG/PNG: GD center-crop 400x400 lalu transcode ke WebP ───
                 $source = null;
                 $tmp_img = null;
                 $tmp_png = null;
@@ -149,7 +142,6 @@ if (isset($_POST['update_profile'])) {
                         throw new \RuntimeException('Gagal memproses gambar.');
                     }
 
-                    // Transcode ke WebP via ffmpeg (GD build ini tanpa dukungan WebP)
                     $webp_ok = false;
                     if ($ffmpeg_ok) {
                         $tmp_png = sys_get_temp_dir() . '/meel_avatar_' . $user_id . '_' . bin2hex(random_bytes(4)) . '.png';
@@ -170,7 +162,7 @@ if (isset($_POST['update_profile'])) {
                     }
 
                     if (!$webp_ok) {
-                        // Fallback: simpan sebagai JPEG bila ffmpeg tidak tersedia/gagal
+
                         $new_name = "user_" . $user_id . ".jpg";
                         $jpg_path = $upload_dir . $new_name;
                         $tmp_jpg = $upload_dir . 'user_' . $user_id . '_tmp_' . bin2hex(random_bytes(4)) . '.jpg';
@@ -200,7 +192,6 @@ if (isset($_POST['update_profile'])) {
                 throw new \RuntimeException('Gagal menyimpan path foto: ' . $stmt_pic->error);
             }
 
-            // Hapus avatar lama yang sudah diganti (hindari file yatim menumpuk)
             $allowed_old = ["user_" . $user_id . ".jpg", "user_" . $user_id . ".webp"];
             if ($old_pic && in_array($old_pic, $allowed_old, true) && $old_pic !== $new_name) {
                 $old_path = $upload_dir . $old_pic;
@@ -219,13 +210,11 @@ if (isset($_POST['update_profile'])) {
     } // tutup else verify_csrf
 }
 
-// Ambil data terbaru untuk ditampilkan di form — prepared statement
 $stmt_data = $conn->prepare("SELECT * FROM users WHERE id = ?");
 $stmt_data->bind_param("i", $user_id);
 $stmt_data->execute();
 $data = $stmt_data->get_result()->fetch_assoc();
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -243,8 +232,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
     <link rel="icon" type="image/png" href="../../assets/MEeL.png">
     <link href="../../assets/css/tailwind.min.css" rel="stylesheet">
     <script src="../../assets/js/compatibilitas/lucide.js"></script>
-    <style>
-        body {
+    <style>        body {
             background-color: #0b0e14;
         }
 
@@ -252,8 +240,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
             background: rgba(22, 27, 34, 0.7);
             backdrop-filter: blur(10px);
         }
-
-    </style>
+</style>
 </head>
 
 <body class="text-gray-300 p-6">
@@ -266,7 +253,6 @@ $data = $stmt_data->get_result()->fetch_assoc();
                     <?= $msg ?>
                 </div>
             <?php endif; ?>
-
             <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                 <div class="flex flex-col items-center gap-4">
@@ -313,10 +299,9 @@ $data = $stmt_data->get_result()->fetch_assoc();
             <a href="../../profile/?u=<?= $_SESSION['username'] ?>" class="block text-center mt-6 text-xs text-gray-600 hover:text-gray-400">Batal dan Kembali</a>
         </div>
     </div>
-    <script>
-        lucide.createIcons();
+    <script>        lucide.createIcons();
 
-        // ── Modal preview foto profil + atur posisi crop ──
+        // ─── Modal preview foto profil + atur posisi crop ───
         var avatarInput        = document.getElementById('avatarInput');
         var avatarPreview      = document.getElementById('avatarPreview');
         var avatarModal        = document.getElementById('avatarModal');
@@ -370,7 +355,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
 
         function batalPreview() {
             avatarModal.classList.add('hidden');
-            // Reset pilihan file — jangan sampai foto ter-upload tanpa konfirmasi
+
             if (avatarInput) avatarInput.value = '';
             if (cropXInput) cropXInput.value = '';
             if (cropYInput) cropYInput.value = '';
@@ -381,7 +366,6 @@ $data = $stmt_data->get_result()->fetch_assoc();
                 var file = this.files && this.files[0];
                 if (!file) return;
 
-                // Validasi tipe gambar (lapisan client; server tetap validasi ulang)
                 if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
                     if (avatarStatus) {
                         avatarStatus.textContent = 'Format tidak didukung! Gunakan JPG, PNG, atau WebP.';
@@ -404,7 +388,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
                     pendingAvatarUrl = e.target.result;
                     var probe = new Image();
                     probe.onload = function () {
-                        // Tampilkan modal DULU, baru ukur bingkai (clientWidth 0 saat hidden)
+
                         avatarModal.classList.remove('hidden');
                         initCrop(probe);
                     };
@@ -433,7 +417,6 @@ $data = $stmt_data->get_result()->fetch_assoc();
                 cropFrame.addEventListener('pointercancel', endDrag);
             }
 
-            // Gunakan → terapkan preview hasil crop (canvas), file tetap terpilih utk di-upload
             if (avatarUseBtn) {
                 avatarUseBtn.addEventListener('click', function () {
                     if (pendingAvatarUrl && modalAvatarPreview.src) {
@@ -458,7 +441,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
                 avatarCancelBtn.addEventListener('click', batalPreview);
             }
         }
-    </script>
+</script>
 </body>
 
 </html>

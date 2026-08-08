@@ -5,6 +5,9 @@
  * upload/upload.js — JS halaman music/upload.php: drop-zone handler (audio & cover), overlay upload (progress manual), drag-and-drop, dan auto-fill metadata dari file audio via auto_metadata.php.
  * Depends on: shared/upload-progress.js (meelUploadProgress)
  * ──────────────────────────────────────────────────────────────── */
+// True jika user memilih cover manual — Auto-fill TIDAK menimpa cover manual
+// (konsisten dgn prioritas cover di Uploader::processMusic: manual > embedded).
+let coverManual = false;
 function handleAudioFile(input) {
   if (!input.files || !input.files[0]) return;
   const zone = document.getElementById("audio-zone");
@@ -14,6 +17,7 @@ function handleAudioFile(input) {
 }
 function handleCoverFile(input) {
   if (!input.files || !input.files[0]) return;
+  coverManual = true; // pilihan manual — Auto-fill tidak boleh menimpa
   const reader = new FileReader();
   reader.onload = function (e) {
     const preview = document.getElementById("cover-preview");
@@ -113,6 +117,19 @@ coverZone.addEventListener("drop", (e) => {
     handleCoverFile(coverInput);
   }
 });
+/** Konversi base64 (JPEG dari server) menjadi FileList utk input file.
+ * Dipakai supaya cover hasil Auto-fill benar-benar terupload (bukan cuma preview). */
+function coverFromBase64(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const file = new File([bytes], "cover-from-metadata.jpg", {
+    type: "image/jpeg",
+  });
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  return dt.files;
+}
 /** Auto-fill metadata dari file audio via ffprobe di server.
  * Upload file ke auto_metadata.php → parse response → isi form + cover. */
 function autoFillMetadata() {
@@ -133,6 +150,11 @@ function autoFillMetadata() {
   btn.innerHTML = '<div class="auto-spinner"></div> Memproses...';
   const formData = new FormData();
   formData.append("audio", audioInput.files[0]);
+  // Sertakan CSRF token (di-verify server di auto_metadata.php)
+  const csrfInput = document.querySelector('input[name="csrf_token"]');
+  if (csrfInput && csrfInput.value) {
+    formData.append("csrf_token", csrfInput.value);
+  }
   fetch("../controllers/api/auto_metadata.php", {
     method: "POST",
     body: formData,
@@ -143,14 +165,18 @@ function autoFillMetadata() {
         const hasTitle = data.title && data.title.trim() !== "";
         const hasArtist = data.artist && data.artist.trim() !== "";
         const hasAlbum = data.album && data.album.trim() !== "";
+        const hasDesc =
+          data.description && data.description.trim() !== "";
         if (hasTitle)
           document.getElementById("f-title").value = data.title.trim();
         if (hasArtist)
           document.getElementById("f-artist").value = data.artist.trim();
         if (hasAlbum)
           document.getElementById("f-album").value = data.album.trim();
-        // Isi cover art dari metadata
-        if (data.cover && data.cover.length > 0) {
+        if (hasDesc)
+          document.getElementById("f-desc").value = data.description.trim();
+        // Isi cover art dari metadata (hanya jika user belum pilih cover manual)
+        if (data.cover && data.cover.length > 0 && !coverManual) {
           const preview = document.getElementById("cover-preview");
           const iconWrap = document.getElementById("cover-icon-wrap");
           const label = document.getElementById("cover-label");
@@ -162,8 +188,12 @@ function autoFillMetadata() {
           label.textContent = "Cover dari metadata";
           sub.textContent = "";
           zone.classList.add("has-file");
+          // Persist ke file input agar cover benar-benar ikut terupload saat submit
+          // (PRIORITAS 1 di Uploader::processMusic: thumbnail dari form).
+          const coverInput = document.getElementById("cover-input");
+          coverInput.files = coverFromBase64(data.cover);
         }
-        if (!hasTitle && !hasArtist && !hasAlbum && !data.cover) {
+        if (!hasTitle && !hasArtist && !hasAlbum && !hasDesc && !data.cover) {
           Swal.fire({
             title: "Metadata tidak ditemukan",
             text: "File ini tidak memiliki metadata ID3/FLAC yang bisa dibaca.",

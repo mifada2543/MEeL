@@ -1,5 +1,4 @@
-/** MEeL Admin — Shared: Search Input with Debounce
- * Auto-submits search form when user stops typing. **/
+/* MEeL Admin — Shared: Search Input with Debounce */
 (function () {
   'use strict';
   function initSearch() {

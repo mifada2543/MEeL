@@ -1,8 +1,4 @@
-/* ============================================================
- * gestures.js — Gestur mobile: tap untuk show/hide kontrol,
- * double-tap kiri/kanan untuk seek -10s/+10s, geser volume.
- * Depends on: state.js, seek-indicator.js
- * ============================================================ */
+/* gestures.js — Gestur mobile: tap untuk show/hide kontrol, */
 function setupMobileGestures() {
   if (!isTouchDevice) return;
   const e = document.querySelector(".plyr");

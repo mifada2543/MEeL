@@ -1,8 +1,5 @@
-/* ============================================================
- * utility.css — Utility classes, animasi, icon buttons
- * Modul: Drive (MEeL Cloud)
- * ============================================================ */
-/* ── Glass Panel ── */
+/* utility.css — Utility classes, animasi, icon buttons */
+/* ─── Glass Panel ─── */
 .glass-panel {
   background: var(--bg-glass);
   border: 1px solid var(--border);
@@ -10,7 +7,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-/* ── Badge ── */
+/* ─── Badge ─── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -22,7 +19,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-/* ── Progress Track (generic) ── */
+/* ─── Progress Track (generic) ─── */
 .progress-track {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
@@ -34,7 +31,7 @@
   border-radius: 999px;
   transition: width 0.5s;
 }
-/* ── Fade Up Animation ── */
+/* ─── Fade Up Animation ─── */
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -48,7 +45,7 @@
 .fade-up {
   animation: fadeUp 0.35s ease-out forwards;
 }
-/* ── Icon Buttons ── */
+/* ─── Icon Buttons ─── */
 .icon-btn {
   padding: 6px;
   border-radius: 8px;
@@ -70,7 +67,7 @@
 .icon-btn.cyan:hover {
   color: #22d3ee;
 }
-/* ── Scrollbar Hide (utility) ── */
+/* ─── Scrollbar Hide (utility) ─── */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -78,7 +75,7 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-/* ── Transition Helpers ── */
+/* ─── Transition Helpers ─── */
 .transition-all {
   transition: all 0.2s ease;
 }
@@ -88,7 +85,7 @@
 .transition-opacity {
   transition: opacity 0.2s ease;
 }
-/* ── Storage Bar ── */
+/* ─── Storage Bar ─── */
 .storage-bar {
   height: 8px;
   background: rgba(255, 255, 255, 0.08);
@@ -101,7 +98,7 @@
   border-radius: 999px;
   transition: width 0.5s ease;
 }
-/* ── Preview Modal ── */
+/* ─── Preview Modal ─── */
 .preview-modal {
   position: fixed;
   inset: 0;

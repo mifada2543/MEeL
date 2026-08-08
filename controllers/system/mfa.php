@@ -1,19 +1,9 @@
 <?php
-/**
- * MEeL — MFA System Controller
- *
- * Endpoint untuk operasi MFA backend:
- *   - action=generate_backup : Verifikasi password → generate backup codes baru
- *   - action=download_backup  : Verifikasi password → download backup codes sebagai TXT
- *
- * Semua request harus POST + CSRF token.
- */
-
 require_once __DIR__ . '/../../auth/config.php';
 require_once __DIR__ . '/../../auth/auth.php';
 require_once __DIR__ . '/../../modules/core/helpers.php';
 
-// ── Hanya user login ──
+// ─── Hanya user login ───
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'Silakan login terlebih dahulu.']);
@@ -24,7 +14,7 @@ $user_id   = (int)$_SESSION['user_id'];
 $action    = $_POST['action'] ?? '';
 $response  = ['status' => 'error', 'message' => 'Aksi tidak dikenal.'];
 
-// ─── VERIFY PASSWORD ───────────────────────────────────────────
+// ─── VERIFY PASSWORD ───
 if ($action === 'generate_backup' || $action === 'download_backup') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         $response['message'] = 'Method tidak diizinkan.';
@@ -46,7 +36,6 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
             $password_raw = $_POST['password'] ?? '';
             $stored_hash  = $user_data['password'];
 
-            // Rate limiting: session-based, max 5 percobaan, lockout 5 menit
             $_SESSION['backup_pwd_attempts'] = ($_SESSION['backup_pwd_attempts'] ?? 0);
 
             // Cek lockout
@@ -115,7 +104,7 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
     }
 }
 
-// ─── RETURN JSON ───────────────────────────────────────────────
+// ─── RETURN JSON ───
 if ($action !== 'download_backup') {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);

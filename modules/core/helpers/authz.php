@@ -1,17 +1,6 @@
 <?php
-
-// ════════════════════════════════════════════════════════════════
 // helpers/authz.php — Admin Authorization Guards
-// ════════════════════════════════════════════════════════════════
-
-/**
- * Cek apakah user yang sedang login ber-role admin.
- * Memakai get_user_role() (3-level cache) agar konsisten dengan
- * helper lain — tidak membaca $_SESSION['role'] secara langsung.
- *
- * @param \mysqli $conn Koneksi database
- * @return bool
- */
+/* @param \mysqli $conn Koneksi database; @return bool */
 if (!function_exists('is_admin')) {
 function is_admin(mysqli $conn): bool
 {
@@ -22,13 +11,7 @@ function is_admin(mysqli $conn): bool
 }
 }
 
-/**
- * Guard untuk halaman admin-only. WAJIB dipanggil di paling atas
- * halaman — sebelum handler POST / logika bisnis apa pun — karena
- * akan menghentikan eksekusi (die) untuk user yang bukan admin.
- *
- * @param \mysqli $conn Koneksi database
- */
+/* @param \mysqli $conn Koneksi database */
 if (!function_exists('require_admin')) {
 function require_admin(mysqli $conn): void
 {

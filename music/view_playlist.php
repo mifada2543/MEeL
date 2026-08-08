@@ -43,7 +43,7 @@ $library       = new MediaLibrary($conn);
 $artists       = $library->getArtists();
 $is_logged_in  = isset($_SESSION['user_id']);
 
-// ─── Fungsi render konten utama ───────────────────────────────────────────────
+// ─── Fungsi render konten utama ───
 function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, $include_script = true)
 {
 ?>
@@ -61,7 +61,6 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             </a>
         </div>
     <?php endif; ?>
-
     <!-- PLAYLIST HEADER -->
     <div class="flex items-start sm:items-end gap-5 mb-8 pb-6 border-b border-white/[.04]">
         <div class="relative flex-shrink-0">
@@ -125,7 +124,6 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             while ($s = $songs_query->fetch_assoc()):
                 $idx++;
                 // Otorisasi stream: tandai id lagu ini boleh di-stream
-                // (diperiksa oleh music/stream.php — lihat helpers/stream_auth.php)
                 authorize_stream((int)$s['id']);
                 $s_ext   = strtolower(pathinfo($s['filename'], PATHINFO_EXTENSION));
                 $s_lbl   = $s_ext === 'ogg' ? 'opus' : $s_ext;
@@ -222,19 +220,15 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             </a>
         </div>
     <?php endif; ?>
-
-    
 <?php
 }
 
-// ─── Mode content_only untuk HTMX swap ───────────────────────────────────────
+// ─── Mode content_only untuk HTMX swap ───
 if (isset($_GET['content_only'])) {
     renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, false);
     exit;
 }
 
-// Cache-busting: pakai filemtime agar browser & SW selalu dapet versi terbaru.
-// filemtime di-cache per request (static) agar tidak 1 stat syscall per aset.
 $__v = function($f) {
     static $mtimeCache = [];
     $path = __DIR__ . '/../' . $f;
@@ -261,8 +255,7 @@ $__v = function($f) {
     <?php endforeach; ?>
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
     <script src="../assets/js/compatibilitas/htmx.min.js"></script>
-    <style>
-        .artist-dropdown-active #library-container > main {
+    <style>        .artist-dropdown-active #library-container > main {
             position: relative;
             z-index: 10;
             filter: blur(4px);
@@ -291,7 +284,7 @@ $__v = function($f) {
         .mp-thumbnail:hover {
             transform: scale(1.05);
         }
-    </style>
+</style>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -411,7 +404,6 @@ $__v = function($f) {
                         </div>
                     </div>
                 <?php endif; ?>
-
                 <!-- MOBILE FILTERS & MENUS -->
                 <div class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
 
@@ -546,7 +538,6 @@ $__v = function($f) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
-
     <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
     <script src="../assets/js/music/shared/mini-player.js<?= $__v('assets/js/music/shared/mini-player.js') ?>"></script>

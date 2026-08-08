@@ -1,8 +1,4 @@
 <?php
-
-/** auth/partials/auth_countdown.php — blok lockout + countdown JS bersama
- * Digunakan oleh: auth/login.php (warna biru), auth/register.php (warna merah + extra link)
- */
 $countdown_seconds = max(1, (int)($countdown_seconds ?? 1));
 $countdown_color   = $countdown_color ?? 'text-red-500';
 ?>

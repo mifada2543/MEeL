@@ -1,7 +1,4 @@
-/** MEeL Admin — Media Analytics (cookies.php)
- * Dependencies:
- *   - admin/main.js (shared/modal.js handles confirmDelete)
- *   - compatibilitas/sweetalert2.all.min.js **/
+/* MEeL Admin — Media Analytics (cookies.php) */
 (function () {
   "use strict";
   function initIcons() {

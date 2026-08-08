@@ -20,7 +20,7 @@
  * @package MEeL\Core
  */
 
-// ─── Environment Detection ───────────────────────────────────────────────────
+// ─── Environment Detection ───
 // MEEL_ENV: 'production' | 'development' | 'maintenance'
 // Default ke production jika tidak didefinisikan di auth/config.php
 if (!defined('MEEL_ENV')) {
@@ -30,18 +30,18 @@ if (!defined('MEEL_ENV')) {
     define('MEEL_ENV', $is_local ? 'development' : 'production');
 }
 
-// ─── APP_DEBUG (Debug Logging Guard) ──────────────────────────────────────────
+// ─── APP_DEBUG (Debug Logging Guard) ───
 // Guard untuk error_log di controllers/modules, pola pemakaian:
-//   if (defined('APP_DEBUG') && APP_DEBUG) { error_log(...); }
+// if (defined('APP_DEBUG') && APP_DEBUG) { error_log(...); }
 // Default otomatis: true di development, false di produksi.
 // Override manual bisa dilakukan di auth/settings.php (sebelum bootstrap jalan):
-//   define('APP_DEBUG', true);   // paksa aktif (debugging)
-//   define('APP_DEBUG', false);  // paksa nonaktif
+// define('APP_DEBUG', true); // paksa aktif (debugging)
+// define('APP_DEBUG', false); // paksa nonaktif
 if (!defined('APP_DEBUG')) {
     define('APP_DEBUG', MEEL_ENV === 'development');
 }
 
-// ─── Error Reporting ─────────────────────────────────────────────────────────
+// ─── Error Reporting ───
 error_reporting(E_ALL);
 
 switch (MEEL_ENV) {
@@ -69,7 +69,7 @@ switch (MEEL_ENV) {
         break;
 }
 
-// ─── Base URL Constant Helper ────────────────────────────────────────────────
+// ─── Base URL Constant Helper ───
 // Pastikan MEEL_BASE_URL terdefinisi (fallback jika config.php belum di-load).
 // Perhitungan dipusatkan di modules/core/base_url.php (root proyek relatif
 // terhadap DOCUMENT_ROOT), BUKAN dari dirname(SCRIPT_NAME) — karena SCRIPT_NAME
@@ -80,7 +80,7 @@ if (!defined('MEEL_BASE_URL') && isset($_SERVER['SCRIPT_NAME'])) {
     define('MEEL_BASE_URL', meel_base_url_path());
 }
 
-// ─── Timezone ────────────────────────────────────────────────────────────────
+// ─── Timezone ───
 if (!ini_get('date.timezone')) {
     date_default_timezone_set('Asia/Jakarta');
 }

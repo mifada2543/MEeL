@@ -1,7 +1,5 @@
-/* ============================================================
- * utility.css — HTMX, accessibility, misc
- * ============================================================ */
-/* ── Accessibility: Improved Contrast Ratios ── */
+/* utility.css — HTMX, accessibility, misc */
+/* ─── Accessibility: Improved Contrast Ratios ─── */
 .text-gray-500,
 .format-pill,
 .sidebar-link {
@@ -25,7 +23,7 @@ a.text-gray-600 {
 .text-gray-800 {
   color: #6a7290;
 }
-/* ── HTMX ── */
+/* ─── HTMX ─── */
 .htmx-added {
   animation: fadeSlideIn 0.35s ease-out both;
 }
@@ -43,7 +41,7 @@ a.text-gray-600 {
   opacity: 0.5;
   transition: opacity 0.2s;
 }
-/* ── Select option ── */
+/* ─── Select option ─── */
 select option {
   background-color: #0d1017 !important;
   color: #d1d5db !important;

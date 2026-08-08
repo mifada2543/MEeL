@@ -1,41 +1,5 @@
 <?php
-/**
- * ═══════════════════════════════════════════════════════════════
- * ADAPTIVE HEAD META TAGS — MEeL
- * ═══════════════════════════════════════════════════════════════
- *
- * Set variabel berikut SEBELUM include('partials/head.php')
- * untuk menyesuaikan meta tag per halaman:
- *
- *   $_META_TITLE        => Judul halaman          (default: "MEeL | Media Hub")
- *   $_META_DESC         => Meta description       (default: deskripsi situs)
- *   $_META_IMAGE        => OG Image URL           (default: auto-detect protocol + host)
- *   $_META_IMAGE_W      => OG Image width         (default: 500)
- *   $_META_IMAGE_H      => OG Image height        (default: 500)
- *   $_META_TYPE         => OG type                (default: "website")
- *   $_META_URL          => OG url / canonical     (default: auto-detect)
- *   $_META_SITE_NAME    => og:site_name           (default: "MEeL")
- *   $_META_LOCALE       => og:locale              (default: "id_ID")
- *   $_META_TWITTER_SITE => twitter:site           (default: "@meel_hub")
- *   $_META_THEME_COLOR  => theme-color            (default: "#05070c")
- *   $_META_ROBOTS       => robots meta            (default: "index, follow")
- *   $_META_CANONICAL    => canonical URL (opsional, auto jika null)
- *   $_META_JSONLD       => Array asosiatif untuk JSON-LD atau null
- *                         (default: WebPage + situs search)
- *   $_META_EXTRA        => String HTML tambahan untuk <head> (opsional)
- *
- * Contoh penggunaan di halaman:
- *
- *   <?php
- *   $_META_TITLE = "Judul Halaman Saya | MEeL";
- *   $_META_DESC  = "Deskripsi khusus halaman ini.";
- *   include 'partials/head.php';
- *   ?>
- *
- * ═══════════════════════════════════════════════════════════════
- */
-
-// ── Deteksi protokol & host ──────────────────────────────────
+// ─── Deteksi protokol & host ───
 if (function_exists('detectProtocol')) {
     $_head_proto = detectProtocol();
 } else {
@@ -45,20 +9,16 @@ if (function_exists('detectProtocol')) {
         : 'http'));
 }
 $_head_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-// Base = host saja. Path lengkap halaman diambil dari REQUEST_URI (di bawah);
-// menambahkan dirname(SCRIPT_NAME) di sini akan menggandakan path
 // (mis. /MEeL/admin + /MEeL/admin/ → /MEeL/admin/MEeL/admin/).
 $_head_base = $_head_proto . '://' . $_head_host;
 
-// ── Project root base (untuk asset tetap seperti manifest, favicon, OG image) ─
-// $_head_base bisa mengandung subdirektori (misal /MEeL/music) yang bikin
-// path aset jadi salah. Hitung root dari lokasi file ini (partials/head.php).
+// ─── Project root base (untuk asset tetap seperti manifest, favicon, OG image) ───
 $_head_root_path = str_replace('\\', '/', dirname(__DIR__));
 $_head_doc_root  = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
 $_head_root_rel  = str_replace(rtrim($_head_doc_root, '/'), '', $_head_root_path);
 $_head_root      = $_head_proto . '://' . $_head_host . rtrim($_head_root_rel, '/\\');
 
-// ── Default values ───────────────────────────────────────────
+// ─── Default values ───
 $_META_TITLE        = $_META_TITLE        ?? 'MEeL | Media Hub';
 $_META_DESC         = $_META_DESC         ?? 'Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.';
 $_META_IMAGE        = $_META_IMAGE        ?? $_head_root . '/assets/MEeL.png';
@@ -74,7 +34,7 @@ $_META_ROBOTS       = $_META_ROBOTS       ?? 'index, follow';
 $_META_CANONICAL    = $_META_CANONICAL    ?? $_META_URL;
 $_META_EXTRA        = $_META_EXTRA        ?? '';
 
-// ── Escape semuanya ──────────────────────────────────────────
+// ─── Escape semuanya ───
 $_e_title    = htmlspecialchars($_META_TITLE, ENT_QUOTES, 'UTF-8');
 $_e_desc     = htmlspecialchars($_META_DESC, ENT_QUOTES, 'UTF-8');
 $_e_image    = htmlspecialchars($_META_IMAGE, ENT_QUOTES, 'UTF-8');
@@ -118,7 +78,6 @@ $_e_robots   = htmlspecialchars($_META_ROBOTS, ENT_QUOTES, 'UTF-8');
 <?php if (!empty($_META_TWITTER_SITE)): ?>
 <meta name="twitter:site" content="<?= $_e_twitter ?>">
 <?php endif; ?>
-
 <!-- Icons & App (pakai $_head_root agar selalu mengarah ke root project) -->
 <link rel="manifest" href="<?= $_head_root ?>/assets/manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="<?= $_head_root ?>/assets/MEeL.png">
@@ -202,7 +161,6 @@ if ('serviceWorker' in navigator) {
 
 <!-- Extra head content (if any) -->
 <?= $_META_EXTRA ?>
-
 <!-- Cleanup variabel global agar tidak bocor ke halaman lain -->
 <?php
 unset(

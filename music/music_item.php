@@ -1,6 +1,5 @@
 <?php /** @var array $v Data musik dari hasil query (music/index.php) */
-// Otorisasi stream: setiap kartu yang dirender menandai id-nya diizinkan
-// di-stream (diperiksa oleh music/stream.php — lihat helpers/stream_auth.php)
+
 authorize_stream((int)$v['id']);
 ?>
 <div class="music-item flex items-center gap-3 px-3 py-2.5 rounded-xl htmx-added"
@@ -11,7 +10,7 @@ authorize_stream((int)$v['id']);
      data-thumbnail-url="<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>"
      data-filename="<?= htmlspecialchars($v['filename']) ?>">
     <!-- THUMBNAIL -->
-    <a href="watch.php?id=<?= $v['id'] ?>" 
+    <a href="watch.php?id=<?= $v['id'] ?>"
        class="music-item-link relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04]"
        data-music-id="<?= $v['id'] ?>"
        data-title="<?= htmlspecialchars($v['title']) ?>"

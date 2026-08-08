@@ -3,7 +3,7 @@ require '../../../auth/config.php';
 require_once __DIR__ . '/chess_helpers.php';
 header('Content-Type: application/json');
 
-// ── Auth guard: wajib login (JSON 401, tanpa redirect) ──
+// ─── Auth guard: wajib login (JSON 401, tanpa redirect) ───
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     die(json_encode([
@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
     ]));
 }
 
-// ── CSRF guard: semua POST wajib token valid ──
+// ─── CSRF guard: semua POST wajib token valid ───
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     die(json_encode([
@@ -31,7 +31,7 @@ if (!in_array($action, $allowed, true)) {
     die(json_encode(["success" => false, "message" => "Aksi tidak dikenal."]));
 }
 
-// ── Otorisasi pemain: warna ditentukan server-side, bukan dari client ──
+// ─── Otorisasi pemain: warna ditentukan server-side, bukan dari client ───
 $roomStmt = $conn->prepare("SELECT white_user_id, black_user_id, black_joined FROM rooms WHERE room_code = ?");
 $roomStmt->bind_param("s", $room);
 $roomStmt->execute();
@@ -49,8 +49,7 @@ if ((int)$roomRow['white_user_id'] === $user_id) {
     die(json_encode(["success" => false, "message" => "Anda bukan pemain di room ini."]));
 }
 
-// ── Game harus sudah dimulai: lawan (hitam) wajib sudah bergabung ──
-// Mencegah resign/tawaran seri saat masih menunggu lawan di lobby.
+// ─── Game harus sudah dimulai: lawan (hitam) wajib sudah bergabung ───
 if ((int)$roomRow['black_joined'] !== 1) {
     die(json_encode([
         "success" => false,
@@ -58,16 +57,10 @@ if ((int)$roomRow['black_joined'] !== 1) {
     ]));
 }
 
-// ── Cek permainan sudah berakhir (event terminal apa pun) ──
+// ─── Cek permainan sudah berakhir (event terminal apa pun) ───
 $gameEnded = chess_has_terminal_event($conn, $room);
 
-// ── Rematch (tanding ulang) — hanya boleh SETELAH game selesai ────────────
-// Alur: salah satu pemain menawar (rematch_offer) → lawan MENERIMA
-// (rematch_accept: riwayat di-reset → game baru di room yang sama, warna
-// tetap) atau MENOLAK (rematch_decline: kedua pemain kembali ke mode lokal;
-// penawar diberi tahu "permainan telah keluar"). Pengirim juga boleh
-// membatalkan tawarannya lewat rematch_decline. Logika inti ada di
-// chess_rematch() (chess_helpers.php) agar bisa diuji.
+// ─── Rematch (tanding ulang) — hanya boleh SETELAH game selesai ───
 if (in_array($action, ['rematch_offer', 'rematch_accept', 'rematch_decline'], true)) {
     $opponentId = ($server_color === 'w')
         ? (int)$roomRow['black_user_id']
@@ -75,8 +68,7 @@ if (in_array($action, ['rematch_offer', 'rematch_accept', 'rematch_decline'], tr
     $result = chess_rematch($conn, $room, $server_color, $action, $opponentId);
     if (!$result['success']) {
         $resp = ["success" => false, "message" => $result['message']];
-        // Flag khusus: lawan sudah keluar (race condition) — client langsung
-        // memberi tahu pemain & keluar ke mode lokal (bukan sekadar alert).
+
         if (!empty($result['opponent_gone'])) {
             $resp['opponent_gone'] = true;
         }
@@ -90,17 +82,14 @@ if ($gameEnded) {
     die(json_encode(["success" => false, "message" => "Permainan sudah berakhir."]));
 }
 
-// ── Resign: sepihak, kapan saja (FIDE 5.1.2) ──
+// ─── Resign: sepihak, kapan saja (FIDE 5.1.2) ───
 if ($action === 'resign') {
     insertGameEvent($conn, $room, $server_color, 'resign');
     echo json_encode(["success" => true, "id" => $conn->insert_id]);
     exit;
 }
 
-// ── Disconnect win: klaim kemenangan karena lawan terputus ───────────────
-// Klaim TIDAK dipercaya dari client — server memverifikasi users.last_activity
-// lawan sudah melewati CHESS_OPPONENT_OFFLINE_SECONDS. Event dicatat dengan
-// warna lawan yang putus (bukan pengklaim) agar pesan terminal benar.
+// ─── Disconnect win: klaim kemenangan karena lawan terputus ───
 if ($action === 'disconnect_win') {
     $opponentId = ($server_color === 'w')
         ? (int)$roomRow['black_user_id']
@@ -117,15 +106,7 @@ if ($action === 'disconnect_win') {
     exit;
 }
 
-// ── Game over (checkmate/stalemate): informasi dari client ─────────────────
-// Checkmate/stalemate hanya bisa dideteksi mesin catur di sisi client. Client
-// mengirim event ini saat langkah terminal dieksekusi supaya server tahu game
-// SUDAH SELESAI — dipakai GC agar game selesai tidak ikut dibersihkan sebagai
-// "macet di tengah". Warna yang dikirim = warna PECUNDANG (konsisten dengan
-// event resign/disconnect). Aman dikirim dari kedua sisi: bila game sudah
-// berakhir, guard terminal di atas menolak duplikat.
-// Validasi lengkap (alasan, warna, pecundang vs langkah terakhir, dedup)
-// dipindah ke chess_record_game_over() di chess_helpers.php agar bisa di-test.
+// ─── Game over (checkmate/stalemate): informasi dari client ───
 if ($action === 'game_over') {
     $result = chess_record_game_over(
         $conn,
@@ -140,12 +121,11 @@ if ($action === 'game_over') {
     exit;
 }
 
-// ── Tentukan giliran sekarang: dari langkah terakhir yang BUKAN event ──
-//    (event resign/seri tidak menghitung sebagai langkah)
+// ─── Tentukan giliran sekarang: dari langkah terakhir yang BUKAN event ───
 $lastMoveColor = chess_last_move_color($conn, $room);
 $turn = $lastMoveColor ? ($lastMoveColor === 'w' ? 'b' : 'w') : 'w';
 
-// ── Event terakhir (untuk melacak tawaran seri yang sedang pending) ──
+// ─── Event terakhir (untuk melacak tawaran seri yang sedang pending) ───
 $lastEv = chess_last_event($conn, $room);
 $pendingOffer = false;
 $pendingBy    = null;
@@ -154,7 +134,7 @@ if ($lastEv && $lastEv['type'] === 'draw_offer') {
     $pendingBy    = $lastEv['color'];
 }
 
-// ── Tawarkan seri: hanya pemain yang gilirannya (FIDE 9.1.2), satu pending ──
+// ─── Tawarkan seri: hanya pemain yang gilirannya (FIDE 9.1.2), satu pending ───
 if ($action === 'draw_offer') {
     if ($turn !== $server_color) {
         die(json_encode([
@@ -173,7 +153,7 @@ if ($action === 'draw_offer') {
     exit;
 }
 
-// ── Terima / tolak tawaran seri: hanya oleh lawan yang menerima tawaran ──
+// ─── Terima / tolak tawaran seri: hanya oleh lawan yang menerima tawaran ───
 if ($action === 'draw_accept' || $action === 'draw_decline') {
     if (!$pendingOffer) {
         die(json_encode([

@@ -1,22 +1,6 @@
 <?php
-
-/**
- * MEeL — Auth Helpers (Shared)
- * ═══════════════════════════════════════════════════════════════
- * Fungsi bersama yang dipakai oleh auth/login.php & auth/register.php.
- * Diekstrak untuk menghilangkan duplikasi 5 blok logika identik:
- *   1. auth_boot_session()           — bootstrap session + redirect jika sudah login
- *   2. auth_get_ip()                 — alamat IP klien
- *   3. auth_back_url()               — back_url dari HTTP_REFERER
- *   4. auth_ip_lockout_status()      — cek & bersihkan lockout IP (login_attempts)
- *   5. auth_record_failed_attempt()  — catat percobaan gagal ke IP + threshold lock
- *   6. auth_recheck_lockout()        — re-check lockout setelah POST
- *   7. auth_validate_credentials()   — validasi username/password (registrasi)
- */
-
 if (!function_exists('auth_boot_session')) {
-    /** Bootstrap session: set cookie params + session_name('meel') + start.
-     * Jika user sudah login, redirect ke index.php. */
+
     function auth_boot_session(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -57,11 +41,7 @@ if (!function_exists('auth_is_loopback')) {
     }
 }
 if (!function_exists('auth_back_url')) {
-    /**
-     *
-     * @param string[] $exclude Nama file yang tidak boleh menjadi back_url
-     *                          (mis. login.php, register.php, revoked.php, banned.php)
-     */
+    /* @param string[] $exclude Nama file yang tidak boleh menjadi back_url */
     function auth_back_url(array $exclude = ['login.php', 'register.php']): string
     {
         $back_url = '../index.php';
@@ -91,12 +71,7 @@ if (!function_exists('auth_back_url')) {
 }
 
 if (!function_exists('auth_ip_lockout_status')) {
-    /**
-     * Cek status lockout IP di tabel login_attempts. Jika lockout sudah
-     * expired, reset barisnya (DELETE). Dipanggil sebelum form processing.
-     *
-     * @return array{locked: bool, remaining: int}
-     */
+    /* @return array{locked: bool, remaining: int} */
     function auth_ip_lockout_status(mysqli $conn, string $ip): array
     {
         $locked    = false;
@@ -130,15 +105,10 @@ if (!function_exists('auth_ip_lockout_status')) {
 }
 
 if (!function_exists('auth_record_failed_attempt')) {
-    /**
-     * Catat percobaan gagal ke IP (tabel login_attempts): upsert counter,
-     * lalu jika melewati ambang batas, set locked_until.
-     *
-     * @return bool true jika lockout BARU diterapkan pada pemanggilan ini
-     */
+    /* @return bool true jika lockout BARU diterapkan pada pemanggilan ini */
     function auth_record_failed_attempt(mysqli $conn, string $ip, int $max_attempts, int $lockout_time): bool
     {
-        // Loopback (localhost) bebas rate-limit — jangan catat apa pun saat debug
+
         if (auth_is_loopback()) {
             return false;
         }
@@ -177,11 +147,7 @@ if (!function_exists('auth_record_failed_attempt')) {
 }
 
 if (!function_exists('auth_recheck_lockout')) {
-    /**
-     * Re-check lockout IP setelah POST processing (kalau baru kena lock).
-     *
-     * @return array{locked: bool, remaining: int}
-     */
+    /* @return array{locked: bool, remaining: int} */
     function auth_recheck_lockout(mysqli $conn, string $ip): array
     {
         $locked    = false;
@@ -205,11 +171,7 @@ if (!function_exists('auth_recheck_lockout')) {
 }
 
 if (!function_exists('auth_validate_credentials')) {
-    /**
-     * Validasi username & password untuk registrasi.
-     *
-     * @return string|null Pesan error, atau null jika valid
-     */
+    /* @return string|null Pesan error, atau null jika valid */
     function auth_validate_credentials(string $user, string $pass): ?string
     {
         // 1. Validasi Panjang Karakter
