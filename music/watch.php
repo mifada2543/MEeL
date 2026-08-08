@@ -52,7 +52,7 @@ $__vdir = function($dir) {
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($v['title']) ?> — MEeL Music">
     <meta property="og:description" content="Dengarkan <?= htmlspecialchars($v['title']) ?> oleh <?= htmlspecialchars($v['artist'] ?? 'Unknown') ?> di MEeL Music.">
-    <title><?= htmlspecialchars($v['title']) ?> — MEeL Music</title>
+    <title><?= htmlspecialchars($v['title']) ?> | MEeL Music</title>
     <?php include '../partials/link.php'; ?>
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
