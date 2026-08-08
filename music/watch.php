@@ -596,12 +596,12 @@ $__vdir = function($dir) {
             id: <?= $id ?>,
             playlistId: <?= (int)$playlist_id ?>,
             fileSizeBytes: <?= (int)$file_size_bytes ?>,
-            nextSongUrl: "<?= $next_song_url ?>",
-            title: '<?= htmlspecialchars(addslashes($v['title'])) ?>',
-            artist: '<?= htmlspecialchars(addslashes($v['artist'] ?? '')) ?>',
-            thumbnail: '<?= htmlspecialchars($v['thumbnail']) ?>',
-            thumbnailUrl: '<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>',
-            filename: '<?= htmlspecialchars($v['filename']) ?>'
+            nextSongUrl: <?= json_encode($next_song_url) ?>,
+            title: <?= json_encode($v['title']) ?>,
+            artist: <?= json_encode($v['artist'] ?? '') ?>,
+            thumbnail: <?= json_encode($v['thumbnail']) ?>,
+            thumbnailUrl: <?= json_encode(music_thumbnail_url($v['thumbnail'])) ?>,
+            filename: <?= json_encode($v['filename']) ?>
         };
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
