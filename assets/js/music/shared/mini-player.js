@@ -219,26 +219,56 @@ window.miniPrevIndex = function () {
   }
   audioPlayer.currentTime = 0;
 };
+// Tambahkan playlist_id ke URL bila belum ada — konteks playlist TIDAK boleh
+// hilang saat kembali ke full player dari mini-player index.php.
+function withPlaylistParam(url, playlistId) {
+  if (!url || !playlistId || playlistId <= 0) return url;
+  if (url.indexOf("playlist_id=") !== -1) return url;
+  // Sisipkan parameter sebelum fragment (#...), supaya URL tetap valid
+  const hashIdx = url.indexOf("#");
+  const base = hashIdx === -1 ? url : url.substring(0, hashIdx);
+  const hash = hashIdx === -1 ? "" : url.substring(hashIdx);
+  return (
+    base +
+    (base.indexOf("?") === -1 ? "?" : "&") +
+    "playlist_id=" +
+    playlistId +
+    hash
+  );
+}
 function expandPlayerFromMiniPlayer() {
   saveIndexState();
   sessionStorage.setItem("skip_resume_once", "true");
   const savedState = sessionStorage.getItem("meel_audio_state");
-  if (savedState) {
+  if (!savedState) return;
+  try {
     const state = JSON.parse(savedState);
+    let target = "";
     if (state.watchUrl) {
-      window.location.href = state.watchUrl;
+      target = withPlaylistParam(state.watchUrl, state.playlistId);
     } else if (state.id) {
-      window.location.href = `watch.php?id=${state.id}`;
+      target = withPlaylistParam(
+        `watch.php?id=${state.id}`,
+        state.playlistId,
+      );
     } else if (state.musicId) {
-      window.location.href = `watch.php?id=${state.musicId}`;
-    } else {
+      target = withPlaylistParam(
+        `watch.php?id=${state.musicId}`,
+        state.playlistId,
+      );
+    } else if (state.filename) {
       const fallbackItem = document.querySelector(
         `[data-filename="${state.filename}"]`,
       );
-      if (fallbackItem && fallbackItem.closest("a")) {
-        window.location.href = fallbackItem.closest("a").getAttribute("href");
-      }
+      const href =
+        fallbackItem && fallbackItem.closest("a")
+          ? fallbackItem.closest("a").getAttribute("href")
+          : "";
+      target = withPlaylistParam(href, state.playlistId);
     }
+    if (target) window.location.href = target;
+  } catch (err) {
+    console.warn("Mini player expand error:", err);
   }
 }
 // ─── Loop toggle untuk mini player ───
@@ -305,6 +335,14 @@ function setupPlaylistItemClicks() {
       loadAudio(state, true);
       updateIndexUI();
       sessionStorage.setItem("meel_audio_state", JSON.stringify(state));
+      // Jaga fallback meel_last_playlist_id tetap sinkron dengan playlist yang
+      // sedang diputar, supaya initMiniPlayerIndex() tidak memakai nilai stale.
+      var plIdNow = parseInt(this.dataset.playlistId || "0", 10);
+      if (plIdNow > 0) {
+        localStorage.setItem("meel_last_playlist_id", String(plIdNow));
+      } else {
+        localStorage.removeItem("meel_last_playlist_id");
+      }
       isMiniPlayerIndexActive = true;
       miniPlayerIndex.classList.add("active");
     });
