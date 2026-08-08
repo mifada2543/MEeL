@@ -154,22 +154,30 @@ class MediaViewer
 
         // DIUBAH: Semua query di bawah menggunakan Prepared Statements
         // 1. Ambil list antrean
-        $stmt_q = $this->conn->prepare("SELECT m.*, pt.added_at FROM music m JOIN playlist_tracks pt ON m.id = pt.music_id WHERE pt.playlist_id = ? ORDER BY pt.added_at DESC");
+        // NOTE: added_at bertipe TIMESTAMP presisi detik, jadi track yang ditambahkan
+        // dalam detik yang sama punya nilai identik. Tie-breaker pt.id (AUTO_INCREMENT,
+        // urut insert) dipakai agar urutan SELALU deterministik & identik dengan
+        // music/view_playlist.php (ORDER BY yang sama persis).
+        $stmt_q = $this->conn->prepare("SELECT m.*, pt.added_at FROM music m JOIN playlist_tracks pt ON m.id = pt.music_id WHERE pt.playlist_id = ? ORDER BY pt.added_at DESC, pt.id DESC");
         $stmt_q->bind_param("i", $playlist_id);
         $stmt_q->execute();
         $queue = $stmt_q->get_result();
 
-        // 2. Ambil waktu track saat ini
-        $stmt_curr = $this->conn->prepare("SELECT added_at FROM playlist_tracks WHERE playlist_id = ? AND music_id = ? LIMIT 1");
+        // 2. Ambil posisi (added_at + id) track saat ini — id diambil sebagai
+        //    tie-breaker untuk row-value comparison di query "next"
+        $stmt_curr = $this->conn->prepare("SELECT added_at, id FROM playlist_tracks WHERE playlist_id = ? AND music_id = ? ORDER BY id DESC LIMIT 1");
         $stmt_curr->bind_param("ii", $playlist_id, $this->media_id);
         $stmt_curr->execute();
         $current = $stmt_curr->get_result()->fetch_assoc();
 
         $next_url = "";
         if ($current) {
-            // 3. Cari lagu berikutnya
-            $stmt_next = $this->conn->prepare("SELECT music_id FROM playlist_tracks WHERE playlist_id = ? AND added_at < ? ORDER BY added_at DESC LIMIT 1");
-            $stmt_next->bind_param("is", $playlist_id, $current['added_at']);
+            // 3. Cari lagu berikutnya: baris terbesar yang masih "di bawah" track saat
+            //    ini dalam urutan (added_at DESC, id DESC). Row-value comparison
+            //    (added_at, id) < (?, ?) dipakai agar track yang added_at-nya SAMA
+            //    persis (detik yang sama) tidak terlewat.
+            $stmt_next = $this->conn->prepare("SELECT music_id FROM playlist_tracks WHERE playlist_id = ? AND (added_at, id) < (?, ?) ORDER BY added_at DESC, id DESC LIMIT 1");
+            $stmt_next->bind_param("isi", $playlist_id, $current['added_at'], $current['id']);
             $stmt_next->execute();
             $next_q = $stmt_next->get_result();
 

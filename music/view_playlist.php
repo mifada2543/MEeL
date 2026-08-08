@@ -21,12 +21,16 @@ if (!$playlist) {
 }
 
 // Daftar lagu — prepared statement untuk keamanan
+// NOTE: ORDER BY harus PERSIS sama dengan MediaViewer::getPlaylistQueue()
+// (added_at DESC, id DESC) supaya urutan di watch.php (full player) dan
+// di sini (listing / mini-player index.php) selalu identik & deterministik.
+// added_at berpresisi detik, jadi pt.id (AUTO_INCREMENT) dipakai sebagai tie-breaker.
 $songs_stmt = $conn->prepare("
     SELECT m.*, pt.id as pivot_id
     FROM music m
     JOIN playlist_tracks pt ON m.id = pt.music_id
     WHERE pt.playlist_id = ?
-    ORDER BY pt.added_at DESC
+    ORDER BY pt.added_at DESC, pt.id DESC
 ");
 $songs_stmt->bind_param("i", $playlist_id);
 $songs_stmt->execute();
