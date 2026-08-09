@@ -4,7 +4,6 @@
 /* index/main.js — Entry point folder index/ (halaman music/index.php). */
 (function () {
   'use strict';
-  if (document.readyState !== 'loading') return;
   var src =
     (document.currentScript && document.currentScript.src) ||
     (function () {
@@ -19,6 +18,18 @@
     'load-more.js',
     'index.js'
   ];
+  // Dipakai oleh assets/js/shared/view-router.js supaya bundle ini bisa
+  // dimuat ulang (SEKALI per page-session) tanpa duplikasi daftar file.
+  // Catatan: shared/mini-player.js dimuat terpisah (bukan lewat loader
+  // ini) — router memuatnya sendiri lewat daftar <script> langsung.
+  window.MEEL_INDEX_BUNDLE = {
+    base: base,
+    qs: qs,
+    files: files.map(function (f) {
+      return base + f + qs;
+    }),
+  };
+  if (document.readyState !== 'loading') return;
   for (var i = 0; i < files.length; i++) {
     document.write('<script src="' + base + files[i] + qs + '"><\/script>');
   }

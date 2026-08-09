@@ -38,7 +38,7 @@ function setupMusicItemClicks() {
       updateIndexUI();
       sessionStorage.setItem("meel_audio_state", JSON.stringify(state));
       isMiniPlayerIndexActive = true;
-      miniPlayerIndex.classList.add("active");
+      getMiniPlayerIndexEl()?.classList.add("active");
     });
   });
 }

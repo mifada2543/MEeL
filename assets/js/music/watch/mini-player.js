@@ -108,10 +108,24 @@ window.miniPrev = function () {
 };
 window.goBackToLibrary = function () {
   saveAudioState();
-  var e = window.MEEL_MUSIC_CONFIG?.playlistId;
-  (player?.destroy(),
-    (window.location.href =
-      e && e > 0 ? "index.php?playlist_id=" + e : "index.php"));
+  var playlistId = window.MEEL_MUSIC_CONFIG?.playlistId;
+  var url = playlistId && playlistId > 0 ? "index.php?playlist_id=" + playlistId : "index.php";
+  if (window.meelNavigateView) {
+    // AJAX partial-swap: audio-engine (dgn <audio> yg sedang berjalan)
+    // TIDAK disentuh sama sekali di sini — cuma direparent oleh
+    // engine.mount() setelah DOM index.php siap. TIDAK ADA player.destroy().
+    window.meelNavigateView(url, "index", {
+      onAfterSwap: function () {
+        var engine = window.meelGetAudioEngine();
+        var slot = document.getElementById("mini-player-index");
+        if (slot && engine) engine.mount(slot, { compact: true });
+        if (typeof window.bootPlayerIndex === "function") window.bootPlayerIndex();
+      },
+    });
+  } else {
+    // Fallback kalau view-router.js entah kenapa gagal dimuat.
+    window.location.href = url;
+  }
 };
 function _attachMiniPlayerDom() {
   document
