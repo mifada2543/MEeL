@@ -4,6 +4,8 @@ $games = [
   ["id" => 2, "title" => "Chess", "developer" => "MEeL Teams", "year" => 2026, "category" => "Strategy", "controls" => "Pawn, Knight, Rook, Bishop, Queen, King", "maxPlayers" => "2 Players", "rating" => 5.0, "description" => "Game strategi klasik yang membutuhkan pemikiran taktis dan perencanaan jangka panjang. Susun bidak-bidakmu dengan cermat untuk mengalahkan lawan dan menguasai papan catur.", "image" => "assets/img/catur.png", "favorite" => false, "play_url" => "chess/"],
   ["id" => 3, "title" => "Snake", "developer" => "MEeL Teams", "year" => 2026, "category" => "Action", "controls" => "Arrow & WASD Keys", "maxPlayers" => "1 Players", "rating" => 4.8, "description" => "Game ular klasik yang tak pernah mati. Kendalikan ular hijau, kumpulkan apel merah, dan hindari menabrak dinding atau tubuh sendiri. Semakin banyak makan, semakin cepat! Cocok untuk mengisi waktu luang dan melatih refleks.", "image" => "assets/img/snake.png", "favorite" => false, "play_url" => "snake/"]
 ];
+$categories = array_values(array_unique(array_column($games, 'category')));
+sort($categories);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -55,12 +57,9 @@ $games = [
         <div class="flex flex-wrap gap-3 w-full md:w-auto justify-start md:justify-end">
           <select id="category-filter" class="px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer">
             <option value="all">Semua Kategori</option>
-            <option value="Action">Action / Beat 'em up</option>
-            <option value="Shooter">Space Shooter / Shmup</option>
-            <option value="Fighting">Fighting</option>
-            <option value="Platformer">Platformer</option>
-            <option value="Puzzle">Puzzle</option>
-            <option value="Racing">Racing</option>
+            <?php foreach ($categories as $cat): ?>
+              <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
+            <?php endforeach; ?>
           </select>
           <select id="sort-filter" class="px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer">
             <option value="newest">Tahun (Terbaru)</option>
@@ -80,11 +79,6 @@ $games = [
         <?php foreach ($games as $game): ?>
           <div class="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-pink-500/50 transition-all duration-300 group flex flex-col h-full hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/5 cursor-pointer game-card-item"
             data-id="<?= $game['id'] ?>"
-            data-title="<?= htmlspecialchars(strtolower($game['title'])) ?>"
-            data-developer="<?= htmlspecialchars(strtolower($game['developer'])) ?>"
-            data-category="<?= htmlspecialchars($game['category']) ?>"
-            data-year="<?= $game['year'] ?>"
-            data-rating="<?= $game['rating'] ?>"
             onclick="openModal(<?= $game['id'] ?>)">
             <div class="relative h-48 overflow-hidden bg-slate-950">
               <img src="<?= htmlspecialchars($game['image']) ?>" alt="<?= htmlspecialchars($game['title']) ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-85 group-hover:opacity-100" />
@@ -152,7 +146,7 @@ $games = [
 
   <?php include "../partials/footer.php"; ?>
   <script>
-    const games = (() => {
+    let games = (() => {
       const init = <?= json_encode($games) ?>,
         saved = JSON.parse(localStorage.getItem("arcade_games")) || [],
         map = {};
@@ -199,7 +193,10 @@ $games = [
         cat = filter.value,
         srt = sort.value;
       const ids = games.filter(g =>
-        (g.title.toLowerCase().includes(term) || g.developer.toLowerCase().includes(term)) &&
+        (g.title.toLowerCase().includes(term) ||
+          g.developer.toLowerCase().includes(term) ||
+          (g.description || "").toLowerCase().includes(term) ||
+          g.category.toLowerCase().includes(term)) &&
         (cat === "all" || g.category === cat) && (!favOnly || g.favorite)
       ).map(g => g.id);
       const cards = Array.from(document.querySelectorAll(".game-card-item"));
@@ -301,6 +298,10 @@ $games = [
       favBtn.classList.toggle("bg-pink-500/20", favOnly);
       favBtn.classList.toggle("border-pink-500", favOnly);
       favBtn.classList.toggle("text-pink-500", favOnly);
+      favBtn.innerHTML = favOnly ?
+        '<i data-lucide="heart" class="w-5 h-5 fill-pink-500"></i><span>Hanya Favorit</span>' :
+        '<i data-lucide="heart" class="w-5 h-5"></i><span>Hanya Favorit</span>';
+      lucide.createIcons();
     }
     search = $("search-input");
     filter = $("category-filter");
