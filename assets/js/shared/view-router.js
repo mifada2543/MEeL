@@ -196,19 +196,165 @@
   // Re-set window.MEEL_MUSIC_CONFIG / window.MEEL_INDEX_CONFIG dari HTML
   // hasil fetch — dieksekusi ulang tiap transisi supaya config match track
   // yang sedang dibuka (aman/idempotent, cuma assignment object literal).
+  //
+  // BUG FIX (CSP mobile — ROOT CAUSE bug "audio beda dari title di HP"):
+  // sebelumnya pakai (0, eval)(text). auth/config.php hanya menambah
+  // 'unsafe-eval' ke CSP saat MEEL_ENV === 'development' (host localhost),
+  // jadi akses via IP LAN (mis. 192.168.1.8 dari HP) TIDAK dapat
+  // 'unsafe-eval' → eval() melempar EvalError → window.MEEL_MUSIC_CONFIG
+  // tidak pernah ter-set → meelInitWatchPlayer() early-return → audio engine
+  // tetap memutar lagu lama padahal judul (render server) sudah benar.
+  // Reload penuh "menyembuhkan" karena config dibaca dari parse HTML asli.
+  //
+  // Pengganti eval: eksekusi inline script lewat elemen <script> dinamis
+  // (diizinkan oleh 'unsafe-inline' — ADA di CSP dev maupun produksi, jadi
+  // jalan di localhost DAN di HP). Ini tetap mengeksekusi SELURUH blok
+  // script, termasuk helper window.* yang hanya didefinisikan di inline
+  // script (mis. window.toggleEqPresetDropdown / window.selectEqPreset yang
+  // dipakai UI equalizer watch.php) — tidak boleh hilang. Sebagai jaring
+  // pengaman, kalau eksekusi script tidak menghasilkan variabel config
+  // (mis. CSP masa depan memakai nonce/hash tanpa 'unsafe-inline'), kita
+  // fallback ke JSON.parse atas object literal config — JSON.parse legal di
+  // bawah CSP apa pun.
+  function runInlineScript(code) {
+    var s = document.createElement("script");
+    s.textContent = code;
+    document.body.appendChild(s);
+    // Node sengaja TIDAK dihapus: script inline klasik dieksekusi sinkron
+    // saat disisipkan (spesifikasi HTML), tapi menjaga node tetap ada adalah
+    // opsi zero-risk kalau suatu browser menunda eksekusi — bloat DOM per
+    // transisi sangat kecil (satu <script> kecil per pindah view).
+  }
+
+  // Ekstrak object literal `window.<varName> = {...}` dari blok script lalu
+  // parse sebagai JSON (key tanpa kutip dikutip dulu).
+  // CATATAN BATASAN: fallback ini hanya untuk object literal primitif —
+  // nilai string harus kutip ganda, tanpa komentar JS / ekspresi / template
+  // literal. Kalau config di masa depan berubah format, JSON.parse gagal →
+  // injection (jalur utama) tetap sudah mengeksekusi script aslinya, jadi
+  // ini murni jaring pengaman.
+
+  function parseConfigJson(text, varName) {
+    try {
+      var marker = "window." + varName + " =";
+      var idx = text.indexOf(marker);
+      if (idx === -1) return undefined;
+      var open = text.indexOf("{", idx + marker.length);
+      if (open === -1) return undefined;
+      // Cari kurung tutup `}` yang match — lompati string literal supaya
+      // `{`/`}` di dalam nilai string tidak mengacaukan depth.
+      var depth = 0;
+      var inStr = null;
+      var end = -1;
+      for (var i = open; i < text.length; i++) {
+        var ch = text[i];
+        if (inStr) {
+          if (ch === "\\") {
+            i++;
+            continue;
+          }
+          if (ch === inStr) inStr = null;
+          continue;
+        }
+        if (ch === '"' || ch === "'" || ch === "`") {
+          inStr = ch;
+          continue;
+        }
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) {
+            end = i;
+            break;
+          }
+        }
+      }
+      if (end === -1) return undefined;
+      return JSON.parse(quoteObjectKeys(text.slice(open, end + 1)));
+    } catch (e) {
+      return undefined;
+    }
+  }
+
+  // Ubah object literal JS (key tanpa kutip, mis. `id: 146`) menjadi JSON
+  // yang valid — key dikutip hanya di luar string literal.
+  function quoteObjectKeys(literal) {
+    var out = "";
+    var inStr = null;
+    var ident = "";
+    var canKey = false;
+    for (var i = 0; i < literal.length; i++) {
+      var ch = literal[i];
+      if (inStr) {
+        out += ch;
+        if (ch === "\\") {
+          out += literal[i + 1] || "";
+          i++;
+          continue;
+        }
+        if (ch === inStr) inStr = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") {
+        inStr = ch;
+        out += ch;
+        canKey = false;
+        ident = "";
+        continue;
+      }
+      if (canKey) {
+        if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
+          out += ch; // whitespace sebelum `:` — pertahankan canKey
+          continue;
+        }
+        if (/[A-Za-z_$0-9]/.test(ch)) {
+          ident += ch;
+          continue;
+        }
+        if (ch === ":" && ident.length) {
+          out += '"' + ident + '"' + ch;
+          ident = "";
+          canKey = false;
+          continue;
+        }
+        out += ident + ch;
+        ident = "";
+        canKey = false;
+        continue;
+      }
+      if (ch === "{" || ch === ",") {
+        canKey = true;
+        out += ch;
+        continue;
+      }
+      out += ch;
+    }
+    return out;
+  }
+
   function applyInlineConfig(doc, viewType) {
     var varName = viewType === "watch" ? "MEEL_MUSIC_CONFIG" : "MEEL_INDEX_CONFIG";
     var scripts = doc.querySelectorAll("script:not([src])");
     for (var i = 0; i < scripts.length; i++) {
       var text = scripts[i].textContent || "";
-      if (text.indexOf("window." + varName) !== -1) {
-        try {
-          (0, eval)(text);
-        } catch (e) {
-          console.error("❌ view-router: gagal apply " + varName + ":", e);
-        }
-        return;
+      // Gate konsisten dengan marker parseConfigJson (assignment eksplisit
+      // "window.X =") supaya komentar atau variabel bernama mirip (mis.
+      // MEEL_MUSIC_CONFIG2) tidak terpilih secara keliru.
+      if (text.indexOf("window." + varName + " =") === -1) continue;
+      try {
+        runInlineScript(text);
+      } catch (e) {
+        console.error("❌ view-router: gagal eksekusi inline script:", e);
       }
+      if (typeof window[varName] === "undefined") {
+        var parsed = parseConfigJson(text, varName);
+        if (parsed !== undefined) {
+          window[varName] = parsed;
+        } else {
+          console.error("❌ view-router: gagal apply " + varName + " (injection & JSON fallback gagal)");
+        }
+      }
+      return;
     }
   }
 

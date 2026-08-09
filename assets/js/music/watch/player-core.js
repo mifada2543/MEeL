@@ -370,6 +370,10 @@
 
   window.meelInitWatchPlayer = function () {
     window.__meelCurrentView = "watch";
+    // BUG FIX: DOM watch baru tiap landing — mode mini-player tidak pernah
+    // aktif di sini. Reset eksplisit supaya interval saveAudioState() (5s)
+    // yang tersisa dari sesi mini-mode sebelumnya tidak terus menulis state.
+    isMiniPlayerActive = false;
     const engine = window.meelGetAudioEngine();
     const slot = document.getElementById("player-audio-slot");
     if (!slot) return void console.error("❌ #player-audio-slot not found");
@@ -461,6 +465,51 @@
     updateVisualizerUI(engine.__vis ? engine.__vis.isOn() : window.innerWidth >= 1024);
 
     if (!isFreshTrack) {
+      // ── BUG FIX (mobile-only): browser HP — terutama iOS Safari/WebKit —
+      //    menghentikan <audio>, atau bahkan tetap memutar resource LAMA,
+      //    saat elemen dipindah-pindah antar-DOM oleh view-router
+      //    (document.body.innerHTML = "" → re-attach) pada tiap transisi
+      //    AJAX mini<->full. Transisi gapless ini TIDAK memanggil play()
+      //    ulang (engine.loadTrack() no-op), jadi di HP audio bisa berhenti
+      //    / posisi 0 / salah lagu walau UI menampilkan benar. Ini yang
+      //    hanya muncul di device asli, tidak di emulasi laptop. ──
+      const wantStream = window.MEEL_MUSIC_CONFIG.streamUrl || "";
+      const haveSrc = engine.audio.currentSrc || engine.audio.src || "";
+      const wantId = String(window.MEEL_MUSIC_CONFIG.id);
+      // Bandingkan PARAM id (boundary-safe: hindari false-positive "id=145"
+      // terhadap "id=1450"). haveId === null → src belum ter-resolve/loading
+      // → dianggap cocok (tidak reload).
+      let haveId = null;
+      try {
+        haveId = new URL(haveSrc, window.location.href).searchParams.get("id");
+      } catch (e) {}
+      if (wantStream && haveSrc && haveId !== null && haveId !== wantId) {
+        // Resource yang benar-benar termuat ≠ lagu halaman ini (quirk
+        // mobile pasca detach/reattach) → muat ulang src yang benar, lalu
+        // pulihkan posisi & playback dari state tersimpan (kalau memang
+        // sedang diputar) — kalau tidak, lagu jadi benar tapi diam.
+        engine.audio.src = wantStream;
+        engine.audio.load();
+        if (savedActive && savedPlaying) {
+          const onReloadReady = function () {
+            if (savedTime > 5) engine.audio.currentTime = savedTime;
+            engine.audio.play().catch(function () {});
+          };
+          if (engine.audio.readyState >= HTMLMediaElement.HAVE_METADATA)
+            onReloadReady();
+          else
+            engine.audio.addEventListener("loadedmetadata", onReloadReady, {
+              once: true,
+            });
+        }
+      } else if (savedActive && savedPlaying && engine.audio.paused) {
+        // Audio berhenti karena detach (bukan ganti lagu) → pulihkan posisi
+        // & playback dari state yang disimpan tepat sebelum navigasi.
+        if (savedTime > 5 && engine.audio.currentTime < 1) {
+          engine.audio.currentTime = savedTime;
+        }
+        engine.audio.play().catch(function () {});
+      }
       // Sama persis dengan track yang sedang jalan — cuma pindah tampilan.
       // TIDAK reset apa pun, TIDAK munculkan resume-modal, TIDAK re-arm
       // FLAC timeout. Loop UI tetap disinkronkan ke state player saat ini

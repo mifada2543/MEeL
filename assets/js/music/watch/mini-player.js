@@ -108,6 +108,11 @@ window.miniPrev = function () {
 };
 window.goBackToLibrary = function () {
   saveAudioState();
+  // BUG FIX: reset flag mode mini-player watch. Tanpa ini, interval
+  // saveAudioState() (5s) yang di-guard `isMiniPlayerActive` TETAP BERJALAN
+  // setelah pindah ke view index dan menimpa meel_audio_state dengan lagu
+  // lama setiap 5 detik — persis sumber "state audio berbeda" di HP.
+  isMiniPlayerActive = false;
   var playlistId = window.MEEL_MUSIC_CONFIG?.playlistId;
   var url = playlistId && playlistId > 0 ? "index.php?playlist_id=" + playlistId : "index.php";
   if (window.meelNavigateView) {

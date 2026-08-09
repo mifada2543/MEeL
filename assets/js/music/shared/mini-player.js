@@ -20,6 +20,11 @@ function getMiniPlayerIndexEl() {
 
 // ─── Helpers ───
 function saveIndexState() {
+  // BUG FIX: interval saveIndexState() (5s) milik view index TIDAK boleh
+  // menulis state saat view aktif bukan index (mis. sudah pindah ke watch
+  // via expand) — kalau tidak, dia menimpa state dengan data stale dan
+  // bertabrakan dengan saveAudioState() milik watch.
+  if (window.__meelCurrentView !== "index") return;
   if (!currentState || !audioPlayer) return;
   currentState.currentTime = audioPlayer.currentTime;
   currentState.isPlaying = !audioPlayer.paused;
@@ -151,6 +156,11 @@ function initMiniPlayerIndex() {
     miniPlayerBar.__meelClickBound = true;
     miniPlayerBar.style.cursor = "default";
     miniPlayerBar.addEventListener("click", (e) => {
+      // BUG FIX (double-fire): tap pada cover image memicu expand DUA kali
+      // — inline onclick di .mp-art (index.php/view_playlist.php) DAN
+      // listener ter-delegasi ini (karena e.target.tagName === "IMG").
+      // Tap di dalam .mp-art sudah ditangani inline onclick, jadi skip di sini.
+      if (e.target.closest(".mp-art")) return;
       if (
         e.target.closest(".mp-thumbnail") ||
         e.target.closest("#mini-player-img") ||
@@ -166,6 +176,42 @@ function initMiniPlayerIndex() {
     isMiniPlayerIndexActive = true;
     updateIndexUI();
     setPlayIcon(audioPlayer.paused ? "play" : "pause");
+    // BUG FIX (mobile-only): browser HP (terutama iOS Safari/WebKit)
+    // menghentikan <audio>, atau tetap memutar resource LAMA, saat
+    // view-router memindahkannya antar-DOM (body.innerHTML = "" →
+    // re-attach) di transisi watch→index. Sinkronkan ulang eksplisit:
+    // (a) resource termuat ≠ lagu state → muat ulang + play;
+    // (b) audio berhenti akibat detach → play() ulang.
+    const wantId = String(currentState.id ?? currentState.musicId);
+    const wantStream =
+      currentState.streamUrl || `stream.php?id=${wantId}`;
+    const haveSrc = audioPlayer.currentSrc || audioPlayer.src || "";
+    let haveId = null;
+    try {
+      haveId = new URL(haveSrc, window.location.href).searchParams.get("id");
+    } catch (e) {}
+    if (haveSrc && haveId !== null && haveId !== wantId) {
+      audioPlayer.src = wantStream;
+      audioPlayer.load();
+      if (currentState.isPlaying) {
+        const onReloadReady = function () {
+          if ((currentState.currentTime || 0) > 5) {
+            audioPlayer.currentTime = currentState.currentTime;
+          }
+          audioPlayer.play().catch(function () {});
+        };
+        if (audioPlayer.readyState >= HTMLMediaElement.HAVE_METADATA)
+          onReloadReady();
+        else
+          audioPlayer.addEventListener("loadedmetadata", onReloadReady, {
+            once: true,
+          });
+      }
+    } else if (currentState.isPlaying && audioPlayer.paused) {
+      // Audio berhenti karena detach (bukan ganti lagu) → play() ulang.
+      // Event 'play' listener akan menyinkronkan ikon.
+      audioPlayer.play().catch(function () {});
+    }
     const bar = getMiniPlayerIndexEl();
     if (bar) bar.classList.add("active");
     return;
@@ -180,10 +226,12 @@ function initMiniPlayerIndex() {
       els.img.src = state.thumbnailUrl || `upload/thumbnail/${state.thumbnail}`;
     if (els.title) els.title.textContent = state.title || "Unknown";
     if (els.artist) els.artist.textContent = state.artist || "Unknown";
-    setTimeout(() => {
-      loadAudio(state, state.isPlaying);
-      updateIndexUI();
-    }, 100);
+    // BUG FIX (race): dulu loadAudio ditunda 100ms — kalau user men-tap kartu
+    // lain dalam jendela itu, loadAudio(state) yang tertunda akan ME-REVERT
+    // lagu yang baru dipilih ke lagu dari state lama. Panggil langsung saja:
+    // engine.loadTrack() sudah no-op untuk track yang sama, jadi aman.
+    loadAudio(state, state.isPlaying);
+    updateIndexUI();
     const globalLoop = localStorage.getItem("meel_global_loop") === "true";
     if (state.isLooping !== undefined) {
       isMiniLoopIndexActive = globalLoop;
@@ -297,11 +345,22 @@ function withPlaylistParam(url, playlistId) {
     hash
   );
 }
+// BUG FIX (double-fire): guard re-entrancy. Tap cover pada HP memicu
+// expandPlayerFromMiniPlayer() dua kali (inline onclick + delegated
+// listener) → dua navigasi AJAX bersamaan yang saling menimpa DOM dan
+// membaca sessionStorage di waktu berbeda. Flag ini membuat hanya satu
+// navigasi yang efektif; di-reset setelah meelNavigateView() selesai.
+let _expandInFlight = false;
 function expandPlayerFromMiniPlayer() {
+  if (_expandInFlight) return;
+  _expandInFlight = true;
   saveIndexState();
   sessionStorage.setItem("skip_resume_once", "true");
   const savedState = sessionStorage.getItem("meel_audio_state");
-  if (!savedState) return;
+  if (!savedState) {
+    _expandInFlight = false;
+    return;
+  }
   try {
     const state = JSON.parse(savedState);
     let target = "";
@@ -324,26 +383,46 @@ function expandPlayerFromMiniPlayer() {
           : "";
       target = withPlaylistParam(href, state.playlistId);
     }
-    if (!target) return;
+    if (!target) {
+      _expandInFlight = false;
+      return;
+    }
+    // Keluar dari view index — hentikan interval saveIndexState() (5s)
+    // yang kalau dibiarkan akan menulis state stale di view watch.
+    isMiniPlayerIndexActive = false;
     if (window.meelNavigateView) {
       // AJAX partial-swap: audio-engine (dgn <audio> yg sedang berjalan)
       // TIDAK disentuh di sini — cuma direparent oleh engine.mount()
       // setelah DOM watch.php siap. Gapless untuk track yang sama.
-      window.meelNavigateView(target, "watch", {
-        onAfterSwap: function () {
-          const engine = window.meelGetAudioEngine();
-          const slot = document.getElementById("player-audio-slot");
-          if (slot && engine) engine.mount(slot, { compact: false });
-          if (typeof window.meelInitWatchPlayer === "function") {
-            window.meelInitWatchPlayer();
-          }
-        },
-      });
+      // Promise.resolve(): jaga-jaga kalau versi view-router.js dari cache
+      // browser (Cache-Control immutable 1 tahun) bukan async — .then()
+      // tetap aman untuk nilai non-thenable.
+      Promise.resolve(
+        window.meelNavigateView(target, "watch", {
+          onAfterSwap: function () {
+            const engine = window.meelGetAudioEngine();
+            const slot = document.getElementById("player-audio-slot");
+            if (slot && engine) engine.mount(slot, { compact: false });
+            if (typeof window.meelInitWatchPlayer === "function") {
+              window.meelInitWatchPlayer();
+            }
+          },
+        }),
+      ).then(
+          function () {
+            _expandInFlight = false;
+          },
+          function () {
+            _expandInFlight = false;
+          },
+        );
     } else {
       // Fallback kalau view-router.js entah kenapa gagal dimuat.
+      _expandInFlight = false;
       window.location.href = target;
     }
   } catch (err) {
+    _expandInFlight = false;
     console.warn("Mini player expand error:", err);
   }
 }
