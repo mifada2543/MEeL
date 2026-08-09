@@ -46,7 +46,6 @@ if (isset($_POST['start_transcode'])) {
 
 $video_id_value = isset($_GET['id']) ? (int)$_GET['id'] : "";
 
-// Format meta info
 $format_meta = [
     'mp3' => ['label' => 'MP3',  'desc' => '128 kbps · MPEG Audio',    'color' => '#ef4444', 'dim' => 'rgba(239,68,68,.12)',  'icon' => 'music', 'textClass' => 'text-red-500'],
     'ogg' => ['label' => 'OGG',  'desc' => 'Opus · Efisien & Modern',  'color' => '#f97316', 'dim' => 'rgba(249,115,22,.12)', 'icon' => 'radio', 'textClass' => 'text-orange-500'],
@@ -70,7 +69,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
     <title>MEeL Transcoder</title>
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="manifest" href="assets/manifest.json">
-    <link href="assets/css/fonts.css" rel="stylesheet">
+    <link href="assets/css/font.css" rel="stylesheet">
     <script src="assets/js/compatibilitas/lucide.js"></script>
     <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="assets/js/compatibilitas/script.min.js"></script>

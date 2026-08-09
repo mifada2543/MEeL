@@ -147,7 +147,7 @@ if (isset($_POST['clean_orphans'])) {
 
 // ─── KICK USER ───
 if (isset($_POST['kick_user'])) {
-    $stmt = $conn->prepare("UPDATE users SET 
+    $stmt = $conn->prepare("UPDATE users SET
         last_session_id = 'KICKED',
         last_page       = 'KICKED BY ADMIN',
         last_activity   = DATE_SUB(NOW(), INTERVAL 10 MINUTE)
@@ -185,7 +185,6 @@ if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
         exit;
     }
 
-    // Reset MFA
     $stmt = $conn->prepare("UPDATE users SET mfa_enabled = 0, mfa_secret = NULL, mfa_backup_codes = NULL WHERE id = ?");
     $stmt->bind_param("i", $target_id);
     if ($stmt->execute()) {

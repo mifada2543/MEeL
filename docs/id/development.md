@@ -668,7 +668,7 @@ main (stable)
 ### ❌ HTMX tidak bekerja
 
 **Cek:**
-1. File `assets/js/htmx.js` ter-load (cek Network tab)
+1. File `assets/js/compatibilitas/htmx.min.js` ter-load (cek Network tab)
 2. Element target (`hx-target`) ada di DOM
 3. Tidak ada JavaScript error di console
 4. Response dari server valid HTML
@@ -706,7 +706,7 @@ if (!headers_sent()) {
 
 **Cek:**
 1. File `assets/js/compatibilitas/sweetalert2.all.min.js` ter-load
-2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/script.js`
+2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/compatibilitas/script.min.js`
 3. Tidak ada CSS conflict
 
 ---

@@ -170,7 +170,6 @@ function initMiniPlayerIndex() {
     if (bar) bar.classList.add("active");
     return;
   }
-
   const raw = sessionStorage.getItem("meel_audio_state");
   if (!raw) return;
   try {
@@ -425,7 +424,7 @@ function setupPlaylistItemClicks() {
       const bar = getMiniPlayerIndexEl();
       if (bar) bar.classList.add("active");
     });
-    // Tombol play
+
     var playBtn = item.querySelector(".pl-play-btn");
     if (playBtn) {
       playBtn.addEventListener("click", function (e) {

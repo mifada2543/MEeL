@@ -19,10 +19,10 @@ class System
         $active_queues = [];
 
         // Advanced Upload (yt-dlp)
-        $res1 = $this->conn->query("SELECT q.id, q.url, q.media_type, q.status, q.created_at, u.username, 'download' as task_type 
-                                    FROM upload_queue q 
-                                    JOIN users u ON q.user_id = u.id 
-                                    WHERE q.status = 'processing' 
+        $res1 = $this->conn->query("SELECT q.id, q.url, q.media_type, q.status, q.created_at, u.username, 'download' as task_type
+                                    FROM upload_queue q
+                                    JOIN users u ON q.user_id = u.id
+                                    WHERE q.status = 'processing'
                                     ORDER BY q.created_at ASC");
         if ($res1) {
             while ($row = $res1->fetch_assoc()) {
@@ -31,10 +31,10 @@ class System
         }
 
         // Transcoder (ffmpeg)
-        $res2 = $this->conn->query("SELECT q.id, q.status, q.created_at, u.username, 'transcode' as task_type, q.user_id 
-                                    FROM transcode_queue q 
-                                    JOIN users u ON q.user_id = u.id 
-                                    WHERE q.status = 'processing' 
+        $res2 = $this->conn->query("SELECT q.id, q.status, q.created_at, u.username, 'transcode' as task_type, q.user_id
+                                    FROM transcode_queue q
+                                    JOIN users u ON q.user_id = u.id
+                                    WHERE q.status = 'processing'
                                     ORDER BY q.created_at ASC");
         if ($res2) {
             while ($row = $res2->fetch_assoc()) {
@@ -159,8 +159,8 @@ class System
 
         $max_upload = RateLimiter::getRoleLimit($max_upload, $user_role);
 
-        $sql = "SELECT upload_date FROM $type 
-                WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR 
+        $sql = "SELECT upload_date FROM $type
+                WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR
                 ORDER BY upload_date ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $user_id);

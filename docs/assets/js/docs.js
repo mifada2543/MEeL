@@ -106,7 +106,6 @@ async function loadDoc(lang, file) {
 
     if (!content) return;
 
-    // Show loading
     if (loading) loading.style.display = 'flex';
     if (content) content.style.display = 'none';
     if (error) error.style.display = 'none';

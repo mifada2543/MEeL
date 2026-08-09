@@ -18,12 +18,12 @@
     });
     var target = document.getElementById("drive-" + id);
     if (target) target.classList.remove("hidden");
-    // Desktop nav reset
+
     document.querySelectorAll(".nav-btn-desktop").forEach(function (b) {
       b.classList.remove("nav-active", "text-blue-500");
       b.classList.add("text-gray-400");
     });
-    // Mobile nav reset
+
     document.querySelectorAll(".nav-btn-mobile").forEach(function (b) {
       b.classList.remove("bg-blue-500/10", "border-blue-500", "text-blue-500");
       b.classList.add("bg-gray-800", "border-transparent", "text-gray-400");

@@ -54,7 +54,6 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
                 $_SESSION['backup_pwd_attempts'] = 0;
                 unset($_SESSION['backup_pwd_lock_until']);
 
-                // Generate backup codes baru
                 $backup = generate_backup_codes();
                 $hashed_json = json_encode($backup['hashed']);
 

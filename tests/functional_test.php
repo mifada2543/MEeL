@@ -905,7 +905,6 @@ function run(): int {
         echo CLR_YELLOW . "  Review warnings for improvements.\n\n" . CLR_RESET;
     }
 
-    // Save report
     $reportFile = PROJECT_ROOT . '/logs/functional_report_' . date('Ymd_His') . '.log';
     $report  = "MEeL Functional Test Report\n";
     $report .= "Date: " . $GLOBALS['test_timestamp'] . "\n";

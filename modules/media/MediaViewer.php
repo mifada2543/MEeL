@@ -52,9 +52,9 @@ class MediaViewer
     public function getMediaData()
     {
         // DIUBAH: Menggunakan prepared statement untuk m.id
-        $sql = "SELECT m.*, u.username as uploader, u.profile_picture as uploader_pfp 
-                FROM {$this->table} m 
-                JOIN users u ON m.user_id = u.id 
+        $sql = "SELECT m.*, u.username as uploader, u.profile_picture as uploader_pfp
+                FROM {$this->table} m
+                JOIN users u ON m.user_id = u.id
                 WHERE m.id = ?";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $this->media_id);

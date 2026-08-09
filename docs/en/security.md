@@ -214,7 +214,7 @@ chess admin `catur.php?auto_cleanup=1` endpoint requires a `csrf_token` too
 ### Chess Multiplayer — Login + CSRF Guards
 
 All `arcade/chess/controller/*.php` endpoints require:
-- **Login** — JSON `401` + `login_required: true` (client `api.js` redirects to login).
+- **Login** — JSON `401` + `login_required: true` (client `arcade/chess/assets/js/api.js` redirects to login).
 - **CSRF** — every state-changing POST carries `csrf_token` (JSON body for `save_move`, `FormData` for `create_room`/`join_room`).
 - The token is **never stored** in `moves.move_data` (not exposed to opponents).
 

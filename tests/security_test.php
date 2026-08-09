@@ -573,7 +573,6 @@ function run(): int {
         echo CLR_YELLOW . "  Review warnings above for best-practice improvements.\n\n" . CLR_RESET;
     }
 
-    // Save report
     $reportFile = PROJECT_ROOT . '/logs/security_report_' . date('Ymd_His') . '.log';
     $report  = "MEeL Security Report\n";
     $report .= "Date: " . date('Y-m-d H:i:s') . "\n";

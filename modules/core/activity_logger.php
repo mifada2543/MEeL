@@ -44,7 +44,6 @@ function validate_and_format_ip($ip)
         }
     }
 
-    // Filter localhost
     if ($ip === 'localhost') {
         return ['ip' => 'LOCAL', 'display' => 'Local Access (localhost)', 'is_local' => true, 'version' => 'hostname'];
     }
@@ -147,7 +146,6 @@ $user_ip = $user_ip_data['ip'];
 $access_method = get_access_method();
 $connection_protocol = get_connection_protocol();
 
-// Debug info (optional, bisa di-remove nanti)
 // Uncomment line di bawah untuk debugging
 if (isset($conn)) {
 

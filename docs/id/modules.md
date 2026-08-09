@@ -385,7 +385,7 @@ Klik "Multiplayer LAN" → konfirmasi SweetAlert
 - Aksi `game_over` di `game_action.php`: client mencatat checkmate/stalemate (hanya bisa dideteksi di sisi client) agar GC mempertahankan game yang sudah selesai.
 
 **Security guards (semua controller):**
-- Wajib login — respons JSON `401` + `login_required: true` (JS `api.js` redirect ke login).
+- Wajib login — respons JSON `401` + `login_required: true` (JS `arcade/chess/assets/js/api.js` redirect ke login).
 - Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
 - Token CSRF tidak pernah disimpan ke `moves.move_data`.
 - `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).

@@ -202,9 +202,7 @@ class HelpersTest extends TestCase
         $_SESSION['csrf_token'] = 'test_token_123';
         $this->assertSame('test_token_123', get_csrf_token());
 
-        // Verify correct token
         $this->assertTrue(verify_csrf_token('test_token_123'));
-        // Verify wrong token
         $this->assertFalse(verify_csrf_token('wrong_token'));
     }
 
