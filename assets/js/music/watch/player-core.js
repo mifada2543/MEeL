@@ -437,6 +437,29 @@
       }
     }
 
+    // BUG FIX (skip_resume_once nyangkut): flag sessionStorage "skip_resume_once"
+    // dipasang oleh sisi index (tap kartu/playlist & expand mini-player) TEPAT
+    // sebelum user menuju watch, untuk menekan resume-modal SEKALI (jangan
+    // tanya "Lanjutkan Sesi?" untuk lagu yang baru saja diputar dari
+    // mini-player). Masalahnya: transisi expand selalu GAPLESS (track sama →
+    // isFreshTrack false → early-return di bawah), jadi konsumsi flag yang
+    // tadinya cuma ada di blok isFreshTrack TIDAK PERNAH jalan → flag nyangkut
+    // di sessionStorage → menekan resume-modal secara keliru pada fresh-track
+    // load berikutnya di watch (lagu berikutnya / reload pertama) — itulah
+    // kenapa butuh 1-2× Ctrl+R agar resume-modal "normal" lagi. Solusi: baca &
+    // buang flag SELALU di sini, sebelum early-return gapless.
+    const skipFromIndex = sessionStorage.getItem("skip_resume_once") === "true";
+    if (skipFromIndex) sessionStorage.removeItem("skip_resume_once");
+    // BUG FIX (resume-modal sesi mini-player): user yang datang dari
+    // mini-player (tap kartu/playlist/expand) sedang dalam sesi mendengarkan
+    // AKTIF — resume-modal tidak boleh menginterupsi lagu-lagu berikutnya di
+    // sesi yang sama (auto-next / pindah lagu via AJAX). Marker in-memory ini
+    // bertahan selama dokumen SPA & dibersihkan saat pause/close eksplisit di
+    // index (miniPlayPauseIndex/closeMiniPlayerIndex) — jadi kunjungan dingin
+    // (buka watch langsung / reload / setelah pause-close) tetap mendapat
+    // resume-modal.
+    if (skipFromIndex) window.__meelResumeSessionActive = true;
+
     // KUNCI GAPLESS: kalau track ID sama dengan yang lagi diputar engine,
     // loadTrack() ini NO-OP TOTAL — src, currentTime, playback state audio
     // TIDAK disentuh sama sekali.
@@ -529,9 +552,13 @@
       btnRestart = document.getElementById("btn-restart"),
       timeEl = document.getElementById("resume-time");
     if (modalEl && btnResume && btnRestart && timeEl) {
-      const skipFromIndex = sessionStorage.getItem("skip_resume_once") === "true";
-      sessionStorage.removeItem("skip_resume_once");
-      if (skipFromIndex) skipResumeModalOnce = true;
+      // skipFromIndex sudah dibaca & flag sessionStorage sudah dikonsumsi di
+      // atas (sebelum early-return gapless). Arm one-shot in-memory HANYA kalau
+      // load fresh ini benar-benar bisa memunculkan modal (savedActive false).
+      // Kalau savedActive (resume lintas-halaman, autoplay) modal tidak akan
+      // dicek sama sekali — meng-arm di sini cuma nyisa & menekan modal pada
+      // fresh-track berikutnya di dokumen yang sama.
+      if (skipFromIndex && !savedActive) skipResumeModalOnce = true;
 
       function showResumeModal() {
         return window.meelResumeModal({
@@ -540,7 +567,7 @@
           countdownPrefix: "Otomatis putar dari awal dalam",
           countdownDoneText: "Otomatis putar dari awal...",
           skipOnce: function () {
-            if (skipResumeModalOnce) {
+            if (skipResumeModalOnce || window.__meelResumeSessionActive) {
               skipResumeModalOnce = false;
               return true;
             }
@@ -575,11 +602,24 @@
             parseFloat(savedPos) > 10 &&
             (!audio.duration || parseFloat(savedPos) < audio.duration - 5);
           if (needsResume) {
-            showResumeModal();
+            const shown = showResumeModal();
+            if (!shown) {
+              // BUG FIX (stuck-paused): modal ditekan (sesi mini-player aktif
+              // / one-shot skip) tapi lagu punya posisi tersimpan — lagu
+              // TIDAK boleh diam. Auto putar dari awal, persis seperti tombol
+              // "Ulang".
+              localStorage.removeItem(storageKeyMusic);
+              audio.currentTime = 0;
+              player.play();
+            }
           } else {
             // Tidak ada posisi tersimpan yang perlu dikonfirmasi user —
             // baru di sinilah lagu benar-benar mulai diputar (menggantikan
             // autoplay yang dulu langsung ditembak dari loadTrack()).
+            // One-shot skipResumeModalOnce "habis" di sini: modal tidak
+            // ditampilkan, jadi flag tidak boleh nyangkut & menekan modal
+            // pada fresh-track berikutnya di dokumen yang sama.
+            skipResumeModalOnce = false;
             player.play();
           }
         }

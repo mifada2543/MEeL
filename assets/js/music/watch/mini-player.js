@@ -37,6 +37,11 @@ window.toggleMiniPlayer = async function () {
     a = n?.nextElementSibling;
   if (isMiniPlayerActive)
     ((isMiniPlayerActive = !1),
+      // BUG FIX (leak skipResumeModalOnce): keluar dari mode mini-player —
+      // one-shot yang di-arm saat masuk mini-mode tidak boleh nyangkut ke
+      // navigasi AJAX berikutnya di dokumen yang sama (auto-next / pindah
+      // lagu) padahal user sudah kembali ke full-player.
+      (skipResumeModalOnce = !1),
       e && ((e.style.maxHeight = ""), (e.style.overflow = "")),
       document
         .getElementById("temp-index-content")
@@ -113,6 +118,10 @@ window.goBackToLibrary = function () {
   // setelah pindah ke view index dan menimpa meel_audio_state dengan lagu
   // lama setiap 5 detik — persis sumber "state audio berbeda" di HP.
   isMiniPlayerActive = false;
+  // BUG FIX (leak skipResumeModalOnce): meninggalkan view watch — one-shot
+  // in-memory dari mode mini-player TIDAK boleh bocor ke navigasi berikutnya
+  // di dokumen yang sama (mis. balik ke index lalu expand lagi). Buang.
+  skipResumeModalOnce = false;
   var playlistId = window.MEEL_MUSIC_CONFIG?.playlistId;
   var url = playlistId && playlistId > 0 ? "index.php?playlist_id=" + playlistId : "index.php";
   if (window.meelNavigateView) {

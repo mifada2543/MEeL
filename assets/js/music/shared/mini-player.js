@@ -151,6 +151,31 @@ function initMiniPlayerIndex() {
   audioPlayer = engine.audio;
   ensureIndexAudioListeners(audioPlayer);
 
+  // BUG FIX (stale currentState / loop tidak sync): currentState di module ini
+  // TIDAK ikut ter-update saat lagu berganti di watch (auto-next, pindah lagu)
+  // — metadata mini-player jadi lagu LAMA & saveIndexState() menulis state
+  // campur (id lama + posisi baru), sehingga expand malah menuju lagu yang
+  // salah (inilah "loop watch<->index tidak sync"). Sinkronkan dari
+  // sessionStorage (sumber kebenaran yang ditulis saveAudioState()/
+  // goBackToLibrary) kalau id-nya cocok dengan track yang sedang diputar
+  // engine.
+  const _engIdNow = engine.getCurrentTrackId();
+  if (_engIdNow != null) {
+    const _sRaw = sessionStorage.getItem("meel_audio_state");
+    if (_sRaw) {
+      try {
+        const _s = JSON.parse(_sRaw);
+        if (
+          _s &&
+          (_s.musicId ?? _s.id) != null &&
+          String(_s.musicId ?? _s.id) === String(_engIdNow)
+        ) {
+          currentState = _s;
+        }
+      } catch (e) {}
+    }
+  }
+
   const miniPlayerBar = getMiniPlayerIndexEl();
   if (miniPlayerBar && !miniPlayerBar.__meelClickBound) {
     miniPlayerBar.__meelClickBound = true;
@@ -269,7 +294,18 @@ window.miniPlayPauseIndex = function () {
   if (!audioPlayer) return;
 
   if (window.meelHealthAlertActive && audioPlayer.paused) return;
-  audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
+  if (audioPlayer.paused) {
+    audioPlayer.play();
+  } else {
+    // BUG FIX (konsistensi pause): pause EKSPLISIT lewat tombol play/pause
+    // mengakhiri konteks "sedang memutar dari mini-player" — buang one-shot
+    // skip_resume_once (sama seperti saat close mini-player) supaya membuka
+    // watch lewat link lagu yang BERBEDA tetap mendapat resume-modal, bukan
+    // ditekan sekali oleh flag stale. Marker sesi in-memory juga dibuang.
+    sessionStorage.removeItem("skip_resume_once");
+    window.__meelResumeSessionActive = false;
+    audioPlayer.pause();
+  }
 };
 // ─── Seek ───
 window.miniSeekIndex = function (event) {
@@ -452,6 +488,14 @@ window.closeMiniPlayerIndex = function () {
   const bar = getMiniPlayerIndexEl();
   if (bar) bar.classList.remove("active");
   sessionStorage.removeItem("meel_audio_state");
+  // BUG FIX: user yang menutup mini-player (pause eksplisit) TIDAK lagi dalam
+  // konteks "sedang memutar dari mini-player" — buang flag one-shot
+  // skip_resume_once yang dipasang saat kartu/item playlist diklik. Kalau
+  // dibiarkan, flag stale ini menekan resume-modal secara keliru saat user
+  // lalu membuka watch lewat link judul lagu (padahal dia sudah pause).
+  // Marker sesi in-memory juga dibuang (sesi mini-player berakhir).
+  sessionStorage.removeItem("skip_resume_once");
+  window.__meelResumeSessionActive = false;
   isMiniPlayerIndexActive = false;
   currentState = null;
 };
