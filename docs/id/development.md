@@ -753,8 +753,42 @@ if (!headers_sent()) {
 | `assets/js/video/watch/gestures.js` | Mobile touch gestures |
 | `assets/js/music/watch/main.js` | Entry point folder watch/ — memuat sibling secara sinkron (document.write) |
 | `assets/js/music/watch/mini-player.js` | Mode mini-player music (Spotify-style) — dipisah dari player-core.js |
-| `assets/js/music/watch/player-core.js` | Inti player music (visualizer, EQ, bitrate, resume) |
-| `assets/js/music/watch/state.js` | Music player state & equalizer presets |
+| `assets/js/music/watch/player-core.js` | Inti player music (visualizer, EQ, bitrate, logika resume-modal & sesi) |
+| `assets/js/music/watch/state.js` | Music player state, preset equalizer & marker sesi resume (`window.__meelResumeSessionActive`) |
+
+### Musik — Perilaku Resume Modal
+
+Player musik menampilkan modal **"Lanjut Musik?"** ketika sebuah lagu punya
+posisi putar tersimpan (`music_pos_<id>` di `localStorage`) dan user **tidak**
+datang dari sesi mini-player yang aktif.
+
+| Konteks | Perilaku |
+|---------|----------|
+| **Sesi mini-player** — user men-tap kartu / item playlist atau expand mini-player di `index.php`, dan masih mendengarkan | 🎧 **Auto-continue** — tanpa modal; semua lagu berikutnya di sesi itu langsung diputar otomatis |
+| **Kunjungan dingin** — buka `watch.php` langsung, reload halaman, atau setelah pause/close eksplisit mini-player | ❓ **Modal muncul** — "Lanjut Musik?" menanyakan apakah lanjut dari posisi tersimpan |
+
+**Mekanisme:**
+
+- **Flag one-shot `skip_resume_once`** (`sessionStorage`) — dipasang sisi index
+  saat tap kartu/playlist dan di `expandPlayerFromMiniPlayer()`. Dibaca dan
+  dibuang di **setiap** pemanggilan `meelInitWatchPlayer()` (termasuk transisi
+  gapless), jadi tidak pernah nyangkut di storage.
+- **Marker sesi `window.__meelResumeSessionActive`** (in-memory, dideklarasikan
+  di `assets/js/music/watch/state.js`) — diaktifkan saat flag one-shot
+  dikonsumsi. Bertahan selama dokumen SPA, jadi **semua** perpindahan lagu
+  berikutnya di watch (auto-next, ganti lagu) melewati modal.
+- **Akhir sesi eksplisit** — `miniPlayPauseIndex()` (pause) dan
+  `closeMiniPlayerIndex()` di `index.php` membersihkan flag one-shot dan marker
+  sesi (`assets/js/music/shared/mini-player.js`). Setelah itu, membuka lagu
+  dari link menampilkan modal lagi.
+- **Kunjungan dingin** — full page load membuat dokumen baru di mana marker
+  in-memory hilang, jadi modal bisa muncul (`skipOnce` di `player-core.js`
+  mengecek `skipResumeModalOnce || window.__meelResumeSessionActive`).
+- **Guard stuck-paused** — jika modal ditekan tapi lagu punya posisi tersimpan,
+  `onFreshTrackReady()` auto putar dari awal, bukan membiarkan lagu diam.
+
+> **Keputusan desain (2026-08):** sesi mendengarkan aktif auto-continue tanpa
+> interupsi; hanya kunjungan dingin yang menanyakan resume.
 
 ### Proses yang Perlu Dipahami
 
@@ -763,6 +797,7 @@ if (!headers_sent()) {
 3. **Auth Flow** — Login → Session → RBAC → Activity Log
 4. **HTMX Flow** — Event → Request → Server → Response → DOM swap
 5. **MFA Flow** — Login password valid → Cek mfa_enabled → Redirect mfa_verify.php → Verify TOTP → Set session penuh
+6. **Sesi Music Player & Resume** — Tap kartu/playlist → mini-player (set `skip_resume_once`) → expand → watch (konsumsi flag, aktifkan marker sesi) → auto-continue; kunjungan dingin menampilkan resume-modal
 
 ---
 

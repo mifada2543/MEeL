@@ -460,8 +460,43 @@ main (stable)
 | `assets/js/video/watch/gestures.js` | Mobile touch gestures |
 | `assets/js/music/watch/main.js` | Entry point folder watch/ — loads siblings synchronously (document.write) |
 | `assets/js/music/watch/mini-player.js` | Music mini-player mode (Spotify-style) — separated from player-core.js |
-| `assets/js/music/watch/player-core.js` | Music player core (visualizer, EQ, bitrate, resume) |
-| `assets/js/music/watch/state.js` | Music player state & equalizer presets |
+| `assets/js/music/watch/player-core.js` | Music player core (visualizer, EQ, bitrate, resume-modal & session logic) |
+| `assets/js/music/watch/state.js` | Music player state, equalizer presets & resume-session marker (`window.__meelResumeSessionActive`) |
+
+### Music Player — Resume Modal Behavior
+
+The music player shows the **"Lanjut Musik?"** resume modal when a song has a
+saved playback position (`music_pos_<id>` in `localStorage`) and the user did
+**not** arrive from an active mini-player session.
+
+| Context | Behavior |
+|---------|----------|
+| **Mini-player session** — user tapped a card / playlist item or expanded the mini-player on `index.php`, and is still listening | 🎧 **Auto-continue** — no modal; every following song in the session plays automatically |
+| **Cold visit** — direct `watch.php` open, page reload, or after an explicit pause/close of the mini-player | ❓ **Modal shown** — "Lanjut Musik?" asks whether to resume from the saved position |
+
+**Mechanisms:**
+
+- **One-shot flag `skip_resume_once`** (`sessionStorage`) — set by the index
+  side on card/playlist tap and in `expandPlayerFromMiniPlayer()`. It is read
+  and removed at **every** `meelInitWatchPlayer()` call (including gapless
+  transitions), so it never leaks or sticks in storage.
+- **Session marker `window.__meelResumeSessionActive`** (in-memory, declared in
+  `assets/js/music/watch/state.js`) — activated when the one-shot flag is
+  consumed. It lives for the whole SPA document, so **all** subsequent
+  in-watch track changes (auto-next, song switch) skip the modal.
+- **Explicit end of session** — `miniPlayPauseIndex()` (pause) and
+  `closeMiniPlayerIndex()` on `index.php` clear both the one-shot flag and the
+  session marker (`assets/js/music/shared/mini-player.js`). After that, opening
+  a song from a link shows the modal again.
+- **Cold visits** — a full page load creates a new document where the in-memory
+  marker is gone, so the modal can appear (`skipOnce` in `player-core.js`
+  checks `skipResumeModalOnce || window.__meelResumeSessionActive`).
+- **Stuck-paused guard** — if the modal is suppressed but the song has a saved
+  position, `onFreshTrackReady()` auto-plays from the beginning instead of
+  leaving the song silent.
+
+> **Design decision (2026-08):** active listening sessions auto-continue
+> without interruption; only cold visits ask to resume.
 
 ### Key Processes
 
@@ -470,6 +505,7 @@ main (stable)
 3. **Auth Flow** — Login → Session → RBAC → Activity Log
 4. **HTMX Flow** — Event → Request → Server → Response → DOM swap
 5. **MFA Flow** — Login password valid → Check mfa_enabled → Redirect mfa_verify.php → Verify TOTP → Set full session
+6. **Music Player Session & Resume** — Card/playlist tap → mini-player (sets `skip_resume_once`) → expand → watch (consumes flag, activates session marker) → auto-continue; cold visits show the resume modal
 
 ---
 
