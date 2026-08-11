@@ -391,7 +391,7 @@
       engine.__syncPlayingVisualState(!engine.audio.paused);
     }
 
-    const globalLoop = "true" === localStorage.getItem("meel_global_loop");
+    const globalLoop = "true" === localStorage.getItem(MEEL_KEYS.GLOBAL_LOOP);
     loadEqState();
     updateEqUI();
     // EQ gain perlu di-reapply tiap landing — engine persisten tidak
@@ -403,7 +403,7 @@
       savedTime = 0,
       savedPlaying = false,
       savedLoop = globalLoop;
-    const raw = sessionStorage.getItem("meel_audio_state");
+    const raw = sessionStorage.getItem(MEEL_KEYS.AUDIO_STATE);
     if (raw) {
       try {
         const k = JSON.parse(raw);
@@ -413,7 +413,7 @@
           savedPlaying = k.isPlaying;
           if (k.isLooping !== undefined) {
             savedLoop = k.isLooping;
-            localStorage.setItem("meel_global_loop", String(k.isLooping));
+            localStorage.setItem(MEEL_KEYS.GLOBAL_LOOP, String(k.isLooping));
           }
         }
       } catch (e) {
@@ -423,8 +423,8 @@
 
     // Baca & buang flag skip_resume_once SELALU di sini (sebelum early-return
     // gapless) agar tidak menekan resume-modal pada fresh-track load berikutnya.
-    const skipFromIndex = sessionStorage.getItem("skip_resume_once") === "true";
-    if (skipFromIndex) sessionStorage.removeItem("skip_resume_once");
+    const skipFromIndex = sessionStorage.getItem(MEEL_KEYS.SKIP_RESUME_ONCE) === "true";
+    if (skipFromIndex) sessionStorage.removeItem(MEEL_KEYS.SKIP_RESUME_ONCE);
     // Marker sesi mini-player in-memory — jangan interupsi lagu berikutnya
     // di sesi yang sama; dibersihkan saat pause/close eksplisit.
     if (skipFromIndex) window.__meelResumeSessionActive = true;
@@ -494,7 +494,7 @@
     // setLoop menyinkronkan media.loop + Plyr config + localStorage secara atomik.
     engine.setLoop(savedLoop);
     updateLoopUI();
-    if (savedActive) sessionStorage.removeItem("meel_audio_state");
+    if (savedActive) sessionStorage.removeItem(MEEL_KEYS.AUDIO_STATE);
     if (engine.__armLoadingTimeout) engine.__armLoadingTimeout();
 
     const modalEl = document.getElementById("resume-modal"),

@@ -7,7 +7,7 @@ function setupMusicItemClicks() {
     item.dataset.listenerAdded = "true";
     item.addEventListener("click", function (e) {
       if (e.target.closest(".no-player")) return;
-      sessionStorage.setItem("skip_resume_once", "true");
+      sessionStorage.setItem(MEEL_KEYS.SKIP_RESUME_ONCE, "true");
       const items = allItems();
       const idx = items.indexOf(this);
       let nextSongUrl = "";
@@ -16,7 +16,7 @@ function setupMusicItemClicks() {
         const nextId = nextItem.dataset.id;
         if (nextId) nextSongUrl = `watch.php?id=${nextId}`;
       }
-      localStorage.removeItem("meel_last_playlist_id");
+      localStorage.removeItem(MEEL_KEYS.LAST_PLAYLIST_ID);
       const state = {
         id: this.dataset.id,
         musicId: this.dataset.id,
@@ -36,7 +36,7 @@ function setupMusicItemClicks() {
       };
       loadAudio(state, true);
       updateIndexUI();
-      sessionStorage.setItem("meel_audio_state", JSON.stringify(state));
+      sessionStorage.setItem(MEEL_KEYS.AUDIO_STATE, JSON.stringify(state));
       isMiniPlayerIndexActive = true;
       getMiniPlayerIndexEl()?.classList.add("active");
     });

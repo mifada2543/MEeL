@@ -76,7 +76,7 @@ function attachMiniPlayerVideoCardListeners(e) {
           if (!isMiniPlayerActive) return;
           t.preventDefault();
           autoNextEnabled = false;
-          localStorage.setItem("meel_autonext_enabled", "false");
+          localStorage.setItem(MEEL_KEYS.AUTONEXT_ENABLED, "false");
           const n = e.href;
           try {
             const e = await fetch(n),

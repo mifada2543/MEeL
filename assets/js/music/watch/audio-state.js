@@ -15,7 +15,7 @@ function saveAudioState() {
     (typeof watchUrl === "string" && watchUrl ? watchUrl : "") ||
     `watch.php?id=${e.id}`;
   (sessionStorage.setItem(
-    "meel_audio_state",
+    MEEL_KEYS.AUDIO_STATE,
     JSON.stringify({
       id: e.id,
       musicId: e.id,
@@ -32,6 +32,6 @@ function saveAudioState() {
     }),
   ),
     t > 0
-      ? localStorage.setItem("meel_last_playlist_id", String(t))
-      : localStorage.removeItem("meel_last_playlist_id"));
+      ? localStorage.setItem(MEEL_KEYS.LAST_PLAYLIST_ID, String(t))
+      : localStorage.removeItem(MEEL_KEYS.LAST_PLAYLIST_ID));
 }

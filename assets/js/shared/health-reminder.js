@@ -134,7 +134,7 @@ function isPlayerActive() {
 var healthAlertChannel = null;
 if (typeof BroadcastChannel !== "undefined") {
   try {
-    healthAlertChannel = new BroadcastChannel("meel_health_alert");
+    healthAlertChannel = new BroadcastChannel(MEEL_KEYS.HEALTH_ALERT);
     healthAlertChannel.onmessage = function (event) {
       if (event.data === "pause") {
         // pemutaran di tab ini juga (bukan hanya pause sekali).
@@ -194,7 +194,7 @@ function acquireHealthAlertLock(task) {
   ) {
     var ran = false;
     navigator.locks
-      .request("meel_health_alert", { ifAvailable: true }, function (lock) {
+      .request(MEEL_KEYS.HEALTH_ALERT, { ifAvailable: true }, function (lock) {
         if (!lock) return; // tab lain sedang menangani alarm → lewati
         ran = true;
         return task(); // Promise dari task → lock ditahan sampai selesai

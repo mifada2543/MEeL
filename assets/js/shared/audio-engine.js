@@ -269,7 +269,7 @@
         audio.loop = active;
         if (player) player.loop = active;
         try {
-          localStorage.setItem("meel_global_loop", String(active));
+          localStorage.setItem(MEEL_KEYS.GLOBAL_LOOP, String(active));
         } catch (e) {}
         return active;
       },

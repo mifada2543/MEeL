@@ -5,7 +5,7 @@ function normalizeEqValue(e) {
 function saveEqState() {
   try {
     localStorage.setItem(
-      "meel_music_eq_state",
+      MEEL_KEYS.EQ_STATE,
       JSON.stringify({ enabled: eqEnabled, preset: eqPreset, gains: eqGains }),
     );
   } catch (e) {
@@ -14,7 +14,7 @@ function saveEqState() {
 }
 function loadEqState() {
   try {
-    const e = localStorage.getItem("meel_music_eq_state");
+    const e = localStorage.getItem(MEEL_KEYS.EQ_STATE);
     if (!e) return;
     const t = JSON.parse(e);
     (t && Array.isArray(t.gains) && (eqGains = t.gains.map(normalizeEqValue)),

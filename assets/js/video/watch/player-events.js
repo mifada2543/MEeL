@@ -158,7 +158,7 @@ function setupMeelPlayerEvents() {
     if (!t) return !1;
     isManual &&
       ((autoNextEnabled = !1),
-      localStorage.setItem("meel_autonext_enabled", "false"),
+      localStorage.setItem(MEEL_KEYS.AUTONEXT_ENABLED, "false"),
       window.updateAutoNextMenuUI && window.updateAutoNextMenuUI());
     ((isTransitioningNext = !0), (isRecovering = !0));
     const n = ++nextVideoTransitionId;
@@ -166,7 +166,7 @@ function setupMeelPlayerEvents() {
     const o = player
       ? player.fullscreen.active || !!document.fullscreenElement
       : !1;
-    sessionStorage.setItem("meel_autonav", "1");
+    sessionStorage.setItem(MEEL_KEYS.AUTONAV, "1");
     try {
       const l = await fetch(t.href),
         a = await l.text();
@@ -481,7 +481,7 @@ function setupMeelPlayerEvents() {
       const g = await showAutoNextOverlay(t);
       if (!g) {
         autoNextEnabled = !1;
-        localStorage.setItem("meel_autonext_enabled", "false");
+        localStorage.setItem(MEEL_KEYS.AUTONEXT_ENABLED, "false");
         ((isTransitioningNext = !1), (isRecovering = !1));
         stopPlaybackStartTimeout();
         return;
@@ -773,7 +773,7 @@ function setupMeelPlayerEvents() {
     window.toggleAutoNext = () => {
       ((autoNextEnabled = !autoNextEnabled),
         localStorage.setItem(
-          "meel_autonext_enabled",
+          MEEL_KEYS.AUTONEXT_ENABLED,
           autoNextEnabled ? "true" : "false",
         ),
         window.updateAutoNextMenuUI(),
@@ -873,7 +873,7 @@ function setupMeelPlayerEvents() {
       if (
         ((glowEnabled = !glowEnabled),
         localStorage.setItem(
-          "meel_glow_enabled",
+          MEEL_KEYS.GLOW_ENABLED,
           glowEnabled ? "true" : "false",
         ),
         p(),
@@ -907,7 +907,7 @@ function setupMeelPlayerEvents() {
           ((player.loop = !player.loop),
             player.loop &&
               ((autoNextEnabled = false),
-              localStorage.setItem("meel_autonext_enabled", "false"),
+              localStorage.setItem(MEEL_KEYS.AUTONEXT_ENABLED, "false"),
               window.updateAutoNextMenuUI && window.updateAutoNextMenuUI()),
             u());
           const e = player.loop;
@@ -933,7 +933,7 @@ function setupMeelPlayerEvents() {
       if (!link || !link.href) return;
       if (link.href === window.location.href) return;
       autoNextEnabled = false;
-      localStorage.setItem("meel_autonext_enabled", "false");
+      localStorage.setItem(MEEL_KEYS.AUTONEXT_ENABLED, "false");
     });
   }
 
