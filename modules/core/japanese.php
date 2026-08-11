@@ -117,11 +117,26 @@ if (!function_exists('analyzeJapaneseText')) {
         }
 
         $alias_glosses = [];
+        $full_cover    = null; // alias yang menutupi seluruh teks → dipakai sebagai terjemahan final
         foreach ($aliases as $phrase => $translation) {
             if ($phrase !== '' && mb_strpos($original_text, $phrase) !== false) {
-                $alias_glosses[] = $translation;
+                $alias_glosses[$phrase] = $translation;
+                if (trim($phrase) === trim($original_text)) {
+                    $full_cover = $translation;
+                }
             }
         }
+        // Buang alias yang merupakan substring dari alias lain yang lebih panjang
+        // (mis. 'ならば' ⊆ 'のならば') — hindari duplikasi makna seperti "in case if".
+        foreach (array_keys($alias_glosses) as $p1) {
+            foreach (array_keys($alias_glosses) as $p2) {
+                if ($p1 !== $p2 && mb_strlen($p2) > mb_strlen($p1) && mb_strpos($p2, $p1) !== false) {
+                    unset($alias_glosses[$p1]);
+                    break;
+                }
+            }
+        }
+        $alias_glosses = array_values($alias_glosses);
 
         // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
         $mecab_bin = getMecabPath();
@@ -176,7 +191,16 @@ if (!function_exists('analyzeJapaneseText')) {
             elseif (isset($features[8]) && $features[8] !== '*') $yomi = $features[8];
             $parsed_romaji .= ' ' . (($yomi !== '*' && !preg_match('/[a-zA-Z]/', $yomi)) ? $yomi : $surface);
 
-            if ($dict_ready) {
+            // ─── FILTER KATA FUNGSIONAL ───
+            // Jangan terjemahkan per-token partikel & kata fungsional:
+            // lookup JMdict berbasis reading rentan homofon (が→蛾"moth",
+            // ば→場"place", の→"indicates possessive"). Konteks frasa hilang.
+            $pos = $features[0] ?? '';
+            $sub = $features[1] ?? '';
+            $is_functional = in_array($pos, ['助詞', '助動詞', '接続詞', '感動詞', '連体詞', '記号', '補助記号'], true)
+                || ($pos === '名詞' && $sub === '非自立' && $surface === 'の');
+
+            if ($dict_ready && !$is_functional) {
                 $base_form = $features[6] ?? '*';
                 foreach (array_unique([$surface, $base_form]) as $candidate) {
                     if ($candidate === '*' || $candidate === '') continue;
@@ -206,9 +230,15 @@ if (!function_exists('analyzeJapaneseText')) {
             $result['romaji'] = $clean;
         }
 
-        // Alias (brand/franchise) didahulukan, lalu glosses JMdict
-        $glosses = array_merge($alias_glosses, $glosses);
-        $result['english'] = trim(implode(' ', array_unique($glosses)));
+        // Alias (brand/franchise) didahulukan, lalu glosses JMdict.
+        // Jika ada alias frasa penuh yang menutupi seluruh teks, terjemahan
+        // final = alias itu saja (gloss per-token justru merusak makna frasa).
+        if ($full_cover !== null) {
+            $result['english'] = $full_cover;
+        } else {
+            $glosses = array_merge($alias_glosses, $glosses);
+            $result['english'] = trim(implode(' ', array_unique($glosses)));
+        }
         return $result;
     }
 }

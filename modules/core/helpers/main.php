@@ -15,3 +15,4 @@ require_once __DIR__ . '/mfa.php';
 require_once __DIR__ . '/subtitle.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/stream_auth.php';
+require_once __DIR__ . '/upload.php';
