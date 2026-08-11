@@ -26,10 +26,8 @@
     if (document.getElementById("meel-audio-engine-style")) return;
     var style = document.createElement("style");
     style.id = "meel-audio-engine-style";
-    // Mode compact (dipakai index.php mini-player, yang punya UI custom
-    // sendiri baca audio.currentTime langsung) menyembunyikan wrapper Plyr
-    // TANPA melepas dari DOM/menghentikan playback — audio tetap jalan,
-    // cuma kontrol visual Plyr yang disembunyikan.
+    // Mode compact (mini-player) menyembunyikan wrapper Plyr tanpa
+    // melepas dari DOM / menghentikan playback.
     style.textContent =
       "#meel-audio-engine-root.meel-engine-compact{position:absolute!important;width:0!important;height:0!important;overflow:hidden!important;opacity:0;pointer-events:none;}";
     document.head.appendChild(style);
@@ -37,8 +35,8 @@
 
   function createEngine() {
     ensureEngineStyle();
-    // ── Root persisten, langsung child <body>, di luar area yang akan
-    //    di-innerHTML-replace oleh view-router. ──
+    // ── Root persisten, langsung child <body> ──
+    // Di luar area yang akan di-innerHTML-replace oleh view-router.
     var root = document.createElement("div");
     root.id = "meel-audio-engine-root";
     root.setAttribute("data-meel-persist", "true");
@@ -63,12 +61,7 @@
       console.error("❌ audio-engine: Plyr init error:", e);
     }
 
-    // ── Format waktu gabungan "[current / total]" pada .plyr__time--current ──
-    // Plyr default menampilkan current time & duration sebagai DUA elemen
-    // terpisah. Di sini digabung jadi satu format (mis. "2:30 / 4:12") pada
-    // elemen current-time, dan elemen duration terpisah disembunyikan.
-    // Listener dipasang SETELAH konstruksi Plyr → eksekusinya selalu setelah
-    // update internal Plyr, jadi nilai gabungan yang terakhir ditulis.
+    // ── Gabungkan current/duration jadi format "[current / total]" ──
     if (player) {
       var _durEl =
         player.elements &&
@@ -82,18 +75,8 @@
         return m + ":" + (s < 10 ? "0" : "") + s;
       }
 
-      // Selama drag seek, Plyr menulis format sementaranya sendiri ke
-      // elemen current-time (mis. "-2:30" sisa waktu, karena kontrol
-      // default Plyr tidak punya elemen duration & invertTime:true) dan
-      // mem-pause audio (attr play-on-seeked). Supaya format gabungan
-      // "[current] / [total]" TIDAK PERNAH kedodoran saat seek:
-      //   1. Listener dipasang LANGSUNG ke elemen <audio> (bukan lewat
-      //      player.on(...)) — media event selalu sampai ke semua
-      //      listener, dan karena listener ini didaftarkan SETELAH
-      //      listener internal Plyr, tulisannya selalu menang.
-      //   2. Saat isSeekingNow, "current" diambil dari nilai slider
-      //      seek (target drag), jadi preview ikut jari walau
-      //      audio.currentTime belum ter-update.
+      // Selama drag seek, ambil "current" dari slider seek (preview ikut
+      // jari); listener dipasang langsung ke <audio> agar selalu menang.
       var _isSeekingNow = false;
 
       function _seekPreviewSeconds() {
@@ -144,10 +127,7 @@
         _updateCombinedTime();
       });
       audio.addEventListener("loadedmetadata", function () {
-        // Reset flag seek — ganti track (loadTrack → load()) tidak memicu
-        // seeking/seeked, jadi kalau seek terpotong oleh ganti lagu, flag
-        // harus di-nol-kan di sini supaya preview tidak memakai nilai
-        // slider lama dari track sebelumnya.
+        // Reset flag seek saat ganti track — load() tidak memicu seeking/seeked.
         _isSeekingNow = false;
         _updateCombinedTime();
       });
@@ -158,11 +138,8 @@
       _updateCombinedTime();
     }
 
-    // ── AudioContext / EQ chain — createMediaElementSource() HANYA BOLEH
-    //    dipanggil sekali seumur hidup elemen <audio> ini. Karena <audio>
-    //    tidak pernah dibuat ulang, chain ini juga aman dipakai lintas
-    //    transisi mini<->full & lintas ganti track (ganti src TIDAK
-    //    memutus koneksi AudioContext yang sudah ada). ──
+    // ── AudioContext / EQ chain ──
+    // createMediaElementSource() hanya boleh dipanggil sekali seumur hidup <audio>.
     var ctx = null,
       analyser = null,
       sourceNode = null,
@@ -218,10 +195,8 @@
     }
 
     var currentTrackId = null;
-    var handlers = {}; // di-replace SELURUHNYA lewat setHandlers() tiap kali
-    // halaman aktif (bukan ditumpuk), supaya event 'ended' dst. tidak
-    // pernah memicu dua handler sekaligus (mis. next-song watch.php DAN
-    // next-song index.php berjalan bersamaan).
+    var handlers = {}; // di-replace via setHandlers() tiap halaman aktif —
+    // hindari dua handler sekaligus (mis. next-song watch vs index).
     var freshLoadPending = false;
 
     function fire(name) {
@@ -286,14 +261,9 @@
         return analyser;
       },
 
-      // ── LOOP: satu-satunya titik untuk mengubah state loop ──
-      // Menulis SEMUA representasi loop secara atomik supaya tidak pernah
-      // divergen: media.loop (perilaku nyata), player.loop (setter Plyr →
-      // config.loop.active + media.loop), dan localStorage.meel_global_loop
-      // (persistensi lintas view). Sebelumnya loop di-toggle dari index
-      // menulis media.loop LANGSUNG (bypass setter Plyr) sehingga
-      // config.loop.active Plyr bisa stale — inilah sumber desync visual
-      // loop index<->watch.
+      // ── LOOP: satu-satunya titik ubah state loop ──
+      // Tulis semua representasi secara atomik (media.loop, player.loop,
+      // localStorage) agar tidak pernah divergen (desync index<->watch).
       setLoop: function (active) {
         active = !!active;
         audio.loop = active;
@@ -308,8 +278,6 @@
         return currentTrackId;
       },
       // true kalau loadTrack() TERAKHIR benar-benar ganti src (bukan no-op).
-      // Dipakai page-side untuk tahu apakah harus jalanin logic "lagu baru"
-      // (resume-modal, FLAC timeout, dsb) atau skip krn cuma pindah tampilan.
       wasFreshLoad: function () {
         var v = freshLoadPending;
         freshLoadPending = false;
@@ -320,8 +288,7 @@
         handlers = h || {};
       },
 
-      // Reparent wrapper Plyr (atau <audio> mentah kalau Plyr gagal init)
-      // ke container baru TANPA reset src/currentTime — ini kunci gapless-nya.
+      // Reparent wrapper Plyr ke container baru tanpa reset src — kunci gapless.
       mount: function (container, opts) {
         opts = opts || {};
         if (!container) return;
@@ -333,8 +300,7 @@
         }
       },
 
-      // Ganti track HANYA kalau id beda dari yang sedang diputar; kalau
-      // sama, no-op total (biarkan playback jalan terus, gapless).
+      // Ganti track HANYA kalau id beda; kalau sama, no-op total (gapless).
       loadTrack: function (meta, opts) {
         opts = opts || {};
         var id = meta && (meta.id != null ? meta.id : meta.musicId);
@@ -346,10 +312,7 @@
         audio.pause();
         audio.src = meta.streamUrl || "stream.php?id=" + id;
         audio.loop = !!meta.isLooping;
-        // Sinkronkan Plyr config.loop.active juga (bukan cuma media.loop) —
-        // supaya state loop engine self-consistent untuk pemanggil mana pun,
-        // tanpa bergantung pada urutan setLoop() di sisi halaman. Persistensi
-        // localStorage tetap urusan pemanggil (lihat setLoop()).
+        // Sinkronkan Plyr config.loop.active — state loop self-consistent.
         if (player) player.loop = !!meta.isLooping;
         audio.load();
         var startTime = opts.startTime || 0;
@@ -362,9 +325,8 @@
         return true;
       },
 
-      // Disediakan sebagai method eksplisit (mis. untuk logout / keluar
-      // total dari app musik) — TIDAK dipanggil otomatis saat transisi
-      // mini<->full.
+      // Method eksplisit untuk keluar total dari app musik — tidak
+      // dipanggil otomatis saat transisi mini<->full.
       destroy: function () {
         try {
           if (player && player.destroy) player.destroy();

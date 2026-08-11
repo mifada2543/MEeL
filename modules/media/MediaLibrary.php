@@ -24,7 +24,6 @@ class MediaLibrary
             }
         }
 
-        // Cache miss — query database
         $counts = ['music' => 0, 'video' => 0, 'books' => 0];
         // Query ini aman karena tidak ada variabel input dari user
         $sql = "SELECT 'music' AS type, COUNT(*) AS total FROM music
@@ -39,7 +38,6 @@ class MediaLibrary
             }
         }
 
-        // Simpan ke cache
         $cache_dir = dirname($cache_file);
         if (!is_dir($cache_dir)) {
             @mkdir($cache_dir, 0755, true);
@@ -116,7 +114,6 @@ class MediaLibrary
 
         if (empty($q)) {
             if ($sidebar) {
-                // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM video");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
 
@@ -227,7 +224,6 @@ class MediaLibrary
 
         if (empty($q)) {
             if ($sidebar) {
-                // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM music");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
 

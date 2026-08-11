@@ -117,7 +117,6 @@ class RateLimiter
         $data = self::readFile($filePath);
         $now  = time();
 
-        // Reset window jika sudah lewat
         if (($now - $data['window_start']) >= $window) {
             $data = ['count' => 0, 'window_start' => $now];
         }
@@ -126,7 +125,6 @@ class RateLimiter
         $remaining = max(0, $maxRequests - $data['count']);
         $reset     = $data['window_start'] + $window;
 
-        // Tulis ulang file
         $content = json_encode($data, JSON_UNESCAPED_UNICODE);
         ftruncate($fp, 0);
         fwrite($fp, $content);

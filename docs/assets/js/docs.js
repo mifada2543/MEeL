@@ -127,7 +127,7 @@ async function loadDoc(lang, file) {
         const md = await res.text();
         const html = marked.parse(md, { gfm: true });
 
-        // Fix internal .md links → viewer links
+        // Internal .md links → viewer links
         const fixedHtml = html.replace(
             /href="([^"]+)\.md"/g,
             (match, path) => {

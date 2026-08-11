@@ -118,33 +118,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ── Media streaming & download → Network only ──
-  // Video/audio/arsip bisa ratusan MB — melewati SW malah bikin cache meledak
-  // dan buffering/seek bermasalah. Selalu ambil langsung dari network.
   if (isStreamingMedia(url)) {
     return;
   }
 
   // ── Avatar profil (profile/upload/) → Network-first ──
-  // URL avatar TIDAK pernah berubah (mis. user_1.webp) padahal isinya sering
-  // diganti. Cache-first bikin foto lama (mis. hasil tes berwarna biru) terus
-  // tampil sampai hard refresh — pakai network-first agar foto baru langsung
-  // muncul, dengan fallback ke cache saat offline.
   if (url.pathname.includes('/profile/upload/')) {
     event.respondWith(networkFirst(request, PAGE_CACHE));
     return;
   }
 
   // ── ES modules catur (arcade/chess/assets/js/*.js) → Network-first ──
-  // main.js dimuat dengan cache-buster (?v=filemtime) TAPI import relatifnya
-  // (assets.js, engine.js, api.js, audio.js) TIDAK berversi. Strategi
-  // stale-while-revalidate (untuk aset tanpa ?v=) menyajikan modul LAMA dari
-  // cache saat main.js sudah BARU → error link module (ekspor baru hilang,
-  // mis. UNICODE_PIECES_WHITE / sendGameActionAPI) → main.js gagal total →
-  // papan catur tidak dirender. Gejala: ctrl+r papan hilang, ctrl+f5 normal.
-  // Network-first: selalu fresh saat online, tetap ada fallback cache offline.
-  // Pakai PAGE_CACHE (bukan STATIC_CACHE) — sama seperti rule avatar di atas:
-  // networkFirst memanggil trimCache() pada cache yang ditulisnya, dan
-  // STATIC_CACHE berisi aset precache lama yang tidak boleh ikut di-evict.
   if (url.pathname.includes('/arcade/chess/assets/js/')) {
     event.respondWith(networkFirst(request, PAGE_CACHE));
     return;
@@ -152,10 +136,7 @@ self.addEventListener('fetch', (event) => {
 
   // ── Static assets (CSS, JS, fonts, images) ──
   if (isStaticAsset(url)) {
-    // Aset dengan cache-buster (?v=filemtime) = immutable → cache-first.
-    // Aset TANPA ?v= (URL sama, tapi isi bisa berubah setelah deploy/edits)
-    // → stale-while-revalidate: sajikan cache (cepat) + refresh background,
-    //   supaya perubahan file langsung terlihat tanpa hard refresh.
+    // Ber-?v= → cache-first; tanpa ?v= → stale-while-revalidate
     if (url.searchParams.has('v')) {
       event.respondWith(cacheFirst(request, STATIC_CACHE));
     } else {

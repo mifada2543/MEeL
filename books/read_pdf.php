@@ -124,15 +124,8 @@ $title = htmlspecialchars($book['title']);
 
     <script>
     /**
-     * PDF Redirector — untuk akses mobile via HP
-     *
-     * read.php sudah menangani PDF via iframe (?raw=1) untuk desktop.
-     * read_pdf.php (mode normal) dipakai sebagai MEeL-branded gateway
-     * yang auto-redirect ke controllers/api/pdf.php.
-     *
-     * Kenapa redirect? Karena iframe/embed untuk PDF di browser mobile
-     * bermasalah dengan cookie session (subresource tidak kirim cookie).
-     * Redirect ke api/pdf.php sebagai top-level navigation = cookie terkirim.
+     * PDF Redirector — gateway mobile: redirect ke api/pdf.php.
+     * Top-level navigation mengirim cookie session (iframe/embed mobile tidak).
      */
     (function() {
         var loader = document.getElementById('redirectLoader');

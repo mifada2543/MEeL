@@ -192,9 +192,8 @@ if (!function_exists('analyzeJapaneseText')) {
             $parsed_romaji .= ' ' . (($yomi !== '*' && !preg_match('/[a-zA-Z]/', $yomi)) ? $yomi : $surface);
 
             // ─── FILTER KATA FUNGSIONAL ───
-            // Jangan terjemahkan per-token partikel & kata fungsional:
-            // lookup JMdict berbasis reading rentan homofon (が→蛾"moth",
-            // ば→場"place", の→"indicates possessive"). Konteks frasa hilang.
+            // Partikel & kata fungsional tidak diterjemahkan per-token:
+            // lookup JMdict berbasis reading rentan homofon tanpa konteks frasa.
             $pos = $features[0] ?? '';
             $sub = $features[1] ?? '';
             $is_functional = in_array($pos, ['助詞', '助動詞', '接続詞', '感動詞', '連体詞', '記号', '補助記号'], true)
@@ -230,9 +229,7 @@ if (!function_exists('analyzeJapaneseText')) {
             $result['romaji'] = $clean;
         }
 
-        // Alias (brand/franchise) didahulukan, lalu glosses JMdict.
-        // Jika ada alias frasa penuh yang menutupi seluruh teks, terjemahan
-        // final = alias itu saja (gloss per-token justru merusak makna frasa).
+        // Alias frasa penuh didahulukan; gloss per-token merusak makna frasa.
         if ($full_cover !== null) {
             $result['english'] = $full_cover;
         } else {

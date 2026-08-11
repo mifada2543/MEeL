@@ -1,9 +1,5 @@
 <?php
 // helpers/csrf.php — CSRF Token Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 /* Get CSRF token dari session (sudah diinisialisasi di config.php) */
 if (!function_exists('get_csrf_token')) {
 function get_csrf_token(): string

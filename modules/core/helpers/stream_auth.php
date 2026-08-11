@@ -1,8 +1,6 @@
 <?php
 // helpers/stream_auth.php — Otorisasi Akses Streaming Audio
-// Efek:
-// tanpa konteks halaman) → konsisten ditolak.
-// - Pemutaran normal dari pemutar MEeL tetap berjalan.
+// Akses tanpa konteks halaman ditolak konsisten; pemutaran normal tetap berjalan.
 if (!function_exists('authorize_stream')) {
     /* @param int $id ID media (tabel music) */
     function authorize_stream(int $id): void

@@ -67,7 +67,6 @@ function scheduleNextHealthAlert() {
   startHealthCountdown();
 }
 
-/* Pasang setTimeout hingga target waktu tercapai. Target tersimpan di */
 function startHealthCountdown() {
   clearTimeout(healthReminderTimer);
 
@@ -132,7 +131,6 @@ function isPlayerActive() {
 
 /* 3b) KOORDINASI ANTAR-TAB — cegah alarm ganda */
 
-// aman (perilaku lama: hanya tab pemenang yang dijeda).
 var healthAlertChannel = null;
 if (typeof BroadcastChannel !== "undefined") {
   try {
@@ -573,7 +571,6 @@ function runHealthAlertFlow() {
         background: "#141820",
         color: "#ffffff",
         timer: 2e4, // 20.000 ms = 20 detik (durasi relaksasi 20-20-20)
-        // visual (menyusut dari 100% → 0% seiring berjalannya waktu).
         timerProgressBar: true,
         showConfirmButton: false,
         allowOutsideClick: false,
@@ -635,8 +632,6 @@ function runHealthAlertFlow() {
 
 /* 5) BLOKIR SHORTCUT PLAYER — selama modal jeda terbuka */
 
-// user tidak terkunci saat mengetik komentar di tab lain.
-// daripada script player di halaman music/video.
 function meelHealthKeydownBlock(e) {
   if (!window.meelHealthAlertActive) return;
   const t = e && e.target;
@@ -661,7 +656,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupReadingActivityTracking(); // mode membaca (books): deteksi idle 60s
 });
 
-// berhenti total jika mode dimatikan dari tab lain.
 window.addEventListener("storage", function (e) {
   if (e.key !== "health_target_time" && e.key !== "health_reminder") return;
   if (localStorage.getItem("health_reminder") === "true") {
@@ -675,7 +669,6 @@ window.addEventListener("storage", function (e) {
   }
 });
 
-// tidak menyentuh jalur media video/music.
 window.addEventListener("pagehide", function () {
   finalizeReadingBannerOnLeave();
 });

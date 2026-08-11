@@ -34,8 +34,7 @@
     }
   }
 
-  // Bangun ulang bar-bar visualizer tiap kali #cava-container adalah node
-  // BARU (tiap mount) — ini murni DOM, tidak menyentuh engine/audio.
+  // Rebuild visualizer bars tiap #cava-container adalah node baru (per mount).
   function buildVisualizerBars(engine) {
     const cava = document.getElementById("cava-container");
     if (!cava) return;
@@ -73,9 +72,9 @@
     }
   }
 
-  // ── Semua listener yang menempel ke `audio`/`player` (elemen persisten)
-  //    — dipasang SEKALI SEUMUR SESI, tidak peduli berapa kali user
-  //    toggle mini<->full. ──
+  // ── Semua listener yang menempel ke `audio`/`player` (elemen persisten) ──
+  // Dipasang SEKALI SEUMUR SESI, tidak peduli berapa kali user
+  // toggle mini<->full.
   function bindEngineOnce(engine) {
     if (engine.player.__meelCoreBound) return;
     engine.player.__meelCoreBound = true;
@@ -278,12 +277,8 @@
       updateVisualizerUI(next);
     };
 
-    // BUG FIX (vinyl/visualizer tidak respons setelah transisi gapless):
-    // logic sync visual ini dipisah jadi fungsi tersendiri & di-expose ke
-    // engine, supaya bisa dipanggil EKSPLISIT dari meelInitWatchPlayer()
-    // tiap kali landing di watch.php — bukan cuma menunggu event
-    // 'play'/'pause' asli, yang TIDAK PERNAH fire kalau loadTrack() no-op
-    // (audio sudah main dari sebelumnya, cuma pindah tampilan).
+    // Sync visual di-expose ke engine & dipanggil eksplisit tiap
+    // landing — event 'play'/'pause' tidak fire saat loadTrack() no-op.
     function applyPlayingVisualState(isPlaying) {
       const container = document.getElementById("player-container");
       const vinyl = document.querySelector(".vinyl-wrap .vinyl-spin");
@@ -352,9 +347,7 @@
         isNavigating = false;
         return;
       }
-      // Auto-next tetap lewat AJAX router (bukan location.href) supaya
-      // konsisten gapless — meskipun track BEDA jadi tetap akan buffer
-      // ulang seperti biasa (sesuai spec, itu memang bukan kasus gapless).
+      // Auto-next lewat AJAX router agar konsisten gapless.
       if (window.meelNavigateView) {
         window.meelNavigateView(target, "watch", {
           onAfterSwap: function () {
@@ -370,9 +363,8 @@
 
   window.meelInitWatchPlayer = function () {
     window.__meelCurrentView = "watch";
-    // BUG FIX: DOM watch baru tiap landing — mode mini-player tidak pernah
-    // aktif di sini. Reset eksplisit supaya interval saveAudioState() (5s)
-    // yang tersisa dari sesi mini-mode sebelumnya tidak terus menulis state.
+    // Reset mode mini-player — interval saveAudioState() (5s) dari sesi
+    // mini-mode sebelumnya tidak boleh terus menulis state.
     isMiniPlayerActive = false;
     const engine = window.meelGetAudioEngine();
     const slot = document.getElementById("player-audio-slot");
@@ -393,11 +385,8 @@
 
     bindEngineOnce(engine);
 
-    // BUG FIX: sinkronkan visual playing-state (vinyl spin, visualizer,
-    // bitrate loop) SECARA EKSPLISIT ke status audio yang sebenarnya saat
-    // ini — jangan cuma andalkan event 'play'/'pause', yang tidak fire
-    // sama sekali kalau loadTrack() di bawah nanti no-op (audio sudah
-    // main dari sebelumnya, transisi gapless).
+    // Sync visual playing-state eksplisit — event 'play'/'pause' tidak
+    // fire saat loadTrack() no-op (transisi gapless).
     if (engine.__syncPlayingVisualState) {
       engine.__syncPlayingVisualState(!engine.audio.paused);
     }
@@ -405,16 +394,11 @@
     const globalLoop = "true" === localStorage.getItem("meel_global_loop");
     loadEqState();
     updateEqUI();
-    // BUG FIX: EQ chain (BiquadFilter) ada di dalam engine yang persisten
-    // dan TIDAK reset sendiri saat pindah tampilan — tapi gain filter-nya
-    // perlu di-reapply eksplisit di sini juga, karena sebelumnya cuma
-    // di-apply lewat window.setEqBand/setEqPreset (dipicu user), bukan
-    // otomatis tiap kali landing di watch.php dengan engine yang sudah
-    // berjalan dari sebelumnya (mis. dari index.php).
+    // EQ gain perlu di-reapply tiap landing — engine persisten tidak
+    // reset sendiri saat pindah tampilan.
     applyEqToFilters();
 
-    // Baca sessionStorage — cuma relevan kalau memang lagu ini yang lagi
-    // "resume" dari sesi sebelumnya (bukan sekadar toggle tampilan).
+    // Baca sessionStorage untuk resume lintas-halaman.
     let savedActive = false,
       savedTime = 0,
       savedPlaying = false,
@@ -437,32 +421,15 @@
       }
     }
 
-    // BUG FIX (skip_resume_once nyangkut): flag sessionStorage "skip_resume_once"
-    // dipasang oleh sisi index (tap kartu/playlist & expand mini-player) TEPAT
-    // sebelum user menuju watch, untuk menekan resume-modal SEKALI (jangan
-    // tanya "Lanjutkan Sesi?" untuk lagu yang baru saja diputar dari
-    // mini-player). Masalahnya: transisi expand selalu GAPLESS (track sama →
-    // isFreshTrack false → early-return di bawah), jadi konsumsi flag yang
-    // tadinya cuma ada di blok isFreshTrack TIDAK PERNAH jalan → flag nyangkut
-    // di sessionStorage → menekan resume-modal secara keliru pada fresh-track
-    // load berikutnya di watch (lagu berikutnya / reload pertama) — itulah
-    // kenapa butuh 1-2× Ctrl+R agar resume-modal "normal" lagi. Solusi: baca &
-    // buang flag SELALU di sini, sebelum early-return gapless.
+    // Baca & buang flag skip_resume_once SELALU di sini (sebelum early-return
+    // gapless) agar tidak menekan resume-modal pada fresh-track load berikutnya.
     const skipFromIndex = sessionStorage.getItem("skip_resume_once") === "true";
     if (skipFromIndex) sessionStorage.removeItem("skip_resume_once");
-    // BUG FIX (resume-modal sesi mini-player): user yang datang dari
-    // mini-player (tap kartu/playlist/expand) sedang dalam sesi mendengarkan
-    // AKTIF — resume-modal tidak boleh menginterupsi lagu-lagu berikutnya di
-    // sesi yang sama (auto-next / pindah lagu via AJAX). Marker in-memory ini
-    // bertahan selama dokumen SPA & dibersihkan saat pause/close eksplisit di
-    // index (miniPlayPauseIndex/closeMiniPlayerIndex) — jadi kunjungan dingin
-    // (buka watch langsung / reload / setelah pause-close) tetap mendapat
-    // resume-modal.
+    // Marker sesi mini-player in-memory — jangan interupsi lagu berikutnya
+    // di sesi yang sama; dibersihkan saat pause/close eksplisit.
     if (skipFromIndex) window.__meelResumeSessionActive = true;
 
-    // KUNCI GAPLESS: kalau track ID sama dengan yang lagi diputar engine,
-    // loadTrack() ini NO-OP TOTAL — src, currentTime, playback state audio
-    // TIDAK disentuh sama sekali.
+    // KUNCI GAPLESS: track ID sama → loadTrack() no-op total.
     const isFreshTrack = engine.loadTrack(
       {
         id: window.MEEL_MUSIC_CONFIG.id,
@@ -470,15 +437,8 @@
         isLooping: savedLoop,
       },
       {
-        // BUG FIX (resume-modal race): untuk track fresh yang BUKAN
-        // cross-page resume (savedActive === false), JANGAN autoplay di
-        // sini. loadTrack() dan onFreshTrackReady() di bawah sama-sama
-        // menunggu event 'loadedmetadata' pada <audio> yang sama — kalau
-        // loadTrack() langsung play() di situ, dia SELALU menang duluan
-        // (listener-nya didaftarkan lebih dulu), jadi lagu sudah mulai
-        // main sebelum resume-modal sempat dicek/ditampilkan. Keputusan
-        // play() sekarang didelegasikan penuh ke onFreshTrackReady(), yang
-        // baru jalan setelah tahu apakah resume-modal perlu intercept.
+        // play() didelegasikan ke onFreshTrackReady() — jangan autoplay
+        // langsung di sini (resume-modal race).
         autoplay: savedActive ? savedPlaying : false,
         startTime: savedActive ? savedTime : 0,
       },
@@ -488,29 +448,20 @@
     updateVisualizerUI(engine.__vis ? engine.__vis.isOn() : window.innerWidth >= 1024);
 
     if (!isFreshTrack) {
-      // ── BUG FIX (mobile-only): browser HP — terutama iOS Safari/WebKit —
-      //    menghentikan <audio>, atau bahkan tetap memutar resource LAMA,
-      //    saat elemen dipindah-pindah antar-DOM oleh view-router
-      //    (document.body.innerHTML = "" → re-attach) pada tiap transisi
-      //    AJAX mini<->full. Transisi gapless ini TIDAK memanggil play()
-      //    ulang (engine.loadTrack() no-op), jadi di HP audio bisa berhenti
-      //    / posisi 0 / salah lagu walau UI menampilkan benar. Ini yang
-      //    hanya muncul di device asli, tidak di emulasi laptop. ──
+      // ── Mobile-only ──
+      // iOS Safari menghentikan <audio> saat elemen dipindah antar-DOM
+      // oleh view-router — sync ulang eksplisit.
       const wantStream = window.MEEL_MUSIC_CONFIG.streamUrl || "";
       const haveSrc = engine.audio.currentSrc || engine.audio.src || "";
       const wantId = String(window.MEEL_MUSIC_CONFIG.id);
-      // Bandingkan PARAM id (boundary-safe: hindari false-positive "id=145"
-      // terhadap "id=1450"). haveId === null → src belum ter-resolve/loading
-      // → dianggap cocok (tidak reload).
+      // Bandingkan param id (boundary-safe); haveId === null → dianggap cocok.
       let haveId = null;
       try {
         haveId = new URL(haveSrc, window.location.href).searchParams.get("id");
       } catch (e) {}
       if (wantStream && haveSrc && haveId !== null && haveId !== wantId) {
-        // Resource yang benar-benar termuat ≠ lagu halaman ini (quirk
-        // mobile pasca detach/reattach) → muat ulang src yang benar, lalu
-        // pulihkan posisi & playback dari state tersimpan (kalau memang
-        // sedang diputar) — kalau tidak, lagu jadi benar tapi diam.
+        // Resource termuat ≠ lagu halaman ini (quirk mobile) → muat ulang src
+        // & pulihkan posisi/playback dari state tersimpan.
         engine.audio.src = wantStream;
         engine.audio.load();
         if (savedActive && savedPlaying) {
@@ -526,29 +477,21 @@
             });
         }
       } else if (savedActive && savedPlaying && engine.audio.paused) {
-        // Audio berhenti karena detach (bukan ganti lagu) → pulihkan posisi
-        // & playback dari state yang disimpan tepat sebelum navigasi.
+        // Audio berhenti karena detach → pulihkan posisi & playback.
         if (savedTime > 5 && engine.audio.currentTime < 1) {
           engine.audio.currentTime = savedTime;
         }
         engine.audio.play().catch(function () {});
       }
-      // Sama persis dengan track yang sedang jalan — cuma pindah tampilan.
-      // TIDAK reset apa pun, TIDAK munculkan resume-modal, TIDAK re-arm
-      // FLAC timeout. Loop UI disinkronkan dari state loop SEBENARNYA
-      // (media.loop): getter player.loop (Plyr) memang live, tapi setter
-      // Plyr dipanggil dulu supaya config.loop.active-nya ikut sinkron —
-      // toggle dari index menulis media.loop langsung (bypass Plyr), jadi
-      // tanpa ini config Plyr bisa stale dan visual/perilaku desync.
+      // Track sama — hanya pindah tampilan: tanpa reset, tanpa resume-modal.
+      // Sync loop via setter Plyr agar config.loop.active tidak stale.
       player.loop = engine.audio.loop;
       _applyLoopUI(player.loop);
       return;
     }
 
-    // ── Dari sini HANYA jalan untuk track yang BENAR-BENAR baru ──
-    // loadTrack() sudah men-set media.loop dari isLooping; setLoop membuat
-    // Plyr config.loop.active + localStorage ikut sinkron secara atomik
-    // (satu-satunya titik ubah state loop di seluruh app).
+    // ── Hanya untuk track yang BENAR-BENAR baru ──
+    // setLoop menyinkronkan media.loop + Plyr config + localStorage secara atomik.
     engine.setLoop(savedLoop);
     updateLoopUI();
     if (savedActive) sessionStorage.removeItem("meel_audio_state");
@@ -559,12 +502,8 @@
       btnRestart = document.getElementById("btn-restart"),
       timeEl = document.getElementById("resume-time");
     if (modalEl && btnResume && btnRestart && timeEl) {
-      // skipFromIndex sudah dibaca & flag sessionStorage sudah dikonsumsi di
-      // atas (sebelum early-return gapless). Arm one-shot in-memory HANYA kalau
-      // load fresh ini benar-benar bisa memunculkan modal (savedActive false).
-      // Kalau savedActive (resume lintas-halaman, autoplay) modal tidak akan
-      // dicek sama sekali — meng-arm di sini cuma nyisa & menekan modal pada
-      // fresh-track berikutnya di dokumen yang sama.
+      // Arm one-shot skip HANYA kalau modal benar-benar bisa muncul
+      // (savedActive false); kalau resume lintas-halaman, jangan di-arm.
       if (skipFromIndex && !savedActive) skipResumeModalOnce = true;
 
       function showResumeModal() {
@@ -611,21 +550,15 @@
           if (needsResume) {
             const shown = showResumeModal();
             if (!shown) {
-              // BUG FIX (stuck-paused): modal ditekan (sesi mini-player aktif
-              // / one-shot skip) tapi lagu punya posisi tersimpan — lagu
-              // TIDAK boleh diam. Auto putar dari awal, persis seperti tombol
-              // "Ulang".
+              // Modal ditekan tapi ada posisi tersimpan
+              // → auto putar dari awal.
               localStorage.removeItem(storageKeyMusic);
               audio.currentTime = 0;
               player.play();
             }
           } else {
-            // Tidak ada posisi tersimpan yang perlu dikonfirmasi user —
-            // baru di sinilah lagu benar-benar mulai diputar (menggantikan
-            // autoplay yang dulu langsung ditembak dari loadTrack()).
-            // One-shot skipResumeModalOnce "habis" di sini: modal tidak
-            // ditampilkan, jadi flag tidak boleh nyangkut & menekan modal
-            // pada fresh-track berikutnya di dokumen yang sama.
+            // Tidak ada posisi tersimpan → mulai putar; one-shot
+            // skipResumeModalOnce "habis" di sini.
             skipResumeModalOnce = false;
             player.play();
           }

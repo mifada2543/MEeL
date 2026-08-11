@@ -37,7 +37,7 @@ $hdd_base_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : '/path/to/your/media
 $hdd_dir       = dirname($hdd_base_path);
 $media_root    = dirname($hdd_dir);
 
-// ─── DEBUG DATA (admin only) ───
+// ─── DATA DIAGNOSTIK (admin only) ───
 $debug = [];
 if ($user_role === 'admin') {
     // PHP process user

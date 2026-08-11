@@ -1,9 +1,5 @@
 <?php
 // helpers/upload.php — Upload Quota & Limit Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 
 /* Tabel media yang didukung untuk query quota upload.
  * Mengembalikan '' untuk input tak dikenal — pemanggil harus

@@ -1,9 +1,5 @@
 <?php
 // helpers/mfa.php — MFA / TOTP Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('base32_decode')) {
 /* @param string $input Base32-encoded string; @return string Decoded binary string */
 function base32_decode(string $input): string

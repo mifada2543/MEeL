@@ -313,7 +313,6 @@ class Uploader
         $temp_video      = $files['video']['tmp_name'];
         $video_name_orig = $files['video']['name'];
 
-        // Validasi ekstensi
         $ext = strtolower(pathinfo($video_name_orig, PATHINFO_EXTENSION));
         if (!in_array($ext, ['mp4', 'webm', 'mkv'], true)) {
             return ['status' => 'error', 'msg' => "Format video tidak didukung! Gunakan MP4, WebM, atau MKV.", 'alert' => true];
@@ -532,7 +531,6 @@ class Uploader
 
         // ─── INSERT DATABASE (WITH TRANSACTION) ───
         $title       = trim($post['title'] ?? 'Untitled Video');
-        // 1. Ambil data deskripsi dari form POST
         $description = trim($post['description'] ?? '');
         $meta        = generate_search_metadata($title);
 

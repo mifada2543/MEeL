@@ -1,9 +1,5 @@
 <?php
 // File: modules/core/Transcoder.php
-// Arsitektur (refactor media-processing engine):
-// Progress dilaporkan lewat ProgressObserver (lihat emit()).
-// mengubah event progress menjadi overlay browser (meel*).
-// bukan pkill -f berbasis marker string.
 // Pastikan konstanta path terdefinisi (dari auth/config.php)
 if (!defined('MEEL_HDD_BASE')) {
     define('MEEL_HDD_BASE', '/path/to/your/media');
@@ -308,7 +304,6 @@ class Transcoder
             }
         }
 
-        // Catat error ke log server
         error_log("[MEeL-Transcoder] Gagal parsing metadata untuk URL: " . $url);
         throw new DownloadException(
             "Gagal parsing metadata dari yt-dlp",
@@ -340,7 +335,6 @@ class Transcoder
     // BAGIAN 1: DOWNLOAD & FINALISASI (processDownload)
     public function processDownload(string $url, string $type): string
     {
-        // Validasi input
         if (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('/^https?:\/\//i', $url)) {
             throw new DownloadException("URL tidak valid atau protokol tidak didukung.", $url, 'validation');
         }
@@ -367,7 +361,6 @@ class Transcoder
             throw $e;
         }
 
-        // ditangani CSS (text-overflow: ellipsis) di halaman library.
         $title_candidates = array_values(array_filter(
             [$meta['title'] ?? '', $meta['fulltitle'] ?? '', $meta['alt_title'] ?? '', $meta['track'] ?? ''],
             fn($t) => $t !== '' && mb_substr(trim($t), -3) !== '...'
@@ -380,7 +373,6 @@ class Transcoder
         $clean       = getRomajiName($title);
         $description = !empty($meta['description']) ? $meta['description'] : 'Upload by MEeL Engine';
 
-        // Siapkan perintah download sesuai tipe
         $shm_temp    = null;
         $temp_id     = null;
         $staging_dir = null;
@@ -423,14 +415,6 @@ class Transcoder
 
         putenv('PATH=/usr/local/bin:/usr/bin:/bin');
         putenv('LC_ALL=en_US.UTF-8');
-        // $cmd_dl sudah berisi args yang di-escape dengan escapeshellarg() + filter_var() untuk URL
-        // session/process-group leader (PGID == PID yang dilaporkan
-        // bisa dihentikan presisi via kill terhadap process group,
-        // menggantikan pkill -f berbasis marker string.
-        // shell saat itu juga. Tanpa sh -c, yang jalan hanya
-        // `setsid timeout N export ...` (export bukan binary, langsung
-        // "command not found"), shell sudah terganti oleh exec, dan
-        // diam-diam dengan error log kosong.
         $full_cmd = "exec setsid timeout " . self::DOWNLOAD_TIMEOUT
             . " sh -c " . escapeshellarg($cmd_dl);
         $dl_desc  = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
@@ -449,7 +433,6 @@ class Transcoder
         $dl_label  = ($type === 'music') ? ($temp_id ?? 'music') : ($basename ?? 'video');
         $this->trackChildProcess($dl_pgid, true, 'yt-dlp download (' . $dl_label . ')');
 
-        // Contoh output yt-dlp:
         $frag_retry_abort  = false;
         $php_timeout_abort = false;
         $frag_total        = 0;
@@ -517,7 +500,6 @@ class Transcoder
         proc_close($dl_proc);
         $this->untrackChildProcess($dl_pgid);
 
-        // Validasi hasil download
         $is_success = false;
 
         if ($type === 'music') {
@@ -577,7 +559,6 @@ class Transcoder
         }
 
         if ($raw_file) {
-            // batas URL server (Apache LimitRequestLine ~8190 byte).
             $meta_key = pathinfo($raw_file, PATHINFO_FILENAME);
             if (!isset($_SESSION['meel_pending_music']) || !is_array($_SESSION['meel_pending_music'])) {
                 $_SESSION['meel_pending_music'] = [];
@@ -594,9 +575,7 @@ class Transcoder
                 'duration'    => $duration,
                 'description' => $description,
             ];
-            // browser mengeksekusi redirect (mencegah race condition).
             session_write_close();
-            // string biasa.
             $redirect_url = 'controllers/api/post_encode.php?temp_file=' . rawurlencode($raw_file);
             $this->emit('redirect', ['url' => $redirect_url]);
             return 'REDIRECT:' . $redirect_url;
@@ -743,7 +722,6 @@ class Transcoder
             $this->ensureDir($ram_folder, 0777);
         }
 
-        // Jalankan pembuatan sprite di dalam RAM
         $this->generateSpriteAndVTT($staging_mp4, $ram_folder);
 
         $sprite_src = $ram_folder . 'thumb_sprite.webp';
@@ -765,7 +743,6 @@ class Transcoder
             error_log("[MEeL] WARN: thumbnails.vtt tidak terbentuk di RAM: $ram_folder");
         }
 
-        // Bersihkan RAM setelah semua file berhasil dipindahkan
         $this->removeDir($ram_folder);
 
         $this->emit('sprite_progress', ['pct' => 100, 'label' => 'Sprite & VTT selesai.']);
@@ -890,25 +867,11 @@ class Transcoder
         $shm_temp   = $this->getShmTempPath();
         $input_path = "$shm_temp/$temp_file";
 
-        // ─── LOCK SINGLE-FLIGHT per temp_file ───
-        // Navigasi duplikat ke post_encode.php (browser kadang melepas request
-        // ganda saat redirect via script streaming di tengah dokumen) bisa
-        // memicu DUA encodeMusic untuk file yang sama: yang pertama sukses lalu
-        // menghapus file input, yang kedua gagal dengan error ffmpeg menyesatkan
-        // padahal media sudah tersimpan. Lock ini men-serialisasi kedua request;
-        // yang kedua menunggu yang pertama selesai, lalu terdeteksi sebagai
-        // duplikat oleh blok idempotensi di bawah.
         $lock_path = sys_get_temp_dir() . '/meel_encode_' . md5($temp_file) . '.lock';
         $lock_fp   = fopen($lock_path, 'c');
         $lock_held = $lock_fp !== false && flock($lock_fp, LOCK_EX);
 
         try {
-            // ─── IDEMPOTENSI: input hilang tapi media sudah masuk DB baru ───
-            // Request duplikat tiba beberapa detik setelah request pertama selesai
-            // (input sudah dihapus) → jangan tampilkan error, anggap sukses seperti
-            // request pertama. Window 60 detik: race hanya butuh hitungan detik,
-            // window pendek meminimalkan risiko salah mengaitkan ke lagu lain jika
-            // user mengupload 2 lagu berbeda berdekatan.
             if ($lock_held && !file_exists($input_path)) {
                 $stmt_recent = $this->conn->prepare(
                     "SELECT filename FROM music
@@ -929,7 +892,6 @@ class Transcoder
 
             $clean      = getRomajiName($title);
 
-            // Cek konflik nama file
             $final_fname = $clean . ".ogg";
             $counter     = 1;
             while (file_exists("{$this->base_path}/music/upload/file/$final_fname")) {
@@ -940,7 +902,6 @@ class Transcoder
             $final_path = "{$this->base_path}/music/upload/file/$final_fname";
             $thumb_name = str_replace('.ogg', '.webp', $final_fname);
 
-            // Encode ke Opus/OGG
             // -vbr on: Variable Bitrate, lebih efisien dari CBR
             $cmd = escapeshellarg($this->ffmpeg_bin)
                 . " -y -threads " . self::FFMPEG_THREADS
@@ -953,7 +914,7 @@ class Transcoder
 
             if (!file_exists($final_path) || filesize($final_path) === 0) {
                 // Pesan ramah — jangan tampilkan banner ffmpeg mentah ke user.
-                // Detail lengkap tetap dicatat ke error_log untuk debugging.
+                // Detail lengkap tetap dicatat ke error_log.
                 $friendly = "Gagal mengonversi audio. Silakan coba lagi nanti.";
                 if (!file_exists($input_path)) {
                     $friendly = "File sumber audio tidak ditemukan. Media mungkin sudah diproses — periksa library Anda, atau coba upload ulang.";
@@ -976,7 +937,6 @@ class Transcoder
 
             $this->removeFile($input_path);
 
-            // Bersihkan sisa file temporary dari yt-dlp
             foreach (glob("$temp_dir/$temp_base.*") as $leftover) {
                 $this->removeFile($leftover);
             }
@@ -1138,7 +1098,6 @@ class Transcoder
         $stmt_clean->execute();
         $stmt_clean->close();
 
-        // Ambil data video
         $stmt = $this->conn->prepare(
             "SELECT title, filename, thumbnail FROM video WHERE id = ? LIMIT 1"
         );
@@ -1169,7 +1128,6 @@ class Transcoder
         natsort($ts_files);
         $ts_files = array_values($ts_files);
 
-        // Validasi durasi & ukuran
         $file_dur   = $this->probeDuration($m3u8_path);
         $total_size = array_sum(array_map('filesize', $ts_files));
 
@@ -1218,7 +1176,6 @@ class Transcoder
             // Marker > 10 menit (stale) — lanjutkan
         }
 
-        // Buat marker file
         if (!touch($marker_file)) {
             error_log("[MEeL] Gagal membuat marker file: {$marker_file}");
         }
@@ -1228,7 +1185,6 @@ class Transcoder
             fclose($mtx_fp);
         }
 
-        // Cek server busy
         require_once __DIR__ . '/System.php';
         $sys = new System($this->conn);
         if ($sys->isServerBusy()) {
@@ -1244,7 +1200,6 @@ class Transcoder
         $queue_id = (int)$this->conn->insert_id;
         $stmt_q->close();
 
-        // Buat concat list
         $concat_list_path = $output_dir . "concat_{$video_id}_" . time() . ".txt";
         $concat_content   = "";
         foreach ($ts_files as $ts) {
@@ -1257,7 +1212,6 @@ class Transcoder
         $thumb_path = $hls_base . "thumbnail/" . $v_data['thumbnail'];
         $use_thumb  = file_exists($thumb_path) && !empty($v_data['thumbnail']);
 
-        // Konfigurasi codec per format
         switch ($format) {
             case 'ogg':
                 // tapi tetap set untuk ffmpeg I/O

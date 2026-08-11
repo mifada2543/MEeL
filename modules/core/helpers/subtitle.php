@@ -1,9 +1,5 @@
 <?php
 // helpers/subtitle.php — Subtitle & WebVTT Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('convert_srt_to_vtt')) {
 /* @param string $srt Konten file .srt; @return string Konten .vtt yang valid */
 function convert_srt_to_vtt(string $srt): string

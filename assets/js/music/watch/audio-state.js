@@ -1,5 +1,5 @@
 function saveAudioState() {
-  // BUG FIX: interval saveAudioState() (5s) milik view watch TIDAK boleh
+  // Interval saveAudioState() (5s) milik view watch TIDAK boleh
   // menulis state saat view aktif bukan watch (mis. sudah pindah ke index
   // via goBackToLibrary) — kalau tidak, dia menimpa meel_audio_state dengan
   // lagu LAMA dan bertabrakan dengan saveIndexState() milik index.

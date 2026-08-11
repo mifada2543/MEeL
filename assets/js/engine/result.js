@@ -10,7 +10,7 @@
 // masuk history sehingga tombol back tidak me-resubmit form upload.
 // CATATAN: guard ini hanya mencegah double-execution dalam satu dokumen —
 // duplikat di level jaringan ditangani di server (flock single-flight +
-// idempotensi di Transcoder::encodeMusic); fix server itu TIDAK boleh dihapus.
+// idempotensi di Transcoder::encodeMusic); perbaikan server itu TIDAK boleh dihapus.
 var _meelRedirectFired = false;
 window.meelRedirect = function (url) {
   if (_meelRedirectFired) return;

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../modules/core/helpers.php';
 // ─── Rate limit ───
 $max_mfa_attempts = 10;
 $mfa_lockout_time = 300; // 5 menit
-$is_loopback = auth_is_loopback(); // localhost bebas rate-limit saat debug
+$is_loopback = auth_is_loopback(); // localhost bebas rate-limit saat pengembangan
 $mfa_locked = false;
 $mfa_remaining = 0;
 if (!$is_loopback && isset($_SESSION['mfa_locked_until'])) {

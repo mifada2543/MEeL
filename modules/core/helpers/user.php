@@ -1,9 +1,5 @@
 <?php
 // helpers/user.php — User Role & Usage Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('get_user_usage')) {
 function get_user_usage(string $username): int|float
 {

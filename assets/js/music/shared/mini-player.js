@@ -20,10 +20,8 @@ function getMiniPlayerIndexEl() {
 
 // ─── Helpers ───
 function saveIndexState() {
-  // BUG FIX: interval saveIndexState() (5s) milik view index TIDAK boleh
-  // menulis state saat view aktif bukan index (mis. sudah pindah ke watch
-  // via expand) — kalau tidak, dia menimpa state dengan data stale dan
-  // bertabrakan dengan saveAudioState() milik watch.
+  // Interval saveIndexState() (5s) tidak boleh menulis state saat view
+  // aktif bukan index (menimpa state dengan data stale).
   if (window.__meelCurrentView !== "index") return;
   if (!currentState || !audioPlayer) return;
   currentState.currentTime = audioPlayer.currentTime;
@@ -32,11 +30,8 @@ function saveIndexState() {
   sessionStorage.setItem("meel_audio_state", JSON.stringify(currentState));
 }
 
-// Pasang listener play/pause/timeupdate/ended ke audio-engine SEKALI SAJA
-// (guard lewat flag di elemen audio itu sendiri, BUKAN `!audioPlayer` —
-// karena initMiniPlayerIndex() sudah men-set audioPlayer=engine.audio
-// duluan sebelum loadAudio() sempat jalan, jadi cek `!audioPlayer` di sini
-// tidak akan pernah true & listener tidak akan pernah terpasang).
+// Pasang listener ke audio-engine SEKALI SAJA (guard via flag di elemen
+// audio, bukan `!audioPlayer` — audioPlayer sudah di-set lebih dulu).
 function ensureIndexAudioListeners(audio) {
   if (audio.__meelIndexListenersBound) return;
   audio.__meelIndexListenersBound = true;
@@ -62,15 +57,10 @@ function loadAudio(state, autoplay) {
     loopVal = _gLoop;
   }
   isMiniLoopIndexActive = loopVal;
-  // Terapkan loop SEKARANG lewat setLoop — kalau loadTrack() di bawah NO-OP
-  // (track sama, gapless), media.loop tidak ikut di-update oleh loadTrack;
-  // setLoop menjamin media.loop + Plyr config + localStorage selalu sinkron
-  // dengan pilihan user, apa pun jalur yang memuat track.
+  // Terapkan loop via setLoop — sinkron dengan loadTrack() yang mungkin no-op.
   engine.setLoop(loopVal);
 
-  // KUNCI GAPLESS: kalau trackId sama dengan yang sedang diputar engine
-  // (mis. balik dari watch.php ke index.php pada lagu yang sama), ini
-  // NO-OP TOTAL — src/currentTime/playback TIDAK disentuh.
+  // KUNCI GAPLESS: trackId sama → loadTrack() no-op total.
   engine.loadTrack(
     { id: trackId, streamUrl: `stream.php?id=${trackId}`, isLooping: loopVal },
     { autoplay: !!autoplay, startTime: state.currentTime || 0 },
@@ -78,12 +68,8 @@ function loadAudio(state, autoplay) {
 
   currentState = state;
   updateMiniLoopUIIndex();
-  // Sync ikon play/pause ke state audio SEBENARNYA saat ini. Penting untuk
-  // kasus gapless: kalau engine.loadTrack() di atas NO-OP (track sama sudah
-  // berjalan), event 'play'/'pause' TIDAK akan pernah fire, jadi setPlayIcon()
-  // tidak terpanggil lewat listener event di ensureIndexAudioListeners — tanpa
-  // baris ini ikon menganggur di "play" (default markup) padahal audio sedang
-  // berjalan, dan klik pertama terlihat tidak mengubah apa-apa.
+  // Sync ikon ke state audio aktual — event 'play'/'pause' tidak fire
+  // saat loadTrack() no-op (gapless).
   setPlayIcon(audioPlayer.paused ? "play" : "pause");
 }
 
@@ -156,14 +142,8 @@ function initMiniPlayerIndex() {
   audioPlayer = engine.audio;
   ensureIndexAudioListeners(audioPlayer);
 
-  // BUG FIX (stale currentState / loop tidak sync): currentState di module ini
-  // TIDAK ikut ter-update saat lagu berganti di watch (auto-next, pindah lagu)
-  // — metadata mini-player jadi lagu LAMA & saveIndexState() menulis state
-  // campur (id lama + posisi baru), sehingga expand malah menuju lagu yang
-  // salah (inilah "loop watch<->index tidak sync"). Sinkronkan dari
-  // sessionStorage (sumber kebenaran yang ditulis saveAudioState()/
-  // goBackToLibrary) kalau id-nya cocok dengan track yang sedang diputar
-  // engine.
+  // Sinkronkan dari sessionStorage agar metadata mini-player
+  // tidak menjadi lagu lama (stale currentState).
   const _engIdNow = engine.getCurrentTrackId();
   if (_engIdNow != null) {
     const _sRaw = sessionStorage.getItem("meel_audio_state");
@@ -186,10 +166,7 @@ function initMiniPlayerIndex() {
     miniPlayerBar.__meelClickBound = true;
     miniPlayerBar.style.cursor = "default";
     miniPlayerBar.addEventListener("click", (e) => {
-      // BUG FIX (double-fire): tap pada cover image memicu expand DUA kali
-      // — inline onclick di .mp-art (index.php/view_playlist.php) DAN
-      // listener ter-delegasi ini (karena e.target.tagName === "IMG").
-      // Tap di dalam .mp-art sudah ditangani inline onclick, jadi skip di sini.
+      // Tap cover sudah ditangani inline onclick di .mp-art — skip di sini (double-fire).
       if (e.target.closest(".mp-art")) return;
       if (
         e.target.closest(".mp-thumbnail") ||
@@ -202,20 +179,14 @@ function initMiniPlayerIndex() {
   }
   isMiniLoopIndexActive = localStorage.getItem("meel_global_loop") === "true";
   updateMiniLoopUIIndex();
-  // Terapkan loop ke engine juga (bukan hanya visual) — media.loop bisa beda
-  // dari localStorage jika track dimuat tanpa lewat setLoop. Atomik & aman:
-  // semua jalur sekarang menulis loop lewat engine.setLoop().
+  // Terapkan loop ke engine via setLoop() (semua jalur menulis lewat sini).
   engine.setLoop(isMiniLoopIndexActive);
   if (engine.getCurrentTrackId() != null && currentState) {
     isMiniPlayerIndexActive = true;
     updateIndexUI();
     setPlayIcon(audioPlayer.paused ? "play" : "pause");
-    // BUG FIX (mobile-only): browser HP (terutama iOS Safari/WebKit)
-    // menghentikan <audio>, atau tetap memutar resource LAMA, saat
-    // view-router memindahkannya antar-DOM (body.innerHTML = "" →
-    // re-attach) di transisi watch→index. Sinkronkan ulang eksplisit:
-    // (a) resource termuat ≠ lagu state → muat ulang + play;
-    // (b) audio berhenti akibat detach → play() ulang.
+    // iOS Safari menghentikan <audio> saat view-router memindahkan elemen
+    // antar-DOM — sync ulang eksplisit (mobile-only).
     const wantId = String(currentState.id ?? currentState.musicId);
     const wantStream =
       currentState.streamUrl || `stream.php?id=${wantId}`;
@@ -242,8 +213,7 @@ function initMiniPlayerIndex() {
           });
       }
     } else if (currentState.isPlaying && audioPlayer.paused) {
-      // Audio berhenti karena detach (bukan ganti lagu) → play() ulang.
-      // Event 'play' listener akan menyinkronkan ikon.
+      // Audio berhenti karena detach → play() ulang.
       audioPlayer.play().catch(function () {});
     }
     const bar = getMiniPlayerIndexEl();
@@ -260,10 +230,8 @@ function initMiniPlayerIndex() {
       els.img.src = state.thumbnailUrl || `upload/thumbnail/${state.thumbnail}`;
     if (els.title) els.title.textContent = state.title || "Unknown";
     if (els.artist) els.artist.textContent = state.artist || "Unknown";
-    // BUG FIX (race): dulu loadAudio ditunda 100ms — kalau user men-tap kartu
-    // lain dalam jendela itu, loadAudio(state) yang tertunda akan ME-REVERT
-    // lagu yang baru dipilih ke lagu dari state lama. Panggil langsung saja:
-    // engine.loadTrack() sudah no-op untuk track yang sama, jadi aman.
+    // Panggil loadAudio langsung (tanpa tunda 100ms) agar tap kartu lain
+    // tidak me-revert lagu dari state lama.
     loadAudio(state, state.isPlaying);
     updateIndexUI();
     const globalLoop = localStorage.getItem("meel_global_loop") === "true";
@@ -276,9 +244,7 @@ function initMiniPlayerIndex() {
     } else {
       isMiniLoopIndexActive = globalLoop;
     }
-    // Terapkan lewat setLoop (media.loop + Plyr config + localStorage) supaya
-    // semua representasi loop konsisten setelah restore state sesi — jangan
-    // menulis media.loop langsung (bypass Plyr config → desync visual).
+    // Terapkan via setLoop agar semua representasi loop konsisten.
     engine.setLoop(isMiniLoopIndexActive);
     updateMiniLoopUIIndex();
     const bar = getMiniPlayerIndexEl();
@@ -309,11 +275,8 @@ window.miniPlayPauseIndex = function () {
   if (audioPlayer.paused) {
     audioPlayer.play();
   } else {
-    // BUG FIX (konsistensi pause): pause EKSPLISIT lewat tombol play/pause
-    // mengakhiri konteks "sedang memutar dari mini-player" — buang one-shot
-    // skip_resume_once (sama seperti saat close mini-player) supaya membuka
-    // watch lewat link lagu yang BERBEDA tetap mendapat resume-modal, bukan
-    // ditekan sekali oleh flag stale. Marker sesi in-memory juga dibuang.
+    // Pause eksplisit mengakhiri konteks mini-player — buang
+    // skip_resume_once & marker sesi in-memory.
     sessionStorage.removeItem("skip_resume_once");
     window.__meelResumeSessionActive = false;
     audioPlayer.pause();
@@ -376,12 +339,11 @@ window.miniPrevIndex = function () {
   }
   audioPlayer.currentTime = 0;
 };
-// Tambahkan playlist_id ke URL bila belum ada — konteks playlist TIDAK boleh
-// hilang saat kembali ke full player dari mini-player index.php.
+// Tambahkan playlist_id ke URL bila belum ada — konteks playlist tidak boleh hilang.
 function withPlaylistParam(url, playlistId) {
   if (!url || !playlistId || playlistId <= 0) return url;
   if (url.indexOf("playlist_id=") !== -1) return url;
-  // Sisipkan parameter sebelum fragment (#...), supaya URL tetap valid
+  // Sisipkan parameter sebelum fragment (#...).
   const hashIdx = url.indexOf("#");
   const base = hashIdx === -1 ? url : url.substring(0, hashIdx);
   const hash = hashIdx === -1 ? "" : url.substring(hashIdx);
@@ -393,11 +355,8 @@ function withPlaylistParam(url, playlistId) {
     hash
   );
 }
-// BUG FIX (double-fire): guard re-entrancy. Tap cover pada HP memicu
-// expandPlayerFromMiniPlayer() dua kali (inline onclick + delegated
-// listener) → dua navigasi AJAX bersamaan yang saling menimpa DOM dan
-// membaca sessionStorage di waktu berbeda. Flag ini membuat hanya satu
-// navigasi yang efektif; di-reset setelah meelNavigateView() selesai.
+// Guard re-entrancy — hanya satu navigasi yang efektif;
+// di-reset setelah meelNavigateView() selesai.
 let _expandInFlight = false;
 function expandPlayerFromMiniPlayer() {
   if (_expandInFlight) return;
@@ -435,16 +394,11 @@ function expandPlayerFromMiniPlayer() {
       _expandInFlight = false;
       return;
     }
-    // Keluar dari view index — hentikan interval saveIndexState() (5s)
-    // yang kalau dibiarkan akan menulis state stale di view watch.
+    // Keluar dari view index — hentikan interval saveIndexState() (5s).
     isMiniPlayerIndexActive = false;
     if (window.meelNavigateView) {
-      // AJAX partial-swap: audio-engine (dgn <audio> yg sedang berjalan)
-      // TIDAK disentuh di sini — cuma direparent oleh engine.mount()
-      // setelah DOM watch.php siap. Gapless untuk track yang sama.
-      // Promise.resolve(): jaga-jaga kalau versi view-router.js dari cache
-      // browser (Cache-Control immutable 1 tahun) bukan async — .then()
-      // tetap aman untuk nilai non-thenable.
+      // AJAX partial-swap: audio-engine tidak disentuh — hanya direparent
+      // oleh engine.mount(). Gapless untuk track yang sama.
       Promise.resolve(
         window.meelNavigateView(target, "watch", {
           onAfterSwap: function () {
@@ -478,10 +432,7 @@ function expandPlayerFromMiniPlayer() {
 let isMiniLoopIndexActive = localStorage.getItem("meel_global_loop") === "true";
 window.toggleMiniLoopIndex = function () {
   isMiniLoopIndexActive = !isMiniLoopIndexActive;
-  // Semua representasi loop di-update atomik lewat engine.setLoop()
-  // (media.loop + Plyr config.loop.active + localStorage) — jangan menulis
-  // media.loop langsung: Plyr config bisa stale → visual loop di watch
-  // desync dengan perilaku nyata (bug loop index<->watch).
+  // Semua representasi loop di-update atomik via engine.setLoop().
   const engine = window.meelGetAudioEngine ? window.meelGetAudioEngine() : null;
   if (engine) engine.setLoop(isMiniLoopIndexActive);
   else localStorage.setItem("meel_global_loop", String(isMiniLoopIndexActive));
@@ -505,12 +456,8 @@ window.closeMiniPlayerIndex = function () {
   const bar = getMiniPlayerIndexEl();
   if (bar) bar.classList.remove("active");
   sessionStorage.removeItem("meel_audio_state");
-  // BUG FIX: user yang menutup mini-player (pause eksplisit) TIDAK lagi dalam
-  // konteks "sedang memutar dari mini-player" — buang flag one-shot
-  // skip_resume_once yang dipasang saat kartu/item playlist diklik. Kalau
-  // dibiarkan, flag stale ini menekan resume-modal secara keliru saat user
-  // lalu membuka watch lewat link judul lagu (padahal dia sudah pause).
-  // Marker sesi in-memory juga dibuang (sesi mini-player berakhir).
+  // Close mini-player mengakhiri sesi — buang skip_resume_once
+  // & marker sesi in-memory agar resume-modal tidak ditekan keliru.
   sessionStorage.removeItem("skip_resume_once");
   window.__meelResumeSessionActive = false;
   isMiniPlayerIndexActive = false;
@@ -552,8 +499,7 @@ function setupPlaylistItemClicks() {
       loadAudio(state, true);
       updateIndexUI();
       sessionStorage.setItem("meel_audio_state", JSON.stringify(state));
-      // Jaga fallback meel_last_playlist_id tetap sinkron dengan playlist yang
-      // sedang diputar, supaya initMiniPlayerIndex() tidak memakai nilai stale.
+      // Jaga meel_last_playlist_id sinkron dengan playlist yang diputar.
       var plIdNow = parseInt(this.dataset.playlistId || "0", 10);
       if (plIdNow > 0) {
         localStorage.setItem("meel_last_playlist_id", String(plIdNow));

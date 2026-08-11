@@ -1,9 +1,5 @@
 <?php
 // helpers/url.php — URL, Protocol & Format Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// hanya butuh fungsi di file ini).
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('resolve_binary')) {
     /* @param array $candidates Daftar kandidat path binary; @return string Path binary yang ditemukan */
     function resolve_binary(array $candidates): string

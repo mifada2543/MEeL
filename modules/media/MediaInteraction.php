@@ -18,7 +18,6 @@ class MediaInteraction {
      * @return array Status dan data terbaru
      */
     public function toggleLike(int $media_id, string $media_type, string $like_type): array {
-        // Validasi
         if (!$this->validateUser()) {
             return $this->getResponse(false, 'User tidak terautentikasi', 403);
         }
@@ -74,7 +73,6 @@ class MediaInteraction {
     // COMMENT FUNCTIONALITY
     /* @param int $comment_id; @return array Status response */
     public function deleteComment(int $comment_id): array {
-        // Validasi
         if (!$this->validateUser()) {
             return $this->getResponse(false, 'User tidak terautentikasi', 403);
         }
