@@ -56,7 +56,14 @@ class BrowserProgressObserver implements ProgressObserver
                 break;
 
             case 'redirect':
-                $this->emitJs('window.location.href = ' . json_encode($data['url'] ?? '') . ';');
+                // Navigasi ke post_encode.php TIDAK lagi dilakukan dari sini.
+                // Sebelumnya: script window.location.href di-stream di TENGAH
+                // dokumen yang masih dibuka → rawan navigasi duplikat/race oleh
+                // browser (dokumen di-abort saat navigasi terjadi di tengah
+                // parse, lalu request bisa terlepas dua kali).
+                // Sekarang upload_advanced.php yang menangani return 'REDIRECT:'
+                // dengan merender DOKUMEN AKHIR yang bersih (meta refresh +
+                // meelRedirect/location.replace) setelah seluruh streaming selesai.
                 break;
 
             case 'error':

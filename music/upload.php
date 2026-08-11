@@ -15,19 +15,14 @@ $alert_message = "";
 $user_role = get_user_role($conn, $user_id);
 $is_admin  = ($user_role === 'admin');
 
-// Upload hari ini
-$stmt_count = $conn->prepare("SELECT COUNT(*) AS c FROM music WHERE user_id = ? AND DATE(upload_date) = CURDATE()");
-$stmt_count->bind_param("i", $user_id);
-$stmt_count->execute();
-$today_count = (int)$stmt_count->get_result()->fetch_assoc()['c'];
+// Upload 1 jam terakhir — window sama dengan System::checkRateLimit
+$hour_count = get_hourly_upload_count($conn, $user_id, 'music');
 
 // Total upload
-$stmt_total = $conn->prepare("SELECT COUNT(*) AS c FROM music WHERE user_id = ?");
-$stmt_total->bind_param("i", $user_id);
-$stmt_total->execute();
-$total_uploads = (int)$stmt_total->get_result()->fetch_assoc()['c'];
+$total_uploads = get_total_upload_count($conn, $user_id, 'music');
 
-$daily_limit = $is_admin ? '∞' : '5';
+// Limit upload per jam — konsisten dengan enforcement (member 2x lipat)
+$hourly_limit = $is_admin ? '∞' : get_upload_hourly_limit($user_role);
 
 $uploader = new Uploader($conn, $user_id, $user);
 
@@ -40,7 +35,7 @@ if (isset($_POST['upload'])) {
 
     if ($result['status'] === 'success') {
         $status = "success";
-        $today_count++;
+        $hour_count++;
         $total_uploads++;
         MediaLibrary::clearCountsCache();
         log_activity($conn, $user_id, 'upload_music', 'music', (int)($result['id'] ?? 0));
@@ -117,16 +112,16 @@ $__v = function($f) {
                 <!-- Stats -->
                 <div class="stats-strip">
                     <div class="stat-chip">
-                        <div class="stat-number"><?= $today_count ?></div>
-                        <div class="stat-label">Hari Ini</div>
+                        <div class="stat-number"><?= $hour_count ?></div>
+                        <div class="stat-label">Jam Ini</div>
                     </div>
                     <div class="stat-chip">
                         <div class="stat-number"><?= $total_uploads ?></div>
                         <div class="stat-label">Total</div>
                     </div>
                     <div class="stat-chip">
-                        <div class="stat-number" style="font-size:15px;"><?= $daily_limit ?></div>
-                        <div class="stat-label">Limit/Hari</div>
+                        <div class="stat-number" style="font-size:15px;"><?= $hourly_limit ?></div>
+                        <div class="stat-label">Limit/Jam</div>
                     </div>
                 </div>
 

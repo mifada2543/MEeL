@@ -57,21 +57,10 @@ $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='proces
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
 // ─── Hitung sisa kuota upload per jam ───
-$quota_video_used = 0;
-$quota_music_used = 0;
-$upload_max = 2;
-
-if ($user_role !== 'admin') {
-    $q_vid = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR");
-    $q_vid->bind_param("i", $_SESSION['user_id']);
-    $q_vid->execute();
-    $quota_video_used = (int)$q_vid->get_result()->fetch_row()[0];
-
-    $q_mus = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR");
-    $q_mus->bind_param("i", $_SESSION['user_id']);
-    $q_mus->execute();
-    $quota_music_used = (int)$q_mus->get_result()->fetch_row()[0];
-}
+// Konsisten dengan System::checkRateLimit(): member mendapat 2x lipat (4/jam).
+$upload_max = get_upload_hourly_limit($user_role);
+$quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
+$quota_music_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'music');
 
 $quota_video_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_video_used;
 $quota_music_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_music_used;
@@ -102,8 +91,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
 
-                // ke post_encode.php — hentikan render sisa halaman agar tidak
+                // Download selesai → navigasi ke post_encode.php dilakukan lewat
+                // DOKUMEN AKHIR yang bersih, BUKAN script window.location yang
+                // di-stream di tengah dokumen (rentan navigasi duplikat/race).
                 if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
+                    $target = substr($message, strlen('REDIRECT:'));
+
+                    // Buang sisa buffer output (overlay & progress sudah ter-stream
+                    // langsung ke browser, tidak ada konten penting yang tertahan).
+                    while (ob_get_level()) {
+                        ob_end_clean();
+                    }
+
+                    // Penutup dokumen: meta refresh sebagai fallback tanpa JS, dan
+                    // meelRedirect() (guard anti-duplikat + location.replace agar
+                    // halaman POST tidak masuk history → back tidak me-resubmit).
+                    $target_attr = htmlspecialchars($target, ENT_QUOTES);
+                    $target_js   = json_encode($target, JSON_UNESCAPED_SLASHES);
+                    echo '<meta http-equiv="refresh" content="0;url=' . $target_attr . '">'
+                       . '<script>'
+                       . 'if (typeof window.meelRedirect === "function") { window.meelRedirect(' . $target_js . '); }'
+                       . 'else { window.location.replace(' . $target_js . '); }'
+                       . '</script></body></html>';
                     exit;
                 }
             } catch (Exception $e) {
