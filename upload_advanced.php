@@ -46,10 +46,7 @@ $sys     = new System($conn);
 $is_busy = $sys->isServerBusy();
 
 // Ambil role untuk tampilkan info ekstra
-$stmt_role = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$stmt_role->bind_param("i", $_SESSION['user_id']);
-$stmt_role->execute();
-$user_role = $stmt_role->get_result()->fetch_assoc()['role'] ?? 'user';
+$user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $is_admin  = ($user_role === 'admin');
 
 // Queue stats
@@ -143,20 +140,13 @@ $__v = function ($f) {
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <title>MEeL — Advanced Upload</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL — Advanced Upload">
-    <meta property="og:description" content="Upload video/musik via URL menggunakan yt-dlp dan FFmpeg. Download dari YouTube, SoundCloud, Instagram, dan 1000+ situs.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/png" href="assets/MEeL.png">
-    <link rel="manifest" href="assets/manifest.json">
-    <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/compatibilitas/lucide.js"></script>
+<?php
+$_META_TITLE = 'MEeL — Advanced Upload';
+$_META_DESC  = 'MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.';
+include __DIR__ . '/partials/link.php';
+$scripts_root = '';
+include __DIR__ . '/partials/scripts.php';
+?>
     <link rel="stylesheet" href="assets/css/up.css">
     <?php foreach (require __DIR__ . '/assets/css/up/manifest.php' as $__f): ?>
     <link rel="stylesheet" href="assets/css/up/<?= $__f ?><?= $__v('assets/css/up/' . $__f) ?>">

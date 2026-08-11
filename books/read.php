@@ -802,6 +802,7 @@ function _scanSubdirs(string $dir): array {
     <!-- Mode Sehat 20-20-20: halaman baca = aktivitas membaca (tanpa media) -->
     <script>window.meelHealthActivityMode = "reading";
 </script>
+    <script src="../assets/js/shared/state-keys.js?v=<?= filemtime(__DIR__ . '/../assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/health-reminder.js?v=<?= filemtime(__DIR__ . '/../assets/js/shared/health-reminder.js') ?>"></script>
 </body>
 

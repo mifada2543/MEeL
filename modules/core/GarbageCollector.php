@@ -50,15 +50,9 @@ class GarbageCollector
             }
         }
 
-        $stmt = $conn->prepare("DELETE FROM users WHERE role = 'guest' AND is_active = 0");
-        if ($stmt) {
-            $stmt->execute();
-            $deleted = $stmt->affected_rows;
-            $stmt->close();
-
-            if ($deleted > 0) {
-                $totalCleaned += $deleted;
-            }
+        $deleted = purge_guest_users($conn) ?? 0;
+        if ($deleted > 0) {
+            $totalCleaned += $deleted;
         }
 
         if ($totalCleaned > 0) {

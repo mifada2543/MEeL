@@ -117,12 +117,7 @@ if (isset($_POST['delete_user_id'])) {
         exit();
     }
 
-    $check = $conn->prepare("SELECT role FROM users WHERE id = ?");
-    $check->bind_param("i", $id);
-    $check->execute();
-    $target = $check->get_result()->fetch_assoc();
-
-    if ($target && $target['role'] === 'admin') {
+    if (get_user_role($conn, $id) === 'admin') {
         header("Location: index.php?msg=Cannot_Delete_Admin");
         exit();
     }

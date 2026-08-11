@@ -219,19 +219,13 @@ $data = $stmt_data->get_result()->fetch_assoc();
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="Edit Profile | MEeL">
-    <meta property="og:description" content="Edit profil Anda di MEeL. Ubah bio dan foto profil.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>Edit Profile | MEeL</title>
-    <link rel="icon" type="image/png" href="../../assets/MEeL.png">
-    <link href="../../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../../assets/js/compatibilitas/lucide.js"></script>
+<?php
+$_META_TITLE = 'Edit Profile | MEeL';
+$_META_DESC  = 'Edit profil Anda di MEeL. Ubah bio dan foto profil.';
+include __DIR__ . '/../../partials/link.php';
+$scripts_root = '../../';
+include __DIR__ . '/../../partials/scripts.php';
+?>
     <style>        body {
             background-color: #0b0e14;
         }

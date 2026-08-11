@@ -426,6 +426,7 @@ $__vdir = function($dir) {
             playlistId: <?= (int)$playlist_id_from_url ?>
         };
     </script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
     <script src="../assets/js/compatibilitas/plyr.min.js"></script>

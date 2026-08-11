@@ -181,15 +181,7 @@ class MediaInteraction {
     /* @return bool True jika user ini admin */
     private function isAdmin(): bool
     {
-        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ?");
-        if (!$stmt) {
-            throw new RuntimeException($this->conn->error);
-        }
-        $stmt->bind_param("i", $this->user_id);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        return ($row && $row['role'] === 'admin');
+        return get_user_role($this->conn, $this->user_id) === 'admin';
     }
 
     private function validateUser(): bool {

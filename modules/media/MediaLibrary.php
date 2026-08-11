@@ -435,12 +435,9 @@ class BookRepository
 
     public function getUserRole(int $user_id): ?string
     {
-        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result ? $result->fetch_assoc() : null;
-        return $row ? $row['role'] : null;
+        // Delegasi ke helper terpusat (cache + session). Fallback 'user' untuk
+        // user tak dikenal — pemanggil hanya membandingkan terhadap 'admin'.
+        return get_user_role($this->conn, $user_id);
     }
 }
 

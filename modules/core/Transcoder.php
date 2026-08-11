@@ -64,14 +64,14 @@ class Transcoder
         $this->base_path    = dirname(__DIR__, 2);
         $this->cookies_path = $this->base_path . "/cookies.txt";
         $this->user_agent   = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
-        $this->ffmpeg_bin   = $this->resolveBinary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-        $this->ffprobe_bin  = $this->resolveBinary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
+        $this->ffmpeg_bin   = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
+        $this->ffprobe_bin  = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 
         $this->user_role = get_user_role($this->conn, $this->user_id);
 
         $ytdlp_bin = defined('MEEL_YTDLP_PATH') && MEEL_YTDLP_PATH !== ''
             ? MEEL_YTDLP_PATH
-            : $this->resolveBinary(['/usr/local/bin/yt-dlp', '/usr/bin/yt-dlp', 'yt-dlp']);
+            : resolve_binary(['/usr/local/bin/yt-dlp', '/usr/bin/yt-dlp', 'yt-dlp']);
         $node_bin  = defined('MEEL_NODE_PATH') && MEEL_NODE_PATH !== ''
             ? MEEL_NODE_PATH
             : '/usr/bin/node';
@@ -235,13 +235,7 @@ class Transcoder
         return file_exists($path) ? $path : null;
     }
 
-    // ─── BINARY RESOLVER ───
-
-    private function resolveBinary(array $candidates): string
-    {
-        return resolve_binary($candidates);
-    }
-
+    // ─── QUEUE MANAGEMENT ───
     // ─── QUEUE MANAGEMENT ───
 
     public function checkServerBusy(): ?array

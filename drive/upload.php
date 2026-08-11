@@ -45,14 +45,7 @@ require_once '../modules/core/System.php';
 $sys = new System($conn);
 $user_id = $_SESSION['user_id'];
 
-// Gunakan prepared statement untuk SQL query
-$stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user_data = $result->fetch_assoc();
-$user_role = $user_data['role'] ?? 'user';
-$stmt->close();
+$user_role = get_user_role($conn, (int)$user_id);
 
 $limit = $sys->checkRateLimit($user_id, 'drive_files', $user_role);
 if (!$limit['allowed']) {

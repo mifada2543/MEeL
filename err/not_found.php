@@ -29,14 +29,13 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Halaman tidak ditemukan.">
-    <title>404 Not Found | MEeL</title>
-    <link rel="manifest" href="<?= $meel_base ?>/assets/manifest.json">
-    <link rel="icon" type="image/png" href="<?= $meel_base ?>/assets/MEeL.png">
-    <link href="<?= $meel_base ?>/assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="<?= $meel_base ?>/assets/js/compatibilitas/lucide.js"></script>
+<?php
+$_META_TITLE = '404 Not Found | MEeL';
+$_META_DESC  = 'MEeL - Halaman tidak ditemukan.';
+include __DIR__ . '/../partials/link.php';
+$scripts_root = '../';
+include __DIR__ . '/../partials/scripts.php';
+?>
     <style>
         @import url("<?= $meel_base ?>/assets/css/font.css");
 

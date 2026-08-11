@@ -289,6 +289,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
     </div>
  <?php include '../partials/footer.php'; ?>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/shared/download-backup-codes.js"></script>
     <script>
         lucide.createIcons();
 
@@ -366,6 +367,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 
                         // Simpan codes untuk download
                         window._lastBackupCodes = data.codes;
+                        window._meelBackupCodes = data.codes;
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -390,33 +392,8 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             });
         }
 
-        // ── Download Backup Codes sebagai TXT ──
-        function downloadBackupCodes() {
-            var codes = window._lastBackupCodes;
-            if (!codes || !codes.length) return;
-
-            var username = '<?= htmlspecialchars($_SESSION['username'] ?? 'user') ?>';
-            var dateStr = new Date().toISOString().replace(/T/, ' ').slice(0, 19);
-            var lines = [
-                'MEeL — MFA Backup Codes',
-                'User: ' + username,
-                'Generated: ' + dateStr,
-                '',
-                'Setiap kode hanya bisa digunakan SEKALI.',
-                'Simpan di tempat yang aman!',
-                '',
-            ];
-            codes.forEach(function(c) { lines.push('  ' + c); });
-
-            var blob = new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' });
-            var link = document.createElement('a');
-            link.download = 'MEeL-backup-codes-' + username + '.txt';
-            link.href = URL.createObjectURL(blob);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-        }
+        // ── Download Backup Codes sebagai TXT (fungsi shared) ──
+        window._meelBackupUser = '<?= htmlspecialchars($_SESSION['username'] ?? 'user') ?>';
     </script>
 </body>
 
