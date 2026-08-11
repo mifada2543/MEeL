@@ -12,6 +12,7 @@ spl_autoload_register(function (string $class) {
         'MediaInteraction'   => __DIR__ . '/media/MediaInteraction.php',
         'GarbageCollector'   => __DIR__ . '/core/GarbageCollector.php',
         'RateLimiter'         => __DIR__ . '/core/RateLimiter.php',
+        'SsrfGuard'           => __DIR__ . '/core/SsrfGuard.php',
 
         // Media
         'SearchEngine'        => __DIR__ . '/media/SearchEngine.php',

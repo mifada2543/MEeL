@@ -19,6 +19,8 @@ require_once __DIR__ . '/../exceptions/ProcessException.php';
 require_once __DIR__ . '/../exceptions/DownloadException.php';
 require_once __DIR__ . '/../exceptions/TranscodeException.php';
 require_once __DIR__ . '/ProgressObserver.php';
+require_once __DIR__ . '/SsrfGuard.php';
+require_once __DIR__ . '/ValidatingProxy.php';
 
 class Transcoder
 {
@@ -34,6 +36,11 @@ class Transcoder
     private string $ffprobe_bin;
 
     private ?ProgressObserver $progressObserver = null;
+
+    /** Validating forward proxy (SSRF per redirect hop). Null sampai download pertama. */
+    private ?ValidatingProxy $validatingProxy = null;
+    /** Argumen yt-dlp untuk proxy (cache hasil spawn). */
+    private string $proxyArgs = '';
 
     /* @var array<int, array{pid:int, group:bool, label:string, started:int}> */
     private array $childProcesses = [];
@@ -88,6 +95,14 @@ class Transcoder
     }
 
     /* @param callable(string $stage, array $data): void|ProgressObserver|null $listener */
+    public function __destruct()
+    {
+        // Pastikan proxy (dan seluruh child process) ikut dimatikan saat
+        // object Transcoder dibuang — tidak ada proses yatim yang tersisa.
+        $this->validatingProxy?->stop();
+        $this->terminateAllProcesses();
+    }
+
     public function setProgressListener(callable|ProgressObserver|null $listener): void
     {
         if ($listener instanceof ProgressObserver) {
@@ -272,9 +287,39 @@ class Transcoder
 
     // ─── METADATA ───
 
-    private function fetchMetadata(string $url): ?array
+    /**
+     * Pastikan validating forward proxy aktif dan kembalikan argumen yt-dlp
+     * untuk memakainya (--proxy). Fail closed: bila proxy tidak bisa
+     * dijalankan, lempar RuntimeException — download tidak pernah diizinkan
+     * melewati jalur yang tidak tervalidasi.
+     */
+    private function ensureDownloadProxy(): string
     {
-        $cmd    = $this->base_cmd . "--skip-download --print-json " . escapeshellarg($url) . " 2>&1";
+        if ($this->proxyArgs !== '') {
+            return $this->proxyArgs;
+        }
+        $this->validatingProxy = new ValidatingProxy();
+        $this->proxyArgs = '--proxy ' . escapeshellarg($this->validatingProxy->url()) . ' ';
+        return $this->proxyArgs;
+    }
+
+    private function fetchMetadata(string $url, string $extraArgs = ''): ?array
+    {
+        // Defense-in-depth: never let an unvalidated URL reach yt-dlp, even if
+        // a future caller skips processDownload(). SsrfGuard performs protocol
+        // allowlisting + public-IP validation of every resolved address.
+        try {
+            (new SsrfGuard())->validate($url);
+        } catch (\RuntimeException $e) {
+            throw new DownloadException($e->getMessage(), $url, 'validation');
+        }
+
+        // Defense-in-depth: routing lewat validating proxy juga dipaksa di sini,
+        // sehingga hop redirect apa pun (termasuk yang diikuti yt-dlp sendiri)
+        // tetap melewati SsrfGuard di sisi proxy. Hindari duplikasi bila caller
+        // (processDownload) sudah menempelkan --proxy pada $extraArgs.
+        $proxyArgs = str_contains($extraArgs, '--proxy') ? '' : $this->ensureDownloadProxy();
+        $cmd    = $this->base_cmd . $proxyArgs . $extraArgs . "--skip-download --print-json " . escapeshellarg($url) . " 2>&1";
         exec($cmd, $output_array, $return_var);
         $output = implode("\n", $output_array);
 
@@ -329,14 +374,45 @@ class Transcoder
     // BAGIAN 1: DOWNLOAD & FINALISASI (processDownload)
     public function processDownload(string $url, string $type): string
     {
-        if (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('/^https?:\/\//i', $url)) {
-            throw new DownloadException("URL tidak valid atau protokol tidak didukung.", $url, 'validation');
-        }
+        $url = trim($url);
+
         if (!in_array($type, ['video', 'music'], true)) {
             throw new DownloadException("Tipe media tidak valid.", $url, 'validation');
         }
         if (strlen($url) > 500) {
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
+        }
+
+        // ─── SSRF GUARD ───
+        // Validasi sentral: hanya http/https, dan semua alamat hasil resolusi
+        // DNS harus publik (bukan localhost/10.x/172.16-31.x/192.168.x/
+        // 169.254.x/IPv6 private, dll). Gagal-fail = tolak URL.
+        try {
+            $ssrf = new SsrfGuard();
+            $ssrf->validate($url);
+
+            // Pin koneksi HTTP ke IP publik yang sudah divalidasi + paksa Host
+            // header asli. Ini menutup celah DNS-rebinding antara validasi dan
+            // request nyata.
+            [$dl_url, $dl_extra] = $ssrf->pinHttpUrl($url);
+        } catch (\RuntimeException $e) {
+            throw new DownloadException("URL tidak diizinkan: " . $e->getMessage(), $url, 'validation');
+        }
+
+        // Arahkan SEMUA trafik yt-dlp (metadata + download + setiap redirect)
+        // lewat validating forward proxy. Proxy menerapkan SsrfGuard pada
+        // SETIAP hop — menutup celah open-redirect → IP private yang tidak bisa
+        // ditutup hanya dengan validasi URL awal. Gagal start = tolak download
+        // (fail closed, tidak ada fallback tanpa proteksi). Kegagalan ini adalah
+        // masalah infrastruktur, BUKAN penolakan URL — jadi pesan dibedakan.
+        try {
+            $dl_extra = $this->ensureDownloadProxy() . $dl_extra;
+        } catch (\RuntimeException $e) {
+            throw new DownloadException(
+                "Layanan keamanan download tidak tersedia. Coba lagi nanti.",
+                $url,
+                'proxy'
+            );
         }
 
         require_disk_space(512 * 1024 * 1024, $this->getShmTempPath(), 'RAM disk staging');
@@ -346,7 +422,7 @@ class Transcoder
         $queue_id = $this->lockQueue($url, $type);
 
         try {
-            $meta = $this->fetchMetadata($url);
+            $meta = $this->fetchMetadata($dl_url, $dl_extra);
             if (!$meta) {
                 throw new DownloadException("Gagal ambil metadata dari yt-dlp.", $url, 'metadata');
             }
@@ -378,10 +454,10 @@ class Transcoder
             // proses yang mulai di detik yang sama.
             $temp_id   = "raw_" . time() . "_" . substr(md5(uniqid('', true)), 0, 4);
             $temp_path = "$shm_temp/$temp_id.%(ext)s";
-            $cmd_dl    = $this->base_cmd
+            $cmd_dl    = $this->base_cmd . $dl_extra
                 . "-f bestaudio -o " . escapeshellarg($temp_path)
                 . " --write-thumbnail --embed-thumbnail"
-                . " --newline " . escapeshellarg($url) . " 2>&1";
+                . " --newline " . escapeshellarg($dl_url) . " 2>&1";
         } else {
 
             $staging_dir = $this->getShmTempPath() . '/';
@@ -395,11 +471,11 @@ class Transcoder
             $output_tpl = $staging_dir . $basename . ".%(ext)s";
             $format     = $this->resolveVideoFormat($url);
 
-            $cmd_dl = $this->base_cmd
+            $cmd_dl = $this->base_cmd . $dl_extra
                 . "-f " . escapeshellarg($format)
                 . " --merge-output-format mp4 -o " . escapeshellarg($output_tpl)
                 . " --write-thumbnail --newline "
-                . escapeshellarg($url) . " 2>&1";
+                . escapeshellarg($dl_url) . " 2>&1";
         }
 
         $this->emit('download_start', ['url' => $url]);
