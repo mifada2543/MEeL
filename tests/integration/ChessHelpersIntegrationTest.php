@@ -1,5 +1,6 @@
 <?php
 require_once MEEL_ROOT . '/arcade/chess/controller/chess_helpers.php';
+require_once __DIR__ . '/ChessTestCase.php';
 
 use PHPUnit\Framework\TestCase;
 
@@ -8,24 +9,8 @@ use PHPUnit\Framework\TestCase;
  * @group integration
  * @covers chess_opponent_online
  */
-class ChessHelpersIntegrationTest extends TestCase
+class ChessHelpersIntegrationTest extends ChessTestCase
 {
-    private DbTestHelper $dbHelper;
-    private mysqli $conn;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->dbHelper = new DbTestHelper();
-        $this->conn = $this->dbHelper->getConnection();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->dbHelper->rollback();
-        $this->dbHelper->close();
-        parent::tearDown();
-    }
 
     public function testRecentlyActiveUserIsOnline(): void
     {
