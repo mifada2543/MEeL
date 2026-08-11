@@ -60,8 +60,13 @@ if (!$limit['allowed']) {
 }
 
 try {
-    $storage->enforceQuota($_FILES['file_drive'], 20 * 1024 * 1024 * 1024);
-    $result = $storage->upload($_FILES['file_drive'], $_POST['scope'] ?? DriveStorage::SCOPE_PRIVATE);
+    // Kuota ditegakkan ATOMIK di dalam DriveStorage::upload() (flock per-user)
+    // sehingga upload berbarengan tidak bisa melewati kuota 20GB secara kolektif.
+    $result = $storage->upload(
+        $_FILES['file_drive'],
+        $_POST['scope'] ?? DriveStorage::SCOPE_PRIVATE,
+        20 * 1024 * 1024 * 1024
+    );
 
     // Audit Logging
     log_drive_operation(

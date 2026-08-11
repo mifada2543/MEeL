@@ -113,11 +113,23 @@ final class DriveStorage
                 continue;
             }
 
+            if ($scope === self::SCOPE_PRIVATE) {
+                // Private files TIDAK boleh direferensikan lewat path web
+                // langsung (subtree storage di-deny web server). URL pratinjau
+                // harus lewat endpoint stream ber-otorisasi.
+                $path = 'stream.php?file=' . rawurlencode($fileInfo->getFilename())
+                    . '&type=' . rawurlencode($type)
+                    . '&scope=private'
+                    . '&csrf_token=' . rawurlencode(get_csrf_token());
+            } else {
+                $path = $webDirectory . '/' . rawurlencode($fileInfo->getFilename());
+            }
+
             $files[] = [
                 'name' => $fileInfo->getFilename(),
                 'size' => $fileInfo->getSize(),
                 'time' => $fileInfo->getMTime(),
-                'path' => $webDirectory . '/' . rawurlencode($fileInfo->getFilename()),
+                'path' => $path,
                 'ext' => strtolower($fileInfo->getExtension()),
             ];
         }
@@ -130,7 +142,15 @@ final class DriveStorage
         return $files;
     }
 
-    public function upload(array $file, ?string $requestedScope): array
+    /**
+     * @param array $file Entry $_FILES untuk satu file
+     * @param string|null $requestedScope Scope yang diminta (public/private)
+     * @param int $quotaLimitBytes Batas kuota member (0 = tanpa penegakan kuota).
+     *        Penegakan kuota dilakukan ATOMIK di dalam lock per-user sehingga
+     *        upload berbarengan tidak bisa melewati kuota secara kolektif.
+     * @throws RuntimeException 'quota_full' saat kuota terlampaui
+     */
+    public function upload(array $file, ?string $requestedScope, int $quotaLimitBytes = 0): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             throw new RuntimeException('Berkas gagal diterima dari browser.');
@@ -151,17 +171,55 @@ final class DriveStorage
             throw new RuntimeException($e->getMessage());
         }
 
-        $finalName = $this->ensureUniqueFilename($directory, $cleanName);
+        // ─── Kuota ATOMIK ───
+        // Lock per-user menjadikan rangkaian "cek usage → cek kuota → tulis
+        // file" satu unit tak-terputus; usage dihitung segar (bypass cache 5
+        // menit) sehingga angka yang dipakai akurat.
+        $lockFp = null;
+        if ($quotaLimitBytes > 0 && $this->user->isMember()) {
+            $lockFp = @fopen($this->quotaLockPath(), 'c');
+            if ($lockFp === false) {
+                // Lock tidak bisa dibuat (temp dir bermasalah) → tetap tegakkan
+                // kuota secara non-atomik. Jangan pernah melewati pengecekan
+                // kuota sama sekali untuk member.
+                $currentUsage = dir_size($this->privateRootForUser($this->user->username), 0);
+                if (($currentUsage + $fileSize) > $quotaLimitBytes) {
+                    throw new RuntimeException('quota_full');
+                }
+            } else {
+                @flock($lockFp, LOCK_EX);
+                $currentUsage = dir_size($this->privateRootForUser($this->user->username), 0);
+                if (($currentUsage + $fileSize) > $quotaLimitBytes) {
+                    @flock($lockFp, LOCK_UN);
+                    @fclose($lockFp);
+                    throw new RuntimeException('quota_full');
+                }
+            }
+        }
+
+        // ─── Reservasi nama ATOMIK ───
+        // fopen('x') = O_CREAT|O_EXCL mengklaim nama file secara atomik, jadi
+        // dua upload berbarengan dengan nama sama tidak bisa sama-sama menang
+        // (menutup TOCTOU antara cek file_exists dan move_uploaded_file).
+        $finalName = $this->reserveUniqueFilename($directory, $cleanName);
         $destination = $directory . '/' . $finalName;
 
         if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
+            @unlink($destination); // buang reservasi kosong
+            if (is_resource($lockFp)) { @flock($lockFp, LOCK_UN); @fclose($lockFp); }
             throw new RuntimeException('Gagal mengunggah file. Cek izin folder penyimpanan.');
         }
 
         // Validasi file type menggunakan magic bytes
         if (!$this->validateFileByMagicBytes($destination, $type)) {
-            unlink($destination);
+            @unlink($destination);
+            if (is_resource($lockFp)) { @flock($lockFp, LOCK_UN); @fclose($lockFp); }
             throw new RuntimeException('Tipe file tidak sesuai dengan extension yang diberikan.');
+        }
+
+        if (is_resource($lockFp)) {
+            @flock($lockFp, LOCK_UN);
+            @fclose($lockFp);
         }
 
         return [
@@ -381,22 +439,41 @@ final class DriveStorage
         return $safeFilename;
     }
 
-    private function ensureUniqueFilename(string $directory, string $filename): string
+    /**
+     * Klaim nama file unik secara atomik. fopen('x') gagal bila nama sudah
+     * dipegang proses lain, jadi tidak ada jendela TOCTOU.
+     */
+    private function reserveUniqueFilename(string $directory, string $filename): string
     {
         $candidate = $filename;
         $nameOnly = pathinfo($filename, PATHINFO_FILENAME);
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $counter = 1;
 
-        while (file_exists($directory . '/' . $candidate)) {
+        while (true) {
+            $destination = $directory . '/' . $candidate;
+            $reservation = @fopen($destination, 'x');
+            if ($reservation !== false) {
+                fclose($reservation);
+                return $candidate;
+            }
+            if ($counter > 1000) {
+                // Gagal berulang bukan karena nama bentrok (mis. direktori
+                // tidak writable) — berhenti agar tidak loop tanpa batas.
+                throw new RuntimeException('Gagal membuat nama file unik. Cek izin folder penyimpanan.');
+            }
             $suffix = '_(' . $counter . ')';
             $candidate = $extension !== ''
                 ? $nameOnly . $suffix . '.' . $extension
                 : $nameOnly . $suffix;
             $counter++;
         }
+    }
 
-        return $candidate;
+    private function quotaLockPath(): string
+    {
+        // File ini berada di <root>/drive/, jadi dirname(__DIR__) = root proyek.
+        return dirname(__DIR__) . '/temp/drive_quota_' . md5($this->user->username) . '.lock';
     }
 }
 final class DriveViewRenderer
