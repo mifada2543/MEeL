@@ -6,24 +6,19 @@ include_once '../modules/core/activity_logger.php';
 include_once '../modules/core/GarbageCollector.php';
 include_once '../modules/core/RateLimiter.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die(include '../err/denied.php');
-}
+// Guard terpusat: harus login + role admin
+require_admin($conn);
 
-// 🔴 Guard independen: verifikasi role admin (tidak bergantung pada side-effect include)
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    die(include '../err/denied.php');
-}
+define('MEEL_ADMIN_CONTEXT', true);
 
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';
 
-// Auto-cleanup guest stale (adaptive — throttle 1 jam via GarbageCollector)
 GarbageCollector::cleanGuests($conn);
 
-/** * --- IDE Type Hinting for Intelephense ---
- * These variables are initialized in '../controllers/fun.php'
- * * @var float $ssd_free
+GarbageCollector::cleanChessRooms($conn);
+
+/**
  * @var float $ssd_used
  * @var float $ssd_total
  * @var float $hdd_free
@@ -50,7 +45,6 @@ GarbageCollector::cleanGuests($conn);
  * @var array $chart_activity
  */
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -67,59 +61,15 @@ GarbageCollector::cleanGuests($conn);
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <script src="../assets/js/chart.umd.min.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/admin/index.css?v=<?= filemtime('../assets/css/admin/index.css') ?>">
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/chart.umd.min.js"></script>
 
-        .glass {
-            background: rgba(22, 27, 34, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .scrollable-table-wrap {
-            overflow: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        .scrollable-table-wrap thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .scrollable-table-wrap thead th {
-            background: #0b0e14;
-        }
-        .scrollable-table-wrap thead::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.03);
-            pointer-events: none;
-        }
-    </style>
 </head>
 
 <body class="text-gray-300 font-sans min-h-screen">
@@ -131,7 +81,6 @@ GarbageCollector::cleanGuests($conn);
     $back_url = '../index.php';
     include 'header-admin.php';
     ?>
-
     <div class="max-w-5xl mx-auto px-4 md:px-8 py-8">
 
         <div class="flex items-center gap-4 mb-8">
@@ -226,7 +175,6 @@ GarbageCollector::cleanGuests($conn);
                         <p class="text-[9px] font-black text-gray-600 uppercase mb-3 tracking-tighter">Most Viewed Content</p>
                         <div class="space-y-2">
                             <?php
-                            // Ambil maksimal 1 video & 1 music dengan views tertinggi dari hasil $top_media
                             $top_picks = ['video' => null, 'music' => null];
                             while ($tm = $top_media->fetch_assoc()) {
                                 if (array_key_exists($tm['type'], $top_picks) && $top_picks[$tm['type']] === null) {
@@ -261,6 +209,9 @@ GarbageCollector::cleanGuests($conn);
 
                 <a href="activity_log.php" class="block mb-2 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat trail audit aktivitas pengguna">
                     <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Activity Log
+                </a>
+                <a href="mfa_reset.php" class="block mb-2 text-center text-[9px] text-purple-400 border border-purple-400/20 py-2.5 rounded-xl hover:bg-purple-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Kelola autentikasi dua faktor (MFA) user">
+                    <i data-lucide="shield" class="w-3 h-3 inline mr-1"></i> MFA Management
                 </a>
                         <a href="cookies.php" class="block text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
                     Full Reports
@@ -307,8 +258,16 @@ GarbageCollector::cleanGuests($conn);
                             <tr class="hover:bg-white/[0.02]">
                                 <td class="py-4 px-6 font-bold text-white"><?= htmlspecialchars($u['username']) ?></td>
                                 <td class="py-4 px-6 text-right space-x-2">
-                                    <a href="?approve_id=<?= $u['id'] ?>" class="bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold text-[10px]" title="Setujui pendaftaran <?= htmlspecialchars($u['username']) ?>">APPROVE</a>
-                                    <a href="?reject_id=<?= $u['id'] ?>" class="bg-red-600/20 text-red-500 px-4 py-1.5 rounded-xl font-bold text-[10px] border border-red-500/20" title="Tolak pendaftaran <?= htmlspecialchars($u['username']) ?>">REJECT</a>
+                                    <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Setujui User', text: 'Setujui pendaftaran <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'APPROVE' })">
+                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                        <input type="hidden" name="approve_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold text-[10px] cursor-pointer" title="Setujui pendaftaran <?= htmlspecialchars($u['username']) ?>">APPROVE</button>
+                                    </form>
+                                    <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Tolak User', text: 'Tolak pendaftaran <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'TOLAK' })">
+                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                        <input type="hidden" name="reject_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="bg-red-600/20 text-red-500 px-4 py-1.5 rounded-xl font-bold text-[10px] border border-red-500/20 cursor-pointer" title="Tolak pendaftaran <?= htmlspecialchars($u['username']) ?>">REJECT</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -316,7 +275,6 @@ GarbageCollector::cleanGuests($conn);
                 </table>
             </div>
         <?php endif; ?>
-
         <div class="glass p-6 rounded-3xl mb-8">
             <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Database Sync Check</h3>
             <?php if (count($orphans) > 0): ?>
@@ -379,11 +337,14 @@ GarbageCollector::cleanGuests($conn);
                                         // Tombol Hapus HANYA muncul jika role BUKAN admin
                                         if ($u['role'] !== 'admin'):
                                         ?>
-                                            <a href="?delete_user_id=<?= $u['id'] ?>"
-                                                onclick="return meelConfirmLink(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })"
-                                                class="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] uppercase" title="Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>">
-                                                Delete
-                                            </a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="delete_user_id" value="<?= (int)$u['id'] ?>">
+                                                <button type="submit"
+                                                    class="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] uppercase cursor-pointer" title="Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>">
+                                                    Delete
+                                                </button>
+                                            </form>
                                         <?php else: ?>
                                             <span class="text-[9px] text-gray-600 italic">Protected</span>
                                         <?php endif; ?>
@@ -483,7 +444,6 @@ GarbageCollector::cleanGuests($conn);
                 </form>
             </div>
 
-
             <div class="scrollable-table-wrap" style="max-height:520px;">
                 <table class="w-full text-left text-xs">
                     <thead class="text-gray-500 uppercase text-[9px] font-black tracking-widest">
@@ -504,7 +464,7 @@ GarbageCollector::cleanGuests($conn);
                                 <td class="py-4 px-2">
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold <?= $row['role'] === 'guest' ? 'text-gray-500 italic' : 'text-white' ?>">
-                                            <a href="profile/?u=<?= $row['username'] ?>"><?= htmlspecialchars($row['username']) ?></a>
+                                            <a href="profile/?u=<?= htmlspecialchars($row['username'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($row['username']) ?></a>
                                         </span>
                                         <?php if ($row['role'] === 'guest'): ?>
                                             <span class="text-[7px] bg-white/5 text-gray-500 px-1 rounded border border-white/10 uppercase font-black">Guest</span>
@@ -573,12 +533,15 @@ GarbageCollector::cleanGuests($conn);
 
                                         if ($is_online && $row['username'] !== $_SESSION['username'] && $row['role'] !== 'guest'):
                                         ?>
-                                            <a href="?kick_user=<?= urlencode($row['username']) ?>"
-                                                onclick="return meelConfirmLink(event, { title: 'Kick User', text: 'Tendang <?= htmlspecialchars($row['username'], ENT_QUOTES) ?>? User akan langsung offline.', confirmButtonText: 'TENDANG' })"
-                                                class="p-1.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                                                title="Kick Active User">
-                                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-                                            </a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Kick User', text: 'Tendang <?= htmlspecialchars($row['username'], ENT_QUOTES) ?>? User akan langsung offline.', confirmButtonText: 'TENDANG' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="kick_user" value="<?= htmlspecialchars($row['username'], ENT_QUOTES) ?>">
+                                                <button type="submit"
+                                                    class="p-1.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-600 hover:text-white transition-all cursor-pointer"
+                                                    title="Kick Active User">
+                                                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </form>
                                         <?php elseif (!$is_online && $row['username'] !== $_SESSION['username']): ?>
                                             <span class="p-1.5 bg-gray-800/30 text-gray-700 rounded-lg border border-gray-800/50 cursor-not-allowed" title="User is already offline">
                                                 <i data-lucide="user-minus" class="w-3.5 h-3.5"></i>
@@ -636,7 +599,11 @@ GarbageCollector::cleanGuests($conn);
                                         <td class="py-3 text-gray-400"><?= $ban['reason'] ?></td>
                                         <td class="py-3 text-gray-500"><?= $ban['banned_at'] ?></td>
                                         <td class="py-3 text-right">
-                                            <a href="?unban_ip=<?= $ban['ip_address'] ?>" class="text-[9px] border border-green-500/30 text-green-500 px-3 py-1 rounded hover:bg-green-500 hover:text-white transition" title="Buka blokir IP <?= $ban['ip_address'] ?>">UNBAN</a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Unban IP', text: 'Buka blokir IP <?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>?', confirmButtonText: 'UNBAN' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="unban_ip" value="<?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>">
+                                                <button type="submit" class="text-[9px] border border-green-500/30 text-green-500 px-3 py-1 rounded hover:bg-green-500 hover:text-white transition cursor-pointer" title="Buka blokir IP <?= htmlspecialchars($ban['ip_address']) ?>">UNBAN</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -649,91 +616,12 @@ GarbageCollector::cleanGuests($conn);
             </div>
         </div>
     </div>
-    <script>
-        lucide.createIcons();
-
-        // ── CHART DATA ────────────────────────────────────────────────────────
-        var activityData = <?= json_encode($chart_activity) ?>;
-
-        // ── 7-DAY ACTIVITY BAR CHART ───────────────────────────────────────
-            var ctx2 = document.getElementById('activityChart');
-            if (ctx2 && activityData.length > 0) {
-                new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: activityData.map(function(d) { return d.label; }),
-                        datasets: [
-                            {
-                                label: 'Views',
-                                data: activityData.map(function(d) { return d.views; }),
-                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                                borderColor: '#3b82f6',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                order: 1
-                            },
-                            {
-                                label: 'Uploads',
-                                data: activityData.map(function(d) { return d.uploads; }),
-                                backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                                borderColor: '#22c55e',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                order: 2
-                            },
-                            {
-                                label: 'Active Users',
-                                data: activityData.map(function(d) { return d.users; }),
-                                type: 'line',
-                                borderColor: '#a855f7',
-                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                                pointBackgroundColor: '#a855f7',
-                                pointRadius: 3,
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3,
-                                order: 0
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#9ca3af',
-                                    font: { size: 9 },
-                                    boxWidth: 12,
-                                    padding: 8
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#6b7280', font: { size: 9 } }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#6b7280', font: { size: 9 } }
-                            }
-                        }
-                    }
-                });
-            }
-        
-
-        // Auto-refresh every 60 seconds
-        setTimeout(function() {
-            location.reload();
-        }, 60000);
-    </script>
+    <!-- Chart data (PHP → JS bridge) -->
+    <script>var activityData = <?= json_encode($chart_activity) ?>;</script>
+    <script src="../assets/js/admin/shared/modal.js?v=<?= filemtime('../assets/js/admin/shared/modal.js') ?>"></script>
+    <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
+    <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>
+    <script src="../assets/js/admin/index.js?v=<?= filemtime('../assets/js/admin/index.js') ?>"></script>
 </body>
 
 </html>

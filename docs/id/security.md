@@ -14,6 +14,7 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 - [Activity Logging](#activity-logging)
 - [File Upload Security](#file-upload-security)
 - [Apache .htaccess Protection](#apache-htaccess-protection)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [Input Validation](#input-validation)
 
 ---
@@ -56,7 +57,14 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 └──────────────────────┬──────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────┐
-│              6. Prepared Statements                     │
+│              6. Multi-Factor Authentication (MFA)       │
+│  • TOTP (Time-based One-Time Password) via Authenticator │
+│  • Backup codes untuk recovery                          │
+│  • Brute-force protection (10 attempts → 5 menit lock)  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────┐
+│              7. Prepared Statements                     │
 │  • All database queries use mysqli prepared statements  │
 │  • No raw SQL concatenation with user input             │
 └─────────────────────────────────────────────────────────┘
@@ -140,6 +148,7 @@ final class DriveUserContext {
 | Advanced Upload | ✅ | ✅ (rate-limited) | ✅ (rate-limited) | ❌ |
 | Transcoder | ✅ | ✅ | ✅ | ❌ |
 | Admin Panel | ✅ | ❌ | ❌ | ❌ |
+| Chess Multiplayer | ✅ | ✅ | ✅ | ❌ |
 
 ---
 
@@ -151,10 +160,29 @@ final class DriveUserContext {
 // auth/config.php
 $timeout = 43200;              // 12 jam
 ini_set('session.gc_maxlifetime', $timeout);
-session_set_cookie_params($timeout, "/");
+
+// Flag cookie aman (auto-detect HTTPS / X-Forwarded-Proto)
+$secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+
+session_set_cookie_params([
+    'lifetime' => $timeout,
+    'path'     => '/',
+    'secure'   => $secure_cookie,  // hanya via HTTPS
+    'httponly' => true,            // tidak bisa dibaca JavaScript
+    'samesite' => 'Lax',           // mitigasi CSRF
+]);
 session_name('meel');           // Cookie name: "meel"
 session_start();
 ```
+
+| Flag | Nilai | Proteksi |
+|------|-------|----------|
+| `Secure` | auto (HTTPS) | Cookie tidak pernah terkirim lewat HTTP polos — cegah sniffing |
+| `HttpOnly` | `true` | XSS tidak bisa mencuri session cookie via JavaScript |
+| `SameSite` | `Lax` | Request POST lintas-situs tidak membawa cookie (CSRF layer 1) |
+
+Diterapkan di `auth/config.php` dan `auth/auth_helpers.php` (`auth_boot_session()`).
 
 ### Path Configuration
 
@@ -219,6 +247,110 @@ $stmt_kick->bind_param("s", $target_username);
 
 ---
 
+## Multi-Factor Authentication (MFA)
+
+### Arsitektur MFA
+
+```
+Login Flow:
+  POST login → password benar
+    ↓
+  Cek users.mfa_enabled == 1?
+    ↓ Ya                             ↓ Tidak
+  Simpan mfa_temp_uid ke session    Set session langsung
+    ↓                                ↓
+  Redirect ke mfa_verify.php       Redirect ke index
+```
+
+### TOTP Implementation
+
+MEeL menggunakan **TOTP (Time-based One-Time Password)** dengan algoritma:
+- **HMAC-SHA1** — standard TOTP
+- **6 digit** — kode verifikasi
+- **30 detik** — time step
+- **Window ±1** — toleransi 90 detik
+
+### Secret Generation
+
+```php
+// modules/core/helpers.php
+function generate_mfa_secret(): string {
+    $random = random_bytes(20);  // 160-bit random
+    $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $secret = '';
+    foreach (str_split($random) as $byte) {
+        $secret .= $base32[ord($byte) & 31];
+        // XOR carry untuk 5-bit encoding
+    }
+    return $secret;
+}
+```
+
+Secret disimpan di kolom `mfa_secret` (VARCHAR(64)) di tabel `users`, di-hash? **Tidak** — secret TOTP harus bisa dibaca untuk verifikasi. Namun, jika database bocor, attacker butuh akses ke Google Authenticator atau backup codes untuk login.
+
+### Backup Codes
+
+- **8 backup codes** — masing-masing 8 karakter alfanumerik
+- **Disimpan sebagai SHA256 hash** — tidak bisa dibaca balik
+- **Sekali pakai** — setelah digunakan, hash dihapus dari daftar
+
+```php
+function generate_backup_codes(): array {
+    $codes = [];
+    $hashes = [];
+    for ($i = 0; $i < 8; $i++) {
+        $plain = bin2hex(random_bytes(4)); // 8 karakter hex
+        $codes[] = $plain;
+        $hashes[] = hash('sha256', $plain);
+    }
+    return ['plain' => $codes, 'hashed' => $hashes];
+}
+
+function verify_backup_code(string $hashedCodes, string $code): array {
+    $codes = json_decode($hashedCodes, true) ?? [];
+    foreach ($codes as $i => $hash) {
+        if (hash_equals($hash, hash('sha256', $code))) {
+            array_splice($codes, $i, 1); // Hapus yang sudah dipakai
+            return ['valid' => true, 'remaining' => $codes];
+        }
+    }
+    return ['valid' => false, 'remaining' => $codes];
+}
+```
+
+### Brute-Force Protection
+
+```php
+// Max 10 percobaan MFA gagal, lock 5 menit
+$max_mfa_attempts = 10;
+$mfa_lockout_time = 300; // 5 menit
+
+if (isset($_SESSION['mfa_locked_until'])) {
+    if (time() >= $_SESSION['mfa_locked_until']) {
+        unset($_SESSION['mfa_locked_until'], $_SESSION['mfa_fail_count']);
+    } else {
+        $mfa_locked = true;
+        $mfa_remaining = $_SESSION['mfa_locked_until'] - time();
+    }
+}
+```
+
+### Admin Reset MFA
+
+Admin dapat mereset MFA user dari halaman `admin/mfa_reset.php`:
+- **Tidak bisa reset admin lain** — hanya admin yang bersangkutan bisa menonaktifkan sendiri
+- **Aksi dicatat** — `log_activity($conn, $admin_id, 'reset_mfa', 'user', $target_id)`
+- **User perlu setup ulang** — MFA di-reset ke default (nonaktif)
+
+### MFA di Profile
+
+Halaman `profile/index.php` menampilkan status MFA dengan toggle switch visual:
+- Hijau "Aktif" → link ke `auth/mfa_setup.php` untuk kelola/disable
+- Abu-abu "Nonaktif" → link ke `auth/mfa_setup.php` untuk setup
+- Jika aktif, backup codes juga ditampilkan di profil
+
+---
+
 ## CSRF Protection
 
 ### Token Generation
@@ -260,6 +392,31 @@ $token = $_SESSION['csrf_token'];
 echo "<input type='hidden' name='csrf_token' value='$token'>";
 ```
 
+### Admin Actions — Form POST (bukan link GET)
+
+Aksi admin yang mengubah state (approve/reject/delete user, kick user, unban IP)
+telah dipindah dari link GET ke **form POST dengan token CSRF** — link GET bisa
+dipicu oleh tag `<img>` (CSRF), form POST tidak:
+
+```html
+<form method="POST" class="inline" onsubmit="return meelConfirmForm(event, {...})">
+    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+    <input type="hidden" name="approve_id" value="<?= (int)$u['id'] ?>">
+    <button type="submit">APPROVE</button>
+</form>
+```
+
+Handler di `controllers/admin/admin_actions.php` kini membaca `$_POST`, dan
+endpoint catur admin `catur.php?auto_cleanup=1` juga wajib `csrf_token`
+(bridge `window.MEEL_ADMIN_CSRF`).
+
+### Chess Multiplayer — Guard Login + CSRF
+
+Semua endpoint `arcade/chess/controller/*.php` mewajibkan:
+- **Login** — JSON `401` + `login_required: true` (client `api.js` redirect ke login).
+- **CSRF** — setiap POST yang mengubah state membawa `csrf_token` (body JSON untuk `save_move`, `FormData` untuk `create_room`/`join_room`).
+- Token **tidak pernah disimpan** di `moves.move_data` (tidak ter-expose ke lawan).
+
 ---
 
 ## IP Banning & Firewall
@@ -280,6 +437,18 @@ function get_real_ip() {
     return $_SERVER["REMOTE_ADDR"];
 }
 ```
+
+### Gerbang Trusted Proxy (`MEEL_TRUST_PROXY_HEADERS`)
+
+Header proxy **hanya** boleh dipercaya jika request lewat proxy/CDN yang Anda
+kendalikan. Konfigurasi di `auth/settings.php`:
+
+```php
+define('MEEL_TRUST_PROXY_HEADERS', false); // default aman: pakai REMOTE_ADDR saja
+```
+
+> Jika diset `true` padahal server diakses langsung, attacker bisa memalsukan
+> `X-Forwarded-For` untuk mem-bypass IP-ban atau membanjiri activity log.
 
 ### IP Validation
 
@@ -672,7 +841,7 @@ $reg_time_window = 3600; // 1 jam
 
 ### Security Checklist
 
-- [ ] Database credentials hanya di `auth/config.php`
+- [ ] Database credentials hanya di `auth/settings.php`
 - [ ] Semua `.htaccess` terpasang di direktori sensitif
 - [ ] Prepared statements di semua query SQL
 - [ ] CSRF token di semua form POST

@@ -21,16 +21,16 @@ $counts  = $library->getCounts();
 ?>
     <link rel="stylesheet" href="assets/css/index(hub).css">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
-    <script src="assets/js/sweetalert2.all.min.js"></script>
-    <script src="assets/js/script.min.js"></script>
+    <script src="assets/js/compatibilitas/lucide.js"></script>
+    <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="assets/js/compatibilitas/script.min.js"></script>
+    <script src="assets/js/shared/health-reminder.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/health-reminder.js') ?>"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen" style="background:#05070c">
 
     <!-- NAVBAR -->
     <?php include 'partials/navbar.php'; ?>
-
     <main class="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-20 flex flex-col items-center">
 
         <!-- HERO -->
@@ -174,17 +174,16 @@ $counts  = $library->getCounts();
         </div>
     </div>
 
-    <script>
-        lucide.createIcons();
+    <script>        lucide.createIcons();
 
-        // ── BANNER LOGIC ──
+        // ─── BANNER LOGIC ───
         (function() {
             const banner = document.getElementById('demoBanner');
             const closeBtn = document.getElementById('demoBannerClose');
 
             // Selalu tampilkan banner setiap kali halaman di-refresh
             if (banner) {
-                // Ukur tinggi aktual banner (menangani text wrap di layar kecil)
+
                 banner.style.visibility = 'hidden';
                 banner.style.display = 'block';
                 const h = banner.scrollHeight;
@@ -204,7 +203,7 @@ $counts  = $library->getCounts();
                     document.body.classList.remove('demo-banner-active');
                     banner.classList.remove('demo-banner-visible');
                     banner.classList.add('demo-banner-hiding');
-                    // Hanya sembunyikan untuk sesi ini — saat refresh akan muncul lagi
+
                     setTimeout(() => {
                         banner.style.display = 'none';
                     }, 400);
@@ -212,7 +211,7 @@ $counts  = $library->getCounts();
             }
         })();
 
-        // ── SWEETALERT2 ──
+        // ─── SWEETALERT2 ───
         (function() {
             // Hanya tampilkan sekali per sesi browser
             if (sessionStorage.getItem('meelDemoAlertShown')) return;
@@ -249,7 +248,7 @@ $counts  = $library->getCounts();
                 });
             }, 800);
         })();
-    </script>
+</script>
 </body>
 
 </html>

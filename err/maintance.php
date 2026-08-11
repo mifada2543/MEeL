@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../modules/core/base_url.php';
+$meel_base = meel_base_url_path();
+
 http_response_code(503);
 session_name('meel');
 session_start();
@@ -29,12 +32,12 @@ if ($user_role === 'admin') {
     $action    = "PLEASE_WAIT";
 }
 
-// ── Path dari config.php (dideklarasikan di sini agar scope global) ──────────
+// ─── Path dari config.php (dideklarasikan di sini agar scope global) ───
 $hdd_base_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : '/path/to/your/media';
 $hdd_dir       = dirname($hdd_base_path);
 $media_root    = dirname($hdd_dir);
 
-// ── DEBUG DATA (admin only) ─────────────────────────────────────────────────
+// ─── DEBUG DATA (admin only) ───
 $debug = [];
 if ($user_role === 'admin') {
     // PHP process user
@@ -43,7 +46,7 @@ if ($user_role === 'admin') {
     $debug['referer']         = $_SERVER['HTTP_REFERER'] ?? '(tidak ada referer)';
 
     // Paths to check (dari config.php terpusat)
-    
+
     $paths = [
         '/media',
         $media_root,
@@ -83,7 +86,6 @@ if ($user_role === 'admin') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -94,9 +96,9 @@ if ($user_role === 'admin') {
     <meta property="og:title" content="MEeL | System Health">
     <meta property="og:description" content="Server MEeL sedang dalam masa pemeliharaan. Mohon tunggu beberapa saat.">
     <title>MEeL | System Health</title>
-    <?php include '../partials/link.php'; ?>
+    <?php include __DIR__ . '/../partials/link.php'; ?>
     <style>
-        @import url('../assets/css/font.css');
+        @import url("<?= $meel_base ?>/assets/css/font.css");
 
         body {
             font-family: 'JetBrains Mono', monospace;
@@ -224,7 +226,7 @@ if ($user_role === 'admin') {
     </div>
 
     <div class="w-full text-center pb-4 relative z-20">
-        <?php include '../partials/footer.php'; ?>
+        <?php include __DIR__ . '/../partials/footer.php'; ?>
     </div>
 
     <?php if ($user_role === 'admin' && !empty($debug)): ?>
@@ -293,10 +295,8 @@ sudo setfacl -R -m u:daemon:rx <?= htmlspecialchars($hdd_base_path) ?></pre>
             </div>
         </div>
     <?php endif; ?>
-
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

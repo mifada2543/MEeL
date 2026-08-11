@@ -130,16 +130,19 @@ SOURCE /path/ke/MEeL/database/schema.sql;
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php`:
+Edit `auth/settings.php`:
 ```php
 $server   = "localhost";
 $username = "root";       // User database Anda
 $password = "";           // Password database Anda
 $db       = "MEeL";       // Nama database
 ```
+
+> `auth/config.php` adalah entry point yang me-require `auth/settings.php`.
 
 Setelah `auth/config.php` sudah diisi, jalankan migrasi database:
 ```bash
@@ -159,6 +162,130 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
 
 > 💡 Jika `www-data` tidak berfungsi, coba `daemon` atau `nobody`.
+> ⚠️ `books/upload`, `music/upload`, `video/upload` adalah **symlink git** yang
+> menunjuk ke HDD storage — cek & perbaiki SEBELUM membuat sub-direktori di
+> bawahnya (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+
+### 5a. Media Storage (MEEL_HDD_BASE) & Upload Symlinks
+
+Semua path media terpusat di `auth/settings.php` — ubah **satu baris** dan
+seluruh sistem mengikuti:
+
+```php
+// auth/settings.php
+// WAJIB DIGANTI sebelum produksi — nilai default hanya placeholder!
+define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
+
+// Path turunan (otomatis):
+//   MEEL_HDD_VIDEO_UPLOAD = MEEL_HDD_BASE . '/video/upload/'
+//   MEEL_HDD_VIDEO_DIR    = MEEL_HDD_BASE . '/video/upload/video/'
+//   MEEL_HDD_THUMB_DIR    = MEEL_HDD_BASE . '/video/upload/thumbnail/'
+//   MEEL_HDD_MUSIC_UPLOAD = MEEL_HDD_BASE . '/music/upload/'
+//   MEEL_HDD_BOOKS_UPLOAD = MEEL_HDD_BASE . '/books/upload/'
+//   MEEL_HDD_DRIVE        = MEEL_HDD_BASE . '/drive/'
+```
+
+#### Cara kerja symlink upload
+
+Repositori men-track `books/upload`, `music/upload`, dan `video/upload` sebagai
+**symlink** (mode git `120000`) yang menunjuk ke path HDD *pemilik sebelumnya*
+(mis. `/media/<user>/MEeL/media/books/upload`). Pada clone baru, symlink itu
+**broken** sampai Anda mengarahkannya ke `MEEL_HDD_BASE` Anda sendiri.
+
+#### 1. Mount / buat storage
+
+```bash
+df -h   # cek mount point yang tersedia
+
+# Contoh /etc/fstab untuk mount permanen (opsional):
+# /dev/sdb1  /media/<user>/MEeL/media  ext4  defaults,nofail  0 2
+sudo mount -a
+```
+
+#### 2. Buat struktur direktori storage
+
+```bash
+BASE=/media/<user>/MEeL/media   # ganti dengan path ANDA
+mkdir -p "$BASE"/video/upload/video "$BASE"/video/upload/thumbnail
+mkdir -p "$BASE"/music/upload/file   "$BASE"/music/upload/thumbnail
+mkdir -p "$BASE"/books/upload/manga  "$BASE"/books/upload/pdf "$BASE"/books/upload/thumbnail
+mkdir -p "$BASE"/drive
+```
+
+#### 3. Cek symlink yang ter-track
+
+```bash
+ls -la books/upload music/upload video/upload
+readlink books/upload
+```
+
+**Gejala symlink broken** (storage tidak ter-mount atau path berubah):
+
+```
+books/upload: broken symbolic link to /media/muhammaddaffa/MEeL/media/books/upload
+```
+
+#### 4. Buat ulang symlink ke path Anda
+
+```bash
+cd /opt/lampp/htdocs/MEeL
+for d in books music video; do
+    rm -f "$d/upload"
+    ln -s "$BASE/$d/upload" "$d/upload"
+done
+ls -la books/upload music/upload video/upload   # harus menunjuk ke BASE Anda
+```
+
+#### 5. Perizinan
+
+```bash
+sudo chown -R www-data:www-data "$BASE"
+sudo chmod -R 775 "$BASE"
+```
+
+#### 6. .htaccess keamanan di folder upload (wajib)
+
+Setiap direktori upload wajib berisi `.htaccess` yang mematikan eksekusi PHP
+(`php_flag engine off`), guard MIME `ForceType`, dan `Options -Indexes` — pola
+yang sama dengan `data_drive/.htaccess`. `tests/security_test.php` memverifikasi ini:
+
+```bash
+php tests/security_test.php
+```
+
+> Jika storage **tidak ter-mount** (atau symlink broken), security test melaporkan
+> **6 FAIL** (`books/upload/`, `music/upload/`, `video/upload/` — "TIDAK PUNYA
+> .htaccess"). Itu **masalah environment, bukan cacat kode**: direktori tidak
+> ditemukan sehingga `.htaccess`-nya tidak bisa diverifikasi. Setelah storage
+> ter-mount dan folder upload punya `.htaccess`, jalankan ulang test untuk
+> konfirmasi `72/72`.
+
+#### 7. Verifikasi storage
+
+```bash
+df -h "$BASE"
+test -d "$BASE/video/upload/video" && echo "storage OK"
+php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : 'NOT SET';"
+```
+
+#### 8. Cek deployment otomatis (satu perintah)
+
+Project menyertakan health-check CLI yang memverifikasi empat area kritis
+deployment dalam satu kali jalan — `MEEL_HDD_BASE`, symlink upload, hardening
+`.htaccess` folder upload, dan aturan `mod_rewrite` PWA:
+
+```bash
+php tests/check_deploy.php                           # cek lokal + probe HTTP otomatis
+php tests/check_deploy.php --url=http://localhost/MEeL   # probe HTTP eksplisit
+php tests/check_deploy.php --hdd=/tmp/meel-storage/media  # override MEEL_HDD_BASE (testing/CI)
+php tests/check_deploy.php --no-color                # tanpa warna ANSI (untuk CI/log)
+```
+
+Setiap item dilaporkan sebagai `PASS` / `WARN` / `FAIL` beserta ringkasan; exit
+code `0` saat sehat dan `1` saat ada minimal satu FAIL (ramah CI). Jika storage
+belum ter-mount, script melaporkan **6 FAIL yang sama persis** dengan yang
+dilaporkan security test — mount storage, perbaiki symlink, tambahkan file
+`.htaccess`, lalu jalankan ulang sampai muncul `✅ Deployment sehat.`
 
 ### 6. Konfigurasi Apache
 
@@ -177,6 +304,21 @@ Edit `/etc/apache2/apache2.conf`:
     Require all granted
 </Directory>
 ```
+
+#### 📱 mod_rewrite & PWA (wajib)
+
+**PWA bergantung pada mod_rewrite + pemrosesan .htaccess**: service worker
+dibangkitkan oleh `sw.js.php` dan disajikan sebagai `/sw.js` via rewrite
+`.htaccess` root. Verifikasi bahwa ini bekerja:
+
+```bash
+curl -sI http://localhost/MEeL/sw.js | grep -i content-type
+# Content-Type: application/javascript; charset=utf-8   ← benar
+```
+
+Jika `.htaccess` tidak diproses (`AllowOverride` dinonaktifkan), `/sw.js`
+mengembalikan 404 dan PWA menurun secara diam-diam — situs tetap berfungsi,
+tetapi **mode offline dan "Add to Home Screen" berhenti bekerja**.
 
 #### ⚡ Aktifkan mod_xsendfile (Opsional — untuk akselerasi streaming)
 
@@ -234,7 +376,7 @@ membiarkan Apache mengirim file langsung dari disk tanpa melalui PHP.
    # Output: xsendfile_module (shared)
    ```
 
-7. Aktifkan di aplikasi — edit `auth/config.php`:
+7. Aktifkan di aplikasi — edit `auth/settings.php`:
    ```php
    define('MEEL_USE_XSENDFILE', true);
    ```
@@ -277,10 +419,13 @@ Setelah semua setup selesai, jalankan migrasi database untuk mengoptimalkan skem
 /opt/lampp/bin/php database/migrate.php
 ```
 
-Migration bersifat **idempotent** — aman dijalankan berulang kali. Yang akan ditambahkan:
-- **v1:** FULLTEXT index untuk search video & music (10-100× lebih cepat dari LIKE)
-- **v2:** Performance index (upload_date) untuk sorting
-- Tracker otomatis di tabel `db_version`
+Migration bersifat **idempotent** — aman dijalankan berulang kali. Mengelola
+**v1–v11** (tracker otomatis di tabel `db_version`):
+- **v1–v5:** FULLTEXT index, performance index, sinkronisasi struktural, foreign key, tipe title
+- **v6–v7:** tabel `activity_log`, UNIQUE KEY pada username
+- **v8–v9:** sync kolom role, **kolom MFA** (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`)
+- **v10:** index komposit `comments` `(video_id, created_at)` & `(music_id, created_at)`
+- **v11:** unique key `interactions` dipecah menjadi `(user_id, video_id)` & `(user_id, music_id)`
 
 ### 11. Setup cookies.txt (untuk yt-dlp)
 
@@ -321,16 +466,30 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 
 ### ❌ "Koneksi ke database gagal"
 - Pastikan MySQL/MariaDB berjalan: `sudo systemctl status mysql`
-- Verifikasi kredensial di `auth/config.php`
+- Verifikasi kredensial di `auth/settings.php`
 - Coba: `mysql -u root -p -e "SHOW DATABASES;"`
 
 ### ❌ "Penyimpanan Offline" / Redirect ke maintenance
-- Periksa path HDD di `auth/config.php`:
+- Periksa path HDD di `auth/settings.php`:
   ```php
   define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
   ```
 - Sesuaikan dengan mount point Anda: `df -h` untuk cek mount point
+- Pastikan storage ter-mount dan symlink upload valid:
+  ```bash
+  readlink books/upload music/upload video/upload
+  ls -ld books/upload music/upload video/upload   # jangan ada "broken symbolic link"
+  ```
 - Atau nonaktifkan sementara untuk development
+
+### ❌ Security test melaporkan 6 FAIL pada folder upload
+- **Gejala:** `php tests/security_test.php` → `books/upload/`, `music/upload/`,
+  `video/upload/` — "TIDAK PUNYA .htaccess!"
+- **Penyebab:** storage HDD (`MEEL_HDD_BASE`) tidak ter-mount, atau symlink
+  upload yang ter-track masih menunjuk ke path pemilik sebelumnya setelah cloning.
+- **Perbaikan:** mount storage, buat ulang symlink, dan pastikan setiap folder
+  upload punya `.htaccess` (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+  Jalankan ulang test untuk konfirmasi `72/72`.
 
 ### ❌ "403 Forbidden" pada halaman
 - Periksa `.htaccess` di direktori terkait

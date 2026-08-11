@@ -1,0 +1,16 @@
+/* up/base.css — Override & layout dasar halaman upload_advanced.php */
+body::after {
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+}
+/* ─── Two-col layout ─── */
+.page-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+}

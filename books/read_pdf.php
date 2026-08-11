@@ -1,28 +1,18 @@
 <?php
 require_once '../modules/core/helpers.php';
-/**
- * read_pdf.php — PDF viewer dengan PWA support
- * 
- * Menyajikan file PDF dalam halaman HTML yang menyertakan manifest, logo,
- * dan meta tags untuk PWA. Cocok untuk akses langsung di HP (tab baru).
- * 
- * Dua mode:
- *  - Normal (?id=X):      Tampilkan halaman HTML dengan navbar + iframe PDF
- *  - Raw    (?id=X&raw=1): Serve file PDF langsung (digunakan oleh <iframe>)
- */
 
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
-// ── Validasi ID ──────────────────────────────────────────────────────────────
+// ─── Validasi ID ───
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id < 1) {
     header("Location: index.php");
     exit();
 }
 
-// ── Ambil data buku dari database ────────────────────────────────────────────
+// ─── Ambil data buku dari database ───
 $repo  = new BookRepository($conn);
 $book  = $repo->getBookById($id);
 
@@ -31,12 +21,7 @@ if (!$book || $book['type'] !== 'pdf') {
     exit();
 }
 
-// ── RAW MODE: Serve PDF langsung untuk <iframe> ─────────────────────────────
-// Keuntungan:
-//   - Request via <iframe> adalah navigation request (bukan subresource),
-//     sehingga mobile browser tetap mengirim cookie session.
-//   - URL same-origin langsung (bukan blob:) → didukung PDF viewer mobile.
-//   - Tidak perlu fetch JavaScript + blob URL yang bermasalah di HP.
+// ─── RAW MODE: Serve PDF langsung untuk <iframe> ───
 if (isset($_GET['raw']) && $_GET['raw'] === '1') {
     $pdf_path = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
     if (!file_exists($pdf_path) || !is_readable($pdf_path)) {
@@ -55,7 +40,7 @@ if (isset($_GET['raw']) && $_GET['raw'] === '1') {
     exit;
 }
 
-// ── Ambil ukuran file ────────────────────────────────────────────────────────
+// ─── Ambil ukuran file ───
 $pdf_path   = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
 $pdf_size   = is_file($pdf_path) ? filesize($pdf_path) : 0;
 $pdf_size_f = $pdf_size > 1048576
@@ -80,186 +65,10 @@ $title = htmlspecialchars($book['title']);
     <link rel="manifest" href="../assets/manifest.json">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/books.css">
-    <style>
-        body {
-            background-color: #080a0f;
-            color: white;
-            margin: 0;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-        }
-        .pdf-wrap {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .pdf-nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 1rem;
-            background: rgba(8,10,15,.92);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,.05);
-            gap: 1rem;
-            flex-shrink: 0;
-        }
-        .pdf-nav-left {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            min-width: 0;
-        }
-        .pdf-nav-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: #7c3aed;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .pdf-nav-icon i {
-            color: white;
-        }
-        .pdf-nav-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #e5e7eb;
-        }
-        .pdf-nav-meta {
-            font-size: 0.6rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        .pdf-nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }
-        .pdf-nav-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.85rem;
-            background: #7c3aed;
-            color: #fff;
-            border-radius: 10px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            transition: all 0.2s;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-        .pdf-nav-btn:hover {
-            background: #6d28d9;
-        }
-        .pdf-nav-back {
-            padding: 0.4rem;
-            color: #6b7280;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.2s;
-            display: flex;
-        }
-        .pdf-nav-back:hover {
-            color: #22c55e;
-            background: rgba(255,255,255,.04);
-        }
-        .pdf-body {
-            flex: 1;
-            min-height: 0;
-            position: relative;
-            background: #0f1318;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-        /* ── Branded redirect card ── */
-        .pdf-redirect-card {
-            text-align: center;
-            max-width: 420px;
-            width: 100%;
-        }
-        .pdf-redirect-card .pdf-redirect-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1.5rem;
-            border-radius: 20px;
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(255,255,255,.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .pdf-redirect-card .pdf-redirect-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #f0f2f7;
-            margin-bottom: .4rem;
-            line-height: 1.3;
-        }
-        .pdf-redirect-card .pdf-redirect-meta {
-            font-size: .7rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: .2em;
-            margin-bottom: 2rem;
-        }
-        /* Loading spinner */
-        .pdf-redirect-loader {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .loader-ring {
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(124,58,237,.15);
-            border-top-color: #7c3aed;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loader-text {
-            font-size: .7rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: .15em;
-            font-weight: 600;
-        }
-        /* Tombol akses langsung (muncul jika redirect gagal) */
-        .pdf-redirect-card .btn {
-            display: none;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.8rem;
-            background: #7c3aed;
-            color: #fff;
-            border-radius: 14px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-decoration: none;
-            box-shadow: 0 8px 24px rgba(124,58,237,.3);
-            transition: all 0.25s;
-        }
-        .pdf-redirect-card .btn:hover {
-            background: #6d28d9;
-            transform: translateY(-2px);
-        }
-    </style>
+    <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/books/read-pdf/main.css">
 </head>
 <body>
     <div class="pdf-wrap">
@@ -345,7 +154,8 @@ $title = htmlspecialchars($book['title']);
         }, 5000);
     })();
     </script>
-    <script src="../assets/js/lucide.js"></script>
-    <script>lucide.createIcons();</script>
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script>lucide.createIcons();
+</script>
 </body>
 </html>

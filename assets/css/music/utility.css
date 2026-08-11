@@ -1,0 +1,48 @@
+/* utility.css — HTMX, accessibility, misc */
+/* ─── Accessibility: Improved Contrast Ratios ─── */
+.text-gray-500,
+.format-pill,
+.sidebar-link {
+  color: #a0aec0;
+}
+.format-pill:hover {
+  color: #e2e8f0;
+}
+.nav-link {
+  color: #9099b0;
+}
+.text-gray-600 {
+  color: #9099b0;
+}
+a.text-gray-600 {
+  color: #9099b0;
+}
+.text-gray-700 {
+  color: #7a839b;
+}
+.text-gray-800 {
+  color: #6a7290;
+}
+/* ─── HTMX ─── */
+.htmx-added {
+  animation: fadeSlideIn 0.35s ease-out both;
+}
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.htmx-request {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+/* ─── Select option ─── */
+select option {
+  background-color: #0d1017 !important;
+  color: #d1d5db !important;
+}

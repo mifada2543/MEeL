@@ -1,5 +1,4 @@
 <?php
-
 final class DriveUserContext
 {
     public const ROLE_ADMIN = 'admin';
@@ -137,7 +136,7 @@ final class DriveStorage
             throw new RuntimeException('Berkas gagal diterima dari browser.');
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk drive — minimal 100MB free
+        // PRE-FLIGHT: Cek ruang disk drive — minimal 100MB free
         $scope = $this->resolveUploadScope($requestedScope);
         $cleanName = $this->sanitizeFileName((string) ($file['name'] ?? ''));
         $type = $this->detectTypeFromFilename($cleanName);
@@ -221,7 +220,6 @@ final class DriveStorage
             throw new RuntimeException('File tidak ditemukan.');
         }
 
-        // CRITICAL: Validasi access control untuk public files - HANYA ADMIN
         if ($safeScope === self::SCOPE_PUBLIC && !$this->user->isAdmin()) {
             throw new RuntimeException('Hanya Admin yang dapat menghapus file di Public Space.');
         }
@@ -236,9 +234,7 @@ final class DriveStorage
         }
     }
 
-    /**
-     * Verifikasi user dapat mengakses private file
-     */
+    /* Verifikasi user dapat mengakses private file */
     private function verifyPrivateFileAccess(string $filePath): bool
     {
         $userPath = $this->privateRootForUser($this->user->username);
@@ -252,7 +248,8 @@ final class DriveStorage
         }
 
         // Ensure file is within user's private directory
-        return strpos($realPath, $realUserPath) === 0;
+        return $realPath === $realUserPath
+            || str_starts_with($realPath, $realUserPath . DIRECTORY_SEPARATOR);
     }
 
     private function buildFilePath(string $type, string $scope, string $filename, bool $forDelete = false): string
@@ -313,9 +310,7 @@ final class DriveStorage
         }
     }
 
-    /**
-     * Validasi file type menggunakan magic bytes
-     */
+    /* Validasi file type menggunakan magic bytes */
     private function validateFileByMagicBytes(string $filePath, string $detectedType): bool
     {
         if (!is_file($filePath)) {
@@ -409,7 +404,7 @@ final class DriveViewRenderer
     public function renderFileGrid(array $files, string $accent, string $icon, string $type, string $scope): void
     {
         $csrfToken = get_csrf_token();
-        // Template terpisah — lebih mudah dibaca & dimaintain daripada string concat
+
         include __DIR__ . '/templates/file_grid.php';
     }
 }

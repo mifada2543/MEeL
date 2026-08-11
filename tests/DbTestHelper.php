@@ -1,26 +1,10 @@
 <?php
-/**
- * DbTestHelper — Database connection helper for integration tests.
- *
- * Provides a real mysqli connection to the MEeL database with
- * transaction-based isolation. Each test automatically rolls back
- * changes to prevent test pollution.
- *
- * Usage:
- *   $helper = new DbTestHelper();
- *   $conn = $helper->getConnection();
- *   // ... test code ...
- *   $helper->rollback(); // Restore initial state
- */
-
 class DbTestHelper
 {
     private ?mysqli $conn = null;
     private bool $inTransaction = false;
 
-    /**
-     * Known test data IDs (read-only — these exist in the actual DB).
-     */
+    /* Known test data IDs (read-only — these exist in the actual DB). */
     const ADMIN_USER_ID = 1;     // BTMEeL2026 (admin)
     const ADMIN2_USER_ID = 9;    // Mifada (admin)
     const MEMBER_USER_ID = 10;   // Daffa (member)
@@ -34,9 +18,7 @@ class DbTestHelper
     const VIDEO_ID_2 = 5;        // Positive*Dance Time
     const VIDEO_ID_3 = 6;        // God-ish
 
-    /**
-     * Get a real DB connection and start a transaction.
-     */
+    /* Get a real DB connection and start a transaction. */
     public function getConnection(): mysqli
     {
         if ($this->conn === null) {
@@ -53,10 +35,6 @@ class DbTestHelper
         return $this->conn;
     }
 
-    /**
-     * Rollback the transaction — restores DB to pre-test state.
-     * Call this in tearDown().
-     */
     public function rollback(): void
     {
         if ($this->conn !== null && $this->inTransaction) {
@@ -65,9 +43,7 @@ class DbTestHelper
         }
     }
 
-    /**
-     * Commit the transaction (use only if intentionally persisting test data).
-     */
+    /* Commit the transaction (use only if intentionally persisting test data). */
     public function commit(): void
     {
         if ($this->conn !== null && $this->inTransaction) {
@@ -76,9 +52,7 @@ class DbTestHelper
         }
     }
 
-    /**
-     * Close the connection.
-     */
+    /* Close the connection. */
     public function close(): void
     {
         if ($this->conn !== null) {
@@ -88,9 +62,7 @@ class DbTestHelper
         }
     }
 
-    /**
-     * Get the original likes/dislikes counts for a music item.
-     */
+    /* Get the original likes/dislikes counts for a music item. */
     public function getMusicLikesCount(int $musicId): array
     {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM music WHERE id = ?");
@@ -104,9 +76,7 @@ class DbTestHelper
         ];
     }
 
-    /**
-     * Get the original likes/dislikes counts for a video item.
-     */
+    /* Get the original likes/dislikes counts for a video item. */
     public function getVideoLikesCount(int $videoId): array
     {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM video WHERE id = ?");
@@ -120,9 +90,7 @@ class DbTestHelper
         ];
     }
 
-    /**
-     * Check if an interaction exists for a user on a specific media item.
-     */
+    /* Check if an interaction exists for a user on a specific media item. */
     public function interactionExists(int $userId, string $col, int $mediaId): ?string
     {
         $stmt = $this->conn->prepare(
@@ -135,10 +103,7 @@ class DbTestHelper
         return $result['TYPE'] ?? null;
     }
 
-    /**
-     * Create a test comment in the database.
-     * Returns the new comment ID.
-     */
+    /* Create a test comment in the database. Returns the new comment ID. */
     public function createTestComment(int $userId, ?int $musicId, ?int $videoId, string $text): int
     {
         $stmt = $this->conn->prepare(
@@ -151,9 +116,7 @@ class DbTestHelper
         return $id;
     }
 
-    /**
-     * Verify a comment exists by ID and belongs to a specific user.
-     */
+    /* Verify a comment exists by ID and belongs to a specific user. */
     public function getCommentOwner(int $commentId): ?int
     {
         $stmt = $this->conn->prepare("SELECT user_id FROM comments WHERE id = ?");

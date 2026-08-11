@@ -1,39 +1,18 @@
 <?php
-/**
- * FfmpegUtils — Trait berisi utility function yang shared antara Transcoder dan Uploader.
- *
- * Trait ini mengekstrak fungsi-fungsi yang identik atau hampir identik
- * dari kedua class untuk menghilangkan duplikasi kode.
- *
- * CATATAN: PHP 8.0 tidak mendukung constants di trait (min. PHP 8.2).
- * Gunakan method getEnvPrefix() untuk mengakses prefix environment variable.
- *
- * @package MEeL\Transcoder
- */
+/* @package MEeL\Transcoder */
 
 require_once __DIR__ . '/../core/helpers.php';
 
 trait FfmpegUtils
 {
-    /**
-     * Dapatkan ENV prefix untuk shell command.
-     * Dipisahkan sebagai method karena PHP 8.0 tidak support trait constants.
-     */
+
     protected function getEnvPrefix(): string
     {
         return "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     // DURATION PROBE
-    // ══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Dapatkan durasi media (detik) via ffprobe.
-     *
-     * @param string $file_path Path ke file media
-     * @return float Durasi dalam detik
-     */
+    /* @param string $file_path Path ke file media; @return float Durasi dalam detik */
     protected function probeDuration(string $file_path): float
     {
         $cmd = $this->getEnvPrefix() . escapeshellarg($this->ffprobe_bin)
@@ -43,52 +22,111 @@ trait FfmpegUtils
         return (float)trim((string)shell_exec($cmd));
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     // FILE SYSTEM HELPERS
-    // ══════════════════════════════════════════════════════════════════════════
-
     /**
-     * Pindahkan file lintas filesystem (untuk USB HDD).
-     * PHP rename() tidak bisa lintas device — wajib copy() + unlink().
-     *
-     * @param string $src Path sumber
-     * @param string $dst Path tujuan
-     * @return bool True jika sukses
+     * @param string $dir Path direktori yang akan dibuat
+     * @param int $perms Permission (default 0755)
+     * @return bool True jika direktori ada / berhasil dibuat
      */
+    protected function ensureDir(string $dir, int $perms = 0755): bool
+    {
+        if (is_dir($dir)) {
+            return true;
+        }
+        if (!mkdir($dir, $perms, true) && !is_dir($dir)) {
+            error_log("[MEeL] ensureDir GAGAL: {$dir}");
+            return false;
+        }
+        return true;
+    }
+
+    /* @param string $path Path file */
+    protected function removeFile(string $path): void
+    {
+        if (!is_file($path) && !is_link($path)) {
+            return;
+        }
+        if (!unlink($path)) {
+            error_log("[MEeL] removeFile GAGAL: {$path}");
+        }
+    }
+
+    /* @param string $dir Path direktori */
+    protected function removeDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        foreach (glob(rtrim($dir, '/') . "/*") ?: [] as $f) {
+            $this->removeFile($f);
+        }
+        if (!rmdir($dir)) {
+            error_log("[MEeL] removeDir GAGAL: {$dir}");
+        }
+    }
+
+    /* @param string $src Path sumber; @param string $dst Path tujuan; @return bool True jika sukses */
     protected function moveFile(string $src, string $dst): bool
     {
-        // Coba rename dulu (cepat, jika sama filesystem)
-        if (@rename($src, $dst)) return true;
+        if (!is_file($src)) {
+            error_log(sprintf('[MEeL] moveFile GAGAL (sumber tidak ada): src=%s dst=%s', $src, $dst));
+            return false;
+        }
+        if (!is_dir(dirname($dst)) || !is_writable(dirname($dst))) {
+            error_log(sprintf(
+                '[MEeL] moveFile GAGAL (direktori tujuan tidak writable): src=%s dst=%s',
+                $src,
+                $dst
+            ));
+            return false;
+        }
+
+        $src_stat = stat($src);
+        $dst_stat = stat(dirname($dst));
+        $crossDevice = $src_stat !== false
+            && $dst_stat !== false
+            && ($src_stat['dev'] ?? 0) !== ($dst_stat['dev'] ?? 0);
+
+        if (!$crossDevice) {
+            // Coba rename dulu (cepat, jika sama filesystem)
+            error_clear_last();
+            if (rename($src, $dst)) return true;
+
+            $rename_err = error_get_last();
+            $rename_msg = is_array($rename_err) ? ($rename_err['message'] ?? 'unknown') : 'unknown';
+        } else {
+            $rename_msg = 'skipped (cross-device: src/dst berbeda filesystem) — langsung copy';
+        }
 
         // Fallback: copy + unlink (untuk USB/cross-device)
+        error_clear_last();
         if (copy($src, $dst)) {
-            @unlink($src);
+            if (!unlink($src)) {
+                error_log("[MEeL] moveFile: source tidak terhapus setelah copy: {$src}");
+            }
             return true;
         }
 
+        $copy_err = error_get_last();
+        $copy_msg = is_array($copy_err) ? ($copy_err['message'] ?? 'unknown') : 'unknown';
+
+        error_log(sprintf(
+            '[MEeL] moveFile GAGAL: src=%s dst=%s | rename: %s | copy: %s',
+            $src,
+            $dst,
+            $rename_msg,
+            $copy_msg
+        ));
         return false;
     }
 
-    /**
-     * Hapus semua isi direktori tanpa rekursif (flat directory).
-     *
-     * @param string $dir Path direktori
-     */
+    /* @param string $dir Path direktori */
     protected function cleanupDir(string $dir): void
     {
-        foreach (glob(rtrim($dir, '/') . "/*") as $f) {
-            @unlink($f);
-        }
-        @rmdir($dir);
+        $this->removeDir($dir);
     }
 
-    /**
-     * Sanitasi judul untuk dijadikan nama file.
-     * Hapus karakter berbahaya, path separator, dan batasi panjang.
-     *
-     * @param string $title Judul yang akan disanitasi
-     * @return string Nama file yang aman
-     */
+    /* @param string $title Judul yang akan disanitasi; @return string Nama file yang aman */
     protected function sanitizeFilename(string $title): string
     {
         $name = trim($title);
@@ -108,16 +146,8 @@ trait FfmpegUtils
         return $name ?: 'untitled-media';
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     // SPRITE & VTT GENERATOR
-    // ══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Generate sprite thumbnail + VTT file dari video.
-     *
-     * @param string $video_path   Path ke file video sumber
-     * @param string $target_folder Folder tujuan untuk sprite .webp dan .vtt
-     */
+    /* @param string $video_path Path ke file video sumber; @param string $target_folder Folder tujuan untuk sprite .webp dan .vtt */
     protected function generateSpriteAndVTT(string $video_path, string $target_folder): void
     {
         $w    = 160;  // Lebar per thumbnail
@@ -129,13 +159,13 @@ trait FfmpegUtils
 
         // Tentukan interval dinamis berdasarkan durasi
         if ($duration > 3600) {
-            $interval = 300;   // > 1 jam   → tiap 5 menit
+            $interval = 300;   // > 1 jam → tiap 5 menit
         } elseif ($duration > 1800) {
             $interval = 180;   // > 30 menit → tiap 3 menit
         } elseif ($duration > 300) {
-            $interval = 60;    // > 5 menit  → tiap 1 menit
+            $interval = 60;    // > 5 menit → tiap 1 menit
         } elseif ($duration > 0) {
-            $interval = 10;    // ≤ 5 menit  → tiap 10 detik
+            $interval = 10;    // ≤ 5 menit → tiap 10 detik
         } else {
             $interval = 10;    // fallback jika durasi 0
         }
@@ -146,7 +176,6 @@ trait FfmpegUtils
         $sprite_file = $target_folder . 'thumb_sprite.webp';
         $vtt_file    = $target_folder . 'thumbnails.vtt';
 
-        // Buat sprite — fps filter + scale + tile (CPU/software decode)
         $filter     = "fps=1/$interval,scale=$w:$h,tile={$cols}x{$rows}";
         $cmd_sprite = $this->getEnvPrefix() . escapeshellarg($this->ffmpeg_bin)
             . " -y -threads 8"

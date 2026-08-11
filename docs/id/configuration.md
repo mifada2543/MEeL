@@ -7,7 +7,7 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 ## 📋 Daftar Isi
 
 - [File Konfigurasi Utama](#file-konfigurasi-utama)
-- [Database (`auth/config.php`)](#database-authconfigphp)
+- [Database (`auth/settings.php`)](#database-authsettingsphp)
 - [Session & Security](#session--security)
 - [Media Storage Paths](#media-storage-paths)
 - [Transcoder Configuration](#transcoder-configuration)
@@ -21,37 +21,46 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 
 | File | Tujuan | Variabel Kunci |
 |------|--------|----------------|
-| `auth/config.php` | Database, session, CSRF, **path terpusat** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
-| `auth/config.example.php` | Template konfigurasi | Sama dengan config.php |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers | (hanya logic init) |
+| `auth/settings.php` | **Data murni**: DB credentials + **path terpusat** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
+| `auth/config.example.php` | Template entry point (copy ke config.php) | Sama dengan config.php |
+| `auth/settings.example.php` | Template data konfigurasi (copy ke settings.php) | Sama dengan settings.php |
 | `database/schema.sql` | Skema database standalone | — |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
 | `modules/core/helpers.php` | HDD check path + berbagai utilitas | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, `resolve_binary()`, `dir_size()`, `check_disk_space()`, dll. |
 | `modules/core/System.php` | Queue management | Rate limit constants |
-| `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guest + rate limit | `STALE_SECONDS`, `GUEST_STALE_HOURS` |
+| `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guest + chess rooms + rate limit | `STALE_SECONDS`, `GUEST_STALE_HOURS`, `ROOM_LOBBY_STALE_HOURS`, `ROOM_GAME_STALE_HOURS`, `CHESS_CLEANUP_INTERVAL` |
 | `modules/core/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, dll.) |
 | `modules/core/japanese.php` | Pemrosesan teks Jepang (MeCab + transliterasi) | `getRomajiName()`, `analyzeJapaneseText()` |
 | `modules/core/activity_logger.php` | Activity logging, IP banning, session kick | `get_real_ip()`, `log_activity()` |
 | `modules/core/bootstrap.php` | Bootstrap (env detection, error reporting, timezone) | `MEEL_ENV`, log error config |
+| `modules/core/base_url.php` | Perhitungan base URL terpusat (`meel_base_url_path()`) | `MEEL_BASE_URL` (via `bootstrap.php`/`config.php`) |
 | `modules/transcoder/FfmpegUtils.php` | **Trait** utilitas FFmpeg | `resolveBinary()`, `probeDuration()`, `generateSpriteAndVTT()` |
 | `modules/autoload.php` | PSR-4-like autoloader | Daftar direktori yang di-scan |
-| `database/migrate.php` | Database migration v1–v7 | FULLTEXT index, FK, activity_log, UNIQUE KEY |
+| `modules/core/SwPrecache.php` | Generator precache PWA (service worker) | `baseAssets()`, `moduleAssets()`, `all()`, `version()` |
+| `sw.js.php` | Generator service worker dinamis (disajikan sebagai `/sw.js`) | `SW_VERSION`, `PRECACHE_URLS` (otomatis) |
+| `database/migrate.php` | Database migration v1–v11 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA, index comments, unique key interactions |
 
 ---
 
-## Database (`auth/config.php`)
+## Database (`auth/settings.php`)
 
 ### Koneksi Database
 
+Kredensial database berada di **`auth/settings.php`** (data murni). `auth/config.php` me-require-nya lalu membuat koneksi:
+
 ```php
-// File: auth/config.php bisa diambil dari example
+// File: auth/settings.php — bisa diambil dari settings.example.php
 
 $server   = "localhost";   // Host database
 $username = "root";        // Username database
 $password = "";            // Password database
 $db       = "MEeL";        // Nama database
 
+// auth/config.php — entry point membuat koneksi:
 $conn = new mysqli($server, $username, $password, $db);
+$conn->set_charset('utf8mb4'); // charset koneksi dipaksa utf8mb4
 ```
 
 ### Error Handling
@@ -74,10 +83,48 @@ Kamu belum mengisi konfigurasi database di file 'auth/config.php'.
 // Di auth/config.php
 $timeout = 43200;     // 12 jam session timeout
 ini_set('session.gc_maxlifetime', $timeout);
-session_set_cookie_params($timeout, "/");
+
+// Flag cookie aman (auto-detect HTTPS / X-Forwarded-Proto)
+$secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+
+session_set_cookie_params([
+    'lifetime' => $timeout,
+    'path'     => '/',
+    'secure'   => $secure_cookie,  // hanya terkirim via HTTPS
+    'httponly' => true,            // tidak bisa dibaca JavaScript
+    'samesite' => 'Lax',           // proteksi CSRF level-1
+]);
 session_name('meel');  // Session cookie name: "meel"
 session_start();
 ```
+
+> `auth/auth_helpers.php` (`auth_boot_session()`) menggunakan parameter cookie yang sama.
+
+### Trusted Proxy (`MEEL_TRUST_PROXY_HEADERS`)
+
+**File:** `auth/settings.example.php` (dan `auth/settings.php`)
+
+```php
+// false = (default, aman) hanya pakai REMOTE_ADDR
+// true  = percaya header proxy (hanya jika di belakang proxy terpercaya)
+define('MEEL_TRUST_PROXY_HEADERS', false);
+```
+
+Header `HTTP_X_FORWARDED_FOR` / `HTTP_CF_CONNECTING_IP` hanya boleh dipercaya
+jika request benar-benar lewat proxy/CDN yang Anda kendalikan (Cloudflare,
+Nginx reverse proxy). Jika diset `true` padahal server diakses langsung,
+attacker bisa memalsukan IP untuk mem-bypass IP-ban atau membanjiri activity log.
+
+### Charset Koneksi (`utf8mb4`)
+
+```php
+// auth/config.php & auth/config.example.php
+$conn->set_charset('utf8mb4');
+```
+
+Koneksi MySQL dipaksa `utf8mb4` agar cocok dengan schema — emoji, aksara
+Jepang, dan teks multibyte tersimpan/terbaca dengan benar.
 
 ### CSRF Protection
 
@@ -131,12 +178,12 @@ function getRomajiName($text) {
 
 ## Media Storage Paths (TERPUSAT)
 
-Semua path penyimpanan media **terpusat** di `auth/config.php` melalui konstanta `MEEL_HDD_*`. Cukup ubah **satu baris** untuk memindahkan lokasi penyimpanan.
+Semua path penyimpanan media **terpusat** di `auth/settings.php` melalui konstanta `MEEL_HDD_*`. Cukup ubah **satu baris** untuk memindahkan lokasi penyimpanan.
 
 ### Konfigurasi Path Utama
 
 ```php
-// File: auth/config.php — ★ Cukup ubah MEEL_HDD_BASE, sisanya otomatis
+// File: auth/settings.php — ★ Cukup ubah MEEL_HDD_BASE, sisanya otomatis
 define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 
 // Path turunan (otomatis mengikuti MEEL_HDD_BASE)
@@ -151,7 +198,7 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ### Cara Mengubah
 
 1. Tentukan path mount HDD Anda: `df -h` atau `lsblk`
-2. Edit `auth/config.php`:
+2. Edit `auth/settings.php`:
    ```php
    define('MEEL_HDD_BASE', '/media/[username]/MEeL/media');
    ```
@@ -159,7 +206,7 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 
 ### Konfigurasi X-Sendfile (Akselerasi Streaming)
 
-> Tersedia di: `auth/config.php`
+> Tersedia di: `auth/settings.php`
 
 ```php
 define('MEEL_USE_XSENDFILE', false);
@@ -225,7 +272,7 @@ Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, aplikasi akan redirect ke 
 
 ### File: `modules/core/Transcoder.php`
 
-> ⚠️ **Perubahan:** Konstanta `HDD_BASE`, `HDD_VIDEO_DIR`, `HDD_THUMB_DIR` telah **dipindahkan** ke `auth/config.php` menjadi `MEEL_HDD_*`.
+> ⚠️ **Perubahan:** Konstanta `HDD_BASE`, `HDD_VIDEO_DIR`, `HDD_THUMB_DIR` telah **dipindahkan** ke `auth/settings.php` menjadi `MEEL_HDD_*`.
 
 ```php
 // ─── KONSTANTA HARDWARE ───────────────────────────────────
@@ -242,7 +289,7 @@ private const HLS_SEGMENT_DURATION  = 10;
 // Download timeout (detik)
 private const DOWNLOAD_TIMEOUT      = 900;
 
-// PATH STORAGE — sekarang lihat auth/config.php (MEEL_HDD_*)
+// PATH STORAGE — sekarang lihat auth/settings.php (MEEL_HDD_*)
 // private const HDD_BASE = "..."; // DIPINDAHKAN
 ```
 
@@ -300,7 +347,7 @@ else                       $interval = 10;    // ≤ 5 menit → tiap 10 detik
 
 ### File: `modules/core/Uploader.php`
 
-> ⚠️ **Perubahan:** `$base_dir` sekarang mengambil path dari `MEEL_HDD_VIDEO_UPLOAD` (didefinisikan di `auth/config.php`).
+> ⚠️ **Perubahan:** `$base_dir` sekarang mengambil path dari `MEEL_HDD_VIDEO_UPLOAD` (didefinisikan di `auth/settings.php`).
 
 ```php
 $this->base_dir = defined('MEEL_HDD_VIDEO_UPLOAD')

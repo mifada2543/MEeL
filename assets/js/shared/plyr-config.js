@@ -1,0 +1,10 @@
+/** MEeL - Media Hub Platform
+ * @copyright Copyright (C) 2026 Mifada
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
+
+window.MEEL_PLYR_COMMON = {
+  iconUrl: "../assets/plyr.svg",
+  speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+  keyboard: { focused: true, global: true },
+  tooltips: { controls: true, seek: true },
+};

@@ -1,0 +1,78 @@
+<?php
+require_once MEEL_ROOT . '/arcade/chess/controller/chess_helpers.php';
+
+use PHPUnit\Framework\TestCase;
+
+/**
+ * @requires extension mysqli
+ * @group integration
+ * @covers chess_opponent_online
+ */
+class ChessHelpersIntegrationTest extends TestCase
+{
+    private DbTestHelper $dbHelper;
+    private mysqli $conn;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->dbHelper = new DbTestHelper();
+        $this->conn = $this->dbHelper->getConnection();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->dbHelper->rollback();
+        $this->dbHelper->close();
+        parent::tearDown();
+    }
+
+    public function testRecentlyActiveUserIsOnline(): void
+    {
+
+        $this->conn->query(
+            "UPDATE users SET last_activity = NOW() WHERE id = " . DbTestHelper::REGULAR_USER_ID
+        );
+
+        $this->assertTrue(chess_opponent_online($this->conn, DbTestHelper::REGULAR_USER_ID));
+    }
+
+    public function testStaleUserIsOffline(): void
+    {
+        // last_activity 10 menit lalu → lewat ambang → offline.
+        $this->conn->query(
+            "UPDATE users SET last_activity = DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+             WHERE id = " . DbTestHelper::REGULAR_USER_ID
+        );
+
+        $this->assertFalse(chess_opponent_online($this->conn, DbTestHelper::REGULAR_USER_ID));
+    }
+
+    public function testBoundaryJustUnderThresholdIsOnline(): void
+    {
+        // 60 detik lalu (< 90) → masih dianggap online.
+        $this->conn->query(
+            "UPDATE users SET last_activity = DATE_SUB(NOW(), INTERVAL 60 SECOND)
+             WHERE id = " . DbTestHelper::REGULAR_USER_ID
+        );
+
+        $this->assertTrue(chess_opponent_online($this->conn, DbTestHelper::REGULAR_USER_ID));
+    }
+
+    public function testUnknownUserIsOffline(): void
+    {
+        $this->assertFalse(chess_opponent_online($this->conn, 999999999));
+    }
+
+    public function testZeroIdIsOffline(): void
+    {
+        // black_user_id NULL → (int)null = 0 → tidak boleh "online".
+        $this->assertFalse(chess_opponent_online($this->conn, 0));
+    }
+
+    public function testConstantIsDefined(): void
+    {
+        $this->assertTrue(defined('CHESS_OPPONENT_OFFLINE_SECONDS'));
+        $this->assertGreaterThan(0, CHESS_OPPONENT_OFFLINE_SECONDS);
+    }
+}

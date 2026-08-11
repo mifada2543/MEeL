@@ -3,19 +3,13 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers MediaInteraction
- *
- * MediaInteraction requires a real mysqli connection for DB operations.
- * These unit tests focus on input validation logic that doesn't need DB.
- * Integration tests (with real DB) belong in tests/integration/.
  */
 class MediaInteractionTest extends TestCase
 {
-    /**
-     * Helper to create MediaInteraction with a simple mock connector.
-     */
+    /* Helper to create MediaInteraction with a simple mock connector. */
     private function createInteraction(int $userId = 1): MediaInteraction
     {
-        // Use a partial mock that doesn't trigger real mysqli lifecycle
+
         $conn = $this->getMockBuilder(mysqli::class)
             ->disableOriginalConstructor()
             ->getMock();

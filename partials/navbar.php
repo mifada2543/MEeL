@@ -15,6 +15,7 @@ if (!isset($is_logged_in)) {
             <span class="w-px h-3 bg-white/10 mx-1"></span>
             <a href="auth/logout.php"
                data-meel-confirm-link
+               data-meel-confirm-size="sm"
                data-meel-confirm-title="Logout"
                data-meel-confirm-text="Yakin mau logout?"
                data-meel-confirm-button="LOGOUT"

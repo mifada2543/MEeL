@@ -1,13 +1,5 @@
 <?php
-/**
- * modules/SearchEngine.php
- *
- * SearchEngine — Centralized search query handler optimized for performance.
- * Handles parameter parsing, input validation, and result wrapping dengan
- * efficient query execution dan caching support.
- *
- * @package MEeL
- */
+/* @package MEeL */
 
 require_once __DIR__ . '/MediaLibrary.php';
 
@@ -21,7 +13,8 @@ class SearchEngine
     // Limit default, harus sinkron dengan @ MediaLibrary
     const VIDEO_LIMIT = 20;
     const MUSIC_LIMIT = 20;
-    const MIN_SEARCH_QUERY = 2;  // Minimum search length
+    // mengembalikan 0 hasil, jadi lebih baik ditolak sejak awal.
+    const MIN_SEARCH_QUERY = 3;
     const MAX_SEARCH_QUERY = 255; // Maximum search length
 
     public function __construct(mysqli $db_connection)
@@ -30,25 +23,12 @@ class SearchEngine
         $this->library = new MediaLibrary($db_connection);
     }
 
-    // ── PARAMETER PARSING ───────────────────────────────────────────────────
+    // ─── PARAMETER PARSING ───
 
-    /**
-     * Parse & validate parameter request yang umum dipakai di semua halaman search.
-     * Includes input sanitization untuk mencegah query injection.
-     *
-     * @return array{
-     *   query:    string,
-     *   exclude:  int,
-     *   offset:   int,
-     *   sidebar:  bool,
-     *   target:   string,
-     *   valid:    bool,
-     * }
-     */
     public function parseParams(): array
     {
-        $query = $this->sanitizeSearchQuery($_GET['search'] ?? '');
-        
+        $query = self::sanitizeQuery($_GET['search'] ?? '');
+
         return [
             'query'   => $query,
             'exclude' => isset($_GET['exclude']) ? max(0, (int)$_GET['exclude']) : 0,
@@ -59,27 +39,30 @@ class SearchEngine
         ];
     }
 
-    /**
-     * Sanitize search query:
-     * - Trim whitespace
-     * - Limit length
-     * - Remove special characters yang bisa break fulltext search
-     */
-    private function sanitizeSearchQuery(string $q): string
+    public static function sanitizeQuery(string $q): string
     {
         $q = trim($q);
         $q = mb_substr($q, 0, self::MAX_SEARCH_QUERY);
-        
-        // Remove atau normalize special fulltext operators yang bisa cause issues
-        // Tapi retain basic operators untuk performance: + - " *
+
+        // Buang karakter yang bisa cause issues / tidak pernah berguna
         $q = preg_replace('/[<>()~@]+/', '', $q);
-        
-        return $q;
+
+        $tokens = preg_split('/\s+/', $q);
+        $tokens = array_filter($tokens, static function ($t) {
+            return $t !== '' && !preg_match('/^[+\-*"]+$/', $t);
+        });
+        $q = implode(' ', $tokens);
+
+        if (substr_count($q, '"') % 2 === 1) {
+            $q = str_replace('"', '', $q);
+        }
+
+        // Truncation "*kata" di awal token tidak valid di boolean mode
+        $q = preg_replace('/(^|\s)\*(?=\S)/', '$1', $q);
+
+        return trim($q);
     }
 
-    /**
-     * Validate search query — must have minimum length untuk avoid inefficient searches.
-     */
     private function isValidSearchQuery(string $q): bool
     {
         if (empty($q)) {
@@ -88,21 +71,15 @@ class SearchEngine
         return mb_strlen($q) >= self::MIN_SEARCH_QUERY;
     }
 
-    /**
-     * Deteksi apakah request berasal dari sidebar HTMX (recommendation).
-     */
+    /* Deteksi apakah request berasal dari sidebar HTMX (recommendation). */
     private function detectSidebar(): bool
     {
         $target = $_SERVER['HTTP_HX_TARGET'] ?? '';
         return in_array($target, ['recommendation-column', 'music-recommendation-column'], true);
     }
 
-    // ── SEARCH RESULT BUILDER ────────────────────────────────────────────────
+    // ─── SEARCH RESULT BUILDER ───
 
-    /**
-     * Bungkus mysqli_result ke array asosiatif + metadata.
-     * Optimized: Fetch limit+1 untuk efficiently check hasMore tanpa COUNT query.
-     */
     private function buildResult(?mysqli_result $data, array $params, int $limit): array
     {
         if (!$data) {
@@ -121,7 +98,7 @@ class SearchEngine
         $rows = [];
         $actualLimit = $limit + 1; // Fetch 1 extra untuk check hasMore
         $idx = 0;
-        
+
         while ($row = $data->fetch_assoc()) {
             if ($idx >= $limit) {
                 break; // Jangan store row ke-21, tapi set hasMore = true
@@ -142,33 +119,28 @@ class SearchEngine
         ];
     }
 
-    // ── CACHING HELPERS ──────────────────────────────────────────────────────
+    // ─── CACHING HELPERS ───
 
-    /**
-     * Generate cache key dari search parameters.
-     */
     private static function getCacheKey(string $type, array $params): string
     {
+
         $key = $type . ':' . md5(json_encode([
             'query'   => $params['query'],
             'exclude' => $params['exclude'],
             'sidebar' => $params['sidebar'],
+            'offset'  => $params['offset'],
         ]));
         return $key;
     }
 
-    /**
-     * Get cached result jika ada.
-     */
+    /* Get cached result jika ada. */
     private static function getFromCache(string $type, array $params): ?array
     {
         $key = self::getCacheKey($type, $params);
         return self::$cache[$key] ?? null;
     }
 
-    /**
-     * Store result ke cache (simple in-memory caching untuk request lifecycle).
-     */
+    /* Store result ke cache (simple in-memory caching untuk request lifecycle). */
     private static function setCache(string $type, array $params, array $result): void
     {
         if (count(self::$cache) >= self::$cacheSize) {
@@ -178,12 +150,8 @@ class SearchEngine
         self::$cache[$key] = $result;
     }
 
-    // ── VIDEO SEARCH ─────────────────────────────────────────────────────────
+    // ─── VIDEO SEARCH ───
 
-    /**
-     * Cari video — delegasi ke MediaLibrary::searchVideo(),
-     * lalu bungkus dalam format terstandarisasi dengan caching.
-     */
     public function searchVideo(array $params): array
     {
         // Check cache dahulu
@@ -209,12 +177,8 @@ class SearchEngine
         return $result;
     }
 
-    // ── MUSIC SEARCH ─────────────────────────────────────────────────────────
+    // ─── MUSIC SEARCH ───
 
-    /**
-     * Cari musik — delegasi ke MediaLibrary::searchMusic(),
-     * lalu bungkus dalam format terstandarisasi dengan caching & offset support.
-     */
     public function searchMusic(array $params): array
     {
         // Check cache dahulu
@@ -240,9 +204,7 @@ class SearchEngine
         return $result;
     }
 
-    /**
-     * Clear cache — useful untuk testing atau manual cache invalidation.
-     */
+    /* Clear cache — useful untuk testing atau manual cache invalidation. */
     public static function clearCache(): void
     {
         self::$cache = [];

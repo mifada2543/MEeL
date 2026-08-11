@@ -1,26 +1,14 @@
 <?php
-
-/**
- * MEeL Admin — Activity Log Viewer
- * Menampilkan trail audit dari tabel activity_log.
- * Hanya untuk admin. Query menggunakan prepared statements.
- */
+/* MEeL Admin — Activity Log Viewer */
 
 include '../auth/config.php';
 include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die(include '../err/denied.php');
-}
+// Guard terpusat: harus login + role admin
+require_admin($conn);
 
-// Verifikasi role admin
-$curr_role = get_user_role($conn, (int)$_SESSION['user_id']);
-if ($curr_role !== 'admin') {
-    die(include '../err/denied.php');
-}
-
-// ─── Filter & Pagination ───────────────────────────────────────
+// ─── Filter & Pagination ───
 $action_filter = $_GET['action'] ?? '';
 $search_q     = trim($_GET['q'] ?? '');
 $days         = max(1, min(365, (int)($_GET['days'] ?? 7)));
@@ -28,7 +16,7 @@ $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 50;
 $offset       = ($page - 1) * $per_page;
 
-// ─── Clear Old Logs (POST) ─────────────────────────────────────
+// ─── Clear Old Logs (POST) ───
 $clear_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
@@ -39,9 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
         $stmt_del->bind_param("i", $clear_days);
         $stmt_del->execute();
         $deleted = $stmt_del->affected_rows;
-
-        // Reset auto-increment ke ID tertinggi yang tersisa + 1
-        // (seperti sistem guest — agar ID baru melanjutkan dari yang tertinggi)            $next_id = 1;
+        $next_id = 1;
         $max_res = $conn->query("SELECT MAX(id) AS max_id FROM activity_log");
         if ($max_res) {
             $max_row = $max_res->fetch_assoc();
@@ -54,7 +40,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
     }
 }
 
-// ─── Build Query ───────────────────────────────────────────────
+// ─── Clear All Logs (POST) ───
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $clear_msg = 'CSRF Token tidak valid.';
+    } else {
+        if ($conn->query("TRUNCATE TABLE activity_log")) {
+            $clear_msg = 'Semua log aktivitas berhasil dihapus. Auto-increment telah di-reset ke 1.';
+        } else {
+            $clear_msg = 'Gagal menghapus log: ' . $conn->error;
+        }
+    }
+}
+
+// ─── Build Query ───
 $where_conditions = ["1=1"];
 $params = [];
 $types  = "";
@@ -80,7 +79,7 @@ $types .= "i";
 
 $where_sql = implode(" AND ", $where_conditions);
 
-// ─── Count total ───────────────────────────────────────────────
+// ─── Count total ───
 $stmt_count = $conn->prepare("SELECT COUNT(*) AS total FROM activity_log al LEFT JOIN users u ON al.user_id = u.id WHERE {$where_sql}");
 if (!empty($params)) {
     $stmt_count->bind_param($types, ...$params);
@@ -92,7 +91,7 @@ $total_pages = max(1, (int)ceil($total_rows / $per_page));
 $page = min($page, $total_pages); // Cegah offset tak berguna
 $offset = ($page - 1) * $per_page;
 
-// ─── Fetch rows ────────────────────────────────────────────────
+// ─── Fetch rows ───
 $stmt_rows = $conn->prepare(
     "SELECT al.*, u.username
      FROM activity_log al
@@ -108,7 +107,7 @@ $stmt_rows->execute();
 $rows = $stmt_rows->get_result();
 $stmt_rows->close();
 
-// ─── Get distinct actions for filter dropdown ──────────────────
+// ─── Get distinct actions for filter dropdown ───
 $actions_res = $conn->query("SELECT DISTINCT action FROM activity_log ORDER BY action ASC");
 $all_actions = [];
 if ($actions_res) {
@@ -117,9 +116,222 @@ if ($actions_res) {
     }
 }
 
-// ─── Stats ─────────────────────────────────────────────────────
+// ─── Stats ───
 $stats_res = $conn->query("SELECT COUNT(*) AS total, COUNT(DISTINCT user_id) AS unique_users FROM activity_log WHERE created_at >= NOW() - INTERVAL 7 DAY");
-$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0];
+$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0]; // ─── Helper: Export Query ───
+function export_query_data(mysqli $conn, string $where_sql, array $params, string $types): array
+{
+    $stmt = $conn->prepare(
+        "SELECT al.*, u.username
+         FROM activity_log al
+         LEFT JOIN users u ON al.user_id = u.id
+         WHERE {$where_sql}
+         ORDER BY al.created_at DESC"
+    );
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($r = $result->fetch_assoc()) {
+        $rows[] = $r;
+    }
+    $stmt->close();
+    return $rows;
+}
+
+// ─── Multi-Format Export ───
+$export_format = $_GET['export'] ?? '';
+if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
+    $timestamp = date('Y-m-d_H-i-s');
+    $filename_base = "activity-log-export-{$timestamp}";
+    $rows = export_query_data($conn, $where_sql, $params, $types);
+
+    switch ($export_format) {
+        // ─── CSV ───
+        case 'csv':
+            header('Content-Type: text/csv; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"{$filename_base}.csv\"");
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
+            fputcsv($output, ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu']);
+
+            foreach ($rows as $row) {
+                fputcsv($output, [
+                    $row['id'],
+                    $row['user_id'] ?? '',
+                    $row['username'] ?? 'Guest',
+                    $row['action'],
+                    $row['media_type'] ?? '',
+                    $row['media_id'] ?? '',
+                    $row['ip_address'] ?? '',
+                    $row['created_at']
+                ]);
+            }
+            fclose($output);
+            break;
+
+        // ─── JSON ───
+        case 'json':
+            header('Content-Type: application/json; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"{$filename_base}.json\"");
+
+            $json_data = array_map(function ($r) {
+                return [
+                    'id'         => (int)$r['id'],
+                    'user_id'    => $r['user_id'] !== null ? (int)$r['user_id'] : null,
+                    'username'   => $r['username'] ?? 'Guest',
+                    'action'     => $r['action'],
+                    'media_type' => $r['media_type'] ?? '',
+                    'media_id'   => $r['media_id'] !== null ? (int)$r['media_id'] : null,
+                    'ip_address' => $r['ip_address'] ?? '',
+                    'created_at' => $r['created_at'],
+                ];
+            }, $rows);
+
+            echo json_encode($json_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        // ─── XLS (XML Spreadsheet 2003) ───
+        case 'xls':
+            header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"{$filename_base}.xls\"");
+
+            echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+            echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+            echo '  xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+            echo '  xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+            echo '  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n";
+            echo '  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n";
+            echo '    <Author>MEeL Admin</Author>' . "\n";
+            echo '    <Created>' . date('c') . '</Created>' . "\n";
+            echo '  </DocumentProperties>' . "\n";
+            echo '  <Worksheet ss:Name="Activity Log">' . "\n";
+            echo '    <Table>' . "\n";
+
+            // Header row
+            $headers = ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu'];
+            echo '      <Row>' . "\n";
+            foreach ($headers as $h) {
+                echo '        <Cell><Data ss:Type="String">' . htmlspecialchars($h) . '</Data></Cell>' . "\n";
+            }
+            echo '      </Row>' . "\n";
+            $xls_cell = function ($val, string $type = 'String'): string {
+                if ($val === null || $val === '') {
+                    return '        <Cell><Data ss:Type="String"></Data></Cell>' . "\n";
+                }
+                if ($type === 'Number') {
+                    return '        <Cell><Data ss:Type="Number">' . (int)$val . '</Data></Cell>' . "\n";
+                }
+                return '        <Cell><Data ss:Type="String">' . htmlspecialchars((string)$val) . '</Data></Cell>' . "\n";
+            };
+
+            // Data rows
+            foreach ($rows as $row) {
+                echo '      <Row>' . "\n";
+                echo $xls_cell($row['id'], 'Number');
+                echo $xls_cell($row['user_id'], 'Number');
+                echo $xls_cell($row['username'] ?? 'Guest');
+                echo $xls_cell($row['action']);
+                echo $xls_cell($row['media_type']);
+                echo $xls_cell($row['media_id'], 'Number');
+                echo $xls_cell($row['ip_address']);
+                echo $xls_cell($row['created_at']);
+                echo '      </Row>' . "\n";
+            }
+
+            echo '    </Table>' . "\n";
+            echo '  </Worksheet>' . "\n";
+            echo '</Workbook>' . "\n";
+            break;
+    }
+    exit;
+}
+
+// ─── Preview Handler ───
+if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['format'] ?? '', ['csv', 'json', 'xls'], true)) {
+    $preview_format = $_GET['format'];
+    $all_rows = export_query_data($conn, $where_sql, $params, $types);
+    $preview_total = count($all_rows);
+    $preview_limit = 15;
+    $preview_rows = array_slice($all_rows, 0, $preview_limit);
+
+    $content = '';
+    switch ($preview_format) {
+        case 'csv':
+            $content = '';
+            $h = ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu'];
+            $content .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $h)) . "\n";
+            foreach ($preview_rows as $r) {
+                $vals = [
+                    $r['id'],
+                    $r['user_id'] ?? '',
+                    $r['username'] ?? 'Guest',
+                    $r['action'],
+                    $r['media_type'] ?? '',
+                    $r['media_id'] ?? '',
+                    $r['ip_address'] ?? '',
+                    $r['created_at']
+                ];
+                $content .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $vals)) . "\n";
+            }
+            if ($preview_total > $preview_limit) {
+                $content .= "\n... dan " . ($preview_total - $preview_limit) . " baris lainnya\n";
+            }
+            break;
+
+        case 'json':
+            $json_out = array_map(function ($r) {
+                return [
+                    'id'         => (int)$r['id'],
+                    'user_id'    => $r['user_id'] !== null ? (int)$r['user_id'] : null,
+                    'username'   => $r['username'] ?? 'Guest',
+                    'action'     => $r['action'],
+                    'media_type' => $r['media_type'] ?? '',
+                    'media_id'   => $r['media_id'] !== null ? (int)$r['media_id'] : null,
+                    'ip_address' => $r['ip_address'] ?? '',
+                    'created_at' => $r['created_at'],
+                ];
+            }, $preview_rows);
+            $content = json_encode($json_out, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($preview_total > $preview_limit) {
+                $content .= "\n\n/* ... dan {$preview_total} total baris (ditampilkan {$preview_limit}) */";
+            }
+            break;
+
+        case 'xls':
+            $content = "ID\tUser ID\tUsername\tAction\tMedia Type\tMedia ID\tIP Address\tWaktu\n";
+            foreach ($preview_rows as $r) {
+                $content .= implode("\t", [
+                    $r['id'],
+                    $r['user_id'] ?? '',
+                    $r['username'] ?? 'Guest',
+                    $r['action'],
+                    $r['media_type'] ?? '',
+                    $r['media_id'] ?? '',
+                    $r['ip_address'] ?? '',
+                    $r['created_at']
+                ]) . "\n";
+            }
+            if ($preview_total > $preview_limit) {
+                $content .= "\n... dan " . ($preview_total - $preview_limit) . " baris lainnya\n";
+            }
+            break;
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'format'        => $preview_format,
+        'total'         => $preview_total,
+        'preview_count' => min($preview_total, $preview_limit),
+        'content'       => $content,
+    ]);
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -131,191 +343,13 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
     <meta name="description" content="MEeL Activity Log — Audit trail untuk monitoring aktivitas pengguna.">
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
-
-        .glass {
-            background: rgba(22, 27, 34, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .scroll-table {
-            overflow: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-
-        .scroll-table::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-
-        .scroll-table::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .scroll-table::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-
-        .scroll-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .scroll-table thead th {
-            background: #0b0e14;
-        }
-
-        .action-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            white-space: nowrap;
-        }
-
-        .chip-filter {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            cursor: pointer;
-            transition: all .15s;
-            border: 1px solid transparent;
-        }
-
-        .chip-filter:hover {
-            opacity: .8;
-        }
-
-        .chip-filter.active {
-            border-color: currentColor;
-            box-shadow: 0 0 0 1px currentColor;
-        }
-
-        /* ── Custom Action Dropdown (seperti artist dropdown di music) ── */
-        .action-dropdown-btn {
-            background: #131720;
-            border: 1px solid rgba(255, 255, 255, .08);
-            transition: all .15s;
-            cursor: pointer;
-        }
-
-        .action-dropdown-btn:hover {
-            background: rgba(255, 255, 255, .05);
-            border-color: rgba(255, 255, 255, .12);
-        }
-
-        .action-dropdown-btn:focus {
-            border-color: #3b82f6;
-        }
-
-        .action-dropdown-panel {
-            background: #131720;
-            border: 1px solid rgba(255, 255, 255, .08);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
-            max-height: 220px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-
-        .action-dropdown-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .action-dropdown-panel::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .action-dropdown-panel::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-
-        .action-dropdown-option {
-            transition: all .1s;
-            cursor: pointer;
-        }
-
-        .action-dropdown-option:hover {
-            background: rgba(59, 130, 246, .08);
-        }
-
-        .action-dropdown-option.active {
-            color: #60a5fa;
-            font-weight: 700;
-            background: rgba(59, 130, 246, .06);
-        }
-
-        /* ── Pill Buttons (seperti format pills di music) ── */
-        .pill-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 14px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .1em;
-            transition: all .15s;
-            background: rgba(255, 255, 255, .03);
-            border: 1px solid rgba(255, 255, 255, .06);
-            color: #6b7280;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .pill-btn:hover {
-            background: rgba(255, 255, 255, .06);
-            border-color: rgba(255, 255, 255, .1);
-            color: #d1d5db;
-        }
-
-        .pill-btn.active-blue {
-            background: rgba(59, 130, 246, .12);
-            border-color: rgba(59, 130, 246, .25);
-            color: #93c5fd;
-        }
-
-        .pill-btn.active-red {
-            background: rgba(239, 68, 68, .12);
-            border-color: rgba(239, 68, 68, .25);
-            color: #fca5a5;
-        }
-
-        .pill-btn.active-green {
-            background: rgba(34, 197, 94, .12);
-            border-color: rgba(34, 197, 94, .25);
-            color: #86efac;
-        }
-
-        .dropdown-active .action-dropdown-panel {
-            filter: none !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
-    </style>
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/admin/activity_log.css?v=<?= filemtime('../assets/css/admin/activity_log.css') ?>">
+    <script src="../assets/js/compatibilitas/lucide.js"></script>
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen">
@@ -326,7 +360,6 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
     $back_url = 'index.php';
     include 'header-admin.php';
     ?>
-
     <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 py-8">
 
         <!-- Header -->
@@ -370,7 +403,6 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                 <?= htmlspecialchars($clear_msg) ?>
             </div>
         <?php endif; ?>
-
         <!-- Filters -->
         <div class="glass p-6 md:p-8 rounded-2xl mb-8 filter-section relative z-40 overflow-visible" id="filter-section">
             <div class="flex flex-col lg:flex-row items-start justify-between gap-6 w-full min-w-0">
@@ -460,76 +492,51 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                     class="text-[10px] text-gray-500 hover:text-white px-4 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-2 rounded-xl hover:bg-white/[.03]">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     Reset
-                </a>
+                </a><span class="text-white/10 text-[10px]">|</span>
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="previewExport('csv')"
+                        class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
+                        title="Preview CSV">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>"
+                        class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
+                        title="Download CSV">
+                        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                        CSV
+                    </a>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <button type="button" onclick="previewExport('json')"
+                        class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
+                        title="Preview JSON">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'json'])) ?>"
+                        class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
+                        title="Download JSON">
+                        <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
+                        JSON
+                    </a>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <button type="button" onclick="previewExport('xls')"
+                        class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
+                        title="Preview XLS">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <span class="text-white/10 text-[10px]">|</span>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'xls'])) ?>"
+                        class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
+                        title="Download XLS">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                        XLS
+                    </a>
+                </div>
             </div>
         </div>
 
-        <script>
-            // ── Action Dropdown ──
-            function toggleActionDropdown() {
-                const panel = document.getElementById('action-dropdown-panel');
-                panel.classList.toggle('hidden');
-            }
-
-            function selectAction(val) {
-                document.getElementById('action-input').value = val;
-                document.getElementById('action-dropdown-label').textContent = val || 'Semua Aksi';
-                // Highlight active via data-value attribute
-                document.querySelectorAll('.action-dropdown-option').forEach(el => {
-                    el.classList.toggle('active', el.dataset.value === val);
-                });
-                // Close
-                document.getElementById('action-dropdown-panel').classList.add('hidden');
-            }
-
-            // ── Clear Days Pill Buttons ──
-            function selectClearDays(val) {
-                document.getElementById('clear-days-input').value = val;
-                document.querySelectorAll('[data-clear-days]').forEach(btn => {
-                    btn.classList.toggle('active-red', parseInt(btn.dataset.clearDays) === val);
-                });
-            }
-
-            // ── Days Pill Buttons ──
-            function selectDays(val) {
-                document.getElementById('days-input').value = val;
-                document.querySelectorAll('.pill-btn[data-days]').forEach(btn => {
-                    btn.classList.toggle('active-blue', parseInt(btn.dataset.days) === val);
-                });
-            }
-
-            // ── Submit Filters ──
-            function submitFilters() {
-                const action = document.getElementById('action-input').value;
-                const q = document.getElementById('search-input').value.trim();
-                const days = document.getElementById('days-input').value;
-                const params = new URLSearchParams();
-                if (action) params.set('action', action);
-                if (q) params.set('q', q);
-                if (days) params.set('days', days);
-                window.location.href = 'activity_log.php?' + params.toString();
-            }
-
-            // ── Close dropdown on outside click ──
-            document.addEventListener('click', function(e) {
-                const container = document.getElementById('action-dropdown-container');
-                const panel = document.getElementById('action-dropdown-panel');
-                if (container && panel && !panel.classList.contains('hidden') && !container.contains(e.target)) {
-                    panel.classList.add('hidden');
-                    document.body.classList.remove('dropdown-active');
-                }
-            });
-
-            // ── Enter key on search field ──
-            document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('search-input')?.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        submitFilters();
-                    }
-                });
-            });
-        </script>
+        <script src="../assets/js/admin/activity_log.js?v=<?= filemtime('../assets/js/admin/activity_log.js') ?>"></script>
 
         <!-- Table -->
         <div class="glass rounded-2xl overflow-hidden relative z-0">
@@ -572,7 +579,7 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                                 }
                             ?>
                                 <tr class="hover:bg-white/[0.02] transition-colors">
-                                    <td class="py-3 px-4 font-mono text-gray-600"><?= $row['id'] ?></td>
+                                    <td class="py-3 px-4 font-mono text-gray-600"><?= (int)$row['id'] ?></td>
                                     <td class="py-3 px-4">
                                         <span class="font-bold text-white">
                                             <?= htmlspecialchars($row['username'] ?? '—') ?>
@@ -591,7 +598,7 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                                         <?= !empty($row['media_type']) ? htmlspecialchars($row['media_type']) : '<span class="text-gray-600">—</span>' ?>
                                     </td>
                                     <td class="py-3 px-4 text-center font-mono text-gray-500">
-                                        <?= $row['media_id'] ? $row['media_id'] : '—' ?>
+                                        <?= !empty($row['media_id']) ? (int)$row['media_id'] : '—' ?>
                                     </td>
                                     <td class="py-3 px-4 hidden md:table-cell font-mono text-gray-500 text-[10px]">
                                         <?= htmlspecialchars($row['ip_address'] ?? '—') ?>
@@ -623,7 +630,6 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                         ‹ Prev
                     </a>
                 <?php endif; ?>
-
                 <?php
                 $start = max(1, $page - 2);
                 $end   = min($total_pages, $page + 2);
@@ -634,7 +640,6 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>
-
                 <?php if ($page < $total_pages): ?>
                     <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>"
                         class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] text-gray-400 hover:text-white hover:bg-white/10 transition-all">
@@ -643,7 +648,6 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                 <?php endif; ?>
             </div>
         <?php endif; ?>
-
         <!-- Clear Old Logs -->
         <div class="glass p-6 rounded-2xl mt-8 border border-red-500/20">
             <div class="flex items-center gap-3 mb-4">
@@ -676,12 +680,81 @@ $stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' 
                 </button>
             </form>
         </div>
+        <br>
+        <!-- Clear ALL Logs -->
+        <div class="glass p-6 rounded-2xl mt-5 border border-red-500/30">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 rounded-xl bg-red-600/15 border border-red-500/30">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-gray-300">Hapus Semua Log</h3>
+                    <p class="text-[9px] text-gray-500">Hapus <strong class="text-red-400">seluruh</strong> log aktivitas dan reset auto-increment ke 1. Tindakan ini <strong class="text-red-400">tidak dapat dibatalkan</strong>.</p>
+                </div>
+            </div>
+
+            <!-- Backup sebelum hapus -->
+            <div class="flex items-center gap-3 flex-wrap mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <i data-lucide="info" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <p class="text-[10px] text-amber-300 flex-1">
+                    Backup dulu sebelum menghapus? Semua log akan hilang permanen.
+                </p>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onclick="previewExport('csv')"
+                        class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
+                        title="Preview CSV">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?export=csv"
+                        class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
+                        onclick="return meelConfirmLink(event, { title:'Backup CSV', text:'Download backup seluruh log aktivitas sebagai CSV?', confirmButtonText:'DOWNLOAD', icon:'question' })"
+                        title="Download CSV">
+                        <i data-lucide="file-down" class="w-3 h-3"></i>
+                        CSV
+                    </a>
+                    <span class="text-amber-500/20">|</span>
+                    <button type="button" onclick="previewExport('json')"
+                        class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
+                        title="Preview JSON">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?export=json"
+                        class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
+                        onclick="return meelConfirmLink(event, { title:'Backup JSON', text:'Download backup seluruh log aktivitas sebagai JSON?', confirmButtonText:'DOWNLOAD', icon:'question' })"
+                        title="Download JSON">
+                        <i data-lucide="file-code" class="w-3 h-3"></i>
+                        JSON
+                    </a>
+                    <span class="text-amber-500/20">|</span>
+                    <button type="button" onclick="previewExport('xls')"
+                        class="text-[10px] font-bold text-violet-400 hover:text-violet-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-violet-500/10 hover:border-violet-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
+                        title="Preview XLS">
+                        <i data-lucide="eye" class="w-3 h-3"></i>
+                    </button>
+                    <a href="?export=xls"
+                        class="text-[10px] font-bold text-violet-400 hover:text-violet-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-violet-500/10 hover:border-violet-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
+                        onclick="return meelConfirmLink(event, { title:'Backup Excel', text:'Download backup seluruh log aktivitas sebagai Excel?', confirmButtonText:'DOWNLOAD', icon:'question' })"
+                        title="Download Excel">
+                        <i data-lucide="file-spreadsheet" class="w-3 h-3"></i>
+                        XLS
+                    </a>
+                </div>
+            </div>
+
+            <form method="POST" onsubmit="return meelConfirmForm(event, { title:'⚠️ Hapus Semua Log', text:'Apakah Anda yakin ingin menghapus SELURUH log aktivitas?\n\nAuto-increment ID akan di-reset ke 1. Tindakan ini tidak dapat dibatalkan!', icon:'warning', confirmButtonText:'HAPUS SEMUA', confirmButtonColor:'#dc2626' })" id="clear-all-logs-form">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                <input type="hidden" name="clear_all_logs" value="1">
+                <button type="submit"
+                    class="bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white text-[10px] font-bold px-6 py-3 rounded-xl transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    Hapus Semua & Reset ID
+                </button>
+            </form>
+        </div>
 
     </div>
 
     <script>
-        lucide.createIcons();
-
         <?php if ($clear_msg): ?>
             Swal.fire({
                 title: 'Selesai!',

@@ -1,16 +1,11 @@
 <?php
 /**
- * Drive File Grid Template
- * ========================
- * Digunakan oleh DriveViewRenderer::renderFileGrid()
- *
- * Variables tersedia:
- *   @var array  $files     — Array of file data (name, size, time, path, ext)
- *   @var string $accent    — Warna aksen CSS (contoh: '#3b82f6')
- *   @var string $icon      — Nama icon Lucide (contoh: 'video', 'file-audio')
- *   @var string $type      — Tipe file (video, audio, dokumen)
- *   @var string $scope     — Scope (public, private)
- *   @var string $csrfToken — CSRF token dari session
+ * @var array $files — Array of file data (name, size, time, path, ext)
+ * @var string $accent — Warna aksen CSS (contoh: '#3b82f6')
+ * @var string $icon — Nama icon Lucide (contoh: 'video', 'file-audio')
+ * @var string $type — Tipe file (video, audio, dokumen)
+ * @var string $scope — Scope (public, private)
+ * @var string $csrfToken — CSRF token dari session
  */
 
 if (empty($files)): ?>
@@ -20,7 +15,6 @@ if (empty($files)): ?>
     </div>
     <?php return; ?>
 <?php endif; ?>
-
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     <?php foreach ($files as $file):
         $name = htmlspecialchars($file['name'], ENT_QUOTES, 'UTF-8');
@@ -47,7 +41,7 @@ if (empty($files)): ?>
                         <i data-lucide='download' class='w-4 h-4'></i>
                     </a>
 
-                    <button onclick="if(confirm('Hapus file ini?')) document.getElementById('<?= $deleteFormId ?>').submit(); return false;" class='p-2 hover:bg-red-500/20 rounded-lg text-red-400' title='Hapus'>
+                    <button onclick="meelConfirm({ title:'Hapus File', text:'Hapus file ini?', confirmButtonText:'HAPUS' }).then(function(ok){ if(ok) document.getElementById('<?= $deleteFormId ?>').submit(); }); return false;" class='p-2 hover:bg-red-500/20 rounded-lg text-red-400' title='Hapus'>
                         <i data-lucide='trash-2' class='w-4 h-4'></i>
                     </button>
 

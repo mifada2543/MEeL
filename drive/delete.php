@@ -34,6 +34,11 @@ try {
         'success'
     );
 
+    // Hapus cache dir_size() biar storage bar update
+    if ($user->isMember()) {
+        invalidate_dir_size_cache($user->username);
+    }
+
     $normalizedScope = $storage->normalizeScope($scope);
     header('Location: index.php?scope=' . urlencode($normalizedScope) . '&status=deleted');
     exit();
@@ -51,5 +56,3 @@ try {
     http_response_code(400);
     echo htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8');
 }
-
-

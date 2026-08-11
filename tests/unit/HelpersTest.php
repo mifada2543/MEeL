@@ -1,13 +1,10 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversNothing
- * Tests for standalone helper functions in modules/core/helpers.php
- */
+/* @coversNothing */
 class HelpersTest extends TestCase
 {
-    // ─── format_bytes() ───────────────────────────────────────────────────────
+    // ─── format_bytes() ───
 
     /** @dataProvider bytesProvider */
     public function testFormatBytes(int|float $bytes, int $precision, string $expected): void
@@ -30,7 +27,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── time_ago() ──────────────────────────────────────────────────────────
+    // ─── time_ago() ───
 
     /** @dataProvider timeAgoProvider */
     public function testTimeAgo(int $secondsAgo, string $expectedRegex): void
@@ -53,7 +50,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_mime_type() ───────────────────────────────────────────────
+    // ─── get_audio_mime_type() ───
 
     /** @dataProvider mimeTypeProvider */
     public function testGetAudioMimeType(string $ext, string $expected): void
@@ -75,7 +72,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_format_label() ───────────────────────────────────────────
+    // ─── get_audio_format_label() ───
 
     /** @dataProvider formatLabelProvider */
     public function testGetAudioFormatLabel(string $ext, string $expected): void
@@ -95,7 +92,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_format_description() ─────────────────────────────────────
+    // ─── get_audio_format_description() ───
 
     /** @dataProvider formatDescriptionProvider */
     public function testGetAudioFormatDescription(string $ext, string $expectedContains): void
@@ -116,7 +113,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── detectProtocol() ────────────────────────────────────────────────────
+    // ─── detectProtocol() ───
 
     public function testDetectProtocolDefaultHttp(): void
     {
@@ -136,7 +133,7 @@ class HelpersTest extends TestCase
         if ($origForwardedProto !== null) $_SERVER['HTTP_X_FORWARDED_PROTO'] = $origForwardedProto;
     }
 
-    // ─── base_url() ──────────────────────────────────────────────────────────
+    // ─── base_url() ───
 
     public function testBaseUrl(): void
     {
@@ -153,11 +150,34 @@ class HelpersTest extends TestCase
         $this->assertStringEndsWith('/css/style.css', $result3);
     }
 
-    // ─── check_disk_space() ──────────────────────────────────────────────────
+    public function testBaseUrlFallbackFromProjectRoot(): void
+    {
+        $helpers = realpath(__DIR__ . '/../../modules/core/helpers.php');
+        $this->assertNotFalse($helpers, 'modules/core/helpers.php tidak ditemukan');
+
+        $projectRoot = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/../..')), '/');
+        $docRoot     = dirname($projectRoot);
+        $expected    = '/' . basename($projectRoot);
+
+        $code = '$_SERVER["SCRIPT_NAME"]=' . var_export($expected . '/admin/index.php', true) . ';'
+            . '$_SERVER["DOCUMENT_ROOT"]=' . var_export($docRoot, true) . ';'
+            . 'require ' . var_export($helpers, true) . ';'
+            . 'echo base_url("/auth/login.php?next=x");';
+
+        $output = [];
+        $exit   = 0;
+        exec(PHP_BINARY . ' -d display_errors=0 -r ' . escapeshellarg($code) . ' 2>&1', $output, $exit);
+
+        $this->assertSame(0, $exit, 'Subprocess helpers gagal: ' . implode("\n", $output));
+        $this->assertCount(1, $output, 'Output subprocess tidak valid: ' . implode("\n", $output));
+        $this->assertSame($expected . '/auth/login.php?next=x', trim($output[0]));
+    }
+
+    // ─── check_disk_space() ───
 
     public function testCheckDiskSpaceOnExistingPath(): void
     {
-        // Test on a real directory (this temp dir should exist from bootstrap)
+
         $result = check_disk_space(1, MEEL_ROOT);
         $this->assertArrayHasKey('ok', $result);
         $this->assertArrayHasKey('free', $result);
@@ -174,7 +194,7 @@ class HelpersTest extends TestCase
         $this->assertArrayHasKey('path', $result);
     }
 
-    // ─── CSRF functions ──────────────────────────────────────────────────────
+    // ─── CSRF functions ───
 
     public function testCsrfTokenFunctions(): void
     {
@@ -188,7 +208,7 @@ class HelpersTest extends TestCase
         $this->assertFalse(verify_csrf_token('wrong_token'));
     }
 
-    // ─── dir_size() ──────────────────────────────────────────────────────────
+    // ─── dir_size() ───
 
     public function testDirSizeOnNonExistentPath(): void
     {
@@ -213,6 +233,61 @@ class HelpersTest extends TestCase
         @rmdir($testDir);
     }
 
-    // ─── get_user_role() requires DB, skip basic test ────────────────────────
-    // ─── is_dir() is a native function, not tested here ──────────────────────
-}
+    // ─── generate_search_metadata() ───
+    public function testGenerateSearchMetadataWithAliases(): void
+    {
+        $result = generate_search_metadata('プロジェクトセカイ カラフルステージ!');
+        $this->assertStringContainsString('project sekai', $result);
+        $this->assertStringContainsString('colorful stage', $result);
+        $this->assertStringContainsString('purojekutosekai', $result); // romaji
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);   // lowercase
+    }
+
+    public function testGenerateSearchMetadataPlainText(): void
+    {
+        $result = generate_search_metadata('Hello World Test');
+        $this->assertStringContainsString('hello world test', $result);
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
+    }
+
+    // ─── lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label() ───
+
+    public function testLangMapHasAllLanguages(): void
+    {
+        $map = lang_map();
+        $this->assertCount(15, $map);
+        $this->assertSame('Indonesia', $map['id']);
+        $this->assertSame('English', $map['en']);
+        $this->assertSame('日本語', $map['ja']);
+        $this->assertArrayHasKey('vi', $map);
+    }
+
+    public function testLangLabelKnownLanguage(): void
+    {
+        $this->assertSame('Indonesia', lang_label('id'));
+        $this->assertSame('English', lang_label('EN')); // case-insensitive
+        $this->assertSame('日本語', lang_label('ja'));
+    }
+
+    public function testLangLabelUnknownFallsBackToUppercase(): void
+    {
+        $this->assertSame('XX', lang_label('xx'));
+        $this->assertSame('PT-BR', lang_label('pt-br'));
+    }
+
+    public function testLangLabelConsistentWithMap(): void
+    {
+        foreach (lang_map() as $code => $label) {
+            $this->assertSame($label, lang_label($code));
+        }
+    }
+
+    public function testSubtitleAliasesMatchGeneric(): void
+    {
+        $this->assertSame(lang_map(), subtitle_lang_map());
+        $this->assertSame(lang_label('ja'), subtitle_lang_label('ja'));
+        $this->assertSame(lang_label('pt-br'), subtitle_lang_label('pt-br'));
+    }
+
+    // ─── get_user_role() requires DB, skip basic test ───
+    }

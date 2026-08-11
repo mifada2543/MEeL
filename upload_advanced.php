@@ -11,11 +11,12 @@ require_once 'auth/auth.php';
 require_once 'auth/config.php';
 require_once 'modules/core/activity_logger.php';
 require_once 'modules/core/Transcoder.php';
+require_once 'modules/core/BrowserProgressObserver.php';
 require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
-// ─── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────
+// ─── GLOBAL ERROR HANDLER ───
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
@@ -36,7 +37,9 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-$transcoder     = new Transcoder($conn, $_SESSION['user_id']);
+// berakhir abnormal (fatal error, timeout server, dsb).
+$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
 require_once 'modules/core/System.php';
 $sys     = new System($conn);
@@ -53,7 +56,7 @@ $is_admin  = ($user_role === 'admin');
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
-// ── Hitung sisa kuota upload per jam ──
+// ─── Hitung sisa kuota upload per jam ───
 $quota_video_used = 0;
 $quota_music_used = 0;
 $upload_max = 2;
@@ -87,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     if ($is_busy) {
         $message = 'busy';
     } else {
-        // ── Rate limit check (sama seperti Uploader.php) ────────────────
+        // ─── Rate limit check (sama seperti Uploader.php) ───
         $type        = $_POST['type'] ?? '';
         $limit_table = ($type === 'music') ? 'music' : 'video';
         $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
@@ -98,6 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
             try {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
+
+                // ke post_encode.php — hentikan render sisa halaman agar tidak
+                if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
+                    exit;
+                }
             } catch (Exception $e) {
                 echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
                 echo str_repeat(' ', 1024);
@@ -112,6 +120,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
         }
     }
 }
+
+$__v = function ($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -130,388 +147,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="manifest" href="assets/manifest.json">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
+    <script src="assets/js/compatibilitas/lucide.js"></script>
     <link rel="stylesheet" href="assets/css/up.css">
-    <style>
-        /* ── Additional page-specific styles ── */
-
-        /* Scanline accent override — blue for advanced page */
-        body::after {
-            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-        }
-
-        /* ── Two-col layout ── */
-        .page-grid {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        @media (max-width: 900px) {
-            .page-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* ── Form card ── */
-        .form-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            overflow: hidden;
-        }
-
-        .form-card-header {
-            padding: 2rem 2rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .form-card-body {
-            padding: 2rem;
-        }
-
-        /* ── URL input ── */
-        .url-wrap {
-            position: relative;
-        }
-
-        .url-wrap .url-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #3b82f6;
-            pointer-events: none;
-        }
-
-        .url-input {
-            width: 100%;
-            background: rgba(0, 0, 0, .35);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 16px 14px 46px;
-            color: var(--white);
-            font-family: var(--font-mono);
-            font-size: .8rem;
-            transition: border-color .2s, box-shadow .2s;
-            outline: none;
-        }
-
-        .url-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
-        }
-
-        .url-input::placeholder {
-            color: var(--muted);
-        }
-
-        /* ── Type selector ── */
-        .type-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .type-label {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 20px 16px;
-            background: rgba(0, 0, 0, .25);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all .2s;
-            overflow: hidden;
-        }
-
-        .type-label::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            transition: opacity .2s;
-        }
-
-        .type-label.video-label::before {
-            background: linear-gradient(135deg, rgba(239, 68, 68, .08), transparent);
-        }
-
-        .type-label.music-label::before {
-            background: linear-gradient(135deg, rgba(249, 115, 22, .08), transparent);
-        }
-
-        .type-label:has(input:checked) {
-            border-color: transparent;
-        }
-
-        .type-label.video-label:has(input:checked) {
-            border-color: rgba(239, 68, 68, .4);
-            box-shadow: 0 0 0 1px rgba(239, 68, 68, .15);
-        }
-
-        .type-label.music-label:has(input:checked) {
-            border-color: rgba(249, 115, 22, .4);
-            box-shadow: 0 0 0 1px rgba(249, 115, 22, .15);
-        }
-
-        .type-label:has(input:checked)::before {
-            opacity: 1;
-        }
-
-        .type-label input {
-            display: none;
-        }
-
-        .type-icon-wrap {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background .2s;
-        }
-
-        .video-label .type-icon-wrap {
-            background: rgba(239, 68, 68, .1);
-            border: 1px solid rgba(239, 68, 68, .18);
-        }
-
-        .music-label .type-icon-wrap {
-            background: rgba(249, 115, 22, .1);
-            border: 1px solid rgba(249, 115, 22, .18);
-        }
-
-        .type-label-text {
-            font-family: var(--font-mono);
-            font-size: .62rem;
-            letter-spacing: .2em;
-            text-transform: uppercase;
-            color: var(--muted);
-            transition: color .2s;
-        }
-
-        .video-label:has(input:checked) .type-label-text {
-            color: #ef4444;
-        }
-
-        .music-label:has(input:checked) .type-label-text {
-            color: #f97316;
-        }
-
-        .type-ext {
-            font-family: var(--font-mono);
-            font-size: .55rem;
-            letter-spacing: .12em;
-            color: #2a3040;
-            text-transform: uppercase;
-        }
-
-        /* ── Submit button ── */
-        .submit-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            background: #3b82f6;
-            color: #fff;
-            font-family: var(--font-mono);
-            font-size: .72rem;
-            letter-spacing: .18em;
-            text-transform: uppercase;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: opacity .2s, transform .15s, box-shadow .2s;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, .25);
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            opacity: .88;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 32px rgba(59, 130, 246, .35);
-        }
-
-        .submit-btn:disabled {
-            opacity: .4;
-            cursor: not-allowed;
-        }
-
-        /* ── Alert banners ── */
-        .alert-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            font-family: var(--font-mono);
-            font-size: .72rem;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        .alert-success {
-            background: rgba(34, 197, 94, .07);
-            border: 1px solid rgba(34, 197, 94, .2);
-            color: #4ade80;
-        }
-
-        .alert-busy {
-            background: rgba(249, 115, 22, .07);
-            border: 1px solid rgba(249, 115, 22, .2);
-            color: #fb923c;
-        }
-
-        /* ── Sidebar cards ── */
-        .side-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 1rem;
-        }
-
-        .side-card-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-            font-family: var(--font-mono);
-            font-size: .6rem;
-            letter-spacing: .22em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .side-card-body {
-            padding: 1.25rem;
-        }
-
-        /* ── Status dot ── */
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .dot-green {
-            background: #22c55e;
-            box-shadow: 0 0 6px #22c55e;
-            animation: pulse-dot 2s infinite;
-        }
-
-        .dot-orange {
-            background: #f97316;
-            box-shadow: 0 0 6px #f97316;
-            animation: pulse-dot 1s infinite;
-        }
-
-        @keyframes pulse-dot {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: .4;
-            }
-        }
-
-        /* ── Supported list ── */
-        .support-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 0;
-            border-bottom: 1px solid var(--border);
-            font-family: var(--font-mono);
-            font-size: .72rem;
-            color: var(--text);
-        }
-
-        .support-row:last-child {
-            border-bottom: none;
-        }
-
-        .support-badge {
-            font-size: .55rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            padding: 2px 7px;
-            border-radius: 6px;
-            font-weight: 600;
-            margin-left: auto;
-        }
-
-        /* ── Queue indicator ── */
-        .queue-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-family: var(--font-mono);
-            font-size: .58rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        /* ── meel-seg ── */
-        .meel-seg {
-            width: 14px;
-            height: 6px;
-            background: rgba(249, 115, 22, .12);
-            border: 1px solid rgba(249, 115, 22, .18);
-            border-radius: 2px;
-            transition: background .3s, border-color .3s;
-        }
-
-        .meel-seg.done {
-            background: #f97316;
-            border-color: #f97316;
-            box-shadow: 0 0 6px rgba(249, 115, 22, .5);
-        }
-
-        .meel-segs {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 100%;
-        }
-
-        /* ── meel-icon-wrap (done/error phases) ── */
-        .meel-icon-wrap {
-            width: 56px;
-            height: 56px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ── Hover effects for type labels on mobile ── */
-        @media (hover: none) {
-            .type-label:active {
-                opacity: .85;
-            }
-        }
-    </style>
+    <?php foreach (require __DIR__ . '/assets/css/up/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="assets/css/up/<?= $__f ?><?= $__v('assets/css/up/' . $__f) ?>">
+    <?php endforeach; ?>
 </head>
 
 <body class="min-h-screen flex flex-col">
@@ -520,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
         <?php include 'partials/ui.php'; ?>
     <?php endif; ?>
-
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
 
@@ -565,7 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     </a>
                 </div>
             <?php endif; ?>
-
             <!-- ── Main grid ── -->
             <div class="page-grid">
 
@@ -607,7 +245,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                             </div>
                         </div>
                     <?php endif; ?>
-
                     <div class="form-card">
                         <!-- Card header -->
                         <div class="form-card-header">
@@ -634,7 +271,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                                 <?php if (isset($_SESSION['csrf_token'])): ?>
                                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <?php endif; ?>
-
                                 <!-- URL input -->
                                 <div>
                                     <label class="f-label">URL Sumber</label>
@@ -880,47 +516,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     </main>
 
     <?php include 'partials/footer.php'; ?>
-
-    <script>
-        lucide.createIcons();
-
-        // ── URL live preview ──
-        const urlInput = document.getElementById('url-input');
-        const urlPreview = document.getElementById('url-preview');
-
-        if (urlInput) {
-            urlInput.addEventListener('input', function() {
-                const val = this.value.trim();
-                if (val.length > 10 && val.startsWith('http')) {
-                    try {
-                        const u = new URL(val);
-                        urlPreview.textContent = u.hostname + u.pathname.slice(0, 60) + (u.pathname.length > 60 ? '…' : '');
-                        urlPreview.style.display = 'block';
-                    } catch (e) {
-                        urlPreview.style.display = 'none';
-                    }
-                } else {
-                    urlPreview.style.display = 'none';
-                }
-            });
-        }
-
-        // ── Form submit — show overlay, let PHP stream ──
-        function startAdvancedUpload(form) {
-            const url = document.getElementById('url-input').value.trim();
-            if (!url) return false;
-
-            // Transisi tombol
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<div style="width:14px;height:14px;border:1.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:meel-spin .7s linear infinite;"></div> Memproses...';
-
-            // Tampilkan overlay pada fase download
-            if (typeof meelPhase === 'function') meelPhase('download');
-
-            return true; // Biarkan form submit biasa (PHP streaming)
-        }
-    </script>
+    <script src="assets/js/up/main.js<?= $__v('assets/js/up/main.js') ?>"></script>
 </body>
 
 </html>

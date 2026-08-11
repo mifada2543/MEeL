@@ -1,17 +1,6 @@
-/**
- * ═══════════════════════════════════════════════════════════
- * MEeL — Documentation Shared JavaScript
- * ═══════════════════════════════════════════════════════════
- *
- * Dependencies:
- *   - marked.js (Markdown parser, loaded in head)
- *   - partials/head.html (CSS)
- *   - partials/nav.html (navbar template)
- *   - partials/footer.html (footer template)
- * ═══════════════════════════════════════════════════════════
- */
+/* MEeL — Documentation Shared JavaScript */
 
-// ── Navigation Structure ──────────────────────────────────
+// ─── Navigation Structure ───
 const DOCS = {
     en: {
         label: 'English',
@@ -28,6 +17,7 @@ const DOCS = {
             ['problem-solved',    '🌍 Problems'],
             ['upload_issue',      '📥 Upload'],
             ['test',              '🧪 Test'],
+            ['pwa',               '📱 PWA'],
             ['analysis',          '📋 Analysis'],
         ]
     },
@@ -46,12 +36,13 @@ const DOCS = {
             ['problem-solved',    '🌍 Masalah'],
             ['upload_issue',      '📥 Upload'],
             ['test',              '🧪 Test'],
+            ['pwa',               '📱 PWA'],
             ['deskripsi',         '📋 Analisis'],
         ]
     }
 };
 
-// ── Partial Loader ──────────────────────────────────────
+// ─── Partial Loader ───
 async function loadPartial(url, targetId) {
     try {
         const res = await fetch(url);
@@ -66,7 +57,7 @@ async function loadPartial(url, targetId) {
     }
 }
 
-// ── URL Params ──────────────────────────────────────────
+// ─── URL Params ───
 function getDocParams() {
     const p = new URLSearchParams(window.location.search);
     return {
@@ -75,7 +66,7 @@ function getDocParams() {
     };
 }
 
-// ── Render Navbar ──────────────────────────────────────
+// ─── Render Navbar ───
 function renderNavbar(lang, activeFile) {
     const docs = DOCS[lang] || DOCS.en;
     const otherLang = lang === 'en' ? 'id' : 'en';
@@ -101,7 +92,7 @@ function renderNavbar(lang, activeFile) {
     }
 }
 
-// ── Load & Render Markdown ─────────────────────────────
+// ─── Load & Render Markdown ───
 const DOC_STATE = { lang: 'en', file: 'index' };
 
 async function loadDoc(lang, file) {
@@ -126,6 +117,11 @@ async function loadDoc(lang, file) {
     const mdPath = `${lang}/${file}.md`;
 
     try {
+        // Check if marked library is loaded
+        if (typeof marked === 'undefined') {
+            throw new Error('Markdown parser (marked.js) not loaded. Check network tab to verify the library is accessible.');
+        }
+
         const res = await fetch(mdPath);
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
@@ -164,12 +160,12 @@ async function loadDoc(lang, file) {
     }
 }
 
-// ── Load Footer ─────────────────────────────────────────
+// ─── Load Footer ───
 async function loadFooter() {
     await loadPartial('partials/footer.html', 'footer');
 }
 
-// ── Init Documentation Page ─────────────────────────────
+// ─── Init Documentation Page ───
 function initDocViewer() {
     const params = getDocParams();
     DOC_STATE.lang = params.lang;
@@ -177,7 +173,7 @@ function initDocViewer() {
     loadDoc(params.lang, params.file);
 }
 
-// ── Auto-init ─────────────────────────────────────────
+// ─── Auto-init ───
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('content')) {
         initDocViewer();

@@ -1,0 +1,3 @@
+# Blokir akses langsung dari web — hanya boleh di-include via PHP
+Options -Indexes
+Deny from all

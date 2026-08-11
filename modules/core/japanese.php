@@ -1,12 +1,5 @@
 <?php
-/**
- * modules/core/japanese.php
- * Fungsi pemrosesan teks Jepang (MeCab + transliterasi Romaji + kamus offline JMdict).
- * Hanya di-include di halaman yang membutuhkan (upload/transcode/admin edit).
- * Tidak dibebankan ke setiap request seperti sebelumnya di config.php.
- */
-
-// ─── HELPER: Resolve MeCab binary (static cache per request) ───────────────
+// ─── HELPER: Resolve MeCab binary (static cache per request) ───
 if (!function_exists('getMecabPath')) {
     function getMecabPath(): string
     {
@@ -34,13 +27,12 @@ if (!function_exists('getMecabPath')) {
     }
 }
 
-// ─── ROMAJI CONVERTER ──────────────────────────────────────────────────────────
+// ─── ROMAJI CONVERTER ───
 if (!function_exists('getRomajiName')) {
     function getRomajiName(string $text): string
     {
         if (empty($text)) return 'untitled';
 
-        // Simpan input asli sebagai cadangan jika MeCab/transliterasi gagal
         $original_text = $text;
 
         // 1. Kamus Koreksi Karakter Spesifik & Simbol
@@ -56,10 +48,10 @@ if (!function_exists('getRomajiName')) {
         ];
         $text = str_replace($search, $replace, $text);
 
-        // 2. Eksekusi MeCab — path absolut biar tidak bergantung PATH environment
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
-        $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
+        $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
+        $process = proc_open($mecab_cmd, $descriptorspec, $pipes);
 
         $parsedText = '';
         if (is_resource($process)) {
@@ -93,7 +85,6 @@ if (!function_exists('getRomajiName')) {
         $clean = preg_replace('/[^a-z0-9\-]/u', '-', $text);
         $clean = preg_replace('/-+/', '-', trim($clean, '-'));
 
-        // Fallback: jika hasil processing kosong, gunakan sanitasi dari teks asli
         if (empty($clean)) {
             $fallback = preg_replace('/[^a-z0-9\-]/u', '-', $original_text);
             $fallback = preg_replace('/-+/', '-', trim($fallback, '-'));
@@ -104,7 +95,7 @@ if (!function_exists('getRomajiName')) {
     }
 }
 
-// ─── ANALISIS GABUNGAN (romaji + english) ─────────────────────────────────────
+// ─── ANALISIS GABUNGAN (romaji + english) ───
 if (!function_exists('analyzeJapaneseText')) {
     function analyzeJapaneseText(string $text): array
     {
@@ -117,12 +108,30 @@ if (!function_exists('analyzeJapaneseText')) {
         $original_text = $text; // Simpan asli untuk fallback
         $clean_text = str_replace($search, $replace, $text);
 
+        static $aliases = null;
+        if ($aliases === null) {
+            $alias_path = __DIR__ . '/japanese_aliases.php';
+            $aliases = file_exists($alias_path) ? require $alias_path : [];
+
+            uksort($aliases, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
+        }
+
+        $alias_glosses = [];
+        foreach ($aliases as $phrase => $translation) {
+            if ($phrase !== '' && mb_strpos($original_text, $phrase) !== false) {
+                $alias_glosses[] = $translation;
+            }
+        }
+
         // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
-        $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
+        $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
+        $process = proc_open($mecab_cmd, $descriptorspec, $pipes);
         if (!is_resource($process)) {
             $result['romaji'] = getRomajiName($text);
+
+            $result['english'] = trim(implode(' ', array_unique($alias_glosses)));
             return $result;
         }
         fwrite($pipes[0], $clean_text);
@@ -134,7 +143,8 @@ if (!function_exists('analyzeJapaneseText')) {
         // 3. Koneksi kamus offline (static — sekali per request)
         static $pdo = null, $dict_ready = null, $dict_stmt = null;
         if ($dict_ready === null) {
-            $dict_path = __DIR__ . '/../assets/dict/jmdict.sqlite3';
+
+            $dict_path = __DIR__ . '/../../assets/dict/jmdict.sqlite3';
             if (file_exists($dict_path)) {
                 try {
                     $pdo        = new PDO('sqlite:' . $dict_path);
@@ -142,9 +152,11 @@ if (!function_exists('analyzeJapaneseText')) {
                     $dict_ready = true;
                 } catch (RuntimeException $e) {
                     $dict_ready = false;
+                    error_log('[japanese.php] Gagal buka jmdict.sqlite3: ' . $e->getMessage());
                 }
             } else {
                 $dict_ready = false;
+                error_log('[japanese.php] Dictionary tidak ditemukan di: ' . $dict_path);
             }
         }
 
@@ -186,7 +198,6 @@ if (!function_exists('analyzeJapaneseText')) {
         $clean = preg_replace('/[^a-z0-9\-]/u', '-', $romaji_text);
         $clean = preg_replace('/-+/', '-', trim($clean, '-'));
 
-        // Fallback: jika hasil processing kosong, gunakan sanitasi dari teks asli
         if (empty($clean)) {
             $fallback = preg_replace('/[^a-z0-9\-]/u', '-', $original_text);
             $fallback = preg_replace('/-+/', '-', trim($fallback, '-'));
@@ -195,67 +206,9 @@ if (!function_exists('analyzeJapaneseText')) {
             $result['romaji'] = $clean;
         }
 
+        // Alias (brand/franchise) didahulukan, lalu glosses JMdict
+        $glosses = array_merge($alias_glosses, $glosses);
         $result['english'] = trim(implode(' ', array_unique($glosses)));
         return $result;
-    }
-}
-
-// ─── ENGLISH TRANSLATION (OFFLINE) ────────────────────────────────────────────
-if (!function_exists('getEnglishTranslation')) {
-    function getEnglishTranslation(string $text): string
-    {
-        static $pdo = null, $dict_ready = null;
-
-        if ($dict_ready === null) {
-            $dict_path = __DIR__ . '/../assets/dict/jmdict.sqlite3';
-            if (file_exists($dict_path)) {
-                try {
-                    $pdo = new PDO('sqlite:' . $dict_path);
-                    $dict_ready = true;
-                } catch (RuntimeException $e) {
-                    $dict_ready = false;
-                }
-            } else {
-                $dict_ready = false;
-            }
-        }
-
-        if (!$dict_ready || empty(trim($text))) return '';
-
-        $mecab_bin = getMecabPath();
-        $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
-        $process = proc_open(escapeshellarg($mecab_bin), $descriptorspec, $pipes);
-        if (!is_resource($process)) return '';
-
-        fwrite($pipes[0], $text);
-        fclose($pipes[0]);
-        $output = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        proc_close($process);
-
-        $stmt = $pdo->prepare("SELECT glosses FROM entries WHERE reading = :w LIMIT 1");
-        $glosses = [];
-
-        foreach (explode("\n", trim($output)) as $line) {
-            if ($line === 'EOS' || trim($line) === '') continue;
-            $parts = explode("\t", $line);
-            if (count($parts) < 2) continue;
-
-            $surface  = $parts[0];
-            $features = explode(',', $parts[1]);
-            $base_form = $features[6] ?? '*';
-
-            foreach (array_unique([$surface, $base_form]) as $candidate) {
-                if ($candidate === '*' || $candidate === '') continue;
-                $stmt->execute([':w' => $candidate]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($row && !empty($row['glosses'])) {
-                    $glosses[] = explode(';', $row['glosses'])[0];
-                    break;
-                }
-            }
-        }
-
-        return trim(implode(' ', array_unique($glosses)));
     }
 }

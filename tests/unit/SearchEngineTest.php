@@ -50,5 +50,32 @@ class SearchEngineTest extends TestCase
     {
         $this->assertSame(20, SearchEngine::VIDEO_LIMIT);
         $this->assertSame(20, SearchEngine::MUSIC_LIMIT);
+
+        $this->assertSame(3, SearchEngine::MIN_SEARCH_QUERY);
+    }
+
+    public function testSanitizeQueryNeutralizesFulltextBreakingInput(): void
+    {
+        // Operator murni / kosong → hasil kosong (bukan SQL error)
+        $this->assertSame('', SearchEngine::sanitizeQuery('*'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('-'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('+'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('"'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('<<>>()~@'));
+
+        // Operator di akhir/awal token dinetralkan
+        $this->assertSame('foo', SearchEngine::sanitizeQuery('foo -'));
+        $this->assertSame('foo', SearchEngine::sanitizeQuery('*foo'));
+        $this->assertSame('a b', SearchEngine::sanitizeQuery('a - b'));
+
+        $this->assertSame('hello', SearchEngine::sanitizeQuery('"hello'));
+        $this->assertSame('hello', SearchEngine::sanitizeQuery('hello"'));
+        $this->assertSame('"a b"', SearchEngine::sanitizeQuery('"a b"'));
+
+        // Prefix search (kata*) tetap valid
+        $this->assertSame('foo*', SearchEngine::sanitizeQuery('foo*'));
+
+        // Query normal tidak berubah
+        $this->assertSame('test query', SearchEngine::sanitizeQuery('test query'));
     }
 }

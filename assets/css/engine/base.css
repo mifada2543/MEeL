@@ -1,0 +1,38 @@
+/* engine/base.css — Shell overlay, kartu, dan sistem fase */
+#meel-overlay * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+#meel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.9);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: meel-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+#meel-overlay.error-state {
+  background: rgba(5, 7, 12, 0.98);
+}
+#meel-card {
+  width: 420px;
+  text-align: center;
+}
+/* ─── Sistem fase ─── */
+.meel-phase {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.meel-phase.active {
+  display: flex;
+  animation: meel-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

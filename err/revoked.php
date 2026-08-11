@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../modules/core/base_url.php';
+$meel_base = meel_base_url_path();
+?>
 <!DOCTYPE html>
 <html lang="id">
 
@@ -8,9 +12,9 @@
     <meta property="og:title" content="Session Revoked | MEeL">
     <meta property="og:description" content="Sesi Anda telah dihentikan. Silakan login kembali untuk melanjutkan.">
     <title>Session Revoked | MEeL</title>
-    <?php include '../partials/link.php'; ?>
+    <?php include __DIR__ . '/../partials/link.php'; ?>
     <style>
-        @import url('../assets/css/font.css');
+        @import url("<?= $meel_base ?>/assets/css/font.css");
 
         body {
             font-family: 'JetBrains Mono', monospace, sans-serif;
@@ -101,13 +105,12 @@
 
     <!-- Footer Area -->
     <div class="w-full text-center pb-6 relative z-20">
-        <?php include '../partials/footer.php'; ?>
+        <?php include __DIR__ . '/../partials/footer.php'; ?>
     </div>
 
     <!-- Lucide Icon Initialization -->
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

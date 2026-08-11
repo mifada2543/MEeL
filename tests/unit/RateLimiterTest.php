@@ -110,7 +110,7 @@ class RateLimiterTest extends TestCase
         $this->assertSame(100, RateLimiter::getRoleLimit(100, 'user'));
         // Member gets 2x
         $this->assertSame(200, RateLimiter::getRoleLimit(100, 'member'));
-        // Admin uses same as user (bypass happens in check(), not here)
+
         $this->assertSame(100, RateLimiter::getRoleLimit(100, 'admin'));
         // Guest uses base limit
         $this->assertSame(100, RateLimiter::getRoleLimit(100, 'guest'));

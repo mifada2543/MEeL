@@ -1,0 +1,16 @@
+/* manga.css — Manga image viewer styles (shared) */
+.manga-img {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: block;
+  background: #0f1318;
+  min-height: 200px;
+  transition: opacity 0.4s ease;
+}
+.manga-img.lazy {
+  opacity: 0;
+}
+.manga-img.loaded {
+  opacity: 1;
+}

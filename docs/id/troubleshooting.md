@@ -76,7 +76,7 @@ ALTER TABLE comments ADD COLUMN comment text NOT NULL;
 
 ### ❌ Redirect ke `err/maintance.php`
 
-**Penyebab:** `MEEL_HDD_BASE` di `auth/config.php` tidak cocok dengan mount point.
+**Penyebab:** `MEEL_HDD_BASE` di `auth/settings.php` tidak cocok dengan mount point.
 
 **Solusi:**
 

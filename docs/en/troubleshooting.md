@@ -161,7 +161,7 @@ mysql -u root -p -e "SHOW DATABASES;"
 
 **Solutions:**
 - Start MySQL: `sudo systemctl start mysql`
-- Check credentials in `auth/config.php`
+- Check credentials in `auth/settings.php`
 - Check MySQL port (default: 3306)
 
 ### ❌ "Table not found"
@@ -217,7 +217,7 @@ Verify the mount point exists and is accessible.
 
 **Solution:**
 ```html
-<script src="/MEeL/assets/js/lucide.js"></script>
+<script src="/MEeL/assets/js/compatibilitas/lucide.js"></script>
 <script>lucide.createIcons();</script>
 ```
 

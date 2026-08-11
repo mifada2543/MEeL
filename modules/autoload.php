@@ -1,20 +1,4 @@
 <?php
-/**
- * MEeL-HUB — Manual Autoloader
- * 
- * PSR-4-like autoloader tanpa Composer.
- * Gunakan: require_once __DIR__ . '/autoload.php';
- * 
- * Cara pakai:
- *   // Di auth/config.php atau entry point manapun:
- *   require_once __DIR__ . '/../modules/autoload.php';
- * 
- *   // Class akan otomatis di-load:
- *   $library = new MediaLibrary($conn);
- *   $uploader = new Uploader($conn, $user_id, $username);
- *   $viewer = new MediaViewer($conn, $user_id, 'video', $id);
- */
-
 spl_autoload_register(function (string $class) {
     $map = [
         // Core modules
@@ -28,13 +12,16 @@ spl_autoload_register(function (string $class) {
         'MediaInteraction'   => __DIR__ . '/media/MediaInteraction.php',
         'GarbageCollector'   => __DIR__ . '/core/GarbageCollector.php',
         'RateLimiter'         => __DIR__ . '/core/RateLimiter.php',
-        
+
         // Media
         'SearchEngine'        => __DIR__ . '/media/SearchEngine.php',
-        
+
         // Drive service
         'DriveService'       => __DIR__ . '/../drive/DriveService.php',
-        
+
+        // PWA service worker
+        'SwPrecache'         => __DIR__ . '/core/SwPrecache.php',
+
     ];
 
     if (isset($map[$class])) {

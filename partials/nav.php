@@ -1,5 +1,5 @@
 <?php
-// ── Ambil profile picture dari session (nav.php bisa di-include dari mana saja) ──
+// ─── Ambil profile picture dari session (nav.php bisa di-include dari mana saja) ───
 $_nav_pfp = null;
 if (isset($_SESSION['user_id']) && isset($conn)) {
     $stmt_nav = $conn->prepare("SELECT profile_picture FROM users WHERE id = ? LIMIT 1");
@@ -9,19 +9,18 @@ if (isset($_SESSION['user_id']) && isset($conn)) {
     $_nav_pfp  = $_nav_user['profile_picture'] ?? null;
 }
 
-// ── Deteksi halaman aktif ──
+// ─── Deteksi halaman aktif ───
 $_nav_is_books  = str_contains($_SERVER['PHP_SELF'], '/books/');
 $_nav_is_video  = str_contains($_SERVER['PHP_SELF'], '/video/');
 $_nav_is_music  = str_contains($_SERVER['PHP_SELF'], '/music/');
 $_nav_is_drive  = str_contains($_SERVER['PHP_SELF'], '/drive/');
 $_nav_in_subdir = $_nav_is_books || $_nav_is_video || $_nav_is_music || $_nav_is_drive;
 
-// ── Tentukan prefix path relatif (root vs subfolder) ──
+// ─── Tentukan prefix path relatif (root vs subfolder) ───
 $_nav_pfp_base = $_nav_in_subdir ? '../profile/upload/' : 'profile/upload/';
 $_nav_root     = $_nav_in_subdir ? '../' : '';
 ?>
-<style>
-    /* Mengunci paksa agar web tidak pernah bisa digeser ke samping */
+<style>    /* Mengunci paksa agar web tidak pernah bisa digeser ke samping */
     html,
     body {
         overflow-x: hidden !important;
@@ -57,9 +56,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         <span class="hidden md:inline">Music</span>
     </a>
 <?php endif; ?>
-
 <?php if (isset($_SESSION['username'])): ?>
-
     <!-- ── AVATAR DROPDOWN (desktop) ── -->
     <div class="relative hidden sm:block" id="nav-dropdown-wrap">
         <button id="nav-avatar-btn"
@@ -149,7 +146,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                     <span>Books</span>
                 </a>
                 <?php endif; ?>
-
                 <a href="<?= $_nav_root ?>introduction.php" title="Cara bernavigasi di MEeL"
                     class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="compass" class="w-3.5 h-3.5 flex-shrink-0"></i>
@@ -163,7 +159,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                         <span>Drive</span>
                     </a>
                 <?php endif; ?>
-
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                     <a href="upload.php" title="Unggah media baru ke platform"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
@@ -190,6 +185,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             <div class="border-t border-white/[.05] py-1.5">
                 <a href="<?= $_nav_root ?>auth/logout.php"
                     data-meel-confirm-link
+                    data-meel-confirm-size="sm"
                     data-meel-confirm-title="Logout"
                     data-meel-confirm-text="Yakin mau logout?"
                     data-meel-confirm-button="LOGOUT"
@@ -334,7 +330,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                     <span>Upload</span>
                 </a>
             <?php endif; ?>
-
             <div class="mx-6 my-3 h-px bg-white/[.05]"></div>
 
             <a href="<?= $_nav_root ?>update.php"
@@ -347,6 +342,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         <div class="border-t border-white/[.05] p-5">
             <a href="<?= $_nav_root ?>auth/logout.php"
                 data-meel-confirm-link
+                data-meel-confirm-size="sm"
                 data-meel-confirm-title="Logout"
                 data-meel-confirm-text="Yakin mau logout?"
                 data-meel-confirm-button="LOGOUT"
@@ -356,7 +352,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             </a>
         </div>
     </div>
-
 <?php else: ?>
     <!-- Belum login - DESKTOP -->
     <div class="hidden sm:flex items-center gap-2">
@@ -424,7 +419,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                 <i data-lucide="user-plus" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Daftar</span>
             </a>
-            
+
             <?php if ($_nav_is_video): ?>
                 <a href="<?= $_nav_root ?>music/index.php"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-orange-400 hover:bg-orange-500/[.06] transition-all no-underline">
@@ -459,11 +454,8 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
     </div>
 <?php endif; ?>
-
-<script src="<?= $_nav_root ?>assets/js/sweetalert2.all.min.js"></script>
-<script src="<?= $_nav_root ?>assets/js/script.min.js"></script>
-<script>
-    // ── Dropdown desktop ──
+<?php $scripts_root = $_nav_root; include __DIR__ . '/scripts.php'; ?>
+<script>    // ─── Dropdown desktop ───
     function toggleNavDropdown() {
         const dd = document.getElementById('nav-dropdown');
         const ch = document.getElementById('nav-chevron');
@@ -486,7 +478,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         const drawer = document.getElementById('nav-drawer');
         const overlay = document.getElementById('nav-drawer-overlay');
         const mainContent = document.getElementById('app-content-grid') || document.querySelector('main');
-        
+
         if (!drawer) return;
         const open = drawer.classList.contains('open');
         if (open) {
@@ -537,16 +529,16 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     // Fungsi pembantu untuk menangani intersep klik di area utama
     function closeDrawerOnMainClick(e) {
         e.preventDefault();
-        e.stopPropagation(); // Menghentikan klik agar tidak menembus ke tombol/komponen di bawahnya
+        e.stopPropagation();
         toggleNavDrawer();
     }
 
-    // ── Guest Drawer (mobile, belum login) ──
+    // ─── Guest Drawer (mobile, belum login) ───
     function toggleNavDrawerGuest() {
         const drawer = document.getElementById('nav-drawer-guest');
         const overlay = document.getElementById('nav-drawer-guest-overlay');
         const mainContent = document.getElementById('app-content-grid') || document.querySelector('main');
-        
+
         if (!drawer) return;
         const open = drawer.classList.contains('open');
         if (open) {

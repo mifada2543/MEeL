@@ -15,11 +15,12 @@ MEeL uses a multi-layered testing approach:
 | **Integration Tests** | PHPUnit 9.6 | Real DB operations | `tests/integration/` |
 | **Functional Tests** | Custom PHP | Application workflows | `tests/functional_test.php` |
 | **Security Tests** | Custom PHP | Vulnerability scanning | `tests/security_test.php` |
+| **Deployment Check** | Custom PHP | Environment verification (storage, symlink, mod_rewrite) | `tests/check_deploy.php` |
 | **CI Pipeline** | GitHub Actions | Automated validation | `.github/workflows/ci.yml` |
 
 ---
 
-## 🧪 PHPUnit Test Suite (86 Unit + 19 Integration = 105 Tests)
+## 🧪 PHPUnit Test Suite (125 Unit + 24 Integration = 149 Tests)
 
 ### Installation
 
@@ -61,19 +62,21 @@ logs/tests/
 
 | File | Tests | Coverage |
 |------|-------|----------|
-| `RateLimiterTest.php` | 12 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
-| `HelpersTest.php` | 22 | format_bytes, time_ago, audio MIME types, disk space, CSRF, dir_size, protocol detection |
-| `JapaneseTest.php` | 6 | Romaji conversion, analyzeJapaneseText, English translation (MeCab-optional) |
-| `GarbageCollectorTest.php` | 4 | Class existence, idempotency, graceful handling |
-| `SearchEngineTest.php` | 4 | Parse params, default values, constants |
+| `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
+| `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME types, disk space, CSRF, dir_size, protocol detection (data providers) |
+| `JapaneseTest.php` | 11 | Romaji conversion, analyzeJapaneseText, English translation (MeCab-optional) |
+| `GarbageCollectorTest.php` | 5 | Class existence, idempotency, graceful handling |
+| `SearchEngineTest.php` | 5 | Parse params, sanitizer (`sanitizeQuery`), default values, constants |
 | `MediaLibraryTest.php` | 11 | Pagination logic (pure math), BookRepository mock |
-| `MediaInteractionTest.php` | 8 | Input validation (invalid IDs, types) |
+| `MediaInteractionTest.php` | 7 | Input validation (invalid IDs, types) |
+| `BootstrapTest.php` | 9 | Env detection, error reporting config, timezone |
+| `CssManifestTest.php` | 16 | CSS module manifests — every entry exists, **all** folders pre-cached by `SwPrecache`, precache entries resolve, deterministic SW version |
 
 #### Integration Tests (`tests/integration/`)
 
 | File | Tests | Coverage |
 |------|-------|----------|
-| `MediaInteractionIntegrationTest.php` | 19 | Like/dislike music+video, toggle, ownership check, count sync, guest denial |
+| `MediaInteractionIntegrationTest.php` | 24 | Like/dislike music+video, toggle, ownership check, count sync, guest denial |
 
 ### Test Helpers
 
@@ -176,6 +179,27 @@ php tests/security_test.php
 - File Upload — magic bytes validation
 - Session Security — cookie params, hijack detection
 
+## 🚀 Deployment Check (`tests/check_deploy.php`)
+
+Quick health-check of the deployment environment — mirrors what the security
+test checks, but focused on infrastructure:
+
+```bash
+php tests/check_deploy.php                          # local check + auto HTTP probe
+php tests/check_deploy.php --url=http://localhost/MEeL   # explicit HTTP probe
+php tests/check_deploy.php --hdd=/tmp/meel-storage/media  # override MEEL_HDD_BASE (testing/CI)
+php tests/check_deploy.php --no-color               # no ANSI colors (for CI/logs)
+```
+
+**Verifies:**
+- `MEEL_HDD_BASE` — defined, not a placeholder, storage mounted & writable
+- Upload symlinks — `books/upload`, `music/upload`, `video/upload` resolve to storage
+- `.htaccess` hardening in upload dirs — `php_flag engine off`, `ForceType`, `Options -Indexes`
+- PWA `mod_rewrite` — root `.htaccess` rule + real HTTP probe of `/sw.js`
+
+Exit code `0` = healthy, `1` = at least one FAIL (CI-friendly). Full storage
+guide: [Installation §5a](installation.md).
+
 ---
 
 ## 🤖 CI Pipeline (GitHub Actions)
@@ -199,11 +223,17 @@ See `.github/workflows/ci.yml` for full configuration.
 
 | Suite | Tests | Pass | Fail | Score |
 |-------|-------|------|------|-------|
-| **PHPUnit Unit Tests** | 86 | 86 | 0 | ✅ 100% |
-| **PHPUnit Integration Tests** | 19 | 19 | 0 | ✅ 100% |
-| **Functional Test** | 144 | 143 | 0 | ✅ 99.3% |
-| **Security Test** | 72 | 72 | 0 | ✅ 100% |
-| **PHP Syntax Check** | 20 files | 20 | 0 | ✅ 100% |
+| **PHPUnit Unit Tests** | 125 | 125 | 0 | ✅ 100% |
+| **PHPUnit Integration Tests** | 24 | 24 | 0 | ✅ 100% |
+| **Functional Test** | 144 | 138 pass, 6 warn | 0 | ✅ 98/100 |
+| **Security Test** | 72 | 66 | 6*
+
+> *Security test: 6 fail muncul saat HDD storage (`MEEL_HDD_BASE`, symlink
+> `books/upload`/`music/upload`/`video/upload`) tidak ter-mount di lingkungan
+> dev — direktori upload tidak ditemukan sehingga `.htaccess`-nya tidak
+> terverifikasi. Di deployment dengan storage ter-mount, direktori upload
+> punya `.htaccess` (php_flag engine off + ForceType + Options -Indexes).
+> Jalankan ulang setelah storage aktif untuk konfirmasi 72/72.
 
 ---
 

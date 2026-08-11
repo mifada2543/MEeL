@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline — MEeL</title>
     <meta name="theme-color" content="#05070c">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    <style>        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
             background: #05070c;
@@ -100,7 +99,7 @@
             0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
         }
-    </style>
+</style>
 </head>
 <body>
     <div class="container">

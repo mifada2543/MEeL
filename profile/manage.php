@@ -3,7 +3,7 @@ require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/core/helpers.php';
 
-// ── Hanya user login ──
+// ─── Hanya user login ───
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login.php");
     exit();
@@ -13,7 +13,7 @@ $user_id   = (int)$_SESSION['user_id'];
 $username  = htmlspecialchars($_SESSION['username'] ?? '');
 $is_admin  = ($_SESSION['role'] ?? '') === 'admin';
 
-// ── Cek apakah user punya konten ──
+// ─── Cek apakah user punya konten ───
 $q_vid_count = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
 $q_vid_count->bind_param("i", $user_id);
 $q_vid_count->execute();
@@ -26,23 +26,26 @@ $total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
 
 $has_content = ($total_video + $total_music) > 0;
 
-// ── Redirect jika tidak punya konten ──
+// ─── Redirect jika tidak punya konten ───
 if (!$has_content) {
     header("Location: ../upload_advanced.php?first=1");
     exit();
 }
 
-// ── Load backend functions ──
+// ─── Load backend functions ───
 define('MEEL_MANAGE_ACCESS', true);
 require_once '../controllers/profile/fun-manage.php';
 
-// ── Cleanup files >30 menit setiap kali halaman dimuat ──
+// ─── Cleanup files >30 menit setiap kali halaman dimuat ───
 $cleaned_count = cleanupPendingDeletions();
 
-// ── Handle delete action ──
+// ─── Handle delete action ───
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+    // Dukungan POST tetap dipertahankan untuk kompatibilitas.
+    $csrf_input = $_GET['csrf_token'] ?? ($_POST['csrf_token'] ?? null);
+    $csrf_input = is_string($csrf_input) ? $csrf_input : null;
+    if (!verify_csrf_token($csrf_input)) {
         $delete_msg = 'Token tidak valid.';
     } else {
         $del_id   = (int)$_GET['id'];
@@ -67,11 +70,11 @@ if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
     }
 }
 
-// ── Tab aktif ──
+// ─── Tab aktif ───
 $active_tab = $_GET['tab'] ?? 'video';
 if (!in_array($active_tab, ['video', 'music'])) $active_tab = 'video';
 
-// ── Ambil data konten ──
+// ─── Ambil data konten ───
 $page_size = 20;
 $page = max(1, (int)($_GET['p'] ?? 1));
 $offset = ($page - 1) * $page_size;
@@ -115,9 +118,10 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
     <meta property="og:description" content="Kelola konten video dan musik Anda di MEeL. Edit, hapus, dan pantau statistik.">
     <title>Kelola Konten | MEeL</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video.css">
-    <style>
-        body {
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
+    <style>        body {
             background-color: #080a0f;
         }
 
@@ -128,7 +132,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border-radius: 24px;
         }
 
-        /* ── Tabs ── */
+        /* ─── Tabs ─── */
         .manage-tabs {
             display: flex;
             gap: 4px;
@@ -169,7 +173,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border: 1px solid rgba(239, 68, 68, 0.15);
         }
 
-        /* ── Content card ── */
+        /* ─── Content card ─── */
         .content-card {
             background: rgba(20, 24, 32, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -226,7 +230,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             gap: 8px;
         }
 
-        /* ── Action buttons ── */
+        /* ─── Action buttons ─── */
         .action-btn {
             display: inline-flex;
             align-items: center;
@@ -266,7 +270,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border-color: rgba(239, 68, 68, 0.3);
         }
 
-        /* ── Stats bar ── */
+        /* ─── Stats bar ─── */
         .stats-bar {
             display: flex;
             gap: 16px;
@@ -299,7 +303,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             color: #f97316;
         }
 
-        /* ── Pagination ── */
+        /* ─── Pagination ─── */
         .pagination {
             display: flex;
             justify-content: center;
@@ -351,7 +355,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             letter-spacing: 0.15em;
         }
 
-        /* ── Alert ── */
+        /* ─── Alert ─── */
         .alert-bar {
             padding: 12px 18px;
             border-radius: 14px;
@@ -374,7 +378,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border: 1px solid rgba(239, 68, 68, 0.2);
             color: #ef4444;
         }
-    </style>
+</style>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -430,7 +434,6 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                 <?= htmlspecialchars($delete_msg) ?>
             </div>
         <?php endif; ?>
-
         <!-- TABS -->
         <div class="manage-tabs mb-6 max-w-sm">
             <a href="?tab=video<?= isset($_GET['csrf_token']) ? '&csrf_token=' . urlencode($_GET['csrf_token']) : '' ?>"
@@ -557,15 +560,12 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                 <?php endfor; ?>
             </div>
         <?php endif; ?>
-
     </main>
 
     <?php include '../partials/footer.php'; ?>
-
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <script>
-        lucide.createIcons();
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script>        lucide.createIcons();
 
         function confirmHapus(event, title, type) {
             event.preventDefault();
@@ -602,7 +602,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
             return false;
         }
-    </script>
+</script>
 </body>
 
 </html>

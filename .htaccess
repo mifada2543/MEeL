@@ -7,29 +7,7 @@ DirectoryIndex index.php index.html
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType text/css "access plus 30 days"
-    ExpiresByType application/javascript "access plus 30 days"
-    ExpiresByType text/javascript "access plus 30 days"
-    ExpiresByType image/jpeg "access plus 30 days"
-    ExpiresByType image/png "access plus 30 days"
-    ExpiresByType image/webp "access plus 30 days"
-    ExpiresByType image/gif "access plus 30 days"
-    ExpiresByType image/svg+xml "access plus 30 days"
-    ExpiresByType audio/ogg "access plus 30 days"
-    ExpiresByType audio/mpeg "access plus 30 days"
-    ExpiresByType audio/mp4 "access plus 30 days"
-    ExpiresByType audio/flac "access plus 30 days"
-</IfModule>
-
-<IfModule mod_headers.c>
-    <FilesMatch "\.(css|js|jpg|jpeg|png|webp|gif|svg|ogg|mp3|m4a|flac)$">
-        Header set Cache-Control "public, max-age=2592000, immutable"
-    </FilesMatch>
-</IfModule>
-
-<FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|cookies\.txt|auth\.php)$">
+<FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|settings\.php|settings\.example\.php|cookies\.txt|auth\.php)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -38,3 +16,11 @@ DirectoryIndex index.php index.html
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# ── PWA: /sw.js disajikan dari generator PHP (precache dinamis dari manifest.php) ──
+# sw.js.php menghitung daftar precache + SW_VERSION otomatis, jadi menambah
+# folder modul CSS baru tidak perlu menyentuh service worker manual.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^sw\.js$ sw.js.php [L]
+</IfModule>

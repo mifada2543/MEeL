@@ -35,6 +35,5 @@ if ($data && $data->num_rows > 0):
     <?php endif;
 endif;
 ?>
-<script>
-lucide.createIcons();
+<script>lucide.createIcons();
 </script>

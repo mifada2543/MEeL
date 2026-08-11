@@ -1,5 +1,4 @@
 <?php
-
 class MediaInteraction {
     private \mysqli $conn;
     private int $user_id;
@@ -11,13 +10,8 @@ class MediaInteraction {
         $this->user_id = (int)$session_user_id;
     }
 
-    // ============================================================
     // LIKE / DISLIKE FUNCTIONALITY
-    // ============================================================
-
     /**
-     * Toggle like/dislike untuk music atau video
-     * 
      * @param int $media_id ID dari music atau video
      * @param string $media_type 'music' atau 'video'
      * @param string $like_type 'like' atau 'dislike'
@@ -55,26 +49,14 @@ class MediaInteraction {
         }
     }
 
-    /**
-     * Get status interaksi user saat ini
-     * 
-     * @param int $media_id
-     * @param string $media_type
-     * @return array|null
-     */
+    /* @param int $media_id; @param string $media_type; @return array|null */
     public function getUserInteractionStatus(int $media_id, string $media_type): ?string {
         $col = ($media_type === 'music') ? 'music_id' : 'video_id';
         $existing = $this->getExistingInteraction($col, $media_id);
         return $existing ? $existing['TYPE'] : null;
     }
 
-    /**
-     * Get likes/dislikes count
-     * 
-     * @param string $table
-     * @param int $media_id
-     * @return array
-     */
+    /* @param string $table; @param int $media_id; @return array */
     public function getLikesCount(string $table, int $media_id): array {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM $table WHERE id = ?");
         $stmt->bind_param("i", $media_id);
@@ -89,16 +71,8 @@ class MediaInteraction {
         ];
     }
 
-    // ============================================================
     // COMMENT FUNCTIONALITY
-    // ============================================================
-
-    /**
-     * Delete comment dengan ownership check
-     * 
-     * @param int $comment_id
-     * @return array Status response
-     */
+    /* @param int $comment_id; @return array Status response */
     public function deleteComment(int $comment_id): array {
         // Validasi
         if (!$this->validateUser()) {
@@ -110,13 +84,48 @@ class MediaInteraction {
         }
 
         try {
-            // Ownership check: hanya bisa delete komentar milik sendiri
-            $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ? AND user_id = ?");
+            // Ambil kepemilikan komentar + media tempat komentar berada
+            $stmt = $this->conn->prepare("SELECT user_id, video_id, music_id FROM comments WHERE id = ?");
             if (!$stmt) {
                 throw new RuntimeException($this->conn->error);
             }
 
-            $stmt->bind_param("ii", $comment_id, $this->user_id);
+            $stmt->bind_param("i", $comment_id);
+            $stmt->execute();
+            $comment = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if (!$comment) {
+                return $this->getResponse(false, 'Komentar tidak ditemukan', 404);
+            }
+
+            // Otorisasi: pemilik komentar ATAU uploader media ATAU admin
+            $is_owner    = ((int)$comment['user_id'] === $this->user_id);
+            $is_uploader = false;
+            $is_admin    = false;
+
+            if (!$is_owner) {
+                $is_uploader = $this->isMediaUploader(
+                    (int)($comment['video_id'] ?? 0),
+                    (int)($comment['music_id'] ?? 0)
+                );
+            }
+
+            if (!$is_owner && !$is_uploader) {
+                $is_admin = $this->isAdmin();
+            }
+
+            if (!$is_owner && !$is_uploader && !$is_admin) {
+                return $this->getResponse(false, 'Komentar tidak ditemukan atau Anda tidak berwenang', 404);
+            }
+
+            // Hapus komentar (reply ikut terhapus via ON DELETE CASCADE)
+            $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+
+            $stmt->bind_param("i", $comment_id);
 
             if (!$stmt->execute()) {
                 throw new RuntimeException($this->conn->error);
@@ -136,9 +145,54 @@ class MediaInteraction {
         }
     }
 
-    // ============================================================
     // PRIVATE HELPER FUNCTIONS
-    // ============================================================
+    /**
+     * @param int|null $video_id ID video tempat komentar (0/null = tidak ada)
+     * @param int|null $music_id ID music tempat komentar (0/null = tidak ada)
+     * @return bool True jika user ini adalah uploader media tsb
+     */
+    private function isMediaUploader(?int $video_id, ?int $music_id): bool
+    {
+        if ($video_id) {
+            $stmt = $this->conn->prepare("SELECT user_id FROM video WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+            $stmt->bind_param("i", $video_id);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $row && (int)$row['user_id'] === $this->user_id;
+        }
+
+        if ($music_id) {
+            $stmt = $this->conn->prepare("SELECT user_id FROM music WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+            $stmt->bind_param("i", $music_id);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $row && (int)$row['user_id'] === $this->user_id;
+        }
+
+        return false;
+    }
+
+    /* @return bool True jika user ini admin */
+    private function isAdmin(): bool
+    {
+        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ?");
+        if (!$stmt) {
+            throw new RuntimeException($this->conn->error);
+        }
+        $stmt->bind_param("i", $this->user_id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return ($row && $row['role'] === 'admin');
+    }
 
     private function validateUser(): bool {
         return $this->user_id > 0;
@@ -236,10 +290,7 @@ class MediaInteraction {
         ];
     }
 
-    // ============================================================
     // GETTERS
-    // ============================================================
-
     public function getError(): string {
         return $this->error;
     }

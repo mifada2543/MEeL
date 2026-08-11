@@ -3,9 +3,12 @@
  * modules/core/bootstrap.php — Bootstrap Terpusat MEeL-HUB
  *
  * Satu titik masuk untuk:
- *   - Environment detection & display_errors
+ *   - Environment detection (MEEL_ENV) & display_errors
  *   - Error logging konfigurasi
- *   - Security headers konsisten
+ *   - Definisi APP_DEBUG (mengikuti MEEL_ENV)
+ *
+ * Catatan: HTTP security headers TIDAK di-set di sini — itu tanggung jawab
+ * auth/config.php (X-Frame-Options, CSP, HSTS, dll).
  *
  * Cara pakai:
  *   Di setiap file entry-point (index.php, watch.php, dll), ganti:
@@ -17,7 +20,7 @@
  * @package MEeL\Core
  */
 
-// ─── Environment Detection ───────────────────────────────────────────────────
+// ─── Environment Detection ───
 // MEEL_ENV: 'production' | 'development' | 'maintenance'
 // Default ke production jika tidak didefinisikan di auth/config.php
 if (!defined('MEEL_ENV')) {
@@ -27,7 +30,18 @@ if (!defined('MEEL_ENV')) {
     define('MEEL_ENV', $is_local ? 'development' : 'production');
 }
 
-// ─── Error Reporting ─────────────────────────────────────────────────────────
+// ─── APP_DEBUG (Debug Logging Guard) ───
+// Guard untuk error_log di controllers/modules, pola pemakaian:
+// if (defined('APP_DEBUG') && APP_DEBUG) { error_log(...); }
+// Default otomatis: true di development, false di produksi.
+// Override manual bisa dilakukan di auth/settings.php (sebelum bootstrap jalan):
+// define('APP_DEBUG', true); // paksa aktif (debugging)
+// define('APP_DEBUG', false); // paksa nonaktif
+if (!defined('APP_DEBUG')) {
+    define('APP_DEBUG', MEEL_ENV === 'development');
+}
+
+// ─── Error Reporting ───
 error_reporting(E_ALL);
 
 switch (MEEL_ENV) {
@@ -55,15 +69,18 @@ switch (MEEL_ENV) {
         break;
 }
 
-// ─── Base URL Constant Helper ────────────────────────────────────────────────
-// Pastikan MEEL_BASE_URL terdefinisi (fallback jika config.php belum di-load)
+// ─── Base URL Constant Helper ───
+// Pastikan MEEL_BASE_URL terdefinisi (fallback jika config.php belum di-load).
+// Perhitungan dipusatkan di modules/core/base_url.php (root proyek relatif
+// terhadap DOCUMENT_ROOT), BUKAN dari dirname(SCRIPT_NAME) — karena SCRIPT_NAME
+// ikut direktori halaman aktif (mis. /MEeL/admin/index.php → /MEeL/admin),
+// sehingga base_url() yang dihasilkan salah untuk halaman di subdirektori.
 if (!defined('MEEL_BASE_URL') && isset($_SERVER['SCRIPT_NAME'])) {
-    $doc_root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
-    $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-    define('MEEL_BASE_URL', rtrim($script_dir, '/'));
+    require_once __DIR__ . '/base_url.php';
+    define('MEEL_BASE_URL', meel_base_url_path());
 }
 
-// ─── Timezone ────────────────────────────────────────────────────────────────
+// ─── Timezone ───
 if (!ini_get('date.timezone')) {
     date_default_timezone_set('Asia/Jakarta');
 }

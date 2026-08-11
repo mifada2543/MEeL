@@ -1,26 +1,4 @@
 <?php
-/**
- * controllers/api/like.php
- * 
- * POST /api/like — Toggle like/dislike untuk video atau music.
- *
- * Request:
- *   - id         (int, required) ID media
- *   - media_type (string, required) 'video' | 'music'
- *   - type       (string, required) 'like' | 'dislike'
- *   - csrf_token (string, required) CSRF token dari session
- *
- * Response (HTML partial):
- *   - Hanya mengembalikan HTML untuk #like-dislike-container (HTMX swap)
- *   - HTTP 403 jika CSRF invalid atau user tidak aktif/guest
- *   - HTTP 401 jika user belum login
- *
- * Dependencies:
- *   - helpers.php (verify_csrf_token)
- *   - auth/config.php ($conn, $_SESSION)
- *   - modules/media/MediaInteraction.php
- */
-
 require_once '../../modules/core/helpers.php';
 // Pastikan session sudah dimulai jika menggunakan $_SESSION
 if (session_status() === PHP_SESSION_NONE) {
@@ -32,13 +10,13 @@ include '../../auth/config.php';
 include '../../modules/core/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
-// 🔒 FIX CSRF: Verifikasi token untuk AJAX POST
+// Verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     exit;
 }
 
-// ⚡ RATE LIMIT: 30 likes per menit per user
+// RATE LIMIT: 30 likes per menit per user
 $rateKey = 'user_' . ($_SESSION['user_id'] ?? 0);
 $rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
 $rateCheck = RateLimiter::check($rateKey, 'like', $rateRole);
@@ -69,7 +47,7 @@ $id         = isset($_POST['id'])         ? intval($_POST['id'])       : 0;
 $media_type = isset($_POST['media_type']) ? trim($_POST['media_type']) : '';
 $type       = isset($_POST['type'])       ? trim($_POST['type'])       : '';
 
-error_log("LIKE.PHP - POST: " . json_encode(['id' => $id, 'media_type' => $media_type, 'type' => $type]));
+if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - POST: " . json_encode(['id' => $id, 'media_type' => $media_type, 'type' => $type])); }
 
 $user_id = $_SESSION['user_id'] ?? null;
 
@@ -80,9 +58,8 @@ if ($user_id) {
     $stmt_user->execute();
     $user = $stmt_user->get_result()->fetch_assoc();
 
-    // Jika user tidak aktif atau perannya adalah guest, batalkan proses (Forbidden)
     if (!$user || $user['is_active'] != 1 || $user['role'] === 'guest') {
-        error_log("LIKE.PHP - BLOCKED: User ID $user_id is inactive or guest.");
+        if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - BLOCKED: User ID $user_id is inactive or guest."); }
         http_response_code(403); // HTTP 403 Forbidden
         exit;
     }
@@ -98,7 +75,7 @@ $result = $interaction->toggleLike($id, $media_type, $type);
 
 // Handle response
 if (!$result['success']) {
-    error_log("LIKE.PHP - ERROR: {$result['message']} (Code: {$result['http_code']})");
+    if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - ERROR: {$result['message']} (Code: {$result['http_code']})"); }
     http_response_code($result['http_code']);
     exit;
 }
@@ -109,7 +86,6 @@ $likes            = $result['data']['likes'];
 $dislikes         = $result['data']['dislikes'];
 $table = ($media_type === 'music') ? 'music' : 'video';
 
-// Konfigurasi style Tailwind yang ditulis penuh (Hardcoded class names)
 $like_active_class = ($media_type === 'music')
     ? 'bg-orange-500/15 border-orange-500/30 text-orange-400'
     : 'bg-red-500/15 border-red-500/30 text-red-400';
@@ -120,7 +96,6 @@ $dislike_active_class = ($media_type === 'music')
 
 $inactive_class = 'bg-gray-900/40 border-gray-800 text-gray-400 hover:bg-gray-800/60 hover:text-gray-300';
 ?>
-
 <div id="like-dislike-container" class="flex items-center gap-2 mt-4 sm:mt-0" hx-get-trigger="load">
     <button
         hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"

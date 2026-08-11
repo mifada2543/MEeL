@@ -38,7 +38,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     <link rel="icon" type="image/png" href="assets/MEeL.png">
     <link rel="stylesheet" href="assets/css/introduction.css">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
+    <script src="assets/js/compatibilitas/lucide.js"></script>
 </head>
 
 <body>
@@ -200,6 +200,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                             ['F',         'Layar penuh'],
                             ['C',         'Toggle caption'],
                             ['L',         'Toggle loop'],
+                            ['A',         'Toggle auto-next'],
                         ];
                         foreach ($shortcuts_video as $s): ?>
                             <div class="shortcut-item">
@@ -330,10 +331,9 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         <img id="lightbox-img" src="" alt="Preview" onclick="event.stopPropagation()">
     </div>
 
-    <script>
-        lucide.createIcons();
+    <script>        lucide.createIcons();
 
-        // ── Mobile sidebar toggle ──
+        // ─── Mobile sidebar toggle ───
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -343,7 +343,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             hamburger.classList.toggle('open');
         }
 
-        // ── Close sidebar on nav click (mobile) ──
+        // ─── Close sidebar on nav click (mobile) ───
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
@@ -352,7 +352,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             });
         });
 
-        // ── Reading progress bar ──
+        // ─── Reading progress bar ───
         const mainEl = document.querySelector('.main');
         const progressBar = document.getElementById('reading-progress');
 
@@ -424,7 +424,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeLightbox();
         });
-    </script>
+</script>
 </body>
 
 </html>

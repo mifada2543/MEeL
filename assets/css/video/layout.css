@@ -1,0 +1,38 @@
+/* layout.css — Tata letak struktural halaman video */
+#main-video-wrapper,
+#main-video-wrapper .plyr,
+#main-video-wrapper .plyr__video-wrapper {
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+@media (min-width: 640px) {
+  #main-video-wrapper,
+  #main-video-wrapper .plyr,
+  #main-video-wrapper .plyr__video-wrapper {
+    border-radius: 2rem !important;
+  }
+}
+#video-glow-container {
+  position: relative;
+  width: 100%;
+}
+#video-glow-container #main-video-wrapper {
+  position: relative;
+  z-index: 2;
+}
+#recommendation-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 10;
+}
+#meel-reconnect-indicator {
+  border-radius: inherit !important;
+  z-index: 100;
+}
+#search-results-overlay {
+  scrollbar-width: thin;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+#search-results-overlay:empty {
+  display: none;
+}
