@@ -222,7 +222,7 @@ readlink books/upload
 **Gejala symlink broken** (storage tidak ter-mount atau path berubah):
 
 ```
-books/upload: broken symbolic link to /media/muhammaddaffa/MEeL/media/books/upload
+books/upload: broken symbolic link to /media/[devuser]/MEeL/media/books/upload
 ```
 
 #### 4. Buat ulang symlink ke path Anda

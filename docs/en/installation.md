@@ -220,7 +220,7 @@ readlink books/upload
 **Symptom of a broken symlink** (storage not mounted or path changed):
 
 ```
-books/upload: broken symbolic link to /media/muhammaddaffa/MEeL/media/books/upload
+books/upload: broken symbolic link to /media/[devuser]/MEeL/media/books/upload
 ```
 
 #### 4. Recreate the symlinks for your path
