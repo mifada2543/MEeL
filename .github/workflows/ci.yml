@@ -93,8 +93,11 @@ jobs:
       - name: Run Functional Tests
         run: |
           if [ -f tests/functional_test.php ]; then
-            php tests/functional_test.php
-            rc=$?
+            # Catat rc via || (bukan baris terpisah) karena run: di GitHub Actions
+            # berjalan dengan `bash -e` — perintah yang return 1 langsung menghentikan
+            # shell sebelum rc=$? sempat dieksekusi; || membuatnya exempt dari set -e.
+            rc=0
+            php tests/functional_test.php || rc=$?
             # 1 = lulus dengan peringatan (storage/HDD belum ter-mount, dll.) → tetap hijau
             if [ "$rc" -gt 1 ]; then exit "$rc"; fi
             if [ "$rc" -eq 1 ]; then echo "⚠️  Functional test passed with warnings (exit 1)"; fi
@@ -129,8 +132,11 @@ jobs:
       - name: Run Security Tests
         run: |
           if [ -f tests/security_test.php ]; then
-            php tests/security_test.php
-            rc=$?
+            # Catat rc via || (bukan baris terpisah) karena run: di GitHub Actions
+            # berjalan dengan `bash -e` — perintah yang return 1 langsung menghentikan
+            # shell sebelum rc=$? sempat dieksekusi; || membuatnya exempt dari set -e.
+            rc=0
+            php tests/security_test.php || rc=$?
             # 1 = lulus dengan peringatan (storage/HDD belum ter-mount, dll.) → tetap hijau
             if [ "$rc" -gt 1 ]; then exit "$rc"; fi
             if [ "$rc" -eq 1 ]; then echo "⚠️  Security test passed with warnings (exit 1)"; fi
