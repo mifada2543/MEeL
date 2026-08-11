@@ -38,10 +38,12 @@ class ChessRematchIntegrationTest extends ChessTestCase
     {
         $username = 'rm_test_' . substr(uniqid('', true), -8);
         $lastActivity = date('Y-m-d H:i:s', $lastActivityTs);
+        // Kolom password NOT NULL di schema.sql — wajib diisi (nilai acak, test-only)
+        $password = bin2hex(random_bytes(16));
         $stmt = $this->conn->prepare(
-            "INSERT INTO users (username, last_activity) VALUES (?, ?)"
+            "INSERT INTO users (username, password, last_activity) VALUES (?, ?, ?)"
         );
-        $stmt->bind_param("ss", $username, $lastActivity);
+        $stmt->bind_param("sss", $username, $password, $lastActivity);
         $stmt->execute();
         $id = (int)$stmt->insert_id;
         $stmt->close();

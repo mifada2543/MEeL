@@ -676,6 +676,110 @@ function testSsrfAndPrivateDrive(): void {
     }
 }
 
+// TEST 14: FATAL-BUG REGRESSION GUARD
+// Guard statis untuk dua bug fatal yang pernah terjadi:
+//   1) INSERT guest ke tabel users tanpa kolom `password` (NOT NULL) →
+//      Uncaught mysqli_sql_exception di MySQL/MariaDB strict mode.
+//   2) Query chart "7-Day Activity" memakai v.views/m.views yang tidak
+//      eksis di subquery UNION (alias t) → SQL error, admin dashboard crash.
+function testFatalBugRegression(): void {
+    print_header('TEST 14: Fatal-Bug Regression Guard');
+
+    // ─── 14a: Guest INSERT di activity_logger.php harus mengisi kolom password ───
+    // schema.sql: `password varchar(255) NOT NULL` — INSERT tanpa nilai langsung
+    // fatal di strict mode. Password guest diisi nilai acak (tidak pernah dipakai
+    // login), bukan dibiarkan kosong.
+    $alFile = PROJECT_ROOT . '/modules/core/activity_logger.php';
+    if (!file_exists($alFile)) {
+        record('modules/core/activity_logger.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $al = (string) file_get_contents($alFile);
+
+        if (strpos($al, 'INSERT INTO users (username, password, role') !== false) {
+            record('activity_logger: INSERT guest menyertakan kolom password', true);
+        } else {
+            record('activity_logger: INSERT guest TIDAK mengisi kolom password — fatal di strict mode!', false, false,
+                'Tambahkan kolom password + bind_param, isi dengan random_bytes()');
+        }
+
+        if (strpos($al, 'random_bytes') !== false && strpos($al, '$guest_pass') !== false) {
+            record('activity_logger: password guest acak (random_bytes) — aman', true);
+        } else {
+            record('activity_logger: password guest tidak di-generate acak', false, false,
+                'Kolom password NOT NULL tanpa nilai acak = error strict mode');
+        }
+
+        if (strpos($al, 'ON DUPLICATE KEY UPDATE') !== false) {
+            record('activity_logger: guest upsert (ON DUPLICATE KEY UPDATE) OK', true);
+        } else {
+            record('activity_logger: ON DUPLICATE KEY UPDATE TIDAK terdeteksi', true, true,
+                'Guest row bisa menumpuk setiap request');
+        }
+    }
+
+    // ─── 14a-2: SEMUA call site INSERT INTO users wajib mengisi kolom password ───
+    // Pemindaian menyeluruh (termasuk tests/) — bukan hanya activity_logger.php,
+    // agar call site baru yang lupa kolom `password` (NOT NULL) langsung tertangkap.
+    $insertSites = [];
+    $ri = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(PROJECT_ROOT, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+    foreach ($ri as $f) {
+        if ($f->getExtension() !== 'php') continue;
+        $p = $f->getPathname();
+        foreach (['/vendor/', '/node_modules/', '/.git/', '/assets/dict/', '/temp/'] as $ex) {
+            if (strpos($p, $ex) !== false) continue 2;
+        }
+        $c = (string) file_get_contents($p);
+        if (preg_match_all('/INSERT\s+INTO\s+users\s*\(([^)]*)\)/i', $c, $ms)) {
+            foreach ($ms[1] as $cols) {
+                $insertSites[] = [
+                    str_replace(PROJECT_ROOT . '/', '', $p),
+                    (bool) preg_match('/\bpassword\b/i', $cols),
+                ];
+            }
+        }
+    }
+
+    if (empty($insertSites)) {
+        record('Tidak ada INSERT INTO users ditemukan', true, true);
+    } else {
+        $bad = array_filter($insertSites, fn($s) => !$s[1]);
+        if (empty($bad)) {
+            record(count($insertSites) . ' call site INSERT INTO users — semua mengisi kolom password', true);
+        } else {
+            foreach ($bad as $b) {
+                record("{$b[0]} — INSERT INTO users TANPA kolom password (fatal di strict mode!)", false, false,
+                    'Tambahkan kolom password (nilai acak untuk guest/test)');
+            }
+        }
+    }
+
+    // ─── 14b: Query chart 7-Day Activity di admin_data.php ───
+    // Subquery UNION video+music diberi alias t; query luar harus pakai
+    // COALESCE(SUM(views), 0) — bukan v.views/m.views (kolom tidak eksis).
+    $adFile = PROJECT_ROOT . '/controllers/admin/admin_data.php';
+    if (!file_exists($adFile)) {
+        record('controllers/admin/admin_data.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $ad = (string) file_get_contents($adFile);
+
+        if (strpos($ad, 'COALESCE(SUM(views), 0)') !== false && strpos($ad, ') AS t') !== false) {
+            record('admin_data: chart 7-Day pakai COALESCE(SUM(views),0) dari subquery AS t', true);
+        } else {
+            record('admin_data: chart 7-Day TIDAK memakai COALESCE(SUM(views),0)/AS t', false, false,
+                'Query lama gagal: Unknown column v.views in field list');
+        }
+
+        if (strpos($ad, 'v.views') === false && strpos($ad, 'm.views') === false) {
+            record('admin_data: tidak ada referensi v.views/m.views (pola bug lama)', true);
+        } else {
+            record('admin_data: masih ada referensi v.views/m.views — query rusak!', false, false,
+                'Ganti jadi COALESCE(SUM(views), 0) FROM (...) AS t');
+        }
+    }
+}
+
 // MAIN
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
@@ -699,6 +803,7 @@ function run(): int {
     testPasswordPolicy();
     testFileIntegrity();
     testSsrfAndPrivateDrive();
+    testFatalBugRegression();
 
     // ─── SUMMARY ───
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
