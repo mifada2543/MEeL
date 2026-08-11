@@ -1,9 +1,17 @@
 /* misc.js — window.toggleLoop, stub toggleVisualizer/toggleEqualizer */
 window.toggleLoop = function () {
-  const e = !("true" === localStorage.getItem("meel_global_loop"));
-  (localStorage.setItem("meel_global_loop", String(e)),
-    player && ((player.loop = e), saveAudioState()),
-    updateLoopUI());
+  // Basis toggle = state NYATA (audio.loop), bukan localStorage — kalau
+  // keduanya sempat divergen (race lama), toggle tetap konsisten dengan
+  // perilaku yang sedang berjalan. Semua representasi di-update atomik
+  // lewat engine.setLoop() (media.loop + Plyr config + localStorage).
+  const engine = window.meelGetAudioEngine ? window.meelGetAudioEngine() : null;
+  const e = engine
+    ? !engine.audio.loop
+    : !("true" === localStorage.getItem("meel_global_loop"));
+  if (engine) engine.setLoop(e);
+  else localStorage.setItem("meel_global_loop", String(e));
+  saveAudioState();
+  updateLoopUI();
 };
 window.toggleVisualizer = function () {};
 window.toggleEqualizer = function () {};

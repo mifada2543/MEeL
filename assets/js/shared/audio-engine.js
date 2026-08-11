@@ -286,6 +286,24 @@
         return analyser;
       },
 
+      // ── LOOP: satu-satunya titik untuk mengubah state loop ──
+      // Menulis SEMUA representasi loop secara atomik supaya tidak pernah
+      // divergen: media.loop (perilaku nyata), player.loop (setter Plyr →
+      // config.loop.active + media.loop), dan localStorage.meel_global_loop
+      // (persistensi lintas view). Sebelumnya loop di-toggle dari index
+      // menulis media.loop LANGSUNG (bypass setter Plyr) sehingga
+      // config.loop.active Plyr bisa stale — inilah sumber desync visual
+      // loop index<->watch.
+      setLoop: function (active) {
+        active = !!active;
+        audio.loop = active;
+        if (player) player.loop = active;
+        try {
+          localStorage.setItem("meel_global_loop", String(active));
+        } catch (e) {}
+        return active;
+      },
+
       getCurrentTrackId: function () {
         return currentTrackId;
       },
@@ -328,6 +346,11 @@
         audio.pause();
         audio.src = meta.streamUrl || "stream.php?id=" + id;
         audio.loop = !!meta.isLooping;
+        // Sinkronkan Plyr config.loop.active juga (bukan cuma media.loop) —
+        // supaya state loop engine self-consistent untuk pemanggil mana pun,
+        // tanpa bergantung pada urutan setLoop() di sisi halaman. Persistensi
+        // localStorage tetap urusan pemanggil (lihat setLoop()).
+        if (player) player.loop = !!meta.isLooping;
         audio.load();
         var startTime = opts.startTime || 0;
         function onReady() {

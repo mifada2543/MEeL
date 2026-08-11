@@ -62,6 +62,11 @@ function loadAudio(state, autoplay) {
     loopVal = _gLoop;
   }
   isMiniLoopIndexActive = loopVal;
+  // Terapkan loop SEKARANG lewat setLoop — kalau loadTrack() di bawah NO-OP
+  // (track sama, gapless), media.loop tidak ikut di-update oleh loadTrack;
+  // setLoop menjamin media.loop + Plyr config + localStorage selalu sinkron
+  // dengan pilihan user, apa pun jalur yang memuat track.
+  engine.setLoop(loopVal);
 
   // KUNCI GAPLESS: kalau trackId sama dengan yang sedang diputar engine
   // (mis. balik dari watch.php ke index.php pada lagu yang sama), ini
@@ -197,6 +202,10 @@ function initMiniPlayerIndex() {
   }
   isMiniLoopIndexActive = localStorage.getItem("meel_global_loop") === "true";
   updateMiniLoopUIIndex();
+  // Terapkan loop ke engine juga (bukan hanya visual) — media.loop bisa beda
+  // dari localStorage jika track dimuat tanpa lewat setLoop. Atomik & aman:
+  // semua jalur sekarang menulis loop lewat engine.setLoop().
+  engine.setLoop(isMiniLoopIndexActive);
   if (engine.getCurrentTrackId() != null && currentState) {
     isMiniPlayerIndexActive = true;
     updateIndexUI();
@@ -267,7 +276,10 @@ function initMiniPlayerIndex() {
     } else {
       isMiniLoopIndexActive = globalLoop;
     }
-    if (audioPlayer) audioPlayer.loop = isMiniLoopIndexActive;
+    // Terapkan lewat setLoop (media.loop + Plyr config + localStorage) supaya
+    // semua representasi loop konsisten setelah restore state sesi — jangan
+    // menulis media.loop langsung (bypass Plyr config → desync visual).
+    engine.setLoop(isMiniLoopIndexActive);
     updateMiniLoopUIIndex();
     const bar = getMiniPlayerIndexEl();
     if (bar) bar.classList.add("active");
@@ -466,8 +478,13 @@ function expandPlayerFromMiniPlayer() {
 let isMiniLoopIndexActive = localStorage.getItem("meel_global_loop") === "true";
 window.toggleMiniLoopIndex = function () {
   isMiniLoopIndexActive = !isMiniLoopIndexActive;
-  localStorage.setItem("meel_global_loop", String(isMiniLoopIndexActive));
-  if (audioPlayer) audioPlayer.loop = isMiniLoopIndexActive;
+  // Semua representasi loop di-update atomik lewat engine.setLoop()
+  // (media.loop + Plyr config.loop.active + localStorage) — jangan menulis
+  // media.loop langsung: Plyr config bisa stale → visual loop di watch
+  // desync dengan perilaku nyata (bug loop index<->watch).
+  const engine = window.meelGetAudioEngine ? window.meelGetAudioEngine() : null;
+  if (engine) engine.setLoop(isMiniLoopIndexActive);
+  else localStorage.setItem("meel_global_loop", String(isMiniLoopIndexActive));
   updateMiniLoopUIIndex();
   saveIndexState();
 };

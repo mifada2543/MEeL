@@ -535,14 +535,21 @@
       }
       // Sama persis dengan track yang sedang jalan — cuma pindah tampilan.
       // TIDAK reset apa pun, TIDAK munculkan resume-modal, TIDAK re-arm
-      // FLAC timeout. Loop UI tetap disinkronkan ke state player saat ini
-      // (bukan localStorage) karena player TIDAK di-reset.
+      // FLAC timeout. Loop UI disinkronkan dari state loop SEBENARNYA
+      // (media.loop): getter player.loop (Plyr) memang live, tapi setter
+      // Plyr dipanggil dulu supaya config.loop.active-nya ikut sinkron —
+      // toggle dari index menulis media.loop langsung (bypass Plyr), jadi
+      // tanpa ini config Plyr bisa stale dan visual/perilaku desync.
+      player.loop = engine.audio.loop;
       _applyLoopUI(player.loop);
       return;
     }
 
     // ── Dari sini HANYA jalan untuk track yang BENAR-BENAR baru ──
-    player.loop = savedLoop;
+    // loadTrack() sudah men-set media.loop dari isLooping; setLoop membuat
+    // Plyr config.loop.active + localStorage ikut sinkron secara atomik
+    // (satu-satunya titik ubah state loop di seluruh app).
+    engine.setLoop(savedLoop);
     updateLoopUI();
     if (savedActive) sessionStorage.removeItem("meel_audio_state");
     if (engine.__armLoadingTimeout) engine.__armLoadingTimeout();
