@@ -30,7 +30,7 @@ final class ValidatingProxy
             throw new \RuntimeException('validating proxy script tidak ditemukan.');
         }
 
-        $phpBin = defined('PHP_BINARY') && PHP_BINARY !== '' ? PHP_BINARY : 'php';
+        $phpBin = self::resolvePhpBinary();
         $cmd = escapeshellarg($phpBin) . ' ' . escapeshellarg($script);
 
         $descriptor = [
@@ -70,6 +70,57 @@ final class ValidatingProxy
 
         // stderr non-blocking supaya tidak pernah memblokir (drain opsional)
         stream_set_blocking($this->pipes[2], false);
+    }
+
+    /**
+     * Tentukan binary PHP CLI yang dipakai untuk spawn proxy.
+     *
+     * Di SAPI CLI, PHP_BINARY benar (mis. /opt/lampp/bin/php). Di mod_php
+     * (Apache) PHP_BINARY sering KOSONG, dan PATH milik Apache biasanya tidak
+     * menyertakan direktori php (mis. /opt/lampp/bin) — fallback 'php' mentah
+     * akan gagal dengan "php: not found" (exit 127), membuat handshake timeout
+     * dan download ditolak (fail-closed) padahal environment sehat.
+     *
+     * Strategi: kandidat dicoba satu per satu, dan setiap kandidat DIVERIFIKASI
+     * dengan menjalankannya (`php -r 'echo PHP_VERSION;'`) — bukan menebak dari
+     * nama file. Ini menangani PHP_BINARY yang menunjuk ke binary non-CLI
+     * (httpd, php-fpm, php-cgi) sekaligus memastikan binary yang dipilih benar-
+     * benar bisa mengeksekusi PHP.
+     */
+    public static function resolvePhpBinary(): string
+    {
+        $candidates = [];
+
+        // 1) PHP_BINARY — benar saat CLI; bisa menunjuk ke binary non-CLI di
+        //    SAPI lain (mod_php/FPM/CGI) — verifikasi nyata di bawah menolaknya.
+        if (defined('PHP_BINARY') && PHP_BINARY !== '') {
+            $candidates[] = PHP_BINARY;
+        }
+        // 2) Lokasi umum php (XAMPP/LAMPP, distro) — PATH Apache sering tidak
+        //    menyertakan direktori php sehingga 'php' mentah tidak ditemukan.
+        foreach (['/opt/lampp/bin/php', '/usr/bin/php', '/usr/local/bin/php'] as $c) {
+            $candidates[] = $c;
+        }
+        // 3) Fallback terakhir: biarkan PATH shell mencarinya.
+        $candidates[] = 'php';
+
+        foreach ($candidates as $candidate) {
+            if ($candidate === 'php') {
+                return 'php';
+            }
+            if (!is_executable($candidate)) {
+                continue;
+            }
+            // VERIFIKASI NYATA: binary harus mengeksekusi PHP (bukan httpd,
+            // php-fpm, atau binary lain yang kebetulan executable).
+            $out = [];
+            $rc  = 0;
+            @exec(escapeshellarg($candidate) . ' -r "echo PHP_VERSION;" 2>&1', $out, $rc);
+            if ($rc === 0 && preg_match('/^\d+\.\d+\.\d+$/', trim(implode('', $out)))) {
+                return $candidate;
+            }
+        }
+        return 'php';
     }
 
     /** URL proxy yang harus dipakai yt-dlp (--proxy). */
