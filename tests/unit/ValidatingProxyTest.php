@@ -198,6 +198,31 @@ class ValidatingProxyTest extends TestCase
         $this->assertStringContainsString('Example Domain', $response);
     }
 
+    /**
+     * resolvePhpBinary() harus menghasilkan binary PHP yang benar-benar bisa
+     * dijalankan. Regresi untuk bug produksi: di mod_php (Apache) PHP_BINARY
+     * kosong dan PATH Apache tidak menyertakan direktori php (mis.
+     * /opt/lampp/bin) — fallback 'php' mentah gagal dengan "php: not found"
+     * (exit 127), membuat proxy tidak bisa start dan upload ditolak.
+     */
+    public function testResolvePhpBinaryReturnsExecutablePhp(): void
+    {
+        $bin = ValidatingProxy::resolvePhpBinary();
+        $this->assertNotSame('', $bin, 'resolvePhpBinary() tidak boleh kosong');
+
+        // Jika path absolut — harus executable. Fallback 'php' (via PATH shell)
+        // hanya valid di lingkungan CLI, bukan di Apache.
+        if (str_contains($bin, '/')) {
+            $this->assertFileExists($bin, "Binary PHP harus ada: $bin");
+            $this->assertTrue(is_executable($bin), "Binary PHP harus executable: $bin");
+        }
+
+        // Bukti nyata: binary harus menjalankan PHP.
+        exec(escapeshellarg($bin) . ' -r "echo PHP_VERSION;" 2>&1', $out, $rc);
+        $this->assertSame(0, $rc, "Binary PHP $bin harus bisa menjalankan php -r");
+        $this->assertNotEmpty(trim(implode('', $out)), 'Output PHP_VERSION tidak boleh kosong');
+    }
+
     public function testProxyUrlIsLoopbackOnly(): void
     {
         $proxy = $this->startProxy();
