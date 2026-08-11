@@ -1,10 +1,10 @@
 <?php
 require_once __DIR__ . '/../modules/core/base_url.php';
+require_once __DIR__ . '/../modules/core/helpers/session.php';
 $meel_base = meel_base_url_path();
 
 http_response_code(503);
-session_name('meel');
-session_start();
+meel_boot_session();
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");

@@ -1,6 +1,6 @@
 <?php
-session_name('meel');
-session_start();
+require_once '../modules/core/helpers.php';
+meel_boot_session();
 include '../auth/config.php';
 
 if (!isset($_SESSION['user_id'])) die('Silakan login terlebih dahulu.');

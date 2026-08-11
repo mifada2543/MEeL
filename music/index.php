@@ -1,7 +1,6 @@
 <?php
 require_once '../modules/core/helpers.php';
-session_name('meel');
-session_start();
+meel_boot_session();
 include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 

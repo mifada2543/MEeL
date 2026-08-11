@@ -1,10 +1,7 @@
 <?php
 require_once '../../modules/core/helpers.php';
-// Pastikan session sudah dimulai jika menggunakan $_SESSION
-if (session_status() === PHP_SESSION_NONE) {
-    session_name('meel');
-    session_start();
-}
+// Session terpusat dengan cookie flags aman (HttpOnly, SameSite=Lax)
+meel_boot_session();
 
 include '../../auth/config.php';
 include '../../modules/core/RateLimiter.php';

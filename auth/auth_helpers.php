@@ -3,20 +3,9 @@ if (!function_exists('auth_boot_session')) {
 
     function auth_boot_session(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            $timeout = 43200; // 12 jam
-            $secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-                || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
-            session_set_cookie_params([
-                'lifetime' => $timeout,
-                'path'     => '/',
-                'secure'   => $secure_cookie,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
-            session_name('meel');
-            session_start();
-        }
+        // Inisialisasi session terpusat (cookie flags aman) — lihat helpers/session.php
+        require_once __DIR__ . '/../modules/core/helpers/session.php';
+        meel_boot_session();
         if (isset($_SESSION['user_id'])) {
             header("Location: ../index.php");
             exit;

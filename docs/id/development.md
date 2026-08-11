@@ -337,6 +337,10 @@ music ──1:N── playlist_tracks
    `is_file()`/`is_dir()`/`is_readable()`/`is_writable()`, cek nilai balik, dan pakai
    helper bersama (trait `FfmpegUtils`, `GarbageCollector::removeFile()`/`removeDirectory()`,
    `meel_write_cache_file()`). Lihat [Konvensi Keamanan Filesystem](modules.md#konvensi-keamanan-filesystem-tanpa-).
+7. **Session Boot Terpusat** — Setiap entry point wajib memanggil `meel_boot_session()`
+   (dari `modules/core/helpers/session.php`) — jangan `session_name()` + `session_start()`
+   manual. Fungsi ini yang menjamin cookie sesi memakai flag `HttpOnly`/`SameSite=Lax`/
+   `Secure` (auto-detect HTTPS) dan timeout 12 jam secara konsisten.
 
 ### File Structure per Modul
 

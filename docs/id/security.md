@@ -157,7 +157,8 @@ final class DriveUserContext {
 ### Session Configuration
 
 ```php
-// auth/config.php
+// modules/core/helpers/session.php — meel_boot_session()
+// (auth/config.php & auth/auth_helpers.php mendelegasikan ke fungsi ini)
 $timeout = 43200;              // 12 jam
 ini_set('session.gc_maxlifetime', $timeout);
 
@@ -182,7 +183,19 @@ session_start();
 | `HttpOnly` | `true` | XSS tidak bisa mencuri session cookie via JavaScript |
 | `SameSite` | `Lax` | Request POST lintas-situs tidak membawa cookie (CSRF layer 1) |
 
-Diterapkan di `auth/config.php` dan `auth/auth_helpers.php` (`auth_boot_session()`).
+Konfigurasi di atas kini **dipusatkan** di `modules/core/helpers/session.php` sebagai fungsi
+`meel_boot_session()` — satu-satunya sumber kebenaran inisialisasi session. Semua entry point
+(index, video, music, auth, controllers/api, err, admin) memanggilnya menggantikan pola lama
+`session_name('meel'); session_start();` yang tersebar di banyak file, sehingga cookie sesi
+dijamin selalu memakai flag aman. Fungsi ini **idempotent** (no-op jika session sudah aktif),
+`auth/config.php` dan `auth_boot_session()` di `auth/auth_helpers.php` kini mendelegasikan
+ke fungsi ini:
+
+```php
+// Cara pakai di entry point baru
+require_once __DIR__ . '/../modules/core/helpers.php';
+meel_boot_session();
+```
 
 ### Path Configuration
 

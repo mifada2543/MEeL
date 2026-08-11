@@ -2,10 +2,7 @@
 define('ACCESS_GRANTED', true);
 require_once '../../modules/core/helpers.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_name('meel');
-    session_start();
-}
+meel_boot_session();
 
 include '../../auth/config.php';
 include '../../modules/core/RateLimiter.php';

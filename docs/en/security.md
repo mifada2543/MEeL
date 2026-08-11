@@ -110,6 +110,8 @@ Documentation about authentication, authorization, and protection systems in MEe
 ### Session Configuration
 
 ```php
+// modules/core/helpers/session.php — meel_boot_session()
+// (auth/config.php & auth/auth_helpers.php delegate to this function)
 $timeout = 43200;              // 12 hours
 ini_set('session.gc_maxlifetime', $timeout);
 
@@ -134,7 +136,19 @@ session_start();
 | `HttpOnly` | `true` | XSS cannot steal the session cookie via JavaScript |
 | `SameSite` | `Lax` | Cross-site POST requests don't carry the cookie (CSRF layer 1) |
 
-Applied in both `auth/config.php` and `auth/auth_helpers.php` (`auth_boot_session()`).
+The configuration above is now **centralized** in `modules/core/helpers/session.php` as the
+`meel_boot_session()` function — the single source of truth for session bootstrapping. Every
+entry point (index, video, music, auth, controllers/api, err, admin) calls it instead of the
+scattered manual `session_name('meel'); session_start();` pattern, so the session cookie is
+guaranteed to always use the hardened flags. The function is **idempotent** (no-op if the
+session is already active); `auth/config.php` and `auth_boot_session()` in
+`auth/auth_helpers.php` now delegate to it:
+
+```php
+// Usage in a new entry point
+require_once __DIR__ . '/../modules/core/helpers.php';
+meel_boot_session();
+```
 
 ### Session Hijacking Prevention
 

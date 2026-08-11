@@ -179,6 +179,10 @@ music ──1:N── playlist_tracks
    `is_readable()`/`is_writable()` guards, check return values, and reuse the shared
    helpers (`FfmpegUtils` trait, `GarbageCollector::removeFile()`/`removeDirectory()`,
    `meel_write_cache_file()`). See the [Filesystem Safety Convention](modules.md#filesystem-safety-convention-no--suppression).
+7. **Centralized Session Boot** — Every entry point must call `meel_boot_session()`
+   (from `modules/core/helpers/session.php`) — never raw `session_name()` + `session_start()`.
+   This function guarantees the session cookie uses `HttpOnly`/`SameSite=Lax`/`Secure`
+   (auto-detect HTTPS) flags and the 12-hour timeout consistently.
 
 ### File Structure per Module
 

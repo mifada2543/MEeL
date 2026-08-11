@@ -45,22 +45,9 @@ if (!defined('MEEL_BASE_URL')) {
     require_once __DIR__ . '/../modules/core/base_url.php';
     define('MEEL_BASE_URL', meel_base_url_path());
 }
-// SESSION CONFIGURATION
-if (session_status() === PHP_SESSION_NONE) {
-    $timeout = 43200; // 12 jam
-    ini_set('session.gc_maxlifetime', $timeout);
-    $secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
-    session_set_cookie_params([
-        'lifetime' => $timeout,
-        'path'     => '/',
-        'secure'   => $secure_cookie,
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
-    session_name('meel');
-    session_start();
-}
+// SESSION CONFIGURATION (terpusat di helpers/session.php — satu sumber kebenaran)
+require_once __DIR__ . '/../modules/core/helpers/session.php';
+meel_boot_session();
 // AUTOLOADER & HELPERS
 require_once __DIR__ . '/../modules/autoload.php';
 // Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
