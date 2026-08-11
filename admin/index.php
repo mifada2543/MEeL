@@ -49,27 +49,18 @@ GarbageCollector::cleanChessRooms($conn);
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <title>MEeL | System Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL | System Admin">
-    <meta property="og:description" content="Panel administrasi MEeL untuk mengelola konten, pengguna, dan monitoring server.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
+<?php
+$_META_TITLE = 'MEeL | System Admin';
+$_META_DESC  = 'Panel administrasi MEeL untuk mengelola konten, pengguna, dan monitoring server.';
+include __DIR__ . '/../partials/link.php';
+$scripts_root = '../';
+include __DIR__ . '/../partials/scripts.php';
+?>
     <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
     <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/index.css?v=<?= filemtime('../assets/css/admin/index.css') ?>">
-    <script src="../assets/js/compatibilitas/lucide.js"></script>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/compatibilitas/script.min.js"></script>
     <script src="../assets/js/compatibilitas/chart.umd.min.js"></script>
-
 </head>
 
 <body class="text-gray-300 font-sans min-h-screen">

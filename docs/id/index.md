@@ -88,6 +88,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 - **Search Improvements:** Sanitizer query (`sanitizeQuery()`), `MIN_SEARCH_QUERY = 3`, pagination search musik, search buku server-side (`BookRepository::searchBooks()`), cache key menyertakan offset, `try/catch` di sekitar query FULLTEXT
 - **Auth Hardening:** Cookie session kini `Secure` (auto-detect HTTPS) + `HttpOnly` + `SameSite=Lax`; `MEEL_TRUST_PROXY_HEADERS` (default `false`) untuk mencegah IP spoofing via header proxy; charset koneksi DB dipaksa `utf8mb4`
 - **Admin CSRF:** Aksi approve/reject/delete/kick/unban dipindah dari link GET ke form POST dengan token CSRF
+- **Session Bootstrap Terpusat:** File baru `modules/core/helpers/session.php` berisi `meel_boot_session()` — semua entry point (index, video, music, auth, controllers/api, err, admin) kini memanggil satu fungsi ini menggantikan pola lama `session_name('meel'); session_start();` yang tersebar. Cookie sesi dijamin selalu `HttpOnly` + `SameSite=Lax` + `Secure` (auto-detect HTTPS), timeout 12 jam, dan idempotent (no-op jika session sudah aktif)
 
 ## 📖 Tentang Proyek
 

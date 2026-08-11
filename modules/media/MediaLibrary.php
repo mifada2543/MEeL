@@ -24,7 +24,6 @@ class MediaLibrary
             }
         }
 
-        // Cache miss — query database
         $counts = ['music' => 0, 'video' => 0, 'books' => 0];
         // Query ini aman karena tidak ada variabel input dari user
         $sql = "SELECT 'music' AS type, COUNT(*) AS total FROM music
@@ -39,7 +38,6 @@ class MediaLibrary
             }
         }
 
-        // Simpan ke cache
         $cache_dir = dirname($cache_file);
         if (!is_dir($cache_dir)) {
             @mkdir($cache_dir, 0755, true);
@@ -116,7 +114,6 @@ class MediaLibrary
 
         if (empty($q)) {
             if ($sidebar) {
-                // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM video");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
 
@@ -227,7 +224,6 @@ class MediaLibrary
 
         if (empty($q)) {
             if ($sidebar) {
-                // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM music");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
 
@@ -439,12 +435,9 @@ class BookRepository
 
     public function getUserRole(int $user_id): ?string
     {
-        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result ? $result->fetch_assoc() : null;
-        return $row ? $row['role'] : null;
+        // Delegasi ke helper terpusat (cache + session). Fallback 'user' untuk
+        // user tak dikenal — pemanggil hanya membandingkan terhadap 'admin'.
+        return get_user_role($this->conn, $user_id);
     }
 }
 

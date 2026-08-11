@@ -35,7 +35,6 @@ class GarbageCollector
 
         $totalCleaned = 0;
 
-        // Step 1: Mark guest stale sebagai is_active = 0
         $stmt = $conn->prepare(
             "UPDATE users SET is_active = 0 WHERE role = 'guest' AND is_active = 1 AND last_activity < DATE_SUB(NOW(), INTERVAL ? HOUR)"
         );
@@ -51,19 +50,11 @@ class GarbageCollector
             }
         }
 
-        // Step 2: Hapus semua guest yang sudah is_active = 0
-        $stmt = $conn->prepare("DELETE FROM users WHERE role = 'guest' AND is_active = 0");
-        if ($stmt) {
-            $stmt->execute();
-            $deleted = $stmt->affected_rows;
-            $stmt->close();
-
-            if ($deleted > 0) {
-                $totalCleaned += $deleted;
-            }
+        $deleted = purge_guest_users($conn) ?? 0;
+        if ($deleted > 0) {
+            $totalCleaned += $deleted;
         }
 
-        // Step 3: Reset AUTO_INCREMENT ke MAX(id) + 1
         if ($totalCleaned > 0) {
             $result = $conn->query("SELECT COALESCE(MAX(id), 0) + 1 AS new_ai FROM users");
             if ($result) {
@@ -73,7 +64,6 @@ class GarbageCollector
             }
         }
 
-        // Simpan timestamp throttle
         self::writeThrottleFile($throttleFile);
 
         return $totalCleaned;
@@ -150,7 +140,6 @@ class GarbageCollector
             $stmt->close();
         }
 
-        // Simpan timestamp throttle
         self::writeThrottleFile($throttleFile);
 
         return $totalCleaned;
@@ -247,7 +236,6 @@ class GarbageCollector
             $mtime = filemtime($item);
             if ($mtime === false || $mtime > $cutoff) continue;
 
-            // ─── Hapus file/folder stale ───
             if (is_dir($item)) {
                 self::removeDirectory($item);
             } else {

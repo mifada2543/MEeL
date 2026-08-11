@@ -188,10 +188,8 @@ $chart_activity = [];
 for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime("-$i days"));
     $label = date('D', strtotime("-$i days"));
-
-    // Total views (video + music) per day
     $views = __admin_get_count($conn, "
-        SELECT COALESCE(SUM(v.views), 0) + COALESCE(SUM(m.views), 0)
+        SELECT COALESCE(SUM(views), 0)
         FROM (
             SELECT SUM(views) AS views FROM video WHERE DATE(upload_date) = '$date'
             UNION ALL

@@ -42,3 +42,12 @@ const ZERO_GAINS = Array(eqBands.length).fill(0),
     podcast: [0, -1, 2, 3, 1, -1],
   };
 let miniEls = null;
+// Marker sesi "datang dari mini-player" — window global karena harus dibaca
+// dari module index (assets/js/music/shared/mini-player.js) yang dipisah dari
+// module watch. Di-set saat meelInitWatchPlayer() melihat skip_resume_once
+// (tap kartu/playlist/expand) dan dibersihkan saat user pause/close EKSPLISIT
+// di index (miniPlayPauseIndex/closeMiniPlayerIndex) — jadi resume-modal
+// tidak pernah menginterupsi sesi mendengarkan yang aktif, tapi tetap muncul
+// di kunjungan dingin (buka watch langsung / reload / setelah pause-close).
+// Reset otomatis saat full page load (halaman baru → undefined/falsy).
+window.__meelResumeSessionActive = !1;

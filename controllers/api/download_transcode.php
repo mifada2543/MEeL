@@ -2,11 +2,7 @@
 require_once __DIR__ . '/../../auth/config.php';
 require_once __DIR__ . '/../../modules/core/Transcoder.php';
 
-// Session check manual (tanpa redirect)
-if (session_status() === PHP_SESSION_NONE) {
-    session_name('meel');
-    session_start();
-}
+// Session sudah dimulai oleh auth/config.php (cookie flags aman)
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     header('Content-Type: application/json');

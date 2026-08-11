@@ -37,6 +37,11 @@ window.toggleMiniPlayer = async function () {
     a = n?.nextElementSibling;
   if (isMiniPlayerActive)
     ((isMiniPlayerActive = !1),
+      // Keluar dari mode mini-player — one-shot yang di-arm saat masuk
+      // mini-mode tidak boleh nyangkut ke navigasi AJAX berikutnya di
+      // dokumen yang sama (auto-next / pindah lagu) padahal user sudah
+      // kembali ke full-player.
+      (skipResumeModalOnce = !1),
       e && ((e.style.maxHeight = ""), (e.style.overflow = "")),
       document
         .getElementById("temp-index-content")
@@ -108,10 +113,33 @@ window.miniPrev = function () {
 };
 window.goBackToLibrary = function () {
   saveAudioState();
-  var e = window.MEEL_MUSIC_CONFIG?.playlistId;
-  (player?.destroy(),
-    (window.location.href =
-      e && e > 0 ? "index.php?playlist_id=" + e : "index.php"));
+  // Reset flag mode mini-player watch. Tanpa ini, interval
+  // saveAudioState() (5s) yang di-guard `isMiniPlayerActive` TETAP BERJALAN
+  // setelah pindah ke view index dan menimpa meel_audio_state dengan lagu
+  // lama setiap 5 detik — persis sumber "state audio berbeda" di HP.
+  isMiniPlayerActive = false;
+  // Meninggalkan view watch — one-shot in-memory dari mode mini-player
+  // TIDAK boleh bocor ke navigasi berikutnya di dokumen yang sama
+  // (mis. balik ke index lalu expand lagi). Buang.
+  skipResumeModalOnce = false;
+  var playlistId = window.MEEL_MUSIC_CONFIG?.playlistId;
+  var url = playlistId && playlistId > 0 ? "index.php?playlist_id=" + playlistId : "index.php";
+  if (window.meelNavigateView) {
+    // AJAX partial-swap: audio-engine (dgn <audio> yg sedang berjalan)
+    // TIDAK disentuh sama sekali di sini — cuma direparent oleh
+    // engine.mount() setelah DOM index.php siap. TIDAK ADA player.destroy().
+    window.meelNavigateView(url, "index", {
+      onAfterSwap: function () {
+        var engine = window.meelGetAudioEngine();
+        var slot = document.getElementById("mini-player-index");
+        if (slot && engine) engine.mount(slot, { compact: true });
+        if (typeof window.bootPlayerIndex === "function") window.bootPlayerIndex();
+      },
+    });
+  } else {
+    // Fallback kalau view-router.js entah kenapa gagal dimuat.
+    window.location.href = url;
+  }
 };
 function _attachMiniPlayerDom() {
   document

@@ -313,7 +313,7 @@
   padding: 8px 0 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
-/* Specificity fix: override Tailwind .hidden */
+/* Specificity: override Tailwind .hidden */
 .upload-prog-result.hidden,
 #uploadProgDone.hidden,
 #uploadProgError.hidden {

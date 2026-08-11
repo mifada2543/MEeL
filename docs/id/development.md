@@ -337,6 +337,10 @@ music ──1:N── playlist_tracks
    `is_file()`/`is_dir()`/`is_readable()`/`is_writable()`, cek nilai balik, dan pakai
    helper bersama (trait `FfmpegUtils`, `GarbageCollector::removeFile()`/`removeDirectory()`,
    `meel_write_cache_file()`). Lihat [Konvensi Keamanan Filesystem](modules.md#konvensi-keamanan-filesystem-tanpa-).
+7. **Session Boot Terpusat** — Setiap entry point wajib memanggil `meel_boot_session()`
+   (dari `modules/core/helpers/session.php`) — jangan `session_name()` + `session_start()`
+   manual. Fungsi ini yang menjamin cookie sesi memakai flag `HttpOnly`/`SameSite=Lax`/
+   `Secure` (auto-detect HTTPS) dan timeout 12 jam secara konsisten.
 
 ### File Structure per Modul
 
@@ -668,7 +672,7 @@ main (stable)
 ### ❌ HTMX tidak bekerja
 
 **Cek:**
-1. File `assets/js/htmx.js` ter-load (cek Network tab)
+1. File `assets/js/compatibilitas/htmx.min.js` ter-load (cek Network tab)
 2. Element target (`hx-target`) ada di DOM
 3. Tidak ada JavaScript error di console
 4. Response dari server valid HTML
@@ -706,7 +710,7 @@ if (!headers_sent()) {
 
 **Cek:**
 1. File `assets/js/compatibilitas/sweetalert2.all.min.js` ter-load
-2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/script.js`
+2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/compatibilitas/script.min.js`
 3. Tidak ada CSS conflict
 
 ---
@@ -753,8 +757,42 @@ if (!headers_sent()) {
 | `assets/js/video/watch/gestures.js` | Mobile touch gestures |
 | `assets/js/music/watch/main.js` | Entry point folder watch/ — memuat sibling secara sinkron (document.write) |
 | `assets/js/music/watch/mini-player.js` | Mode mini-player music (Spotify-style) — dipisah dari player-core.js |
-| `assets/js/music/watch/player-core.js` | Inti player music (visualizer, EQ, bitrate, resume) |
-| `assets/js/music/watch/state.js` | Music player state & equalizer presets |
+| `assets/js/music/watch/player-core.js` | Inti player music (visualizer, EQ, bitrate, logika resume-modal & sesi) |
+| `assets/js/music/watch/state.js` | Music player state, preset equalizer & marker sesi resume (`window.__meelResumeSessionActive`) |
+
+### Musik — Perilaku Resume Modal
+
+Player musik menampilkan modal **"Lanjut Musik?"** ketika sebuah lagu punya
+posisi putar tersimpan (`music_pos_<id>` di `localStorage`) dan user **tidak**
+datang dari sesi mini-player yang aktif.
+
+| Konteks | Perilaku |
+|---------|----------|
+| **Sesi mini-player** — user men-tap kartu / item playlist atau expand mini-player di `index.php`, dan masih mendengarkan | 🎧 **Auto-continue** — tanpa modal; semua lagu berikutnya di sesi itu langsung diputar otomatis |
+| **Kunjungan dingin** — buka `watch.php` langsung, reload halaman, atau setelah pause/close eksplisit mini-player | ❓ **Modal muncul** — "Lanjut Musik?" menanyakan apakah lanjut dari posisi tersimpan |
+
+**Mekanisme:**
+
+- **Flag one-shot `skip_resume_once`** (`sessionStorage`) — dipasang sisi index
+  saat tap kartu/playlist dan di `expandPlayerFromMiniPlayer()`. Dibaca dan
+  dibuang di **setiap** pemanggilan `meelInitWatchPlayer()` (termasuk transisi
+  gapless), jadi tidak pernah nyangkut di storage.
+- **Marker sesi `window.__meelResumeSessionActive`** (in-memory, dideklarasikan
+  di `assets/js/music/watch/state.js`) — diaktifkan saat flag one-shot
+  dikonsumsi. Bertahan selama dokumen SPA, jadi **semua** perpindahan lagu
+  berikutnya di watch (auto-next, ganti lagu) melewati modal.
+- **Akhir sesi eksplisit** — `miniPlayPauseIndex()` (pause) dan
+  `closeMiniPlayerIndex()` di `index.php` membersihkan flag one-shot dan marker
+  sesi (`assets/js/music/shared/mini-player.js`). Setelah itu, membuka lagu
+  dari link menampilkan modal lagi.
+- **Kunjungan dingin** — full page load membuat dokumen baru di mana marker
+  in-memory hilang, jadi modal bisa muncul (`skipOnce` di `player-core.js`
+  mengecek `skipResumeModalOnce || window.__meelResumeSessionActive`).
+- **Guard stuck-paused** — jika modal ditekan tapi lagu punya posisi tersimpan,
+  `onFreshTrackReady()` auto putar dari awal, bukan membiarkan lagu diam.
+
+> **Keputusan desain (2026-08):** sesi mendengarkan aktif auto-continue tanpa
+> interupsi; hanya kunjungan dingin yang menanyakan resume.
 
 ### Proses yang Perlu Dipahami
 
@@ -763,6 +801,7 @@ if (!headers_sent()) {
 3. **Auth Flow** — Login → Session → RBAC → Activity Log
 4. **HTMX Flow** — Event → Request → Server → Response → DOM swap
 5. **MFA Flow** — Login password valid → Cek mfa_enabled → Redirect mfa_verify.php → Verify TOTP → Set session penuh
+6. **Sesi Music Player & Resume** — Tap kartu/playlist → mini-player (set `skip_resume_once`) → expand → watch (konsumsi flag, aktifkan marker sesi) → auto-continue; kunjungan dingin menampilkan resume-modal
 
 ---
 

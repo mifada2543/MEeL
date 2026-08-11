@@ -14,6 +14,8 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 - [Activity Logging](#activity-logging)
 - [File Upload Security](#file-upload-security)
 - [Apache .htaccess Protection](#apache-htaccess-protection)
+- [Proteksi SSRF (Advanced Upload)](#proteksi-ssrf-advanced-upload)
+- [Proteksi Private Drive](#proteksi-private-drive)
 - [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [Input Validation](#input-validation)
 
@@ -157,7 +159,8 @@ final class DriveUserContext {
 ### Session Configuration
 
 ```php
-// auth/config.php
+// modules/core/helpers/session.php — meel_boot_session()
+// (auth/config.php & auth/auth_helpers.php mendelegasikan ke fungsi ini)
 $timeout = 43200;              // 12 jam
 ini_set('session.gc_maxlifetime', $timeout);
 
@@ -182,7 +185,19 @@ session_start();
 | `HttpOnly` | `true` | XSS tidak bisa mencuri session cookie via JavaScript |
 | `SameSite` | `Lax` | Request POST lintas-situs tidak membawa cookie (CSRF layer 1) |
 
-Diterapkan di `auth/config.php` dan `auth/auth_helpers.php` (`auth_boot_session()`).
+Konfigurasi di atas kini **dipusatkan** di `modules/core/helpers/session.php` sebagai fungsi
+`meel_boot_session()` — satu-satunya sumber kebenaran inisialisasi session. Semua entry point
+(index, video, music, auth, controllers/api, err, admin) memanggilnya menggantikan pola lama
+`session_name('meel'); session_start();` yang tersebar di banyak file, sehingga cookie sesi
+dijamin selalu memakai flag aman. Fungsi ini **idempotent** (no-op jika session sudah aktif),
+`auth/config.php` dan `auth_boot_session()` di `auth/auth_helpers.php` kini mendelegasikan
+ke fungsi ini:
+
+```php
+// Cara pakai di entry point baru
+require_once __DIR__ . '/../modules/core/helpers.php';
+meel_boot_session();
+```
 
 ### Path Configuration
 
@@ -413,7 +428,7 @@ endpoint catur admin `catur.php?auto_cleanup=1` juga wajib `csrf_token`
 ### Chess Multiplayer — Guard Login + CSRF
 
 Semua endpoint `arcade/chess/controller/*.php` mewajibkan:
-- **Login** — JSON `401` + `login_required: true` (client `api.js` redirect ke login).
+- **Login** — JSON `401` + `login_required: true` (client `arcade/chess/assets/js/api.js` redirect ke login).
 - **CSRF** — setiap POST yang mengubah state membawa `csrf_token` (body JSON untuk `save_move`, `FormData` untuk `create_room`/`join_room`).
 - Token **tidak pernah disimpan** di `moves.move_data` (tidak ter-expose ke lawan).
 
@@ -723,6 +738,184 @@ Direktori yang diproteksi:
 RewriteEngine On
 # Custom rules here
 ```
+
+Direktori private Drive juga di-deny untuk akses HTTP langsung — lihat [Proteksi Private Drive](#proteksi-private-drive).
+
+---
+
+## Proteksi SSRF (Advanced Upload)
+
+Fitur Advanced Upload (`upload_advanced.php`) mengizinkan user terautentikasi mengunduh media dari URL eksternal melalui yt-dlp. Karena yt-dlp berjalan **di server**, URL yang di-supply attacker dan me-resolve ke alamat internal bisa disalahgunakan sebagai vektor Server-Side Request Forgery (SSRF) — memindai layanan loopback, endpoint metadata cloud (`169.254.169.254`), atau mesin lain di jaringan lokal.
+
+### Arsitektur
+
+`modules/core/SsrfGuard.php` adalah **satu-satunya sumber kebenaran** untuk setiap request keluar yang dibuat atas nama user:
+
+```
+User URL → SsrfGuard::validate()
+    ↓
+Allowlist protokol (hanya http/https)
+    ↓
+Denylist hostname (defense-in-depth: localhost, .local, .internal, …)
+    ↓
+Resolusi DNS → SEMUA record A/AAAA dicek terhadap range IPv4/IPv6
+private/reserved secara eksplisit (satu record buruk = tolak)
+    ↓
+Transcoder::processDownload() me-pin koneksi HTTP ke IP publik yang
+sudah divalidasi + memaksa Host header asli
+```
+
+### Aturan Validasi
+
+| Aturan | Detail |
+|--------|--------|
+| **Protokol** | Hanya `http` dan `https`. URL tanpa skema, protocol-relative (`//host/…`), dan skema lain ditolak |
+| **Kredensial** | `user:pass@` yang disematkan di URL ditolak (sering dipakai untuk menyembunyikan host tujuan) |
+| **Denylist hostname** | `localhost`, `*.local`, `*.internal`, `*.lan`, `*.test`, `*.onion`, … (hanya defense-in-depth) |
+| **DNS** | Setiap record A/AAAA yang dikembalikan divalidasi — satu record non-publik menolak URL (memblokir trik DNS mixed-answer) |
+| **IP literal** | Literal IPv4 & IPv6 divalidasi langsung tanpa round-trip DNS |
+| **Fail closed** | Host yang tidak bisa di-resolve, host IDN/punycode, dan IP yang tidak bisa di-parse ditolak |
+| **Batas panjang** | URL lebih dari 2048 karakter ditolak |
+
+### Range IP yang Diblokir
+
+**IPv4:** `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10` (CGNAT), `127.0.0.0/8`, `169.254.0.0/16` (link-local), `172.16.0.0/12`, `192.0.0.0/24`, `192.0.2.0/24` (TEST-NET-1), `192.168.0.0/16`, `198.18.0.0/15`, `198.51.100.0/24` (TEST-NET-2), `203.0.113.0/24` (TEST-NET-3), multicast/reserved `224.0.0.0/4`.
+
+**IPv6:** `::/128`, `::1/128`, `::ffff:0:0/96` (IPv4-mapped — dicek ulang dengan logika IPv4), `64:ff9b::/96` (NAT64), `100::/64` (discard-only), `2001:db8::/32`, `2001:10::/28` (ORCHID), `2002::/16` (6to4), `3fff::/20`, `fc00::/7` (unique-local), `fe80::/10` (link-local), `fec0::/10` (site-local), `ff00::/8` (multicast).
+
+### DNS Rebinding & HTTP Pinning
+
+Alur "validasi sekali, lalu request" yang naif rentan terhadap **DNS rebinding**: hostname me-resolve ke IP publik saat validasi, lalu ke IP private saat request sungguhan dilakukan. Untuk menutup celah ini, `SsrfGuard::pinHttpUrl()` menulis ulang URL `http://` yang sudah divalidasi agar koneksi langsung ke **IP publik yang sudah divalidasi**, sementara yt-dlp menerima `--add-header Host: <hostname-asli>`:
+
+```php
+[$dl_url, $dl_extra] = $ssrf->pinHttpUrl($url);
+// $dl_url   = http://<ip-publik>[:port]/path  (tidak ada DNS lookup kedua yang dipengaruhi attacker)
+// $dl_extra = --add-header 'Host: example.com'
+```
+
+URL `https://` dikembalikan apa adanya — validasi SNI dan sertifikat TLS membutuhkan hostname.
+
+### Validating Forward Proxy (penegakan per-redirect)
+
+Validasi awal sekali tidak bisa melindungi dari **open redirect**: yt-dlp mengikuti redirect sendiri dan me-resolve ulang setiap target tanpa mengembalikannya ke `SsrfGuard`. Untuk menutup celah ini, pipeline download mengarahkan **semua** trafik yt-dlp (metadata + download + setiap hop redirect) melalui validating forward proxy:
+
+```
+URL → SsrfGuard::validate() + pinHttpUrl()   (pre-flight, fast fail)
+   ↓
+yt-dlp --proxy http://127.0.0.1:<ephemeral>  (di-spawn per Transcoder)
+   ↓
+Validating forward proxy (validating_proxy_server.php)
+   • HTTP  absolute-URI → validasi host → tulis ulang origin-form → teruskan
+   • HTTPS CONNECT host:port → validasi host → tunnel 200 → relay byte
+   • Target ditolak (IP private/reserved, hostname diblokir, host tidak bisa
+     di-resolve, request cacat) → 502, tidak pernah diteruskan
+   ↓
+Stream diteruskan kembali ke yt-dlp
+```
+
+Properti kunci:
+
+| Properti | Detail |
+|----------|--------|
+| **Setiap hop divalidasi** | Redirect ke `127.0.0.1`, `10.x`, metadata cloud, dsb. menjadi request CONNECT/absolute-URI baru ke proxy, yang menerapkan `SsrfGuard::resolvePublicAddresses()` ke **tujuan hop tersebut** dan menolaknya |
+| **Loopback-only** | Proxy bind ke `127.0.0.1` pada port ephemeral — tidak ada pihak eksternal yang bisa memakainya sebagai open proxy |
+| **DNS-rebinding aman per hop** | Setiap hop di-resolve sekali dan koneksi menuju IP publik yang sudah divalidasi (tidak ada lookup terpisah belakangan) |
+| **Host header dipertahankan** | Header `Host:` dari client dipertahankan untuk request upstream, sehingga routing virtual-host dan SNI TLS tidak terganggu |
+| **Fail closed** | Jika proxy tidak bisa dijalankan, download **ditolak** — tidak ada fallback tanpa proteksi |
+| **Siklus hidup** | Di-spawn lazy saat download pertama via `ValidatingProxy` (proc_open script CLI), di-terminate oleh destructor `Transcoder` — tidak ada proses yatim |
+
+Keterbatasan `https://` dengan demikian teratasi: meskipun URL HTTPS asli tidak bisa di-pin (SNI TLS), setiap tujuan redirect tetap divalidasi ulang oleh proxy sebelum koneksi dibuka.
+
+### Defense in Depth
+
+`Transcoder::fetchMetadata()` juga memanggil `SsrfGuard::validate()` secara independen dan memaksa flag proxy, sehingga calon pemanggil lain yang melewati `processDownload()` pun tidak bisa meneruskan URL yang belum divalidasi — atau hop yang tidak terlindungi — ke yt-dlp.
+
+### Titik Integrasi
+
+| File | Peran |
+|------|-------|
+| `modules/core/SsrfGuard.php` | Validasi sentral: allowlist protokol, cek range IPv4/IPv6 eksplisit, validasi semua record DNS, HTTP pinning |
+| `modules/core/ValidatingProxy.php` | Spawn/terminate proses proxy, expose URL `--proxy` (loopback-only) |
+| `modules/core/validating_proxy_server.php` | CLI forward proxy: SsrfGuard di setiap hop (HTTP absolute-URI + CONNECT tunnel) |
+| `modules/core/Transcoder.php` | `processDownload()` / `fetchMetadata()` memanggil guard dan mengarahkan yt-dlp lewat `--proxy`; fail closed jika proxy tidak bisa start |
+| `modules/autoload.php` | Mengautoload kelas `SsrfGuard` |
+
+---
+
+## Proteksi Private Drive
+
+Cloud Drive MEeL menyimpan file private user di bawah `data_drive/private_admins/<username>/...`. Karena subtree ini berada di dalam document root web, web server bisa melayani file secara langsung — melewati otorisasi level aplikasi. Dua lapisan kontrol menutup celah ini.
+
+### Lapisan 1 — Deny Web Server (ter-track di repo)
+
+`data_drive/.htaccess` ter-commit di repository, sehingga aturan deny berlaku di **semua deployment** — termasuk saat `private_admins/` adalah symlink ke storage eksternal:
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^private_admins/ - [F,L]
+</IfModule>
+```
+
+Request langsung apa pun ke `data_drive/private_admins/...` mengembalikan **HTTP 403**, apa pun tipe filenya (mp3/mp4/jpg/png/pdf/zip — semuanya) atau metode HTTP-nya. `Options -Indexes` saja TIDAK cukup — itu hanya menyembunyikan daftar direktori, tidak memblokir akses langsung ke file yang nama persisnya diketahui.
+
+### Lapisan 2 — Hard Deny di Root Storage
+
+`data_drive/private_admins/.htaccess` (dibuat saat deploy di target storage):
+
+```apache
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+```
+
+### Jalur Akses yang Ber-otorisasi
+
+File private hanya disajikan lewat endpoint terautentikasi:
+
+| Endpoint | Fungsi | Pemeriksaan |
+|----------|--------|-------------|
+| `drive/stream.php` | Preview / streaming inline (video, audio, gambar, PDF) | session + CSRF + kepemilikan |
+| `drive/download.php` | Unduh file private | session + CSRF + kepemilikan |
+
+Kedua endpoint me-resolve file melalui `DriveStorage::getFileForDownload()`, yang:
+
+1. **Menormalkan** scope (`public`/`private`) dan tipe (`video`/`audio`/`dokumen`)
+2. Menerapkan `basename()` — menghapus komponen path-traversal
+3. Memanggil `verifyPrivateFileAccess()` — membandingkan `realpath()` file dengan `realpath()` root private peminta, sehingga file harus berada di dalam direktori milik peminta sendiri (symlink escape dan traversal `..` gagal)
+
+`stream.php` juga mendukung HTTP `Range` agar seeking video/audio tetap berfungsi.
+
+### URL Preview
+
+`DriveStorage::listFilesByType()` tidak pernah mengeluarkan path web langsung untuk file private. Sebagai gantinya ia membangun URL `stream.php?file=…&type=…&scope=private&csrf_token=…`, sehingga browser tidak pernah menyentuh path storage mentah (yang juga membocorkan struktur filesystem).
+
+### Hardening Race Condition (Upload Drive)
+
+Dua race TOCTOU ditutup di `DriveStorage::upload()`:
+
+- **Kuota** — rangkaian "cek usage → cek kuota → tulis file" berjalan di dalam `flock()` per-user (lock file `temp/drive_quota_<md5(username)>.lock`) dengan usage dihitung segar (melewati cache 5 menit), sehingga upload berbarengan tidak bisa melewati kuota member secara kolektif. Jika lock tidak bisa dibuat, pengecekan kuota tetap berjalan non-atomik — tidak pernah dilewati.
+- **Bentrok nama file** — `fopen($path, 'x')` (O_CREAT|O_EXCL) mengklaim nama file unik secara atomik sebelum `move_uploaded_file()`, sehingga dua upload bersamaan dengan nama sama tidak bisa sama-sama menang (menutup TOCTOU `file_exists()` → move).
+
+### Test Regresi
+
+| File test | Cakupan |
+|-----------|---------|
+| `tests/unit/SsrfGuardTest.php` | Allowlist protokol, range IP private/publik (v4 & v6), resolusi DNS termasuk record campuran, denylist hostname, HTTP pinning |
+| `tests/unit/ValidatingProxyTest.php` | Probe proxy nyata: CONNECT/GET ke target private ditolak, target publik di-tunnel, bind loopback-only, siklus hidup proses |
+| `tests/unit/DriveSecurityTest.php` | Akses cross-user, path traversal, symlink escape, boundary realpath, penegakan kuota, reservasi nama atomik |
+| `tests/security_test.php` / `tests/functional_test.php` | Pemeriksaan statis wiring: guard dipanggil, flag proxy ter-wire, aturan deny `.htaccess` ada, endpoint stream dipakai untuk preview private |
+
+**Jalankan semuanya dengan satu perintah:** `scripts/verify_security.sh`
+menjalankan ketiga suite keamanan (subset PHPUnit keamanan,
+`security_test.php`, `functional_test.php`) plus probe live 403 Private Drive
+dan keluar dengan exit code ramah-CI (lihat [test.md](test.md)).
 
 ---
 

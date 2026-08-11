@@ -90,4 +90,29 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('Ensemble Stars', $result['english']);
     }
 
+    // ─── Partikel & homofon tidak boleh diterjemahkan per-token ───
+    public function testAnalyzeJapaneseTextDoesNotGlossParticlesAsHomophones(): void
+    {
+        // が, の, ば adalah partikel — sebelumnya salah jadi "moth", "indicates possessive", "place"
+        $result = analyzeJapaneseText('君が飛び降りるのならば');
+        $this->assertStringContainsString('kimi-ga-tobioriru-no-nara-ba', $result['romaji']);
+        $this->assertStringNotContainsString('moth', $result['english']);
+        $this->assertStringNotContainsString('indicates possessive', $result['english']);
+        $this->assertStringNotContainsString('place', $result['english']);
+    }
+
+    public function testAnalyzeJapaneseTextFullCoverAliasWins(): void
+    {
+        // Alias frasa penuh menutupi seluruh judul → dipakai sebagai terjemahan final
+        $result = analyzeJapaneseText('君が飛び降りるのならば');
+        $this->assertSame("In case you're gonna jump", $result['english']);
+    }
+
+    public function testAnalyzeJapaneseTextConditionalPatternAlias(): void
+    {
+        // Pola 'のならば' / 'ならば' diterjemahkan sebagai unit, bukan kata-per-kata
+        $result = analyzeJapaneseText('跳べるならば');
+        $this->assertStringContainsString('if', $result['english']);
+    }
+
 }

@@ -131,7 +131,7 @@ MEeL/
 
 ## 🔒 Assessment Keamanan
 
-### Security Test: ⚠️ 66/72 — Score: 66/72* (6 fail hanya muncul saat storage HDD tidak ter-mount)
+### Security Test: ✅ 97/100 — Score: 97/100 (A) (5 warning non-kritis, 0 fail)
 
 | Kategori | Status | Detail |
 |----------|--------|--------|
@@ -157,14 +157,16 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 144/138 — Score: 98/100 (A) (6 warning non-kritis)
+### Functional Test: ✅ 161/157 — Score: 99/100 (A) (4 warning non-kritis)
 
-**6 Warnings (non-critical):**
+**4 Warnings (non-critical):**
 
 | Warning | Kategori | Notes |
 |---------|----------|-------|
-| Missing `partials/header.php` include | Minor | File bernama `head.php`, bukan `header.php` |
-| Database server not configured | Info | Wajar di environment testing |
+| Session name (meel) tidak terdeteksi | Minor | Deteksi statis — session diboot dari modul terpusat `modules/core/helpers/session.php` |
+| Session GC maxlifetime tidak terdeteksi | Minor | Deteksi statis — lihat `meel_boot_session()` |
+| Session cookie params tidak terdeteksi | Minor | Deteksi statis |
+| `verify_csrf_token` tidak terdeteksi | Minor | Fungsi terpusat di `modules/core/helpers.php` |
 
 ### PHP Syntax Check: ✅ 18/18 Files Passed
 
@@ -332,9 +334,9 @@ Tidak ada masalah medium yang tersisa.
 |---|------|-----------|----------|
 | 72 | `assets/js/video/watch/player-events.js` | **Mutual exclusion:** Auto Next ON → Loop OFF; Loop ON → Auto Next OFF | 🐛 Bug |
 | 73 | `assets/js/video/watch/player-events.js` | Sembunyikan tombol replay + poster Plyr saat auto-next overlay aktif | 🐛 Bug |
-| 74 | `assets/css/video.css` | Tambah backdrop gelap `rgba(0,0,0,0.45)` di auto-next overlay | 🐛 Bug |
+| 74 | `assets/css/video/autonext.css` | Tambah backdrop gelap `rgba(0,0,0,0.45)` di auto-next overlay | 🐛 Bug |
 | 75 | `music/watch.php` | Klik vinyl disc → toggle mini-player (sama seperti keyboard `I`) | ✨ New |
-| 76 | `assets/css/music.css` | Hover overlay hanya muncul di area `mp-art`, bukan seluruh `mp-track` | 🐛 Bug |
+| 76 | `assets/css/music/mini-player.css` | Hover overlay hanya muncul di area `mp-art`, bukan seluruh `mp-track` | 🐛 Bug |
 | 77 | `music/index.php` | Skip resume modal saat navigasi dari index mini-player ke watch | ✨ New |
 | 78 | `assets/js/music/watch/player-core.js` | Baca flag `skip_resume_once` dari sessionStorage untuk skip modal | ✨ New |
 | 79 | `music/view_playlist.php` | Skip resume modal dari playlist view (sama seperti index) | ✨ New |
@@ -364,10 +366,10 @@ Tidak ada masalah medium yang tersisa.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 125 | 125 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 24 | 24 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 138 | 6 warn | **0** | **✅ 98/100** |
-| **Security Test** | 72 | 66 | 6* | **0** | **⚠️ 66/72*** |
+| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 161 | 157 | 4 warn | **0** | **✅ 99/100** |
+| **Security Test** | 98 | 93 | 5 warn | **0** | **✅ 97/100** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 ---
@@ -386,7 +388,7 @@ Tidak ada masalah medium yang tersisa.
 
 ### Prioritas Rendah
 7. **Docker support** — environment yang konsisten untuk deployment
-8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (125 unit + 24 integration = 149 tests)
+8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (255 unit + 79 integration = 334 tests)
 
 ---
 
@@ -403,7 +405,7 @@ Tidak ada masalah medium yang tersisa.
 | **Performance optimization** | 6 (FULLTEXT, pagination cache, session_write_close) |
 | **Code quality improvement** | 12 (autoloader, template, static cache, deduplikasi) |
 | **Documentation updated** | 8 file docs + README.md |
-| **Functional test score** | 98/100 (A) |
-| **Security test score** | 66/72* (6 fail hanya saat storage HDD tidak ter-mount) |
+| **Functional test score** | 99/100 (A) |
+| **Security test score** | 97/100 (93 pass, 5 warning non-kritis) |
 
 > **Status:** ✅ **Production-ready dengan 0 critical, 0 high, 0 medium, dan 0 low issue.** Semua low issue yang teridentifikasi telah diperbaiki.

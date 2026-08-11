@@ -46,10 +46,7 @@ $sys     = new System($conn);
 $is_busy = $sys->isServerBusy();
 
 // Ambil role untuk tampilkan info ekstra
-$stmt_role = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$stmt_role->bind_param("i", $_SESSION['user_id']);
-$stmt_role->execute();
-$user_role = $stmt_role->get_result()->fetch_assoc()['role'] ?? 'user';
+$user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $is_admin  = ($user_role === 'admin');
 
 // Queue stats
@@ -57,21 +54,10 @@ $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='proces
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
 // ─── Hitung sisa kuota upload per jam ───
-$quota_video_used = 0;
-$quota_music_used = 0;
-$upload_max = 2;
-
-if ($user_role !== 'admin') {
-    $q_vid = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR");
-    $q_vid->bind_param("i", $_SESSION['user_id']);
-    $q_vid->execute();
-    $quota_video_used = (int)$q_vid->get_result()->fetch_row()[0];
-
-    $q_mus = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR");
-    $q_mus->bind_param("i", $_SESSION['user_id']);
-    $q_mus->execute();
-    $quota_music_used = (int)$q_mus->get_result()->fetch_row()[0];
-}
+// Konsisten dengan System::checkRateLimit(): member mendapat 2x lipat (4/jam).
+$upload_max = get_upload_hourly_limit($user_role);
+$quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
+$quota_music_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'music');
 
 $quota_video_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_video_used;
 $quota_music_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_music_used;
@@ -102,8 +88,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
 
-                // ke post_encode.php — hentikan render sisa halaman agar tidak
+                // Download selesai → navigasi ke post_encode.php dilakukan lewat
+                // DOKUMEN AKHIR yang bersih, BUKAN script window.location yang
+                // di-stream di tengah dokumen (rentan navigasi duplikat/race).
                 if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
+                    $target = substr($message, strlen('REDIRECT:'));
+
+                    // Buang sisa buffer output (overlay & progress sudah ter-stream
+                    // langsung ke browser, tidak ada konten penting yang tertahan).
+                    while (ob_get_level()) {
+                        ob_end_clean();
+                    }
+
+                    // Penutup dokumen: meta refresh sebagai fallback tanpa JS, dan
+                    // meelRedirect() (guard anti-duplikat + location.replace agar
+                    // halaman POST tidak masuk history → back tidak me-resubmit).
+                    $target_attr = htmlspecialchars($target, ENT_QUOTES);
+                    $target_js   = json_encode($target, JSON_UNESCAPED_SLASHES);
+                    echo '<meta http-equiv="refresh" content="0;url=' . $target_attr . '">'
+                       . '<script>'
+                       . 'if (typeof window.meelRedirect === "function") { window.meelRedirect(' . $target_js . '); }'
+                       . 'else { window.location.replace(' . $target_js . '); }'
+                       . '</script></body></html>';
                     exit;
                 }
             } catch (Exception $e) {
@@ -134,20 +140,13 @@ $__v = function ($f) {
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <title>MEeL — Advanced Upload</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL — Advanced Upload">
-    <meta property="og:description" content="Upload video/musik via URL menggunakan yt-dlp dan FFmpeg. Download dari YouTube, SoundCloud, Instagram, dan 1000+ situs.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/png" href="assets/MEeL.png">
-    <link rel="manifest" href="assets/manifest.json">
-    <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/compatibilitas/lucide.js"></script>
+<?php
+$_META_TITLE = 'MEeL — Advanced Upload';
+$_META_DESC  = 'MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.';
+include __DIR__ . '/partials/link.php';
+$scripts_root = '';
+include __DIR__ . '/partials/scripts.php';
+?>
     <link rel="stylesheet" href="assets/css/up.css">
     <?php foreach (require __DIR__ . '/assets/css/up/manifest.php' as $__f): ?>
     <link rel="stylesheet" href="assets/css/up/<?= $__f ?><?= $__v('assets/css/up/' . $__f) ?>">

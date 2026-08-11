@@ -206,6 +206,68 @@ foreach (['books/upload', 'music/upload', 'video/upload'] as $u) {
     }
 }
 
+// 3b. Private Drive storage — wajib hard-deny (bukan sekadar Options -Indexes)
+// primary: aturan ter-track di data_drive/.htaccess (berlaku untuk semua
+// deployment, termasuk saat private_admins/ adalah symlink ke storage eksternal).
+$parentHt    = MEEL_ROOT . '/data_drive/.htaccess';
+$parentLabel = 'data_drive/.htaccess (deny private_admins)';
+if (!is_file($parentHt)) {
+    report('FAIL', $parentLabel, 'tidak ada');
+} else {
+    $parentContent = (string) @file_get_contents($parentHt);
+    if (str_contains($parentContent, 'private_admins') && str_contains($parentContent, '[F')) {
+        report('PASS', $parentLabel, 'RewriteRule deny aktif — akses langsung diblokir Apache');
+    } else {
+        report('FAIL', $parentLabel, 'kehilangan RewriteRule deny untuk private_admins');
+    }
+}
+
+// lapisan kedua (deploy-time, di target storage symlink):
+$driveHt    = MEEL_ROOT . '/data_drive/private_admins/.htaccess';
+$driveLabel = 'data_drive/private_admins/.htaccess';
+if (!is_file($driveHt)) {
+    report('WARN', $driveLabel,
+        'tidak ada di target storage — buat dengan Require all denied (parent rule tetap aktif)');
+} else {
+    $driveContent = (string) @file_get_contents($driveHt);
+    if (str_contains($driveContent, 'Require all denied')) {
+        report('PASS', $driveLabel, 'Require all denied aktif (lapisan 2)');
+    } else {
+        report('FAIL', $driveLabel, 'kehilangan directive Require all denied');
+    }
+}
+
+// 3c. Validating forward proxy — wajib tersedia untuk download URL (SSRF per hop)
+$vpClass = MEEL_ROOT . '/modules/core/ValidatingProxy.php';
+$vpScript = MEEL_ROOT . '/modules/core/validating_proxy_server.php';
+if (!is_file($vpClass) || !is_file($vpScript)) {
+    report('FAIL', 'Validating proxy tidak lengkap',
+        'butuh modules/core/ValidatingProxy.php + validating_proxy_server.php');
+} elseif (PHP_BINARY === '' || !is_executable(PHP_BINARY)) {
+    report('FAIL', 'PHP_BINARY tidak dapat dieksekusi untuk spawn proxy',
+        'ValidatingProxy menjalankan php CLI (proc_open)');
+} else {
+    // Spawn proxy nyata sebentar lewat class (handshake stdout dibaca sendiri
+    // oleh ValidatingProxy, jadi tidak ada proses yang menggantung di sini).
+    $proxyOk = false;
+    try {
+        require_once $vpClass;
+        $p = new ValidatingProxy();
+        $proxyUrl = $p->url();
+        $parts = parse_url($proxyUrl);
+        $proxyOk = ($parts['host'] ?? '') === '127.0.0.1' && (int) ($parts['port'] ?? 0) > 0;
+        $p->stop();
+    } catch (\Throwable $e) {
+        $proxyOk = false;
+    }
+    if ($proxyOk) {
+        report('PASS', 'Validating proxy dapat di-spawn (loopback-only)');
+    } else {
+        report('FAIL', 'Validating proxy gagal di-spawn',
+            'periksa izin eksekusi PHP CLI + pcntl/stream_socket_server');
+    }
+}
+
 // 4. mod_rewrite & PWA (sw.js → sw.js.php)
 section('4. mod_rewrite & PWA (sw.js → sw.js.php)');
 

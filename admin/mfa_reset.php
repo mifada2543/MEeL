@@ -27,17 +27,17 @@ $total_all = $conn->query("SELECT COUNT(*) AS c FROM users")->fetch_assoc()['c']
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MFA Reset | Admin MEeL</title>
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
+<?php
+$_META_TITLE = 'MFA Reset | Admin MEeL';
+$_META_DESC  = 'MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.';
+include __DIR__ . '/../partials/link.php';
+$scripts_root = '../';
+include __DIR__ . '/../partials/scripts.php';
+?>
     <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
         <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/mfa_reset.css?v=<?= filemtime('../assets/css/admin/mfa_reset.css') ?>">
-    <script src="../assets/js/compatibilitas/lucide.js"></script>
-    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen">

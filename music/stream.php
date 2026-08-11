@@ -1,8 +1,8 @@
 <?php
 error_reporting(0);
 
-session_name('meel');
-session_start();
+require_once __DIR__ . '/../modules/core/helpers.php';
+meel_boot_session();
 
 // File besar seperti FLAC 34MB+ butuh waktu streaming lama
 session_write_close();

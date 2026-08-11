@@ -1,4 +1,9 @@
 function saveAudioState() {
+  // Interval saveAudioState() (5s) milik view watch TIDAK boleh
+  // menulis state saat view aktif bukan watch (mis. sudah pindah ke index
+  // via goBackToLibrary) — kalau tidak, dia menimpa meel_audio_state dengan
+  // lagu LAMA dan bertabrakan dengan saveIndexState() milik index.
+  if (window.__meelCurrentView !== "watch") return;
   if (!window.MEEL_MUSIC_CONFIG) return;
   const e = window.MEEL_MUSIC_CONFIG,
     t = e.playlistId || 0;
@@ -10,7 +15,7 @@ function saveAudioState() {
     (typeof watchUrl === "string" && watchUrl ? watchUrl : "") ||
     `watch.php?id=${e.id}`;
   (sessionStorage.setItem(
-    "meel_audio_state",
+    MEEL_KEYS.AUDIO_STATE,
     JSON.stringify({
       id: e.id,
       musicId: e.id,
@@ -27,6 +32,6 @@ function saveAudioState() {
     }),
   ),
     t > 0
-      ? localStorage.setItem("meel_last_playlist_id", String(t))
-      : localStorage.removeItem("meel_last_playlist_id"));
+      ? localStorage.setItem(MEEL_KEYS.LAST_PLAYLIST_ID, String(t))
+      : localStorage.removeItem(MEEL_KEYS.LAST_PLAYLIST_ID));
 }

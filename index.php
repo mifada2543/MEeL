@@ -1,7 +1,6 @@
 <?php
 require_once 'modules/core/helpers.php';
-session_name('meel');
-session_start();
+meel_boot_session();
 include 'auth/config.php';
 require_once 'modules/media/MediaLibrary.php';
 
@@ -24,6 +23,7 @@ $counts  = $library->getCounts();
     <script src="assets/js/compatibilitas/lucide.js"></script>
     <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="assets/js/compatibilitas/script.min.js"></script>
+    <script src="assets/js/shared/state-keys.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/state-keys.js') ?>"></script>
     <script src="assets/js/shared/health-reminder.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/health-reminder.js') ?>"></script>
 </head>
 

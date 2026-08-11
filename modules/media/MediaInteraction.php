@@ -18,7 +18,6 @@ class MediaInteraction {
      * @return array Status dan data terbaru
      */
     public function toggleLike(int $media_id, string $media_type, string $like_type): array {
-        // Validasi
         if (!$this->validateUser()) {
             return $this->getResponse(false, 'User tidak terautentikasi', 403);
         }
@@ -74,7 +73,6 @@ class MediaInteraction {
     // COMMENT FUNCTIONALITY
     /* @param int $comment_id; @return array Status response */
     public function deleteComment(int $comment_id): array {
-        // Validasi
         if (!$this->validateUser()) {
             return $this->getResponse(false, 'User tidak terautentikasi', 403);
         }
@@ -183,15 +181,7 @@ class MediaInteraction {
     /* @return bool True jika user ini admin */
     private function isAdmin(): bool
     {
-        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ?");
-        if (!$stmt) {
-            throw new RuntimeException($this->conn->error);
-        }
-        $stmt->bind_param("i", $this->user_id);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        return ($row && $row['role'] === 'admin');
+        return get_user_role($this->conn, $this->user_id) === 'admin';
     }
 
     private function validateUser(): bool {

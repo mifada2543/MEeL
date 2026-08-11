@@ -62,7 +62,7 @@ MEeL/
 
 ## 🔒 Security Assessment
 
-### Security Test: ⚠️ 66/72 — Score: 66/72* (6 fails appear only when the storage HDD is not mounted)
+### Security Test: ✅ 97/100 — Score: 97/100 (A) (5 non-critical warnings, 0 fails)
 
 | Category | Status | Detail |
 |----------|--------|--------|
@@ -79,13 +79,15 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 144/138 — Score: 98/100 (A) (6 non-critical warnings)
+### Functional Test: ✅ 161/157 — Score: 99/100 (A) (4 non-critical warnings)
 
-**6 Warnings (non-critical):**
+**4 Warnings (non-critical):**
 | Warning | Category | Notes |
 |---------|----------|-------|
-| Missing `partials/header.php` include | Minor | File is named `head.php` |
-| Database server not configured | Info | Normal in test environment |
+| Session name (meel) not detected | Minor | Static detection — session bootstrapped from central `modules/core/helpers/session.php` |
+| Session GC maxlifetime not detected | Minor | Static detection — see `meel_boot_session()` |
+| Session cookie params not detected | Minor | Static detection |
+| `verify_csrf_token` not detected | Minor | Central function in `modules/core/helpers.php` |
 
 ### PHP Syntax Check: ✅ 20/20 Files Passed
 
@@ -162,10 +164,10 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 125 | 125 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 24 | 24 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 138 | 6 warn | **0** | **✅ 98/100** |
-| **Security Test** | 72 | 66 | 6* | **0** | **⚠️ 66/72*** |
+| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 161 | 157 | 4 warn | **0** | **✅ 99/100** |
+| **Security Test** | 98 | 93 | 5 warn | **0** | **✅ 97/100** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 ---
@@ -184,7 +186,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 
 ### Low Priority
 7. **Docker support** — consistent deployment environment
-8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (125 unit + 24 integration = 149 tests)
+8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (255 unit + 79 integration = 334 tests)
 
 ---
 
@@ -201,8 +203,8 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 | **Performance optimizations** | 6 (FULLTEXT, pagination cache, session_write_close) |
 | **Code quality improvements** | 12 (autoloader, template, static cache, deduplication) |
 | **Documentation updated** | 13 docs + README.md |
-| **Functional test score** | 98/100 (A) |
-| **Security test score** | 66/72* (6 fails only when storage HDD is not mounted) |
+| **Functional test score** | 99/100 (A) |
+| **Security test score** | 97/100 (93 pass, 5 non-critical warnings) |
 
 > **Status:** ✅ **Production-ready with 0 critical, 0 high, 0 medium, and 0 low issues.** All identified low issues have been resolved.
 

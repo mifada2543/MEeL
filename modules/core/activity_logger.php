@@ -6,7 +6,6 @@ function trust_proxy_headers(): bool
 
 function get_real_ip()
 {
-    // Format IP yang valid (IPv4 atau IPv6)
     $valid = function ($ip) {
         return is_string($ip) && $ip !== '' && filter_var($ip, FILTER_VALIDATE_IP) !== false;
     };
@@ -38,23 +37,20 @@ function validate_and_format_ip($ip)
 
     // Handle IPv4-mapped IPv6 addresses (::ffff:192.168.1.1)
     if (strpos($ip, '::ffff:') === 0) {
-        $ipv4 = substr($ip, 7); // Extract IPv4 part
+        $ipv4 = substr($ip, 7);
         if (filter_var($ipv4, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             return ['ip' => $ipv4, 'display' => $ipv4 . ' (IPv4-mapped)', 'is_local' => false, 'version' => 'ipv4-mapped'];
         }
     }
 
-    // Filter localhost
     if ($ip === 'localhost') {
         return ['ip' => 'LOCAL', 'display' => 'Local Access (localhost)', 'is_local' => true, 'version' => 'hostname'];
     }
 
-    // Validasi IPv6 format
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
         return ['ip' => $ip, 'display' => $ip . ' (IPv6)', 'is_local' => false, 'version' => 'ipv6'];
     }
 
-    // Validasi IPv4 format
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
         return ['ip' => $ip, 'display' => $ip . ' (IPv4)', 'is_local' => false, 'version' => 'ipv4'];
     }
@@ -147,8 +143,6 @@ $user_ip = $user_ip_data['ip'];
 $access_method = get_access_method();
 $connection_protocol = get_connection_protocol();
 
-// Debug info (optional, bisa di-remove nanti)
-// Uncomment line di bawah untuk debugging
 if (isset($conn)) {
 
     $session_role = $_SESSION['role'] ?? null;
@@ -173,7 +167,6 @@ if (isset($conn)) {
             }
         }
     }
-    // Deteksi halaman dan aktivitas user
     $current_page = basename($_SERVER['PHP_SELF']);
     $dir_name = basename(dirname($_SERVER['PHP_SELF']));
     $id_get = isset($_GET['id']) ? $_GET['id'] : null;
@@ -271,7 +264,6 @@ if (isset($conn)) {
     $host = $_SERVER['HTTP_HOST'] ?? 'Local';
     $access_via = $access_method; // Gunakan metode akses, bukan hanya hostname
 
-    // Deteksi Device
     $device = "Unknown";
     if (strpos($ua_raw, 'Android') !== false) $device = "Smartphone";
     elseif (strpos($ua_raw, 'Linux') !== false) $device = "Linux PC";
@@ -319,9 +311,11 @@ if (isset($conn)) {
 
         $guest_id = "g_" . substr(md5(session_id()), 0, 10);
         $role     = 'guest';
+        $guest_pass = bin2hex(random_bytes(24));
+
         $guest_upd = $conn->prepare(
-            "INSERT INTO users (username, role, last_page, user_agent, access_via, ip_address, last_activity)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())
+            "INSERT INTO users (username, password, role, last_page, user_agent, access_via, ip_address, last_activity)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
              ON DUPLICATE KEY UPDATE
                 last_page = VALUES(last_page),
                 user_agent = VALUES(user_agent),
@@ -329,7 +323,7 @@ if (isset($conn)) {
                 ip_address = VALUES(ip_address),
                 last_activity = NOW()"
         );
-        $guest_upd->bind_param("ssssss", $guest_id, $role, $current_page, $device, $access_via, $user_ip);
+        $guest_upd->bind_param("sssssss", $guest_id, $guest_pass, $role, $current_page, $device, $access_via, $user_ip);
         $guest_upd->execute();
     }
 }

@@ -1,7 +1,6 @@
 <?php
 require_once '../modules/core/helpers.php';
-session_name('meel');
-session_start();
+meel_boot_session();
 include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
@@ -427,8 +426,13 @@ $__vdir = function($dir) {
             playlistId: <?= (int)$playlist_id_from_url ?>
         };
     </script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/audio-engine.js<?= $__v('assets/js/shared/audio-engine.js') ?>"></script>
+    <script src="../assets/js/shared/view-router.js<?= $__v('assets/js/shared/view-router.js') ?>"></script>
     <script src="../assets/js/music/shared/mini-player.js<?= $__v('assets/js/music/shared/mini-player.js') ?>"></script>
     <script src="../assets/js/music/index/main.js<?= $__vdir('assets/js/music/index') ?>"></script>
     <?php include '../partials/footer.php'; ?>

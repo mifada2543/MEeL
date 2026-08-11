@@ -88,6 +88,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Search Improvements:** Query sanitizer (`sanitizeQuery()`), `MIN_SEARCH_QUERY = 3`, music search pagination, server-side books search (`BookRepository::searchBooks()`), cache key includes offset, `try/catch` around FULLTEXT queries
 - **Auth Hardening:** Session cookies now `Secure` (auto-detect HTTPS) + `HttpOnly` + `SameSite=Lax`; `MEEL_TRUST_PROXY_HEADERS` (default `false`) to prevent IP spoofing via proxy headers; DB connection charset forced to `utf8mb4`
 - **Admin CSRF:** Approve/reject/delete/kick/unban actions moved from GET links to POST forms with CSRF token
+- **Centralized Session Bootstrap:** New file `modules/core/helpers/session.php` with `meel_boot_session()` — every entry point (index, video, music, auth, controllers/api, err, admin) now calls this single function instead of scattered manual `session_name('meel'); session_start();`. The session cookie is guaranteed `HttpOnly` + `SameSite=Lax` + `Secure` (auto-detect HTTPS), 12-hour timeout, and idempotent (no-op if the session is already active)
 
 ## 📖 About the Project
 

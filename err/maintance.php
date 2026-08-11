@@ -1,10 +1,10 @@
 <?php
 require_once __DIR__ . '/../modules/core/base_url.php';
+require_once __DIR__ . '/../modules/core/helpers/session.php';
 $meel_base = meel_base_url_path();
 
 http_response_code(503);
-session_name('meel');
-session_start();
+meel_boot_session();
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
@@ -37,7 +37,7 @@ $hdd_base_path = defined('MEEL_HDD_BASE') ? MEEL_HDD_BASE : '/path/to/your/media
 $hdd_dir       = dirname($hdd_base_path);
 $media_root    = dirname($hdd_dir);
 
-// ─── DEBUG DATA (admin only) ───
+// ─── DATA DIAGNOSTIK (admin only) ───
 $debug = [];
 if ($user_role === 'admin') {
     // PHP process user

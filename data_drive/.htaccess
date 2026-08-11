@@ -42,3 +42,16 @@ ForceType inherit
 # 5. Matikan Directory Listing (Mencegah intip struktur folder)
 
 Options -Indexes
+
+# 6. PRIVATE DRIVE: Blokir SEMUA akses langsung ke subtree private_admins/
+#    File private (mp3/mp4/pdf/dll.) HANYA boleh disajikan lewat endpoint yang
+#    ber-otorisasi: drive/download.php & drive/stream.php (session + CSRF +
+#    kepemilikan file). Aturan ini ter-track di repo sehingga berlaku untuk
+#    semua deployment — termasuk saat private_admins/ adalah symlink ke storage
+#    eksternal. Lapisan kedua: data_drive/private_admins/.htaccess berisi
+#    `Require all denied` (dibuat saat deploy pada target storage).
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^private_admins/ - [F,L]
+</IfModule>

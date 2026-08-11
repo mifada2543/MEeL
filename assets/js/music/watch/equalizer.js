@@ -5,7 +5,7 @@ function normalizeEqValue(e) {
 function saveEqState() {
   try {
     localStorage.setItem(
-      "meel_music_eq_state",
+      MEEL_KEYS.EQ_STATE,
       JSON.stringify({ enabled: eqEnabled, preset: eqPreset, gains: eqGains }),
     );
   } catch (e) {
@@ -14,7 +14,7 @@ function saveEqState() {
 }
 function loadEqState() {
   try {
-    const e = localStorage.getItem("meel_music_eq_state");
+    const e = localStorage.getItem(MEEL_KEYS.EQ_STATE);
     if (!e) return;
     const t = JSON.parse(e);
     (t && Array.isArray(t.gains) && (eqGains = t.gains.map(normalizeEqValue)),
@@ -25,10 +25,15 @@ function loadEqState() {
   }
 }
 function applyEqToFilters() {
-  if (!eqFilters.length) return;
-  const e = eqEnabled ? eqGains : ZERO_GAINS;
-  for (let t = 0; t < eqFilters.length; t++)
-    eqFilters[t].gain.value = normalizeEqValue(e[t] ?? 0);
+  // EQ (BiquadFilter chain) sekarang dipegang oleh audio-engine.js yang
+  // persisten (bukan `eqFilters` lokal di sini, yang sudah tidak dipakai
+  // lagi sejak refactor gapless mini<->full player). eqGains/eqEnabled di
+  // sini tetap jadi source-of-truth UI & localStorage seperti sebelumnya —
+  // fungsi ini cuma jembatan yang mendorong nilainya ke engine.
+  const engine = window.meelGetAudioEngine && window.meelGetAudioEngine();
+  if (!engine) return;
+  engine.setEqEnabled(eqEnabled);
+  engine.setEqGains(eqGains);
 }
 function getRealtimeVbrValue(e) {
   if (!e || !e.length) return 160;

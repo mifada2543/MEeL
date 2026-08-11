@@ -1,6 +1,6 @@
 <?php
-session_name('meel');
-session_start();
+require_once '../modules/core/helpers.php';
+meel_boot_session();
 
 include '../auth/config.php';
 require_once '../modules/core/helpers.php';
@@ -52,7 +52,7 @@ $__vdir = function($dir) {
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($v['title']) ?> — MEeL Music">
     <meta property="og:description" content="Dengarkan <?= htmlspecialchars($v['title']) ?> oleh <?= htmlspecialchars($v['artist'] ?? 'Unknown') ?> di MEeL Music.">
-    <title><?= htmlspecialchars($v['title']) ?> | MEeL Music</title>
+    <title><?= htmlspecialchars($v['title']) ?> — MEeL Music</title>
     <?php include '../partials/link.php'; ?>
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
@@ -226,10 +226,12 @@ $__vdir = function($dir) {
                 </div>
 
                 <div class="p-4 sm:p-5">
-                    <audio id="main-player" controls preload="<?= $preloadVal ?>" class="w-full" oncontextmenu="return false;">
-                        <source src="stream.php?id=<?= $id ?>" type="<?= $mimeType ?>">
-                        Your browser does not support the audio element.
-                    </audio>
+                    <!-- Elemen <audio> aslinya dirender statis di sini. Sekarang audio
+                         dipegang oleh audio-engine.js yang persisten (satu <audio> untuk
+                         seluruh page-session, direparent ke sini oleh engine.mount() —
+                         BUKAN dibuat ulang), supaya transisi mini<->full player gapless.
+                         Slot ini adalah target reparent-nya. -->
+                    <div id="player-audio-slot" class="w-full"></div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 border-t border-white/[.04] bg-black/10">
@@ -601,7 +603,9 @@ $__vdir = function($dir) {
             artist: <?= json_encode($v['artist'] ?? '') ?>,
             thumbnail: <?= json_encode($v['thumbnail']) ?>,
             thumbnailUrl: <?= json_encode(music_thumbnail_url($v['thumbnail'])) ?>,
-            filename: <?= json_encode($v['filename']) ?>
+            filename: <?= json_encode($v['filename']) ?>,
+            streamUrl: <?= json_encode('stream.php?id=' . $id) ?>,
+            mimeType: <?= json_encode($mimeType) ?>
         };
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
@@ -656,12 +660,15 @@ $__vdir = function($dir) {
         };
     </script>
     <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
     <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
     <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
     <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
     <script src="../assets/js/shared/resume-modal.js<?= $__v('assets/js/shared/resume-modal.js') ?>"></script>
     <script src="../assets/js/shared/mini-player-popstate.js<?= $__v('assets/js/shared/mini-player-popstate.js') ?>"></script>
+    <script src="../assets/js/shared/audio-engine.js<?= $__v('assets/js/shared/audio-engine.js') ?>"></script>
+    <script src="../assets/js/shared/view-router.js<?= $__v('assets/js/shared/view-router.js') ?>"></script>
     <script src="../assets/js/music/watch/main.js<?= $__vdir('assets/js/music/watch') ?>"></script>
     <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
 </body>

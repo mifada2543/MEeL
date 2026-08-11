@@ -220,7 +220,7 @@ readlink books/upload
 **Symptom of a broken symlink** (storage not mounted or path changed):
 
 ```
-books/upload: broken symbolic link to /media/muhammaddaffa/MEeL/media/books/upload
+books/upload: broken symbolic link to /media/[devuser]/MEeL/media/books/upload
 ```
 
 #### 4. Recreate the symlinks for your path
@@ -251,12 +251,12 @@ same pattern as `data_drive/.htaccess`. `tests/security_test.php` verifies these
 php tests/security_test.php
 ```
 
-> If storage is **not mounted** (or symlinks are broken), the security test
-> reports **6 FAILs** (`books/upload/`, `music/upload/`, `video/upload/` —
-> "TIDAK PUNYA .htaccess"). That is an **environment issue, not a code defect**:
-> the directories don't exist so their `.htaccess` cannot be verified. Once
-> storage is mounted and the upload dirs have their `.htaccess`, re-run the test
-> to confirm `72/72`.
+> The security test now reports **0 failures in all environments** — the upload-dir
+> `.htaccess` deny rules are tracked in the repo and verified statically. It may
+> emit **5 non-critical warnings** (MediaViewer raw-query review, profile_edit
+> MIME check, session parameter detection) — those are review items, not
+> deployment issues. For storage-level verification use `tests/check_deploy.php`
+> (see [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
 
 #### 7. Verify storage
 
@@ -281,9 +281,9 @@ php tests/check_deploy.php --no-color                # no ANSI colors (for CI/lo
 
 Each item is reported as `PASS` / `WARN` / `FAIL` with a summary; exit code is
 `0` when healthy and `1` when at least one check fails (CI-friendly). If the
-storage is not mounted yet, the script reports the **same 6 FAILs** the security
-test reports — mount the storage, fix the symlinks, add the `.htaccess` files,
-then re-run until you see `✅ Deployment sehat.`
+storage is not mounted yet, the script reports `FAIL` on the storage / symlink /
+upload-`.htaccess` areas — mount the storage, fix the symlinks, add the
+`.htaccess` files, then re-run until you see `✅ Deployment sehat.`
 
 ### 6. Apache Configuration
 
@@ -479,14 +479,14 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
   ```
 - Or disable temporarily for development
 
-### ❌ Security test reports 6 FAIL on upload folders
-- **Symptom:** `php tests/security_test.php` → `books/upload/`, `music/upload/`,
-  `video/upload/` — "TIDAK PUNYA .htaccess!"
+### ❌ Deployment Check reports FAIL on upload folders
+- **Symptom:** `php tests/check_deploy.php` → `FAIL` on upload symlinks /
+  `.htaccess` upload dirs (storage not mounted or broken symlinks).
 - **Cause:** storage HDD (`MEEL_HDD_BASE`) not mounted, or the tracked upload
   symlinks still point to the previous owner's path after cloning.
 - **Fix:** mount the storage, recreate the symlinks, and ensure each upload dir
   has its `.htaccess` (see [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
-  Re-run the test to confirm `72/72`.
+  Re-run `php tests/check_deploy.php` until it reports `✅ Deployment sehat.`
 
 ### ❌ "403 Forbidden" on pages
 - Check `.htaccess` in the relevant directory

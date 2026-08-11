@@ -1,9 +1,5 @@
 <?php
 // File: modules/core/Transcoder.php
-// Arsitektur (refactor media-processing engine):
-// Progress dilaporkan lewat ProgressObserver (lihat emit()).
-// mengubah event progress menjadi overlay browser (meel*).
-// bukan pkill -f berbasis marker string.
 // Pastikan konstanta path terdefinisi (dari auth/config.php)
 if (!defined('MEEL_HDD_BASE')) {
     define('MEEL_HDD_BASE', '/path/to/your/media');
@@ -23,6 +19,8 @@ require_once __DIR__ . '/../exceptions/ProcessException.php';
 require_once __DIR__ . '/../exceptions/DownloadException.php';
 require_once __DIR__ . '/../exceptions/TranscodeException.php';
 require_once __DIR__ . '/ProgressObserver.php';
+require_once __DIR__ . '/SsrfGuard.php';
+require_once __DIR__ . '/ValidatingProxy.php';
 
 class Transcoder
 {
@@ -38,6 +36,11 @@ class Transcoder
     private string $ffprobe_bin;
 
     private ?ProgressObserver $progressObserver = null;
+
+    /** Validating forward proxy (SSRF per redirect hop). Null sampai download pertama. */
+    private ?ValidatingProxy $validatingProxy = null;
+    /** Argumen yt-dlp untuk proxy (cache hasil spawn). */
+    private string $proxyArgs = '';
 
     /* @var array<int, array{pid:int, group:bool, label:string, started:int}> */
     private array $childProcesses = [];
@@ -68,14 +71,14 @@ class Transcoder
         $this->base_path    = dirname(__DIR__, 2);
         $this->cookies_path = $this->base_path . "/cookies.txt";
         $this->user_agent   = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
-        $this->ffmpeg_bin   = $this->resolveBinary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-        $this->ffprobe_bin  = $this->resolveBinary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
+        $this->ffmpeg_bin   = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
+        $this->ffprobe_bin  = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 
         $this->user_role = get_user_role($this->conn, $this->user_id);
 
         $ytdlp_bin = defined('MEEL_YTDLP_PATH') && MEEL_YTDLP_PATH !== ''
             ? MEEL_YTDLP_PATH
-            : $this->resolveBinary(['/usr/local/bin/yt-dlp', '/usr/bin/yt-dlp', 'yt-dlp']);
+            : resolve_binary(['/usr/local/bin/yt-dlp', '/usr/bin/yt-dlp', 'yt-dlp']);
         $node_bin  = defined('MEEL_NODE_PATH') && MEEL_NODE_PATH !== ''
             ? MEEL_NODE_PATH
             : '/usr/bin/node';
@@ -92,6 +95,14 @@ class Transcoder
     }
 
     /* @param callable(string $stage, array $data): void|ProgressObserver|null $listener */
+    public function __destruct()
+    {
+        // Pastikan proxy (dan seluruh child process) ikut dimatikan saat
+        // object Transcoder dibuang — tidak ada proses yatim yang tersisa.
+        $this->validatingProxy?->stop();
+        $this->terminateAllProcesses();
+    }
+
     public function setProgressListener(callable|ProgressObserver|null $listener): void
     {
         if ($listener instanceof ProgressObserver) {
@@ -239,13 +250,7 @@ class Transcoder
         return file_exists($path) ? $path : null;
     }
 
-    // ─── BINARY RESOLVER ───
-
-    private function resolveBinary(array $candidates): string
-    {
-        return resolve_binary($candidates);
-    }
-
+    // ─── QUEUE MANAGEMENT ───
     // ─── QUEUE MANAGEMENT ───
 
     public function checkServerBusy(): ?array
@@ -282,9 +287,39 @@ class Transcoder
 
     // ─── METADATA ───
 
-    private function fetchMetadata(string $url): ?array
+    /**
+     * Pastikan validating forward proxy aktif dan kembalikan argumen yt-dlp
+     * untuk memakainya (--proxy). Fail closed: bila proxy tidak bisa
+     * dijalankan, lempar RuntimeException — download tidak pernah diizinkan
+     * melewati jalur yang tidak tervalidasi.
+     */
+    private function ensureDownloadProxy(): string
     {
-        $cmd    = $this->base_cmd . "--skip-download --print-json " . escapeshellarg($url) . " 2>&1";
+        if ($this->proxyArgs !== '') {
+            return $this->proxyArgs;
+        }
+        $this->validatingProxy = new ValidatingProxy();
+        $this->proxyArgs = '--proxy ' . escapeshellarg($this->validatingProxy->url()) . ' ';
+        return $this->proxyArgs;
+    }
+
+    private function fetchMetadata(string $url, string $extraArgs = ''): ?array
+    {
+        // Defense-in-depth: never let an unvalidated URL reach yt-dlp, even if
+        // a future caller skips processDownload(). SsrfGuard performs protocol
+        // allowlisting + public-IP validation of every resolved address.
+        try {
+            (new SsrfGuard())->validate($url);
+        } catch (\RuntimeException $e) {
+            throw new DownloadException($e->getMessage(), $url, 'validation');
+        }
+
+        // Defense-in-depth: routing lewat validating proxy juga dipaksa di sini,
+        // sehingga hop redirect apa pun (termasuk yang diikuti yt-dlp sendiri)
+        // tetap melewati SsrfGuard di sisi proxy. Hindari duplikasi bila caller
+        // (processDownload) sudah menempelkan --proxy pada $extraArgs.
+        $proxyArgs = str_contains($extraArgs, '--proxy') ? '' : $this->ensureDownloadProxy();
+        $cmd    = $this->base_cmd . $proxyArgs . $extraArgs . "--skip-download --print-json " . escapeshellarg($url) . " 2>&1";
         exec($cmd, $output_array, $return_var);
         $output = implode("\n", $output_array);
 
@@ -308,7 +343,6 @@ class Transcoder
             }
         }
 
-        // Catat error ke log server
         error_log("[MEeL-Transcoder] Gagal parsing metadata untuk URL: " . $url);
         throw new DownloadException(
             "Gagal parsing metadata dari yt-dlp",
@@ -340,15 +374,45 @@ class Transcoder
     // BAGIAN 1: DOWNLOAD & FINALISASI (processDownload)
     public function processDownload(string $url, string $type): string
     {
-        // Validasi input
-        if (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('/^https?:\/\//i', $url)) {
-            throw new DownloadException("URL tidak valid atau protokol tidak didukung.", $url, 'validation');
-        }
+        $url = trim($url);
+
         if (!in_array($type, ['video', 'music'], true)) {
             throw new DownloadException("Tipe media tidak valid.", $url, 'validation');
         }
         if (strlen($url) > 500) {
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
+        }
+
+        // ─── SSRF GUARD ───
+        // Validasi sentral: hanya http/https, dan semua alamat hasil resolusi
+        // DNS harus publik (bukan localhost/10.x/172.16-31.x/192.168.x/
+        // 169.254.x/IPv6 private, dll). Gagal-fail = tolak URL.
+        try {
+            $ssrf = new SsrfGuard();
+            $ssrf->validate($url);
+
+            // Pin koneksi HTTP ke IP publik yang sudah divalidasi + paksa Host
+            // header asli. Ini menutup celah DNS-rebinding antara validasi dan
+            // request nyata.
+            [$dl_url, $dl_extra] = $ssrf->pinHttpUrl($url);
+        } catch (\RuntimeException $e) {
+            throw new DownloadException("URL tidak diizinkan: " . $e->getMessage(), $url, 'validation');
+        }
+
+        // Arahkan SEMUA trafik yt-dlp (metadata + download + setiap redirect)
+        // lewat validating forward proxy. Proxy menerapkan SsrfGuard pada
+        // SETIAP hop — menutup celah open-redirect → IP private yang tidak bisa
+        // ditutup hanya dengan validasi URL awal. Gagal start = tolak download
+        // (fail closed, tidak ada fallback tanpa proteksi). Kegagalan ini adalah
+        // masalah infrastruktur, BUKAN penolakan URL — jadi pesan dibedakan.
+        try {
+            $dl_extra = $this->ensureDownloadProxy() . $dl_extra;
+        } catch (\RuntimeException $e) {
+            throw new DownloadException(
+                "Layanan keamanan download tidak tersedia. Coba lagi nanti.",
+                $url,
+                'proxy'
+            );
         }
 
         require_disk_space(512 * 1024 * 1024, $this->getShmTempPath(), 'RAM disk staging');
@@ -358,7 +422,7 @@ class Transcoder
         $queue_id = $this->lockQueue($url, $type);
 
         try {
-            $meta = $this->fetchMetadata($url);
+            $meta = $this->fetchMetadata($dl_url, $dl_extra);
             if (!$meta) {
                 throw new DownloadException("Gagal ambil metadata dari yt-dlp.", $url, 'metadata');
             }
@@ -367,7 +431,6 @@ class Transcoder
             throw $e;
         }
 
-        // ditangani CSS (text-overflow: ellipsis) di halaman library.
         $title_candidates = array_values(array_filter(
             [$meta['title'] ?? '', $meta['fulltitle'] ?? '', $meta['alt_title'] ?? '', $meta['track'] ?? ''],
             fn($t) => $t !== '' && mb_substr(trim($t), -3) !== '...'
@@ -380,7 +443,6 @@ class Transcoder
         $clean       = getRomajiName($title);
         $description = !empty($meta['description']) ? $meta['description'] : 'Upload by MEeL Engine';
 
-        // Siapkan perintah download sesuai tipe
         $shm_temp    = null;
         $temp_id     = null;
         $staging_dir = null;
@@ -392,10 +454,10 @@ class Transcoder
             // proses yang mulai di detik yang sama.
             $temp_id   = "raw_" . time() . "_" . substr(md5(uniqid('', true)), 0, 4);
             $temp_path = "$shm_temp/$temp_id.%(ext)s";
-            $cmd_dl    = $this->base_cmd
+            $cmd_dl    = $this->base_cmd . $dl_extra
                 . "-f bestaudio -o " . escapeshellarg($temp_path)
                 . " --write-thumbnail --embed-thumbnail"
-                . " --newline " . escapeshellarg($url) . " 2>&1";
+                . " --newline " . escapeshellarg($dl_url) . " 2>&1";
         } else {
 
             $staging_dir = $this->getShmTempPath() . '/';
@@ -409,11 +471,11 @@ class Transcoder
             $output_tpl = $staging_dir . $basename . ".%(ext)s";
             $format     = $this->resolveVideoFormat($url);
 
-            $cmd_dl = $this->base_cmd
+            $cmd_dl = $this->base_cmd . $dl_extra
                 . "-f " . escapeshellarg($format)
                 . " --merge-output-format mp4 -o " . escapeshellarg($output_tpl)
                 . " --write-thumbnail --newline "
-                . escapeshellarg($url) . " 2>&1";
+                . escapeshellarg($dl_url) . " 2>&1";
         }
 
         $this->emit('download_start', ['url' => $url]);
@@ -423,14 +485,6 @@ class Transcoder
 
         putenv('PATH=/usr/local/bin:/usr/bin:/bin');
         putenv('LC_ALL=en_US.UTF-8');
-        // $cmd_dl sudah berisi args yang di-escape dengan escapeshellarg() + filter_var() untuk URL
-        // session/process-group leader (PGID == PID yang dilaporkan
-        // bisa dihentikan presisi via kill terhadap process group,
-        // menggantikan pkill -f berbasis marker string.
-        // shell saat itu juga. Tanpa sh -c, yang jalan hanya
-        // `setsid timeout N export ...` (export bukan binary, langsung
-        // "command not found"), shell sudah terganti oleh exec, dan
-        // diam-diam dengan error log kosong.
         $full_cmd = "exec setsid timeout " . self::DOWNLOAD_TIMEOUT
             . " sh -c " . escapeshellarg($cmd_dl);
         $dl_desc  = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
@@ -449,7 +503,6 @@ class Transcoder
         $dl_label  = ($type === 'music') ? ($temp_id ?? 'music') : ($basename ?? 'video');
         $this->trackChildProcess($dl_pgid, true, 'yt-dlp download (' . $dl_label . ')');
 
-        // Contoh output yt-dlp:
         $frag_retry_abort  = false;
         $php_timeout_abort = false;
         $frag_total        = 0;
@@ -517,7 +570,6 @@ class Transcoder
         proc_close($dl_proc);
         $this->untrackChildProcess($dl_pgid);
 
-        // Validasi hasil download
         $is_success = false;
 
         if ($type === 'music') {
@@ -577,7 +629,6 @@ class Transcoder
         }
 
         if ($raw_file) {
-            // batas URL server (Apache LimitRequestLine ~8190 byte).
             $meta_key = pathinfo($raw_file, PATHINFO_FILENAME);
             if (!isset($_SESSION['meel_pending_music']) || !is_array($_SESSION['meel_pending_music'])) {
                 $_SESSION['meel_pending_music'] = [];
@@ -594,9 +645,7 @@ class Transcoder
                 'duration'    => $duration,
                 'description' => $description,
             ];
-            // browser mengeksekusi redirect (mencegah race condition).
             session_write_close();
-            // string biasa.
             $redirect_url = 'controllers/api/post_encode.php?temp_file=' . rawurlencode($raw_file);
             $this->emit('redirect', ['url' => $redirect_url]);
             return 'REDIRECT:' . $redirect_url;
@@ -743,7 +792,6 @@ class Transcoder
             $this->ensureDir($ram_folder, 0777);
         }
 
-        // Jalankan pembuatan sprite di dalam RAM
         $this->generateSpriteAndVTT($staging_mp4, $ram_folder);
 
         $sprite_src = $ram_folder . 'thumb_sprite.webp';
@@ -765,7 +813,6 @@ class Transcoder
             error_log("[MEeL] WARN: thumbnails.vtt tidak terbentuk di RAM: $ram_folder");
         }
 
-        // Bersihkan RAM setelah semua file berhasil dipindahkan
         $this->removeDir($ram_folder);
 
         $this->emit('sprite_progress', ['pct' => 100, 'label' => 'Sprite & VTT selesai.']);
@@ -887,62 +934,104 @@ class Transcoder
             return ['status' => 'error', 'msg' => 'Storage HDD untuk musik tidak mencukupi (hanya ' . sprintf('%.1f', $hdd_free / (1024 ** 3)) . ' GB free).'];
         }
 
-        $shm_temp  = $this->getShmTempPath();
+        $shm_temp   = $this->getShmTempPath();
         $input_path = "$shm_temp/$temp_file";
-        $clean      = getRomajiName($title);
 
-        // Cek konflik nama file
-        $final_fname = $clean . ".ogg";
-        $counter     = 1;
-        while (file_exists("{$this->base_path}/music/upload/file/$final_fname")) {
-            $final_fname = $clean . "-" . $counter . ".ogg";
-            $counter++;
-        }
+        $lock_path = sys_get_temp_dir() . '/meel_encode_' . md5($temp_file) . '.lock';
+        $lock_fp   = fopen($lock_path, 'c');
+        $lock_held = $lock_fp !== false && flock($lock_fp, LOCK_EX);
 
-        $final_path = "{$this->base_path}/music/upload/file/$final_fname";
-        $thumb_name = str_replace('.ogg', '.webp', $final_fname);
+        try {
+            if ($lock_held && !file_exists($input_path)) {
+                $stmt_recent = $this->conn->prepare(
+                    "SELECT filename FROM music
+                     WHERE user_id = ? AND upload_date >= NOW() - INTERVAL 60 SECOND
+                     ORDER BY id DESC LIMIT 1"
+                );
+                if ($stmt_recent) {
+                    $stmt_recent->bind_param("i", $this->user_id);
+                    $stmt_recent->execute();
+                    $row = $stmt_recent->get_result()->fetch_assoc();
+                    $stmt_recent->close();
+                    if (!empty($row['filename'])) {
+                        error_log("[MEeL] encodeMusic: input $temp_file sudah diproses request lain → dianggap sukses (file: {$row['filename']})");
+                        return ['status' => 'success', 'filename' => $row['filename']];
+                    }
+                }
+            }
 
-        // Encode ke Opus/OGG
-        // -vbr on: Variable Bitrate, lebih efisien dari CBR
-        $cmd = escapeshellarg($this->ffmpeg_bin)
-            . " -y -threads " . self::FFMPEG_THREADS
-            . " -i "                 . escapeshellarg($input_path)
-            . " -c:a libopus -vbr on -compression_level 10"
-            . " -metadata title="    . escapeshellarg($title)
-            . " -metadata artist="   . escapeshellarg($artist)
-            . " " . escapeshellarg($final_path) . " 2>&1";
-        $log = shell_exec($cmd);
+            $clean      = getRomajiName($title);
 
-        if (!file_exists($final_path) || filesize($final_path) === 0) {
-            return ['status' => 'error', 'msg' => $log];
-        }
+            $final_fname = $clean . ".ogg";
+            $counter     = 1;
+            while (file_exists("{$this->base_path}/music/upload/file/$final_fname")) {
+                $final_fname = $clean . "-" . $counter . ".ogg";
+                $counter++;
+            }
 
-        $temp_base    = pathinfo($temp_file, PATHINFO_FILENAME);
-        $temp_dir     = $this->getShmTempPath();
-        $thumb_result = $this->extractMusicThumbnail($input_path, $temp_dir, $temp_base, $thumb_name);
+            $final_path = "{$this->base_path}/music/upload/file/$final_fname";
+            $thumb_name = str_replace('.ogg', '.webp', $final_fname);
 
-        $this->removeFile($input_path);
+            // -vbr on: Variable Bitrate, lebih efisien dari CBR
+            $cmd = escapeshellarg($this->ffmpeg_bin)
+                . " -y -threads " . self::FFMPEG_THREADS
+                . " -i "                 . escapeshellarg($input_path)
+                . " -c:a libopus -vbr on -compression_level 10"
+                . " -metadata title="    . escapeshellarg($title)
+                . " -metadata artist="   . escapeshellarg($artist)
+                . " " . escapeshellarg($final_path) . " 2>&1";
+            $log = (string) shell_exec($cmd);
 
-        // Bersihkan sisa file temporary dari yt-dlp
-        foreach (glob("$temp_dir/$temp_base.*") as $leftover) {
-            $this->removeFile($leftover);
-        }
+            if (!file_exists($final_path) || filesize($final_path) === 0) {
+                // Pesan ramah — jangan tampilkan banner ffmpeg mentah ke user.
+                // Detail lengkap tetap dicatat ke error_log.
+                $friendly = "Gagal mengonversi audio. Silakan coba lagi nanti.";
+                if (!file_exists($input_path)) {
+                    $friendly = "File sumber audio tidak ditemukan. Media mungkin sudah diproses — periksa library Anda, atau coba upload ulang.";
+                } elseif ($log) {
+                    $lines = array_values(array_filter(array_map('trim', explode("\n", $log))));
+                    foreach (array_reverse($lines) as $line) {
+                        if (preg_match('/error|failed|invalid/i', $line)) {
+                            $friendly = "Gagal mengonversi audio: " . substr($line, 0, 160);
+                            break;
+                        }
+                    }
+                }
+                error_log("[MEeL] encodeMusic GAGAL ($temp_file): " . substr(trim($log), 0, 800));
+                return ['status' => 'error', 'msg' => $friendly];
+            }
 
-        $metadata = generate_search_metadata($title, $artist, $album);
+            $temp_base    = pathinfo($temp_file, PATHINFO_FILENAME);
+            $temp_dir     = $this->getShmTempPath();
+            $thumb_result = $this->extractMusicThumbnail($input_path, $temp_dir, $temp_base, $thumb_name);
 
-        $stmt = $this->conn->prepare(
-            "INSERT INTO music (title, artist, album, description, search_metadata, filename, thumbnail, duration, user_id, upload_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
-        );
-        $stmt->bind_param("sssssssii", $title, $artist, $album, $description, $metadata, $final_fname, $thumb_result, $duration, $this->user_id);
+            $this->removeFile($input_path);
 
-        if ($stmt->execute()) {
+            foreach (glob("$temp_dir/$temp_base.*") as $leftover) {
+                $this->removeFile($leftover);
+            }
+
+            $metadata = generate_search_metadata($title, $artist, $album);
+
+            $stmt = $this->conn->prepare(
+                "INSERT INTO music (title, artist, album, description, search_metadata, filename, thumbnail, duration, user_id, upload_date)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+            );
+            $stmt->bind_param("sssssssii", $title, $artist, $album, $description, $metadata, $final_fname, $thumb_result, $duration, $this->user_id);
+
+            if ($stmt->execute()) {
+                $stmt->close();
+                return ['status' => 'success', 'filename' => $final_fname];
+            }
+            $err = $this->conn->error;
             $stmt->close();
-            return ['status' => 'success', 'filename' => $final_fname];
+            return ['status' => 'error', 'msg' => 'Database error: ' . $err];
+        } finally {
+            if ($lock_held) {
+                flock($lock_fp, LOCK_UN);
+                fclose($lock_fp);
+            }
         }
-        $err = $this->conn->error;
-        $stmt->close();
-        return ['status' => 'error', 'msg' => 'Database error: ' . $err];
     }
 
     // ─── THUMBNAIL HELPERS ───
@@ -1079,7 +1168,6 @@ class Transcoder
         $stmt_clean->execute();
         $stmt_clean->close();
 
-        // Ambil data video
         $stmt = $this->conn->prepare(
             "SELECT title, filename, thumbnail FROM video WHERE id = ? LIMIT 1"
         );
@@ -1110,7 +1198,6 @@ class Transcoder
         natsort($ts_files);
         $ts_files = array_values($ts_files);
 
-        // Validasi durasi & ukuran
         $file_dur   = $this->probeDuration($m3u8_path);
         $total_size = array_sum(array_map('filesize', $ts_files));
 
@@ -1159,7 +1246,6 @@ class Transcoder
             // Marker > 10 menit (stale) — lanjutkan
         }
 
-        // Buat marker file
         if (!touch($marker_file)) {
             error_log("[MEeL] Gagal membuat marker file: {$marker_file}");
         }
@@ -1169,7 +1255,6 @@ class Transcoder
             fclose($mtx_fp);
         }
 
-        // Cek server busy
         require_once __DIR__ . '/System.php';
         $sys = new System($this->conn);
         if ($sys->isServerBusy()) {
@@ -1185,7 +1270,6 @@ class Transcoder
         $queue_id = (int)$this->conn->insert_id;
         $stmt_q->close();
 
-        // Buat concat list
         $concat_list_path = $output_dir . "concat_{$video_id}_" . time() . ".txt";
         $concat_content   = "";
         foreach ($ts_files as $ts) {
@@ -1198,7 +1282,6 @@ class Transcoder
         $thumb_path = $hls_base . "thumbnail/" . $v_data['thumbnail'];
         $use_thumb  = file_exists($thumb_path) && !empty($v_data['thumbnail']);
 
-        // Konfigurasi codec per format
         switch ($format) {
             case 'ogg':
                 // tapi tetap set untuk ffmpeg I/O

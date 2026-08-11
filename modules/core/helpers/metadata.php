@@ -1,9 +1,5 @@
 <?php
 // helpers/metadata.php — Search Metadata Helper
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('generate_search_metadata')) {
 /**
  * @param string $title Judul video / judul lagu
@@ -21,9 +17,19 @@ function generate_search_metadata(string $title, string $artist = '', string $al
     }
 
     $original = trim("$title $artist $album");
-    $analysis = analyzeJapaneseText($original); // 1x MeCab: romaji + english sekaligus
 
-    $combined = trim($original . ' ' . $analysis['romaji'] . ' ' . $analysis['english']);
+    // Analisis JUDUL terpisah agar alias frasa penuh judul bisa full-cover
+    // (jika digabung dgn artist/album, alias tidak pernah menutupi seluruh input).
+    $title_analysis = analyzeJapaneseText($title);
+
+    // Romaji artist/album dilampirkan terpisah supaya tetap bisa dicari via romaji.
+    // Hanya perlu diproses MeCab jika mengandung non-ASCII — teks ASCII romajinya
+    // sama dengan input (menghindari proc_open yang tidak perlu).
+    $extra_romaji = '';
+    if ($artist !== '' && preg_match('/[^\x20-\x7E]/u', $artist)) $extra_romaji .= ' ' . getRomajiName($artist);
+    if ($album  !== '' && preg_match('/[^\x20-\x7E]/u', $album))  $extra_romaji .= ' ' . getRomajiName($album);
+
+    $combined = trim($original . ' ' . $title_analysis['romaji'] . $extra_romaji . ' ' . $title_analysis['english']);
     return mb_strtolower($combined, 'UTF-8');
 }
 } // end function_exists('generate_search_metadata')

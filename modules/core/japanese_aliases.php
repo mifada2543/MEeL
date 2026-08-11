@@ -46,5 +46,17 @@ return [
     'ニコニコ動画'         => 'Niconico',
     'ニコニコ'            => 'Niconico',
 
+    // ─── Pola gramatikal umum (dicek sebelum gloss per-token) ───
+    // HINDARI pola pendek yang bisa jadi substring kata lain (mis. 'たら' ada
+    // di dalam 'あたらしい' = baru) agar tidak mencemari gloss.
+    'のならば'            => 'in case',
+    'ならば'              => 'if',
+    'けど'                => 'but',
+    'だから'              => 'so',
+    'ために'              => 'for the sake of',
+
+    // ─── Judul lagu: frasa penuh (full-cover → dipakai sebagai terjemahan final) ───
+    '君が飛び降りるのならば' => "In case you're gonna jump",
+
     // Tambahkan entri lain di sini sesuai kebutuhan katalog.
 ];

@@ -21,18 +21,13 @@ class Uploader
         $this->user_id   = (int)$session_user_id;
         $this->username  = $session_username;
         $this->base_dir  = defined('MEEL_HDD_VIDEO_UPLOAD') ? MEEL_HDD_VIDEO_UPLOAD : "/path/to/your/media/video/upload/";
-        $this->ffmpeg_bin  = $this->resolveBinary(['/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg', 'ffmpeg']);
-        $this->ffprobe_bin = $this->resolveBinary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
+        $this->ffmpeg_bin  = resolve_binary(['/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg', 'ffmpeg']);
+        $this->ffprobe_bin = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 
         $this->user_role = get_user_role($this->conn, $this->user_id);
     }
 
     // ─── PRIVATE HELPERS ───
-
-    private function resolveBinary(array $candidates): string
-    {
-        return resolve_binary($candidates);
-    }
 
     private function checkRateLimit(string $table): array
     {
@@ -313,7 +308,6 @@ class Uploader
         $temp_video      = $files['video']['tmp_name'];
         $video_name_orig = $files['video']['name'];
 
-        // Validasi ekstensi
         $ext = strtolower(pathinfo($video_name_orig, PATHINFO_EXTENSION));
         if (!in_array($ext, ['mp4', 'webm', 'mkv'], true)) {
             return ['status' => 'error', 'msg' => "Format video tidak didukung! Gunakan MP4, WebM, atau MKV.", 'alert' => true];
@@ -532,7 +526,6 @@ class Uploader
 
         // ─── INSERT DATABASE (WITH TRANSACTION) ───
         $title       = trim($post['title'] ?? 'Untitled Video');
-        // 1. Ambil data deskripsi dari form POST
         $description = trim($post['description'] ?? '');
         $meta        = generate_search_metadata($title);
 

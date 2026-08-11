@@ -1,6 +1,6 @@
 <?php
-session_name('meel');
-session_start();
+require_once '../modules/core/helpers.php';
+meel_boot_session();
 
 include '../auth/config.php';
 require_once '../modules/core/helpers.php';
@@ -390,6 +390,7 @@ $__vdir = function($dir) {
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;
     </script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
     <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
     <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>

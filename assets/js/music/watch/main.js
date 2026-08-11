@@ -4,7 +4,6 @@
 /* watch/main.js — Entry point folder watch/ (halaman music/watch.php). */
 (function () {
   "use strict";
-  if (document.readyState !== "loading") return;
   var src =
     (document.currentScript && document.currentScript.src) ||
     (function () {
@@ -23,6 +22,16 @@
     "mini-player.js",
     "player-core.js",
   ];
+  // Dipakai oleh assets/js/shared/view-router.js supaya bundle ini bisa
+  // dimuat ulang (SEKALI per page-session) tanpa duplikasi daftar file.
+  window.MEEL_WATCH_BUNDLE = {
+    base: base,
+    qs: qs,
+    files: files.map(function (f) {
+      return base + f + qs;
+    }),
+  };
+  if (document.readyState !== "loading") return;
   for (var i = 0; i < files.length; i++) {
     document.write('<script src="' + base + files[i] + qs + '"><\/script>');
   }

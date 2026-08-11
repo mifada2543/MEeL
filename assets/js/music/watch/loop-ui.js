@@ -19,6 +19,6 @@ function _applyLoopUI(e) {
 }
 function updateLoopUI() {
   _applyLoopUI(
-    player ? player.loop : "true" === localStorage.getItem("meel_global_loop"),
+    player ? player.loop : "true" === localStorage.getItem(MEEL_KEYS.GLOBAL_LOOP),
   );
 }

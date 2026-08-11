@@ -300,6 +300,8 @@ function testHtaccessSecurity(): void {
         // Logs & tests
         'logs', 'tests',
         // Upload dirs (harus disable PHP)
+        // Catatan: data_drive/private_admins bukan folder nyata di repo
+        // (symlink ke storage eksternal) — deny-nya diatur di data_drive/.htaccess.
         'data_drive', 'books/upload', 'music/upload', 'video/upload',
     ];
 
@@ -325,7 +327,7 @@ function testHtaccessSecurity(): void {
         'auth/.htaccess'            => ['Options -Indexes', 'Deny from all'],
         'admin/.htaccess'           => ['Options -Indexes', 'FilesMatch'],
         'logs/.htaccess'            => ['Options -Indexes', 'Deny from all'],
-        'data_drive/.htaccess'      => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
+        'data_drive/.htaccess'      => ['php_flag engine off', 'ForceType', 'Options -Indexes', 'RewriteRule ^private_admins'],
         'books/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'music/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'video/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
@@ -498,10 +500,12 @@ function testFileIntegrity(): void {
         'modules/core/helpers.php',
         'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
-        'modules/core/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
+        'modules/core/Transcoder.php', 'modules/core/SsrfGuard.php', 'modules/core/ValidatingProxy.php',
+        'modules/core/validating_proxy_server.php', 'modules/media/MediaInteraction.php',
+        'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php', 'modules/core/japanese.php',
         'admin/.htaccess', 'auth/.htaccess', 'data_drive/.htaccess',
-        'drive/DriveService.php', 'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
+        'drive/DriveService.php', 'drive/stream.php', 'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
         'controllers/profile/profile_edit.php',
         'controllers/api/like.php', 'controllers/api/delete_comment.php',
         'controllers/api/download_transcode.php', 'controllers/system/UpdateManager.php',
@@ -516,6 +520,263 @@ function testFileIntegrity(): void {
         record("Semua " . count($critical) . " file kritis ditemukan", true);
     } else {
         foreach ($missing as $f) record("File hilang: {$f}", false, false);
+    }
+}
+
+// TEST 13: SSRF & PRIVATE DRIVE HARDENING
+function testSsrfAndPrivateDrive(): void {
+    print_header('TEST 13: SSRF Guard & Private Drive Hardening');
+
+    // ─── 13a: SsrfGuard ada dan dipakai di jalur download ───
+    $guardFile = PROJECT_ROOT . '/modules/core/SsrfGuard.php';
+    if (!file_exists($guardFile)) {
+        record('modules/core/SsrfGuard.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $gc = file_get_contents($guardFile);
+        foreach (['function validate', 'function isPrivateIp', 'function resolvePublicAddresses', 'function pinHttpUrl'] as $m) {
+            if (strpos($gc, $m) !== false) {
+                record("SsrfGuard::{$m}() ada", true);
+            } else {
+                record("SsrfGuard — metode {$m}() TIDAK ditemukan", false, false);
+            }
+        }
+    }
+
+    $tcFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
+    if (file_exists($tcFile)) {
+        $tc = file_get_contents($tcFile);
+        if (strpos($tc, 'new SsrfGuard()') !== false) {
+            record('Transcoder memanggil SsrfGuard sebelum yt-dlp', true);
+        } else {
+            record('Transcoder TIDAK memakai SsrfGuard — SSRF terbuka!', false, false);
+        }
+        if (strpos($tc, 'FILTER_VALIDATE_URL') === false) {
+            record('Transcoder tidak lagi mengandalkan filter_var(FILTER_VALIDATE_URL)', true);
+        } else {
+            record('Transcoder masih memakai FILTER_VALIDATE_URL sebagai validasi URL', false, false);
+        }
+        if (strpos($tc, '$dl_extra') !== false && strpos($tc, 'pinHttpUrl') !== false) {
+            record('HTTP pinning aktif (SsrfGuard::pinHttpUrl + $dl_extra)', true);
+        } else {
+            record('HTTP pinning (SsrfGuard::pinHttpUrl + $dl_extra) TIDAK terdeteksi', false, false);
+        }
+
+        $guardContent = $guardFile !== null && file_exists($guardFile) ? (string) file_get_contents($guardFile) : '';
+        if (strpos($guardContent, '--add-header') !== false) {
+            record('SsrfGuard: --add-header Host (IP pinning) terpasang', true);
+        } else {
+            record('SsrfGuard: --add-header Host TIDAK terdeteksi', false, false);
+        }
+
+        // ─── Validating forward proxy: SSRF pada SETIAP redirect hop ───
+        if (strpos($tc, 'ensureDownloadProxy') !== false && strpos($tc, '--proxy') !== false) {
+            record('Transcoder: yt-dlp diarahkan lewat validating proxy (--proxy)', true);
+        } else {
+            record('Transcoder: --proxy / ensureDownloadProxy TIDAK terdeteksi', false, false,
+                'Tanpa proxy, redirect ke IP private masih bisa diikuti yt-dlp');
+        }
+    }
+
+    $proxyClass = PROJECT_ROOT . '/modules/core/ValidatingProxy.php';
+    if (!file_exists($proxyClass)) {
+        record('modules/core/ValidatingProxy.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $pc = file_get_contents($proxyClass);
+        if (strpos($pc, '127.0.0.1') !== false && strpos($pc, 'proc_open') !== false) {
+            record('ValidatingProxy: spawn CLI + bind 127.0.0.1 (loopback-only)', true);
+        } else {
+            record('ValidatingProxy: bind loopback / proc_open TIDAK terdeteksi', false, false);
+        }
+    }
+
+    $proxyServer = PROJECT_ROOT . '/modules/core/validating_proxy_server.php';
+    if (!file_exists($proxyServer)) {
+        record('modules/core/validating_proxy_server.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $ps = file_get_contents($proxyServer);
+        foreach (['SsrfGuard', 'CONNECT', 'resolvePublicAddresses'] as $pat) {
+            if (strpos($ps, $pat) === false) {
+                record("validating_proxy_server: {$pat} TIDAK ditemukan", false, false);
+            }
+        }
+        record('validating_proxy_server: SsrfGuard diterapkan per hop (CONNECT + resolve)', true);
+    }
+
+    // ─── 13b: Private Drive storage di-deny web server ───
+    // primary: aturan deny ter-track di data_drive/.htaccess (berlaku untuk
+    // semua deployment, termasuk saat private_admins/ adalah symlink storage).
+    $parentHt = PROJECT_ROOT . '/data_drive/.htaccess';
+    if (!file_exists($parentHt)) {
+        record('data_drive/.htaccess — FILE TIDAK DITEMUKAN!', false, false,
+            'Tanpa deny, file private bisa diambil langsung lewat web!');
+    } else {
+        $phc = (string) file_get_contents($parentHt);
+        if (strpos($phc, 'private_admins') !== false && strpos($phc, '[F') !== false) {
+            record('data_drive/.htaccess — deny subtree private_admins OK (RewriteRule [F])', true);
+        } else {
+            record('data_drive/.htaccess — TIDAK ada deny untuk private_admins', false, false,
+                'Tambahkan RewriteRule ^private_admins/ - [F,L]');
+        }
+    }
+
+    // lapisan kedua (opsional, dibuat saat deploy pada target storage):
+    $nestedHt = PROJECT_ROOT . '/data_drive/private_admins/.htaccess';
+    if (is_file($nestedHt)) {
+        $nhc = (string) file_get_contents($nestedHt);
+        if (strpos($nhc, 'Require all denied') !== false) {
+            record('data_drive/private_admins/.htaccess — Require all denied OK (lapisan 2)', true);
+        } else {
+            record('data_drive/private_admins/.htaccess — TIDAK ada Require all denied', true, true);
+        }
+    } else {
+        record('data_drive/private_admins/.htaccess — tidak ada (deploy-time; parent rule aktif)', true, true);
+    }
+
+    // ─── 13c: Streaming private harus lewat endpoint ber-otorisasi ───
+    $streamFile = PROJECT_ROOT . '/drive/stream.php';
+    if (!file_exists($streamFile)) {
+        record('drive/stream.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $sc = file_get_contents($streamFile);
+        $need = [
+            'authorize()'            => 'authorize()',
+            'verify_csrf_token'      => 'verify_csrf_token',
+            'getFileForDownload'     => 'getFileForDownload',
+            'basename (traversal)'   => 'basename(',
+        ];
+        foreach ($need as $label => $pat) {
+            if (strpos($sc, $pat) !== false) {
+                record("drive/stream.php — {$label} OK", true);
+            } else {
+                record("drive/stream.php — {$label} TIDAK ditemukan", false, false);
+            }
+        }
+    }
+
+    // ─── 13d: URL listing private diarahkan ke stream.php (bukan path web) ───
+    $dsFile = PROJECT_ROOT . '/drive/DriveService.php';
+    if (file_exists($dsFile)) {
+        $ds = file_get_contents($dsFile);
+        if (strpos($ds, "'stream.php?file='") !== false) {
+            record('DriveService: listing private memakai stream.php ber-auth', true);
+        } else {
+            record('DriveService: listing private TIDAK memakai stream.php', false, false,
+                'URL web langsung membocorkan file private');
+        }
+        if (strpos($ds, "fopen(\$destination, 'x')") !== false || (strpos($ds, '@fopen($destination') !== false && strpos($ds, ", 'x')") !== false)) {
+            record('DriveService: reservasi nama file atomik (fopen O_EXCL)', true);
+        } else {
+            record('DriveService: reservasi nama file atomik TIDAK terdeteksi', false, false);
+        }
+        if (strpos($ds, 'flock($lockFp') !== false) {
+            record('DriveService: kuota ditegakkan di dalam flock (atomik)', true);
+        } else {
+            record('DriveService: kuota tanpa flock — rawan race condition', false, false);
+        }
+    }
+}
+
+// TEST 14: FATAL-BUG REGRESSION GUARD
+// Guard statis untuk dua bug fatal yang pernah terjadi:
+//   1) INSERT guest ke tabel users tanpa kolom `password` (NOT NULL) →
+//      Uncaught mysqli_sql_exception di MySQL/MariaDB strict mode.
+//   2) Query chart "7-Day Activity" memakai v.views/m.views yang tidak
+//      eksis di subquery UNION (alias t) → SQL error, admin dashboard crash.
+function testFatalBugRegression(): void {
+    print_header('TEST 14: Fatal-Bug Regression Guard');
+
+    // ─── 14a: Guest INSERT di activity_logger.php harus mengisi kolom password ───
+    // schema.sql: `password varchar(255) NOT NULL` — INSERT tanpa nilai langsung
+    // fatal di strict mode. Password guest diisi nilai acak (tidak pernah dipakai
+    // login), bukan dibiarkan kosong.
+    $alFile = PROJECT_ROOT . '/modules/core/activity_logger.php';
+    if (!file_exists($alFile)) {
+        record('modules/core/activity_logger.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $al = (string) file_get_contents($alFile);
+
+        if (strpos($al, 'INSERT INTO users (username, password, role') !== false) {
+            record('activity_logger: INSERT guest menyertakan kolom password', true);
+        } else {
+            record('activity_logger: INSERT guest TIDAK mengisi kolom password — fatal di strict mode!', false, false,
+                'Tambahkan kolom password + bind_param, isi dengan random_bytes()');
+        }
+
+        if (strpos($al, 'random_bytes') !== false && strpos($al, '$guest_pass') !== false) {
+            record('activity_logger: password guest acak (random_bytes) — aman', true);
+        } else {
+            record('activity_logger: password guest tidak di-generate acak', false, false,
+                'Kolom password NOT NULL tanpa nilai acak = error strict mode');
+        }
+
+        if (strpos($al, 'ON DUPLICATE KEY UPDATE') !== false) {
+            record('activity_logger: guest upsert (ON DUPLICATE KEY UPDATE) OK', true);
+        } else {
+            record('activity_logger: ON DUPLICATE KEY UPDATE TIDAK terdeteksi', true, true,
+                'Guest row bisa menumpuk setiap request');
+        }
+    }
+
+    // ─── 14a-2: SEMUA call site INSERT INTO users wajib mengisi kolom password ───
+    // Pemindaian menyeluruh (termasuk tests/) — bukan hanya activity_logger.php,
+    // agar call site baru yang lupa kolom `password` (NOT NULL) langsung tertangkap.
+    $insertSites = [];
+    $ri = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(PROJECT_ROOT, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+    foreach ($ri as $f) {
+        if ($f->getExtension() !== 'php') continue;
+        $p = $f->getPathname();
+        foreach (['/vendor/', '/node_modules/', '/.git/', '/assets/dict/', '/temp/'] as $ex) {
+            if (strpos($p, $ex) !== false) continue 2;
+        }
+        $c = (string) file_get_contents($p);
+        if (preg_match_all('/INSERT\s+INTO\s+users\s*\(([^)]*)\)/i', $c, $ms)) {
+            foreach ($ms[1] as $cols) {
+                $insertSites[] = [
+                    str_replace(PROJECT_ROOT . '/', '', $p),
+                    (bool) preg_match('/\bpassword\b/i', $cols),
+                ];
+            }
+        }
+    }
+
+    if (empty($insertSites)) {
+        record('Tidak ada INSERT INTO users ditemukan', true, true);
+    } else {
+        $bad = array_filter($insertSites, fn($s) => !$s[1]);
+        if (empty($bad)) {
+            record(count($insertSites) . ' call site INSERT INTO users — semua mengisi kolom password', true);
+        } else {
+            foreach ($bad as $b) {
+                record("{$b[0]} — INSERT INTO users TANPA kolom password (fatal di strict mode!)", false, false,
+                    'Tambahkan kolom password (nilai acak untuk guest/test)');
+            }
+        }
+    }
+
+    // ─── 14b: Query chart 7-Day Activity di admin_data.php ───
+    // Subquery UNION video+music diberi alias t; query luar harus pakai
+    // COALESCE(SUM(views), 0) — bukan v.views/m.views (kolom tidak eksis).
+    $adFile = PROJECT_ROOT . '/controllers/admin/admin_data.php';
+    if (!file_exists($adFile)) {
+        record('controllers/admin/admin_data.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $ad = (string) file_get_contents($adFile);
+
+        if (strpos($ad, 'COALESCE(SUM(views), 0)') !== false && strpos($ad, ') AS t') !== false) {
+            record('admin_data: chart 7-Day pakai COALESCE(SUM(views),0) dari subquery AS t', true);
+        } else {
+            record('admin_data: chart 7-Day TIDAK memakai COALESCE(SUM(views),0)/AS t', false, false,
+                'Query lama gagal: Unknown column v.views in field list');
+        }
+
+        if (strpos($ad, 'v.views') === false && strpos($ad, 'm.views') === false) {
+            record('admin_data: tidak ada referensi v.views/m.views (pola bug lama)', true);
+        } else {
+            record('admin_data: masih ada referensi v.views/m.views — query rusak!', false, false,
+                'Ganti jadi COALESCE(SUM(views), 0) FROM (...) AS t');
+        }
     }
 }
 
@@ -541,6 +802,8 @@ function run(): int {
     testCommandInjection();
     testPasswordPolicy();
     testFileIntegrity();
+    testSsrfAndPrivateDrive();
+    testFatalBugRegression();
 
     // ─── SUMMARY ───
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
@@ -573,7 +836,6 @@ function run(): int {
         echo CLR_YELLOW . "  Review warnings above for best-practice improvements.\n\n" . CLR_RESET;
     }
 
-    // Save report
     $reportFile = PROJECT_ROOT . '/logs/security_report_' . date('Ymd_His') . '.log';
     $report  = "MEeL Security Report\n";
     $report .= "Date: " . date('Y-m-d H:i:s') . "\n";

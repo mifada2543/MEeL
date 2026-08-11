@@ -58,7 +58,9 @@ function testFileIntegrity(): void {
         // Modules
         'modules/core/helpers.php', 'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php',
-        'modules/core/Uploader.php', 'modules/core/Transcoder.php', 'modules/core/japanese.php',
+        'modules/core/Uploader.php', 'modules/core/Transcoder.php', 'modules/core/SsrfGuard.php',
+        'modules/core/ValidatingProxy.php', 'modules/core/validating_proxy_server.php',
+        'modules/core/japanese.php',
         'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php',
         // Controllers
@@ -74,7 +76,7 @@ function testFileIntegrity(): void {
         'music/index.php', 'music/upload.php', 'music/watch.php',
         'music/stream.php', 'music/playlist_action.php', 'music/view_playlist.php',
         'books/index.php', 'books/upload.php', 'books/read.php',
-        'drive/index.php', 'drive/upload.php', 'drive/download.php', 'drive/delete.php',
+        'drive/index.php', 'drive/upload.php', 'drive/download.php', 'drive/delete.php', 'drive/stream.php',
         // Htaccess
         'auth/.htaccess', 'admin/.htaccess', 'logs/.htaccess',
         'data_drive/.htaccess', 'video/.htaccess', 'music/.htaccess',
@@ -120,6 +122,8 @@ function testClassLoading(): void {
         'MediaInteraction'   => 'modules/media/MediaInteraction.php',
         'System'             => 'modules/core/System.php',
         'GarbageCollector'   => 'modules/core/GarbageCollector.php',
+        'SsrfGuard'          => 'modules/core/SsrfGuard.php',
+        'ValidatingProxy'    => 'modules/core/ValidatingProxy.php',
         'UpdateManager'      => 'controllers/system/UpdateManager.php',
         'BookRepository'     => 'modules/media/MediaLibrary.php',
         'BookUploader'       => 'modules/media/MediaLibrary.php',
@@ -253,6 +257,7 @@ function testSecurityCsrf(): void {
         'video/watch.php'     => ['csrf_token'],
         'drive/upload.php'    => ['verify_csrf_token'],
         'drive/download.php'  => ['verify_csrf_token', 'csrf_token'],
+        'drive/stream.php'    => ['verify_csrf_token', 'csrf_token'],
         'drive/delete.php'    => ['verify_csrf_token'],
         'video/upload.php'    => ['verify_csrf_token', 'csrf_token'],
         'music/upload.php'    => ['verify_csrf_token', 'csrf_token'],
@@ -364,6 +369,7 @@ function testSecurityBasename(): void {
     $checks = [
         'music/stream.php'      => 'basename(',
         'drive/download.php'    => 'basename(',
+        'drive/stream.php'      => 'basename(',
         'drive/delete.php'      => 'basename(',
     ];
 
@@ -480,7 +486,7 @@ function testHtaccessSecurity(): void {
         'auth/.htaccess'       => ['Options -Indexes', 'Deny from all'],
         'admin/.htaccess'      => ['Options -Indexes'],
         'logs/.htaccess'       => ['Options -Indexes', 'Deny from all'],
-        'data_drive/.htaccess' => ['Options -Indexes', 'php_flag engine off'],
+        'data_drive/.htaccess' => ['Options -Indexes', 'php_flag engine off', 'private_admins'],
         'video/.htaccess'      => ['Options -Indexes'],
         'music/.htaccess'      => ['Options -Indexes'],
         'books/.htaccess'      => ['Options -Indexes'],
@@ -663,6 +669,9 @@ function testModifiedFiles(): void {
             'TTL auto-reset'=> ['pattern' => '/300\\)/', 'label' => 'TTL auto-reset 5 menit'],
         ],
         'modules/core/Transcoder.php' => [
+            'validating proxy' => ['pattern' => '/ensureDownloadProxy/', 'label' => 'Validating proxy (ensureDownloadProxy)'],
+            'proxy flag'       => ['pattern' => '/--proxy/', 'label' => 'yt-dlp diarahkan ke --proxy'],
+            'proxy require'    => ['pattern' => '/ValidatingProxy\.php/', 'label' => 'Require ValidatingProxy'],
             'proc_open finalizeVideo' => ['pattern' => '/proc_open\\(\\$hls_cmd/', 'label' => 'proc_open array (finalizeVideo)'],
             'proc_open transcodeVideo' => ['pattern' => '/proc_open\\(\\$tc_cmd/', 'label' => 'proc_open array (transcodeVideo)'],
             'env vars'      => ['pattern' => "/'LD_LIBRARY_PATH'/", 'label' => 'Environment variables via $env'],
@@ -905,7 +914,6 @@ function run(): int {
         echo CLR_YELLOW . "  Review warnings for improvements.\n\n" . CLR_RESET;
     }
 
-    // Save report
     $reportFile = PROJECT_ROOT . '/logs/functional_report_' . date('Ymd_His') . '.log';
     $report  = "MEeL Functional Test Report\n";
     $report .= "Date: " . $GLOBALS['test_timestamp'] . "\n";

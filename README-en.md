@@ -391,16 +391,15 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 125 | 125 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 24 | 24 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 138 pass, 6 warn | 0 | **0** | **✅ 98/100** |
-| **Security Test** | 72 | 66 | 6* | **0** | **⚠️ 66/72*** |
+| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 161 | 157 pass, 4 warn | 0 | **0** | **✅ 99/100** |
+| **Security Test** | 98 | 93 pass, 5 warn | 0 | **0** | **✅ 97/100** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
-> \* Security test: 6 fails appear only when the storage HDD (`MEEL_HDD_BASE`) is
-> not mounted — the upload directories are missing, so their `.htaccess` cannot
-> be verified. Once storage is active: **72/72**. Quick check:
-> `php tests/check_deploy.php`
+> Security test: 5 non-critical warnings (MediaViewer raw-query review, profile_edit
+> MIME check, and session parameter detection) — not failures; score **97/100**.
+> Storage & deployment verification: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
 

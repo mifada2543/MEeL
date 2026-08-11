@@ -1,9 +1,5 @@
 <?php
 // helpers/storage.php — Storage, Disk & Thumbnail Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('music_thumbnail_url')) {
 function music_thumbnail_url(?string $thumbnail): string
 {
@@ -130,7 +126,6 @@ function dir_size(string $path, int $cache_ttl = 300): float
     $cache_key  = 'dirsize_' . md5($path);
     $cache_file = dirname(__DIR__, 3) . '/temp/' . $cache_key . '.cache';
 
-    // Cek cache
     if (is_readable($cache_file)) {
         $content = file_get_contents($cache_file);
         $cached  = $content !== false ? json_decode($content, true) : null;
@@ -147,7 +142,6 @@ function dir_size(string $path, int $cache_ttl = 300): float
     $output = shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
     if ($output && preg_match('/^(\d+)/', $output, $m)) {
         $size = (float)$m[1];
-        // Simpan cache
         meel_write_cache_file($cache_file, json_encode(['size' => $size, 'time' => time()]));
         return $size;
     }
@@ -161,7 +155,6 @@ function dir_size(string $path, int $cache_ttl = 300): float
                 $size += $file->getSize();
             }
         }
-        // Simpan cache
         meel_write_cache_file($cache_file, json_encode(['size' => $size, 'time' => time()]));
     } catch (RuntimeException $e) {
         return 0.0;

@@ -46,7 +46,6 @@ if (isset($_POST['start_transcode'])) {
 
 $video_id_value = isset($_GET['id']) ? (int)$_GET['id'] : "";
 
-// Format meta info
 $format_meta = [
     'mp3' => ['label' => 'MP3',  'desc' => '128 kbps · MPEG Audio',    'color' => '#ef4444', 'dim' => 'rgba(239,68,68,.12)',  'icon' => 'music', 'textClass' => 'text-red-500'],
     'ogg' => ['label' => 'OGG',  'desc' => 'Opus · Efisien & Modern',  'color' => '#f97316', 'dim' => 'rgba(249,115,22,.12)', 'icon' => 'radio', 'textClass' => 'text-orange-500'],
@@ -58,24 +57,14 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL Transcoder - Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.">
-    <meta property="og:title" content="MEeL Transcoder">
-    <meta property="og:description" content="Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>MEeL Transcoder</title>
-    <link rel="icon" type="image/png" href="assets/MEeL.png">
-    <link rel="manifest" href="assets/manifest.json">
-    <link href="assets/css/fonts.css" rel="stylesheet">
-    <script src="assets/js/compatibilitas/lucide.js"></script>
-    <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-    <script src="assets/js/compatibilitas/script.min.js"></script>
-
-    <link href="assets/css/tailwind.min.css" rel="stylesheet">
+<?php
+$_META_TITLE = 'MEeL Transcoder';
+$_META_DESC  = 'MEeL Transcoder - Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.';
+include __DIR__ . '/partials/link.php';
+$scripts_root = '';
+include __DIR__ . '/partials/scripts.php';
+?>
+    <link href="assets/css/font.css" rel="stylesheet">
     <style>        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
         body::before {
             content: '';

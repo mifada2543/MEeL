@@ -1,9 +1,5 @@
 <?php
-// helpers/main.php — Endpoint Modul Helper
-// Memuat semua pecahan modules/core/helpers.php:
-// url, csrf, user, storage, audio, metadata, mfa, subtitle
-// file ini agar seluruh fungsi tersedia.
-// sebagai defense-in-depth terhadap double-include.
+// helpers/main.php — Memuat semua pecahan helpers (lihat require_once di bawah).
 require_once __DIR__ . '/url.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/user.php';
@@ -13,4 +9,6 @@ require_once __DIR__ . '/audio.php';
 require_once __DIR__ . '/metadata.php';
 require_once __DIR__ . '/mfa.php';
 require_once __DIR__ . '/subtitle.php';
+require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/stream_auth.php';
+require_once __DIR__ . '/upload.php';

@@ -52,19 +52,13 @@ $title = htmlspecialchars($book['title']);
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Baca PDF: <?= $title ?>">
-    <meta property="og:title" content="<?= $title ?> — MEeL PDF">
-    <meta property="og:description" content="Baca dokumen PDF <?= $title ?> di MEeL Books.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>MEeL PDF | <?= $title ?></title>
-    <link rel="manifest" href="../assets/manifest.json">
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
+<?php
+$_META_TITLE = 'MEeL PDF | ' . $title;
+$_META_DESC  = 'MEeL - Baca PDF: ' . $title;
+include __DIR__ . '/../partials/link.php';
+$scripts_root = '../';
+include __DIR__ . '/../partials/scripts.php';
+?>
     <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
     <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
     <?php endforeach; ?>
@@ -124,15 +118,8 @@ $title = htmlspecialchars($book['title']);
 
     <script>
     /**
-     * PDF Redirector — untuk akses mobile via HP
-     *
-     * read.php sudah menangani PDF via iframe (?raw=1) untuk desktop.
-     * read_pdf.php (mode normal) dipakai sebagai MEeL-branded gateway
-     * yang auto-redirect ke controllers/api/pdf.php.
-     *
-     * Kenapa redirect? Karena iframe/embed untuk PDF di browser mobile
-     * bermasalah dengan cookie session (subresource tidak kirim cookie).
-     * Redirect ke api/pdf.php sebagai top-level navigation = cookie terkirim.
+     * PDF Redirector — gateway mobile: redirect ke api/pdf.php.
+     * Top-level navigation mengirim cookie session (iframe/embed mobile tidak).
      */
     (function() {
         var loader = document.getElementById('redirectLoader');
@@ -154,7 +141,6 @@ $title = htmlspecialchars($book['title']);
         }, 5000);
     })();
     </script>
-    <script src="../assets/js/compatibilitas/lucide.js"></script>
     <script>lucide.createIcons();
 </script>
 </body>

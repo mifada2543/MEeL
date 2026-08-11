@@ -1,10 +1,6 @@
 <?php
 include 'config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
-if (session_status() === PHP_SESSION_NONE) {
-    session_name('meel');
-    session_start();
-}
 if (!isset($_SESSION['user_id'])) {
     $next = urlencode($_SERVER['REQUEST_URI'] ?? '/');
     header("Location: " . base_url('/auth/login.php?next=' . $next));

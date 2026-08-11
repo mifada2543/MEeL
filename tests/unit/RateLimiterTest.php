@@ -127,7 +127,6 @@ class RateLimiterTest extends TestCase
         ]);
         file_put_contents($expiredFile, $expiredData);
 
-        // Run cleanup
         $cleaned = RateLimiter::cleanup();
         $this->assertSame(1, $cleaned, 'Should have cleaned 1 expired file');
         $this->assertFileDoesNotExist($expiredFile, 'Expired file should be deleted');

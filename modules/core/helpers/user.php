@@ -1,9 +1,5 @@
 <?php
 // helpers/user.php — User Role & Usage Helpers
-// Bagian dari pecahan modules/core/helpers.php.
-// Dimuat oleh helpers/main.php.
-// Semua fungsi dibungkus function_exists() guard sebagai
-// defense-in-depth terhadap double-include.
 if (!function_exists('get_user_usage')) {
 function get_user_usage(string $username): int|float
 {
@@ -58,3 +54,32 @@ function invalidate_user_role_cache(): void
     unset($_SESSION['role']);
 }
 } // end function_exists('invalidate_user_role_cache')
+
+/* Hapus akun guest non-aktif lalu reset AUTO_INCREMENT users (aksi admin & GC).
+ * @param \mysqli $conn Koneksi database aktif
+ * @return ?int Jumlah guest dihapus, atau null jika query gagal
+ */
+if (!function_exists('purge_guest_users')) {
+function purge_guest_users(mysqli $conn): ?int
+{
+    $stmt = $conn->prepare("DELETE FROM users WHERE role = 'guest' AND is_active = 0");
+    if (!$stmt) {
+        return null;
+    }
+    $ok      = $stmt->execute();
+    $deleted = $stmt->affected_rows; // baca sebelum close
+    $stmt->close();
+    if (!$ok) {
+        return null;
+    }
+
+    if ($deleted > 0) {
+        $result = $conn->query("SELECT COALESCE(MAX(id), 0) + 1 AS new_ai FROM users");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            $conn->query("ALTER TABLE users AUTO_INCREMENT = " . (int)$row['new_ai']);
+        }
+    }
+    return $deleted;
+}
+} // end function_exists('purge_guest_users')

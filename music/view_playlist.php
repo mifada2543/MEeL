@@ -1,7 +1,6 @@
 <?php
 require_once '../modules/core/helpers.php';
-session_name('meel');
-session_start();
+meel_boot_session();
 include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
@@ -542,6 +541,7 @@ $__v = function($f) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
     <script src="../assets/js/music/shared/mini-player.js<?= $__v('assets/js/music/shared/mini-player.js') ?>"></script>
