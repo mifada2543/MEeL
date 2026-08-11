@@ -311,9 +311,11 @@ if (isset($conn)) {
 
         $guest_id = "g_" . substr(md5(session_id()), 0, 10);
         $role     = 'guest';
+        $guest_pass = bin2hex(random_bytes(24));
+
         $guest_upd = $conn->prepare(
-            "INSERT INTO users (username, role, last_page, user_agent, access_via, ip_address, last_activity)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())
+            "INSERT INTO users (username, password, role, last_page, user_agent, access_via, ip_address, last_activity)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
              ON DUPLICATE KEY UPDATE
                 last_page = VALUES(last_page),
                 user_agent = VALUES(user_agent),
@@ -321,7 +323,7 @@ if (isset($conn)) {
                 ip_address = VALUES(ip_address),
                 last_activity = NOW()"
         );
-        $guest_upd->bind_param("ssssss", $guest_id, $role, $current_page, $device, $access_via, $user_ip);
+        $guest_upd->bind_param("sssssss", $guest_id, $guest_pass, $role, $current_page, $device, $access_via, $user_ip);
         $guest_upd->execute();
     }
 }
