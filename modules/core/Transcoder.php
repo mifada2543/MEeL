@@ -887,62 +887,121 @@ class Transcoder
             return ['status' => 'error', 'msg' => 'Storage HDD untuk musik tidak mencukupi (hanya ' . sprintf('%.1f', $hdd_free / (1024 ** 3)) . ' GB free).'];
         }
 
-        $shm_temp  = $this->getShmTempPath();
+        $shm_temp   = $this->getShmTempPath();
         $input_path = "$shm_temp/$temp_file";
-        $clean      = getRomajiName($title);
 
-        // Cek konflik nama file
-        $final_fname = $clean . ".ogg";
-        $counter     = 1;
-        while (file_exists("{$this->base_path}/music/upload/file/$final_fname")) {
-            $final_fname = $clean . "-" . $counter . ".ogg";
-            $counter++;
-        }
+        // ─── LOCK SINGLE-FLIGHT per temp_file ───
+        // Navigasi duplikat ke post_encode.php (browser kadang melepas request
+        // ganda saat redirect via script streaming di tengah dokumen) bisa
+        // memicu DUA encodeMusic untuk file yang sama: yang pertama sukses lalu
+        // menghapus file input, yang kedua gagal dengan error ffmpeg menyesatkan
+        // padahal media sudah tersimpan. Lock ini men-serialisasi kedua request;
+        // yang kedua menunggu yang pertama selesai, lalu terdeteksi sebagai
+        // duplikat oleh blok idempotensi di bawah.
+        $lock_path = sys_get_temp_dir() . '/meel_encode_' . md5($temp_file) . '.lock';
+        $lock_fp   = fopen($lock_path, 'c');
+        $lock_held = $lock_fp !== false && flock($lock_fp, LOCK_EX);
 
-        $final_path = "{$this->base_path}/music/upload/file/$final_fname";
-        $thumb_name = str_replace('.ogg', '.webp', $final_fname);
+        try {
+            // ─── IDEMPOTENSI: input hilang tapi media sudah masuk DB baru ───
+            // Request duplikat tiba beberapa detik setelah request pertama selesai
+            // (input sudah dihapus) → jangan tampilkan error, anggap sukses seperti
+            // request pertama. Window 60 detik: race hanya butuh hitungan detik,
+            // window pendek meminimalkan risiko salah mengaitkan ke lagu lain jika
+            // user mengupload 2 lagu berbeda berdekatan.
+            if ($lock_held && !file_exists($input_path)) {
+                $stmt_recent = $this->conn->prepare(
+                    "SELECT filename FROM music
+                     WHERE user_id = ? AND upload_date >= NOW() - INTERVAL 60 SECOND
+                     ORDER BY id DESC LIMIT 1"
+                );
+                if ($stmt_recent) {
+                    $stmt_recent->bind_param("i", $this->user_id);
+                    $stmt_recent->execute();
+                    $row = $stmt_recent->get_result()->fetch_assoc();
+                    $stmt_recent->close();
+                    if (!empty($row['filename'])) {
+                        error_log("[MEeL] encodeMusic: input $temp_file sudah diproses request lain → dianggap sukses (file: {$row['filename']})");
+                        return ['status' => 'success', 'filename' => $row['filename']];
+                    }
+                }
+            }
 
-        // Encode ke Opus/OGG
-        // -vbr on: Variable Bitrate, lebih efisien dari CBR
-        $cmd = escapeshellarg($this->ffmpeg_bin)
-            . " -y -threads " . self::FFMPEG_THREADS
-            . " -i "                 . escapeshellarg($input_path)
-            . " -c:a libopus -vbr on -compression_level 10"
-            . " -metadata title="    . escapeshellarg($title)
-            . " -metadata artist="   . escapeshellarg($artist)
-            . " " . escapeshellarg($final_path) . " 2>&1";
-        $log = shell_exec($cmd);
+            $clean      = getRomajiName($title);
 
-        if (!file_exists($final_path) || filesize($final_path) === 0) {
-            return ['status' => 'error', 'msg' => $log];
-        }
+            // Cek konflik nama file
+            $final_fname = $clean . ".ogg";
+            $counter     = 1;
+            while (file_exists("{$this->base_path}/music/upload/file/$final_fname")) {
+                $final_fname = $clean . "-" . $counter . ".ogg";
+                $counter++;
+            }
 
-        $temp_base    = pathinfo($temp_file, PATHINFO_FILENAME);
-        $temp_dir     = $this->getShmTempPath();
-        $thumb_result = $this->extractMusicThumbnail($input_path, $temp_dir, $temp_base, $thumb_name);
+            $final_path = "{$this->base_path}/music/upload/file/$final_fname";
+            $thumb_name = str_replace('.ogg', '.webp', $final_fname);
 
-        $this->removeFile($input_path);
+            // Encode ke Opus/OGG
+            // -vbr on: Variable Bitrate, lebih efisien dari CBR
+            $cmd = escapeshellarg($this->ffmpeg_bin)
+                . " -y -threads " . self::FFMPEG_THREADS
+                . " -i "                 . escapeshellarg($input_path)
+                . " -c:a libopus -vbr on -compression_level 10"
+                . " -metadata title="    . escapeshellarg($title)
+                . " -metadata artist="   . escapeshellarg($artist)
+                . " " . escapeshellarg($final_path) . " 2>&1";
+            $log = (string) shell_exec($cmd);
 
-        // Bersihkan sisa file temporary dari yt-dlp
-        foreach (glob("$temp_dir/$temp_base.*") as $leftover) {
-            $this->removeFile($leftover);
-        }
+            if (!file_exists($final_path) || filesize($final_path) === 0) {
+                // Pesan ramah — jangan tampilkan banner ffmpeg mentah ke user.
+                // Detail lengkap tetap dicatat ke error_log untuk debugging.
+                $friendly = "Gagal mengonversi audio. Silakan coba lagi nanti.";
+                if (!file_exists($input_path)) {
+                    $friendly = "File sumber audio tidak ditemukan. Media mungkin sudah diproses — periksa library Anda, atau coba upload ulang.";
+                } elseif ($log) {
+                    $lines = array_values(array_filter(array_map('trim', explode("\n", $log))));
+                    foreach (array_reverse($lines) as $line) {
+                        if (preg_match('/error|failed|invalid/i', $line)) {
+                            $friendly = "Gagal mengonversi audio: " . substr($line, 0, 160);
+                            break;
+                        }
+                    }
+                }
+                error_log("[MEeL] encodeMusic GAGAL ($temp_file): " . substr(trim($log), 0, 800));
+                return ['status' => 'error', 'msg' => $friendly];
+            }
 
-        $metadata = generate_search_metadata($title, $artist, $album);
+            $temp_base    = pathinfo($temp_file, PATHINFO_FILENAME);
+            $temp_dir     = $this->getShmTempPath();
+            $thumb_result = $this->extractMusicThumbnail($input_path, $temp_dir, $temp_base, $thumb_name);
 
-        $stmt = $this->conn->prepare(
-            "INSERT INTO music (title, artist, album, description, search_metadata, filename, thumbnail, duration, user_id, upload_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
-        );
-        $stmt->bind_param("sssssssii", $title, $artist, $album, $description, $metadata, $final_fname, $thumb_result, $duration, $this->user_id);
+            $this->removeFile($input_path);
 
-        if ($stmt->execute()) {
+            // Bersihkan sisa file temporary dari yt-dlp
+            foreach (glob("$temp_dir/$temp_base.*") as $leftover) {
+                $this->removeFile($leftover);
+            }
+
+            $metadata = generate_search_metadata($title, $artist, $album);
+
+            $stmt = $this->conn->prepare(
+                "INSERT INTO music (title, artist, album, description, search_metadata, filename, thumbnail, duration, user_id, upload_date)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+            );
+            $stmt->bind_param("sssssssii", $title, $artist, $album, $description, $metadata, $final_fname, $thumb_result, $duration, $this->user_id);
+
+            if ($stmt->execute()) {
+                $stmt->close();
+                return ['status' => 'success', 'filename' => $final_fname];
+            }
+            $err = $this->conn->error;
             $stmt->close();
-            return ['status' => 'success', 'filename' => $final_fname];
+            return ['status' => 'error', 'msg' => 'Database error: ' . $err];
+        } finally {
+            if ($lock_held) {
+                flock($lock_fp, LOCK_UN);
+                fclose($lock_fp);
+            }
         }
-        $err = $this->conn->error;
-        $stmt->close();
-        return ['status' => 'error', 'msg' => 'Database error: ' . $err];
     }
 
     // ─── THUMBNAIL HELPERS ───

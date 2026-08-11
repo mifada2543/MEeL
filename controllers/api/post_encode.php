@@ -30,7 +30,9 @@ if (is_array($pending)) {
     $album       = (string)($pending['album']       ?? $album);
     $duration    = (int)($pending['duration']       ?? $duration);
     $description = (string)($pending['description'] ?? $description);
-    unset($_SESSION['meel_pending_music'][$meta_key]);
+    // NOTE: entri meel_pending_music di-unset SETELAH encode sukses (di bawah),
+    // bukan di sini — request duplikat yang tiba bersamaan tetap bisa membaca
+    // metadata asli, dan encode yang gagal bisa di-retry tanpa kehilangan data.
 } else {
     $title       = $_GET['title']       ?? $title;
     $artist      = $_GET['artist']      ?? $artist;
@@ -43,6 +45,7 @@ $transcoder = new Transcoder($conn, $_SESSION['user_id']);
 $result = $transcoder->encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
 
 if ($result['status'] === 'success') {
+    unset($_SESSION['meel_pending_music'][$meta_key]);
     header("Location: ../../upload_advanced.php?success=1&file=" . urlencode($result['filename']));
     exit;
 } else {
