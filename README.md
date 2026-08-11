@@ -385,7 +385,7 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 | **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 161 | 157 pass, 4 warn | 0 | **0** | **✅ 99/100** |
-| **Security Test** | 92 | 87 pass, 5 warn | 0 | **0** | **✅ 97/100** |
+| **Security Test** | 98 | 93 pass, 5 warn | 0 | **0** | **✅ 97/100** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
 > Security test: 5 warning non-kritis (review query mentah MediaViewer, cek MIME
