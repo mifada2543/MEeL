@@ -112,11 +112,11 @@ probe_403() {
   dir_code=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "$base/" 2>/dev/null) || dir_code="000"
   file_code=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "$base/zz_probe_security.mp4" 2>/dev/null) || file_code="000"
 
-  if [ "$dir_code" = "000" ] && [ "$file_code" = "000" ]; then
-    warn "Web server tidak dapat dijangkau di $URL_BASE — probe dilewati (pakai --url=... atau --skip-403)"
-  elif [ "$dir_code" = "403" ] && [ "$file_code" = "403" ]; then
+  if [ "$dir_code" = "403" ] && [ "$file_code" = "403" ]; then
     echo "${C_GREEN}✔ PASS${C_RESET} — akses langsung ditolak (dir: 403, file: 403)"
     PASS=$((PASS + 1))
+  elif [ "$dir_code" = "000" ] || [ "$file_code" = "000" ]; then
+    warn "curl tidak dapat menjangkau server (dir=$dir_code file=$file_code) — probe tidak konklusif, dilewati (pakai --url=... atau --skip-403)"
   elif [ "$dir_code" = "404" ] || [ "$file_code" = "404" ] \
     || [ "$dir_code" = "301" ] || [ "$dir_code" = "302" ]; then
     warn "HTTP dir=$dir_code file=$file_code — storage belum ter-mount ATAU AllowOverride/mod_rewrite tidak aktif (lihat docs/en/test.md)"
