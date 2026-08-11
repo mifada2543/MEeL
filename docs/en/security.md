@@ -16,6 +16,8 @@ Documentation about authentication, authorization, and protection systems in MEe
 - [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [File Upload Security](#file-upload-security)
 - [Apache .htaccess Protection](#apache-htaccess-protection)
+- [SSRF Protection (Advanced Upload)](#ssrf-protection-advanced-upload)
+- [Private Drive Protection](#private-drive-protection)
 - [Exception Handling](#exception-handling)
 - [Disk Space Validation](#disk-space-validation)
 - [Input Validation](#input-validation)
@@ -496,6 +498,183 @@ if ($detectedType === 'audio') { /* MP3: 0xFFFB, FLAC: 0x664C6143 */ }
 - `books/upload/` — Book files
 - `music/upload/` — Music files
 - `video/upload/` — Video files
+- `data_drive/private_admins/` — Private Drive files (denied for direct HTTP access, see [Private Drive Protection](#private-drive-protection))
+
+---
+
+## SSRF Protection (Advanced Upload)
+
+The Advanced Upload feature (`upload_advanced.php`) lets authenticated users download media from external URLs via yt-dlp. Because yt-dlp runs **on the server**, an attacker-supplied URL that resolves to an internal address could be abused as a Server-Side Request Forgery (SSRF) vector — probing loopback services, cloud metadata endpoints (`169.254.169.254`), or other machines on the local network.
+
+### Architecture
+
+`modules/core/SsrfGuard.php` is the **single source of truth** for every outbound request made on behalf of a user:
+
+```
+User URL → SsrfGuard::validate()
+    ↓
+Protocol allowlist (http/https only)
+    ↓
+Hostname denylist (defense-in-depth: localhost, .local, .internal, …)
+    ↓
+DNS resolution → EVERY A/AAAA record checked against explicit
+private/reserved IPv4 & IPv6 ranges (one bad record = reject)
+    ↓
+Transcoder::processDownload() pins plain-HTTP connections to the
+validated public IP + forces the original Host header
+```
+
+### Validation Rules
+
+| Rule | Detail |
+|------|--------|
+| **Protocol** | Only `http` and `https`. Scheme-less, protocol-relative (`//host/…`), and any other scheme are rejected |
+| **Credentials** | `user:pass@` embedded in the URL is rejected (commonly used to obscure the real destination host) |
+| **Hostname denylist** | `localhost`, `*.local`, `*.internal`, `*.lan`, `*.test`, `*.onion`, … (defense-in-depth only) |
+| **DNS** | Every returned A/AAAA record is validated — a single non-public record rejects the URL (blocks mixed-answer DNS tricks) |
+| **IP literals** | IPv4 & IPv6 literals are validated directly with no DNS round-trip |
+| **Fail closed** | Unresolvable hosts, IDN/punycode hosts, and unparsable IPs are rejected |
+| **Length limit** | URLs longer than 2048 characters are rejected |
+
+### Blocked IP Ranges
+
+**IPv4:** `0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10` (CGNAT), `127.0.0.0/8`, `169.254.0.0/16` (link-local), `172.16.0.0/12`, `192.0.0.0/24`, `192.0.2.0/24` (TEST-NET-1), `192.168.0.0/16`, `198.18.0.0/15`, `198.51.100.0/24` (TEST-NET-2), `203.0.113.0/24` (TEST-NET-3), multicast/reserved `224.0.0.0/4`.
+
+**IPv6:** `::/128`, `::1/128`, `::ffff:0:0/96` (IPv4-mapped — re-checked with the IPv4 logic), `64:ff9b::/96` (NAT64), `100::/64` (discard-only), `2001:db8::/32`, `2001:10::/28` (ORCHID), `2002::/16` (6to4), `3fff::/20`, `fc00::/7` (unique-local), `fe80::/10` (link-local), `fec0::/10` (site-local), `ff00::/8` (multicast).
+
+### DNS Rebinding & HTTP Pinning
+
+A naive "validate once, then request" flow is vulnerable to **DNS rebinding**: the hostname resolves to a public IP during validation, then to a private IP when the real request is made. To close this window, `SsrfGuard::pinHttpUrl()` rewrites validated `http://` URLs so the connection goes directly to the **validated public IP**, while yt-dlp receives `--add-header Host: <original-hostname>`:
+
+```php
+[$dl_url, $dl_extra] = $ssrf->pinHttpUrl($url);
+// $dl_url   = http://<public-ip>[:port]/path  (no second, attacker-influenced DNS lookup)
+// $dl_extra = --add-header 'Host: example.com'
+```
+
+`https://` URLs are returned untouched — TLS SNI and certificate validation require the hostname.
+
+### Validating Forward Proxy (per-redirect enforcement)
+
+A single pre-flight validation cannot protect against **open redirects**: yt-dlp follows redirects itself and re-resolves each target without passing it back through `SsrfGuard`. To close this gap, the download pipeline routes **all** yt-dlp traffic (metadata + download + every redirect hop) through a validating forward proxy:
+
+```
+URL → SsrfGuard::validate() + pinHttpUrl()   (pre-flight, fast fail)
+   ↓
+yt-dlp --proxy http://127.0.0.1:<ephemeral>  (spawned per Transcoder)
+   ↓
+Validating forward proxy (validating_proxy_server.php)
+   • HTTP  absolute-URI → validate host → re-write to origin-form → forward
+   • HTTPS CONNECT host:port → validate host → 200 tunnel → byte relay
+   • Rejected target (private/reserved IP, blocked hostname, unresolvable
+     host, malformed request) → 502, never forwarded
+   ↓
+Stream relayed back to yt-dlp
+```
+
+Key properties:
+
+| Property | Detail |
+|----------|--------|
+| **Every hop validated** | A redirect to `127.0.0.1`, `10.x`, cloud metadata, etc. becomes a new CONNECT/absolute-URI request to the proxy, which applies `SsrfGuard::resolvePublicAddresses()` to the **destination of that hop** and refuses it |
+| **Loopback-only** | The proxy binds to `127.0.0.1` on an ephemeral port — no external party can use it as an open proxy |
+| **DNS-rebinding safe per hop** | Each hop is resolved once and the connection goes to the validated public IP (no separate, later lookup) |
+| **Host header preserved** | The client's `Host:` header is kept for the upstream request, so virtual-host routing and TLS SNI are unaffected |
+| **Fail closed** | If the proxy cannot start, the download is **refused** — there is no unprotected fallback |
+| **Lifecycle** | Spawned lazily on first download via `ValidatingProxy` (proc_open of the CLI script), terminated by the `Transcoder` destructor — no orphan processes |
+
+The `https://` limitation is therefore resolved: even though the original HTTPS URL cannot be pinned (TLS SNI), every redirect destination is re-validated by the proxy before a connection is opened.
+
+### Defense in Depth
+
+`Transcoder::fetchMetadata()` also calls `SsrfGuard::validate()` independently and forces the proxy flag, so even a future caller that skips `processDownload()` cannot pass an unvalidated URL — or an unprotected hop — to yt-dlp.
+
+### Integration Points
+
+| File | Role |
+|------|------|
+| `modules/core/SsrfGuard.php` | Central validation: protocol allowlist, explicit IPv4/IPv6 range checks, DNS all-record validation, HTTP pinning |
+| `modules/core/ValidatingProxy.php` | Spawns/terminates the proxy process, exposes `--proxy` URL (loopback-only) |
+| `modules/core/validating_proxy_server.php` | CLI forward proxy: SsrfGuard on every hop (HTTP absolute-URI + CONNECT tunnel) |
+| `modules/core/Transcoder.php` | `processDownload()` / `fetchMetadata()` call the guard and route yt-dlp through `--proxy`; fail closed if the proxy cannot start |
+| `modules/autoload.php` | Autoloads the `SsrfGuard` class |
+
+---
+
+## Private Drive Protection
+
+MEeL's Cloud Drive stores private user files under `data_drive/private_admins/<username>/...`. Because this subtree lives inside the web document root, the web server could serve files directly — bypassing application-level authorization. Two layered controls close this gap.
+
+### Layer 1 — Web Server Deny (tracked in repo)
+
+`data_drive/.htaccess` is committed to the repository, so the deny rule applies to **every deployment** — including when `private_admins/` is a symlink to external storage:
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^private_admins/ - [F,L]
+</IfModule>
+```
+
+Any direct request to `data_drive/private_admins/...` returns **HTTP 403**, regardless of file type (mp3/mp4/jpg/png/pdf/zip — everything) or HTTP method. `Options -Indexes` alone is NOT sufficient — it only hides directory listings, it does not block direct access to a file whose exact name is known.
+
+### Layer 2 — Hard Deny at the Storage Root
+
+`data_drive/private_admins/.htaccess` (created at deploy time on the storage target):
+
+```apache
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+```
+
+### Authorized Access Paths
+
+Private files are only served through authenticated endpoints:
+
+| Endpoint | Purpose | Checks |
+|----------|---------|--------|
+| `drive/stream.php` | Inline preview / streaming (video, audio, images, PDF) | session + CSRF + ownership |
+| `drive/download.php` | Download of private files | session + CSRF + ownership |
+
+Both endpoints resolve files through `DriveStorage::getFileForDownload()`, which:
+
+1. **Normalizes** scope (`public`/`private`) and type (`video`/`audio`/`dokumen`)
+2. Applies `basename()` — strips any path-traversal component
+3. Calls `verifyPrivateFileAccess()` — compares `realpath()` of the file against `realpath()` of the requester's own private root, so the file must be inside the requester's own directory (symlink escapes and `..` traversal fail)
+
+`stream.php` also supports HTTP `Range` requests so seeking in video/audio keeps working.
+
+### Preview URLs
+
+`DriveStorage::listFilesByType()` never emits direct web paths for private files. Instead it builds `stream.php?file=…&type=…&scope=private&csrf_token=…` URLs, so the browser never touches the raw storage path (which would also leak filesystem layout).
+
+### Race-Condition Hardening (Drive Uploads)
+
+Two TOCTOU races were closed in `DriveStorage::upload()`:
+
+- **Quota** — the "check usage → check quota → write file" sequence runs inside a per-user `flock()` (lock file `temp/drive_quota_<md5(username)>.lock`) with usage computed fresh (bypassing the 5-minute cache), so concurrent uploads cannot collectively exceed the member quota. If the lock cannot be created, the quota check still runs non-atomically — it is never skipped.
+- **Filename collisions** — `fopen($path, 'x')` (O_CREAT|O_EXCL) atomically claims a unique filename before `move_uploaded_file()`, so two simultaneous uploads with the same name cannot both win (closes the `file_exists()` → move TOCTOU).
+
+### Regression Tests
+
+| Test file | Coverage |
+|-----------|----------|
+| `tests/unit/SsrfGuardTest.php` | Protocol allowlist, private/public IP ranges (v4 & v6), DNS resolution incl. mixed records, hostname denylist, HTTP pinning |
+| `tests/unit/ValidatingProxyTest.php` | Real-proxy probes: CONNECT/GET to private targets refused, public targets tunneled, loopback-only bind, process lifecycle |
+| `tests/unit/DriveSecurityTest.php` | Cross-user access, path traversal, symlink escape, realpath boundary, quota enforcement, atomic filename reservation |
+| `tests/security_test.php` / `tests/functional_test.php` | Static wiring checks: guard is called, proxy flag is wired, `.htaccess` deny rules exist, stream endpoint is used for private previews |
+
+**Run everything with one command:** `scripts/verify_security.sh` runs the
+three security suites (PHPUnit security subset, `security_test.php`,
+`functional_test.php`) plus a live Private Drive 403 probe and exits with a
+CI-friendly code (see [test.md](test.md)).
 
 ---
 

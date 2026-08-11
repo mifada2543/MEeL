@@ -20,7 +20,7 @@ MEeL menggunakan pendekatan testing berlapis:
 
 ---
 
-## 🧪 PHPUnit Test Suite (125 Unit + 24 Integration = 149 Test)
+## 🧪 PHPUnit Test Suite (255 Unit + 79 Integration = 334 Test)
 
 ### Instalasi
 
@@ -64,19 +64,29 @@ logs/tests/
 |------|------|---------|
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME, disk space, CSRF, dir_size, deteksi protokol (data provider) |
-| `JapaneseTest.php` | 11 | Romaji conversion, analyzeJapaneseText, English translation (tanpa MeCab) |
+| `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (tanpa MeCab) |
 | `GarbageCollectorTest.php` | 5 | Class existence, idempotency, graceful handling |
 | `SearchEngineTest.php` | 5 | Parse params, sanitizer (`sanitizeQuery`), default values, constants |
 | `MediaLibraryTest.php` | 11 | Logika pagination (pure math), BookRepository mock |
 | `MediaInteractionTest.php` | 7 | Validasi input (ID/type tidak valid) |
+| `MediaViewerTest.php` | 4 | Logika rendering / viewer media |
 | `BootstrapTest.php` | 9 | Env detection, konfigurasi error reporting, timezone |
 | `CssManifestTest.php` | 16 | Manifest CSS modul — semua entri ada, **semua** folder ter-precache oleh `SwPrecache`, entri precache resolve, versi SW deterministik |
+| `SharedJsTest.php` | 7 | Shared JS harness — alur download-backup-codes |
+| `StreamAuthTest.php` | 8 | Guard otorisasi endpoint stream |
+| `SsrfGuardTest.php` | 76 | **Guard SSRF** — allowlist protokol, range IP private/publik (v4 & v6), penolakan record DNS campuran, denylist hostname, HTTP pinning (lihat bawah) |
+| `DriveSecurityTest.php` | 13 | **Private Drive** — akses cross-user, path traversal, symlink escape, boundary realpath, kuota, reservasi nama atomik (lihat bawah) |
+| `ValidatingProxyTest.php` | 19 | **Validating forward proxy** — probe CONNECT/GET nyata: target private ditolak (502), target publik di-tunnel, bind loopback-only (lihat bawah) |
 
 #### Integration Test (`tests/integration/`)
 
 | File | Test | Cakupan |
 |------|------|---------|
 | `MediaInteractionIntegrationTest.php` | 24 | Like/dislike music+video, toggle, ownership check, count sync, guest denial |
+| `ChessGameOverIntegrationTest.php` | 13 | Alur game-over catur dengan DB real |
+| `ChessHelpersIntegrationTest.php` | 6 | Helper catur dengan DB real |
+| `ChessRematchIntegrationTest.php` | 21 | Alur rematch catur dengan DB real |
+| `GarbageCollectorChessRoomsIntegrationTest.php` | 15 | Garbage collection room catur dengan DB real |
 
 ### Test Helpers
 
@@ -98,6 +108,76 @@ logs/tests/
         </testsuite>
     </testsuites>
 </phpunit>
+```
+
+### Test Regresi Keamanan (Guard SSRF, Validating Proxy, Private Drive)
+
+Tiga kelas test khusus mencakup batas-batas keamanan dari security-hardening
+pass. Jalankan bersama atau satu per satu:
+
+```bash
+# Semua test keamanan (SSRF + Drive + proxy) sekaligus
+vendor/bin/phpunit --no-coverage --filter 'SsrfGuardTest|DriveSecurityTest|ValidatingProxyTest'
+
+# Atau per file:
+vendor/bin/phpunit --no-coverage tests/unit/SsrfGuardTest.php
+vendor/bin/phpunit --no-coverage tests/unit/DriveSecurityTest.php
+vendor/bin/phpunit --no-coverage tests/unit/ValidatingProxyTest.php
+```
+
+| File test | Yang diverifikasi (penolakan/penerimaan nyata, bukan sekadar keberadaan) |
+|-----------|----------------------------------------------------------------------|
+| `SsrfGuardTest.php` | Range IPv4/IPv6 private ditolak, IP publik diizinkan, denylist hostname, protokol tak didukung, URL cacat, penolakan kredensial, DNS hostname→IP private, HTTP pinning (`pinHttpUrl`) |
+| `DriveSecurityTest.php` | Download cross-user diblokir, path traversal diblokir, symlink escape diblokir, boundary prefix realpath, penegakan kuota (atomik), reservasi nama atomik |
+| `ValidatingProxyTest.php` | **Menjalankan proses proxy nyata** dan mengirim CONNECT/absolute-URI asli: target private ditolak 502, target publik di-tunnel/relay, bind loopback-only, siklus hidup proses |
+
+### Verifikasi satu-perintah (`scripts/verify_security.sh`)
+
+Ketiga suite keamanan plus probe 403 Private Drive bisa dijalankan dengan satu
+perintah:
+
+```bash
+scripts/verify_security.sh
+# flag opsional: --url=https://staging.example/MEeL --deploy --hdd=... --no-color
+```
+
+Skrip menjalankan, secara berurutan:
+
+1. **PHPUnit subset keamanan** — `SsrfGuardTest | DriveSecurityTest | ValidatingProxyTest`
+2. **Security Test** — `php tests/security_test.php` (scan statis)
+3. **Functional Test** — `php tests/functional_test.php` (verifikasi patch)
+4. **Probe 403 Private Drive** — akses HTTP langsung ke `data_drive/private_admins/`
+   dan path file tiruan harus sama-sama mengembalikan `403` (aturan deny `.htaccess`)
+5. *Opsional* (`--deploy`) — `php tests/check_deploy.php --no-color [--hdd=...]`
+
+Exit code `0` = semua suite lulus (warning diperbolehkan), `1` = minimal satu
+gagal — ramah CI. Tool yang tidak ada (`vendor/bin/phpunit`) atau web server
+yang tidak terjangkau menghasilkan warning dan **di-skip, bukan gagal**.
+`security_test.php` dan `functional_test.php` mengembalikan `1` saat hanya ada
+warning (Score A — mis. storage HDD belum ter-mount); skrip memetakannya ke
+**WARN**, bukan FAIL, sesuai semantik mereka sendiri (mereka mengembalikan `2`
+hanya untuk kegagalan nyata). Flag: `--url=…` (base URL probe),
+`--skip-403`, `--deploy`, `--hdd=…`, `--no-color`. Membutuhkan `bash`,
+CLI `php`, dan `curl`.
+
+> 💡 Komponen yang sama berjalan terpisah di CI (lihat [CI Pipeline](#-ci-pipeline-github-actions));
+> skrip ini adalah padanan sekali-jalan untuk lokal / pra-rilis.
+
+**Catatan:**
+- `SsrfGuardTest` dan `ValidatingProxyTest` punya kasus **bergantung jaringan**
+  (DNS lookup nyata). Di lingkungan offline kasus itu berubah jadi
+  `markTestSkipped()`; di CI (GitHub Actions) dan mesin dengan resolver,
+  kasus itu berjalan sungguhan.
+- `ValidatingProxyTest` butuh **PHP CLI + pcntl + stream_socket_server**
+  (semuanya tersedia di setup XAMPP/LAMP default) karena ia men-spawn
+  `validating_proxy_server.php` sebagai subproses.
+- Pemeriksaan statis wiring untuk boundary yang sama ada di
+  `tests/security_test.php` (TEST 13) dan `tests/functional_test.php` (patch
+  verification), dijalankan dengan:
+
+```bash
+php tests/security_test.php
+php tests/functional_test.php
 ```
 
 ### Menulis Test Baru
@@ -208,14 +288,81 @@ CI pipeline berjalan otomatis pada push/pull request:
 
 ```
 PHP Syntax (8.1, 8.2, 8.3)
-    ├── Functional Tests
-    ├── Security Tests
-    ├── PHPUnit Unit Tests
-    └── HTACCESS & Integrity
+    ├── Functional Tests          → php tests/functional_test.php
+    ├── Security Tests            → php tests/security_test.php
+    ├── PHPUnit Unit Tests        → php vendor/bin/phpunit --no-coverage
+    ├── HTACCESS & Integrity      → kehadiran .htaccess + permission
+    └── Deployment Check         → php tests/check_deploy.php --no-color --hdd=…
             └── CI Summary
 ```
 
-Lihat `.github/workflows/ci.yml` untuk konfigurasi lengkap.
+### Bagaimana test regresi keamanan berjalan di CI
+
+Ketiga kelas test keamanan (`SsrfGuardTest`, `DriveSecurityTest`,
+`ValidatingProxyTest`) berada di `tests/unit/`, yang otomatis diambil oleh job
+`phpunit-tests` (`php vendor/bin/phpunit --no-coverage`). Tidak perlu
+konfigurasi CI tambahan — mereka bagian dari testsuite **MEeL Core Unit
+Tests**. Kasus yang bergantung DNS berjalan sungguhan karena runner GitHub
+Actions punya resolver; `ValidatingProxyTest` lulus karena runner punya PHP
+CLI dengan pcntl/stream sockets.
+
+Pemeriksaan **statis wiring** untuk boundary yang sama dijalankan oleh job
+`security-tests` (TEST 13 di `tests/security_test.php`) dan job
+`functional-tests` (patch verification). Job `htaccess-check` memverifikasi
+kehadiran `.htaccess`; aturan deny level repo untuk `data_drive/private_admins`
+ditegaskan oleh pemeriksaan `data_drive/.htaccess` di security test.
+
+Job `deploy-check` di `.github/workflows/ci.yml` menjalankan suite ini
+(`php tests/check_deploy.php --no-color --hdd=...`) pada layout storage yang
+disimulasikan, dan menyertakan probe 403 live opsional yang berjalan hanya
+saat URL staging dikonfigurasi sebagai secret GitHub:
+
+```yaml
+# .github/workflows/ci.yml — job deploy-check, langkah opsional
+- name: Verify Private Drive 403 (staging)
+  if: secrets.STAGING_URL != ''
+  run: |
+    code=$(curl -s -o /dev/null -w '%{http_code}' \
+      "$STAGING_URL/data_drive/private_admins/" || true)
+    [ "$code" = "403" ] || { echo "Expected 403, got $code"; exit 1; }
+  env:
+    STAGING_URL: ${{ secrets.STAGING_URL }}
+```
+
+### Verifikasi Manual Private Drive 403 (saat deploy)
+
+Setelah deploy (atau sebelum melepas perubahan), pastikan web server benar-benar
+menolak akses langsung ke storage Drive private — file `.htaccess` saja bukan
+bukti. Gunakan file probe sekali pakai, lalu hapus:
+
+```bash
+cd /path/ke/MEeL
+
+# 1. Buat file probe di storage Drive private (symlink ke media storage)
+TARGET=$(readlink -f data_drive/private_admins)
+mkdir -p "$TARGET/zz_403_probe/video"
+echo 'PROBE' > "$TARGET/zz_403_probe/video/probe.mp4"
+
+# 2. Akses langsung → HARUS 403 (bukan 200/404 dari web server)
+curl -s -o /dev/null -w 'file: %{http_code}\n' \
+  'http://localhost/MEeL/data_drive/private_admins/zz_403_probe/video/probe.mp4'
+
+# 3. Directory listing → HARUS 403
+curl -s -o /dev/null -w 'dir:  %{http_code}\n' \
+  'http://localhost/MEeL/data_drive/private_admins/zz_403_probe/'
+
+# 4. Bersihkan probe
+rm -rf "$TARGET/zz_403_probe"
+```
+
+**Output yang diharapkan:** keduanya `file: 403` dan `dir: 403`. Hasil lain
+(200, 301, 404 yang dilayani storage) berarti `AllowOverride` / `mod_rewrite`
+tidak aktif untuk `data_drive/` — perbaiki `httpd.conf` (`AllowOverride All`)
+sebelum rilis.
+
+> 💡 Tip: pemeriksaan yang sama juga bagian dari `tests/check_deploy.php`
+> (aturan deny `.htaccess`) — jalankan `php tests/check_deploy.php --url=http://localhost/MEeL`
+> untuk laporan kesehatan deployment lengkap.
 
 ---
 
@@ -223,17 +370,16 @@ Lihat `.github/workflows/ci.yml` untuk konfigurasi lengkap.
 
 | Suite | Test | Lulus | Gagal | Skor |
 |-------|------|-------|-------|------|
-| **PHPUnit Unit Tests** | 125 | 125 | 0 | ✅ 100% |
-| **PHPUnit Integration Tests** | 24 | 24 | 0 | ✅ 100% |
-| **Functional Test** | 144 | 138 pass, 6 warn | 0 | ✅ 98/100 |
-| **Security Test** | 72 | 66 | 6*
+| **PHPUnit (unit + integration)** | 334 | 334 | 0 | ✅ 100% |
+| **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 108 | 108 | 0 | ✅ 100% |
+| **Functional Test** | 161 | 157 pass, 4 warn | 0 | ✅ 99/100 |
+| **Security Test** | 92 | 87 pass, 5 warn | 0 | ✅ 97/100 |
+| **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
-> *Security test: 6 fail muncul saat storage HDD (`MEEL_HDD_BASE`, symlink
-> `books/upload`/`music/upload`/`video/upload`) tidak ter-mount di lingkungan
-> dev — direktori upload tidak ditemukan sehingga `.htaccess`-nya tidak
-> terverifikasi. Di deployment dengan storage ter-mount, direktori upload
-> punya `.htaccess` (php_flag engine off + ForceType + Options -Indexes).
-> Jalankan ulang setelah storage aktif untuk konfirmasi 72/72.
+> Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri
+> suite tersebut untuk kondisi terkini — pemeriksaan keamanan bisa memunculkan
+> warning tambahan saat storage HDD (`MEEL_HDD_BASE` / symlink upload) belum
+> ter-mount di lingkungan pengembangan.
 
 ---
 

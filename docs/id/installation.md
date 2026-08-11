@@ -253,12 +253,12 @@ yang sama dengan `data_drive/.htaccess`. `tests/security_test.php` memverifikasi
 php tests/security_test.php
 ```
 
-> Jika storage **tidak ter-mount** (atau symlink broken), security test melaporkan
-> **6 FAIL** (`books/upload/`, `music/upload/`, `video/upload/` — "TIDAK PUNYA
-> .htaccess"). Itu **masalah environment, bukan cacat kode**: direktori tidak
-> ditemukan sehingga `.htaccess`-nya tidak bisa diverifikasi. Setelah storage
-> ter-mount dan folder upload punya `.htaccess`, jalankan ulang test untuk
-> konfirmasi `72/72`.
+> Security test sekarang melaporkan **0 FAIL di semua environment** — aturan deny
+> `.htaccess` folder upload ter-track di repo dan diverifikasi secara statis.
+> Ia bisa mengeluarkan **5 warning non-kritis** (review query mentah MediaViewer,
+> cek MIME profile_edit, dan deteksi parameter session) — itu item review,
+> bukan masalah deployment. Untuk verifikasi level storage gunakan
+> `tests/check_deploy.php` (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
 
 #### 7. Verifikasi storage
 
@@ -283,9 +283,9 @@ php tests/check_deploy.php --no-color                # tanpa warna ANSI (untuk C
 
 Setiap item dilaporkan sebagai `PASS` / `WARN` / `FAIL` beserta ringkasan; exit
 code `0` saat sehat dan `1` saat ada minimal satu FAIL (ramah CI). Jika storage
-belum ter-mount, script melaporkan **6 FAIL yang sama persis** dengan yang
-dilaporkan security test — mount storage, perbaiki symlink, tambahkan file
-`.htaccess`, lalu jalankan ulang sampai muncul `✅ Deployment sehat.`
+belum ter-mount, script melaporkan FAIL pada area storage / symlink / `.htaccess`
+upload — mount storage, perbaiki symlink, tambahkan file `.htaccess`, lalu
+jalankan ulang sampai muncul `✅ Deployment sehat.`
 
 ### 6. Konfigurasi Apache
 
@@ -482,14 +482,14 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
   ```
 - Atau nonaktifkan sementara untuk development
 
-### ❌ Security test melaporkan 6 FAIL pada folder upload
-- **Gejala:** `php tests/security_test.php` → `books/upload/`, `music/upload/`,
-  `video/upload/` — "TIDAK PUNYA .htaccess!"
+### ❌ Deployment Check melaporkan FAIL pada folder upload
+- **Gejala:** `php tests/check_deploy.php` → `FAIL` pada symlink upload /
+  `.htaccess` folder upload (storage tidak ter-mount atau symlink broken).
 - **Penyebab:** storage HDD (`MEEL_HDD_BASE`) tidak ter-mount, atau symlink
   upload yang ter-track masih menunjuk ke path pemilik sebelumnya setelah cloning.
 - **Perbaikan:** mount storage, buat ulang symlink, dan pastikan setiap folder
   upload punya `.htaccess` (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
-  Jalankan ulang test untuk konfirmasi `72/72`.
+  Jalankan ulang `php tests/check_deploy.php` sampai muncul `✅ Deployment sehat.`
 
 ### ❌ "403 Forbidden" pada halaman
 - Periksa `.htaccess` di direktori terkait

@@ -382,16 +382,15 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 125 | 125 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 24 | 24 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 138 pass, 6 warn | 0 | **0** | **✅ 98/100** |
-| **Security Test** | 72 | 66 | 6* | **0** | **⚠️ 66/72*** |
+| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 161 | 157 pass, 4 warn | 0 | **0** | **✅ 99/100** |
+| **Security Test** | 92 | 87 pass, 5 warn | 0 | **0** | **✅ 97/100** |
 | **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
 
-> \* Security test: 6 fail hanya muncul saat storage HDD (`MEEL_HDD_BASE`) tidak
-> ter-mount — folder upload tidak ditemukan sehingga `.htaccess`-nya tak
-> terverifikasi. Setelah storage aktif: **72/72**. Cek cepat:
-> `php tests/check_deploy.php`
+> Security test: 5 warning non-kritis (review query mentah MediaViewer, cek MIME
+> profile_edit, dan deteksi parameter session) — bukan kegagalan; skor **97/100**.
+> Verifikasi storage & deployment: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
 
