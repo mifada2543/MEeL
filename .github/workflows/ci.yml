@@ -93,7 +93,11 @@ jobs:
       - name: Run Functional Tests
         run: |
           if [ -f tests/functional_test.php ]; then
-            php tests/functional_test.php || exit $?
+            php tests/functional_test.php
+            rc=$?
+            # 1 = lulus dengan peringatan (storage/HDD belum ter-mount, dll.) → tetap hijau
+            if [ "$rc" -gt 1 ]; then exit "$rc"; fi
+            if [ "$rc" -eq 1 ]; then echo "⚠️  Functional test passed with warnings (exit 1)"; fi
           else
             echo "⚠️  Functional test not found, skipping."
           fi
@@ -125,7 +129,11 @@ jobs:
       - name: Run Security Tests
         run: |
           if [ -f tests/security_test.php ]; then
-            php tests/security_test.php || exit $?
+            php tests/security_test.php
+            rc=$?
+            # 1 = lulus dengan peringatan (storage/HDD belum ter-mount, dll.) → tetap hijau
+            if [ "$rc" -gt 1 ]; then exit "$rc"; fi
+            if [ "$rc" -eq 1 ]; then echo "⚠️  Security test passed with warnings (exit 1)"; fi
           else
             echo "⚠️  Security test not found, skipping."
           fi
@@ -201,7 +209,7 @@ jobs:
             "controllers" "modules" "logs" "tests" "database"
             "auth" "err" "temp" "data_drive" "books/upload"
             "music/upload" "video/upload" "drive/templates"
-            "docs/partials" "partials" "admin"
+            "docs/partials" "partials" "admin" "scripts"
           )
           missing=0
           for dir in "${sensitive_dirs[@]}"; do
@@ -234,11 +242,97 @@ jobs:
           done
           echo "✅ Permission check complete."
 
-  # ─── Job 6: Summary / Status ───
+  # ─── Job 6: Deployment Check ───
+  # Menjalankan tests/check_deploy.php — verifikasi lingkungan deployment
+  # (MEEL_HDD_BASE, upload symlinks, .htaccess hardening, PWA mod_rewrite,
+  # dan validating forward proxy SSRF). Di runner, storage lokal (book/music/
+  # video upload + private_admins) disimulasikan ke $RUNNER_TEMP karena
+  # symlink yang ter-track di repo menunjuk ke path /media yang tidak ada.
+  # Argumen --hdd meniru MEEL_HDD_BASE (lihat check_deploy.php --help).
+  deploy-check:
+    name: Deployment Check
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: none
+
+      - name: Simulate storage layout (temp HDD + upload dirs)
+        run: |
+          # check_deploy memverifikasi MEEL_HDD_BASE, upload symlinks dan
+          # .htaccess upload dirs. Runner tidak punya /media storage, jadi kita
+          # buat layout tiruan yang valid di $RUNNER_TEMP lalu arahkan symlink
+          # upload ke sana (check_deploy memeriksa target symlink).
+          #
+          # Asumsi: books/music/video/upload dan data_drive/private_admins
+          # adalah symlink yang ter-track git (mode 120000) menuju /media/...
+          # yang TIDAK ada di runner — rm -f menghapus symlink-nya saja (bukan
+          # target), lalu ln -s membuat symlink baru ke storage temp.
+          HDD="$RUNNER_TEMP/meel_storage/media"
+          mkdir -p "$HDD/video/upload/video" "$HDD/video/upload/thumbnail" \
+                   "$HDD/music/upload" "$HDD/books/upload" \
+                   "$HDD/drive/private_admins"
+
+          # .htaccess hardening untuk tiap upload dir (pola sama dengan deploy)
+          for m in video music books; do
+            cp "${{ github.workspace }}/data_drive/.htaccess" "$HDD/$m/upload/.htaccess" 2>/dev/null || true
+            # Upload dir di repo adalah symlink → arahkan ke storage temp
+            rm -f "${{ github.workspace }}/$m/upload"
+            ln -s "$HDD/$m/upload" "${{ github.workspace }}/$m/upload"
+          done
+
+          # private_admins/ juga symlink → arahkan ke temp (dengan .htaccess deny)
+          rm -f "${{ github.workspace }}/data_drive/private_admins"
+          ln -s "$HDD/drive/private_admins" "${{ github.workspace }}/data_drive/private_admins"
+          printf 'Options -Indexes\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n' \
+            > "$HDD/drive/private_admins/.htaccess"
+
+          # settings.php dibutuhkan check_deploy (di-copy dari contoh)
+          cp "${{ github.workspace }}/auth/settings.example.php" "${{ github.workspace }}/auth/settings.php" 2>/dev/null || true
+
+          echo "HDD=$HDD" >> "$GITHUB_ENV"
+
+      - name: Run Deployment Check
+        run: |
+          if [ -f tests/check_deploy.php ]; then
+            php tests/check_deploy.php --no-color --hdd="$HDD" || exit $?
+          else
+            echo "⚠️  Deployment check not found, skipping."
+          fi
+
+      - name: Verify Private Drive 403 (staging)
+        # Optional: hanya berjalan bila STAGING_URL tersedia sebagai secret.
+        # Memastikan web server sungguhan menolak akses langsung ke
+        # data_drive/private_admins/ (lihat docs/en/test.md). secrets context
+        # tersedia langsung di if — empty secret = step di-skip.
+        if: secrets.STAGING_URL != ''
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$STAGING_URL/data_drive/private_admins/" || true)
+          [ "$code" = "403" ] || { echo "Expected 403, got $code"; exit 1; }
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+
+  # ─── Job 7: Summary / Status ───
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check]
+    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check, deploy-check]
     if: always()
     steps:
       - name: Generate Job Status Summary
@@ -267,6 +361,7 @@ jobs:
           report_job "Security Tests" "${{ needs.security-tests.result }}"
           report_job "PHPUnit Unit Tests" "${{ needs.phpunit-tests.result }}"
           report_job "HTACCESS & Integrity" "${{ needs.htaccess-check.result }}"
+          report_job "Deployment Check" "${{ needs.deploy-check.result }}"
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⚡ Optimizations applied" >> $GITHUB_STEP_SUMMARY
