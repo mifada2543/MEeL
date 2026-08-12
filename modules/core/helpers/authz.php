@@ -16,7 +16,8 @@ if (!function_exists('require_admin')) {
 function require_admin(mysqli $conn): void
 {
     if (!is_admin($conn)) {
-        die(include __DIR__ . '/../../../err/denied.php');
+        $_GET['code'] = 'denied';
+        die(include __DIR__ . '/../../../err/index.php');
     }
 }
 } // end function_exists('require_admin')

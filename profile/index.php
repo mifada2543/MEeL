@@ -59,7 +59,7 @@ $res = $stmt->get_result();
 $u = $res->fetch_assoc();
 
 if (!$u) {
-    header("Location: ../err/not_found.php");
+    header("Location: ../err/?code=not_found");
     exit;
 }
 

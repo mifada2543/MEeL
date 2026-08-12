@@ -803,11 +803,7 @@ function testErrorPages(): void {
     print_header('TEST 12: Error Pages — Path Consistency');
 
     $err_pages = [
-        'err/denied.php',
-        'err/banned.php',
-        'err/maintance.php',
-        'err/revoked.php',
-        'err/not_found.php',
+        'err/index.php',
     ];
 
     foreach ($err_pages as $file) {

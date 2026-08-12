@@ -29,7 +29,7 @@ if ($referer !== '' && $currentHost !== '') {
     }
 }
 if (!$refererOk) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit;
 }
 
@@ -43,7 +43,7 @@ if ($id <= 0) {
 }
 
 if (!is_stream_authorized($id)) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit;
 }
 

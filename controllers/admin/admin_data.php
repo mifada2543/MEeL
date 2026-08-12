@@ -1,7 +1,8 @@
 <?php
 // ─── Guard Direct Access ───
 if (!defined('MEEL_ADMIN_CONTEXT')) {
-    die(include __DIR__ . '/../../err/denied.php');
+    $_GET['code'] = 'denied';
+    die(include __DIR__ . '/../../err/index.php');
 }
 
 // ─── BANNED IPS ───

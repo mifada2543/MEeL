@@ -16,7 +16,8 @@ $book = $repo->getBookById((int)$_GET['id']);
 
 if (!$book) {
     http_response_code(404);
-    include '../err/not_found.php';
+    $_GET['code'] = 'not_found';
+    include '../err/index.php';
     exit;
 }
 

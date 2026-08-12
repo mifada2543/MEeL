@@ -44,13 +44,13 @@ $stmt_music->bind_param("i", $id);
 $stmt_music->execute();
 $music = $stmt_music->get_result()->fetch_assoc();
 if (!$music) {
-    header("Location: ../err/not_found.php");
+    header("Location: ../err/?code=not_found");
     exit;
 }
 
 $is_owner = ((int)$music['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit();
 }
 $status = "";

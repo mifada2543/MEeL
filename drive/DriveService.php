@@ -27,7 +27,8 @@ final class DriveUserContext
     public function authorize(): void
     {
         if (!$this->isAllowedRole()) {
-            die(include __DIR__ . '/../err/denied.php');
+            $_GET['code'] = 'denied';
+            die(include __DIR__ . '/../err/index.php');
         }
     }
 

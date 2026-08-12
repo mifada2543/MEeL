@@ -41,13 +41,13 @@ $stmt_video->bind_param("i", $id);
 $stmt_video->execute();
 $video = $stmt_video->get_result()->fetch_assoc();
 if (!$video) {
-    header("Location: ../err/not_found.php");
+    header("Location: ../err/?code=not_found");
     exit;
 }
 
 $is_owner = ((int)$video['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit();
 }
 $status = "";

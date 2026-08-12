@@ -33,7 +33,7 @@ if ($normalizedScope === DriveStorage::SCOPE_PUBLIC && !$user->isAdmin()) {
         $scope,
         'denied: member tidak boleh hapus file public'
     );
-    header('Location: ../err/denied.php');
+    header('Location: ../err/?code=denied');
     exit;
 }
 
