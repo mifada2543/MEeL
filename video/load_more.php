@@ -23,8 +23,8 @@ if ($data && $data->num_rows > 0):
             class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
             hx-get="load_more.php?offset=<?= $next ?>&page=<?= $nextPage ?>"
             hx-target="#load-more-area"
-            hx-swap="outerHTML" title="Muat lebih">
-            <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-700 group-hover:text-red-500 transition-colors">
+            hx-swap="outerHTML">
+            <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-300 group-hover:text-red-500 transition-colors">
                 Muat Lebih Banyak · <?= $nextPage ?>/<?= $totalPages ?>
             </span>
         </div>

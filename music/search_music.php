@@ -41,19 +41,29 @@ if ($result['count'] > 0) {
         }
     }
 
+    // Load More — gaya & label seragam dengan library (music/index.php):
+    // tombol penuh w-full, 'Load More · x/y', dan penanda akhir 'End of
+    // Collection' saat batch terakhir sudah dimuat (offset > 0).
     if (!$result['sidebar'] && $result['hasMore']) {
+        $curPage    = (int)((int)$result['offset'] / max((int)$result['limit'], 1)) + 1;
+        $totalPages = max(1, (int)$result['total_pages']);
         ?>
-        <div id="load-more-music-search"
-            class="py-4 border border-dashed border-white/[.06] rounded-xl text-center text-[10px] font-bold uppercase tracking-[.25em] text-gray-700 hover:text-orange-500 hover:border-orange-500/30 transition-all cursor-pointer"
+        <button type="button" id="load-more-music-search"
+            class="w-full py-4 border border-dashed border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-[.25em] text-gray-700 hover:text-orange-500 hover:border-orange-500/30 transition-all"
             hx-get="search_music.php?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
             hx-target="#load-more-music-search"
             hx-swap="outerHTML"
             title="Muat lebih banyak lagu">
-            Muat Lebih Banyak
-        </div>
+            Load More · <?= $curPage ?>/<?= $totalPages ?>
+        </button>
+        <?php
+    } elseif (!$result['sidebar'] && (int)$result['offset'] > 0) {
+        // Batch terakhir sudah dimuat — penanda akhir identik dengan load-more.js
+        ?>
+        <div class="py-10 text-center text-[9px] text-gray-800 uppercase tracking-[.4em]">End of Collection</div>
         <?php
     }
 } elseif ($result['offset'] === 0) {
 
-    echo '<div class="py-12 text-center text-[10px] text-gray-700 uppercase tracking-widest">Tidak ada lagu ditemukan.</div>';
+    echo '<div class="py-16 text-center text-[10px] text-gray-700 uppercase tracking-widest">Tidak ada lagu ditemukan.</div>';
 }

@@ -108,6 +108,12 @@ $__v = function($f) {
                 <?php while ($v = $data->fetch_assoc()): ?>
                     <?php include 'video_card.php'; ?>
                 <?php endwhile; ?>
+            <?php else: ?>
+                <!-- Empty state: pesan membentang penuh di grid, gaya sama
+                     dengan modul music (index.php) -->
+                <div class="col-span-full py-16 text-center text-[10px] text-gray-700 uppercase tracking-widest">
+                    Video tidak ditemukan.
+                </div>
             <?php endif; ?>
             <?php if ($total > $perPage): ?>
                 <button type="button" id="load-more-area"

@@ -48,8 +48,9 @@ class SearchEngineTest extends TestCase
 
     public function testConstants(): void
     {
-        $this->assertSame(20, SearchEngine::VIDEO_LIMIT);
-        $this->assertSame(20, SearchEngine::MUSIC_LIMIT);
+        $this->assertSame(15, SearchEngine::VIDEO_LIMIT);
+        $this->assertSame(10, SearchEngine::MUSIC_LIMIT);
+        $this->assertSame(15, SearchEngine::SIDEBAR_LIMIT);
 
         $this->assertSame(3, SearchEngine::MIN_SEARCH_QUERY);
     }
