@@ -56,7 +56,7 @@ MEeL adalah jawaban atas pertanyaan itu. Bukan sekadar project coding — tapi *
 Coba lihat pengeluaran digital rata-rata per bulan:
 
 | Layanan | Biaya/Bulan (Rp) | Keperluan | Frekuensi Pakai |
-|---------|-----------------|-----------|-----------------|
+|---|---|---|---|
 | Netflix | 50.000 - 150.000 | Film & Series | ⭐⭐⭐ Setiap hari |
 | Spotify / Apple Music | 55.000 | Musik | ⭐⭐⭐ Setiap hari |
 | YouTube Premium | 70.000 | Video bebas iklan | ⭐⭐⭐ Setiap hari |
@@ -94,7 +94,7 @@ Dan itu **belum termasuk**:
 **Apa yang Anda dapatkan:**
 
 | Layanan | Platform | Biaya | MEeL | Biaya |
-|---------|----------|-------|------|-------|
+|---|---|---|---|---|
 | 🎬 Video | YouTube Premium | Rp 70.000/bln | ✅ HLS Streaming | **Gratis** |
 | 🎵 Musik | Spotify | Rp 55.000/bln | ✅ Lossless Audio | **Gratis** |
 | 📚 Buku | Langganan buku | Rp 50.000+/bln | ✅ Manga/PDF Reader | **Gratis** |
@@ -119,7 +119,7 @@ Anda → [ Platform ] → Kumpulkan data → Analisis → Jual ke pengiklan → 
 **Data yang dikumpulkan platform komersial:**
 
 | Jenis Data | YouTube | Spotify | Google Drive |
-|-----------|---------|---------|--------------|
+|---|---|---|---|
 | Riwayat tontonan/dengar | ✅ | ✅ | ❌ |
 | Preferensi & minat | ✅ | ✅ | ✅ |
 | Lokasi geografis | ✅ | ✅ | ✅ |
@@ -158,7 +158,7 @@ Anda → [ 🖥️ MEeL (Server Lokal) ] → 100% Data milik Anda → 🔒
 Coba bayangkan koleksi digital rata-rata orang:
 
 | Jenis Media | Lokasi 1 | Lokasi 2 | Lokasi 3 |
-|------------|----------|----------|----------|
+|---|---|---|---|
 | 🎬 Video | Laptop | YouTube | Google Drive |
 | 🎵 Musik | HP | Spotify playlist | Laptop kantor |
 | 📚 Komik/Manga | Folder laptop | HP | Flashdisk |
@@ -209,7 +209,7 @@ Mencari satu file? **Buka 3-4 aplikasi berbeda** dan cek satu per satu.
 Platform komersial memaksa Anda pakai format yang mereka tentukan:
 
 | Platform | Format | Kualitas | Catatan |
-|----------|--------|----------|---------|
+|---|---|---|---|
 | YouTube | H.264/AAC | 👍 Bagus tapi dikompres | Video 4K di-encode ulang |
 | Spotify | Ogg Vorbis 320kbps | 👌 Cukup bagus | Tapi bukan lossless |
 | Netflix | H.264/H.265 | 👍 Bagus | Tapi tergantung koneksi |
@@ -227,7 +227,7 @@ Platform komersial memaksa Anda pakai format yang mereka tentukan:
 **Transcoding otomatis tanpa kompromi kualitas:**
 
 | Input → Output | Engine |
-|----------------|--------|
+|---|---|
 | MP4, MKV, AVI, MOV, WEBM → **HLS (.m3u8 + .ts)** — adaptive bitrate | FFmpeg |
 | MP3, FLAC, WAV, M4A, OGG → **Opus/OGG** — kompresi cerdas | FFmpeg |
 | PDF, ZIP, CBZ → **In-browser Viewer** — tanpa konversi | PHP |
@@ -275,7 +275,7 @@ Platform streaming komersial **WAJIB internet**. Kalau mati, Anda tidak bisa aks
 **Keuntungan LAN vs internet:**
 
 | Aspek | Platform Komersial | MEeL (LAN) |
-|-------|-------------------|------------|
+|---|---|---|
 | Kecepatan | 10-50 Mbps (internet) | **1.000+ Mbps (LAN)** |
 | Buffering | Sering (tergantung ISP) | **✅ Zero buffering** |
 | Kuota data | Boros (1-3GB/jam) | **✅ Gratis (LAN)** |
@@ -294,7 +294,7 @@ Platform streaming komersial **WAJIB internet**. Kalau mati, Anda tidak bisa aks
 Coba kirim film 2GB ke teman:
 
 | Metode | Waktu | Kualitas | Batasan |
-|--------|-------|----------|---------|
+|---|---|---|---|
 | WhatsApp | ⏳ 30 menit upload | 📉 Dikompres jadi 16MB | Maks 2GB |
 | Email | ⏳ 15 menit | ✅ Original | Maks 25MB |
 | Google Drive | ⏳ 20 menit | ✅ Original | Butuh akun Google |
@@ -348,7 +348,7 @@ Google Drive bisa:
 **Anda yang pegang kendali penuh:**
 
 | Aspek | Platform Komersial | MEeL |
-|-------|-------------------|------|
+|---|---|---|
 | Kontrol konten | Mereka yang punya | **Anda yang punya** |
 | Iklan | Wajib (kecuali premium) | **Zero iklan** |
 | Algoritma | Manipulatif | **Tidak ada** |
@@ -415,7 +415,7 @@ tar -czf meel_media_backup_$(date +%Y%m%d).tar.gz /media/username/MEeL/media/
 ### Perbandingan Tahunan
 
 | Pos | Pakai Platform Komersial | Pakai MEeL |
-|-----|------------------------|------------|
+|---|---|---|
 | Langganan streaming | Rp 3.000.000 - 5.000.000/tahun | **Rp 0** |
 | Storage cloud | Rp 300.000 - 1.200.000/tahun | **Rp 0** |
 | Software converter | Rp 200.000 - 500.000/tahun | **Rp 0** |
@@ -436,14 +436,14 @@ HEMAT:              Rp 14.100.000 - Rp 24.700.000 dalam 5 tahun!
 Itu baru untuk **satu orang**. Bayangkan jika dipakai 1 keluarga (4 orang) — **penghematan 4x lipat!**
 
 > ⚡ **Catatan soal biaya listrik:** Rp 600.000 - 1.200.000/tahun di atas adalah estimasi untuk **PC desktop bekas (~100-150 watt)** yang menyala 24/7. Jika Anda menggunakan perangkat **hemat daya**, biaya listriknya bisa jauh lebih rendah:
-> 
+>
 > | Perangkat | Konsumsi Daya | Estimasi Biaya Listrik/Tahun |
 > |-----------|--------------|-----------------------------|
 > | 🖥️ PC Desktop bekas | 100-150 watt | Rp 600.000 - 1.200.000 |
 > | 💻 Laptop bekas | 30-60 watt | Rp 200.000 - 500.000 |
 > | 🍓 Raspberry Pi 4/5 | 5-10 watt | **Rp 30.000 - 100.000** 🔥 |
 > | 📦 Mini PC / STB / Thin Client | 10-25 watt | Rp 75.000 - 200.000 |
-> 
+>
 > > 💡 **Tip:** Dengan Raspberry Pi (~Rp 500.000 - 1.000.000 sekali beli), biaya listrik Anda cuma **Rp 30.000 - 100.000 per tahun** — lebih murah dari segelas kopi tiap bulan! 🍓
 
 ---
@@ -481,7 +481,7 @@ Total: Rp 300.000+/bln ≠ Yang didapat: terpisah-pisah
 ### Ringkasan Cepat
 
 | Masalah Dunia Nyata | Dampak | Solusi MEeL |
-|---------------------|--------|-------------|
+|---|---|---|
 | 💸 Biaya langganan | Rp 2,7-4,8 juta/tahun | **Gratis — cukup listrik + HDD** |
 | 🔒 Privasi data | Data dijual ke iklan | **Server pribadi, 100% data milik Anda** |
 | 📂 Koleksi tersebar | 5+ platform berbeda | **Satu hub terpadu untuk semua media** |
@@ -519,7 +519,7 @@ Demi kejujuran, berikut adalah **sebab-akibat** (trade-offs) yang perlu Anda pah
 ### ❓ Apa yang Perlu Anda Siapkan?
 
 | Yang Dibutuhkan | Detail | Level Kesulitan |
-|----------------|--------|-----------------|
+|---|---|---|
 | 🖥️ **Server / Komputer** | Butuh perangkat yang menyala 24/7 (bisa laptop bekas, VPS, atau Raspberry Pi) | 🟢 Mudah |
 | 💾 **HDD/SSD Eksternal** | Media butuh tempat. Semakin besar koleksi, semakin besar HDD yang dibutuhkan | 🟢 Mudah |
 | 🐧 **Pengetahuan Linux Dasar** | Instalasi FFmpeg, yt-dlp, permission filesystem, terminal commands | 🟡 Sedang |
@@ -532,7 +532,7 @@ Demi kejujuran, berikut adalah **sebab-akibat** (trade-offs) yang perlu Anda pah
 ### ⏱️ Estimasi Waktu
 
 | Tahap | Perkiraan Waktu |
-|-------|----------------|
+|---|---|
 | Instalasi server + database | 30 - 60 menit |
 | Konfigurasi aplikasi | 15 - 30 menit |
 | Setup FFmpeg + yt-dlp | 15 - 30 menit |
@@ -543,7 +543,7 @@ Demi kejujuran, berikut adalah **sebab-akibat** (trade-offs) yang perlu Anda pah
 ### ⚠️ Hal yang Perlu Dipertimbangkan
 
 | Aspek | Platform Komersial | MEeL |
-|-------|-------------------|------|
+|---|---|---|
 | **Kemudahan** | ✅ Install app, login, langsung pakai | ❌ Perlu setup server sendiri |
 | **Biaya bulanan** | ❌ Rp 230-400rb/bln | ✅ Rp 0 — cuma listrik |
 | **Koleksi konten** | ✅ Jutaan judul siap pakai | ❌ Anda harus upload sendiri |
@@ -556,7 +556,7 @@ Demi kejujuran, berikut adalah **sebab-akibat** (trade-offs) yang perlu Anda pah
 ### 🎯 Jadi, MEeL Cocok untuk Siapa?
 
 | Cocok Untuk | Kurang Cocok Untuk |
-|-------------|-------------------|
+|---|---|
 | ✅ Orang yang ingin **hemat biaya** langganan | ❌ Orang yang ingin **instant setup** tanpa ribet |
 | ✅ Orang yang **peduli privasi** data | ❌ Orang yang **tidak mau ribet** dengan server |
 | ✅ Orang yang punya **koleksi media sendiri** | ❌ Orang yang **hanya nonton konten baru** tiap hari |

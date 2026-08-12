@@ -1,5 +1,4 @@
 <?php
-// File: modules/media/MediaLibrary.php
 
 class MediaLibrary
 {
@@ -16,7 +15,6 @@ class MediaLibrary
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
         $cache_ttl  = 30; // detik — refresh maksimal tiap 30 detik
 
-        // Cek cache: jika file ada dan masih fresh, return langsung
         if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
             $cached = json_decode(file_get_contents($cache_file), true);
             if (is_array($cached) && isset($cached['music'], $cached['video'], $cached['books'])) {
@@ -108,9 +106,9 @@ class MediaLibrary
         return (int)$res->fetch_assoc()['total'];
     }
 
-    public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0)
+    public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
     {
-        $limit = 21; // Fetch limit+1 untuk efficiently check hasMore
+        $limit = $fetchLimit; // Fetch limit+1 untuk efficiently check hasMore
 
         if (empty($q)) {
             if ($sidebar) {
@@ -159,6 +157,37 @@ class MediaLibrary
         }
         $result = $stmt->get_result();
         return $result ?: null;
+    }
+
+    /* Total hasil pencarian video (non-sidebar) — dipakai SearchEngine untuk
+     * progress 'Muat Lebih Banyak · x/y'. WHERE harus identik dengan
+     * searchVideo() (termasuk INNER JOIN users) supaya total konsisten. */
+    public function countSearchVideo(string $q, int $exclude = 0): int
+    {
+        if (empty($q)) {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM video v
+                 JOIN users u ON v.user_id = u.id
+                 WHERE v.id != ?"
+            );
+            $stmt->bind_param("i", $exclude);
+        } else {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM video v
+                 JOIN users u ON v.user_id = u.id
+                 WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE)
+                   AND v.id != ?"
+            );
+            $stmt->bind_param("si", $q, $exclude);
+        }
+
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return 0;
+        }
+        $res = $stmt->get_result();
+        return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
     // ─── MUSIC ───
@@ -218,9 +247,9 @@ class MediaLibrary
         return $stmt->get_result();
     }
 
-    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0)
+    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
     {
-        $limit = 21; // Fetch limit+1 untuk efficiently check hasMore
+        $limit = $fetchLimit; // Fetch limit+1 untuk efficiently check hasMore
 
         if (empty($q)) {
             if ($sidebar) {
@@ -268,6 +297,37 @@ class MediaLibrary
         }
         $result = $stmt->get_result();
         return $result ?: null;
+    }
+
+    /* Total hasil pencarian musik (non-sidebar) — dipakai SearchEngine untuk
+     * progress 'Load More · x/y'. WHERE harus identik dengan searchMusic()
+     * (termasuk INNER JOIN users) supaya total konsisten dengan hasil. */
+    public function countSearchMusic(string $q, int $exclude = 0): int
+    {
+        if (empty($q)) {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM music m
+                 JOIN users u ON m.user_id = u.id
+                 WHERE m.id != ?"
+            );
+            $stmt->bind_param("i", $exclude);
+        } else {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM music m
+                 JOIN users u ON m.user_id = u.id
+                 WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)
+                   AND m.id != ?"
+            );
+            $stmt->bind_param("si", $q, $exclude);
+        }
+
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return 0;
+        }
+        $res = $stmt->get_result();
+        return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
     // ─── PRIVATE HELPER ───

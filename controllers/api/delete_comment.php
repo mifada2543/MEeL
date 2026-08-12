@@ -51,10 +51,8 @@ if (defined('APP_DEBUG') && APP_DEBUG) { error_log("DELETE_COMMENT.PHP - ID: $co
 $interaction = new MediaInteraction($conn, $_SESSION['user_id'] ?? null);
 $result = $interaction->deleteComment($comment_id);
 
-// Log result
 if (defined('APP_DEBUG') && APP_DEBUG) { error_log("DELETE_COMMENT.PHP - Result: " . json_encode($result)); }
 
-// Handle response
 if (!$result['success']) {
     if (defined('APP_DEBUG') && APP_DEBUG) { error_log("DELETE_COMMENT - ERROR: {$result['message']}"); }
     if ($is_ajax) {

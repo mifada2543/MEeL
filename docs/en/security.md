@@ -82,7 +82,7 @@ Documentation about authentication, authorization, and protection systems in MEe
 ### Role Definitions
 
 | Role | Level | Access Rights |
-|------|-------|-----------|
+|---|---|---|
 | **Admin** | 100 | Full system control |
 | **Member** | 50 | Media + Cloud Drive (20GB quota) |
 | **User** | 30 | Media + comments (no Drive) |
@@ -91,7 +91,7 @@ Documentation about authentication, authorization, and protection systems in MEe
 ### Feature Gating per Role
 
 | Feature | Admin | Member | User | Guest |
-|---------|-------|--------|------|-------|
+|---|---|---|---|---|
 | Watch Video | ✅ | ✅ | ✅ | ✅ |
 | Listen Music | ✅ | ✅ | ✅ | ✅ |
 | Like/Dislike | ✅ | ✅ | ✅ | ❌ |
@@ -133,7 +133,7 @@ session_start();
 ```
 
 | Flag | Value | Protection |
-|------|-------|------------|
+|---|---|---|
 | `Secure` | auto (HTTPS) | Cookie never sent over plain HTTP — prevents sniffing |
 | `HttpOnly` | `true` | XSS cannot steal the session cookie via JavaScript |
 | `SameSite` | `Lax` | Cross-site POST requests don't carry the cookie (CSRF layer 1) |
@@ -290,7 +290,7 @@ function log_activity(
 ### Integrated Events
 
 | Event | Action | Location |
-|-------|------|------------------|
+|---|---|---|
 | Successful login | `login` | `auth/login.php` |
 | Logout | `logout` | `auth/logout.php` |
 | Video upload | `upload_video` | `video/upload.php` |
@@ -309,7 +309,7 @@ function log_activity(
 Page `admin/activity_log.php` provides a dedicated audit trail viewer:
 
 | Feature | Detail |
-|---------|--------|
+|---|---|
 | 🔍 **Filter** | By action type (dropdown), search username/IP, date range (7–365 days) |
 | 📄 **Pagination** | 50 entries per page with prev/next navigation |
 | 📊 **Stats Cards** | 7-day activity count, unique users, total entries, page info |
@@ -339,7 +339,7 @@ Allow request
 ### Endpoint Limits
 
 | Endpoint | Max Requests | Window | Response on Limit |
-|----------|:-----------:|:------:|--------------------|
+|---|:---:|:---:|---|
 | **Like/Dislike** | 30 | 1 minute | HTTP 429 + HTMX HTML snippet (yellow badge "Wait Xs" + disabled buttons) |
 | **Comment** | 10 | 1 minute | Redirect with flash error message |
 | **Upload** (video/music/books) | 3 | 1 hour | — |
@@ -527,7 +527,7 @@ validated public IP + forces the original Host header
 ### Validation Rules
 
 | Rule | Detail |
-|------|--------|
+|---|---|
 | **Protocol** | Only `http` and `https`. Scheme-less, protocol-relative (`//host/…`), and any other scheme are rejected |
 | **Credentials** | `user:pass@` embedded in the URL is rejected (commonly used to obscure the real destination host) |
 | **Hostname denylist** | `localhost`, `*.local`, `*.internal`, `*.lan`, `*.test`, `*.onion`, … (defense-in-depth only) |
@@ -575,7 +575,7 @@ Stream relayed back to yt-dlp
 Key properties:
 
 | Property | Detail |
-|----------|--------|
+|---|---|
 | **Every hop validated** | A redirect to `127.0.0.1`, `10.x`, cloud metadata, etc. becomes a new CONNECT/absolute-URI request to the proxy, which applies `SsrfGuard::resolvePublicAddresses()` to the **destination of that hop** and refuses it |
 | **Loopback-only** | The proxy binds to `127.0.0.1` on an ephemeral port — no external party can use it as an open proxy |
 | **DNS-rebinding safe per hop** | Each hop is resolved once and the connection goes to the validated public IP (no separate, later lookup) |
@@ -592,7 +592,7 @@ The `https://` limitation is therefore resolved: even though the original HTTPS 
 ### Integration Points
 
 | File | Role |
-|------|------|
+|---|---|
 | `modules/core/SsrfGuard.php` | Central validation: protocol allowlist, explicit IPv4/IPv6 range checks, DNS all-record validation, HTTP pinning |
 | `modules/core/ValidatingProxy.php` | Spawns/terminates the proxy process, exposes `--proxy` URL (loopback-only) |
 | `modules/core/validating_proxy_server.php` | CLI forward proxy: SsrfGuard on every hop (HTTP absolute-URI + CONNECT tunnel) |
@@ -639,7 +639,7 @@ Options -Indexes
 Private files are only served through authenticated endpoints:
 
 | Endpoint | Purpose | Checks |
-|----------|---------|--------|
+|---|---|---|
 | `drive/stream.php` | Inline preview / streaming (video, audio, images, PDF) | session + CSRF + ownership |
 | `drive/download.php` | Download of private files | session + CSRF + ownership |
 
@@ -665,7 +665,7 @@ Two TOCTOU races were closed in `DriveStorage::upload()`:
 ### Regression Tests
 
 | Test file | Coverage |
-|-----------|----------|
+|---|---|
 | `tests/unit/SsrfGuardTest.php` | Protocol allowlist, private/public IP ranges (v4 & v6), DNS resolution incl. mixed records, hostname denylist, HTTP pinning |
 | `tests/unit/ValidatingProxyTest.php` | Real-proxy probes: CONNECT/GET to private targets refused, public targets tunneled, loopback-only bind, process lifecycle |
 | `tests/unit/DriveSecurityTest.php` | Cross-user access, path traversal, symlink escape, realpath boundary, quota enforcement, atomic filename reservation |
@@ -694,7 +694,7 @@ catch (DownloadException $e) { /* yt-dlp failed */ }
 ```
 
 | Exception | Extends | Used For |
-|-----------|---------|-----------------|
+|---|---|---|
 | `ProcessException` | `\RuntimeException` | External process failure: FFmpeg, yt-dlp, exec() non-zero |
 | `DownloadException` | `\RuntimeException` | URL download failure: metadata parsing, connection |
 | `TranscodeException` | `\RuntimeException` | Transcoding failure: HLS segments, codec, output missing |

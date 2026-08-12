@@ -214,7 +214,7 @@ Semua fungsi dibungkus `function_exists()` guard:
 File-based rate limiter dengan `flock()` safety. Role-based (admin = unlimited, member = 2x).
 
 | Endpoint | Max/Window | Keterangan |
-|----------|:----------:|-----------|
+|---|:---:|---|
 | `like` | 30/menit | HTMX 429 HTML response |
 | `comment` | 10/menit | Flash message redirect |
 | `upload` | 3/jam | — |
@@ -226,7 +226,7 @@ File-based rate limiter dengan `flock()` safety. Role-based (admin = unlimited, 
 Tiga class exception yang extends `\RuntimeException`:
 
 | Class | Deskripsi | Method Ekstra |
-|-------|-----------|---------------|
+|---|---|---|
 | `ProcessException` | Gagal proses eksternal (FFmpeg, yt-dlp) | `getCommand()`, `getExitCode()`, `getOutput()` |
 | `DownloadException` | Gagal download URL | `getUrl()`, `getStage()` (validation/metadata/download) |
 | `TranscodeException` | Gagal transcoding FFmpeg | `getInput()`, `getOutput()`, `getFfmpegLog()` |
@@ -318,7 +318,7 @@ class MusicWatchController { public function getViewData(): array; public functi
 ### 19. Migration System (`database/migrate.php`)
 
 | Versi | Perubahan |
-|-------|-----------|
+|---|---|
 | **v1** | FULLTEXT index (video, music, books) |
 | **v2** | Performance index (upload_date) |
 | **v3** | Sinkronisasi struktural |
@@ -336,7 +336,7 @@ class MusicWatchController { public function getViewData(): array; public functi
 Multi-Factor Authentication (TOTP) melindungi akun user:
 
 | File | Fungsi |
-|------|--------|
+|---|---|
 | `auth/mfa_setup.php` | Setup MFA — generate secret, scan QR/barcode, verifikasi TOTP, backup codes |
 | `auth/mfa_verify.php` | Verifikasi TOTP setelah login — rate limit 10 percobaan gagal, lock 5 menit |
 | `admin/mfa_reset.php` | Admin reset MFA user yang kehilangan akses Authenticator |
@@ -358,7 +358,7 @@ function verify_backup_code(string $stored, string $code): array; // Verify + co
 Multiplayer catur real-time via LAN:
 
 | File | Fungsi |
-|------|--------|
+|---|---|
 | `index.php` | Board catur dengan drag-and-drop, timer, chat, sound effects |
 | `controller/create_room.php` | Buat ruang baru, return room code |
 | `controller/join_room.php` | Gabung ruang dengan kode |
@@ -400,7 +400,7 @@ Service worker **dibangkitkan dinamis oleh PHP** — panduan lengkap di
 [`pwa.md`](pwa.md).
 
 | Komponen | Peran |
-|----------|-------|
+|---|---|
 | `modules/core/SwPrecache.php` | `baseAssets()` + `moduleAssets()` (semua `assets/css/*/manifest.php`) → `all()`; `version()` = hash konten → update SW otomatis |
 | `sw.js.php` | Skrip SW lengkap, `Content-Type: application/javascript`, output deterministik |
 | `.htaccess` | `RewriteRule ^sw\.js$ sw.js.php [L]` — URL `/sw.js` dipertahankan |
@@ -526,7 +526,7 @@ mencemari output buffer.
 ### File
 
 | File | Peran |
-|------|------|
+|---|---|
 | `modules/core/ProgressObserver.php` | Interface `ProgressObserver` + adapter `CallableProgressObserver` |
 | `modules/core/BrowserProgressObserver.php` | Presenter browser: memetakan event ke overlay MEeL (`partials/ui.php`) + panggilan JS `meel*` |
 
@@ -549,7 +549,7 @@ $tc = new Transcoder($conn, $uid, function (string $stage, array $data): void {
 ### Kontrak event — `ProgressObserver::onProgress(string $stage, array $data)`
 
 | Stage | Payload | Arti |
-|-------|---------|------|
+|---|---|---|
 | `download_start` | `['url' => string]` | Unduh dimulai (titik injeksi overlay) |
 | `transcode_start` | `[]` | Transcode dimulai (titik injeksi overlay) |
 | `phase` | `['phase' => string]` | Pergantian fase overlay (`transcode`, `sprite`, ...) |
@@ -592,7 +592,7 @@ Setiap akses filesystem mengikuti tiga aturan:
 ### Helper filesystem bersama
 
 | Helper | Lokasi | Tujuan |
-|--------|--------|--------|
+|---|---|---|
 | `ensureDir()` | trait `FfmpegUtils` | Pembuatan ala `mkdir -p` dengan logging |
 | `removeFile()` | trait `FfmpegUtils` | unlink ber-guard (keberadaan + parent writable) |
 | `removeDir()` | trait `FfmpegUtils` | Pembersihan dir datar (glob → removeFile → rmdir) |

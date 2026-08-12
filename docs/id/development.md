@@ -111,7 +111,7 @@ $result = $stmt->get_result();
 #### 3. Parameter Binding Types
 
 | Type | PHP Type | SQL Type |
-|------|----------|----------|
+|---|---|---|
 | `i` | int | INTEGER |
 | `d` | float | DOUBLE/FLOAT |
 | `s` | string | VARCHAR/TEXT |
@@ -311,7 +311,7 @@ music ──1:N── playlist_tracks
 ### Key Relationships
 
 | Table | Foreign Key | References | Type |
-|-------|-------------|-----------|------|
+|---|---|---|---|
 | `video` | `user_id` | `users.id` | CASCADE |
 | `music` | `user_id` | `users.id` | CASCADE |
 | `books` | `user_id` | `users.id` | SET NULL |
@@ -448,7 +448,7 @@ if (!$stmt) error_log("SQL Error: " . $conn->error);
 MEeL mengimplementasikan TOTP sesuai [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238):
 
 | Parameter | Nilai |
-|-----------|-------|
+|---|---|
 | Algoritma | HMAC-SHA1 |
 | Digit | 6 digit |
 | Time Step | 30 detik |
@@ -560,7 +560,7 @@ ALTER TABLE users
 ### Rate Limiting
 
 | Endpoint | Limit | Mekanisme |
-|----------|:-----:|-----------|
+|---|:---:|---|
 | MFA Verify | 10 gagal → lock 5 menit | Session-based `mfa_fail_count` + `mfa_locked_until` |
 | Backup Password | 5 gagal → lock 5 menit | Session-based `backup_pwd_attempts` + `backup_pwd_lock_until` |
 
@@ -638,7 +638,7 @@ GPL v3 mewajibkan (Pasal 5a):
 
 **Type:**
 | Type | Penggunaan |
-|------|------------|
+|---|---|
 | `feat` | Fitur baru |
 | `fix` | Bug fix |
 | `security` | Perbaikan keamanan |
@@ -720,7 +720,7 @@ if (!headers_sent()) {
 ### File Penting untuk Dipahami
 
 | File | Alasan |
-|------|--------|
+|---|---|
 | `auth/config.php` | Entry point configurasi |
 | `auth/auth.php` | Authentication middleware |
 | `modules/core/helpers.php` | Fungsi utilitas global |
@@ -767,7 +767,7 @@ posisi putar tersimpan (`music_pos_<id>` di `localStorage`) dan user **tidak**
 datang dari sesi mini-player yang aktif.
 
 | Konteks | Perilaku |
-|---------|----------|
+|---|---|
 | **Sesi mini-player** — user men-tap kartu / item playlist atau expand mini-player di `index.php`, dan masih mendengarkan | 🎧 **Auto-continue** — tanpa modal; semua lagu berikutnya di sesi itu langsung diputar otomatis |
 | **Kunjungan dingin** — buka `watch.php` langsung, reload halaman, atau setelah pause/close eksplisit mini-player | ❓ **Modal muncul** — "Lanjut Musik?" menanyakan apakah lanjut dari posisi tersimpan |
 

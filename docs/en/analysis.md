@@ -1,7 +1,7 @@
 # 📋 MEeL-HUB Project Analysis & Description
 
-**Analysis Version:** 2.2  
-**Date:** July 29, 2026  
+**Analysis Version:** 2.2
+**Date:** July 29, 2026
 **Analyst:** Buffy (Freebuff AI Agent)
 
 ---
@@ -13,7 +13,7 @@
 ### Project Identity
 
 | Attribute | Value |
-|---------|-------|
+|---|---|
 | **Name** | MEeL-HUB (Media Hub Platform) |
 | **License** | GNU GPL v3 |
 | **Architecture** | PHP Monolith + MySQL |
@@ -65,7 +65,7 @@ MEeL/
 ### Security Test: ✅ 97/100 — Score: 97/100 (A) (5 non-critical warnings, 0 fails)
 
 | Category | Status | Detail |
-|----------|--------|--------|
+|---|---|---|
 | **SQL Injection** | ✅ Safe | All queries use prepared statements |
 | **CSRF** | ✅ Safe | CSRF tokens generated with `random_bytes(32)` |
 | **XSS** | ✅ Safe | All output uses `htmlspecialchars()` |
@@ -83,7 +83,7 @@ MEeL/
 
 **4 Warnings (non-critical):**
 | Warning | Category | Notes |
-|---------|----------|-------|
+|---|---|---|
 | Session name (meel) not detected | Minor | Static detection — session bootstrapped from central `modules/core/helpers/session.php` |
 | Session GC maxlifetime not detected | Minor | Static detection — see `meel_boot_session()` |
 | Session cookie params not detected | Minor | Static detection |
@@ -94,7 +94,7 @@ MEeL/
 ### Performance Improvements
 
 | Optimization | Impact | File |
-|----------|--------|------|
+|---|---|---|
 | `LIKE` → `MATCH AGAINST` FULLTEXT | 10-100× faster search | `modules/MediaLibrary.php` |
 | `session_write_close()` | No more blocked range requests | `music/stream.php` |
 | File-based cache `getCounts()` | 60-second count cache, no DB hits | `modules/media/MediaLibrary.php` |
@@ -104,22 +104,28 @@ MEeL/
 ## ✅ Completed Improvements Summary
 
 ### Round 1: Bug Fixes & Security (12 items)
+
 Transcoder AND→OR fix, register CSRF validation, autoloader, migration system, session_write_close(), null coalescing fixes
 
 ### Round 2: Performance & Code Quality (7 items)
+
 FULLTEXT search, null coalescing in search pages, activity_logger CLI guard
 
 ### Round 3: Advanced Fixes (9 items)
+
 Hardcoded path → base_url(), open redirect fix, redirect guard, template extraction, get_user_role() static cache
 
 ### Round 4: Rate Limiting, Dashboard & Cleanup (15 items)
+
 RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard charts, activity log viewer, pagination metadata, FK constraints, GarbageCollector integration
 
 ### Round 5: Documentation & Restructuring
+
 - japanese.php, bootstrap.php, FfmpegUtils.php trait, exception classes, SearchEngine.php → proper module structure
 - Updated all documentation with correct file paths (modules/core/)
 
 ### Round 6: Uploader & Transcoder Enhancement (11 items)
+
 - Magic bytes validation, active upload limit, pre-flight disk space check
 - RAM disk priority (/dev/shm) for HLS staging
 - Atomic DB transactions with rollback + file cleanup
@@ -127,6 +133,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 - dir_size() caching, detectProtocol() with Cloudflare support, resolve_binary() with MEEL_*_PATH override
 
 ### Round 7: Database Schema Sync & Migration v8 (6 items)
+
 - `users.role` → `varchar(20)` — supports `admin`, `member`, `user`, `guest`
 - Added `db_version`, `moves`, `rooms` tables to schema.sql
 - Added missing FK `comments_ibfk_2` (music_id → music.id)
@@ -135,6 +142,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 - **Migration v8** — alters role type, drops duplicate UNIQUE KEY, syncs all default values
 
 ### Round 8: Player Enhancement & UX Fixes (9 items)
+
 - Mutual exclusion Auto-Next ↔ Loop; hide Plyr replay button + poster when auto-next overlay active
 - Dark backdrop `rgba(0,0,0,0.45)` on auto-next overlay
 - Click vinyl disc → toggle mini-player (same as keyboard `I`)
@@ -144,6 +152,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 - Cache-busting (`filemtime()`) on music watch.php JS scripts
 
 ### Round 9: MFA Support & Chess (13 items)
+
 - `auth/mfa_setup.php` — MFA Setup (generate secret, scan QR, verify TOTP, backup codes)
 - `auth/mfa_verify.php` — TOTP verification page (rate limited: 10 tries → 5 min lock)
 - `admin/mfa_reset.php` — Admin reset MFA for users (cannot reset other admins)
@@ -163,7 +172,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 ## 🧪 Test Results
 
 | Test | Total | Pass | Warn | Fail | Score |
-|------|-------|------|------|------|-------|
+|---|---|---|---|---|---|
 | **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 161 | 157 | 4 warn | **0** | **✅ 99/100** |
@@ -175,6 +184,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 ## 📈 Future Recommendations
 
 ### High Priority (All Completed ✅)
+
 1. ✅ FK constraints added (Migration v4)
 2. ✅ Anime module removed
 3. ✅ Pagination UI implemented
@@ -182,9 +192,11 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 5. ✅ Admin dashboard charts implemented
 
 ### Medium Priority
+
 6. ~~**Service Worker** for PWA — page caching, install prompt on mobile~~ ✅ **Implemented** (dynamic `sw.js.php` + `SwPrecache`, auto precache per module via `manifest.php`)
 
 ### Low Priority
+
 7. **Docker support** — consistent deployment environment
 8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (255 unit + 79 integration = 334 tests)
 
@@ -195,7 +207,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 **MEeL** is a solid personal media hub platform with modular architecture, layered security, and good performance. Of the 93 improvement items identified across 9 rounds, **all have been implemented**.
 
 | Metric | Value |
-|--------|-------|
+|---|---|
 | **Files modified** | 40+ unique files |
 | **New files** | 7 (autoload.php, migrate.php, file_grid.php, deskripsi.md, RateLimiter.php, activity_log.php) |
 | **Bugs fixed** | 7 (mutual exclusion, hover overlay, cache-busting, skip modal, auto-next visibility) |

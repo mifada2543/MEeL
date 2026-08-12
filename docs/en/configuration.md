@@ -20,7 +20,7 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 ## Main Configuration Files
 
 | File | Purpose | Key Variables |
-|------|--------|----------------|
+|---|---|---|
 | `auth/config.php` | Entry point: bootstrap, session, CSRF, headers | (init logic only) |
 | `auth/settings.php` | **Pure data**: DB credentials + **centralized paths** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
 | `auth/config.example.php` | Entry point template (copy to config.php) | Same as config.php |
@@ -277,7 +277,7 @@ return $active >= 2; // isServerBusy()
 File-based rate limiter for API endpoints:
 
 | Endpoint | Limit | Window | File |
-|----------|:-----:|:------:|------|
+|---|:---:|:---:|---|
 | Like/Dislike | 30 | 1 minute | `controllers/api/like.php` |
 | Comment | 10 | 1 minute | `controllers/api/delete_comment.php`, `WatchController.php` |
 | Upload | 3 | 1 hour | — |

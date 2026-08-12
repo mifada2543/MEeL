@@ -13,7 +13,6 @@
         e.stopPropagation();
         panel.classList.toggle("hidden");
       });
-      // Option clicks
       panel.querySelectorAll(".action-dropdown-option").forEach(function (opt) {
         opt.addEventListener("click", function () {
           var val = this.dataset.value || "";

@@ -83,7 +83,6 @@ abstract class AbstractWatchController
     }
 }
 
-// VIDEO WATCH CONTROLLER
 class VideoWatchController extends AbstractWatchController
 {
     private ?array $mediaData = null;

@@ -61,7 +61,6 @@ if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
 
         $delete_msg = $result['message'];
         if ($result['success']) {
-            // Refresh counts
             $q_vid_count->execute();
             $total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
             $q_mus_count->execute();

@@ -9,7 +9,6 @@ class Uploader
     use FfmpegUtils;
     private \mysqli $conn;
     private int $user_id;
-    private string $username;
     private string $user_role;
     private string $base_dir;
     private string $ffmpeg_bin;
@@ -19,7 +18,6 @@ class Uploader
     {
         $this->conn      = $db_connection;
         $this->user_id   = (int)$session_user_id;
-        $this->username  = $session_username;
         $this->base_dir  = defined('MEEL_HDD_VIDEO_UPLOAD') ? MEEL_HDD_VIDEO_UPLOAD : "/path/to/your/media/video/upload/";
         $this->ffmpeg_bin  = resolve_binary(['/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg', 'ffmpeg']);
         $this->ffprobe_bin = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);

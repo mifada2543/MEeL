@@ -23,7 +23,7 @@ Panduan lengkap untuk menginstal dan menjalankan MEeL-HUB di server lokal Anda.
 ### Minimum Requirements
 
 | Komponen | Versi | Keterangan |
-|----------|-------|------------|
+|---|---|---|
 | **PHP** | 8.0+ | **8.1+** sangat disarankan |
 | **MySQL** | 5.7+ / MariaDB 10.2+ | Encoding `utf8mb4` |
 | **Apache** | 2.4+ | Wajib `mod_rewrite` |
@@ -34,6 +34,7 @@ Panduan lengkap untuk menginstal dan menjalankan MEeL-HUB di server lokal Anda.
 | **Storage** | 10 GB+ | Tergantung ukuran media |
 
 ### Translator mecab
+
 ```bash
 sudo apt install mecab mecab-ipadic-utf8 libmecab-dev
 ```
@@ -107,11 +108,13 @@ cd MEeL
 > Setelah impor, jalankan migrasi untuk menyelesaikan setup.
 
 #### Opsi A — Via MySQL CLI (cepat):
+
 ```bash
 mysql -u root -p < database/schema.sql
 ```
 
 #### Opsi B — Via MySQL prompt:
+
 ```bash
 mysql -u root -p
 ```
@@ -120,11 +123,10 @@ SOURCE /path/ke/MEeL/database/schema.sql;
 ```
 
 #### Opsi C — Via phpMyAdmin / GUI lainnya:
+
 1. Buka phpMyAdmin → tab **Import**
 2. Pilih file `database/schema.sql`
 3. Klik **Go**
-
-
 
 ### 4. Konfigurasi Aplikasi
 
@@ -290,12 +292,14 @@ jalankan ulang sampai muncul `✅ Deployment sehat.`
 ### 6. Konfigurasi Apache
 
 #### Aktifkan mod_rewrite:
+
 ```bash
 sudo a2enmod rewrite
 sudo systemctl restart apache2
 ```
 
 #### Pastikan AllowOverride aktif:
+
 Edit `/etc/apache2/apache2.conf`:
 ```apache
 <Directory /var/www/html>
@@ -465,11 +469,13 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 ## Troubleshooting Instalasi
 
 ### ❌ "Koneksi ke database gagal"
+
 - Pastikan MySQL/MariaDB berjalan: `sudo systemctl status mysql`
 - Verifikasi kredensial di `auth/settings.php`
 - Coba: `mysql -u root -p -e "SHOW DATABASES;"`
 
 ### ❌ "Penyimpanan Offline" / Redirect ke maintenance
+
 - Periksa path HDD di `auth/settings.php`:
   ```php
   define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
@@ -483,6 +489,7 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 - Atau nonaktifkan sementara untuk development
 
 ### ❌ Deployment Check melaporkan FAIL pada folder upload
+
 - **Gejala:** `php tests/check_deploy.php` → `FAIL` pada symlink upload /
   `.htaccess` folder upload (storage tidak ter-mount atau symlink broken).
 - **Penyebab:** storage HDD (`MEEL_HDD_BASE`) tidak ter-mount, atau symlink
@@ -492,14 +499,17 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
   Jalankan ulang `php tests/check_deploy.php` sampai muncul `✅ Deployment sehat.`
 
 ### ❌ "403 Forbidden" pada halaman
+
 - Periksa `.htaccess` di direktori terkait
 - Pastikan `AllowOverride All` di konfigurasi Apache
 
 ### ❌ "500 Internal Server Error"
+
 - Cek error log: `sudo tail -f /var/log/apache2/error.log`
 - Aktifkan error reporting di PHP: `ini_set('display_errors', 1);`
 
 ### ❌ FFmpeg/yt-dlp tidak ditemukan
+
 - Pastikan binary terinstall: `which ffmpeg && which yt-dlp`
 - Transcoder dan Uploader sudah auto-detect via `resolveBinary()`
 

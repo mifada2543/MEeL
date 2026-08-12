@@ -24,7 +24,6 @@ if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
 // Room code acak 6 karakter
 $room = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 $user_id = (int)$_SESSION['user_id'];
-// memverifikasi identitas pengirim langkah nanti.
 $sql = "INSERT INTO rooms (room_code, white_user_id) VALUES (?, ?)";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {

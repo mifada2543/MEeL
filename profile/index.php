@@ -51,7 +51,7 @@ if (empty($target_user)) {
     exit();
 }
 
-// 2. Query Data User (TAMBAHKAN 'id' di sini!)
+// 2. Query Data User
 $stmt = $conn->prepare("SELECT id, username, bio, role, profile_picture, last_activity FROM users WHERE username = ?");
 $stmt->bind_param("s", $target_user);
 $stmt->execute();
@@ -62,7 +62,6 @@ if (!$u) {
     die("<div class='min-h-screen bg-[#0b0e14] flex items-center justify-center text-white font-mono'>User tidak ditemukan!</div>");
 }
 
-// Sekarang $u['id'] sudah ada isinya
 $profile_id = $u['id'];
 
 $stmt_vid = $conn->prepare("SELECT COUNT(*) as total FROM video WHERE user_id = ?");

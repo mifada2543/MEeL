@@ -70,7 +70,6 @@ if (!$stmt) {
 }
 
 unset($data['csrf_token']);
-// dengan kolom color di DB — bukan nilai mentah dari client.
 $data['color'] = $server_color;
 $json = json_encode($data);
 $captured = $data['captured'] ?? null;

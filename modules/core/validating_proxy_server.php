@@ -1,5 +1,4 @@
 <?php
-// modules/core/validating_proxy_server.php
 // ─────────────────────────────────────────────────────────────────────────────
 // Validating forward proxy (CLI ONLY). yt-dlp runs behind this proxy so that
 // EVERY destination — including every redirect hop — is resolved and checked
@@ -73,6 +72,10 @@ if (function_exists('pcntl_async_signals') && function_exists('pcntl_signal')) {
 /**
  * Read the HTTP request head (request line + headers) from a client socket.
  * @return string[]|null [method, target, version, header_lines] or null on error
+ */
+/**
+ * Baca header request sampai terminator \r\n\r\n (dengan timeout & batas ukuran).
+ * @return array{0: string, 1: string, 2: string, 3: list<string>}|null [method, target, version, baris-header]
  */
 function readRequestHead($client): ?array
 {

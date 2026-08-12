@@ -35,7 +35,6 @@ function get_user_role(mysqli $conn, int $user_id): string
     $role = $stmt->get_result()->fetch_assoc()['role'] ?? 'user';
     $stmt->close();
 
-    // Simpan ke cache
     $cache[$user_id] = $role;
 
     // Simpan ke session jika ini user yang sedang login

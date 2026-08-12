@@ -44,13 +44,6 @@ function getRealtimeVbrValue(e) {
 function updateBitrateLabel(e, t) {
   t && (t.innerText = `${e}`);
 }
-function updateBarColors(e, t) {
-  if (!t || !t.length) return;
-  const n = Math.round(28 + ((e - 96) / 224) * 180);
-  t.forEach((e) => {
-    e.style.background = `linear-gradient(to top, hsl(${n}, 96%, 50%), hsl(${Math.min(360, n + 40)}, 96%, 72%))`;
-  });
-}
 function updateEqUI() {
   const e = document.getElementById("btn-eq"),
     t = document.getElementById("eq-text"),

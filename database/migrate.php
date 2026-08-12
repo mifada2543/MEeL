@@ -55,7 +55,6 @@ $migrations = [
         'description' => 'Tambah FK constraint untuk tabel tanpa referensi',
         'sql' => [
             function ($conn) {
-
                 $conn->query("DELETE FROM upload_queue WHERE user_id NOT IN (SELECT id FROM users)");
                 $result = $conn->query("ALTER TABLE upload_queue ADD CONSTRAINT fk_upload_queue_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE");
                 if (!$result) {
@@ -139,7 +138,6 @@ $migrations = [
         'description' => 'Tambah UNIQUE KEY pada users.username — cegah bloat guest, optimasi ON DUPLICATE KEY',
         'sql' => [
             function ($conn) {
-
                 $conn->query("DELETE g1 FROM users g1
                     INNER JOIN users g2
                     WHERE g1.id < g2.id
@@ -172,7 +170,6 @@ $migrations = [
         'description' => 'Sinkronisasi kolom & default values dengan actual DB — role→varchar(20), hapus duplicate UNIQUE KEY, defaults konsisten',
         'sql' => [
             function ($conn) {
-
                 $result = $conn->query("ALTER TABLE users MODIFY COLUMN role varchar(20) DEFAULT 'user'");
                 if (!$result) {
                     $err = $conn->error;
@@ -182,7 +179,6 @@ $migrations = [
                 }
             },
             function ($conn) {
-
                 $check = $conn->query("SHOW INDEX FROM users WHERE Key_name = 'username'");
                 if ($check && $check->num_rows > 0) {
                     $conn->query("ALTER TABLE users DROP INDEX username");
@@ -261,7 +257,6 @@ $migrations = [
                     AND i2.video_id IS NOT NULL");
             },
             function ($conn) {
-
                 $conn->query("DELETE i1 FROM interactions i1
                     INNER JOIN interactions i2
                     WHERE i1.id < i2.id
@@ -281,7 +276,6 @@ $migrations = [
                 }
             },
             function ($conn) {
-
                 $result = $conn->query("ALTER TABLE interactions ADD UNIQUE INDEX unique_interaction_video (user_id, video_id)");
                 if (!$result) {
                     $err = $conn->error;
@@ -343,14 +337,12 @@ $migrations = [
         ],
     ],
 ];
-// Catatan Sinkronisasi
 $conn->query("CREATE TABLE IF NOT EXISTS db_version (
     id INT AUTO_INCREMENT PRIMARY KEY,
     version INT NOT NULL,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
-// Ambil versi terakhir yang sudah dijalankan
 $result = $conn->query("SELECT MAX(version) AS current_version FROM db_version");
 $row = $result->fetch_assoc();
 $current_version = (int)($row['current_version'] ?? 0);
@@ -363,7 +355,6 @@ foreach ($migrations as $version => $migration) {
 
         foreach ($migration['sql'] as $migration_step) {
             if (is_callable($migration_step)) {
-
                 try {
                     $migration_step($conn);
                     $err = $conn->error;
@@ -374,7 +365,6 @@ foreach ($migrations as $version => $migration) {
                     echo "[MEeL] ⚠ Warning: " . $e->getMessage() . "\n";
                 }
             } else {
-                // Raw SQL string
                 $sql = $migration_step;
                 try {
                     if ($conn->query($sql) === false) {
@@ -389,7 +379,6 @@ foreach ($migrations as $version => $migration) {
             }
         }
 
-        // Catat migrasi sukses
         $stmt = $conn->prepare("INSERT INTO db_version (version) VALUES (?)");
         $stmt->bind_param("i", $version);
         $stmt->execute();

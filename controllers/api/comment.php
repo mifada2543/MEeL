@@ -45,7 +45,6 @@ if (!$rateCheck['allowed']) {
     exit;
 }
 
-// Simpan komentar
 $viewer = new MediaViewer($conn, $user_id, $media_type, $media_id);
 if (!$viewer->addComment($_POST)) {
     http_response_code(400);

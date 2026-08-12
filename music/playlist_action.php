@@ -115,7 +115,6 @@ if ($action === 'delete_playlist') {
     // TRANSACTION: Hapus playlist beserta semua track di dalamnya
     $conn->begin_transaction();
     try {
-        // Hapus semua track milik playlist ini
         $stmt_tracks = $conn->prepare('DELETE FROM playlist_tracks WHERE playlist_id = ?');
         $stmt_tracks->bind_param('i', $playlist_id);
         $stmt_tracks->execute();

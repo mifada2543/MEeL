@@ -1,5 +1,4 @@
 <?php
-// dan juga menangani pagination (load-more) hasil pencarian.
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/media/SearchEngine.php';

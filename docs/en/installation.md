@@ -23,7 +23,7 @@ Complete guide to install and run MEeL-HUB on your local server.
 ### Minimum Requirements
 
 | Component | Version | Notes |
-|----------|-------|------------|
+|---|---|---|
 | **PHP** | 8.0+ | **8.1+** highly recommended |
 | **MySQL** | 5.7+ / MariaDB 10.2+ | Encoding `utf8mb4` |
 | **Apache** | 2.4+ | Requires `mod_rewrite` |
@@ -34,6 +34,7 @@ Complete guide to install and run MEeL-HUB on your local server.
 | **Storage** | 10 GB+ | Depends on media size |
 
 ### mecab Translator
+
 ```bash
 sudo apt install mecab mecab-ipadic-utf8 libmecab-dev
 ```
@@ -107,11 +108,13 @@ cd MEeL
 > After importing, run the migration to complete the setup.
 
 #### Option A — Via MySQL CLI (fast):
+
 ```bash
 mysql -u root -p < database/schema.sql
 ```
 
 #### Option B — Via MySQL prompt:
+
 ```bash
 mysql -u root -p
 ```
@@ -120,6 +123,7 @@ SOURCE /path/to/MEeL/database/schema.sql;
 ```
 
 #### Option C — Via phpMyAdmin / other GUI:
+
 1. Open phpMyAdmin → **Import** tab
 2. Select the `database/schema.sql` file
 3. Click **Go**
@@ -288,12 +292,14 @@ upload-`.htaccess` areas — mount the storage, fix the symlinks, add the
 ### 6. Apache Configuration
 
 #### Enable mod_rewrite:
+
 ```bash
 sudo a2enmod rewrite
 sudo systemctl restart apache2
 ```
 
 #### Ensure AllowOverride is active:
+
 Edit `/etc/apache2/apache2.conf`:
 ```apache
 <Directory /var/www/html>
@@ -462,11 +468,13 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 ## Installation Troubleshooting
 
 ### ❌ "Database connection failed"
+
 - Make sure MySQL/MariaDB is running: `sudo systemctl status mysql`
 - Verify credentials in `auth/settings.php`
 - Try: `mysql -u root -p -e "SHOW DATABASES;"`
 
 ### ❌ "Storage Offline" / Redirected to maintenance
+
 - Check HDD path in `auth/settings.php`:
   ```php
   define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
@@ -480,6 +488,7 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
 - Or disable temporarily for development
 
 ### ❌ Deployment Check reports FAIL on upload folders
+
 - **Symptom:** `php tests/check_deploy.php` → `FAIL` on upload symlinks /
   `.htaccess` upload dirs (storage not mounted or broken symlinks).
 - **Cause:** storage HDD (`MEEL_HDD_BASE`) not mounted, or the tracked upload
@@ -489,14 +498,17 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
   Re-run `php tests/check_deploy.php` until it reports `✅ Deployment sehat.`
 
 ### ❌ "403 Forbidden" on pages
+
 - Check `.htaccess` in the relevant directory
 - Make sure `AllowOverride All` is set in Apache config
 
 ### ❌ "500 Internal Server Error"
+
 - Check error log: `sudo tail -f /var/log/apache2/error.log`
 - Enable error reporting in PHP: `ini_set('display_errors', 1);`
 
 ### ❌ FFmpeg/yt-dlp not found
+
 - Verify binary is installed: `which ffmpeg && which yt-dlp`
 - Transcoder and Uploader auto-detect via `resolveBinary()`
 

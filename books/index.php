@@ -229,7 +229,6 @@ $totalPagesBooks = $meta_books['total_pages'];
                     return;
                 }
 
-                // Tampilkan banner — dengan chapter jika ada
                 var label = data.title;
                 if (data.ch) label += ' — ' + data.ch;
                 if (data.type !== 'pdf' && data.page && data.total) {
@@ -244,7 +243,6 @@ $totalPagesBooks = $meta_books['total_pages'];
                 console.warn('[Continue] Gagal baca progress:', e);
             }
 
-            // Tombol tutup
             if (closeEl) {
                 closeEl.addEventListener('click', function() {
                     banner.classList.remove('visible');

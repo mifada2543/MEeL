@@ -400,7 +400,6 @@ include __DIR__ . '/partials/auth_head.php';
         } // ── Download Backup Codes sebagai TXT (fungsi shared) ──
         window._meelBackupCodes = window._backupCodes || [];
         window._meelBackupUser = '<?= htmlspecialchars($username) ?>';
-        // Copy secret to clipboard
         function copySecret() {
             const text = document.getElementById('mfa-secret-text');
             if (text) {

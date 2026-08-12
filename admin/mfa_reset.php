@@ -12,14 +12,12 @@ define('MEEL_ADMIN_CONTEXT', true);
 include '../controllers/admin/admin_actions.php';
 $msg      = $_GET['msg'] ?? '';
 $msg_user = $_GET['user'] ?? '';
-// Ambil user dengan MFA aktif
 $mfa_users = $conn->query("
     SELECT id, username, role, is_active, last_activity, created_at
     FROM users
     WHERE mfa_enabled = 1
     ORDER BY last_activity DESC
 ");
-// Ambil total user
 $total_mfa = $conn->query("SELECT COUNT(*) AS c FROM users WHERE mfa_enabled = 1")->fetch_assoc()['c'] ?? 0;
 $total_all = $conn->query("SELECT COUNT(*) AS c FROM users")->fetch_assoc()['c'] ?? 0;
 ?>

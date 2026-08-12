@@ -1,7 +1,7 @@
 # 📋 Analisis & Deskripsi Proyek MEeL-HUB
 
-**Versi Analisis:** 2.2  
-**Tanggal:** 29 Juli 2026  
+**Versi Analisis:** 2.2
+**Tanggal:** 29 Juli 2026
 **Analis:** Buffy (Freebuff AI Agent)
 
 ---
@@ -13,7 +13,7 @@
 ### Identitas Proyek
 
 | Atribut | Nilai |
-|---------|-------|
+|---|---|
 | **Nama** | MEeL-HUB (Media Hub Platform) |
 | **Lisensi** | GNU GPL v3 |
 | **Arsitektur** | PHP Monolith + MySQL |
@@ -84,7 +84,7 @@ MEeL/
 ### 20 Tabel
 
 | # | Tabel | Fungsi | Status |
-|---|-------|--------|--------|
+|---|---|---|---|
 | 1 | `users` | Pengguna, role, session, profil | ✅ |
 | 2 | `video` | Metadata video (HLS/MP4) | ✅ |
 | 3 | `music` | Metadata audio (MP3/FLAC/OGG/M4A) | ✅ |
@@ -109,7 +109,7 @@ MEeL/
 ### Index
 
 | Tabel | Index | Tipe | Status |
-|-------|-------|------|--------|
+|---|---|---|---|
 | `video` | `ft_video_search` (title, search_metadata) | **FULLTEXT** | ✅ Migration v1 |
 | `music` | `ft_music_search` (title, artist, search_metadata) | **FULLTEXT** | ✅ Migration v1 |
 | `books` | `ft_books_search` (title, author) | **FULLTEXT** | ✅ Migration v1 |
@@ -134,7 +134,7 @@ MEeL/
 ### Security Test: ✅ 97/100 — Score: 97/100 (A) (5 warning non-kritis, 0 fail)
 
 | Kategori | Status | Detail |
-|----------|--------|--------|
+|---|---|---|
 | **SQL Injection** | ✅ Aman | Semua query menggunakan prepared statements (`->prepare()` + `->bind_param()`) |
 | **CSRF** | ✅ Aman | Token CSRF di-generate dengan `random_bytes(32)`, diverifikasi di semua form |
 | **XSS** | ✅ Aman | Semua output user menggunakan `htmlspecialchars()` |
@@ -146,8 +146,8 @@ MEeL/
 
 ### Open Issues (Fixed)
 
-| Issue | File | Fix | 
-|-------|------|-----|
+| Issue | File | Fix |
+|---|---|---|
 | Hardcoded `/MEeL/` path | `auth/auth.php` | ✅ → `base_url()` |
 | Open redirect via HTTP_REFERER | `controllers/delete_comment.php` | ✅ → Host validation + port stripping |
 | Redirect tanpa validasi | `music/playlist_action.php` | ✅ → Allowlist prefix check |
@@ -162,7 +162,7 @@ MEeL/
 **4 Warnings (non-critical):**
 
 | Warning | Kategori | Notes |
-|---------|----------|-------|
+|---|---|---|
 | Session name (meel) tidak terdeteksi | Minor | Deteksi statis — session diboot dari modul terpusat `modules/core/helpers/session.php` |
 | Session GC maxlifetime tidak terdeteksi | Minor | Deteksi statis — lihat `meel_boot_session()` |
 | Session cookie params tidak terdeteksi | Minor | Deteksi statis |
@@ -173,7 +173,7 @@ MEeL/
 ### Code Duplication Removed
 
 | Sebelum | Sesudah | File |
-|---------|---------|------|
+|---|---|---|
 | `resolveBinary()` ada di 2 file | 1 shared function `resolve_binary()` | `modules/core/helpers.php` |
 | Role check query di 3 file | 1 helper `get_user_role()` dengan static cache | `modules/core/helpers.php` |
 | HTML string concat di DriveService | Template terpisah `drive/templates/file_grid.php` | `drive/DriveService.php` |
@@ -181,7 +181,7 @@ MEeL/
 ### Performance Improvements
 
 | Optimasi | Dampak | File |
-|----------|--------|------|
+|---|---|---|
 | `LIKE` → `MATCH AGAINST` FULLTEXT | 10-100× faster search | `modules/media/MediaLibrary.php` |
 | `session_write_close()` | No more blocked range requests | `music/stream.php`, `music/watch.php`, `video/watch.php` |
 | `PHP_BINARY` constant | Test script portable | `tests/functional_test.php` |
@@ -195,9 +195,11 @@ MEeL/
 ## 🔍 Masalah Teridentifikasi
 
 ### Critical (0)
+
 Tidak ada masalah kritis yang tersisa.
 
 ### High (0)
+
 Tidak ada masalah high yang tersisa.
 
 ### Medium (0)
@@ -207,7 +209,7 @@ Tidak ada masalah medium yang tersisa.
 ### Low (0 ✅ — Semua telah diperbaiki)
 
 | # | Masalah | Status | Fix |
-|---|---------|--------|-----|
+|---|---|---|---|
 | 1 | `users.role` enum tidak include 'member' | ✅ **Selesai** | Role diubah ke `varchar(20)` — mendukung `admin`, `member`, `user`, `guest` |
 | 2 | Tidak ada `db_version` table di schema.sql | ✅ **Selesai** | Ditambahkan ke schema.sql + Migration v8 sync untuk DB existing |
 
@@ -220,7 +222,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 1: Bug Fixes & Security
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 1 | `modules/core/Transcoder.php` | AND→OR fix (size/duration check) | 🐛 Bug |
 | 2 | `auth/register.php` | PASSWORD→password column + CSRF validation | 🐛 Bug |
 | 3 | `auth/register.php` | CSRF return check (bukan hanya call) | 🛡 Security |
@@ -237,7 +239,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 2: Performance & Code Quality
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 13 | `modules/media/MediaLibrary.php` | `LIKE` → `MATCH AGAINST` FULLTEXT | ⚡ Performance |
 | 14 | `video/video_card.php` | Null coalescing `?? 0` | 🛡 Stability |
 | 15 | `video/search_video.php` | Null coalescing `?? 0` | 🛡 Stability |
@@ -249,7 +251,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 2.5: Remaining Fixes
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 20 | `tests/functional_test.php` | Hardcoded php → `PHP_BINARY` | 🔌 Portability |
 | 21 | `video/watch.php` | CSRF token `htmlspecialchars()` | 🛡 Security |
 | 22 | `music/watch.php` | CSRF token `htmlspecialchars()` (6 occurrences) | 🛡 Security |
@@ -258,7 +260,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 3: Advanced Fixes
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 24 | `auth/auth.php` | Hardcoded `/MEeL/` → `base_url()` + require helpers | 🔌 Portability |
 | 25 | `controllers/api/delete_comment.php` | HTTP_REFERER validation + port stripping | 🛡 Security |
 | 26 | `music/playlist_action.php` | Redirect allowlist guard | 🛡 Security |
@@ -272,7 +274,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 4: Rate Limiting, Dashboard, & Final Cleanup
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 33 | `modules/core/RateLimiter.php` | **Baru!** File-based API rate limiter | ✨ New |
 | 34 | `controllers/api/like.php` | Rate limit 30 likes/menit dengan HTMX 429 response | 🛡 Security |
 | 35 | `controllers/api/delete_comment.php` | Rate limit 10 comments/menit | 🛡 Security |
@@ -292,7 +294,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 5: Dokumentasi & Restrukturisasi
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 48 | `modules/core/japanese.php` | Restrukturisasi ke modules/core/ | ♻ Code |
 | 49 | `modules/core/bootstrap.php` | **Baru!** Bootstrap terpusat | ✨ New |
 | 50 | `modules/transcoder/FfmpegUtils.php` | **Baru!** Trait FFmpeg utilitas bersama | ✨ New |
@@ -304,7 +306,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 6: Uploader & Transcoder Enhancement
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 55 | `modules/core/Uploader.php` | Magic bytes validation + active upload limit + pre-flight disk space | 🛡 Security |
 | 56 | `modules/core/Uploader.php` | RAM disk priority (/dev/shm) untuk staging HLS | ⚡ Performance |
 | 57 | `modules/core/Uploader.php` | Atomic DB transaction + rollback + file cleanup | 🛡 Stability |
@@ -320,7 +322,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 7: Database Schema Sync & Migration v8
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 66 | `database/schema.sql` | `users.role` → `varchar(20)` — dukung role `member` & `guest` | 🗄 Database |
 | 67 | `database/schema.sql` | Tambah tabel `db_version`, `moves`, `rooms` ke schema.sql | 🗄 Database |
 | 68 | `database/schema.sql` | Tambah missing FK `comments_ibfk_2` (music_id→music.id) | 🗄 Database |
@@ -331,7 +333,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 8: Player Enhancement & UX Fixes
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 72 | `assets/js/video/watch/player-events.js` | **Mutual exclusion:** Auto Next ON → Loop OFF; Loop ON → Auto Next OFF | 🐛 Bug |
 | 73 | `assets/js/video/watch/player-events.js` | Sembunyikan tombol replay + poster Plyr saat auto-next overlay aktif | 🐛 Bug |
 | 74 | `assets/css/video/autonext.css` | Tambah backdrop gelap `rgba(0,0,0,0.45)` di auto-next overlay | 🐛 Bug |
@@ -345,7 +347,7 @@ Tidak ada masalah medium yang tersisa.
 ### Round 9: MFA Support & Chess
 
 | # | File | Perubahan | Kategori |
-|---|------|-----------|----------|
+|---|---|---|---|
 | 81 | `auth/mfa_setup.php` | **Baru!** Halaman setup MFA (generate secret, verifikasi TOTP, backup codes) | ✨ New |
 | 82 | `auth/mfa_verify.php` | **Baru!** Halaman verifikasi TOTP setelah login (redirect dengan session temp) | ✨ New |
 | 83 | `admin/mfa_reset.php` | **Baru!** Halaman admin untuk reset MFA user yang kehilangan akses Authenticator | ✨ New |
@@ -365,7 +367,7 @@ Tidak ada masalah medium yang tersisa.
 ## 🧪 Test Results
 
 | Test | Total | Pass | Warn | Fail | Score |
-|------|-------|------|------|------|-------|
+|---|---|---|---|---|---|
 | **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 161 | 157 | 4 warn | **0** | **✅ 99/100** |
@@ -377,6 +379,7 @@ Tidak ada masalah medium yang tersisa.
 ## 📈 Rekomendasi ke Depan
 
 ### Prioritas Tinggi
+
 1. ~~Tambah FK constraint~~ ✅ **Sudah ditambahkan** (Migration v4 & schema.sql)
 2. ~~Modul anime~~ ✅ **Sudah dihapus dari kodebase**
 3. ~~Tambah pagination UI~~ ✅ **Sudah diimplementasi** (metadata → UI) — halaman musik sekarang menampilkan info page
@@ -384,9 +387,11 @@ Tidak ada masalah medium yang tersisa.
 5. ~~Dashboard admin lebih informatif~~ ✅ **Sudah diimplementasi** (Chart.js 7-Day Activity Chart)
 
 ### Prioritas Menengah
+
 6. ~~**Service Worker** untuk PWA — caching halaman, install prompt di mobile~~ ✅ **Sudah diimplementasi** (`sw.js.php` dinamis + `SwPrecache`, precache otomatis per modul via `manifest.php`)
 
 ### Prioritas Rendah
+
 7. **Docker support** — environment yang konsisten untuk deployment
 8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (255 unit + 79 integration = 334 tests)
 
@@ -397,7 +402,7 @@ Tidak ada masalah medium yang tersisa.
 **MEeL** adalah platform media hub pribadi yang solid dengan arsitektur modular, keamanan berlapis, dan performa yang baik. Dari 47 item perbaikan yang diidentifikasi selama analisis, **seluruhnya telah diimplementasikan**.
 
 | Metrik | Nilai |
-|--------|-------|
+|---|---|
 | **Total file dimodifikasi** | 40+ file (unik) |
 | **File baru** | 7 file (autoload.php, migrate.php, file_grid.php, deskripsi.md, RateLimiter.php, activity_log.php) |
 | **Bug fixed** | 5 |

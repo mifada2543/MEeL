@@ -35,28 +35,4 @@ class ProcessException extends \RuntimeException
     {
         return $this->output;
     }
-
-    /* Buat ProcessException dari hasil exec(). */
-    public static function fromExec(string $command, int $exitCode, array $output): self
-    {
-        $lastLines = implode(' | ', array_slice($output, -3));
-        return new self(
-            "Perintah gagal (exit code $exitCode): $lastLines",
-            $command,
-            $exitCode,
-            implode("\n", $output)
-        );
-    }
-
-    /* Buat ProcessException dari hasil proc_close(). */
-    public static function fromProcClose(string $command, int $exitCode, string $output = ''): self
-    {
-        $lastLines = implode(' | ', array_slice(explode("\n", $output), -3));
-        return new self(
-            "Proses gagal (exit code $exitCode): $lastLines",
-            $command,
-            $exitCode,
-            $output
-        );
-    }
 }

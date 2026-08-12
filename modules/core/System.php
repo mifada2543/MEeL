@@ -1,5 +1,4 @@
 <?php
-// File: modules/core/System.php
 
 require_once __DIR__ . '/RateLimiter.php';
 
@@ -50,24 +49,6 @@ class System
         });
 
         return $active_queues;
-    }
-
-    public function getTodayUploadStats(): array
-    {
-        $stats = ['video' => 0, 'music' => 0, 'drive' => 0, 'total' => 0];
-
-        $q_vid = $this->conn->query("SELECT COUNT(*) FROM video WHERE DATE(upload_date) = CURDATE()");
-        $stats['video'] = $q_vid ? (int)$q_vid->fetch_row()[0] : 0;
-
-        $q_mus = $this->conn->query("SELECT COUNT(*) FROM music WHERE DATE(upload_date) = CURDATE()");
-        $stats['music'] = $q_mus ? (int)$q_mus->fetch_row()[0] : 0;
-
-        $q_drv = $this->conn->query("SELECT COUNT(*) FROM drive_files WHERE DATE(upload_date) = CURDATE()");
-        $stats['drive'] = $q_drv ? (int)$q_drv->fetch_row()[0] : 0;
-
-        $stats['total'] = $stats['video'] + $stats['music'] + $stats['drive'];
-
-        return $stats;
     }
 
     private static function getFolderSizeSys(string $path): float
@@ -197,7 +178,6 @@ class System
     }
     public function forceStopQueue(int $id, string $task_type): bool
     {
-        // Tentukan tabel berdasarkan jenis task
         if ($task_type === 'download') {
             $stmt = $this->conn->prepare("DELETE FROM upload_queue WHERE id = ?");
         } elseif ($task_type === 'transcode') {

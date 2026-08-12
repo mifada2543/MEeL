@@ -117,7 +117,6 @@ function verify_backup_code(string $hashed_json, string $input): array
 
     foreach ($codes as $i => $hash) {
         if (password_verify($input, $hash)) {
-            // Hapus kode yang sudah dipakai
             array_splice($codes, $i, 1);
             return ['valid' => true, 'remaining' => $codes];
         }

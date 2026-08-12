@@ -212,7 +212,6 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             echo '  <Worksheet ss:Name="Activity Log">' . "\n";
             echo '    <Table>' . "\n";
 
-            // Header row
             $headers = ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu'];
             echo '      <Row>' . "\n";
             foreach ($headers as $h) {
@@ -229,7 +228,6 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
                 return '        <Cell><Data ss:Type="String">' . htmlspecialchars((string)$val) . '</Data></Cell>' . "\n";
             };
 
-            // Data rows
             foreach ($rows as $row) {
                 echo '      <Row>' . "\n";
                 echo $xls_cell($row['id'], 'Number');

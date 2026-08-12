@@ -1,5 +1,4 @@
 <?php
-// modules/core/ValidatingProxy.php
 // ─────────────────────────────────────────────────────────────────────────────
 // Manages the validating forward proxy process (validating_proxy_server.php).
 //

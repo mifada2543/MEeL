@@ -410,7 +410,7 @@ Tunggu hingga kuota ter-reset, atau minta admin untuk meng-upload-kan.
 ### HTTP Status Codes
 
 | Kode | Arti | Penyebab Umum |
-|------|------|---------------|
+|---|---|---|
 | **401** | Unauthorized | User belum login |
 | **403** | Forbidden | IP banned, user inactive, role insufficient |
 | **404** | Not Found | Media tidak ada, file hilang |
@@ -420,7 +420,7 @@ Tunggu hingga kuota ter-reset, atau minta admin untuk meng-upload-kan.
 ### System Error Messages
 
 | Pesan | Arti | Solusi |
-|-------|------|--------|
+|---|---|---|
 | "Penyimpanan Offline" | HDD external tidak ter-mount | Cek `df -h` dan path di `helpers.php` |
 | "Server sedang sibuk" | Queue penuh (max 2) | Tunggu atau bersihkan queue stuck |
 | "Batas upload tercapai!" | Rate limit aktif | Tunggu 1 jam atau minta admin |
@@ -433,9 +433,11 @@ Tunggu hingga kuota ter-reset, atau minta admin untuk meng-upload-kan.
 ## FAQ
 
 ### Q: Apakah MEeL bisa diakses dari internet?
+
 **A:** Bisa, tapi disarankan menggunakan Cloudflare Tunnel atau VPN. Jangan expose langsung tanpa HTTPS.
 
 ### Q: Bagaimana cara backup data?
+
 **A:** Backup database + folder media:
 ```bash
 mysqldump -u root -p MEeL > backup_meel.sql
@@ -443,21 +445,26 @@ tar -czf media_backup.tar.gz /media/[user]/MEeL/
 ```
 
 ### Q: Kenapa video tidak muncul thumbnail?
+
 **A:** Thumbnail digenerate otomatis dari frame ke-5 video. Pastikan FFmpeg terinstall.
 
 ### Q: Format musik apa yang didukung?
+
 **A:** MP3, OGG/Opus, M4A/AAC, FLAC, WAV. Semua akan di-transcode ke Opus/OGG.
 
 ### Q: Bagaimana cara menambahkan admin baru?
+
 **A:** Register user biasa, lalu ubah role di database:
 ```sql
 UPDATE users SET role = 'admin', is_active = 1 WHERE id = [user_id];
 ```
 
 ### Q: Apakah bisa streaming video 4K?
+
 **A:** Secara teknis bisa, tapi kendala di bandwidth dan storage. Disarankan maksimal 1080p.
 
 ### Q: Kenapa session guest tidak valid?
+
 **A:** Guest otomatis dibuat saat pertama kali akses. Jika ada masalah, hapus guest tidak aktif via Admin Panel.
 
 ---

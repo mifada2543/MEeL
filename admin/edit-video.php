@@ -35,7 +35,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         if (!$should_exclude) $back_url = $ref;
     }
 }
-// Validasi ID Video
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $stmt_video = $conn->prepare("SELECT v.*, u.username AS uploader, u.profile_picture AS uploader_pfp FROM video v JOIN users u ON v.user_id = u.id WHERE v.id = ? LIMIT 1");
 $stmt_video->bind_param("i", $id);
@@ -75,13 +74,11 @@ if (isset($_POST['update'])) {
                     $error_message = 'File thumbnail harus berupa gambar (JPEG, PNG, WebP, GIF, atau AVIF).';
                 }
             }
-            // Proses thumbnail lolos
             if (empty($error_message)) {
                 $target_dir = __DIR__ . '/../video/upload/thumbnail/';
                 if (!is_dir($target_dir)) {
                     @mkdir($target_dir, 0755, true);
                 }
-                // Nama file berdasarkan judul video
                 $clean_title = getRomajiName($title);
                 if (empty($clean_title)) $clean_title = 'video-thumb';
                 $new_name = $clean_title . '_thumb.webp';

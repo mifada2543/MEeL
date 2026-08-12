@@ -215,7 +215,6 @@ $__vdir = function($dir) {
                             <span>All Collections</span>
                         </a>
                         <?php
-                        // reset pointer
                         $artists->data_seek(0);
                         while ($a = $artists->fetch_assoc()): ?>
                             <a href="index.php?format=<?= $format_filter ?>&artist=<?= urlencode($a['artist']) ?>"

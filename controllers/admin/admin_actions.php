@@ -23,7 +23,7 @@ if (isset($_POST['ban_ip'])) {
     $stmt = $conn->prepare("INSERT IGNORE INTO ip_ban (ip_address, reason) VALUES (?, ?)");
     $stmt->bind_param("ss", $ip, $reason);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'ban_ip', 'ip', 0, $ip);
+    log_activity($conn, (int)$_SESSION['user_id'], 'ban_ip', 'ip', 0);
     header("Location: index.php?msg=IP_Banned");
     exit();
 }
@@ -33,7 +33,7 @@ if (isset($_POST['unban_ip'])) {
     $stmt = $conn->prepare("DELETE FROM ip_ban WHERE ip_address = ?");
     $stmt->bind_param("s", $_POST['unban_ip']);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0, $_POST['unban_ip']);
+    log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0);
     header("Location: index.php?msg=IP_Unbanned#unban");
     exit();
 }
@@ -149,7 +149,7 @@ if (isset($_POST['kick_user'])) {
         WHERE username = ?");
     $stmt->bind_param("s", $_POST['kick_user']);
     $stmt->execute();
-    log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0, $_POST['kick_user']);
+    log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0);
     header("Location: index.php?msg=Kicked_Success#monitor");
     exit();
 }

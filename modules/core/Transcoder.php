@@ -1,5 +1,4 @@
 <?php
-// File: modules/core/Transcoder.php
 // Pastikan konstanta path terdefinisi (dari auth/config.php)
 if (!defined('MEEL_HDD_BASE')) {
     define('MEEL_HDD_BASE', '/path/to/your/media');
@@ -251,17 +250,6 @@ class Transcoder
     }
 
     // ─── QUEUE MANAGEMENT ───
-    // ─── QUEUE MANAGEMENT ───
-
-    public function checkServerBusy(): ?array
-    {
-        $res = $this->conn->query(
-            "SELECT q.*, u.username FROM upload_queue q
-             JOIN users u ON q.user_id = u.id
-             WHERE q.status = 'processing' LIMIT 1"
-        );
-        return $res ? $res->fetch_assoc() : null;
-    }
 
     private function lockQueue(string $url, string $type): int
     {
@@ -907,7 +895,7 @@ class Transcoder
         if (is_dir($hdd_target_folder)) {
             $this->removeDir($hdd_target_folder);
         }
-        // default_thumb.webp milik bersama.
+        // Jangan hapus default_thumb.webp — dipakai bersama.
         if ($thumb_generated && $db_thumb !== 'default_thumb.webp') {
             $this->removeFile(MEEL_HDD_THUMB_DIR . $db_thumb);
         }
@@ -1134,14 +1122,6 @@ class Transcoder
     }
 
     // BAGIAN 3: TRANSCODE VIDEO → AUDIO (transcode.php)
-    public function checkTranscodeQueue(): bool
-    {
-        $res = $this->conn->query(
-            "SELECT COUNT(*) as total FROM transcode_queue WHERE status = 'processing'"
-        );
-        return $res->fetch_assoc()['total'] >= 2;
-    }
-
     public function transcodeVideo(int $video_id, string $format = 'mp3'): array
     {
 

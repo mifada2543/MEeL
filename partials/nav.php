@@ -407,13 +407,11 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
         <!-- Drawer menu items -->
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
-            <!-- Login -->
             <a href="<?= $_nav_root ?>auth/login.php"
                 class="flex items-center gap-4 px-6 py-4 text-base text-blue-400 hover:text-blue-300 hover:bg-blue-500/[.06] transition-all no-underline font-bold">
                 <i data-lucide="log-in" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Login</span>
             </a>
-            <!-- Daftar -->
             <a href="<?= $_nav_root ?>auth/register.php"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="user-plus" class="w-5 h-5 flex-shrink-0"></i>
@@ -444,7 +442,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                     <span>Music</span>
                 </a>
             <?php endif; ?>
-            <!-- Introduction -->
             <a href="<?= $_nav_root ?>introduction.php"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="compass" class="w-5 h-5 flex-shrink-0"></i>
@@ -463,7 +460,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         dd.classList.toggle('hidden');
         if (ch) ch.style.transform = dd.classList.contains('hidden') ? '' : 'rotate(180deg)';
     }
-    // Tutup dropdown jika klik di luar
     document.addEventListener('click', function(e) {
         const wrap = document.getElementById('nav-dropdown-wrap');
         if (wrap && !wrap.contains(e.target)) {

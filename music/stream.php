@@ -59,7 +59,6 @@ if (!$v || empty($v['filename'])) {
     exit("Data audio tidak ditemukan.");
 }
 
-// dan menyebabkan mod_xsendfile return 404.
 $filePath = __DIR__ . '/upload/file/' . basename($v['filename']);
 
 if (!file_exists($filePath)) {

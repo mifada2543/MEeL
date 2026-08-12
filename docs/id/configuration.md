@@ -20,7 +20,7 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 ## File Konfigurasi Utama
 
 | File | Tujuan | Variabel Kunci |
-|------|--------|----------------|
+|---|---|---|
 | `auth/config.php` | Entry point: bootstrap, session, CSRF, headers | (hanya logic init) |
 | `auth/settings.php` | **Data murni**: DB credentials + **path terpusat** | `$server`, `$username`, `$password`, `$db`, `MEEL_HDD_*` |
 | `auth/config.example.php` | Template entry point (copy ke config.php) | Sama dengan config.php |
@@ -219,7 +219,7 @@ membaca file sama sekali.
 **Dampak performa berdasarkan hasil tes (FLAC 33MB):**
 
 | Metrik | Tanpa X-Sendfile (PHP chunking) | Dengan X-Sendfile |
-|--------|--------------------------------|-------------------|
+|---|---|---|
 | Full file 33MB | 0.020 detik | ~0.010 detik (2x lebih cepat) |
 | Range request 256KB | 0.011 detik | ~0.003 detik (3x lebih cepat) |
 | RAM server per request | ~33MB | 0 bytes |
@@ -230,13 +230,14 @@ membaca file sama sekali.
 ### Contoh untuk Berbagai Skenario
 
 | Skenario | Nilai `MEEL_HDD_BASE` |
-|----------|----------------------|
+|---|---|
 | HDD eksternal | `/media/username/MEeL/media` |
 | Lokal SSD | `/var/www/meel-storage/media` |
 | Development (fallback) | `__DIR__ . '/../storage/media'` |
 | Docker volume | `/data/media` |
 
 ### ⚠️ Penting
+
 Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, aplikasi akan redirect ke `err/maintance.php`. Buka halaman tersebut sebagai admin untuk diagnosa lengkap.
 
 ### Struktur Direktori Media
@@ -406,7 +407,7 @@ if ($user_role === 'admin') return ['allowed' => true];
 `modules/core/RateLimiter.php` — file-based rate limiter untuk endpoint API:
 
 | Endpoint | Limit | Window | File |
-|----------|:-----:|:------:|------|
+|---|:---:|:---:|---|
 | Like/Dislike | 30 | 1 menit | `controllers/api/like.php` |
 | Comment | 10 | 1 menit | `controllers/api/delete_comment.php`, `WatchController.php` |
 | Upload | 3 | 1 jam | — |

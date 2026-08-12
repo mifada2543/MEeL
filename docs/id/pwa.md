@@ -35,7 +35,7 @@ Apache .htaccess rewrite  ──►  sw.js.php (PHP generator)
 ```
 
 | Komponen | File | Fungsi |
-|----------|------|--------|
+|---|---|---|
 | Service Worker (dinamis) | `sw.js.php` | Skrip SW lengkap, dibangkitkan per request dari `SwPrecache` |
 | Generator precache | `modules/core/SwPrecache.php` | Membangun daftar precache + versi otomatis |
 | Web app manifest | `assets/manifest.json` | Metadata instalasi (nama, ikon, shortcuts) |
@@ -82,7 +82,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 **File:** `modules/core/SwPrecache.php` (terdaftar di `modules/autoload.php`)
 
 | Method | Mengembalikan | Deskripsi |
-|--------|---------------|-----------|
+|---|---|---|
 | `baseAssets()` | `string[]` | Aset tetap: CSS hub, tailwind, font, plyr, library JS, ikon, manifest, halaman offline |
 | `moduleAssets()` | `string[]` | **Semua** modul CSS dari setiap `assets/css/*/manifest.php` (video, music, books, drive, admin, engine, up) |
 | `all()` | `string[]` | Daftar precache lengkap = `baseAssets()` + `moduleAssets()` |
@@ -117,7 +117,7 @@ Perubahan apa pun pada file precache → versi baru → nama cache baru
 Karena `SW_VERSION` diturunkan dari konten, skenario berikut terjadi otomatis:
 
 | Skenario | SW_VERSION | Hasil |
-|----------|------------|-------|
+|---|---|---|
 | Edit aset CSS/JS | berubah | SW install ulang, cache lama ter-purge, aset baru ter-precache |
 | Tambah folder modul baru (`assets/css/<folder>/manifest.php` + CSS) | berubah | Folder otomatis masuk precache saat kunjungan berikutnya |
 | Hapus file yang di-precache | berubah (penanda `MISSING:`) | Memaksa update — test CI menangkap file hilang secara permanen |
@@ -128,7 +128,7 @@ Karena `SW_VERSION` diturunkan dari konten, skenario berikut terjadi otomatis:
 ## Strategi Cache
 
 | Kategori | Strategi | Deskripsi |
-|----------|----------|-----------|
+|---|---|---|
 | **Halaman HTML** | Network-first | Halaman segar saat online; fallback cache; lalu `err/offline.php` |
 | **Aset berversi** (`?v=filemtime`) | Cache-first | Immutable — sajikan dari cache, fetch hanya saat miss |
 | **Aset tanpa versi** (tanpa `?v=`) | Stale-while-revalidate | Sajikan cache seketika + refresh di background — tidak perlu hard-refresh setelah deploy |
@@ -176,7 +176,7 @@ menaikkan `SW_VERSION`. **Tidak perlu mengubah `sw.js.php` atau `SwPrecache.php`
 **File:** `assets/manifest.json`
 
 | Properti | Nilai | Catatan |
-|----------|-------|---------|
+|---|---|---|
 | `name` / `short_name` | MEeL — Media Hub Platform | |
 | `icons` | 192×192 (any), 512×512 (any), 512×512 (**maskable**) | File asli — syarat prompt install Chrome |
 | `start_url` | `../index.php?source=pwa` | Relatif terhadap manifest |
@@ -188,7 +188,7 @@ menaikkan `SW_VERSION`. **Tidak perlu mengubah `sw.js.php` atau `SwPrecache.php`
 ### Ikon
 
 | File | Ukuran | Digunakan Untuk |
-|------|--------|-----------------|
+|---|---|---|
 | `assets/MEeL.png` | 500×500 | Favicon, gambar OG |
 | `assets/MEeL-192.png` | 192×192 | Manifest, shortcuts |
 | `assets/MEeL-512.png` | 512×512 | Manifest (any + maskable) |

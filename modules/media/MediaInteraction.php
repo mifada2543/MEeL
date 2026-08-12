@@ -3,7 +3,6 @@ class MediaInteraction {
     private \mysqli $conn;
     private int $user_id;
     private string $error = '';
-    private bool $success = false;
 
     public function __construct(\mysqli $db_connection, int $session_user_id) {
         $this->conn = $db_connection;
@@ -280,7 +279,6 @@ class MediaInteraction {
         ];
     }
 
-    // GETTERS
     public function getError(): string {
         return $this->error;
     }

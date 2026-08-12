@@ -1,6 +1,6 @@
 # 🧪 Panduan Testing
 
-**Versi Dokumen:** 1.0  
+**Versi Dokumen:** 1.0
 **Tanggal:** 25 Juli 2026
 
 ---
@@ -10,7 +10,7 @@
 MEeL menggunakan pendekatan testing berlapis:
 
 | Lapisan | Tools | Cakupan | Lokasi |
-|---------|-------|---------|--------|
+|---|---|---|---|
 | **Unit Test** | PHPUnit 9.6 | Logika murni, DB di-mock | `tests/unit/` |
 | **Integration Test** | PHPUnit 9.6 | Operasi DB real | `tests/integration/` |
 | **Functional Test** | Custom PHP | Alur kerja aplikasi | `tests/functional_test.php` |
@@ -61,7 +61,7 @@ logs/tests/
 #### Unit Test (`tests/unit/`)
 
 | File | Test | Cakupan |
-|------|------|---------|
+|---|---|---|
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME, disk space, CSRF, dir_size, deteksi protokol (data provider) |
 | `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (tanpa MeCab) |
@@ -81,7 +81,7 @@ logs/tests/
 #### Integration Test (`tests/integration/`)
 
 | File | Test | Cakupan |
-|------|------|---------|
+|---|---|---|
 | `MediaInteractionIntegrationTest.php` | 24 | Like/dislike music+video, toggle, ownership check, count sync, guest denial |
 | `ChessGameOverIntegrationTest.php` | 13 | Alur game-over catur dengan DB real |
 | `ChessHelpersIntegrationTest.php` | 6 | Helper catur dengan DB real |
@@ -91,7 +91,7 @@ logs/tests/
 ### Test Helpers
 
 | File | Fungsi |
-|------|--------|
+|---|---|
 | `tests/DbTestHelper.php` | Koneksi DB real dengan isolasi transaction rollback |
 | `tests/bootstrap.php` | Autoloader, `$_SERVER` defaults, setup direktori temp |
 
@@ -126,7 +126,7 @@ vendor/bin/phpunit --no-coverage tests/unit/ValidatingProxyTest.php
 ```
 
 | File test | Yang diverifikasi (penolakan/penerimaan nyata, bukan sekadar keberadaan) |
-|-----------|----------------------------------------------------------------------|
+|---|---|
 | `SsrfGuardTest.php` | Range IPv4/IPv6 private ditolak, IP publik diizinkan, denylist hostname, protokol tak didukung, URL cacat, penolakan kredensial, DNS hostname→IP private, HTTP pinning (`pinHttpUrl`) |
 | `DriveSecurityTest.php` | Download cross-user diblokir, path traversal diblokir, symlink escape diblokir, boundary prefix realpath, penegakan kuota (atomik), reservasi nama atomik |
 | `ValidatingProxyTest.php` | **Menjalankan proses proxy nyata** dan mengirim CONNECT/absolute-URI asli: target private ditolak 502, target publik di-tunnel/relay, bind loopback-only, siklus hidup proses |
@@ -369,7 +369,7 @@ sebelum rilis.
 ## 📊 Hasil Test Terkini
 
 | Suite | Test | Lulus | Gagal | Skor |
-|-------|------|-------|-------|------|
+|---|---|---|---|---|
 | **PHPUnit (unit + integration)** | 334 | 334 | 0 | ✅ 100% |
 | **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 108 | 108 | 0 | ✅ 100% |
 | **Functional Test** | 161 | 157 pass, 4 warn | 0 | ✅ 99/100 |

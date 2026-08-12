@@ -1,5 +1,4 @@
 <?php
-// partials/navbar.php
 if (!isset($is_logged_in)) {
     $is_logged_in = isset($_SESSION['user_id']);
 }

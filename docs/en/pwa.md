@@ -35,7 +35,7 @@ Apache .htaccess rewrite  ──►  sw.js.php (PHP generator)
 ```
 
 | Component | File | Purpose |
-|-----------|------|---------|
+|---|---|---|
 | Service Worker (dynamic) | `sw.js.php` | Full SW script, generated per request from `SwPrecache` |
 | Precache generator | `modules/core/SwPrecache.php` | Builds precache list + auto version |
 | Web app manifest | `assets/manifest.json` | Install metadata (name, icons, shortcuts) |
@@ -83,7 +83,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 **File:** `modules/core/SwPrecache.php` (registered in `modules/autoload.php`)
 
 | Method | Returns | Description |
-|--------|---------|-------------|
+|---|---|---|
 | `baseAssets()` | `string[]` | Fixed assets: hub CSS, tailwind, font, plyr, JS libs, icons, manifest, offline page |
 | `moduleAssets()` | `string[]` | **All** CSS modules from every `assets/css/*/manifest.php` (video, music, books, drive, admin, engine, up) |
 | `all()` | `string[]` | Full precache list = `baseAssets()` + `moduleAssets()` |
@@ -118,7 +118,7 @@ Any change to any precached file → new version → new cache name
 Because `SW_VERSION` is content-derived, these scenarios happen automatically:
 
 | Scenario | SW_VERSION | Result |
-|----------|-----------|--------|
+|---|---|---|
 | Edit a CSS/JS asset | changes | SW re-installs, old caches purged, new assets pre-cached |
 | Add a new module folder (`assets/css/<folder>/manifest.php` + CSS) | changes | Folder auto-added to precache on next visit |
 | Delete a precached file | changes (`MISSING:` marker) | Forces an update — CI test catches the missing file permanently |
@@ -129,7 +129,7 @@ Because `SW_VERSION` is content-derived, these scenarios happen automatically:
 ## Cache Strategies
 
 | Category | Strategy | Description |
-|----------|----------|-------------|
+|---|---|---|
 | **HTML pages** | Network-first | Fresh page when online; cache fallback; then `err/offline.php` |
 | **Versioned assets** (`?v=filemtime`) | Cache-first | Immutable — serve from cache, fetch only on miss |
 | **Unversioned assets** (no `?v=`) | Stale-while-revalidate | Serve cache instantly + refresh in background — no hard-refresh needed after deploy |
@@ -178,7 +178,7 @@ That's it — on the next visit the SW auto-includes the new folder and bumps
 **File:** `assets/manifest.json`
 
 | Property | Value | Notes |
-|----------|-------|-------|
+|---|---|---|
 | `name` / `short_name` | MEeL — Media Hub Platform | |
 | `icons` | 192×192 (any), 512×512 (any), 512×512 (**maskable**) | Real files — required for Chrome install prompt |
 | `start_url` | `../index.php?source=pwa` | Relative to manifest |
@@ -190,7 +190,7 @@ That's it — on the next visit the SW auto-includes the new folder and bumps
 ### Icons
 
 | File | Size | Used for |
-|------|------|----------|
+|---|---|---|
 | `assets/MEeL.png` | 500×500 | Favicon, OG image |
 | `assets/MEeL-192.png` | 192×192 | Manifest, shortcuts |
 | `assets/MEeL-512.png` | 512×512 | Manifest (any + maskable) |
