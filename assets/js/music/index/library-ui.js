@@ -45,7 +45,6 @@ function setupMusicItemClicks() {
 // ─── Muat konten playlist ───
 function loadPlaylistById(id) {
   if (!id) return;
-  // Simpan state load-more
   var savedLMUrl = null;
   var savedBtn = document.getElementById("load-more-btn");
   if (savedBtn) savedLMUrl = savedBtn.getAttribute("hx-get");

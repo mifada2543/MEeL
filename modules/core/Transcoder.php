@@ -895,7 +895,7 @@ class Transcoder
         if (is_dir($hdd_target_folder)) {
             $this->removeDir($hdd_target_folder);
         }
-        // default_thumb.webp milik bersama.
+        // Jangan hapus default_thumb.webp — dipakai bersama.
         if ($thumb_generated && $db_thumb !== 'default_thumb.webp') {
             $this->removeFile(MEEL_HDD_THUMB_DIR . $db_thumb);
         }

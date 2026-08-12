@@ -1,5 +1,4 @@
 <?php
-// modules/core/validating_proxy_server.php
 // ─────────────────────────────────────────────────────────────────────────────
 // Validating forward proxy (CLI ONLY). yt-dlp runs behind this proxy so that
 // EVERY destination — including every redirect hop — is resolved and checked

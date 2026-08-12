@@ -336,7 +336,6 @@ body::before {
   font-weight: 700;
   background: var(--accent-dim, rgba(34, 197, 94, 0.06));
 }
-/* Thumb preview */
 .thumb-mini {
   width: 56px;
   height: 36px;
@@ -393,7 +392,6 @@ body::before {
     opacity: 1;
   }
 }
-/* spinning ring */
 .upload-ring {
   width: 72px;
   height: 72px;
@@ -435,7 +433,6 @@ body::before {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* progress bar */
 .progress-track {
   width: 100%;
   height: 4px;
@@ -475,7 +472,6 @@ body::before {
   text-align: center;
   line-height: 1.5;
 }
-/* Footer links */
 .footer-links {
   display: flex;
   flex-wrap: wrap;

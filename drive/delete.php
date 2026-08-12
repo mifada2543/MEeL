@@ -23,7 +23,6 @@ try {
 
     $storage->delete($filename, $type, $scope);
 
-    // Audit Logging
     log_drive_operation(
         $_SESSION['user_id'],
         $user->username,

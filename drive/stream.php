@@ -50,20 +50,17 @@ try {
 $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
 $mimeTypes = [
-    // Video
     'mp4'  => 'video/mp4',
     'webm' => 'video/webm',
     'mkv'  => 'video/x-matroska',
     'mov'  => 'video/quicktime',
     'avi'  => 'video/x-msvideo',
     'm4v'  => 'video/mp4',
-    // Gambar
     'jpg'  => 'image/jpeg',
     'jpeg' => 'image/jpeg',
     'png'  => 'image/png',
     'gif'  => 'image/gif',
     'webp' => 'image/webp',
-    // Dokumen
     'pdf'  => 'application/pdf',
     'txt'  => 'text/plain; charset=utf-8',
 ];

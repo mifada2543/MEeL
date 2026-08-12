@@ -21,7 +21,6 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
     } elseif (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $response['message'] = 'Sesi keamanan kadaluarsa. Refresh halaman.';
     } else {
-        // Ambil data user
         $stmt = $conn->prepare("SELECT password, mfa_enabled FROM users WHERE id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -38,7 +37,6 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
 
             $_SESSION['backup_pwd_attempts'] = ($_SESSION['backup_pwd_attempts'] ?? 0);
 
-            // Cek lockout
             if (isset($_SESSION['backup_pwd_lock_until']) && time() < $_SESSION['backup_pwd_lock_until']) {
                 $remaining = $_SESSION['backup_pwd_lock_until'] - time();
                 $response['message'] = "Terlalu banyak percobaan. Coba lagi dalam {$remaining} detik.";
@@ -50,20 +48,17 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
                 }
                 $response['message'] = 'Password salah.';
             } else {
-                // Reset counter
                 $_SESSION['backup_pwd_attempts'] = 0;
                 unset($_SESSION['backup_pwd_lock_until']);
 
                 $backup = generate_backup_codes();
                 $hashed_json = json_encode($backup['hashed']);
 
-                // Simpan ke database
                 $stmt = $conn->prepare("UPDATE users SET mfa_backup_codes = ? WHERE id = ?");
                 $stmt->bind_param("si", $hashed_json, $user_id);
                 $stmt->execute();
                 $stmt->close();
 
-                // Catat aktivitas
                 log_activity($conn, $user_id, 'backup_codes_generated');
 
                 if ($action === 'download_backup') {

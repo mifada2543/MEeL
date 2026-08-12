@@ -7,7 +7,6 @@ require __DIR__ . '/DriveService.php';
 $user = DriveUserContext::fromSession($_SESSION);
 $user->authorize();
 
-// Detect AJAX request
 $isAjax = (isset($_GET['ajax']) && $_GET['ajax'] === '1');
 
 if ($isAjax) {
@@ -68,7 +67,6 @@ try {
         20 * 1024 * 1024 * 1024
     );
 
-    // Audit Logging
     log_drive_operation(
         $user_id,
         $user->username,
@@ -107,7 +105,6 @@ try {
     header('Location: index.php?scope=' . urlencode($result['scope']) . '&status=success');
     exit();
 } catch (RuntimeException $exception) {
-    // Log failed upload
     log_drive_operation(
         $user_id,
         $user->username,

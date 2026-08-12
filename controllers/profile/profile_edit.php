@@ -185,7 +185,6 @@ if (isset($_POST['update_profile'])) {
                 }
             }
 
-            // Update nama file di database
             $stmt_pic = $conn->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
             $stmt_pic->bind_param("si", $new_name, $user_id);
             if (!$stmt_pic->execute()) {

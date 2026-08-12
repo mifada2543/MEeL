@@ -26,7 +26,6 @@ try {
         $_GET['scope'] ?? DriveStorage::SCOPE_PUBLIC
     );
 
-    // Audit Logging
     log_drive_operation(
         $user->userId,
         $user->username,

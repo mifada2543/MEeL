@@ -146,7 +146,6 @@ $connection_protocol = get_connection_protocol();
 if (isset($conn)) {
 
     $session_role = $_SESSION['role'] ?? null;
-    // Cek apakah IP user masuk dalam daftar ban
     $check_ban = $conn->prepare("SELECT reason FROM ip_ban WHERE ip_address = ?");
     $check_ban->bind_param("s", $user_ip);
     $check_ban->execute();

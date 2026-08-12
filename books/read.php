@@ -221,7 +221,6 @@ function _scanSubdirs(string $dir): array {
                 if ($book['has_chapters'] == 1):
                     $chapters = _scanSubdirs($ch_base);
                     natsort($chapters);
-                    // Hitung variabel navigasi chapter
                     $ch_list = array_values(array_map('basename', $chapters));
                     $current_idx = array_search($current_chapter, $ch_list);
                     $prev_ch = ($current_idx !== false && $current_idx > 0) ? $ch_list[$current_idx - 1] : null;
@@ -571,7 +570,6 @@ function _scanSubdirs(string $dir): array {
                 });
             });
 
-            // Initial update
             setTimeout(updateScrollState, 300);
         })();
 
@@ -593,7 +591,6 @@ function _scanSubdirs(string $dir): array {
                 var options = document.getElementById('ch-options-' + which);
                 var isHidden = options.classList.contains('hidden');
 
-                // Tutup semua dropdown dulu
                 document.querySelectorAll('.ch-options').forEach(function(el) {
                     el.classList.add('hidden');
                 });
@@ -604,7 +601,6 @@ function _scanSubdirs(string $dir): array {
                     document.body.classList.add('ch-dropdown-open');
                     activeDropdown = which;
 
-                    // Auto-scroll ke item aktif
                     var active = options.querySelector('.ch-option.active');
                     if (active) {
                         setTimeout(function() {
@@ -622,7 +618,6 @@ function _scanSubdirs(string $dir): array {
                 window.navigateChapter(url);
             };
 
-            // Tutup dropdown saat klik di luar
             document.addEventListener('click', function(e) {
                 if (!activeDropdown) return;
                 var dropdown = document.getElementById('ch-dropdown-' + activeDropdown);
@@ -699,7 +694,6 @@ function _scanSubdirs(string $dir): array {
                 } catch(e) {}
             }, 3000); // throttle 3 detik
         }
-        // Simpan saat pertama kali halaman dimuat
         saveProgress();
         // Juga simpan saat user meninggalkan halaman
         window.addEventListener('beforeunload', function() {
@@ -770,7 +764,6 @@ function _scanSubdirs(string $dir): array {
             const key = e.key.toLowerCase();
 
             if (key === 'arrowleft' || key === 'a') {
-                // Previous chapter
                 const prevLink = document.querySelector('a[href*="ch="]:first-child');
                 if (prevLink && prevLink.textContent.includes('Sebelumnya')) {
                     e.preventDefault();
@@ -779,7 +772,6 @@ function _scanSubdirs(string $dir): array {
             }
 
             if (key === 'arrowright' || key === 'd') {
-                // Next chapter
                 const links = document.querySelectorAll('a[href*="ch="]');
                 const nextLink = Array.from(links).find(el => el.textContent.includes('Selanjutnya'));
                 if (nextLink) {

@@ -279,7 +279,6 @@ class MediaInteraction {
         ];
     }
 
-    // GETTERS
     public function getError(): string {
         return $this->error;
     }

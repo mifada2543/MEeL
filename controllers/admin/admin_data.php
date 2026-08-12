@@ -76,7 +76,6 @@ $check_map = [
     'books/upload/thumbnail/'   => 'books',
 ];
 
-// Ambil data DB sekaligus ke memori
 $db_data = ['video_files' => [], 'video_thumbs' => [], 'music_files' => [], 'books_folders' => [], 'books_thumbs' => []];
 
 $res = $conn->query("SELECT filename, thumbnail FROM video");
@@ -129,13 +128,11 @@ foreach ($check_map as $rel_path => $table) {
 
         $is_orphan = true;
 
-        // Manga folder
         if (str_contains($full_path, '/books/upload/manga/')) {
             $relative = substr($full_path, strlen($abs_path));
             $folder   = explode('/', $relative)[0];
             if (in_array($folder, $db_data['books_folders'], true)) $is_orphan = false;
         }
-        // Video
         elseif ($table === 'video') {
             if (str_contains($full_path, '/thumbnail/')) {
                 if (in_array($fname, $db_data['video_thumbs'], true)) $is_orphan = false;
@@ -161,8 +158,8 @@ foreach ($check_map as $rel_path => $table) {
                 }
             }
         }
-        // Music / Books
         else {
+            // Music / Books
             if ($table === 'books' && (in_array($fname, $db_data['books_folders'], true) || in_array($fname, $db_data['books_thumbs'], true))) {
                 $is_orphan = false;
             } elseif ($table === 'music' && in_array($fname, $db_data['music_files'], true)) {

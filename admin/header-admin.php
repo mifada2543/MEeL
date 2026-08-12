@@ -4,7 +4,6 @@ if (!isset($is_admin)) {
         && function_exists('is_admin') && is_admin($conn));
 }
 
-// Default back URL if not set
 if (!isset($back_url)) {
     if ($is_admin) {
         $back_url = 'index.php'; // Dashboard admin
@@ -13,7 +12,6 @@ if (!isset($back_url)) {
     }
 }
 
-// Default variables
 $nav_page_title = $page_title ?? 'Edit';
 $nav_media_type = $media_type ?? 'music';
 $nav_id         = $id ?? 0;

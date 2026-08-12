@@ -18,7 +18,6 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         return ['success' => false, 'message' => 'Video tidak ditemukan.'];
     }
 
-    // Cek kepemilikan
     if ((int)$video['user_id'] !== $user_id) {
         return ['success' => false, 'message' => 'Anda tidak memiliki akses ke video ini.'];
     }
@@ -43,7 +42,6 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         $pending['files'][] = $hls_dir;
     }
 
-    // Thumbnail
     if (!empty($video['thumbnail'])) {
         $thumb_path = __DIR__ . '/../../video/upload/thumbnail/' . $video['thumbnail'];
         if (file_exists($thumb_path)) {
@@ -93,13 +91,11 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
         'files'     => []
     ];
 
-    // File audio
     $audio_path = __DIR__ . '/../../music/upload/file/' . $music['filename'];
     if (file_exists($audio_path)) {
         $pending['files'][] = $audio_path;
     }
 
-    // Thumbnail
     if (!empty($music['thumbnail'])) {
         $thumb_path = __DIR__ . '/../../music/upload/thumbnail/' . $music['thumbnail'];
         if (file_exists($thumb_path)) {
@@ -174,10 +170,8 @@ function cleanupPendingDeletions(): int
         $files = $item['files'] ?? [];
 
         if ($timestamp <= $cutoff) {
-            // Hapus file fisik
             foreach ($files as $path) {
                 if (is_dir($path)) {
-                    // Hapus folder rekursif (HLS folder)
                     removeDirectoryRecursive($path);
                 } elseif (file_exists($path)) {
                     @unlink($path);
@@ -189,7 +183,6 @@ function cleanupPendingDeletions(): int
         }
     }
 
-    // Simpan sisa yang belum 30 menit
     if (!empty($remaining)) {
         @file_put_contents($file, json_encode($remaining, JSON_PRETTY_PRINT), LOCK_EX);
     } else {

@@ -1,5 +1,4 @@
 <?php
-// modules/core/SsrfGuard.php
 // ─────────────────────────────────────────────────────────────────────────────
 // SSRF-safe URL validation — the single source of truth for every outbound
 // request the application makes on behalf of a user (currently the Advanced

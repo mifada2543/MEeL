@@ -134,7 +134,6 @@ body {
   letter-spacing: 0.2em;
   margin-bottom: 2rem;
 }
-/* Loading spinner */
 .pdf-redirect-loader {
   display: flex;
   flex-direction: column;

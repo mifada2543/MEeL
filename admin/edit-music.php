@@ -80,13 +80,11 @@ if (isset($_POST['update'])) {
                     $error_message = 'File cover harus berupa gambar (JPEG, PNG, WebP, GIF, atau AVIF).';
                 }
             }
-            // Proses thumbnail lolos
             if (empty($error_message)) {
                 $target_dir = __DIR__ . '/../music/upload/thumbnail/';
                 if (!is_dir($target_dir)) {
                     @mkdir($target_dir, 0755, true);
                 }
-                // Nama file berdasarkan judul lagu
                 $clean_title = getRomajiName($title);
                 if (empty($clean_title)) $clean_title = 'music-cover';
                 $new_name = $clean_title . '_cover.webp';
@@ -122,7 +120,6 @@ if (isset($_POST['update'])) {
             $stmt_update->bind_param("ssssssi", $title, $artist, $album, $description, $thumbnail_url, $meta, $id);
             if ($stmt_update->execute()) {
                 $status = "success";
-                // Refresh data musik terupdate
                 $music['title'] = $title;
                 $music['artist'] = $artist;
                 $music['album'] = $album;
@@ -137,7 +134,6 @@ if (isset($_POST['update'])) {
     }
 }
 
-// Helper thumbnail URL
 $thumb_src = !empty($music['thumbnail'])
     ? '../music/upload/thumbnail/' . htmlspecialchars($music['thumbnail'])
     : '../assets/img/music0.webp';

@@ -7,7 +7,6 @@
 </main>
 
 <script>    lucide.createIcons();
-    // Fitur Toggle Password
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     const iconEye = document.getElementById('iconEye');

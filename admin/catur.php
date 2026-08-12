@@ -112,7 +112,6 @@ $rooms_result = $conn->query("
 ");
 $rooms = $rooms_result ? $rooms_result->fetch_all(MYSQLI_ASSOC) : [];
 
-// Stats
 $stats = [
     'total_rooms'  => count($rooms),
     'active'       => count(array_filter($rooms, fn($r) => $r['black_joined'] == 1)),
@@ -128,7 +127,6 @@ if (file_exists($log_file)) {
     $log_lines = array_slice(array_reverse($all), 0, 20);
 }
 
-// Page vars for header
 $page_title  = 'Chess Room Manager';
 $media_type  = 'analytics';
 $back_url    = 'index.php';
@@ -244,7 +242,6 @@ $back_url    = 'index.php';
                                 $last_act = $room['last_activity'] ? new DateTime($room['last_activity']) : null;
                                 $idle_minutes = $last_act ? (int)(($now->getTimestamp() - $last_act->getTimestamp()) / 60) : null;
 
-                                // Status logic
                                 if ($room['black_joined'] == 0) {
                                     $status = 'waiting';
                                     $status_label = 'Menunggu Lawan';

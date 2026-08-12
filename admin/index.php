@@ -471,7 +471,6 @@ include __DIR__ . '/../partials/scripts.php';
                                             $ip_display = $row['ip_address'] ?? 'Unknown';
                                             $is_local = ($ip_display === 'LOCAL' || strpos($ip_display, 'Local') !== false);
 
-                                            // Deteksi tipe IP
                                             $ip_type = 'Unknown';
                                             $ip_color_class = 'bg-gray-800 text-gray-400 border-gray-700';
                                             if ($is_local) {

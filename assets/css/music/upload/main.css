@@ -549,7 +549,6 @@ body::before {
   text-align: center;
   line-height: 1.5;
 }
-/* Footer links */
 .footer-links {
   display: flex;
   flex-wrap: wrap;

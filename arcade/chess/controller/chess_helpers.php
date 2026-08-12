@@ -204,8 +204,6 @@ function chess_rematch(\mysqli $conn, string $room, string $color, string $actio
         if ($pendingBy === $color) {
             return ["success" => false, "message" => "Anda tidak dapat menjawab tawaran anda sendiri."];
         }
-        // client penawar ikut me-reset papannya (sinkron via polling).
-        // setelah game selesai (UI memblokir).
         chess_reset_room_game($conn, $room);
         insertGameEvent($conn, $room, $color, 'rematch_accept');
         return ["success" => true, "id" => $conn->insert_id];
