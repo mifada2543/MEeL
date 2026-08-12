@@ -16,11 +16,28 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
 
 $storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
 
-try {
-    $filename = isset($_POST['file']) ? basename($_POST['file']) : null;
-    $type = isset($_POST['type']) ? basename($_POST['type']) : null;
-    $scope = $_POST['scope'] ?? DriveStorage::SCOPE_PUBLIC;
+$filename = isset($_POST['file']) ? basename($_POST['file']) : null;
+$type = isset($_POST['type']) ? basename($_POST['type']) : null;
+$scope = $_POST['scope'] ?? DriveStorage::SCOPE_PUBLIC;
 
+// Member tidak berhak menghapus file di Public Space — redirect ke halaman
+// Access Denied yang informatif, bukan pesan error mentah.
+$normalizedScope = $storage->normalizeScope($scope);
+if ($normalizedScope === DriveStorage::SCOPE_PUBLIC && !$user->isAdmin()) {
+    log_drive_operation(
+        $user->userId,
+        $user->username,
+        'delete',
+        $filename ?? 'unknown',
+        $type ?? 'unknown',
+        $scope,
+        'denied: member tidak boleh hapus file public'
+    );
+    header('Location: ../err/denied.php');
+    exit;
+}
+
+try {
     $storage->delete($filename, $type, $scope);
 
     log_drive_operation(
@@ -38,7 +55,6 @@ try {
         invalidate_dir_size_cache($user->username);
     }
 
-    $normalizedScope = $storage->normalizeScope($scope);
     header('Location: index.php?scope=' . urlencode($normalizedScope) . '&status=deleted');
     exit();
 } catch (RuntimeException $exception) {
