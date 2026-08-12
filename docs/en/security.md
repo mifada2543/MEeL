@@ -160,7 +160,7 @@ Every user has a `last_session_id` in the database. If the browser's session ID 
 if ($user_status['last_session_id'] !== $current_sid) {
     session_unset();
     session_destroy();
-    header("Location: .../err/revoked.php");
+    header("Location: .../err/?code=revoked");
     exit();
 }
 ```
@@ -269,7 +269,7 @@ define('MEEL_TRUST_PROXY_HEADERS', false); // default aman: pakai REMOTE_ADDR sa
 
 ### Ban Check (Real-time)
 
-Checked on every page load. Non-admin users are redirected to `err/banned.php` with the ban reason.
+Checked on every page load. Non-admin users are redirected to `err/?code=banned` with the ban reason.
 
 ---
 

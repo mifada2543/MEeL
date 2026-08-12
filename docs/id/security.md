@@ -125,7 +125,8 @@ if ($user['is_active'] != 1 || $user['role'] === 'guest') {
 final class DriveUserContext {
     public function authorize(): void {
         if (!$this->isAllowedRole()) {
-            die(include __DIR__ . '/../err/denied.php');
+            $_GET['code'] = 'denied';
+            die(include __DIR__ . '/../err/index.php');
         }
     }
     
@@ -230,7 +231,7 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
 $_SESSION['LAST_ACTIVITY'] = time();
 
 // activity_logger.php - Kick detection (Header Redirect)
-if ($current_page !== 'banned.php' && $current_page !== 'revoked.php') {
+if ($current_dir !== 'err') {
     if ($user_status && $user_status['role'] !== 'admin') {
         if (!empty($user_status['last_session_id']) && $user_status['last_session_id'] !== $current_sid) {
             session_unset();
@@ -239,7 +240,7 @@ if ($current_page !== 'banned.php' && $current_page !== 'revoked.php') {
             $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/..'));
             $doc_root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
             $relative_base = rtrim('/' . ltrim(str_replace($doc_root, '', $root_dir), '/'), '/');
-            $revoked_url = $relative_base . '/err/revoked.php';
+            $revoked_url = $relative_base . '/err/?code=revoked';
             header("Location: " . $revoked_url);
             exit();
         }
@@ -489,7 +490,8 @@ function validate_and_format_ip($ip) {
 ```php
 // Di activity_logger.php - dijalankan di setiap halaman (Header Redirect)
 $current_page = basename($_SERVER['PHP_SELF']);
-if ($current_page !== 'banned.php' && $current_page !== 'revoked.php') {
+$current_dir  = basename(dirname($_SERVER['PHP_SELF']));
+if ($current_dir !== 'err') {
     if ($ban_res->num_rows > 0) {
         // Jika bukan admin, baru di-redirect
         if ($session_role !== 'admin') {
@@ -497,8 +499,8 @@ if ($current_page !== 'banned.php' && $current_page !== 'revoked.php') {
             $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/..'));
             $doc_root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
             $relative_base = rtrim('/' . ltrim(str_replace($doc_root, '', $root_dir), '/'), '/');
-            $banned_url = $relative_base . '/err/banned.php';
-            header("Location: " . $banned_url . "?reason=" . urlencode($row['reason']));
+            $banned_url = $relative_base . '/err/?code=banned';
+            header("Location: " . $banned_url . "&reason=" . urlencode($row['reason']));
             exit();
         }
     }
