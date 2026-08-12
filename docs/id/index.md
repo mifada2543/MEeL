@@ -7,7 +7,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 ## 📋 Peta Dokumentasi
 
 | # | Dokumen | Deskripsi |
-|---|---------|-----------|
+|---|---|---|
 | 1 | [🚀 Instalasi](installation.md) | Panduan instalasi lengkap dari awal hingga aplikasi berjalan |
 | 2 | [⚙️ Konfigurasi](configuration.md) | Referensi semua file konfigurasi dan parameter |
 | 3 | [🏗️ Modul & Arsitektur](modules.md) | Penjelasan mendalam setiap modul dan class |
@@ -25,7 +25,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 ## 📦 Daftar Modul Lengkap
 
 | Modul | File | Deskripsi |
-|-------|------|-----------|
+|---|---|---|
 | **Exception Classes** | `modules/exceptions/*.php` | 3 class exception spesifik: `ProcessException`, `DownloadException`, `TranscodeException` |
 | **Japanese Processor** | `modules/core/japanese.php` | MeCab + transliterator untuk teks Jepang → Romaji filenames |
 | **Bootstrap** | `modules/core/bootstrap.php` | Environment detection (dev/prod), error reporting, timezone |
@@ -55,7 +55,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 ## 📁 File Penting Baru
 
 | File | Deskripsi |
-|------|-----------|
+|---|---|
 | `database/schema.sql` | Skema database standalone — import langsung `mysql < database/schema.sql` |
 | `auth/config.example.php` | Template entry point (copy ke `config.php`) |
 | `auth/settings.example.php` | Template data konfigurasi (copy ke `settings.php`) |
@@ -103,7 +103,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 ### Tech Stack Utama
 
 | Komponen | Teknologi |
-|----------|-----------|
+|---|---|
 | Backend | PHP 8.0+, MySQL/MariaDB |
 | Frontend | TailwindCSS, HTMX, Vanilla JS |
 | Media Player | Plyr.js, HLS.js |

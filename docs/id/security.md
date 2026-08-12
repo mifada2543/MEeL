@@ -79,7 +79,7 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 ### Definisi Role
 
 | Role | Level | Hak Akses |
-|------|-------|-----------|
+|---|---|---|
 | **Admin** | 100 | Kontrol penuh sistem |
 | **Member** | 50 | Media + Cloud Drive (quota 20GB) |
 | **User** | 30 | Media + komentar (tanpa Drive) |
@@ -138,7 +138,7 @@ final class DriveUserContext {
 ### Feature Gating per Role
 
 | Fitur | Admin | Member | User | Guest |
-|-------|-------|--------|------|-------|
+|---|---|---|---|---|
 | Nonton Video | ✅ | ✅ | ✅ | ✅ |
 | Dengar Musik | ✅ | ✅ | ✅ | ✅ |
 | Like/Dislike | ✅ | ✅ | ✅ | ❌ |
@@ -180,7 +180,7 @@ session_start();
 ```
 
 | Flag | Nilai | Proteksi |
-|------|-------|----------|
+|---|---|---|
 | `Secure` | auto (HTTPS) | Cookie tidak pernah terkirim lewat HTTP polos — cegah sniffing |
 | `HttpOnly` | `true` | XSS tidak bisa mencuri session cookie via JavaScript |
 | `SameSite` | `Lax` | Request POST lintas-situs tidak membawa cookie (CSRF layer 1) |
@@ -536,7 +536,7 @@ Mencatat aktivitas user ke tabel `activity_log` dengan prepared statement. Null 
 `log_activity()` sudah terintegrasi langsung di berbagai entry point aplikasi:
 
 | Event | Aksi | Lokasi Integrasi |
-|-------|------|------------------|
+|---|---|---|
 | Login sukses | `login` | `auth/login.php` |
 | Logout | `logout` | `auth/logout.php` |
 | Upload video | `upload_video` | `video/upload.php` |
@@ -555,7 +555,7 @@ Mencatat aktivitas user ke tabel `activity_log` dengan prepared statement. Null 
 Halaman `admin/activity_log.php` menyediakan viewer khusus untuk audit trail:
 
 | Fitur | Detail |
-|-------|--------|
+|---|---|
 | 🔍 **Filter** | By action type (dropdown), search username/IP, rentang waktu (7–365 hari) |
 | 📄 **Pagination** | 50 entry per halaman dengan navigasi prev/next |
 | 📊 **Stats Cards** | 7-day activity count, unique users, total entries, page info |
@@ -611,7 +611,7 @@ Menggunakan file JSON di `temp/ratelimit/` (tanpa schema DB tambahan):
 ### Endpoint Limits
 
 | Endpoint | Max Request | Window | Respons pada Limit |
-|----------|:-----------:|:------:|--------------------|
+|---|:---:|:---:|---|
 | **Like/Dislike** | 30 | 1 menit | HTTP 429 + HTMX HTML snippet (badge kuning "Wait Xs" + disabled buttons) |
 | **Comment** | 10 | 1 menit | Redirect dengan flash error message |
 | **Upload** (video/music/books) | 3 | 1 jam | — |
@@ -768,7 +768,7 @@ sudah divalidasi + memaksa Host header asli
 ### Aturan Validasi
 
 | Aturan | Detail |
-|--------|--------|
+|---|---|
 | **Protokol** | Hanya `http` dan `https`. URL tanpa skema, protocol-relative (`//host/…`), dan skema lain ditolak |
 | **Kredensial** | `user:pass@` yang disematkan di URL ditolak (sering dipakai untuk menyembunyikan host tujuan) |
 | **Denylist hostname** | `localhost`, `*.local`, `*.internal`, `*.lan`, `*.test`, `*.onion`, … (hanya defense-in-depth) |
@@ -816,7 +816,7 @@ Stream diteruskan kembali ke yt-dlp
 Properti kunci:
 
 | Properti | Detail |
-|----------|--------|
+|---|---|
 | **Setiap hop divalidasi** | Redirect ke `127.0.0.1`, `10.x`, metadata cloud, dsb. menjadi request CONNECT/absolute-URI baru ke proxy, yang menerapkan `SsrfGuard::resolvePublicAddresses()` ke **tujuan hop tersebut** dan menolaknya |
 | **Loopback-only** | Proxy bind ke `127.0.0.1` pada port ephemeral — tidak ada pihak eksternal yang bisa memakainya sebagai open proxy |
 | **DNS-rebinding aman per hop** | Setiap hop di-resolve sekali dan koneksi menuju IP publik yang sudah divalidasi (tidak ada lookup terpisah belakangan) |
@@ -833,7 +833,7 @@ Keterbatasan `https://` dengan demikian teratasi: meskipun URL HTTPS asli tidak 
 ### Titik Integrasi
 
 | File | Peran |
-|------|-------|
+|---|---|
 | `modules/core/SsrfGuard.php` | Validasi sentral: allowlist protokol, cek range IPv4/IPv6 eksplisit, validasi semua record DNS, HTTP pinning |
 | `modules/core/ValidatingProxy.php` | Spawn/terminate proses proxy, expose URL `--proxy` (loopback-only) |
 | `modules/core/validating_proxy_server.php` | CLI forward proxy: SsrfGuard di setiap hop (HTTP absolute-URI + CONNECT tunnel) |
@@ -880,7 +880,7 @@ Options -Indexes
 File private hanya disajikan lewat endpoint terautentikasi:
 
 | Endpoint | Fungsi | Pemeriksaan |
-|----------|--------|-------------|
+|---|---|---|
 | `drive/stream.php` | Preview / streaming inline (video, audio, gambar, PDF) | session + CSRF + kepemilikan |
 | `drive/download.php` | Unduh file private | session + CSRF + kepemilikan |
 
@@ -906,7 +906,7 @@ Dua race TOCTOU ditutup di `DriveStorage::upload()`:
 ### Test Regresi
 
 | File test | Cakupan |
-|-----------|---------|
+|---|---|
 | `tests/unit/SsrfGuardTest.php` | Allowlist protokol, range IP private/publik (v4 & v6), resolusi DNS termasuk record campuran, denylist hostname, HTTP pinning |
 | `tests/unit/ValidatingProxyTest.php` | Probe proxy nyata: CONNECT/GET ke target private ditolak, target publik di-tunnel, bind loopback-only, siklus hidup proses |
 | `tests/unit/DriveSecurityTest.php` | Akses cross-user, path traversal, symlink escape, boundary realpath, penegakan kuota, reservasi nama atomik |
@@ -935,12 +935,13 @@ catch (DownloadException $e) { /* yt-dlp failed */ }
 ```
 
 | Exception | Extends | Digunakan Untuk |
-|-----------|---------|-----------------|
+|---|---|---|
 | `ProcessException` | `\RuntimeException` | Gagal proses eksternal: FFmpeg, yt-dlp, exec() non-zero |
 | `DownloadException` | `\RuntimeException` | Gagal download URL: metadata parsing, koneksi |
 | `TranscodeException` | `\RuntimeException` | Gagal transcoding: HLS segments, codec, output hilang |
 
 ### Best Practice
+
 ```php
 try {
     $meta = $this->fetchMetadata($url);

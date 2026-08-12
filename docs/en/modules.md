@@ -273,7 +273,7 @@ function log_drive_operation(...);                       // Drive audit trail
 File-based rate limiter with `flock()` safety. Role-based limits (admin = unlimited, member = 2x).
 
 | Endpoint | Max/Window | Notes |
-|----------|:----------:|-------|
+|---|:---:|---|
 | `like` | 30/min | HTMX 429 HTML response |
 | `comment` | 10/min | Flash message redirect |
 | `upload` | 3/hour | — |
@@ -398,7 +398,7 @@ class MusicWatchController { public function getViewData(): array; public functi
 ### 19. Migration System (`database/migrate.php`)
 
 | Version | Changes |
-|-------|-----------|
+|---|---|
 | **v1** | FULLTEXT index for video, music, books search |
 | **v2** | Performance index (upload_date) |
 | **v3** | Structural synchronization (idempotent) |
@@ -416,7 +416,7 @@ class MusicWatchController { public function getViewData(): array; public functi
 Multi-Factor Authentication (TOTP) protects user accounts:
 
 | File | Function |
-|------|--------|
+|---|---|
 | `auth/mfa_setup.php` | MFA Setup — generate secret, scan QR/barcode, verify TOTP, backup codes |
 | `auth/mfa_verify.php` | TOTP verification after login — rate limit 10 failed attempts, lock 5 minutes |
 | `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
@@ -438,7 +438,7 @@ function verify_backup_code(string $stored, string $code): array; // Verify + co
 Real-time LAN multiplayer chess:
 
 | File | Function |
-|------|--------|
+|---|---|
 | `index.php` | Chess board with drag-and-drop, timer, chat, sound effects |
 | `controller/create_room.php` | Create new room, return room code |
 | `controller/join_room.php` | Join room with code |
@@ -485,7 +485,7 @@ The service worker is **generated dynamically by PHP** — see the full guide in
 [`pwa.md`](pwa.md).
 
 | Component | Role |
-|-----------|------|
+|---|---|
 | `modules/core/SwPrecache.php` | `baseAssets()` + `moduleAssets()` (all `assets/css/*/manifest.php`) → `all()`; `version()` = content hash → auto SW update |
 | `sw.js.php` | Full SW script, `Content-Type: application/javascript`, deterministic output |
 | `.htaccess` | `RewriteRule ^sw\.js$ sw.js.php [L]` — URL `/sw.js` preserved |
@@ -505,7 +505,7 @@ output buffers.
 ### Files
 
 | File | Role |
-|------|------|
+|---|---|
 | `modules/core/ProgressObserver.php` | `ProgressObserver` interface + `CallableProgressObserver` adapter |
 | `modules/core/BrowserProgressObserver.php` | Browser presenter: maps events to the MEeL overlay (`partials/ui.php`) + `meel*` JS calls |
 
@@ -528,7 +528,7 @@ $tc = new Transcoder($conn, $uid, function (string $stage, array $data): void {
 ### Event contract — `ProgressObserver::onProgress(string $stage, array $data)`
 
 | Stage | Payload | Meaning |
-|-------|---------|---------|
+|---|---|---|
 | `download_start` | `['url' => string]` | Download begins (overlay injection point) |
 | `transcode_start` | `[]` | Transcode begins (overlay injection point) |
 | `phase` | `['phase' => string]` | Overlay phase switch (`transcode`, `sprite`, ...) |
@@ -570,7 +570,7 @@ Every filesystem access follows three rules:
 ### Shared filesystem helpers
 
 | Helper | Location | Purpose |
-|--------|----------|---------|
+|---|---|---|
 | `ensureDir()` | `FfmpegUtils` trait | `mkdir -p`-style creation with logging |
 | `removeFile()` | `FfmpegUtils` trait | Guarded unlink (existence + writable parent) |
 | `removeDir()` | `FfmpegUtils` trait | Flat-dir cleanup (glob → removeFile → rmdir) |

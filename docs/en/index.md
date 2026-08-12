@@ -7,7 +7,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 ## 📋 Documentation Map
 
 | # | Document | Description |
-|---|---------|-----------|
+|---|---|---|
 | 1 | [🚀 Installation](installation.md) | Complete installation guide from scratch |
 | 2 | [⚙️ Configuration](configuration.md) | Reference for all config files and parameters |
 | 3 | [🏗️ Modules & Architecture](modules.md) | Deep dive into every module and class |
@@ -25,7 +25,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 ## 📦 Complete Module List
 
 | Module | File | Description |
-|-------|------|-----------|
+|---|---|---|
 | **Exception Classes** | `modules/exceptions/*.php` | 3 specific exception classes: `ProcessException`, `DownloadException`, `TranscodeException` |
 | **Japanese Processor** | `modules/core/japanese.php` | MeCab + transliterator for Japanese text → Romaji filenames |
 | **Bootstrap** | `modules/core/bootstrap.php` | Environment detection (dev/prod), error reporting, timezone |
@@ -55,7 +55,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 ## 📁 Important New Files
 
 | File | Description |
-|------|-----------|
+|---|---|
 | `database/schema.sql` | Standalone database schema — import directly via `mysql < database/schema.sql` |
 | `auth/config.example.php` | Entry point template (copy to `config.php`) |
 | `auth/settings.example.php` | Config data template (copy to `settings.php`) |
@@ -103,7 +103,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 ### Core Tech Stack
 
 | Component | Technology |
-|----------|-----------|
+|---|---|
 | Backend | PHP 8.0+, MySQL/MariaDB |
 | Frontend | TailwindCSS, HTMX, Vanilla JS |
 | Media Player | Plyr.js, HLS.js |

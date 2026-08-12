@@ -5,6 +5,7 @@ Dokumentasi penanganan masalah khusus untuk fitur **Advanced Upload (yt-dlp)** d
 ---
 
 ## 📋 Daftar Isi
+
 - [Gejala & Masalah Umum](#gejala--masalah-umum)
 - [Masalah 1: Antrean (Queue) Stuck / Server Sibuk](#masalah-1-antrean-queue-stuck--server-sibuk)
 - [Masalah 2: Gagal Ambil / Parsing Metadata](#masalah-2-gagal-ambil--parsing-metadata)
@@ -24,6 +25,7 @@ Fitur Advanced Upload menggunakan pustaka CLI `yt-dlp` yang dikombinasikan denga
 Sistem membatasi maksimal **2 proses unduhan/transcoding simultan** demi menjaga stabilitas kinerja CPU server. Jika proses terputus secara tidak wajar (misalnya koneksi putus atau server mati mendadak), status antrean di database tetap menggantung sebagai `"processing"`.
 
 ### Solusi A — Melalui Admin Panel (Direkomendasikan)
+
 1. Masuk sebagai akun **Admin**.
 2. Buka **Dashboard Admin** (`admin/index.php`).
 3. Scroll ke bagian **Active Background Tasks**.
@@ -31,6 +33,7 @@ Sistem membatasi maksimal **2 proses unduhan/transcoding simultan** demi menjaga
 5. Atau klik ikon silang (**Force Stop** `x`) pada tugas spesifik yang mengalami macet.
 
 ### Solusi B — Melalui Database (Manual SQL)
+
 Jalankan perintah SQL berikut melalui phpMyAdmin atau MySQL Client untuk mereset antrean:
 ```sql
 -- Menghapus antrean yang menggantung
@@ -39,6 +42,7 @@ WHERE `status` = 'processing';
 ```
 
 ### Solusi C — Menghentikan Proses di OS (Linux)
+
 Jika proses FFmpeg atau yt-dlp masih berjalan di latar belakang dan memakan CPU:
 ```bash
 # Cek apakah ada proses aktif
@@ -56,6 +60,7 @@ sudo killall -9 ffmpeg
 Saat memasukkan URL, sistem memanggil `yt-dlp --print-json` untuk mengekstrak informasi media sebelum mengunduhnya. Jika proses ini gagal, debug overlay akan muncul di layar.
 
 ### Langkah Pemeriksaan:
+
 1. **Verifikasi Binary Path**:
    Pastikan executable `yt-dlp`, `ffmpeg`, dan `node` dapat ditemukan di server:
    ```bash
@@ -65,7 +70,7 @@ Saat memasukkan URL, sistem memanggil `yt-dlp --print-json` untuk mengekstrak in
    ```
 2. **Sesuaikan Path di PHP**:
    Buka berkas `modules/core/Transcoder.php` dan verifikasi pencarian path binary pada metode `resolveBinary`.
-   
+
    > ⚠️ Konstanta path `HDD_BASE`/`HDD_VIDEO_DIR`/`HDD_THUMB_DIR` telah **dipindahkan** ke `auth/settings.php` sebagai `MEEL_HDD_*`. Konfigurasi path storage tidak perlu diubah di Transcoder.php lagi.
 3. **Uji URL Langsung di Terminal**:
    Jalankan perintah berikut untuk melihat pesan error asli dari `yt-dlp`:
@@ -83,6 +88,7 @@ Platform video seperti YouTube sering kali memblokir akses otomatis dari server 
 > Sistem membutuhkan kuki browser terkini yang disimpan dalam berkas `cookies.txt` di root proyek MEeL agar bisa mengunduh dengan sukses.
 
 ### Cara Memperbarui Cookies:
+
 1. Buka browser Anda dan pasang ekstensi **Get cookies.txt LOCALLY** (Chrome/Firefox).
 2. Buka dan masuk (Sign-in) ke akun YouTube Anda.
 3. Klik ikon ekstensi dan pilih **Export / Download** cookies untuk domain youtube.com.
@@ -100,6 +106,7 @@ Platform video seperti YouTube sering kali memblokir akses otomatis dari server 
 Terkadang file berhasil diunduh secara penuh, namun gagal saat dikonversi ke HLS (untuk video) atau Opus (untuk musik).
 
 ### Cara Mengatasi:
+
 1. **Periksa Sisa Ruang Penyimpanan**:
    Transcoding membutuhkan sisa ruang minimal 2x dari ukuran video asli.
    ```bash

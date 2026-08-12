@@ -153,7 +153,7 @@ music ──1:N── playlist_tracks
 ### Key Relationships
 
 | Table | Foreign Key | References | Type |
-|-------|-------------|-----------|------|
+|---|---|---|---|
 | `video` | `user_id` | `users.id` | CASCADE |
 | `music` | `user_id` | `users.id` | CASCADE |
 | `books` | `user_id` | `users.id` | SET NULL |
@@ -225,7 +225,7 @@ music ──1:N── playlist_tracks
 MEeL implements TOTP per [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238):
 
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | Algorithm | HMAC-SHA1 |
 | Digits | 6 digits |
 | Time Step | 30 seconds |
@@ -337,7 +337,7 @@ ALTER TABLE users
 ### Rate Limiting
 
 | Endpoint | Limit | Mechanism |
-|----------|:-----:|-----------|
+|---|:---:|---|
 | MFA Verify | 10 failures → lock 5 minutes | Session-based `mfa_fail_count` + `mfa_locked_until` |
 | Backup Password | 5 failures → lock 5 minutes | Session-based `backup_pwd_attempts` + `backup_pwd_lock_until` |
 
@@ -402,7 +402,7 @@ This project is licensed under **GNU General Public License v3.0 (GPLv3)**. See 
 
 **Types:**
 | Type | Usage |
-|------|------------|
+|---|---|
 | `feat` | New feature |
 | `fix` | Bug fix |
 | `security` | Security fix |
@@ -427,7 +427,7 @@ main (stable)
 ### Key Files to Understand
 
 | File | Reason |
-|------|--------|
+|---|---|
 | `auth/config.php` | Configuration entry point |
 | `auth/auth.php` | Authentication middleware |
 | `modules/core/helpers.php` | Global utility functions |
@@ -474,7 +474,7 @@ saved playback position (`music_pos_<id>` in `localStorage`) and the user did
 **not** arrive from an active mini-player session.
 
 | Context | Behavior |
-|---------|----------|
+|---|---|
 | **Mini-player session** — user tapped a card / playlist item or expanded the mini-player on `index.php`, and is still listening | 🎧 **Auto-continue** — no modal; every following song in the session plays automatically |
 | **Cold visit** — direct `watch.php` open, page reload, or after an explicit pause/close of the mini-player | ❓ **Modal shown** — "Lanjut Musik?" asks whether to resume from the saved position |
 

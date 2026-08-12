@@ -1,6 +1,6 @@
 # 🧪 Testing Guide
 
-**Document Version:** 1.0  
+**Document Version:** 1.0
 **Date:** July 25, 2026
 
 ---
@@ -10,7 +10,7 @@
 MEeL uses a multi-layered testing approach:
 
 | Layer | Tool | Scope | Location |
-|-------|------|-------|----------|
+|---|---|---|---|
 | **Unit Tests** | PHPUnit 9.6 | Pure logic, mocked DB | `tests/unit/` |
 | **Integration Tests** | PHPUnit 9.6 | Real DB operations | `tests/integration/` |
 | **Functional Tests** | Custom PHP | Application workflows | `tests/functional_test.php` |
@@ -61,7 +61,7 @@ logs/tests/
 #### Unit Tests (`tests/unit/`)
 
 | File | Tests | Coverage |
-|------|-------|----------|
+|---|---|---|
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME types, disk space, CSRF, dir_size, protocol detection (data providers) |
 | `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (MeCab-optional) |
@@ -81,7 +81,7 @@ logs/tests/
 #### Integration Tests (`tests/integration/`)
 
 | File | Tests | Coverage |
-|------|-------|----------|
+|---|---|---|
 | `MediaInteractionIntegrationTest.php` | 24 | Like/dislike music+video, toggle, ownership check, count sync, guest denial |
 | `ChessGameOverIntegrationTest.php` | 13 | Chess game-over flow against real DB |
 | `ChessHelpersIntegrationTest.php` | 6 | Chess helper functions with real DB |
@@ -91,7 +91,7 @@ logs/tests/
 ### Test Helpers
 
 | File | Purpose |
-|------|---------|
+|---|---|
 | `tests/DbTestHelper.php` | Real DB connection with transaction rollback isolation |
 | `tests/bootstrap.php` | Autoloader, `$_SERVER` defaults, temp directory setup |
 
@@ -126,7 +126,7 @@ vendor/bin/phpunit --no-coverage tests/unit/ValidatingProxyTest.php
 ```
 
 | Test file | What it verifies (real rejection/acceptance, not just existence) |
-|-----------|------------------------------------------------------------------|
+|---|---|
 | `SsrfGuardTest.php` | Private IPv4/IPv6 ranges rejected, public IPs allowed, hostname denylist, unsupported protocols, malformed URLs, credentials rejection, hostname→private-IP DNS rejection, HTTP pinning (`pinHttpUrl`) |
 | `DriveSecurityTest.php` | Cross-user download blocked, path traversal blocked, symlink escape blocked, realpath prefix boundary, quota enforcement (atomic), atomic filename reservation |
 | `ValidatingProxyTest.php` | **Spawns a real proxy process** and sends real CONNECT/absolute-URI requests: private targets refused with 502, public targets tunneled/relayed, loopback-only bind, process lifecycle |
@@ -367,7 +367,7 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 ## 📊 Current Test Results
 
 | Suite | Tests | Pass | Fail | Score |
-|-------|-------|------|------|-------|
+|---|---|---|---|---|
 | **PHPUnit (unit + integration)** | 334 | 334 | 0 | ✅ 100% |
 | **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 108 | 108 | 0 | ✅ 100% |
 | **Functional Test** | 161 | 157 pass, 4 warn | 0 | ✅ 99/100 |

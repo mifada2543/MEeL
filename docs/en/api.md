@@ -45,7 +45,7 @@ controllers/
 ### MFA Pages (in `auth/` & `admin/`)
 
 | File | Function |
-|------|--------|
+|---|---|
 | `auth/mfa_setup.php` | MFA Setup — generate secret, verify TOTP, backup codes |
 | `auth/mfa_verify.php` | TOTP verification after login |
 | `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
@@ -54,7 +54,7 @@ controllers/
 
 ## WatchController
 
-**File:** `controllers/api/WatchController.php`  
+**File:** `controllers/api/WatchController.php`
 **Method:** Constructor-based (not a direct HTTP endpoint)
 
 Controller for video & music watch pages. Data fetched via `getViewData()` and `extract()`ed into the view.
@@ -93,7 +93,7 @@ extract($ctrl->getViewData());  // → $v, $video_src, $is_hls, $subtitles, etc.
 
 **Returned view data:**
 | Variable | Type | Description |
-|----------|------|-----------|
+|---|---|---|
 | `$v` | array | Video data + uploader info |
 | `$video_src` | string | Path to video file / playlist.m3u8 |
 | `$is_hls` | bool | Whether video is HLS |
@@ -115,7 +115,7 @@ extract($ctrl->getViewData());  // getViewData() calls requireMedia() internally
 
 **Returned view data:**
 | Variable | Type | Description |
-|----------|------|-----------|
+|---|---|---|
 | `$v` | array | Audio data + uploader info |
 | `$playlist_id` | int | Active playlist ID |
 | `$playlist_context` | int | Playlist ID for navigation links |
@@ -136,7 +136,7 @@ extract($ctrl->getViewData());  // getViewData() calls requireMedia() internally
 Comment helpers shared by the watch pages & AJAX endpoints:
 
 | Function | Description |
-|----------|-------------|
+|---|---|
 | `render_comments($parent_id, $grouped, $level, $theme, $playlist_context)` | Nested comment rendering with 2 themes (video/music) |
 | `comment_preview($grouped, $limit = 4): array` | Latest comment preview → `['text' => ..., 'latest_comment' => ?array, 'items' => array]` (up to `$limit` latest comments) |
 | `render_comment_empty_state($theme): void` | "Jadilah komentar pertama" empty state, theme-aware (video=gray-300, music=gray-700) |
@@ -147,8 +147,8 @@ Comment helpers shared by the watch pages & AJAX endpoints:
 
 ### Login
 
-**Endpoint:** `auth/login.php`  
-**Method:** POST  
+**Endpoint:** `auth/login.php`
+**Method:** POST
 **Auth:** None (public)
 
 **Request:**
@@ -168,14 +168,14 @@ Comment helpers shared by the watch pages & AJAX endpoints:
 
 ### Logout
 
-**Endpoint:** `auth/logout.php`  
-**Method:** GET  
+**Endpoint:** `auth/logout.php`
+**Method:** GET
 **Auth:** Required
 
 ### Registration
 
-**Endpoint:** `auth/register.php`  
-**Method:** POST  
+**Endpoint:** `auth/register.php`
+**Method:** POST
 **Auth:** None (public)
 
 **Validation:**
@@ -220,8 +220,8 @@ Remove mfa_temp_uid → Redirect to index.php
 
 ### MFA Setup (`auth/mfa_setup.php`)
 
-**Method:** POST  
-**Auth:** User (login required)  
+**Method:** POST
+**Auth:** User (login required)
 **Rate Limit:** None (user's own account only)
 
 Multi-step page for enabling, managing, or disabling MFA.
@@ -261,7 +261,7 @@ Multi-step page for enabling, managing, or disabling MFA.
 - `verify_totp($secret, $code)` — TOTP with window ±1 (90 seconds)
 
 | Error | Cause |
-|-------|----------|
+|---|---|
 | `Security session expired` | Invalid CSRF token |
 | `MFA setup session not found` | Session expired, restart |
 | `Code must be 6 digits` | Input format invalid |
@@ -305,8 +305,8 @@ If MFA is already active, the page shows an option to disable:
 
 ### MFA Verify (`auth/mfa_verify.php`)
 
-**Method:** POST  
-**Auth:** Session temp (`mfa_temp_uid`)  
+**Method:** POST
+**Auth:** Session temp (`mfa_temp_uid`)
 **Rate Limit:** 10 failed attempts → lock 5 minutes
 
 TOTP verification page shown after login if user has MFA enabled.
@@ -338,7 +338,7 @@ TOTP verification page shown after login if user has MFA enabled.
 
 **Error Responses:**
 | Condition | Response |
-|---------|--------|
+|---|---|
 | `mfa_temp_uid` missing + not fully logged in | Redirect to `login.php` |
 | `mfa_temp_uid` missing + already logged in | Redirect to `index.php` |
 | Max 10 failed attempts | Lock 5 minutes — render page with countdown + auto-refresh |
@@ -353,8 +353,8 @@ TOTP verification page shown after login if user has MFA enabled.
 
 ### MFA Backend Controller (`controllers/system/mfa.php`)
 
-**Method:** POST  
-**Auth:** User (login required)  
+**Method:** POST
+**Auth:** User (login required)
 **Rate Limit:** Password verify: 5 attempts → lock 5 minutes (session-based)
 
 AJAX endpoint for MFA backend operations. All requests via `fetch()` + JSON.
@@ -426,7 +426,7 @@ Store in a safe place!
 
 **Error Responses (JSON):**
 | Status | Cause |
-|--------|----------|
+|---|---|
 | `401` | User not logged in |
 | `Please log in first.` | Session expired |
 | `Security session expired.` | Invalid CSRF token |
@@ -440,8 +440,8 @@ Store in a safe place!
 
 ### Admin MFA Reset (`admin/mfa_reset.php` + `controllers/admin/admin_actions.php`)
 
-**Method:** GET (link with parameters)  
-**Auth:** Admin only  
+**Method:** GET (link with parameters)
+**Auth:** Admin only
 **Rate Limit:** None
 
 Admins can reset MFA for users who lost access to their Authenticator app.
@@ -451,7 +451,7 @@ Admins can reset MFA for users who lost access to their Authenticator app.
 Page `admin/mfa_reset.php` shows a list of users with MFA enabled:
 
 | Column | Description |
-|-------|-----------|
+|---|---|
 | Username | User name + ID |
 | Role | Admin/Member/User (color badge) |
 | Status | Active/Pending |
@@ -480,7 +480,7 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 **Response Messages:**
 | Message | Description |
-|---------|-----------|
+|---|---|
 | `reset_ok` | ✅ MFA successfully reset |
 | `csrf_invalid` | ❌ Invalid CSRF token |
 | `user_not_found` | ❌ User ID not found |
@@ -499,9 +499,9 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 ### Like/Dislike
 
-**Endpoint:** `controllers/like.php`  
-**Method:** POST (via HTMX)  
-**Auth:** User (non-guest, active)  
+**Endpoint:** `controllers/like.php`
+**Method:** POST (via HTMX)
+**Auth:** User (non-guest, active)
 **Rate Limit:** 30 requests per minute per user
 
 **Request (via HTMX hx-vals):**
@@ -514,7 +514,7 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 ```
 
 | Parameter | Type | Description |
-|-----------|------|-----------|
+|---|---|---|
 | `id` | int | Media ID (video/music) |
 | `media_type` | string | `video` or `music` |
 | `type` | string | `like` or `dislike` |
@@ -526,9 +526,9 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 ### Delete Comment
 
-**Endpoint:** `controllers/api/delete_comment.php?id=123`  
-**Method:** GET  
-**Auth:** User (comment owner)  
+**Endpoint:** `controllers/api/delete_comment.php?id=123`
+**Method:** GET
+**Auth:** User (comment owner)
 **Rate Limit:** 10 requests per minute per user
 
 **Response:**
@@ -538,24 +538,24 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 ### Auto Metadata
 
-**Endpoint:** `controllers/api/auto_metadata.php`  
-**Method:** POST  
+**Endpoint:** `controllers/api/auto_metadata.php`
+**Method:** POST
 **Auth:** Admin
 
 Fetches automatic metadata from URL (yt-dlp) for upload forms.
 
 ### PDF Proxy
 
-**Endpoint:** `controllers/api/pdf.php?id=123`  
-**Method:** GET  
+**Endpoint:** `controllers/api/pdf.php?id=123`
+**Method:** GET
 **Auth:** User/Admin
 
 Streams PDF for book viewer with access protection.
 
 ### Download Transcode
 
-**Endpoint:** `controllers/api/download_transcode.php`  
-**Method:** POST  
+**Endpoint:** `controllers/api/download_transcode.php`
+**Method:** POST
 **Auth:** User/Admin
 
 Downloads transcoded video→audio files.
@@ -566,8 +566,8 @@ Downloads transcoded video→audio files.
 
 ### Upload Video (Local)
 
-**Endpoint:** `video/upload.php`  
-**Method:** POST  
+**Endpoint:** `video/upload.php`
+**Method:** POST
 **Auth:** User/Admin
 
 **Form Data:**
@@ -582,20 +582,20 @@ Downloads transcoded video→audio files.
 
 ### Upload Music (Local)
 
-**Endpoint:** `music/upload.php`  
-**Method:** POST  
+**Endpoint:** `music/upload.php`
+**Method:** POST
 **Auth:** User/Admin
 
 ### Upload Book
 
-**Endpoint:** `books/upload.php`  
-**Method:** POST  
+**Endpoint:** `books/upload.php`
+**Method:** POST
 **Auth:** User/Admin
 
 ### Advanced Upload (yt-dlp URL)
 
-**Endpoint:** `upload_advanced.php`  
-**Method:** POST  
+**Endpoint:** `upload_advanced.php`
+**Method:** POST
 **Auth:** Admin
 
 **Response:** Real-time streaming via overlay (`partials/ui.php`):
@@ -608,8 +608,8 @@ Phase 4: Done (links to media)
 
 ### Transcode Video → Audio
 
-**Endpoint:** `transcode.php`  
-**Method:** POST  
+**Endpoint:** `transcode.php`
+**Method:** POST
 **Auth:** User/Admin
 
 ---
@@ -618,8 +618,8 @@ Phase 4: Done (links to media)
 
 ### Edit Profile
 
-**Endpoint:** `controllers/profile_edit.php`  
-**Method:** POST  
+**Endpoint:** `controllers/profile_edit.php`
+**Method:** POST
 **Auth:** User
 
 **Process:**
@@ -629,8 +629,8 @@ Phase 4: Done (links to media)
 
 ### View Profile
 
-**Endpoint:** `profile/index.php?u=username`  
-**Method:** GET  
+**Endpoint:** `profile/index.php?u=username`
+**Method:** GET
 **Auth:** Public
 
 ### Media Deletion & Cleanup
@@ -638,7 +638,7 @@ Phase 4: Done (links to media)
 **File:** `controllers/profile/fun-manage.php` (function-based)
 
 | Function | Description |
-|----------|-----------|
+|---|---|
 | `handleDeleteVideo(int $id, int $user_id, mysqli $conn): array` | Delete video + HLS segments + DB record |
 | `handleDeleteMusic(int $id, int $user_id, mysqli $conn): array` | Delete audio + thumbnail + DB record |
 | `cleanupPendingDeletions(): int` | Execute pending deletion queue |
@@ -653,7 +653,7 @@ Phase 4: Done (links to media)
 > from GET links — a GET link can be triggered by an `<img>` tag).
 
 | Action | Parameter | Method | Description |
-|--------|-----------|--------|-----------|
+|---|---|---|---|
 | Approve User | `approve_id` | POST | Set `is_active=1` |
 | Reject User | `reject_id` | POST | Delete user (pending) |
 | Delete User | `delete_user_id` | POST | Delete user (non-admin) |
@@ -662,7 +662,7 @@ Phase 4: Done (links to media)
 ### IP Ban Management
 
 | Action | Parameter | Method | Description |
-|--------|-----------|--------|-----------|
+|---|---|---|---|
 | Ban IP | `ban_ip=1` + `ip_target` + `ban_reason` | POST | Insert into ip_ban |
 | Unban IP | `unban_ip` | POST | Delete from ip_ban |
 
@@ -671,14 +671,14 @@ Every POST must carry `csrf_token`.
 ### Queue Management
 
 | Action | Parameter | Method | Description |
-|--------|-----------|--------|-----------|
+|---|---|---|---|
 | Clean Stuck | `clean_stuck_queues=1` | POST | Delete all stuck queues |
 | Force Stop | `force_stop_queue=1` + `queue_id` + `task_type` | POST | Stop specific queue |
 
 ### Activity Log Cleanup
 
 | Action | Parameter | Method | Description |
-|--------|-----------|--------|-----------|
+|---|---|---|---|
 | Clean Logs | `clean_logs=1` + `days` | POST | Delete logs older than N days |
 
 ---
@@ -687,45 +687,45 @@ Every POST must carry `csrf_token`.
 
 ### Video Search
 
-**Trigger:** Enter key on search input  
-**Request:** `video/search_video.php?q=keyword`  
-**Target:** `#video-container`  
+**Trigger:** Enter key on search input
+**Request:** `video/search_video.php?q=keyword`
+**Target:** `#video-container`
 **Swap:** `innerHTML`
 
 ### Video Load More
 
-**Trigger:** Click "Load More"  
-**Request:** `video/load_more.php?offset=15`  
-**Target:** `#load-more-area`  
+**Trigger:** Click "Load More"
+**Request:** `video/load_more.php?offset=15`
+**Target:** `#load-more-area`
 **Swap:** `outerHTML`
 
 ### Music Search
 
-**Trigger:** Enter key on search input  
-**Request:** `music/search_music.php?q=keyword`  
-**Target:** `#music-list`  
+**Trigger:** Enter key on search input
+**Request:** `music/search_music.php?q=keyword`
+**Target:** `#music-list`
 **Swap:** `innerHTML`
 
 ### Music Load More
 
-**Trigger:** Click "Load More"  
-**Request:** `music/load_more_music.php?offset=10&format=all&artist=all`  
-**Target:** `#music-list`  
+**Trigger:** Click "Load More"
+**Request:** `music/load_more_music.php?offset=10&format=all&artist=all`
+**Target:** `#music-list`
 **Swap:** `beforeend`
 
 ### Books Search
 
-**Trigger:** Search input  
-**Request:** `books/search_books.php?q=keyword&type=all&offset=0`  
-**Target:** `#book-grid`  
-**Swap:** `innerHTML`  
+**Trigger:** Search input
+**Request:** `books/search_books.php?q=keyword&type=all&offset=0`
+**Target:** `#book-grid`
+**Swap:** `innerHTML`
 **Server-side pagination** via `BookRepository::searchBooks()` (24 per page).
 
 ### Like/Dislike
 
-**Trigger:** Click like/dislike button  
-**Request:** `controllers/like.php` with `hx-vals`  
-**Target:** `#like-dislike-container`  
+**Trigger:** Click like/dislike button
+**Request:** `controllers/like.php` with `hx-vals`
+**Target:** `#like-dislike-container`
 **Swap:** `outerHTML`
 
 ---
@@ -736,7 +736,7 @@ Real-time LAN chess polling API. **All endpoints require login** (JSON `401` +
 `login_required: true`) and **CSRF** on state-changing calls.
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
+|---|---|---|---|
 | `create_room.php` | POST | login + CSRF | Create room, return 6-char room code + color `white` |
 | `join_room.php` | POST | login + CSRF | Join room with code (`room` + `csrf_token` in FormData) |
 | `save_move.php` | POST | login + CSRF (JSON body) | Save move with legal move validation; token never stored in `move_data` |
@@ -752,21 +752,21 @@ Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects
 
 ### Upload File
 
-**Endpoint:** `drive/upload.php`  
-**Method:** POST  
+**Endpoint:** `drive/upload.php`
+**Method:** POST
 **Auth:** Member/Admin
 
 ### Download File
 
-**Endpoint:** `drive/download.php?file=xxx&type=video&scope=public&csrf_token=...`  
-**Method:** GET  
+**Endpoint:** `drive/download.php?file=xxx&type=video&scope=public&csrf_token=...`
+**Method:** GET
 **Auth:** Member/Admin
 
 ### Delete File
 
-**Endpoint:** `drive/delete.php`  
-**Method:** POST  
-**Auth:** Member/Admin  
+**Endpoint:** `drive/delete.php`
+**Method:** POST
+**Auth:** Member/Admin
 **Body:** `csrf_token` + `file` + `type` + `scope`
 
 ---
@@ -774,7 +774,7 @@ Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects
 ## Error Response Codes
 
 | Code | Description | Cause |
-|------|-----------|----------|
+|---|---|---|
 | 401 | Unauthorized | User not logged in |
 | 403 | Forbidden | Inactive/guest user, IP banned |
 | 404 | Not Found | Media/comment not found |
