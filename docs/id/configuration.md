@@ -238,7 +238,7 @@ membaca file sama sekali.
 
 ### ⚠️ Penting
 
-Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, aplikasi akan redirect ke `err/maintance.php`. Buka halaman tersebut sebagai admin untuk diagnosa lengkap.
+Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, halaman maintenance `err/?code=maintance` (HTTP 503) dapat ditampilkan.
 
 ### Struktur Direktori Media
 

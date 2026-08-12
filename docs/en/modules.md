@@ -357,6 +357,25 @@ function meel_base_url_path(): string;   // Project root relative to DOCUMENT_RO
 
 Used by `bootstrap.php` (`MEEL_BASE_URL` fallback), `auth/config.php`, `auth/config.example.php`, and the `base_url()` fallback in `helpers.php`. Computed from this file's location (`dirname(__DIR__, 2)`) rather than `dirname(SCRIPT_NAME)` — consistent for all pages in subdirectories (admin/, video/, etc.).
 
+### 15b. Error Pages (`err/`)
+
+Error handling is centralized in one dynamic page `err/index.php` — content & theme adapt to the error source:
+
+| File | Purpose |
+|---|---|
+| `err/index.php` | Unified dynamic error page — invoked via `?code=...` |
+| `err/offline.php` | PWA offline page (service worker fallback) — must be kept |
+
+**`err/index.php` parameters:**
+
+| Param | Values | Effect |
+|---|---|---|
+| `code` | `denied` / `not_found` / `banned` / `revoked` / `maintance` | Error type + HTTP status (403 / 404 / 403 / 401 / 503). Default `not_found` |
+| `reason` | text | Extra reason line (used by IP-ban redirect) |
+| `back` | relative path | Overrides the "Back" button target |
+
+**Source adaptation:** the origin module is detected from `HTTP_REFERER` (video/music/books/drive/admin/profile) → accent color & back-button label change automatically. Back-button priority: `?back=` → referer (GET page) → module home → hub (`index.php`).
+
 ### 16. `modules/media/SearchEngine.php`
 
 **Class:** `SearchEngine` — FULLTEXT search engine (video, music, books) with query sanitizer:

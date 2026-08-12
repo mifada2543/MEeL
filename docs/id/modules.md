@@ -277,6 +277,25 @@ function meel_base_url_path(): string;   // Root proyek relatif DOCUMENT_ROOT (m
 
 Dipakai oleh `bootstrap.php` (fallback `MEEL_BASE_URL`), `auth/config.php`, `auth/config.example.php`, dan fallback `base_url()` di `helpers.php`. Dihitung dari lokasi file ini (`dirname(__DIR__, 2)`), bukan dari `dirname(SCRIPT_NAME)` — sehingga konsisten untuk semua halaman di subdirektori (admin/, video/, dll).
 
+### 15b. Halaman Error (`err/`)
+
+Error handling terpusat di satu halaman dinamis `err/index.php` — konten & tema menyesuaikan sumber error:
+
+| File | Fungsi |
+|---|---|
+| `err/index.php` | Halaman error dinamis terpadu — dipanggil via `?code=...` |
+| `err/offline.php` | Halaman offline PWA (fallback service worker) — wajib dipertahankan |
+
+**Parameter `err/index.php`:**
+
+| Param | Nilai | Efek |
+|---|---|---|
+| `code` | `denied` / `not_found` / `banned` / `revoked` / `maintance` | Jenis error + status HTTP (403 / 404 / 403 / 401 / 503). Default `not_found` |
+| `reason` | teks | Baris alasan tambahan (dipakai redirect IP-ban) |
+| `back` | path relatif | Override target tombol "Kembali" |
+
+**Adaptasi sumber:** modul asal dideteksi dari `HTTP_REFERER` (video/music/books/drive/admin/profile) → tema warna + label tombol kembali berubah otomatis. Prioritas tombol kembali: `?back=` → referer (halaman GET) → home modul → hub (`index.php`).
+
 ### 16. `modules/media/SearchEngine.php`
 
 **Class:** `SearchEngine` — FULLTEXT search engine (video, music, books) dengan sanitizer query:
@@ -465,7 +484,7 @@ Session exists? → Tidak → Redirect ke login.php
   ↓ Ya
 Validasi last_session_id
   ↓
-Berbeda? → Ya → Session Destroy → Redirect ke /err/revoked.php
+Berbeda? → Ya → Session Destroy → Redirect ke /err/?code=revoked
   ↓ Tidak
 Update last_activity
   ↓

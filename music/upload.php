@@ -28,21 +28,19 @@ $uploader = new Uploader($conn, $user_id, $user);
 
 if (isset($_POST['upload'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-        http_response_code(403);
-        die('CSRF token tidak valid.');
-    }
-    $result = $uploader->processMusic($_POST, $_FILES, __DIR__ . "/");
-
-    if ($result['status'] === 'success') {
-        $status = "success";
-        $hour_count++;
-        $total_uploads++;
-        MediaLibrary::clearCountsCache();
-        log_activity($conn, $user_id, 'upload_music', 'music', (int)($result['id'] ?? 0));
-    } elseif (isset($result['alert']) && $result['alert'] == true) {
-        $alert_message = $result['msg'];
+        $alert_message = 'CSRF token tidak valid.';
     } else {
-        die("<div style='color:red;'>Error: {$result['msg']}</div>");
+        $result = $uploader->processMusic($_POST, $_FILES, __DIR__ . "/");
+
+        if ($result['status'] === 'success') {
+            $status = "success";
+            $hour_count++;
+            $total_uploads++;
+            MediaLibrary::clearCountsCache();
+            log_activity($conn, $user_id, 'upload_music', 'music', (int)($result['id'] ?? 0));
+        } else {
+            $alert_message = $result['msg'];
+        }
     }
 }
 

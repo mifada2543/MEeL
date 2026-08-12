@@ -41,12 +41,13 @@ $stmt_video->bind_param("i", $id);
 $stmt_video->execute();
 $video = $stmt_video->get_result()->fetch_assoc();
 if (!$video) {
-    die("<div style='color:red; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Video tidak ditemukan!</h2><a href='../video/index.php' style='color:#ef4444;'>Kembali ke Video</a></div>");
+    header("Location: ../err/?code=not_found");
+    exit;
 }
 
 $is_owner = ((int)$video['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit();
 }
 $status = "";

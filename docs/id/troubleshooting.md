@@ -74,7 +74,7 @@ ALTER TABLE comments ADD COLUMN comment text NOT NULL;
 
 ## Masalah Storage & HDD
 
-### ❌ Redirect ke `err/maintance.php`
+### ❌ Halaman maintenance muncul (`err/?code=maintance`)
 
 **Penyebab:** `MEEL_HDD_BASE` di `auth/settings.php` tidak cocok dengan mount point.
 
@@ -122,11 +122,8 @@ sudo chmod -R 777 /opt/lampp/htdocs/MEeL/temp/
 
 ### Debug Mode untuk Admin
 
-Buka `err/maintance.php` sebagai admin untuk melihat diagnosa lengkap path storage, termasuk:
-- Status exists/is_dir/readable/executable per path
-- Permission (numeric + ACL)
-- Owner:Group
-- Rekomendasi perbaikan otomatis
+Halaman maintenance kini terpadu di `err/?code=maintance` (HTTP 503) dan hanya menampilkan status perawatan.
+Diagnosa path storage dilakukan lewat perintah filesystem (contoh `ls -la` dan `df -h` di atas).
 
 ---
 
@@ -285,17 +282,17 @@ Saat metadata gagal di-parsing, Transcoder akan menampilkan debug overlay:
    sudo chmod 777 /tmp
    ```
 
-### ❌ Terus menerus dialihkan ke `/err/revoked.php` (Session Revoked)
+### ❌ Terus menerus dialihkan ke `/err/?code=revoked` (Session Revoked)
 
 **Penyebab:** Session ID di browser Anda tidak cocok dengan yang terdaftar di database (misalnya karena ter-kick oleh Admin, masuk dari perangkat lain, atau cookie sesi terhapus/tidak persisten).
 
 **Solusi:**
-1. Klik tombol **Kembali Ke Login** pada layar error dan lakukan login ulang.
+1. Klik tombol **Kembali** pada layar error, lalu lakukan login ulang (atau buka `auth/login.php`).
 2. Bersihkan cache dan cookie browser Anda khusus untuk domain platform ini.
 3. Jika menggunakan Cloudflare Tunnel, pastikan pengaturan kuki sesi diatur agar tetap persisten.
 4. Coba akses menggunakan Mode Incognito / Private Window di browser Anda.
 
-### ❌ Dialihkan ke `/err/banned.php` (Access Blocked)
+### ❌ Dialihkan ke `/err/?code=banned` (Access Blocked)
 
 **Penyebab:** Alamat IP Anda terdaftar pada tabel pemblokiran firewall internal (`ip_ban`).
 

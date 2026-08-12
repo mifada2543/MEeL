@@ -44,12 +44,13 @@ $stmt_music->bind_param("i", $id);
 $stmt_music->execute();
 $music = $stmt_music->get_result()->fetch_assoc();
 if (!$music) {
-    die("<div style='color:orange; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Musik tidak ditemukan!</h2><a href='../music/index.php' style='color:#f97316;'>Kembali ke Musik</a></div>");
+    header("Location: ../err/?code=not_found");
+    exit;
 }
 
 $is_owner = ((int)$music['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit();
 }
 $status = "";

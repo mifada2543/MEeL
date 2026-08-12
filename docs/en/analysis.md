@@ -46,7 +46,7 @@ MEeL/
 ├── database/      → SQL schema + migration system
 ├── data_drive/    → Runtime storage for Cloud Drive
 ├── temp/          → Staging transcoding + rate limit cache
-├── err/           → Error pages (denied, banned, maintenance)
+├── err/           → Unified error pages (index.php dynamic) + offline.php (PWA)
 └── docs/          → Project documentation
 ```
 

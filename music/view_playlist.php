@@ -15,15 +15,10 @@ $pl_stmt->execute();
 $playlist = $pl_stmt->get_result()->fetch_assoc();
 
 if (!$playlist) {
-    include '../err/denied.php';
+    $_GET['code'] = 'denied';
+    include '../err/index.php';
     exit;
 }
-
-// Daftar lagu — prepared statement untuk keamanan
-// NOTE: ORDER BY harus PERSIS sama dengan MediaViewer::getPlaylistQueue()
-// (added_at DESC, id DESC) supaya urutan di watch.php (full player) dan
-// di sini (listing / mini-player index.php) selalu identik & deterministik.
-// added_at berpresisi detik, jadi pt.id (AUTO_INCREMENT) dipakai sebagai tie-breaker.
 $songs_stmt = $conn->prepare("
     SELECT m.*, pt.id as pivot_id
     FROM music m

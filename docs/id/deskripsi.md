@@ -46,7 +46,7 @@ MEeL/
 ├── database/      → Schema SQL + migration system
 ├── data_drive/    → Runtime storage untuk Cloud Drive
 ├── temp/          → Staging transcoding + rate limit cache
-├── err/           → Halaman error (denied, banned, maintenance)
+├── err/           → Halaman error terpadu (index.php dinamis) + offline.php (PWA)
 └── docs/          → Dokumentasi proyek
 ```
 
