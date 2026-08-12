@@ -118,8 +118,6 @@
 ### 🎵 Music Discovery
 ![Music Discovery](assets/img/music0.webp)
 
-> Sisanya menyusul
-
 ---
 
 ## 🛠️ Tech Stack

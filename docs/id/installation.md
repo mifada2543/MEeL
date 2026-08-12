@@ -124,8 +124,6 @@ SOURCE /path/ke/MEeL/database/schema.sql;
 2. Pilih file `database/schema.sql`
 3. Klik **Go**
 
-
-
 ### 4. Konfigurasi Aplikasi
 
 ```bash
