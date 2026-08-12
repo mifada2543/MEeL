@@ -1,5 +1,4 @@
 <?php
-// File: modules/media/MediaLibrary.php
 
 class MediaLibrary
 {

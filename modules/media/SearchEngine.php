@@ -5,7 +5,6 @@ require_once __DIR__ . '/MediaLibrary.php';
 
 class SearchEngine
 {
-    private mysqli $conn;
     private MediaLibrary $library;
     private static array $cache = [];
     private static int $cacheSize = 50; // Max cached queries
@@ -18,13 +17,12 @@ class SearchEngine
     // MUSIC_LIMIT supaya ubah ukuran halaman library tidak memangkas
     // rekomendasi sidebar.
     const SIDEBAR_LIMIT = 15;
-    // mengembalikan 0 hasil, jadi lebih baik ditolak sejak awal.
+    // Query terlalu pendek mengembalikan 0 hasil, jadi ditolak sejak awal.
     const MIN_SEARCH_QUERY = 3;
-    const MAX_SEARCH_QUERY = 255; // Maximum search length
+    const MAX_SEARCH_QUERY = 255;
 
     public function __construct(mysqli $db_connection)
     {
-        $this->conn    = $db_connection;
         $this->library = new MediaLibrary($db_connection);
     }
 

@@ -230,20 +230,6 @@ final class DriveStorage
         ];
     }
 
-    public function enforceQuota(array $file, int $limitBytes): void
-    {
-        if (!$this->user->isMember()) {
-            return;
-        }
-
-        $currentUsage = get_user_usage($this->user->username);
-        $newFileSize = (int) ($file['size'] ?? 0);
-
-        if (($currentUsage + $newFileSize) > $limitBytes) {
-            throw new RuntimeException('quota_full');
-        }
-    }
-
     public function getFileForDownload(?string $filename, ?string $type, ?string $scope): array
     {
         $safeType = $this->normalizeType($type);
