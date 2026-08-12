@@ -32,7 +32,9 @@ abstract class AbstractWatchController
 
         if ($this->isLoggedIn() && isset($_POST['send'])) {
             if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-                die('CSRF Token tidak valid.');
+                $_SESSION['error'] = 'CSRF Token tidak valid.';
+                header('Location: ' . $this->commentRedirectUrl());
+                exit;
             }
 
             // RATE LIMIT: 10 comments per menit per user

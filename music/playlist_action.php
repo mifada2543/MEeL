@@ -3,11 +3,28 @@ require_once '../modules/core/helpers.php';
 meel_boot_session();
 include '../auth/config.php';
 
-if (!isset($_SESSION['user_id'])) die('Silakan login terlebih dahulu.');
+// Kembali ke halaman asal jika referer valid (host sama), fallback ke index
+function playlist_back_url(): string
+{
+    $back = 'index.php';
+    if (isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER'] !== '') {
+        $ref_host = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
+        if ($ref_host === ($_SERVER['HTTP_HOST'] ?? '')) {
+            $back = $_SERVER['HTTP_REFERER'];
+        }
+    }
+    return $back;
+}
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../auth/login.php');
+    exit;
+}
 
 // Verifikasi token untuk semua aksi playlist
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-    die('CSRF Token tidak valid.');
+    header('Location: ' . playlist_back_url());
+    exit;
 }
 
 $user_id = (int) $_SESSION['user_id'];
@@ -60,7 +77,9 @@ if ($action === 'create_playlist') {
             $conn->commit();
         } catch (\Throwable $e) {
             $conn->rollback();
-            die('Error: ' . $e->getMessage());
+            error_log('playlist_action: ' . $e->getMessage());
+            header('Location: ' . playlist_back_url());
+            exit;
         }
     }
     redirect("watch.php?id=$music_id&msg=playlist_created");

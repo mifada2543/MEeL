@@ -203,14 +203,16 @@ $query_media .= " ORDER BY $order_by";
 
 $stmt = $conn->prepare($query_media);
 if (!$stmt) {
-    die("Database error: " . $conn->error);
+    error_log('cookies.php: prepare media query gagal: ' . $conn->error);
+    $result_media = null;
+} else {
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result_media = $stmt->get_result();
+    $stmt->close();
 }
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$result_media = $stmt->get_result();
-$stmt->close();
 
 $total_counts = ['all' => 0, 'video' => 0, 'music' => 0];
 $r = $conn->query("SELECT 'video' as t, COUNT(*) as c FROM video UNION ALL SELECT 'music', COUNT(*) FROM music");
@@ -340,7 +342,7 @@ while ($rc = $r->fetch_assoc()) {
                         <div class="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                     </div>
                     <div class="text-[11px] font-semibold text-[#455060]">
-                        <?= $result_media->num_rows ?> item ditemukan
+                        <?= $result_media ? $result_media->num_rows : 0 ?> item ditemukan
                     </div>
                     <?php if (!empty($search)): ?>
                         <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $type_filter ?>" class="btn-clear-filter">
@@ -409,7 +411,7 @@ while ($rc = $r->fetch_assoc()) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($result_media->num_rows > 0):
+                            <?php if ($result_media && $result_media->num_rows > 0):
                                 $row_i = 0;
                                 while ($row = $result_media->fetch_assoc()):
                                     $row_i++;

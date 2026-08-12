@@ -59,7 +59,8 @@ $res = $stmt->get_result();
 $u = $res->fetch_assoc();
 
 if (!$u) {
-    die("<div class='min-h-screen bg-[#0b0e14] flex items-center justify-center text-white font-mono'>User tidak ditemukan!</div>");
+    header("Location: ../err/not_found.php");
+    exit;
 }
 
 $profile_id = $u['id'];

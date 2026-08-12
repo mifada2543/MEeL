@@ -70,10 +70,8 @@ if (isset($_GET['success'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-        http_response_code(403);
-        die('CSRF token tidak valid.');
-    }
-    if ($is_busy) {
+        $message = 'csrf_invalid';
+    } elseif ($is_busy) {
         $message = 'busy';
     } else {
         // ─── Rate limit check (sama seperti Uploader.php) ───
@@ -241,6 +239,18 @@ include __DIR__ . '/partials/scripts.php';
                             <div>
                                 <div style="font-weight:700;letter-spacing:.1em;margin-bottom:3px;">BATAS UPLOAD TERCAPAI</div>
                                 <div style="color:rgba(251,146,60,.7);"><?= htmlspecialchars($rate_limit_msg) ?></div>
+                            </div>
+                        </div>
+                    <?php elseif ($message === 'csrf_invalid'): ?>
+                        <div class="alert-banner alert-error">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px">
+                                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <div>
+                                <div style="font-weight:700;letter-spacing:.1em;margin-bottom:3px;">CSRF TOKEN TIDAK VALID</div>
+                                <div style="color:rgba(248,113,113,.7);">Sesi Anda kedaluwarsa. Muat ulang halaman lalu coba lagi.</div>
                             </div>
                         </div>
                     <?php endif; ?>
