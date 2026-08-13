@@ -310,7 +310,10 @@ Pemeriksaan **statis wiring** untuk boundary yang sama dijalankan oleh job
 `security-tests` (TEST 13 di `tests/security_test.php`) dan job
 `functional-tests` (patch verification). Job `htaccess-check` memverifikasi
 kehadiran `.htaccess`; aturan deny level repo untuk `data_drive/private_admins`
-ditegaskan oleh pemeriksaan `data_drive/.htaccess` di security test.
+ditegaskan oleh pemeriksaan `data_drive/.htaccess` di security test (lapisan 1),
+plus `data_drive/private_admins/.htaccess` ter-track (`Require all denied`,
+lapisan 2) yang diperiksa oleh `tests/security_test.php` (TEST 13) dan
+`tests/check_deploy.php`.
 
 Job `deploy-check` di `.github/workflows/ci.yml` menjalankan suite ini
 (`php tests/check_deploy.php --no-color --hdd=...`) pada layout storage yang
@@ -338,8 +341,12 @@ bukti. Gunakan file probe sekali pakai, lalu hapus:
 ```bash
 cd /path/ke/MEeL
 
-# 1. Buat file probe di storage Drive private (symlink ke media storage)
-TARGET=$(readlink -f data_drive/private_admins)
+# 1. Buat file probe di storage Drive private.
+#    Lokasi storage mengikuti MEEL_HDD_DRIVE (auth/settings.php); fallback ke
+#    folder nyata ter-track data_drive/private_admins bila konstanta tidak ada
+#    (modul Drive tidak lagi memakai symlink untuk storage — lihat installation.md).
+BASE=$(php -r 'require "modules/core/helpers.php"; echo meel_drive_base_path();')
+TARGET="$BASE/private_admins"
 mkdir -p "$TARGET/zz_403_probe/video"
 echo 'PROBE' > "$TARGET/zz_403_probe/video/probe.mp4"
 

@@ -309,7 +309,10 @@ The **static wiring checks** for the same boundaries are exercised by the
 `security-tests` job (TEST 13 in `tests/security_test.php`) and the
 `functional-tests` job (patch verification). The `htaccess-check` job verifies
 `.htaccess` presence; the repo-level deny rule for `data_drive/private_admins`
-is asserted by the security test's `data_drive/.htaccess` check.
+is asserted by the security test's `data_drive/.htaccess` check (layer 1),
+plus the tracked `data_drive/private_admins/.htaccess` (`Require all denied`,
+layer 2) which is checked by both `tests/security_test.php` (TEST 13) and
+`tests/check_deploy.php`.
 
 The `deploy-check` job in `.github/workflows/ci.yml` runs this suite
 (`php tests/check_deploy.php --no-color --hdd=...`) on a simulated storage
@@ -337,8 +340,12 @@ not proof. Use a throwaway probe file, then remove it:
 ```bash
 cd /path/to/MEeL
 
-# 1. Buat file probe di storage private Drive (symlink ke media storage)
-TARGET=$(readlink -f data_drive/private_admins)
+# 1. Buat file probe di storage private Drive.
+#    Lokasi storage mengikuti MEEL_HDD_DRIVE (auth/settings.php); fallback ke
+#    folder nyata ter-track data_drive/private_admins bila konstanta tidak ada
+#    (modul Drive tidak lagi memakai symlink untuk storage — lihat installation.md).
+BASE=$(php -r 'require "modules/core/helpers.php"; echo meel_drive_base_path();')
+TARGET="$BASE/private_admins"
 mkdir -p "$TARGET/zz_403_probe/video"
 echo 'PROBE' > "$TARGET/zz_403_probe/video/probe.mp4"
 

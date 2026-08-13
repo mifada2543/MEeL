@@ -285,6 +285,16 @@ sudo chown -R www-data:www-data data_drive temp profile/upload music/upload book
 sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
 
+> ⚠️ **Never commit symlinks inside `data_drive/`.** `data_drive/public` and
+> `data_drive/private_admins` are **real directories** tracked in the repo
+> (`.gitkeep` placeholders + deny `.htaccess`). Their contents (user uploads) are
+> auto-ignored by `.gitignore`. For Drive storage outside the repo, set
+> `MEEL_HDD_DRIVE` in `auth/settings.php` — the Drive module follows it
+> automatically (falls back to `data_drive/` when the constant is absent). Manual
+> symlinks pointing to absolute development paths (`/media/<username>/...`) leak
+> the OS username through the public repo and crash the Drive module
+> (`RuntimeException: Folder penyimpanan gagal dibuat`) on other machines.
+
 ### 5. Enable Apache mod_rewrite
 
 ```bash

@@ -258,6 +258,50 @@ $timeout = 43200; // 12 hours in seconds
 
 ## Storage & Disk Issues
 
+### ❌ Drive module crashes: "Folder penyimpanan gagal dibuat" (RuntimeException)
+
+**Symptoms:**
+- Opening `drive/index.php`, uploading, downloading or streaming throws
+  `RuntimeException: Folder penyimpanan gagal dibuat` from `drive/DriveService.php`
+  (`ensureDirectoryExists()`)
+- Happens on a fresh clone or on a machine where the old repo symlinks were broken
+
+**Causes & Solutions:**
+
+1. **Legacy committed symlink to a dead absolute path** (old checkout): the repo
+   used to track `data_drive/public` & `data_drive/private_admins` as **symlinks**
+   pointing to `/media/<devuser>/MEeL/media/drive/...` — broken on any other
+   machine. Update the repo (the symlinks are removed and the folders are now
+   tracked as real directories), or fix locally:
+   ```bash
+   rm -f data_drive/public data_drive/private_admins   # remove old symlinks
+   mkdir -p data_drive/public data_drive/private_admins
+   ```
+
+2. **`MEEL_HDD_DRIVE` points to an unreadable/nonexistent path:** when defined,
+   the Drive module reads its storage directly from `MEEL_HDD_DRIVE` (derived
+   from `MEEL_HDD_BASE` in `auth/settings.php`) — **no symlink is involved**.
+   Verify where the app actually resolves storage:
+   ```bash
+   php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_DRIVE') ? MEEL_HDD_DRIVE : 'NOT SET';"
+   php -r "require 'modules/core/helpers.php'; echo meel_drive_base_path();"
+   ```
+   If the resolved path doesn't exist or isn't writable, fix `MEEL_HDD_BASE` in
+   `auth/settings.php` (or leave it unset to use the `data_drive/` fallback).
+
+3. **Fallback folders not writable** (when `MEEL_HDD_DRIVE` is not defined):
+   ```bash
+   sudo chown -R www-data:www-data data_drive
+   sudo chmod -R 775 data_drive
+   ```
+   `data_drive/public` & `data_drive/private_admins` are auto-created by
+   `DriveStorage::ensureDirectoryExists()`.
+
+> ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them and
+> `tests/check_deploy.php` warns. See
+> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)
+> for the Drive storage layout (`MEEL_HDD_DRIVE` vs the `data_drive/` fallback).
+
 ### ❌ "Disk full" error
 
 **Check:**

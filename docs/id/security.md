@@ -846,11 +846,19 @@ Keterbatasan `https://` dengan demikian teratasi: meskipun URL HTTPS asli tidak 
 
 ## Proteksi Private Drive
 
-Cloud Drive MEeL menyimpan file private user di bawah `data_drive/private_admins/<username>/...`. Karena subtree ini berada di dalam document root web, web server bisa melayani file secara langsung — melewati otorisasi level aplikasi. Dua lapisan kontrol menutup celah ini.
+Cloud Drive MEeL menyimpan file private user di bawah
+`<MEEL_HDD_DRIVE>/private_admins/<username>/...` saat `MEEL_HDD_DRIVE` di-set di
+`auth/settings.php`, atau folder fallback ter-track repo
+`data_drive/private_admins/<username>/...` saat tidak (lihat
+[Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)).
+Selama subtree private dapat dijangkau dari web server (folder fallback berada di
+document root; deployment HDD bisa mengeksposnya lewat symlink saat deploy), web
+server bisa melayani file secara langsung — melewati otorisasi level aplikasi.
+Dua lapisan kontrol menutup celah ini.
 
 ### Lapisan 1 — Deny Web Server (ter-track di repo)
 
-`data_drive/.htaccess` ter-commit di repository, sehingga aturan deny berlaku di **semua deployment** — termasuk saat `private_admins/` adalah symlink ke storage eksternal:
+`data_drive/.htaccess` ter-commit di repository, sehingga aturan deny berlaku di **semua deployment** — baik saat `private_admins/` adalah folder fallback ter-track maupun symlink ke storage eksternal saat deploy:
 
 ```apache
 <IfModule mod_rewrite.c>
@@ -863,7 +871,7 @@ Request langsung apa pun ke `data_drive/private_admins/...` mengembalikan **HTTP
 
 ### Lapisan 2 — Hard Deny di Root Storage
 
-`data_drive/private_admins/.htaccess` (dibuat saat deploy di target storage):
+`data_drive/private_admins/.htaccess` (ter-track di folder fallback repo; dibuat ulang saat deploy pada target storage eksternal):
 
 ```apache
 Options -Indexes
