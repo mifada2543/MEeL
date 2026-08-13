@@ -12,6 +12,18 @@ class JapaneseTest extends TestCase
         require_once MEEL_ROOT . '/modules/core/japanese.php';
     }
 
+    /**
+     * Test yang memerlukan romaji aktual dari MeCab di-skip bila mecab
+     * tidak tersedia di lingkungan (mis. CI runner tanpa apt install mecab).
+     * Test berbasis alias/kamus tetap jalan karena tidak butuh mecab.
+     */
+    protected function skipIfNoMecab(): void
+    {
+        if (!function_exists('meel_mecab_available') || !meel_mecab_available()) {
+            $this->markTestSkipped('mecab tidak tersedia — test romaji di-skip');
+        }
+    }
+
     public function testGetRomajiNameEmptyString(): void
     {
         $this->assertSame('untitled', getRomajiName(''));
@@ -26,6 +38,7 @@ class JapaneseTest extends TestCase
 
     public function testGetRomajiNameWithSpecialChars(): void
     {
+        $this->skipIfNoMecab();
         // Special chars should be replaced
         $result = getRomajiName('初音ミク【テスト】');
         // Should contain 'hatsune' (replacement for 初音)
@@ -50,6 +63,7 @@ class JapaneseTest extends TestCase
 
     public function testAnalyzeJapaneseTextWithAlias(): void
     {
+        $this->skipIfNoMecab();
         $result = analyzeJapaneseText('プロジェクトセカイ カラフルステージ!');
         $this->assertStringContainsString('Project Sekai', $result['english']);
         $this->assertStringContainsString('Colorful Stage', $result['english']);
@@ -93,6 +107,7 @@ class JapaneseTest extends TestCase
     // ─── Partikel & homofon tidak boleh diterjemahkan per-token ───
     public function testAnalyzeJapaneseTextDoesNotGlossParticlesAsHomophones(): void
     {
+        $this->skipIfNoMecab();
         // が, の, ば adalah partikel — sebelumnya salah jadi "moth", "indicates possessive", "place"
         $result = analyzeJapaneseText('君が飛び降りるのならば');
         $this->assertStringContainsString('kimi-ga-tobioriru-no-nara-ba', $result['romaji']);
