@@ -189,10 +189,21 @@ jobs:
             echo "⚠️  composer.json not found, skipping."
           fi
 
+      - name: Install mecab (Japanese tests dependency)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mecab
+          # Nama paket kamus berbeda antar versi Ubuntu:
+          #   < 20.04: mecab-ipadic-utf8 ; >= 20.04: mecab-ipadic
+          sudo apt-get install -y mecab-ipadic-utf8 || sudo apt-get install -y mecab-ipadic || true
+          echo "テスト" | mecab || echo "⚠️  mecab gagal diuji — Japanese tests akan skip"
+
       - name: Run PHPUnit Tests
         run: |
           if [ -f vendor/bin/phpunit ]; then
-            php vendor/bin/phpunit --no-coverage --verbose
+            # Hanya suite unit: integration tests membutuhkan MySQL + data nyata
+            # yang tidak tersedia di runner (lihat docs/en/test.md).
+            php vendor/bin/phpunit --no-coverage --verbose --testsuite='MEeL Core Unit Tests'
           else
             echo "⚠️  PHPUnit not installed, skipping."
           fi
