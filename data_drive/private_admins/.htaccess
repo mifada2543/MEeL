@@ -1,0 +1,19 @@
+# =================================================================
+# MEeL Cloud Storage — Private Drive (lapisan 2)
+# =================================================================
+# Folder ini menyimpan file private user (data_drive/private_admins/).
+# Lapisan 1: data_drive/.htaccess memblokir subtree ini via mod_rewrite
+# (RewriteRule ^private_admins/ - [F,L]) — berlaku di semua deployment.
+#
+# Lapisan 2 (ini): deny mutlak langsung dari Apache untuk file apa pun
+# di dalam folder ini. Satu-satunya jalur akses yang sah adalah endpoint
+# ber-otorisasi: drive/download.php & drive/stream.php (session + CSRF +
+# kepemilikan file).
+#
+# Catatan: file ini ter-track di repo. Saat data_drive/private_admins
+# diarahkan ke storage eksternal (MEEL_HDD_DRIVE), file .htaccess deny
+# dibuat ulang saat deploy pada target storage — pola sama seperti ini.
+Options -Indexes
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>

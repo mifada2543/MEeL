@@ -38,7 +38,7 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     exit();
 }
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 
 require_once '../modules/core/System.php';
 $sys = new System($conn);

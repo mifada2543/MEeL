@@ -55,6 +55,32 @@ if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
 }
 
 /**
+ * Resolve base path storage Drive secara terpusat.
+ *
+ * Prioritas: konstanta MEEL_HDD_DRIVE (dari auth/settings.php) — konsisten
+ * dengan modul Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD. Bila
+ * konstanta belum didefinisikan (lingkungan lama / instalasi tanpa HDD
+ * eksternal), fallback ke folder lokal <root>/data_drive agar tidak ada
+ * breaking change.
+ *
+ * @param string|null $hddDriveOverride Untuk pengujian: simulasikan nilai
+ *        MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
+ *        konstanta sungguhan; '' = paksa fallback lokal.
+ * @return string Base path TANPA trailing slash
+ */
+if (!function_exists('meel_drive_base_path')) {
+function meel_drive_base_path(?string $hddDriveOverride = null): string
+{
+    $hddDrive = $hddDriveOverride ?? (defined('MEEL_HDD_DRIVE') ? (string) MEEL_HDD_DRIVE : '');
+    if ($hddDrive !== '') {
+        return rtrim($hddDrive, '/\\');
+    }
+    // File ini berada di modules/core/helpers/, jadi dirname(__DIR__, 3) = root proyek.
+    return dirname(__DIR__, 3) . '/data_drive';
+}
+} // end function_exists('meel_drive_base_path')
+
+/**
  * @param int $required_bytes Jumlah byte yang dibutuhkan
  * @param string $path Path untuk diperiksa (file atau direktori)
  * @return array ['ok' => bool, 'free' => float, 'required' => float, 'path' => string]
@@ -167,7 +193,7 @@ if (!function_exists('invalidate_dir_size_cache')) {
 /* @param string $username Nama user */
 function invalidate_dir_size_cache(string $username): void
 {
-    $userPath = dirname(__DIR__, 3) . '/data_drive/private_admins/' . $username;
+    $userPath = meel_drive_base_path() . '/private_admins/' . $username;
     $cacheFile = dirname(__DIR__, 3) . '/temp/dirsize_' . md5($userPath) . '.cache';
     if (is_file($cacheFile)) {
         if (!is_writable(dirname($cacheFile))) {

@@ -23,7 +23,7 @@ if (session_status() === PHP_SESSION_ACTIVE) {
 
 set_time_limit(0);
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 
 try {
     $file = $storage->getFileForDownload(

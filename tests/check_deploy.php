@@ -237,6 +237,19 @@ if (!is_file($driveHt)) {
     }
 }
 
+// ─── Guard portabilitas: data_drive/public & private_admins harus folder ───
+// nyata (bukan symlink ter-track). Storage Drive diset terpusat lewat
+// MEEL_HDD_DRIVE di auth/settings.php; symlink lama (/media/<username>/...)
+// mem-bocorkan username OS developer & membuat modul Drive crash di mesin
+// lain (RuntimeException: Folder penyimpanan gagal dibuat).
+foreach (['public', 'private_admins'] as $driveSub) {
+    $driveEntry = MEEL_ROOT . '/data_drive/' . $driveSub;
+    if (is_link($driveEntry)) {
+        report('WARN', "data_drive/{$driveSub} masih symlink → " . (string) readlink($driveEntry),
+            'jadikan folder nyata ATAU set MEEL_HDD_DRIVE di auth/settings.php (jangan commit symlink)');
+    }
+}
+
 // 3c. Validating forward proxy — wajib tersedia untuk download URL (SSRF per hop)
 $vpClass = MEEL_ROOT . '/modules/core/ValidatingProxy.php';
 $vpScript = MEEL_ROOT . '/modules/core/validating_proxy_server.php';

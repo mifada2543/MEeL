@@ -14,7 +14,7 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     exit();
 }
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 
 $filename = isset($_POST['file']) ? basename($_POST['file']) : null;
 $type = isset($_POST['type']) ? basename($_POST['type']) : null;
