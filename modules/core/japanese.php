@@ -32,19 +32,43 @@ if (!function_exists('getRomajiName')) {
     function getRomajiName(string $text): string
     {
         if (empty($text)) return 'untitled';
-
+        $text = Normalizer::normalize($text, Normalizer::FORM_C) ?: $text;
         $original_text = $text;
 
         // 1. Kamus Koreksi Karakter Spesifik & Simbol
         $search = [
-            '×', 'x', 'X', '*', '&', '/',
-            '【', '】', '「', '」', '(', ')',
-            '鏡音', '巡音', '初音'
+            '×',
+            'x',
+            'X',
+            '*',
+            '&',
+            '/',
+            '【',
+            '】',
+            '「',
+            '」',
+            '(',
+            ')',
+            '鏡音',
+            '巡音',
+            '初音'
         ];
         $replace = [
-            ' ', ' ', ' ', ' ', ' ', ' ',
-            ' ', ' ', ' ', ' ', ' ', ' ',
-            'かがみね', 'めぐりね', 'hatsune'
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            ' ',
+            'かがみね',
+            'めぐりね',
+            'hatsune'
         ];
         $text = str_replace($search, $replace, $text);
 
@@ -101,6 +125,7 @@ if (!function_exists('analyzeJapaneseText')) {
     {
         $result = ['romaji' => 'untitled-media', 'english' => ''];
         if (empty(trim($text))) return $result;
+        $text = Normalizer::normalize($text, Normalizer::FORM_C) ?: $text;
 
         // 1. Preprocessing
         $search  = ['×', 'x', 'X', '*', '&', '/', '【', '】', '「', '」', '(', ')', '鏡音', '巡音', '初音'];
@@ -136,6 +161,7 @@ if (!function_exists('analyzeJapaneseText')) {
                 }
             }
         }
+        $matched_phrases = array_keys($alias_glosses);
         $alias_glosses = array_values($alias_glosses);
 
         // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
@@ -198,8 +224,15 @@ if (!function_exists('analyzeJapaneseText')) {
             $sub = $features[1] ?? '';
             $is_functional = in_array($pos, ['助詞', '助動詞', '接続詞', '感動詞', '連体詞', '記号', '補助記号'], true)
                 || ($pos === '名詞' && $sub === '非自立' && $surface === 'の');
+            $inside_alias = false;
+            foreach ($matched_phrases as $phrase) {
+                if ($phrase !== '' && mb_strpos($phrase, $surface) !== false) {
+                    $inside_alias = true;
+                    break;
+                }
+            }
 
-            if ($dict_ready && !$is_functional) {
+            if ($dict_ready && !$is_functional && !$inside_alias) {
                 $base_form = $features[6] ?? '*';
                 foreach (array_unique([$surface, $base_form]) as $candidate) {
                     if ($candidate === '*' || $candidate === '') continue;

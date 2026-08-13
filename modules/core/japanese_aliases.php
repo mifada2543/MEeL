@@ -46,9 +46,10 @@ return [
     'ニコニコ動画'         => 'Niconico',
     'ニコニコ'            => 'Niconico',
 
+    // ─── Voicebank / Synthesizer (CeVIO, VOICEROID, dsb.) ───
+    '可不'                => 'Kafu',
+
     // ─── Pola gramatikal umum (dicek sebelum gloss per-token) ───
-    // HINDARI pola pendek yang bisa jadi substring kata lain (mis. 'たら' ada
-    // di dalam 'あたらしい' = baru) agar tidak mencemari gloss.
     'のならば'            => 'in case',
     'ならば'              => 'if',
     'けど'                => 'but',
