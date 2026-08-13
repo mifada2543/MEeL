@@ -115,4 +115,12 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('if', $result['english']);
     }
 
+    public function testAnalyzeJapaneseTextVoicebankAliasSkipsTokenGloss(): void
+    {
+        $result = analyzeJapaneseText('プロポーズ / 可不');
+        $this->assertStringContainsString('Kafu', $result['english']);
+        $this->assertStringNotContainsString('acceptable', $result['english']);
+        $this->assertStringNotContainsString('un-', $result['english']);
+    }
+
 }
