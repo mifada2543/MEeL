@@ -603,11 +603,19 @@ The `https://` limitation is therefore resolved: even though the original HTTPS 
 
 ## Private Drive Protection
 
-MEeL's Cloud Drive stores private user files under `data_drive/private_admins/<username>/...`. Because this subtree lives inside the web document root, the web server could serve files directly — bypassing application-level authorization. Two layered controls close this gap.
+MEeL's Cloud Drive stores private user files under
+`<MEEL_HDD_DRIVE>/private_admins/<username>/...` when `MEEL_HDD_DRIVE` is set in
+`auth/settings.php`, or the repo-tracked fallback folder
+`data_drive/private_admins/<username>/...` when it is not (see
+[Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)).
+Whenever the private subtree is reachable from the web server (the fallback
+folder lives in the document root; HDD deployments may expose it via a
+deploy-time symlink), the web server could serve files directly — bypassing
+application-level authorization. Two layered controls close this gap.
 
 ### Layer 1 — Web Server Deny (tracked in repo)
 
-`data_drive/.htaccess` is committed to the repository, so the deny rule applies to **every deployment** — including when `private_admins/` is a symlink to external storage:
+`data_drive/.htaccess` is committed to the repository, so the deny rule applies to **every deployment** — whether `private_admins/` is the tracked fallback folder or a deploy-time symlink to external storage:
 
 ```apache
 <IfModule mod_rewrite.c>
@@ -620,7 +628,7 @@ Any direct request to `data_drive/private_admins/...` returns **HTTP 403**, rega
 
 ### Layer 2 — Hard Deny at the Storage Root
 
-`data_drive/private_admins/.htaccess` (created at deploy time on the storage target):
+`data_drive/private_admins/.htaccess` (tracked in the repo fallback folder; recreated at deploy time on the external storage target):
 
 ```apache
 Options -Indexes

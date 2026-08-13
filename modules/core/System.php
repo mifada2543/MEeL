@@ -65,6 +65,7 @@ class System
     public function getStorageUsage(): array
     {
         $project_root = dirname(__DIR__, 2);
+        require_once __DIR__ . '/helpers.php';
 
         $ssd_free  = @disk_free_space("/") / (1024 ** 3);
         $ssd_total = @disk_total_space("/") / (1024 ** 3);
@@ -75,11 +76,15 @@ class System
         $hdd_free  = @disk_free_space($hdd_path) / (1024 ** 3);
         $hdd_total = @disk_total_space($hdd_path) / (1024 ** 3);
 
+        // Base path Drive di-resolve terpusat (MEEL_HDD_DRIVE, fallback
+        // <root>/data_drive) supaya konsisten dengan DriveStorage.
+        $drive_base = meel_drive_base_path();
+
         $sz_vid   = self::getFolderSizeSys($project_root . '/video/upload') / (1024 ** 3);
         $sz_mus   = self::getFolderSizeSys($project_root . '/music/upload') / (1024 ** 3);
         $sz_book  = self::getFolderSizeSys($project_root . '/books/upload') / (1024 ** 3);
-        $sz_d_pub = self::getFolderSizeSys($project_root . '/data_drive/public') / (1024 ** 3);
-        $sz_d_prv = self::getFolderSizeSys($project_root . '/data_drive/private_admins') / (1024 ** 3);
+        $sz_d_pub = self::getFolderSizeSys($drive_base . '/public') / (1024 ** 3);
+        $sz_d_prv = self::getFolderSizeSys($drive_base . '/private_admins') / (1024 ** 3);
 
         $sz_drive_total = $sz_d_pub + $sz_d_prv;
         $p_vid   = ($hdd_total > 0) ? ($sz_vid / $hdd_total) * 100 : 0;

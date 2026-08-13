@@ -252,8 +252,10 @@ jobs:
   # Menjalankan tests/check_deploy.php — verifikasi lingkungan deployment
   # (MEEL_HDD_BASE, upload symlinks, .htaccess hardening, PWA mod_rewrite,
   # dan validating forward proxy SSRF). Di runner, storage lokal (book/music/
-  # video upload + private_admins) disimulasikan ke $RUNNER_TEMP karena
-  # symlink yang ter-track di repo menunjuk ke path /media yang tidak ada.
+  # video upload) disimulasikan ke $RUNNER_TEMP karena symlink yang ter-track
+  # di repo menunjuk ke path /media yang tidak ada. data_drive/public &
+  # data_drive/private_admins kini folder nyata ter-track (bukan symlink) dan
+  # modul Drive membaca storage langsung dari MEEL_HDD_DRIVE.
   # Argumen --hdd meniru MEEL_HDD_BASE (lihat check_deploy.php --help).
   deploy-check:
     name: Deployment Check
@@ -285,10 +287,16 @@ jobs:
           # buat layout tiruan yang valid di $RUNNER_TEMP lalu arahkan symlink
           # upload ke sana (check_deploy memeriksa target symlink).
           #
-          # Asumsi: books/music/video/upload dan data_drive/private_admins
-          # adalah symlink yang ter-track git (mode 120000) menuju /media/...
-          # yang TIDAK ada di runner — rm -f menghapus symlink-nya saja (bukan
-          # target), lalu ln -s membuat symlink baru ke storage temp.
+          # Asumsi: books/music/video/upload adalah symlink yang ter-track git
+          # (mode 120000) menuju /media/... yang TIDAK ada di runner — rm -f
+          # menghapus symlink-nya saja (bukan target), lalu ln -s membuat
+          # symlink baru ke storage temp.
+          #
+          # Catatan: data_drive/public & data_drive/private_admins TIDAK lagi
+          # symlink ter-track — keduanya folder nyata di repo (placeholder
+          # .gitkeep/.htaccess deny ter-track). Modul Drive membaca storage
+          # langsung dari MEEL_HDD_DRIVE (disimulasikan lewat --hdd), jadi
+          # tidak ada symlink yang perlu diarahkan ke temp untuk Drive.
           HDD="$RUNNER_TEMP/meel_storage/media"
           mkdir -p "$HDD/video/upload/video" "$HDD/video/upload/thumbnail" \
                    "$HDD/music/upload" "$HDD/books/upload" \
@@ -301,12 +309,6 @@ jobs:
             rm -f "${{ github.workspace }}/$m/upload"
             ln -s "$HDD/$m/upload" "${{ github.workspace }}/$m/upload"
           done
-
-          # private_admins/ juga symlink → arahkan ke temp (dengan .htaccess deny)
-          rm -f "${{ github.workspace }}/data_drive/private_admins"
-          ln -s "$HDD/drive/private_admins" "${{ github.workspace }}/data_drive/private_admins"
-          printf 'Options -Indexes\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n' \
-            > "$HDD/drive/private_admins/.htaccess"
 
           # settings.php dibutuhkan check_deploy (di-copy dari contoh)
           cp "${{ github.workspace }}/auth/settings.example.php" "${{ github.workspace }}/auth/settings.php" 2>/dev/null || true
@@ -334,11 +336,52 @@ jobs:
         env:
           STAGING_URL: ${{ secrets.STAGING_URL }}
 
+  # ─── Job 6b: Drive Storage Integrity — tolak symlink di data_drive/ ───
+  # data_drive/public & data_drive/private_admins harus folder NYATA di repo
+  # (placeholder .gitkeep/.htaccess deny ter-track). Symlink ter-track yang
+  # menunjuk ke path absolut development (/media/<username>/...) membocorkan
+  # username OS lewat repo publik dan membuat modul Drive crash di mesin lain
+  # (RuntimeException: Folder penyimpanan gagal dibuat). Job ini menolak PR
+  # bila ada symlink apa pun di dalam data_drive/.
+  drive-storage-check:
+    name: Drive Storage Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Reject symlinks inside data_drive/
+        run: |
+          echo "🔍 Memeriksa data_drive/public & data_drive/private_admins (harus folder nyata)..."
+          # 1) Index check: mode 120000 = symlink ter-track. Git index adalah
+          #    sumber kebenaran apa yang akan ter-commit — bukan sekadar
+          #    working tree.
+          tracked=$(git ls-files -s data_drive/ | awk '$1 == "120000" {print $4}')
+          if [ -n "$tracked" ]; then
+            echo "❌ Symlink ter-track di data_drive/ (dilarang):"
+            echo "$tracked" | sed 's/^/   - /'
+            echo ""
+            echo "Perbaikan: hapus symlink; untuk storage eksternal set MEEL_HDD_DRIVE"
+            echo "di auth/settings.php (modul Drive membaca langsung, tanpa symlink)."
+            exit 1
+          fi
+          # 2) Working-tree check: symlink yang muncul di filesystem (mis. hasil
+          #    deploy lokal yang keliru di-commit via -f).
+          found=0
+          while IFS= read -r -d '' link; do
+            echo "❌ Symlink di data_drive/: $link -> $(readlink "$link")"
+            found=1
+          done < <(find data_drive -type l -print0)
+          [ $found -eq 1 ] && exit 1
+          echo "✅ Tidak ada symlink di data_drive/ (index & working tree bersih)."
+
   # ─── Job 7: Summary / Status ───
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check, deploy-check]
+    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check, deploy-check, drive-storage-check]
     if: always()
     steps:
       - name: Generate Job Status Summary
@@ -368,6 +411,7 @@ jobs:
           report_job "PHPUnit Unit Tests" "${{ needs.phpunit-tests.result }}"
           report_job "HTACCESS & Integrity" "${{ needs.htaccess-check.result }}"
           report_job "Deployment Check" "${{ needs.deploy-check.result }}"
+          report_job "Drive Storage Integrity" "${{ needs.drive-storage-check.result }}"
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⚡ Optimizations applied" >> $GITHUB_STEP_SUMMARY

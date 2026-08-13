@@ -18,18 +18,33 @@ auth/local.config.php
 music/upload/*
 video/upload/*
 books/upload/*
-data_drive/public/*
-data_drive/private_admins/*
 profile/upload/*
 temp/*
 .agents
+# ─── DATA_DRIVE (Cloud Drive storage) ───────────────────
+# data_drive/public & data_drive/private_admins adalah FOLDER NYATA di repo
+# (placeholder .gitkeep/.htaccess) — isinya (file upload user) di-ignore.
+#
+# Aturan eksplisit di bawah sekaligus memblokir SYMLINK apa pun dengan nama
+# data_drive/public / data_drive/private_admins agar tidak pernah ter-commit
+# lagi (sebelumnya pernah ter-commit symlink absolut /media/<username>/...
+# yang mem-bocorkan username OS dan mem-buat modul Drive crash di mesin lain).
+# Jangan pernah membuat symlink manual di folder ini — set MEEL_HDD_DRIVE di
+# auth/settings.php untuk storage eksternal.
+data_drive/public
+!data_drive/public/
+data_drive/public/*
+!**/data_drive/public/.gitkeep
+data_drive/private_admins
+!data_drive/private_admins/
+data_drive/private_admins/*
+!**/data_drive/private_admins/.gitkeep
+!**/data_drive/private_admins/.htaccess
 # Keep .gitkeep files to maintain directory structure
 !**/upload/.gitkeep
 !profile/upload/default_avatar.png
 !**/temp/.gitkeep
 !**/temp/.htaccess
-!**/data_drive/public/.gitkeep
-!**/data_drive/private_admins/.gitkeep
 
 # ─── CACHE & TEMPORARY FILES ──────────────────────────
 .cache/

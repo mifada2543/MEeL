@@ -125,6 +125,51 @@ sudo chmod -R 777 /opt/lampp/htdocs/MEeL/temp/
 Halaman maintenance kini terpadu di `err/?code=maintance` (HTTP 503) dan hanya menampilkan status perawatan.
 Diagnosa path storage dilakukan lewat perintah filesystem (contoh `ls -la` dan `df -h` di atas).
 
+### ❌ Modul Drive crash: "Folder penyimpanan gagal dibuat" (RuntimeException)
+
+**Gejala:**
+- Membuka `drive/index.php`, upload, download, atau streaming melempar
+  `RuntimeException: Folder penyimpanan gagal dibuat` dari `drive/DriveService.php`
+  (`ensureDirectoryExists()`)
+- Terjadi pada clone baru atau mesin yang symlink lama repo-nya broken
+
+**Penyebab & Solusi:**
+
+1. **Symlink lama ter-commit ke path absolut yang tidak ada** (checkout lama):
+   repo dulu men-track `data_drive/public` & `data_drive/private_admins` sebagai
+   **symlink** menunjuk ke `/media/<devuser>/MEeL/media/drive/...` — broken di
+   mesin lain. Update repo (symlink sudah dihapus, folder kini ter-track sebagai
+   folder nyata), atau perbaiki manual:
+   ```bash
+   rm -f data_drive/public data_drive/private_admins   # hapus symlink lama
+   mkdir -p data_drive/public data_drive/private_admins
+   ```
+
+2. **`MEEL_HDD_DRIVE` menunjuk ke path yang tidak ada / tidak writable:** saat
+   terdefinisi, modul Drive membaca storage langsung dari `MEEL_HDD_DRIVE`
+   (turunan `MEEL_HDD_BASE` di `auth/settings.php`) — **tanpa symlink**. Cek di
+   mana aplikasi benar-benar me-resolve storage:
+   ```bash
+   php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_DRIVE') ? MEEL_HDD_DRIVE : 'NOT SET';"
+   php -r "require 'modules/core/helpers.php'; echo meel_drive_base_path();"
+   ```
+   Jika path hasil resolve tidak ada atau tidak writable, perbaiki `MEEL_HDD_BASE`
+   di `auth/settings.php` (atau biarkan tidak di-set agar memakai fallback
+   `data_drive/`).
+
+3. **Folder fallback tidak writable** (saat `MEEL_HDD_DRIVE` tidak terdefinisi):
+   ```bash
+   sudo chown -R www-data:www-data data_drive
+   sudo chmod -R 775 data_drive
+   ```
+   `data_drive/public` & `data_drive/private_admins` dibuat otomatis oleh
+   `DriveStorage::ensureDirectoryExists()`.
+
+> ⚠️ **Jangan pernah commit symlink di dalam `data_drive/`** — `.gitignore`
+> memblokirnya dan `tests/check_deploy.php` memberi peringatan. Lihat
+> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)
+> untuk layout storage Drive (`MEEL_HDD_DRIVE` vs fallback `data_drive/`).
+
 ---
 
 ## Masalah Transcoding

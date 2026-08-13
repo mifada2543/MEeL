@@ -79,6 +79,24 @@ final class DriveStorage
         $this->webBasePath = $webBasePath;
     }
 
+    /**
+     * Resolve base path storage Drive untuk seluruh caller modul Drive.
+     *
+     * Prioritas: konstanta MEEL_HDD_DRIVE (terpusat di auth/settings.php,
+     * konsisten dengan Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD).
+     * Bila konstanta belum didefinisikan (lingkungan lama / instalasi tanpa
+     * HDD eksternal), fallback ke folder lokal <root>/data_drive agar tidak
+     * ada breaking change.
+     *
+     * @param string|null $hddDriveOverride Untuk pengujian: simulasikan nilai
+     *        MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
+     *        konstanta sungguhan; '' = paksa fallback lokal.
+     */
+    public static function defaultBasePath(?string $hddDriveOverride = null): string
+    {
+        return meel_drive_base_path($hddDriveOverride);
+    }
+
     public function normalizeScope(?string $scope): string
     {
         return $scope === self::SCOPE_PRIVATE ? self::SCOPE_PRIVATE : self::SCOPE_PUBLIC;

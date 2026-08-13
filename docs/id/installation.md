@@ -167,6 +167,11 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 > ⚠️ `books/upload`, `music/upload`, `video/upload` adalah **symlink git** yang
 > menunjuk ke HDD storage — cek & perbaiki SEBELUM membuat sub-direktori di
 > bawahnya (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+> ℹ️ `data_drive/public` dan `data_drive/private_admins` adalah **folder nyata**
+> yang ter-track di repo (bukan symlink) — keduanya storage bawaan (fallback)
+> modul Drive dan dibuat/dipakai otomatis. Untuk storage Drive di HDD eksternal,
+> set `MEEL_HDD_DRIVE` di `auth/settings.php` (lihat di bawah). **Jangan pernah
+> commit symlink di dalam `data_drive/`** — `.gitignore` memblokirnya.
 
 ### 5a. Media Storage (MEEL_HDD_BASE) & Upload Symlinks
 
@@ -194,6 +199,45 @@ Repositori men-track `books/upload`, `music/upload`, dan `video/upload` sebagai
 (mis. `/media/<user>/MEeL/media/books/upload`). Pada clone baru, symlink itu
 **broken** sampai Anda mengarahkannya ke `MEEL_HDD_BASE` Anda sendiri.
 
+#### Storage Cloud Drive — `MEEL_HDD_DRIVE` (tanpa symlink ter-commit)
+
+Berbeda dari books/music/video, **modul Drive tidak memakai symlink untuk
+storage**: base path-nya dibaca langsung dari `MEEL_HDD_DRIVE` (turunan
+`MEEL_HDD_BASE` di `auth/settings.php`), persis seperti Video/Music/Books yang
+membaca konstanta `MEEL_HDD_*_UPLOAD`:
+
+```php
+// auth/settings.php
+define('MEEL_HDD_DRIVE', MEEL_HDD_BASE . '/drive/'); // base = public/ + private_admins/
+```
+
+- **Mode HDD (`MEEL_HDD_DRIVE` terdefinisi):** Drive membaca/menulis file langsung
+  di bawah `<MEEL_HDD_DRIVE>/public/<type>` dan
+  `<MEEL_HDD_DRIVE>/private_admins/<username>/<type>`; kedua sub-tree dibuat
+  otomatis. File private hanya dilayani lewat endpoint ber-otorisasi
+  `drive/stream.php` / `drive/download.php` (yang membaca `MEEL_HDD_DRIVE`
+  langsung), jadi **tidak perlu** symlink untuk `private_admins`. Pratinjau
+  publik memakai path web `data_drive/public/...` — agar pratinjau di browser
+  tetap jalan di mode HDD, arahkan symlink **saat deploy** (jangan pernah
+  di-commit):
+  ```bash
+  rm -f data_drive/public && ln -s "$BASE/drive/public" data_drive/public
+  ```
+- **Mode fallback (`MEEL_HDD_DRIVE` tidak terdefinisi):** Drive memakai folder
+  ter-track `data_drive/public` & `data_drive/private_admins` (folder nyata,
+  dibuat otomatis oleh `DriveStorage::ensureDirectoryExists()`). Ini perilaku
+  bawaan pada clone baru.
+- **Jangan pernah commit symlink di dalam `data_drive/`**: `.gitignore`
+  memblokir `data_drive/public` / `data_drive/private_admins` sebagai symlink,
+  dan `tests/check_deploy.php` memberi peringatan jika keduanya symlink.
+  Symlink absolut yang ter-commit (mis. `/media/<user>/...`) membocorkan
+  username OS lewat repo publik dan membuat modul Drive crash di mesin lain
+  (`RuntimeException: Folder penyimpanan gagal dibuat`).
+- Subtree private tetap di-deny oleh `data_drive/.htaccess` yang ter-track
+  (`RewriteRule ^private_admins/ - [F,L]`) plus
+  `data_drive/private_admins/.htaccess` (`Require all denied` — ter-track di
+  folder fallback dan dibuat ulang saat deploy pada target storage eksternal).
+
 #### 1. Mount / buat storage
 
 ```bash
@@ -211,7 +255,7 @@ BASE=/media/<user>/MEeL/media   # ganti dengan path ANDA
 mkdir -p "$BASE"/video/upload/video "$BASE"/video/upload/thumbnail
 mkdir -p "$BASE"/music/upload/file   "$BASE"/music/upload/thumbnail
 mkdir -p "$BASE"/books/upload/manga  "$BASE"/books/upload/pdf "$BASE"/books/upload/thumbnail
-mkdir -p "$BASE"/drive
+mkdir -p "$BASE"/drive/public "$BASE"/drive/private_admins
 ```
 
 #### 3. Cek symlink yang ter-track

@@ -7,7 +7,7 @@ require __DIR__ . '/DriveService.php';
 $user = DriveUserContext::fromSession($_SESSION);
 $user->authorize();
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 $renderer = new DriveViewRenderer();
 $currentScope = $storage->normalizeScope($_GET['scope'] ?? DriveStorage::SCOPE_PUBLIC);
 

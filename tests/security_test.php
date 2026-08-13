@@ -300,8 +300,10 @@ function testHtaccessSecurity(): void {
         // Logs & tests
         'logs', 'tests',
         // Upload dirs (harus disable PHP)
-        // Catatan: data_drive/private_admins bukan folder nyata di repo
-        // (symlink ke storage eksternal) — deny-nya diatur di data_drive/.htaccess.
+        // Catatan: data_drive/private_admins kini folder nyata ter-track di repo
+        // (placeholder .gitkeep + .htaccess deny lapisan 2) — deny utama tetap
+        // di data_drive/.htaccess. Saat MEEL_HDD_DRIVE diset, storage pindah ke
+        // lokasi eksternal dan .htaccess deny dibuat ulang saat deploy.
         'data_drive', 'books/upload', 'music/upload', 'video/upload',
     ];
 
@@ -619,7 +621,8 @@ function testSsrfAndPrivateDrive(): void {
         }
     }
 
-    // lapisan kedua (opsional, dibuat saat deploy pada target storage):
+    // lapisan kedua (ter-track di repo saat folder nyata; dibuat saat deploy
+    // pada target storage eksternal):
     $nestedHt = PROJECT_ROOT . '/data_drive/private_admins/.htaccess';
     if (is_file($nestedHt)) {
         $nhc = (string) file_get_contents($nestedHt);

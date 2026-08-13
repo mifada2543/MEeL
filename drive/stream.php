@@ -34,7 +34,7 @@ if (session_status() === PHP_SESSION_ACTIVE) {
     session_write_close();
 }
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 
 try {
     $file = $storage->getFileForDownload(

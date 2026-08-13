@@ -3,9 +3,10 @@
 if (!function_exists('get_user_usage')) {
 function get_user_usage(string $username): int|float
 {
-    // Catatan: file ini berada di modules/core/helpers/, sehingga
-    // dibutuhkan dirname(__DIR__, 3) untuk mencapai root proyek.
-    $path = dirname(__DIR__, 3) . "/data_drive/private_admins/" . $username;
+    // Base path storage Drive di-resolve terpusat lewat meel_drive_base_path()
+    // (MEEL_HDD_DRIVE bila didefinisikan, fallback <root>/data_drive) supaya
+    // konsisten dengan DriveStorage — lihat modules/core/helpers/storage.php.
+    $path = meel_drive_base_path() . '/private_admins/' . $username;
     if (!is_dir($path)) return 0;
 
     return dir_size($path);
