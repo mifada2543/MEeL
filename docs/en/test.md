@@ -383,8 +383,11 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 
 > Numbers are from the hardening pass (August 2026). Run the suites yourself
 > to get the current state — the security checks may additionally produce
-> warnings when HDD storage (`MEEL_HDD_BASE` / upload symlinks) is not
-> mounted in a development environment.
+> warnings when HDD storage (`MEEL_HDD_BASE` / storage not mounted) is not
+> set up in a development environment. Media folders (`books/upload`,
+> `music/upload`, `video/upload`) are real tracked directories served through
+> PHP endpoints — no symlinks involved (see
+> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)).
 
 ---
 

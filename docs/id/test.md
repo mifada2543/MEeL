@@ -385,8 +385,11 @@ sebelum rilis.
 
 > Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri
 > suite tersebut untuk kondisi terkini — pemeriksaan keamanan bisa memunculkan
-> warning tambahan saat storage HDD (`MEEL_HDD_BASE` / symlink upload) belum
-> ter-mount di lingkungan pengembangan.
+> warning tambahan saat storage HDD (`MEEL_HDD_BASE` / storage belum
+> ter-mount) belum disiapkan di lingkungan pengembangan. Folder media
+> (`books/upload`, `music/upload`, `video/upload`) adalah folder nyata
+> ter-track yang disajikan lewat endpoint PHP — tanpa symlink sama sekali
+> (lihat [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
 
 ---
 

@@ -729,9 +729,29 @@ Direktori yang diproteksi:
 - `modules/` — Core business logic
 - `partials/` — UI components (include-only)
 - `admin/` — Admin panel (hanya index)
-- `books/upload/` — File buku
+- `books/upload/` — File buku (disajikan via `books/file.php` — **wajib login**, lihat catatan di bawah)
 - `music/upload/` — File musik
 - `video/upload/` — File video
+
+> **File upload tidak disajikan langsung oleh web server.** Sejak refactor
+> portabilitas, `books/upload/`, `music/upload/`, dan `video/upload/` adalah
+> folder nyata ter-track (placeholder `.gitkeep` + `.htaccess` hardening) yang
+> isinya disajikan lewat endpoint PHP yang dipetakan internal rewrite di
+> `.htaccess` root: `video/upload/...` → `video/stream.php`,
+> `music/upload/...` → `music/file.php`, `books/upload/...` → `books/file.php`
+> (lihat [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
+> Endpoint ini menerapkan proteksi path traversal, whitelist ekstensi, dan
+> dukungan HTTP Range.
+>
+> **`books/file.php` wajib login** (`auth/auth.php`), konsisten dengan seluruh
+> modul Books — `index.php`, `read.php`, `read_pdf.php`, dan
+> `controllers/api/pdf.php` semuanya login-gated. Tanpa ini, gambar manga dan
+> PDF bisa diunduh langsung tanpa autentikasi (path mentah sebelumnya dapat
+> diakses dengan `HTTP 200`). Audio musik tetap di belakang `music/stream.php`
+> (marker session + referer gate ketat); `music/file.php` dan
+> `video/stream.php` sengaja **tanpa** login gate karena halaman index/watch
+> Music & Video memang publik by design (thumbnail harus tampil untuk
+> pengunjung anonim).
 
 ### Root .htaccess
 
@@ -850,7 +870,7 @@ Cloud Drive MEeL menyimpan file private user di bawah
 `<MEEL_HDD_DRIVE>/private_admins/<username>/...` saat `MEEL_HDD_DRIVE` di-set di
 `auth/settings.php`, atau folder fallback ter-track repo
 `data_drive/private_admins/<username>/...` saat tidak (lihat
-[Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)).
+[Installation §5a](installation.md#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
 Selama subtree private dapat dijangkau dari web server (folder fallback berada di
 document root; deployment HDD bisa mengeksposnya lewat symlink saat deploy), web
 server bisa melayani file secara langsung — melewati otorisasi level aplikasi.
