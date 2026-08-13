@@ -1,15 +1,38 @@
 <?php
 // helpers/storage.php — Storage, Disk & Thumbnail Helpers
+
+/**
+ * Resolve base path folder upload modul media (video/music/books) secara
+ * terpusat — pola sama seperti meel_drive_base_path().
+ * @param string $module 'video' | 'music' | 'books'
+ * @return string Base path TANPA trailing slash
+ */
+if (!function_exists('meel_media_base_path')) {
+function meel_media_base_path(string $module): string
+{
+    $const = [
+        'video' => 'MEEL_HDD_VIDEO_UPLOAD',
+        'music' => 'MEEL_HDD_MUSIC_UPLOAD',
+        'books' => 'MEEL_HDD_BOOKS_UPLOAD',
+    ][$module] ?? null;
+    if ($const !== null && defined($const)) {
+        $v = (string) constant($const);
+        if ($v !== '') {
+            return rtrim($v, '/\\');
+        }
+    }
+    return dirname(__DIR__, 3) . '/' . $module . '/upload';
+}
+} // end function_exists('meel_media_base_path')
+
 if (!function_exists('music_thumbnail_url')) {
 function music_thumbnail_url(?string $thumbnail): string
 {
     $thumbnail = trim((string)$thumbnail);
-    $thumb_dir = __DIR__ . '/../../../music/upload/thumbnail/';
+    $thumb_dir = meel_media_base_path('music') . '/thumbnail/';
     $fallback  = '../assets/img/music0.webp';
-
     // Cache default path untuk menghindari is_file() berulang
     static $default_thumb = null;
-
     if ($thumbnail === '') {
         if ($default_thumb === null) {
             $default_thumb = is_file($thumb_dir . 'default.thumb.webp') ? 'upload/thumbnail/default.thumb.webp'
@@ -25,8 +48,6 @@ function music_thumbnail_url(?string $thumbnail): string
     }
 
     $base = preg_replace('/\\.thumb$/', '', pathinfo($thumbnail, PATHINFO_FILENAME)) ?: pathinfo($thumbnail, PATHINFO_FILENAME);
-
-    // Cari dalam urutan prioritas
     $candidates = [
         $base . '.thumb.webp',
         $base . '.webp',
@@ -253,3 +274,163 @@ function log_drive_operation(int $userId, string $username, string $operation, s
     }
 }
 } // end function_exists('log_drive_operation')
+
+/**
+ * Serve file media dari storage terpusat (MEEL_HDD_*_UPLOAD / folder lokal
+ * fallback) — pengganti symlink webroot. Dipakai oleh endpoint per modul
+ * (video/stream.php, music/stream.php, books/file.php) lewat internal
+ * rewrite di .htaccess sehingga URL publik tetap `upload/...`.
+ *
+ * Keamanan:
+ *  - Path traversal ditolak (realpath harus di dalam base dir).
+ *  - Whitelist ekstensi per tipe media.
+ *  - Range request didukung (penting untuk HLS .ts & video mp4).
+ *  - Opsional referer gate untuk HLS video (anti hotlink, pola sama dengan
+ *    .htaccess storage HDD lama: file di bawah /video/upload/video/ hanya
+ *    boleh diminta dari halaman watch/index video MEeL).
+ *
+ * @param string $module 'video' | 'music' | 'books'
+ * @param string $relPath Path relatif terhadap base dir (mis. 'video/xxx/xxx.m3u8')
+ * @param array  $opts    ['hls_gate' => bool] aktifkan referer gate untuk HLS
+ */
+if (!function_exists('meel_serve_media_file')) {
+function meel_serve_media_file(string $module, string $relPath, array $opts = []): void
+{
+    $base = meel_media_base_path($module);
+    $baseReal = realpath($base);
+    if ($baseReal === false) {
+        http_response_code(503);
+        exit('Storage tidak tersedia.');
+    }
+
+    // Normalisasi & cegah traversal
+    $relPath = str_replace('\\', '/', (string) $relPath);
+    $relPath = ltrim($relPath, '/');
+    if ($relPath === '' || str_contains($relPath, '..') || str_contains($relPath, "\0")) {
+        http_response_code(403);
+        exit('Akses ditolak.');
+    }
+
+    $full = $base . '/' . $relPath;
+    $realFull = realpath($full);
+    if ($realFull === false || !str_starts_with($realFull, $baseReal . DIRECTORY_SEPARATOR)) {
+        http_response_code(404);
+        exit('File tidak ditemukan.');
+    }
+    if (!is_file($realFull) || !is_readable($realFull)) {
+        http_response_code(404);
+        exit('File tidak ditemukan.');
+    }
+
+    // Whitelist ekstensi
+    $ext = strtolower(pathinfo($realFull, PATHINFO_EXTENSION));
+    $allowed = [
+        'm3u8', 'ts', 'vtt', 'mp4', 'webm', 'mkv',
+        'jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf',
+        'mp3', 'ogg', 'm4a', 'flac', 'wav', 'opus',
+    ];
+    if (!in_array($ext, $allowed, true)) {
+        http_response_code(403);
+        exit('Tipe file tidak diizinkan.');
+    }
+
+    $mimeMap = [
+        'm3u8' => 'application/vnd.apple.mpegurl', 'ts' => 'video/mp2t',
+        'vtt'  => 'text/vtt', 'mp4' => 'video/mp4', 'webm' => 'video/webm',
+        'mkv'  => 'video/x-matroska', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+        'png'  => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif',
+        'pdf'  => 'application/pdf', 'mp3' => 'audio/mpeg', 'ogg' => 'audio/ogg',
+        'm4a'  => 'audio/mp4', 'flac' => 'audio/flac', 'wav' => 'audio/wav',
+        'opus' => 'audio/ogg',
+    ];
+    $mime = $mimeMap[$ext] ?? 'application/octet-stream';
+
+    // Referer gate untuk HLS video (anti hotlink / anti unduh langsung)
+    // Pola sama dengan .htaccess storage HDD lama: hanya path di bawah
+    // <base>/video/ yang diproteksi; thumbnail tetap bebas.
+    // (path HLS diawali `video/...`, tanpa slash depan)
+    if (!empty($opts['hls_gate']) && (str_starts_with($relPath, 'video/') || str_contains($relPath, '/video/'))) {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $host    = $_SERVER['HTTP_HOST'] ?? '';
+        $refOk   = false;
+        if ($referer !== '' && $host !== '') {
+            $parts = parse_url($referer);
+            $hostNorm = strtolower(parse_url('http://' . $host, PHP_URL_HOST) ?: $host);
+            if ($parts && isset($parts['host']) && strtolower($parts['host']) === $hostNorm) {
+                $refPath = $parts['path'] ?? '';
+                if (str_contains($refPath, '/video/') && preg_match('#/video/(watch|index)\.php#i', $refPath)) {
+                    $refOk = true;
+                }
+            }
+        }
+        if (!$refOk) {
+            // Portabel: redirect ke halaman denied di root proyek. Endpoint
+            // berada di <root>/{video,music,books}/{stream,file}.php, jadi
+            // base URL proyek = dirname(SCRIPT_NAME, 2).
+            $script = $_SERVER['SCRIPT_NAME'] ?? '';
+            $basePath = rtrim(dirname(dirname($script)), '/');
+            header('Location: ' . $basePath . '/err/denied.php');
+            exit;
+        }
+    }
+
+    $size = (int) @filesize($realFull);
+    $start = 0;
+    $end   = $size - 1;
+    $range = $_SERVER['HTTP_RANGE'] ?? '';
+    $isPartial = false;
+    if ($range !== '' && preg_match('/bytes=(\d*)-(\d*)/', $range, $m)) {
+        $rStart = $m[1] !== '' ? (int) $m[1] : null;
+        $rEnd   = $m[2] !== '' ? (int) $m[2] : null;
+        if ($rStart === null && $rEnd === null) {
+            $rStart = 0;
+        }
+        if ($rStart !== null) {
+            $start = max(0, $rStart);
+            $end   = ($rEnd !== null && $rEnd < $size) ? $rEnd : ($size - 1);
+            if ($start > $end) {
+                header('HTTP/1.1 416 Requested Range Not Satisfiable');
+                header('Content-Range: bytes */' . $size);
+                exit;
+            }
+            $isPartial = true;
+        } elseif ($rEnd !== null) {
+            // suffix range: bytes=-N → N byte terakhir
+            $start = max(0, $size - $rEnd);
+            $end   = $size - 1;
+            $isPartial = true;
+        }
+    }
+
+    header('Content-Type: ' . $mime);
+    header('X-Content-Type-Options: nosniff');
+    header('Accept-Ranges: bytes');
+    header('Content-Length: ' . ($end - $start + 1));
+    if ($isPartial) {
+        header('HTTP/1.1 206 Partial Content');
+        header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
+    }
+
+    set_time_limit(0);
+    ignore_user_abort(false);
+
+    $fp = @fopen($realFull, 'rb');
+    if ($fp === false) {
+        http_response_code(500);
+        exit('Gagal membuka file.');
+    }
+    if ($start > 0) {
+        fseek($fp, $start);
+    }
+    $remaining = $end - $start + 1;
+    while ($remaining > 0 && !feof($fp)) {
+        $chunk = fread($fp, min(8192, $remaining));
+        if ($chunk === false) break;
+        echo $chunk;
+        $remaining -= strlen($chunk);
+        flush();
+    }
+    fclose($fp);
+    exit;
+}
+} // end function_exists('meel_serve_media_file')

@@ -20,10 +20,9 @@ if (!$book || $book['type'] !== 'pdf') {
     header("Location: index.php");
     exit();
 }
+$pdf_path   = meel_media_base_path('books') . '/pdf/' . basename($book['path_folder']);
 
-// ─── RAW MODE: Serve PDF langsung untuk <iframe> ───
 if (isset($_GET['raw']) && $_GET['raw'] === '1') {
-    $pdf_path = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
     if (!file_exists($pdf_path) || !is_readable($pdf_path)) {
         http_response_code(404);
         die('File not found');
@@ -41,7 +40,6 @@ if (isset($_GET['raw']) && $_GET['raw'] === '1') {
 }
 
 // ─── Ambil ukuran file ───
-$pdf_path   = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
 $pdf_size   = is_file($pdf_path) ? filesize($pdf_path) : 0;
 $pdf_size_f = $pdf_size > 1048576
     ? number_format($pdf_size / 1048576, 1) . ' MB'
@@ -51,19 +49,21 @@ $title = htmlspecialchars($book['title']);
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-<?php
-$_META_TITLE = 'MEeL PDF | ' . $title;
-$_META_DESC  = 'MEeL - Baca PDF: ' . $title;
-include __DIR__ . '/../partials/link.php';
-$scripts_root = '../';
-include __DIR__ . '/../partials/scripts.php';
-?>
+    <?php
+    $_META_TITLE = 'MEeL PDF | ' . $title;
+    $_META_DESC  = 'MEeL - Baca PDF: ' . $title;
+    include __DIR__ . '/../partials/link.php';
+    $scripts_root = '../';
+    include __DIR__ . '/../partials/scripts.php';
+    ?>
     <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
-    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+        <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/books/read-pdf/main.css">
 </head>
+
 <body>
     <div class="pdf-wrap">
         <!-- Navigation bar -->
@@ -87,10 +87,6 @@ include __DIR__ . '/../partials/scripts.php';
                 </a>
             </div>
         </div>
-
-        <!-- PDF content: MEeL branding + auto-redirect ke api/pdf.php -->
-        <!-- Untuk mobile: redirect langsung ke api/pdf.php (work di semua browser) -->
-        <!-- Untuk desktop: read.php menggunakan ?raw=1 via iframe -->
         <div class="pdf-body" id="pdfBody">
             <div class="pdf-redirect-card" id="redirectCard">
                 <div class="pdf-redirect-icon">
@@ -107,8 +103,8 @@ include __DIR__ . '/../partials/scripts.php';
 
                 <!-- Tombol akses langsung (jika redirect tidak jalan) -->
                 <a href="../controllers/api/pdf.php?id=<?= $id ?>"
-                   target="_blank" rel="noopener"
-                   class="btn" id="directBtn">
+                    target="_blank" rel="noopener"
+                    class="btn" id="directBtn">
                     <i data-lucide="external-link" class="w-4 h-4"></i>
                     Buka PDF
                 </a>
@@ -117,31 +113,28 @@ include __DIR__ . '/../partials/scripts.php';
     </div>
 
     <script>
-    /**
-     * PDF Redirector — gateway mobile: redirect ke api/pdf.php.
-     * Top-level navigation mengirim cookie session (iframe/embed mobile tidak).
-     */
-    (function() {
-        var loader = document.getElementById('redirectLoader');
-        var directBtn = document.getElementById('directBtn');
-        var _redirected = false;
-
-        // Redirect ke api/pdf.php setelah 1.8 detik
-        // Top-level navigation → cookie session terkirim!
-        setTimeout(function() {
-            _redirected = true;
-            window.location.href = '../controllers/api/pdf.php?id=<?= $id ?>';
-        }, 1800);
-
-        // Backup: jika redirect gagal/tidak terjadi (5 detik), munculkan tombol
-        setTimeout(function() {
-            if (_redirected) return; // sudah redirect, skip
-            if (loader) loader.style.display = 'none';
-            if (directBtn) directBtn.style.display = 'inline-flex';
-        }, 5000);
-    })();
+        /**
+         * PDF Redirector — gateway mobile: redirect ke api/pdf.php.
+         * Top-level navigation mengirim cookie session (iframe/embed mobile tidak).
+         */
+        (function() {
+            var loader = document.getElementById('redirectLoader');
+            var directBtn = document.getElementById('directBtn');
+            var _redirected = false;
+            setTimeout(function() {
+                _redirected = true;
+                window.location.href = '../controllers/api/pdf.php?id=<?= $id ?>';
+            }, 1800);
+            setTimeout(function() {
+                if (_redirected) return;
+                if (loader) loader.style.display = 'none';
+                if (directBtn) directBtn.style.display = 'inline-flex';
+            }, 5000);
+        })();
     </script>
-    <script>lucide.createIcons();
-</script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
+
 </html>

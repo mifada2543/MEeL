@@ -25,7 +25,7 @@ foreach (array_slice($argv, 1) as $a) {
     } elseif ($a === '--help' || $a === '-h') {
         fwrite(STDOUT, <<<HELP
 MEeL Deployment Health Check
-  Verifikasi: MEEL_HDD_BASE, upload symlinks, .htaccess upload dirs, mod_rewrite.
+  Verifikasi: MEEL_HDD_BASE, upload dirs (folder nyata / symlink deploy), .htaccess upload dirs, mod_rewrite.
 
 Contoh:
   php tests/check_deploy.php
@@ -149,8 +149,12 @@ if ($hdd === '') {
     }
 }
 
-// 2. Upload Symlinks (books / music / video)
-section('2. Upload Symlinks (books / music / video)');
+// 2. Upload dirs (books / music / video)
+// Sejak refactor portabilitas, books/music/video/upload adalah folder NYATA
+// ter-track di repo (placeholder .gitkeep + .htaccess hardening) — storage
+// fallback bawaan. Saat MEEL_HDD_BASE digunakan, symlink dibuat SAAT deploy
+// (jangan pernah di-commit; .gitignore memblokir).
+section('2. Upload dirs (books / music / video)');
 
 foreach (['books', 'music', 'video'] as $m) {
     $path  = MEEL_ROOT . "/{$m}/upload";
@@ -172,7 +176,12 @@ foreach (['books', 'music', 'video'] as $m) {
             report('PASS', $label, "→ {$target}");
         }
     } elseif (is_dir($path)) {
-        report('WARN', $label, 'folder nyata (bukan symlink) — berfungsi, tapi tidak sinkron dengan storage terpusat');
+        // Folder nyata ter-track = fallback bawaan repo (valid). Kalau
+        // MEEL_HDD_BASE diset, sebaiknya arahkan symlink saat deploy.
+        $hint = $hdd !== ''
+            ? 'folder nyata (fallback) — untuk storage terpusat buat symlink saat deploy: ln -s ' . rtrim($hdd, '/') . "/{$m}/upload " . $path
+            : 'folder nyata (fallback ter-track repo) — storage lokal OK';
+        report('WARN', $label, $hint);
     } else {
         $hintTarget = $hdd !== '' ? rtrim($hdd, '/') . "/{$m}/upload" : '<MEEL_HDD_BASE>';
         report('FAIL', $label, 'tidak ada — buat symlink: ln -s ' . $hintTarget . " " . $path);

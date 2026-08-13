@@ -72,17 +72,22 @@ class System
         $ssd_used  = $ssd_total - $ssd_free;
         $ssd_perc  = ($ssd_total > 0) ? ($ssd_used / $ssd_total) * 100 : 0;
 
-        $hdd_path  = $project_root . '/video/upload';
+        // Semua base path storage di-resolve terpusat (MEEL_HDD_*_UPLOAD /
+        // MEEL_HDD_DRIVE, fallback folder lokal) supaya konsisten dengan
+        // meel_media_base_path() / meel_drive_base_path() — bukan folder
+        // webroot yang kosong.
+        $video_base = meel_media_base_path('video');
+        $music_base = meel_media_base_path('music');
+        $books_base = meel_media_base_path('books');
+        $drive_base = meel_drive_base_path();
+
+        $hdd_path  = $video_base;
         $hdd_free  = @disk_free_space($hdd_path) / (1024 ** 3);
         $hdd_total = @disk_total_space($hdd_path) / (1024 ** 3);
 
-        // Base path Drive di-resolve terpusat (MEEL_HDD_DRIVE, fallback
-        // <root>/data_drive) supaya konsisten dengan DriveStorage.
-        $drive_base = meel_drive_base_path();
-
-        $sz_vid   = self::getFolderSizeSys($project_root . '/video/upload') / (1024 ** 3);
-        $sz_mus   = self::getFolderSizeSys($project_root . '/music/upload') / (1024 ** 3);
-        $sz_book  = self::getFolderSizeSys($project_root . '/books/upload') / (1024 ** 3);
+        $sz_vid   = self::getFolderSizeSys($video_base) / (1024 ** 3);
+        $sz_mus   = self::getFolderSizeSys($music_base) / (1024 ** 3);
+        $sz_book  = self::getFolderSizeSys($books_base) / (1024 ** 3);
         $sz_d_pub = self::getFolderSizeSys($drive_base . '/public') / (1024 ** 3);
         $sz_d_prv = self::getFolderSizeSys($drive_base . '/private_admins') / (1024 ** 3);
 

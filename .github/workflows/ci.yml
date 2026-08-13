@@ -249,14 +249,6 @@ jobs:
           echo "✅ Permission check complete."
 
   # ─── Job 6: Deployment Check ───
-  # Menjalankan tests/check_deploy.php — verifikasi lingkungan deployment
-  # (MEEL_HDD_BASE, upload symlinks, .htaccess hardening, PWA mod_rewrite,
-  # dan validating forward proxy SSRF). Di runner, storage lokal (book/music/
-  # video upload) disimulasikan ke $RUNNER_TEMP karena symlink yang ter-track
-  # di repo menunjuk ke path /media yang tidak ada. data_drive/public &
-  # data_drive/private_admins kini folder nyata ter-track (bukan symlink) dan
-  # modul Drive membaca storage langsung dari MEEL_HDD_DRIVE.
-  # Argumen --hdd meniru MEEL_HDD_BASE (lihat check_deploy.php --help).
   deploy-check:
     name: Deployment Check
     runs-on: ubuntu-latest
@@ -284,19 +276,19 @@ jobs:
         run: |
           # check_deploy memverifikasi MEEL_HDD_BASE, upload symlinks dan
           # .htaccess upload dirs. Runner tidak punya /media storage, jadi kita
-          # buat layout tiruan yang valid di $RUNNER_TEMP lalu arahkan symlink
-          # upload ke sana (check_deploy memeriksa target symlink).
+          # buat layout tiruan yang valid di $RUNNER_TEMP lalu arahkan upload
+          # dir ke sana (check_deploy memeriksa target symlink).
           #
-          # Asumsi: books/music/video/upload adalah symlink yang ter-track git
-          # (mode 120000) menuju /media/... yang TIDAK ada di runner — rm -f
-          # menghapus symlink-nya saja (bukan target), lalu ln -s membuat
-          # symlink baru ke storage temp.
+          # Sejak refactor portabilitas: books/music/video/upload adalah folder
+          # NYATA ter-track di repo (placeholder .gitkeep/.htaccess), bukan
+          # symlink. Di sini folder-nya di-remove lalu diganti symlink ke
+          # storage temp — mensimulasikan layout deploy produksi (symlink dibuat
+          # saat deploy, TIDAK pernah di-commit).
           #
-          # Catatan: data_drive/public & data_drive/private_admins TIDAK lagi
-          # symlink ter-track — keduanya folder nyata di repo (placeholder
-          # .gitkeep/.htaccess deny ter-track). Modul Drive membaca storage
-          # langsung dari MEEL_HDD_DRIVE (disimulasikan lewat --hdd), jadi
-          # tidak ada symlink yang perlu diarahkan ke temp untuk Drive.
+          # data_drive/public & data_drive/private_admins juga folder nyata
+          # ter-track — modul Drive membaca storage langsung dari
+          # MEEL_HDD_DRIVE (disimulasikan lewat --hdd), jadi tidak ada symlink
+          # yang perlu diarahkan ke temp untuk Drive.
           HDD="$RUNNER_TEMP/meel_storage/media"
           mkdir -p "$HDD/video/upload/video" "$HDD/video/upload/thumbnail" \
                    "$HDD/music/upload" "$HDD/books/upload" \
@@ -305,8 +297,8 @@ jobs:
           # .htaccess hardening untuk tiap upload dir (pola sama dengan deploy)
           for m in video music books; do
             cp "${{ github.workspace }}/data_drive/.htaccess" "$HDD/$m/upload/.htaccess" 2>/dev/null || true
-            # Upload dir di repo adalah symlink → arahkan ke storage temp
-            rm -f "${{ github.workspace }}/$m/upload"
+            # Upload dir di repo adalah folder nyata → ganti dengan symlink ke storage temp
+            rm -rf "${{ github.workspace }}/$m/upload"
             ln -s "$HDD/$m/upload" "${{ github.workspace }}/$m/upload"
           done
 
@@ -324,10 +316,6 @@ jobs:
           fi
 
       - name: Verify Private Drive 403 (staging)
-        # Optional: hanya berjalan bila STAGING_URL tersedia sebagai secret.
-        # Memastikan web server sungguhan menolak akses langsung ke
-        # data_drive/private_admins/ (lihat docs/en/test.md). secrets context
-        # tersedia langsung di if — empty secret = step di-skip.
         if: secrets.STAGING_URL != ''
         run: |
           code=$(curl -s -o /dev/null -w '%{http_code}' \
@@ -337,12 +325,6 @@ jobs:
           STAGING_URL: ${{ secrets.STAGING_URL }}
 
   # ─── Job 6b: Drive Storage Integrity — tolak symlink di data_drive/ ───
-  # data_drive/public & data_drive/private_admins harus folder NYATA di repo
-  # (placeholder .gitkeep/.htaccess deny ter-track). Symlink ter-track yang
-  # menunjuk ke path absolut development (/media/<username>/...) membocorkan
-  # username OS lewat repo publik dan membuat modul Drive crash di mesin lain
-  # (RuntimeException: Folder penyimpanan gagal dibuat). Job ini menolak PR
-  # bila ada symlink apa pun di dalam data_drive/.
   drive-storage-check:
     name: Drive Storage Integrity
     runs-on: ubuntu-latest

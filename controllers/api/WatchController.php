@@ -110,20 +110,19 @@ class VideoWatchController extends AbstractWatchController
     {
         $this->requireMedia();
         $v = $this->mediaData;
-
         $video_src = 'upload/' . $v['filename'];
         $is_hls    = (pathinfo($video_src, PATHINFO_EXTENSION) === 'm3u8');
         $video_dir = dirname($video_src);
-        $vtt_src   = file_exists($video_dir . '/thumbnails.vtt')
+        $fs_dir    = meel_media_base_path('video') . '/' . dirname($v['filename']);
+        $vtt_src   = is_file($fs_dir . '/thumbnails.vtt')
             ? $video_dir . '/thumbnails.vtt'
             : '';
 
         // ─── Subtitle: deteksi semua file .vtt di folder video ───
         $subtitles = [];
-        foreach (glob($video_dir . '/*.vtt') ?: [] as $sub_file) {
+        foreach (glob($fs_dir . '/*.vtt') ?: [] as $sub_file) {
             $sub_base = basename($sub_file);
             if ($sub_base === 'thumbnails.vtt') continue;
-
             // Ekstrak kode bahasa dari pola {folder}.{lang}.vtt
             $lang = 'und';
             if (preg_match('/\.([a-z]{2,3}(?:-[a-z]{2,8})?)\.vtt$/i', $sub_base, $m)) {
@@ -136,8 +135,6 @@ class VideoWatchController extends AbstractWatchController
                 'label' => subtitle_lang_label($lang),
             ];
         }
-
-        // Urutkan: 'id' (default) di depan, lalu alfabetis
         usort($subtitles, function ($a, $b) {
             if ($a['lang'] === 'id') return -1;
             if ($b['lang'] === 'id') return 1;
@@ -219,7 +216,7 @@ class MusicWatchController extends AbstractWatchController
 
         $preloadVal       = ($ext === 'flac') ? 'none' : 'metadata';
         $file_size_bytes  = !empty($v['filename'])
-            ? (@filesize(__DIR__ . '/../../music/upload/file/' . $v['filename']) ?: 0)
+            ? (@filesize(meel_media_base_path('music') . '/file/' . $v['filename']) ?: 0)
             : 0;
 
         return array_merge($this->baseViewData($v, $rekom), [
