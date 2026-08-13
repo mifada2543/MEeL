@@ -18,9 +18,10 @@ class GarbageCollectorChessRoomsIntegrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->dbHelper = new DbTestHelper();
         $this->conn = $this->dbHelper->getConnection();
+        $this->conn->query('DELETE FROM moves');
+        $this->conn->query('DELETE FROM rooms');
 
         $this->throttleFile = MEEL_ROOT . '/temp/gc_chess_last_run.txt';
 
