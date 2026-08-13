@@ -258,6 +258,10 @@ jobs:
       fail-fast: false
       matrix:
         php-version: ['8.2']
+    env:
+      # secrets TIDAK tersedia di step-level if: → expose di env job-level
+      # lalu baca lewat env.STAGING_URL (kosong bila secret belum diset)
+      STAGING_URL: ${{ secrets.STAGING_URL }}
 
     steps:
       - name: Checkout
@@ -316,13 +320,11 @@ jobs:
           fi
 
       - name: Verify Private Drive 403 (staging)
-        if: secrets.STAGING_URL != ''
+        if: env.STAGING_URL != ''
         run: |
           code=$(curl -s -o /dev/null -w '%{http_code}' \
             "$STAGING_URL/data_drive/private_admins/" || true)
           [ "$code" = "403" ] || { echo "Expected 403, got $code"; exit 1; }
-        env:
-          STAGING_URL: ${{ secrets.STAGING_URL }}
 
   # ─── Job 6b: Drive Storage Integrity — tolak symlink di data_drive/ ───
   drive-storage-check:
