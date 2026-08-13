@@ -290,7 +290,7 @@ CI pipeline berjalan otomatis pada push/pull request:
 PHP Syntax (8.1, 8.2, 8.3)
     ├── Functional Tests          → php tests/functional_test.php
     ├── Security Tests            → php tests/security_test.php
-    ├── PHPUnit Unit Tests        → php vendor/bin/phpunit --no-coverage
+    ├── PHPUnit Unit Tests        → php vendor/bin/phpunit --no-coverage --testsuite='MEeL Core Unit Tests'
     ├── HTACCESS & Integrity      → kehadiran .htaccess + permission
     └── Deployment Check         → php tests/check_deploy.php --no-color --hdd=…
             └── CI Summary
@@ -300,11 +300,25 @@ PHP Syntax (8.1, 8.2, 8.3)
 
 Ketiga kelas test keamanan (`SsrfGuardTest`, `DriveSecurityTest`,
 `ValidatingProxyTest`) berada di `tests/unit/`, yang otomatis diambil oleh job
-`phpunit-tests` (`php vendor/bin/phpunit --no-coverage`). Tidak perlu
-konfigurasi CI tambahan — mereka bagian dari testsuite **MEeL Core Unit
-Tests**. Kasus yang bergantung DNS berjalan sungguhan karena runner GitHub
-Actions punya resolver; `ValidatingProxyTest` lulus karena runner punya PHP
-CLI dengan pcntl/stream sockets.
+`phpunit-tests` (`php vendor/bin/phpunit --no-coverage
+--testsuite='MEeL Core Unit Tests'`). Tidak perlu konfigurasi CI tambahan —
+mereka bagian dari testsuite **MEeL Core Unit Tests**. Kasus yang bergantung
+DNS berjalan sungguhan karena runner GitHub Actions punya resolver;
+`ValidatingProxyTest` lulus karena runner punya PHP CLI dengan
+pcntl/stream sockets.
+
+> **CI hanya menjalankan suite unit.** Suite `tests/integration/` butuh
+> database MySQL nyata dengan data seed (`DbTestHelper` terkoneksi ke
+> `localhost` dengan ID user/media hardcoded) yang tidak tersedia di runner
+> CI — menjalankannya di sana menghasilkan 70+ error koneksi `mysqli`.
+> Jalankan secara lokal:
+> `vendor/bin/phpunit --testsuite='MEeL Integration Tests'`.
+>
+> Test Jepang/romaji (`JapaneseTest`, sebagian `HelpersTest`) memanggil
+> **MeCab** via `proc_open`. CI meng-install-nya (`apt-get install mecab
+> mecab-ipadic-utf8`), dan saat MeCab tidak tersedia test terkait menurun ke
+> `markTestSkipped()` via `meel_mecab_available()` — jadi mesin tanpa mecab
+> tetap mendapat suite hijau, bukan failure.
 
 Pemeriksaan **statis wiring** untuk boundary yang sama dijalankan oleh job
 `security-tests` (TEST 13 di `tests/security_test.php`) dan job
@@ -385,8 +399,11 @@ sebelum rilis.
 
 > Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri
 > suite tersebut untuk kondisi terkini — pemeriksaan keamanan bisa memunculkan
-> warning tambahan saat storage HDD (`MEEL_HDD_BASE` / symlink upload) belum
-> ter-mount di lingkungan pengembangan.
+> warning tambahan saat storage HDD (`MEEL_HDD_BASE` / storage belum
+> ter-mount) belum disiapkan di lingkungan pengembangan. Folder media
+> (`books/upload`, `music/upload`, `video/upload`) adalah folder nyata
+> ter-track yang disajikan lewat endpoint PHP — tanpa symlink sama sekali
+> (lihat [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
 
 ---
 

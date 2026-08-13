@@ -5,9 +5,12 @@
     <!-- THUMBNAIL -->
     <div class="aspect-video bg-black relative overflow-hidden">
         <?php
-        $thumb_path = "upload/thumbnail/" . $v['thumbnail'];
-        $thumb_src  = (file_exists($thumb_path) && !empty($v['thumbnail']))
-            ? $thumb_path
+        // Cek keberadaan thumbnail di base path terpusat (MEEL_HDD_VIDEO_UPLOAD
+        // atau folder fallback), bukan folder webroot kosong.
+        $thumb_name = $v['thumbnail'] ?? '';
+        $thumb_ok   = $thumb_name !== '' && is_file(meel_media_base_path('video') . '/thumbnail/' . basename($thumb_name));
+        $thumb_src  = $thumb_ok
+            ? 'upload/thumbnail/' . rawurlencode($thumb_name)
             : '../assets/img/video0.webp';
         ?>
         <img src="<?= $thumb_src ?>"

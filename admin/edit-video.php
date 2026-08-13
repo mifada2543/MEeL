@@ -76,7 +76,7 @@ if (isset($_POST['update'])) {
                 }
             }
             if (empty($error_message)) {
-                $target_dir = __DIR__ . '/../video/upload/thumbnail/';
+                $target_dir = meel_media_base_path('video') . '/thumbnail/';
                 if (!is_dir($target_dir)) {
                     @mkdir($target_dir, 0755, true);
                 }
@@ -120,9 +120,9 @@ if (isset($_POST['update'])) {
                     }
                     $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
 
-                    // Lokasi folder HLS video di storage
+                    // Lokasi folder HLS video di storage terpusat
                     $hls_folder = basename(dirname($video['filename']));
-                    $sub_dir    = __DIR__ . '/../video/upload/video/' . $hls_folder . '/';
+                    $sub_dir    = meel_media_base_path('video') . '/video/' . $hls_folder . '/';
                     if (is_dir($sub_dir)) {
                         $sub_target = $sub_dir . $hls_folder . '.' . $sub_lang . '.vtt';
                         if (@file_put_contents($sub_target, $sub_content, LOCK_EX) !== false) {
@@ -158,7 +158,7 @@ if (isset($_POST['update'])) {
         }
         // ─── ROLLBACK THUMBNAIL ───
         if ($error_message !== '' && $thumbnail_url !== $video['thumbnail']) {
-            $orphan_thumb = __DIR__ . '/../video/upload/thumbnail/' . basename($thumbnail_url);
+            $orphan_thumb = meel_media_base_path('video') . '/thumbnail/' . basename($thumbnail_url);
             if (is_file($orphan_thumb)) {
                 @unlink($orphan_thumb);
             }
@@ -172,7 +172,7 @@ if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== 
     } else {
         $del_lang   = sanitize_subtitle_lang($_POST['delete_subtitle_lang'], 'und');
         $hls_folder = basename(dirname($video['filename']));
-        $del_path   = __DIR__ . '/../video/upload/video/' . $hls_folder . '/' . $hls_folder . '.' . $del_lang . '.vtt';
+        $del_path   = meel_media_base_path('video') . '/video/' . $hls_folder . '/' . $hls_folder . '.' . $del_lang . '.vtt';
         if (file_exists($del_path)) {
             if (@unlink($del_path)) {
                 $status = "success";
@@ -188,7 +188,7 @@ if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== 
 // ─── DAFTAR SUBTITLE EXISTING format {folder}.{lang}.vtt. ───
 $existing_subtitles = [];
 $hls_folder_dir    = basename(dirname($video['filename']));
-$sub_scan_dir      = __DIR__ . '/../video/upload/video/' . $hls_folder_dir . '/';
+$sub_scan_dir      = meel_media_base_path('video') . '/video/' . $hls_folder_dir . '/';
 if (is_dir($sub_scan_dir)) {
     foreach (glob($sub_scan_dir . '*.vtt') ?: [] as $sf) {
         $sbase = basename($sf);

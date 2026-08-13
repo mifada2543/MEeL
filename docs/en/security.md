@@ -495,10 +495,30 @@ if ($detectedType === 'audio') { /* MP3: 0xFFFB, FLAC: 0x664C6143 */ }
 - `tests/` — Test scripts (CLI only)
 - `controllers/` — API endpoints
 - `logs/` — System logs
-- `books/upload/` — Book files
+- `books/upload/` — Book files (served via `books/file.php` — **login required**, see note below)
 - `music/upload/` — Music files
 - `video/upload/` — Video files
 - `data_drive/private_admins/` — Private Drive files (denied for direct HTTP access, see [Private Drive Protection](#private-drive-protection))
+
+> **Media uploads are not served directly by the web server.** Since the
+> portability refactor, `books/upload/`, `music/upload/`, and `video/upload/`
+> are real tracked directories (placeholder `.gitkeep` + hardened `.htaccess`)
+> whose contents are served through PHP endpoints mapped by an internal rewrite
+> in the root `.htaccess`: `video/upload/...` → `video/stream.php`,
+> `music/upload/...` → `music/file.php`, `books/upload/...` → `books/file.php`
+> (see [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)).
+> These endpoints enforce path-traversal protection, an extension whitelist,
+> and HTTP Range support.
+>
+> **`books/file.php` requires login** (`auth/auth.php`), consistent with the rest
+> of the Books module — `index.php`, `read.php`, `read_pdf.php`, and
+> `controllers/api/pdf.php` are all login-gated. Without this, manga images and
+> PDFs could be downloaded directly without authentication (the raw paths were
+> reachable with `HTTP 200` before the fix). Music audio stays behind
+> `music/stream.php` (session marker + strict referer gate); `music/file.php`
+> and `video/stream.php` intentionally have **no** login gate because the
+> Music/Video index & watch pages are public by design (thumbnails must render
+> for anonymous visitors).
 
 ---
 
@@ -607,7 +627,7 @@ MEeL's Cloud Drive stores private user files under
 `<MEEL_HDD_DRIVE>/private_admins/<username>/...` when `MEEL_HDD_DRIVE` is set in
 `auth/settings.php`, or the repo-tracked fallback folder
 `data_drive/private_admins/<username>/...` when it is not (see
-[Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)).
+[Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)).
 Whenever the private subtree is reachable from the web server (the fallback
 folder lives in the document root; HDD deployments may expose it via a
 deploy-time symlink), the web server could serve files directly — bypassing

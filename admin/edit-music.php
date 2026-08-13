@@ -82,7 +82,7 @@ if (isset($_POST['update'])) {
                 }
             }
             if (empty($error_message)) {
-                $target_dir = __DIR__ . '/../music/upload/thumbnail/';
+                $target_dir = meel_media_base_path('music') . '/thumbnail/';
                 if (!is_dir($target_dir)) {
                     @mkdir($target_dir, 0755, true);
                 }

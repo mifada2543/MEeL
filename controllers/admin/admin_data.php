@@ -117,10 +117,18 @@ if (!function_exists('__admin_scan_files')) {
 
 $ignored_files = ['.htaccess', 'default_video.png', 'music_default.png', 'default_cover.jpg'];
 
-$base_dir = realpath(__DIR__ . '/../..') . '/';
+$base_dirs = [
+    'video/upload/video/'       => meel_media_base_path('video') . '/video/',
+    'music/upload/file/'        => meel_media_base_path('music') . '/file/',
+    'video/upload/thumbnail/'   => meel_media_base_path('video') . '/thumbnail/',
+    'music/upload/thumbnail/'   => meel_media_base_path('music') . '/thumbnail/',
+    'books/upload/manga/'       => meel_media_base_path('books') . '/manga/',
+    'books/upload/pdf/'         => meel_media_base_path('books') . '/pdf/',
+    'books/upload/thumbnail/'   => meel_media_base_path('books') . '/thumbnail/',
+];
 
 foreach ($check_map as $rel_path => $table) {
-    $abs_path  = $base_dir . $rel_path;
+    $abs_path  = $base_dirs[$rel_path];
     $all_files = __admin_scan_files($abs_path);
 
     foreach ($all_files as $full_path) {

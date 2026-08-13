@@ -299,7 +299,7 @@ $timeout = 43200; // 12 hours in seconds
 
 > ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them and
 > `tests/check_deploy.php` warns. See
-> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--upload-symlinks)
+> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)
 > for the Drive storage layout (`MEEL_HDD_DRIVE` vs the `data_drive/` fallback).
 
 ### ❌ "Disk full" error

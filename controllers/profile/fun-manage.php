@@ -28,8 +28,8 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         'files'     => []
     ];
 
-    // File video (HLS folder atau file mp4 langsung)
-    $video_base = __DIR__ . '/../../video/upload/video/';
+    // File video (HLS folder atau file mp4 langsung) — di storage terpusat
+    $video_base = meel_media_base_path('video') . '/video/';
     $video_file = $video['filename'];
     $video_path = $video_base . $video_file;
     if (file_exists($video_path)) {
@@ -43,7 +43,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
     }
 
     if (!empty($video['thumbnail'])) {
-        $thumb_path = __DIR__ . '/../../video/upload/thumbnail/' . $video['thumbnail'];
+        $thumb_path = meel_media_base_path('video') . '/thumbnail/' . $video['thumbnail'];
         if (file_exists($thumb_path)) {
             $pending['files'][] = $thumb_path;
         }
@@ -91,13 +91,13 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
         'files'     => []
     ];
 
-    $audio_path = __DIR__ . '/../../music/upload/file/' . $music['filename'];
+    $audio_path = meel_media_base_path('music') . '/file/' . $music['filename'];
     if (file_exists($audio_path)) {
         $pending['files'][] = $audio_path;
     }
 
     if (!empty($music['thumbnail'])) {
-        $thumb_path = __DIR__ . '/../../music/upload/thumbnail/' . $music['thumbnail'];
+        $thumb_path = meel_media_base_path('music') . '/thumbnail/' . $music['thumbnail'];
         if (file_exists($thumb_path)) {
             $pending['files'][] = $thumb_path;
         }

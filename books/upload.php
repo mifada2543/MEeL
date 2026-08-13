@@ -22,7 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = 'CSRF Token tidak valid.';
     } else {
-    $uploader = new BookUploader($conn, __DIR__);
+    $books_base = dirname(meel_media_base_path('books'));
+    $uploader = new BookUploader($conn, $books_base);
     $result   = $uploader->handleUpload(
         array_merge($_POST, ['user_id' => $user_id]),
         $_FILES

@@ -3,10 +3,6 @@
 # ==========================================
 
 # ─── SENSITIVE CONFIGURATION ───────────────────────────
-# Database credentials and local configuration
-# auth/settings.php berisi DATA kredensial & path storage PRODUKSI yang nyata
-# (bukan template). Wajib di-ignore agar kredensial tidak pernah ter-commit
-# tanpa sengaja. Template yang aman untuk tetap di-track: auth/settings.example.php
 auth/settings.php
 auth/local.config.php
 .env
@@ -14,23 +10,19 @@ auth/local.config.php
 .env.*.local
 
 # ─── UPLOADED MEDIA & USER FILES ───────────────────────
-# User-generated content - these are large and should not be in repo
+music/upload
+!music/upload/
 music/upload/*
+video/upload
+!video/upload/
 video/upload/*
+books/upload
+!books/upload/
 books/upload/*
 profile/upload/*
 temp/*
 .agents
 # ─── DATA_DRIVE (Cloud Drive storage) ───────────────────
-# data_drive/public & data_drive/private_admins adalah FOLDER NYATA di repo
-# (placeholder .gitkeep/.htaccess) — isinya (file upload user) di-ignore.
-#
-# Aturan eksplisit di bawah sekaligus memblokir SYMLINK apa pun dengan nama
-# data_drive/public / data_drive/private_admins agar tidak pernah ter-commit
-# lagi (sebelumnya pernah ter-commit symlink absolut /media/<username>/...
-# yang mem-bocorkan username OS dan mem-buat modul Drive crash di mesin lain).
-# Jangan pernah membuat symlink manual di folder ini — set MEEL_HDD_DRIVE di
-# auth/settings.php untuk storage eksternal.
 data_drive/public
 !data_drive/public/
 data_drive/public/*
@@ -40,8 +32,8 @@ data_drive/private_admins
 data_drive/private_admins/*
 !**/data_drive/private_admins/.gitkeep
 !**/data_drive/private_admins/.htaccess
-# Keep .gitkeep files to maintain directory structure
 !**/upload/.gitkeep
+!**/upload/.htaccess
 !profile/upload/default_avatar.png
 !**/temp/.gitkeep
 !**/temp/.htaccess
@@ -116,8 +108,6 @@ $RECYCLE.BIN/
 *.user
 
 # ─── DEPENDENCY MANAGEMENT ────────────────────────────
-# Composer — vendor/ is ignored (installed at deploy), but composer.lock
-# MUST be tracked for reproducible CI builds across environments.
 vendor/
 composer.phar
 
@@ -180,15 +170,3 @@ __pycache__/
 *.pem
 *.key
 *.pub
-
-# ==========================================
-# IMPORTANT: Files to KEEP in Repository
-# ==========================================
-# The following are kept and should be committed:
-# ✓ All source code (.php files)
-# ✓ auth/ directory (except config.php)
-# ✓ assets/ - CSS, JS, images
-# ✓ partials/ - UI components
-# ✓ README.md & Documentation
-# ✓ .htaccess (if needed for routing, or exclude if contains secrets)
-# ✓ Directory structure with .gitkeep files

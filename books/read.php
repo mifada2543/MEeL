@@ -30,12 +30,12 @@ if ($current_chapter === '..') {
 }
 
 $book_id = (int)$book['id'];
-
-// ─── Hitung total halaman (manga mode) ───
+$fs_base    = meel_media_base_path('books');
 $total_pages = 0;
 if ($book['type'] !== 'pdf') {
     $ch_base = "upload/manga/" . $book['path_folder'];
-    $target_path = $ch_base;
+    $ch_fs   = $fs_base . '/manga/' . $book['path_folder'];
+    $target_path = $ch_fs;
 
     if ($book['has_chapters'] == 1 && !empty($current_chapter)) {
         $target_path .= '/' . $current_chapter;
@@ -218,9 +218,10 @@ function _scanSubdirs(string $dir): array {
             <div class="py-0 space-y-0" id="manga-container">
                 <?php
                 $ch_base   = "upload/manga/" . $book['path_folder'];
+                $ch_fs     = $fs_base . '/manga/' . $book['path_folder'];
 
                 if ($book['has_chapters'] == 1):
-                    $chapters = _scanSubdirs($ch_base);
+                    $chapters = _scanSubdirs($ch_fs);
                     natsort($chapters);
                     $ch_list = array_values(array_map('basename', $chapters));
                     $current_idx = array_search($current_chapter, $ch_list);
@@ -283,8 +284,8 @@ function _scanSubdirs(string $dir): array {
                     </div>
                 <?php endif; ?>
                 <?php
-                // ─── Tentukan path gambar ───
-                $target_path = $ch_base;
+                // ─── Tentukan path gambar (filesystem di storage terpusat) ───
+                $target_path = $ch_fs;
 
                 if ($book['has_chapters'] == 1) {
                     if (empty($current_chapter)) {
@@ -320,7 +321,9 @@ function _scanSubdirs(string $dir): array {
                         $page_num = 0;
                         foreach ($images as $img):
                             $page_num++;
-                            $safe_src = htmlspecialchars($img);
+                            // Konversi path filesystem → URL publik (upload/...)
+                            $url_img  = 'upload' . substr($img, strlen($fs_base));
+                            $safe_src = htmlspecialchars($url_img);
                             $is_first = ($img === reset($images));
                         ?>
                             <?php if ($is_first): ?>

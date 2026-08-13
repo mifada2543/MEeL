@@ -59,19 +59,12 @@ if (!$v || empty($v['filename'])) {
     exit("Data audio tidak ditemukan.");
 }
 
-$filePath = __DIR__ . '/upload/file/' . basename($v['filename']);
+// Resolve file di storage terpusat (MEEL_HDD_MUSIC_UPLOAD / folder fallback)
+$filePath = meel_media_base_path('music') . '/file/' . basename($v['filename']);
 
-if (!file_exists($filePath)) {
-    // Fallback: coba HDD path langsung jika symlink tidak tersedia
-    $altPath = defined('MEEL_HDD_MUSIC_UPLOAD')
-        ? rtrim(MEEL_HDD_MUSIC_UPLOAD, '/') . '/file/' . basename($v['filename'])
-        : null;
-    if ($altPath && file_exists($altPath)) {
-        $filePath = $altPath;
-    } else {
-        header("HTTP/1.1 404 Not Found");
-        exit("File fisik tidak tersedia di server.");
-    }
+if (!file_exists($filePath) || !is_readable($filePath)) {
+    header("HTTP/1.1 404 Not Found");
+    exit("File fisik tidak tersedia di server.");
 }
 
 // 3. Tentukan MIME Type yang sesuai secara dinamis

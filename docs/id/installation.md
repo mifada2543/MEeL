@@ -164,16 +164,18 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
 
 > 💡 Jika `www-data` tidak berfungsi, coba `daemon` atau `nobody`.
-> ⚠️ `books/upload`, `music/upload`, `video/upload` adalah **symlink git** yang
-> menunjuk ke HDD storage — cek & perbaiki SEBELUM membuat sub-direktori di
-> bawahnya (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+> ⚠️ `books/upload`, `music/upload`, `video/upload` adalah **folder nyata** yang
+> ter-track di repo (placeholder `.gitkeep` + `.htaccess` hardening) — **BUKAN
+> symlink**. Isinya (file upload) di-ignore; file media disimpan di bawah
+> `MEEL_HDD_BASE` dan disajikan lewat endpoint PHP (lihat
+> [5a. Media Storage](#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
 > ℹ️ `data_drive/public` dan `data_drive/private_admins` adalah **folder nyata**
 > yang ter-track di repo (bukan symlink) — keduanya storage bawaan (fallback)
 > modul Drive dan dibuat/dipakai otomatis. Untuk storage Drive di HDD eksternal,
 > set `MEEL_HDD_DRIVE` di `auth/settings.php` (lihat di bawah). **Jangan pernah
 > commit symlink di dalam `data_drive/`** — `.gitignore` memblokirnya.
 
-### 5a. Media Storage (MEEL_HDD_BASE) & Upload Symlinks
+### 5a. Media Storage (MEEL_HDD_BASE) — Endpoint PHP + Rewrite (tanpa symlink)
 
 Semua path media terpusat di `auth/settings.php` — ubah **satu baris** dan
 seluruh sistem mengikuti:
@@ -192,19 +194,48 @@ define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 //   MEEL_HDD_DRIVE        = MEEL_HDD_BASE . '/drive/'
 ```
 
-#### Cara kerja symlink upload
+#### Cara file media disajikan (tanpa perlu symlink)
 
 Repositori men-track `books/upload`, `music/upload`, dan `video/upload` sebagai
-**symlink** (mode git `120000`) yang menunjuk ke path HDD *pemilik sebelumnya*
-(mis. `/media/<user>/MEeL/media/books/upload`). Pada clone baru, symlink itu
-**broken** sampai Anda mengarahkannya ke `MEEL_HDD_BASE` Anda sendiri.
+**folder nyata** (placeholder `.gitkeep` + `.htaccess` hardening) — storage
+fallback bawaan. **Tidak ada symlink yang di-commit atau diperlukan.** File
+media disimpan di bawah `MEEL_HDD_BASE` (via konstanta turunan
+`MEEL_HDD_*_UPLOAD`) dan disajikan lewat **endpoint PHP** yang dipetakan oleh
+**internal rewrite** di `.htaccess` root:
 
-#### Storage Cloud Drive — `MEEL_HDD_DRIVE` (tanpa symlink ter-commit)
+```apache
+RewriteRule ^video/upload/(.+)$ video/stream.php?f=$1 [L,QSA,B]
+RewriteRule ^music/upload/(.+)$ music/file.php?f=$1 [L,QSA,B]
+RewriteRule ^books/upload/(.+)$ books/file.php?f=$1 [L,QSA,B]
+```
 
-Berbeda dari books/music/video, **modul Drive tidak memakai symlink untuk
-storage**: base path-nya dibaca langsung dari `MEEL_HDD_DRIVE` (turunan
-`MEEL_HDD_BASE` di `auth/settings.php`), persis seperti Video/Music/Books yang
-membaca konstanta `MEEL_HDD_*_UPLOAD`:
+URL di browser tetap `.../upload/...` (jadi segmen HLS relatif seperti `.ts`
+tetap resolve dengan benar), tetapi Apache secara internal meneruskan request
+ke endpoint, yang me-resolve file asli via `meel_media_base_path()`. Flag `B`
+meng-escape backreference sehingga nama file yang mengandung spasi atau
+karakter khusus (mis. `I'm My Own Girlfriend - ch 1-30 001 page 00.jpg`)
+tetap lolos rewrite tanpa merusak query string:
+
+- `MEEL_HDD_*_UPLOAD` terdefinisi → file dibaca dari path HDD;
+- tidak terdefinisi → file dibaca dari folder fallback repo
+  `<root>/{module}/upload`.
+
+Endpoint menerapkan proteksi path traversal, whitelist ekstensi, dukungan
+Range (206 — diperlukan untuk HLS `.ts` dan video besar), serta referer gate
+untuk HLS video (anti-hotlink). Pemutaran audio memakai `music/stream.php?id=...`
+(otorisasi session + referer gate ketat; akselerasi X-Sendfile opsional —
+lihat [mod_xsendfile](#aktifkan-mod_xsendfile-opsional--untuk-akselerasi-streaming)).
+
+`.gitignore` secara eksplisit **memblokir commit symlink** dengan nama folder
+ini (sebelumnya pernah ter-commit symlink absolut `/media/<user>/...` yang
+membocorkan username OS dan broken di mesin lain).
+
+#### Storage Cloud Drive — `MEEL_HDD_DRIVE`
+
+**Modul Drive memakai pola konstanta yang sama**: base path-nya dibaca langsung
+dari `MEEL_HDD_DRIVE` (turunan `MEEL_HDD_BASE` di `auth/settings.php`), persis
+seperti Video/Music/Books yang membaca konstanta `MEEL_HDD_*_UPLOAD` — tanpa
+symlink di mana pun:
 
 ```php
 // auth/settings.php
@@ -258,29 +289,26 @@ mkdir -p "$BASE"/books/upload/manga  "$BASE"/books/upload/pdf "$BASE"/books/uplo
 mkdir -p "$BASE"/drive/public "$BASE"/drive/private_admins
 ```
 
-#### 3. Cek symlink yang ter-track
+#### 3. Tidak ada symlink yang perlu dibuat
 
-```bash
-ls -la books/upload music/upload video/upload
-readlink books/upload
-```
-
-**Gejala symlink broken** (storage tidak ter-mount atau path berubah):
-
-```
-books/upload: broken symbolic link to /media/[devuser]/MEeL/media/books/upload
-```
-
-#### 4. Buat ulang symlink ke path Anda
+Folder upload books/music/video adalah folder nyata di repo — **tidak ada yang
+perlu di-symlink**. Opsional: jika ingin Apache menyajikan file langsung
+(melewati PHP) demi performa, Anda boleh mengarahkan folder ke storage HDD
+**saat deploy** — tetapi jangan pernah commit symlink-nya (`.gitignore`
+memblokir):
 
 ```bash
 cd /opt/lampp/htdocs/MEeL
 for d in books music video; do
-    rm -f "$d/upload"
+    rm -rf "$d/upload"
     ln -s "$BASE/$d/upload" "$d/upload"
 done
 ls -la books/upload music/upload video/upload   # harus menunjuk ke BASE Anda
 ```
+
+`tests/check_deploy.php` menerima symlink saat deploy yang menunjuk ke
+`MEEL_HDD_BASE` (PASS) dan memperingatkan bila menunjuk ke tempat lain — tetapi
+layout bawaan (folder nyata + endpoint PHP) sama sekali tidak butuh symlink.
 
 #### 5. Perizinan
 
@@ -304,7 +332,7 @@ php tests/security_test.php
 > Ia bisa mengeluarkan **5 warning non-kritis** (review query mentah MediaViewer,
 > cek MIME profile_edit, dan deteksi parameter session) — itu item review,
 > bukan masalah deployment. Untuk verifikasi level storage gunakan
-> `tests/check_deploy.php` (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+> `tests/check_deploy.php` (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
 
 #### 7. Verifikasi storage
 
@@ -317,8 +345,9 @@ php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_BASE') ? MEEL_HDD_BA
 #### 8. Cek deployment otomatis (satu perintah)
 
 Project menyertakan health-check CLI yang memverifikasi empat area kritis
-deployment dalam satu kali jalan — `MEEL_HDD_BASE`, symlink upload, hardening
-`.htaccess` folder upload, dan aturan `mod_rewrite` PWA:
+deployment dalam satu kali jalan — `MEEL_HDD_BASE`, folder upload (folder nyata atau
+symlink saat deploy), hardening `.htaccess` folder upload, dan aturan
+`mod_rewrite` PWA:
 
 ```bash
 php tests/check_deploy.php                           # cek lokal + probe HTTP otomatis
@@ -329,9 +358,10 @@ php tests/check_deploy.php --no-color                # tanpa warna ANSI (untuk C
 
 Setiap item dilaporkan sebagai `PASS` / `WARN` / `FAIL` beserta ringkasan; exit
 code `0` saat sehat dan `1` saat ada minimal satu FAIL (ramah CI). Jika storage
-belum ter-mount, script melaporkan FAIL pada area storage / symlink / `.htaccess`
-upload — mount storage, perbaiki symlink, tambahkan file `.htaccess`, lalu
-jalankan ulang sampai muncul `✅ Deployment sehat.`
+belum ter-mount, script melaporkan FAIL pada area storage / folder upload /
+`.htaccess` upload — mount storage, set `MEEL_HDD_BASE`, pastikan folder
+upload punya `.htaccess`, lalu jalankan ulang sampai muncul
+`✅ Deployment sehat.`
 
 ### 6. Konfigurasi Apache
 
@@ -409,9 +439,20 @@ membiarkan Apache mengirim file langsung dari disk tanpa melalui PHP.
 
    <IfModule xsendfile_module>
        XSendFile on
-       XSendFilePath "/opt/lampp/htdocs/MEeL/music/upload/file"
+       # File media kini dibaca langsung dari storage terpusat (MEEL_HDD_BASE),
+       # bukan dari folder webroot — whitelist path HDD-nya:
+       XSendFilePath "/media/<user>/MEeL/media"
+       XSendFilePath "/opt/lampp/htdocs/MEeL/data_drive"
    </IfModule>
    ```
+
+   > ⚠️ `XSendFilePath` harus mencakup path tempat file media sebenarnya berada
+   > (nilai `MEEL_HDD_BASE` di `auth/settings.php`). Sejak refactor portabilitas,
+   > `music/upload` dkk adalah folder nyata di repo (bukan symlink), jadi path
+   > webroot lama seperti `/opt/lampp/htdocs/MEeL/music/upload/file` BUKAN lagi
+   > lokasi file — hanya path HDD yang benar. Jika `XSendFilePath` tidak
+   > mencakup storage, Apache mengembalikan 404 "Object not found" saat streaming
+   > (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
 
 5. Restart Apache:
    ```bash
@@ -525,21 +566,29 @@ cp /path/to/cookies.txt /opt/lampp/htdocs/MEeL/cookies.txt
   define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
   ```
 - Sesuaikan dengan mount point Anda: `df -h` untuk cek mount point
-- Pastikan storage ter-mount dan symlink upload valid:
+- Pastikan storage ter-mount dan endpoint media me-resolve-nya:
   ```bash
-  readlink books/upload music/upload video/upload
-  ls -ld books/upload music/upload video/upload   # jangan ada "broken symbolic link"
+  php -r "require 'auth/settings.php'; require 'modules/core/helpers.php'; echo meel_media_base_path('video');"
+  # Output harus path storage Anda, mis. /media/<user>/MEeL/media/video/upload
   ```
+- Folder upload (`books/upload`, `music/upload`, `video/upload`) adalah folder
+  nyata ter-track di repo (tanpa perlu symlink). Media disajikan lewat endpoint
+  PHP (`video/stream.php`, `music/file.php`, `books/file.php`) yang dipetakan
+  rewrite `.htaccess` — lihat
+  [5a. Media Storage](#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink).
 - Atau nonaktifkan sementara untuk development
 
 ### ❌ Deployment Check melaporkan FAIL pada folder upload
 
-- **Gejala:** `php tests/check_deploy.php` → `FAIL` pada symlink upload /
-  `.htaccess` folder upload (storage tidak ter-mount atau symlink broken).
-- **Penyebab:** storage HDD (`MEEL_HDD_BASE`) tidak ter-mount, atau symlink
-  upload yang ter-track masih menunjuk ke path pemilik sebelumnya setelah cloning.
-- **Perbaikan:** mount storage, buat ulang symlink, dan pastikan setiap folder
-  upload punya `.htaccess` (lihat [5a. Media Storage](#5a-media-storage-meel_hdd_base--upload-symlinks)).
+- **Gejala:** `php tests/check_deploy.php` → `FAIL` pada folder upload /
+  `.htaccess` folder upload (storage tidak ter-mount atau `MEEL_HDD_BASE` salah).
+- **Penyebab:** storage HDD (`MEEL_HDD_BASE`) tidak ter-mount / salah di
+  `auth/settings.php`. Folder upload adalah folder nyata di repo — tidak ada
+  symlink yang perlu diperbaiki. Symlink saat deploy yang menunjuk ke target
+  salah juga memicu peringatan.
+- **Perbaikan:** mount storage, set `MEEL_HDD_BASE` dengan benar, dan pastikan
+  setiap folder upload punya `.htaccess` (lihat
+  [5a. Media Storage](#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)).
   Jalankan ulang `php tests/check_deploy.php` sampai muncul `✅ Deployment sehat.`
 
 ### ❌ "403 Forbidden" pada halaman

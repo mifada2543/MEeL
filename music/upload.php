@@ -30,7 +30,8 @@ if (isset($_POST['upload'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF token tidak valid.';
     } else {
-        $result = $uploader->processMusic($_POST, $_FILES, __DIR__ . "/");
+        $music_base = dirname(meel_media_base_path('music')) . '/';
+        $result = $uploader->processMusic($_POST, $_FILES, $music_base);
 
         if ($result['status'] === 'success') {
             $status = "success";

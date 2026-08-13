@@ -913,7 +913,7 @@ class Transcoder
         putenv("LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/lib");
         putenv("PATH=/usr/local/bin:/usr/bin:/bin");
 
-        $music_dir = "{$this->base_path}/music/upload/file";
+        $music_dir = meel_media_base_path('music') . '/file';
         if (!is_dir($music_dir)) {
             $this->ensureDir($music_dir);
         }
@@ -1030,7 +1030,7 @@ class Transcoder
         string $temp_base,
         string $target_name
     ): string {
-        $thumb_dir = "{$this->base_path}/music/upload/thumbnail";
+        $thumb_dir = meel_media_base_path('music') . '/thumbnail';
         if (!is_dir($thumb_dir)) {
             $this->ensureDir($thumb_dir);
         }

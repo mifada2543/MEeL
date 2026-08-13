@@ -20,7 +20,7 @@ if (!$book || $book['type'] !== 'pdf') {
 
 // ─── Tentukan path fisik file PDF ───
 $file_name = basename($book['path_folder']);
-$file_path = __DIR__ . '/../../books/upload/pdf/' . $file_name;
+$file_path = meel_media_base_path('books') . '/pdf/' . $file_name;
 
 if (!file_exists($file_path) || !is_readable($file_path)) {
     http_response_code(404);
