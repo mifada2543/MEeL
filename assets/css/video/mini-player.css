@@ -1,8 +1,12 @@
 /* mini-player.css — Mini player shell, info, responsive */
 #mini-player-shell {
   position: fixed !important;
-  bottom: 24px !important;
-  right: 24px !important;
+  /* bottom/right TANPA !important: inline `bottom:auto`/`right:auto`
+     (dipasang saat drag/snap/clamp) harus bisa mengalahkannya. Kalau
+     keduanya !important, shell position:fixed dengan top+bottom terisi
+     akan TEREGANG mengisi viewport (height = vh - top - bottom). */
+  bottom: 24px;
+  right: 24px;
   width: 360px !important;
   z-index: 9999 !important;
   border-radius: 12px !important;
@@ -11,10 +15,50 @@
   box-shadow:
     0 20px 50px rgba(0, 0, 0, 0.85),
     0 0 0 1px rgba(255, 255, 255, 0.07) !important;
+  /* Transform TIDAK punya transisi dasar: transform hanya diubah saat
+     drag (.mini-dragging → transition:none) dan saat settle snap
+     (.mini-snapping → transisi sendiri !important). Kalau transform ikut
+     punya transisi dasar, reset transform:none saat commit posisi akan
+     DIANIMASIKAN → shell meluncur balik ke posisi base (bug slide-back). */
+  transition: box-shadow 0.3s;
+  cursor: grab !important;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#mini-player-shell.mini-dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+  will-change: transform;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}
+/* Gesture sentuh di area video mini-player dipakai untuk drag, bukan scroll */
+.mini-player-mode .plyr__video-wrapper,
+.mini-player-mode .plyr__video-wrapper video {
+  touch-action: none;
+}
+#mini-player-shell.mini-dragging * {
+  cursor: grabbing !important;
+}
+#mini-player-shell.mini-snapping {
+  /* "Settle" saat lepas drag dianimasikan via transform (GPU-composited),
+     bukan left/top (layout) — halus walau di perangkat rendah.
+     Hanya skala yang menyusut; posisi tetap di tempat dilepas. */
   transition:
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.3s !important;
-  cursor: default !important;
+}
+/* Kontrol Plyr disembunyikan selama drag agar tidak berkedip */
+#mini-player-shell.mini-dragging .plyr__controls {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+/* Batas tinggi video di mini-player agar shell tidak melebihi layar
+   (video potret/9:16). Video dirender contain (letterbox hitam). */
+.mini-player-mode .plyr__video-wrapper {
+  max-height: 60vh;
 }
 #mini-player-shell:hover {
   box-shadow:
@@ -105,12 +149,11 @@
     background 0.15s,
     transform 0.15s;
   z-index: 20;
-  pointer-events: none;
+  pointer-events: auto;
 }
 #mini-player-shell:hover #mini-close-btn,
 #mini-player-shell:hover #mini-expand-btn {
   opacity: 1;
-  pointer-events: auto;
 }
 #mini-expand-btn {
   left: 8px;
@@ -133,6 +176,29 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
+}
+#mini-mute-btn {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 50%;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.15s;
+}
+#mini-mute-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f87171;
+  transform: scale(1.08);
 }
 #mini-player-info:hover #mini-info-title {
   color: #f87171;
@@ -167,8 +233,8 @@
 @media (max-width: 640px) {
   #mini-player-shell {
     width: 280px !important;
-    right: 12px !important;
-    bottom: 16px !important;
+    right: 12px;
+    bottom: 16px;
     border-radius: 10px !important;
   }
   #mini-player-shell #mini-close-btn,
@@ -193,13 +259,17 @@
   #mini-player-shell #mini-info-uploader {
     font-size: 9px;
   }
+  #mini-player-shell #mini-mute-btn {
+    width: 24px;
+    height: 24px;
+  }
 }
 /* ─── Responsive: 480px ─── */
 @media (max-width: 480px) {
   #mini-player-shell {
     width: 240px !important;
-    right: 8px !important;
-    bottom: 12px !important;
+    right: 8px;
+    bottom: 12px;
     border-radius: 8px !important;
   }
   #mini-player-shell #mini-close-btn,
@@ -226,5 +296,9 @@
   #mini-player-shell #mini-info-uploader {
     font-size: 8px;
     margin-top: 1px;
+  }
+  #mini-player-shell #mini-mute-btn {
+    width: 22px;
+    height: 22px;
   }
 }
