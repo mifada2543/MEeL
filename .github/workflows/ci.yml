@@ -366,8 +366,11 @@ jobs:
           # MEEL_HDD_DRIVE (disimulasikan lewat --hdd), jadi tidak ada symlink
           # yang perlu diarahkan ke temp untuk Drive.
           HDD="$RUNNER_TEMP/meel_storage/media"
+          # check_deploy menganggap subdirektori non-auto-create (music/books)
+          # sebagai FAIL jika hilang — buat struktur lengkap seperti install.sh.
           mkdir -p "$HDD/video/upload/video" "$HDD/video/upload/thumbnail" \
-                   "$HDD/music/upload" "$HDD/books/upload" \
+                   "$HDD/music/upload/file" "$HDD/music/upload/thumbnail" \
+                   "$HDD/books/upload/pdf" "$HDD/books/upload/thumbnail" \
                    "$HDD/drive/private_admins"
 
           # .htaccess hardening untuk tiap upload dir (pola sama dengan deploy)
