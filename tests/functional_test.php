@@ -1,4 +1,12 @@
 <?php
+/**
+ * MEeL Functional Test Suite — Struktur & Lingkungan.
+ *
+ * Verifikasi keamanan statis (CSRF, SQL injection, shell escape, .htaccess,
+ * SSRF, hardening Uploader/Transcoder, patch keamanan, dll.) telah
+ * dikonsolidasikan ke tests/security_test.php — suite ini fokus pada syntax,
+ * struktur, dan kesehatan lingkungan runtime.
+ */
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'assets/dict', 'data_drive']);
 define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
@@ -47,72 +55,9 @@ function testPhpSyntax(): void {
     }
 }
 
-// TEST 2: FILE INTEGRITY — Semua file kritis ada
-function testFileIntegrity(): void {
-    print_header('TEST 2: File Integrity — Critical Files');
-
-    $critical = [
-        // Config & Auth
-        '.htaccess', 'index.php', 'auth/config.php', 'auth/auth.php',
-        'auth/login.php', 'auth/logout.php', 'auth/register.php', 'auth/auth_helpers.php',
-        // Modules
-        'modules/core/helpers.php', 'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
-        'modules/core/activity_logger.php', 'modules/core/System.php',
-        'modules/core/Uploader.php', 'modules/core/Transcoder.php', 'modules/core/SsrfGuard.php',
-        'modules/core/ValidatingProxy.php', 'modules/core/validating_proxy_server.php',
-        'modules/core/japanese.php',
-        'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
-        'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php',
-        // Controllers
-        'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
-        'controllers/api/like.php', 'controllers/profile/profile_edit.php',
-        'controllers/api/delete_comment.php', 'controllers/api/download_transcode.php',
-        'controllers/system/UpdateManager.php', 'controllers/api/post_encode.php',
-        // Admin
-        'admin/index.php', 'admin/catur.php', 'admin/cookies.php',
-        'admin/edit-video.php', 'admin/edit-music.php',
-        // Media Pages
-        'video/index.php', 'video/upload.php', 'video/watch.php',
-        'music/index.php', 'music/upload.php', 'music/watch.php',
-        'music/stream.php', 'music/playlist_action.php', 'music/view_playlist.php',
-        'books/index.php', 'books/upload.php', 'books/read.php',
-        'drive/index.php', 'drive/upload.php', 'drive/download.php', 'drive/delete.php', 'drive/stream.php',
-        // Htaccess
-        'auth/.htaccess', 'admin/.htaccess', 'logs/.htaccess',
-        'data_drive/.htaccess', 'video/.htaccess', 'music/.htaccess',
-        'books/.htaccess', 'drive/.htaccess',
-        'err/.htaccess', 'profile/.htaccess',
-        // Partials
-        'partials/navbar.php', 'partials/footer.php', 'partials/nav.php', 'partials/ui.php',
-        // Pages
-        'introduction.php', 'update.php', 'transcode.php', 'upload_advanced.php',
-    ];
-
-    $missing = [];
-    $found = 0;
-    foreach ($critical as $f) {
-        $path = PROJECT_ROOT . '/' . $f;
-        if (file_exists($path)) {
-            $found++;
-        } else {
-            $missing[] = $f;
-        }
-    }
-
-    record("Memeriksa " . count($critical) . " file kritis...", true, false, "{$found} ditemukan, " . count($missing) . " hilang");
-
-    if (empty($missing)) {
-        record("Semua " . count($critical) . " file kritis tersedia ✓", true);
-    } else {
-        foreach ($missing as $f) {
-            record("File hilang: {$f}", false, false, "Tambahkan file ini untuk mengembalikan fungsionalitas");
-        }
-    }
-}
-
-// TEST 3: CLASS LOADING — Semua class bisa di-load
+// TEST 2: CLASS LOADING — Semua class bisa di-load
 function testClassLoading(): void {
-    print_header('TEST 3: Class Loading — Instantiation Check');
+    print_header('TEST 2: Class Loading — Instantiation Check');
 
     $classes = [
         'Uploader'           => 'modules/core/Uploader.php',
@@ -157,9 +102,9 @@ function testClassLoading(): void {
     }
 }
 
-// TEST 4: FUNCTION EXISTENCE — Semua fungsi kunci ada
+// TEST 3: FUNCTION EXISTENCE — Semua fungsi kunci ada
 function testFunctionExistence(): void {
-    print_header('TEST 4: Function Existence — Helper Functions');
+    print_header('TEST 3: Function Existence — Helper Functions');
 
     $functions = [
 
@@ -210,318 +155,9 @@ function testFunctionExistence(): void {
     }
 }
 
-// TEST 5A: SECURITY FIXES — Magic Bytes Validation
-function testSecurityMagicBytes(): void {
-    print_header('TEST 5A: Security Fix — Magic Bytes Validation');
-
-    $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
-    if (!file_exists($uploaderFile)) {
-        record("Uploader.php tidak ditemukan", false, false);
-        return;
-    }
-    $content = file_get_contents($uploaderFile);
-
-    $checks = [
-        'Method validateVideoMagicBytes ada'          => '/function validateVideoMagicBytes/',
-        'Cek MP4: ftyp di offset 4'                   => '/substr.*4.*ftyp/',
-        'Cek WebM/MKV: EBML header \\x1A\\x45\\xDF\\xA3' => '/1A.*45.*DF.*A3|x1A.*x45.*xDF.*xA3/',
-        'Ukuran minimal 12 byte'                      => '/filesize.*< 12/',
-        'Dipanggil di processVideo()'                 => '/validateVideoMagicBytes/',
-    ];
-
-    foreach ($checks as $name => $pattern) {
-        if (preg_match($pattern, $content)) {
-            record("{$name} ✓", true);
-        } else {
-            record("{$name} ✗", false, false, "Pattern {$pattern} tidak ditemukan di Uploader.php");
-        }
-    }
-}
-
-// TEST 5B: SECURITY FIXES — CSRF Protection
-function testSecurityCsrf(): void {
-    print_header('TEST 5B: Security Fix — CSRF Protection');
-
-    $csrf_files = [
-        'admin/catur.php'     => ['verify_csrf_token', 'csrf_token'],
-        'admin/index.php'     => ['csrf_token'],
-        'books/upload.php'    => ['verify_csrf_token', 'csrf_token'],
-        'controllers/api/WatchController.php' => ['verify_csrf_token'],
-        'controllers/api/like.php' => ['verify_csrf_token'],
-        'controllers/profile/profile_edit.php' => ['verify_csrf_token', 'csrf_token'],
-        'music/playlist_action.php' => ['verify_csrf_token'],
-        'music/view_playlist.php'   => ['csrf_token'],
-        'music/watch.php'     => ['csrf_token'],
-        'transcode.php'       => ['verify_csrf_token', 'csrf_token'],
-        'update.php'          => ['csrf_token'],
-        'video/watch.php'     => ['csrf_token'],
-        'drive/upload.php'    => ['verify_csrf_token'],
-        'drive/download.php'  => ['verify_csrf_token', 'csrf_token'],
-        'drive/stream.php'    => ['verify_csrf_token', 'csrf_token'],
-        'drive/delete.php'    => ['verify_csrf_token'],
-        'video/upload.php'    => ['verify_csrf_token', 'csrf_token'],
-        'music/upload.php'    => ['verify_csrf_token', 'csrf_token'],
-        'admin/edit-video.php'=> ['verify_csrf_token', 'csrf_token'],
-        'admin/edit-music.php'=> ['verify_csrf_token', 'csrf_token'],
-        'admin/cookies.php'   => ['verify_csrf_token', 'csrf_token'],
-    ];
-
-    foreach ($csrf_files as $file => $patterns) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record("{$file} — tidak ditemukan", true, true);
-            continue;
-        }
-        $content = file_get_contents($full);
-        $allFound = true;
-        foreach ($patterns as $pat) {
-            if (strpos($content, $pat) === false) {
-                $allFound = false;
-                record("{$file} — MISSING: {$pat}", false, false, "Tambahkan {$pat} di file ini");
-            }
-        }
-        if ($allFound) {
-            record("{$file} — semua CSRF pattern ada ✓", true);
-        }
-    }
-}
-
-// TEST 5C: SECURITY FIXES — Prepared Statements
-function testSecurityPreparedStmts(): void {
-    print_header('TEST 5C: Security Fix — Prepared Statements');
-
-    $critical_sql_files = [
-        'music/view_playlist.php',
-        'music/playlist_action.php',
-        'controllers/profile/profile_edit.php',
-    ];
-
-    foreach ($critical_sql_files as $file) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record("{$file} — tidak ditemukan", true, true);
-            continue;
-        }
-        $content = file_get_contents($full);
-
-        $hasPrepare = (strpos($content, '->prepare(') !== false);
-        $hasBind   = (strpos($content, '->bind_param') !== false);
-
-        if ($hasPrepare || $hasBind) {
-            record("{$file} — menggunakan prepared statements ✓", true);
-        } else {
-            // Cek apakah file ini memang punya SQL query
-            $hasQuery = (strpos($content, '->query(') !== false);
-            $hasSQL   = (strpos($content, 'SELECT ') !== false || strpos($content, 'INSERT ') !== false || strpos($content, 'UPDATE ') !== false || strpos($content, 'DELETE ') !== false);
-            if ($hasQuery && $hasSQL) {
-                record("{$file} — memiliki SQL query tapi TANPA prepared statement", false, false, "Gunakan ->prepare() + ->bind_param()");
-            } else {
-                record("{$file} — tidak memiliki SQL query langsung (didelegasikan) ⚠", true, true);
-            }
-        }
-    }
-
-    // Files that delegate SQL operations to other classes
-    $delegation_map = [
-        'music/search_music.php' => ['modules/media/MediaLibrary.php'], // SearchEngine → MediaLibrary (SQL actual source)
-        'video/index.php' => ['modules/media/MediaLibrary.php'],
-        'controllers/api/delete_comment.php' => ['modules/media/MediaInteraction.php'],
-        'drive/DriveService.php' => [], // file-based storage, no SQL needed
-    ];
-
-    foreach ($delegation_map as $file => $delegated_files) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record("{$file} — tidak ditemukan", true, true);
-            continue;
-        }
-
-        if (empty($delegated_files)) {
-            // Pure file-based storage (no SQL at all)
-            record("{$file} — penyimpanan berbasis file (tanpa SQL) ✓", true);
-            continue;
-        }
-
-        foreach ($delegated_files as $df) {
-            $dfFull = PROJECT_ROOT . '/' . $df;
-            if (!file_exists($dfFull)) {
-                record("{$file} → {$df} — file tidak ditemukan", false, false);
-                continue;
-            }
-
-            $dfContent = file_get_contents($dfFull);
-            $dfHasPrepare = (strpos($dfContent, '->prepare(') !== false);
-            $dfHasBind   = (strpos($dfContent, '->bind_param') !== false);
-
-            if ($dfHasPrepare || $dfHasBind) {
-                record("{$file} (SQL didelegasikan ke {$df} — prepared statements OK) ✓", true);
-            } else {
-                record("{$file} → {$df} — TANPA prepared statement", false, false);
-            }
-        }
-    }
-}
-
-// TEST 5D: SECURITY FIXES — basename() untuk Path Traversal
-function testSecurityBasename(): void {
-    print_header('TEST 5D: Security Fix — basename() Path Traversal');
-
-    $checks = [
-        'music/stream.php'      => 'basename(',
-        'drive/download.php'    => 'basename(',
-        'drive/stream.php'      => 'basename(',
-        'drive/delete.php'      => 'basename(',
-    ];
-
-    foreach ($checks as $file => $pattern) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record("{$file} — tidak ditemukan", true, true);
-            continue;
-        }
-        $content = file_get_contents($full);
-        if (strpos($content, $pattern) !== false) {
-            record("{$file} — path traversal protection OK ✓", true);
-        } else {
-            record("{$file} — TIDAK memiliki basename()", false, false, "Tambahkan basename() untuk proteksi path traversal");
-        }
-    }
-}
-
-function testSecurityShellEscape(): void {
-    print_header('TEST 5E: Security Fix — escapeshellarg() Shell Safety');
-
-    $files = [
-        'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
-        'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers/storage.php' => ['shell_exec'], // dir_size() — dipecah dari helpers.php
-        'modules/core/System.php'       => ['shell_exec'],
-        'modules/core/japanese.php'     => ['proc_open'],
-    ];
-
-    foreach ($files as $file => $funcs) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record("{$file} — tidak ditemukan", true, true);
-            continue;
-        }
-        $content = file_get_contents($full);
-        $escCount = countInFile($full, '/escapeshellarg\\s*\\(/');
-        $execCount = 0;
-        foreach ($funcs as $fn) {
-            $execCount += countInFile($full, '/' . preg_quote($fn, '/') . '\\s*\\(/');
-        }
-        if ($execCount === 0) {
-            record("{$file} — tidak ada shell execution ✓", true);
-        } elseif ($escCount >= $execCount) {
-            record("{$file} — {$execCount} shell exec, semua pakai escapeshellarg() ✓", true);
-        } else {
-            record("{$file} — {$execCount} shell exec, {$escCount} escapeshellarg()", false, false, "Beberapa shell exec tanpa escapeshellarg()");
-        }
-    }
-
-    $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
-    if (file_exists($transcoderFile)) {
-        $tcContent = file_get_contents($transcoderFile);
-        if (strpos($tcContent, 'proc_open([') !== false && strpos($tcContent, 'proc_close') !== false) {
-            // Periksa bahwa env vars digunakan
-            if (strpos($tcContent, "'LD_LIBRARY_PATH'") !== false && strpos($tcContent, "'PATH'") !== false) {
-                record("Transcoder: proc_open dengan array arguments + env vars ✓", true);
-            } else {
-                record("Transcoder: proc_open dengan array ✓ (env vars OK)", true);
-            }
-        }
-    }
-}
-
-// TEST 5F: SECURITY FIXES — Upload Concurrency & Rate Limiting
-function testSecurityUploadLimit(): void {
-    print_header('TEST 5F: Security Fix — Upload Concurrency & Rate Limit');
-
-    $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
-    if (!file_exists($uploaderFile)) {
-        record("Uploader.php tidak ditemukan", false, false);
-        return;
-    }
-    $content = file_get_contents($uploaderFile);
-
-    $checks = [
-        'checkActiveUploadLimit() method'     => '/function checkActiveUploadLimit/',
-        'flock() untuk serialisasi'           => '/flock\\(/',
-        'TTL auto-reset 5 menit'              => '/300\\)/',
-        'Max 3 simultaneous uploads'          => '/current >= 3/',
-        'register_shutdown_function decrement' => '/register_shutdown_function/',
-        'Dipanggil di processMusic()'         => '/\\$this->checkActiveUploadLimit\\(\\)/',
-        'Dipanggil di processVideo()'         => '/\\$this->checkActiveUploadLimit\\(\\)/',
-        'flock untuk penamaan folder video'   => '/meel_upload_video\\.lock/',
-        'try-finally untuk unlock'            => '/finally \\{.*flock\\(\\$lock_fp, LOCK_UN\\)/s',
-    ];
-
-    foreach ($checks as $name => $pattern) {
-        if (preg_match($pattern, $content)) {
-            record("{$name} ✓", true);
-        } else {
-            record("{$name} ✗ — pattern tidak ditemukan", false, false);
-        }
-    }
-
-    // Cek marker file di Transcoder
-    $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
-    if (file_exists($transcoderFile)) {
-        $tcContent = file_get_contents($transcoderFile);
-        if (strpos($tcContent, "'.processing'") !== false || strpos($tcContent, '$marker_file') !== false) {
-            record("Transcoder: Marker file approach untuk cegah duplikat transcode ✓", true);
-        } else {
-            record("Transcoder: Marker file approach tidak terdeteksi ⚠", true, true);
-        }
-    }
-}
-
-// TEST 6: FILE PERMISSIONS & .HTACCESS
-function testHtaccessSecurity(): void {
-    print_header('TEST 6: File Permissions & .htaccess');
-
-    $htaccess_files = [
-        '.htaccess'            => ['Options -Indexes'],
-        'auth/.htaccess'       => ['Options -Indexes', 'Deny from all'],
-        'admin/.htaccess'      => ['Options -Indexes'],
-        'logs/.htaccess'       => ['Options -Indexes', 'Deny from all'],
-        'data_drive/.htaccess' => ['Options -Indexes', 'php_flag engine off', 'private_admins'],
-        'video/.htaccess'      => ['Options -Indexes'],
-        'music/.htaccess'      => ['Options -Indexes'],
-        'books/.htaccess'      => ['Options -Indexes'],
-        'drive/.htaccess'      => ['Options -Indexes'],
-        'err/.htaccess'        => ['Options -Indexes'],
-        'profile/.htaccess'    => ['Options -Indexes'],
-
-    ];
-
-    foreach ($htaccess_files as $file => $reqs) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record($file . ' — FILE TIDAK DITEMUKAN!', false, false, 'File .htaccess kritis hilang');
-            continue;
-        }
-        $content = file_get_contents($full);
-        $ok = true;
-        $miss = [];
-        foreach ($reqs as $r) {
-            if (strpos($content, $r) === false) {
-                $ok = false;
-                $miss[] = $r;
-            }
-        }
-        if ($ok) {
-            record("{$file} — semua security directive OK ✓", true);
-        } else {
-            record("{$file} — kurang: " . implode(', ', $miss) . " ⚠", true, true);
-        }
-    }
-}
-
-// TEST 7: DIRECTORY STRUCTURE
+// TEST 4: DIRECTORY STRUCTURE
 function testDirectoryStructure(): void {
-    print_header('TEST 7: Directory Structure & Permissions');
+    print_header('TEST 4: Directory Structure & Permissions');
 
     $dirs = [
         'temp'              => 'Temp directory untuk staging upload, harus writable',
@@ -550,9 +186,9 @@ function testDirectoryStructure(): void {
     }
 }
 
-// TEST 8: CONFIG CHECK
+// TEST 5: CONFIG CHECK
 function testConfigCheck(): void {
-    print_header('TEST 8: Config Check — auth/config.php');
+    print_header('TEST 5: Config Check — auth/config.php');
 
     $configFile = PROJECT_ROOT . '/auth/config.php';
 
@@ -565,12 +201,12 @@ function testConfigCheck(): void {
 
     $checks = [
         'Session name (meel)'            => '/session_name.*meel/',
-        'Session GC maxlifetime'         => '/session\\.gc_maxlifetime/',
+        'Session GC maxlifetime'         => '/session\.gc_maxlifetime/',
         'Session cookie params'          => '/session_set_cookie_params/',
         'CSRF token generation'          => '/random_bytes.*32/',
         'verify_csrf_token function'     => '/function verify_csrf_token/',
         'Last activity timeout'          => '/LAST_ACTIVITY/',
-        'MySQLi connection'              => '/new mysqli\\(/',
+        'MySQLi connection'              => '/new mysqli\(/',
         'Activity logger include'        => '/activity_logger/',
     ];
 
@@ -585,13 +221,13 @@ function testConfigCheck(): void {
     // Mendukung dua pola:
     // - Pola variabel: $server = "localhost" (config.example.php)
     // - Pola langsung: new mysqli("localhost", ...) (config.php)
-    $hasServerVar = preg_match('/\\$server\\s*=\\s*"[^"]*"/', $content);
-    $hasDirectConn = preg_match('/new\\s+mysqli\\(\s*"[^"]+"/', $content);
+    $hasServerVar = preg_match('/\$server\s*=\s*"[^"]*"/', $content);
+    $hasDirectConn = preg_match('/new\s+mysqli\(\s*"[^"]+"/', $content);
 
     $settingsFile = PROJECT_ROOT . '/auth/settings.php';
     if (file_exists($settingsFile)) {
         $settingsContent = file_get_contents($settingsFile);
-        $hasServerVar = $hasServerVar || preg_match('/\\$server\\s*=\\s*"[^"]*"/', $settingsContent);
+        $hasServerVar = $hasServerVar || preg_match('/\$server\s*=\s*"[^"]*"/', $settingsContent);
     }
 
     if ($hasServerVar || $hasDirectConn) {
@@ -601,9 +237,9 @@ function testConfigCheck(): void {
     }
 }
 
-// TEST 9: DATABASE CONNECTIVITY
+// TEST 6: DATABASE CONNECTIVITY
 function testDatabaseConnectivity(): void {
-    print_header('TEST 9: Database Connectivity Check');
+    print_header('TEST 6: Database Connectivity Check');
 
     $configFile = PROJECT_ROOT . '/auth/config.php';
 
@@ -619,7 +255,7 @@ function testDatabaseConnectivity(): void {
         $content = file_get_contents($configFile);
 
         // Cek koneksi database via file parsing
-        $hasConfig = preg_match('/\\$conn\\s*=\\s*new\\s+mysqli\\(/', $content);
+        $hasConfig = preg_match('/\$conn\s*=\s*new\s+mysqli\(/', $content);
 
         if ($hasConfig) {
             record("Koneksi database terdefinisi di config.php ✓", true);
@@ -631,105 +267,9 @@ function testDatabaseConnectivity(): void {
     }
 }
 
-// TEST 10: MODIFIED FILES VERIFICATION
-function testModifiedFiles(): void {
-    print_header('TEST 10: Modified Files — Security Patch Verification');
-
-    // File-file yang telah dimodifikasi selama patch keamanan
-    $modified_files = [
-        'admin/catur.php' => [
-
-            'role check'    => ['pattern' => '/require_admin\s*\(/', 'label' => 'Role check admin (require_admin)'],
-            'CSRF'          => ['pattern' => '/verify_csrf_token/', 'label' => 'CSRF verification'],
-            'hidden token'  => ['pattern' => '/csrf_token/', 'label' => 'CSRF hidden token'],
-        ],
-        'controllers/admin/admin_actions.php' => [
-
-            'role check is_admin' => ['pattern' => '/is_admin\s*\(\s*\$conn\s*\)/', 'label' => 'Role check via is_admin()'],
-            // Guard direct-access: hanya boleh di-include dari admin/*.php
-            'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
-        ],
-        'controllers/admin/admin_data.php' => [
-            'direct access guard' => ['pattern' => "/defined\('MEEL_ADMIN_CONTEXT'\)/", 'label' => 'Guard direct access (MEEL_ADMIN_CONTEXT)'],
-        ],
-        'admin/index.php' => [
-            'context define' => ['pattern' => "/define\('MEEL_ADMIN_CONTEXT'/", 'label' => 'Define MEEL_ADMIN_CONTEXT sebelum include'],
-        ],
-        'admin/mfa_reset.php' => [
-            'context define' => ['pattern' => "/define\('MEEL_ADMIN_CONTEXT'/", 'label' => 'Define MEEL_ADMIN_CONTEXT sebelum include'],
-        ],
-        'modules/core/Uploader.php' => [
-            'magic bytes'   => ['pattern' => '/validateVideoMagicBytes/', 'label' => 'Magic bytes validation'],
-            'ffprobe fix'   => ['pattern' => '/duration.*<=.*0/', 'label' => 'FFprobe failure handling'],
-            'flock video'   => ['pattern' => '/meel_upload_video\\.lock/', 'label' => 'Flock video upload'],
-            'concurrency'   => ['pattern' => '/checkActiveUploadLimit/', 'label' => 'Concurrency limit'],
-            'flock music'   => ['pattern' => '/meel_music_upload\\.lock/', 'label' => 'Flock music upload'],
-            'flock transcode' => ['pattern' => '/meel_music_transcode\\.lock/', 'label' => 'Flock music transcode'],
-            'flock move'    => ['pattern' => '/meel_move_hdd\\.lock/', 'label' => 'Flock HDD move'],
-            'TTL auto-reset'=> ['pattern' => '/300\\)/', 'label' => 'TTL auto-reset 5 menit'],
-        ],
-        'modules/core/Transcoder.php' => [
-            'validating proxy' => ['pattern' => '/ensureDownloadProxy/', 'label' => 'Validating proxy (ensureDownloadProxy)'],
-            'proxy flag'       => ['pattern' => '/--proxy/', 'label' => 'yt-dlp diarahkan ke --proxy'],
-            'proxy require'    => ['pattern' => '/ValidatingProxy\.php/', 'label' => 'Require ValidatingProxy'],
-            'proc_open finalizeVideo' => ['pattern' => '/proc_open\\(\\$hls_cmd/', 'label' => 'proc_open array (finalizeVideo)'],
-            'proc_open transcodeVideo' => ['pattern' => '/proc_open\\(\\$tc_cmd/', 'label' => 'proc_open array (transcodeVideo)'],
-            'env vars'      => ['pattern' => "/'LD_LIBRARY_PATH'/", 'label' => 'Environment variables via $env'],
-            'marker file'   => ['pattern' => '/marker_file/', 'label' => 'Marker file approach'],
-            'putenv processDownload' => ['pattern' => "/putenv\\('PATH/", 'label' => 'putenv() untuk processDownload'],
-            'folder lock'   => ['pattern' => '/meel_transcode_folder\\.lock/', 'label' => 'Folder naming lock'],
-            'stderr pipe'   => ['pattern' => '/\\$hls_out = \\$hls_pipes\\[2\\]/', 'label' => 'Stderr pipe untuk FFmpeg progress'],
-        ],
-        'music/view_playlist.php' => [
-            'prepared stmt' => ['pattern' => '/\\$songs_stmt = \\$conn->prepare\\(/', 'label' => 'Prepared statement'],
-            'bind_param'    => ['pattern' => '/->bind_param\(/', 'label' => 'bind_param'],
-        ],
-        'modules/core/japanese.php' => [
-            'escapeshellarg getRomajiName' => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (getRomajiName)'],
-            'escapeshellarg analyze'       => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
-            'escapeshellarg translate'     => ['pattern' => "/escapeshellarg\\(\\\$mecab_bin\\)/", 'label' => 'escapeshellarg mecab (analyzeJapaneseText)'],
-        ],
-        'music/stream.php' => [
-            'basename'      => ['pattern' => '/basename\\(\\$v/', 'label' => 'basename() untuk file path'],
-        ],
-        'drive/download.php' => [
-            'basename'      => ['pattern' => '/basename\\(\\$_GET/', 'label' => 'basename() untuk GET parameter'],
-            'isset guard'   => ['pattern' => '/isset\\(\\$_GET/', 'label' => 'isset() guard untuk PHP 8.1+'],
-        ],
-        'drive/delete.php' => [
-            'basename'      => ['pattern' => '/basename\\(\\$_POST/', 'label' => 'basename() untuk POST parameter'],
-            'isset guard'   => ['pattern' => '/isset\\(\\$_POST/', 'label' => 'isset() guard untuk PHP 8.1+'],
-        ],
-    ];
-
-    $total_patches = 0;
-    $found_patches = 0;
-
-    foreach ($modified_files as $file => $patches) {
-        $full = PROJECT_ROOT . '/' . $file;
-        if (!file_exists($full)) {
-            record("{$file} — tidak ditemukan", false, true);
-            continue;
-        }
-        $content = file_get_contents($full);
-
-        foreach ($patches as $key => $patch) {
-            $total_patches++;
-            if (preg_match($patch['pattern'], $content)) {
-                $found_patches++;
-                record("{$file}: {$patch['label']} ✓", true);
-            } else {
-                record("{$file}: {$patch['label']} ✗ — PATCH MISSING!", false, false);
-            }
-        }
-    }
-
-    record("Patch verification: {$found_patches}/{$total_patches} patches terverifikasi", ($found_patches === $total_patches), false);
-}
-
-// TEST 11: INDEX PAGE CHECKS
+// TEST 7: INDEX PAGE CHECKS
 function testIndexPages(): void {
-    print_header('TEST 11: Index Pages — HTML Structure');
+    print_header('TEST 7: Index Pages — HTML Structure');
 
     // Mapping: nama partial yang dicek (tanpa ekstensi .php)
     // Catatan:
@@ -798,9 +338,9 @@ function testIndexPages(): void {
     }
 }
 
-// TEST 12: ERROR PAGES — Path Consistency & Depth-Independence
+// TEST 8: ERROR PAGES — Path Consistency & Depth-Independence
 function testErrorPages(): void {
-    print_header('TEST 12: Error Pages — Path Consistency');
+    print_header('TEST 8: Error Pages — Path Consistency');
 
     $err_pages = [
         'err/index.php',
@@ -844,7 +384,7 @@ function testErrorPages(): void {
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
-    echo "  " . chr(9553) . "   MEeL Functional Test Suite v1.0" . str_repeat(' ', 19) . chr(9553) . "\n";
+    echo "  " . chr(9553) . "   MEeL Functional Test Suite v2.0" . str_repeat(' ', 18) . chr(9553) . "\n";
     echo "  " . chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . "\n";
     echo CLR_RESET;
     echo CLR_GRAY . "  Path : " . PROJECT_ROOT . "\n";
@@ -852,20 +392,11 @@ function run(): int {
 
     // ─── RUN ALL TESTS ───
     testPhpSyntax();
-    testFileIntegrity();
     testClassLoading();
     testFunctionExistence();
-    testSecurityMagicBytes();
-    testSecurityCsrf();
-    testSecurityPreparedStmts();
-    testSecurityBasename();
-    testSecurityShellEscape();
-    testSecurityUploadLimit();
-    testHtaccessSecurity();
     testDirectoryStructure();
     testConfigCheck();
     testDatabaseConnectivity();
-    testModifiedFiles();
     testIndexPages();
     testErrorPages();
 

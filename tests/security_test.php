@@ -783,11 +783,111 @@ function testFatalBugRegression(): void {
     }
 }
 
+// TEST 15: ADMIN CONTEXT GUARDS & MEDIA PIPELINE HARDENING
+// (Konsolidasi dari functional_test.php — verifikasi statis hardening yang
+//  dulu ada di suite functional; sekarang jadi tanggung jawab security suite.)
+function testAdminContextAndPipelineHardening(): void {
+    print_header('TEST 15: Admin Context Guards & Media Pipeline Hardening');
+
+    // ─── 15a: Admin RBAC & direct-access guard ───
+    $adminFiles = [
+        'admin/catur.php' => [
+            'Role check admin (require_admin)' => '/require_admin\s*\(/',
+        ],
+        'controllers/admin/admin_actions.php' => [
+            'Role check via is_admin()'        => '/is_admin\s*\(\s*\$conn\s*\)/',
+            'Guard direct access (MEEL_ADMIN_CONTEXT)' => "/defined\('MEEL_ADMIN_CONTEXT'\)/",
+        ],
+        'controllers/admin/admin_data.php' => [
+            'Guard direct access (MEEL_ADMIN_CONTEXT)' => "/defined\('MEEL_ADMIN_CONTEXT'\)/",
+        ],
+        'admin/index.php' => [
+            'Define MEEL_ADMIN_CONTEXT sebelum include' => "/define\('MEEL_ADMIN_CONTEXT'/",
+        ],
+        'admin/mfa_reset.php' => [
+            'Define MEEL_ADMIN_CONTEXT sebelum include' => "/define\('MEEL_ADMIN_CONTEXT'/",
+        ],
+    ];
+
+    foreach ($adminFiles as $file => $pats) {
+        $full = PROJECT_ROOT . '/' . $file;
+        if (!file_exists($full)) {
+            record("{$file} — tidak ditemukan", true, true);
+            continue;
+        }
+        $content = file_get_contents($full);
+        foreach ($pats as $label => $pat) {
+            if (preg_match($pat, $content)) {
+                record("{$file}: {$label} ✓", true);
+            } else {
+                record("{$file}: {$label} ✗ — PATCH MISSING!", false, false);
+            }
+        }
+    }
+
+    // ─── 15b: Uploader — concurrency & hardening ───
+    $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
+    if (!file_exists($uploaderFile)) {
+        record('modules/core/Uploader.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $uc = (string) file_get_contents($uploaderFile);
+        $uploaderChecks = [
+            'checkActiveUploadLimit() method'          => '/function checkActiveUploadLimit/',
+            'flock() untuk serialisasi'                => '/flock\(/',
+            'TTL auto-reset 5 menit'                   => '/300\)/',
+            'Max 3 simultaneous uploads'               => '/current >= 3/',
+            'register_shutdown_function decrement'     => '/register_shutdown_function/',
+            'Dipanggil di processMusic()'              => '/\$this->checkActiveUploadLimit\(\)/',
+            'Dipanggil di processVideo()'              => '/\$this->checkActiveUploadLimit\(\)/',
+            'flock untuk penamaan folder video'        => '/meel_upload_video\.lock/',
+            'flock music upload'                       => '/meel_music_upload\.lock/',
+            'flock music transcode'                    => '/meel_music_transcode\.lock/',
+            'flock HDD move'                           => '/meel_move_hdd\.lock/',
+            'FFprobe failure handling'                 => '/duration.*<=.*0/',
+            'try-finally untuk unlock'                 => '/finally \{.*flock\(\$lock_fp, LOCK_UN\)/s',
+        ];
+
+        foreach ($uploaderChecks as $name => $pat) {
+            if (preg_match($pat, $uc)) {
+                record("Uploader: {$name} ✓", true);
+            } else {
+                record("Uploader: {$name} ✗ — pattern tidak ditemukan", false, false);
+            }
+        }
+    }
+
+    // ─── 15c: Transcoder — pipeline hardening ───
+    $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
+    if (!file_exists($transcoderFile)) {
+        record('modules/core/Transcoder.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $tc = (string) file_get_contents($transcoderFile);
+        $tcChecks = [
+            'proc_open array (finalizeVideo)'   => '/proc_open\(\$hls_cmd/',
+            'proc_open array (transcodeVideo)'  => '/proc_open\(\$tc_cmd/',
+            'env vars via $env (LD_LIBRARY_PATH)' => "/'LD_LIBRARY_PATH'/",
+            'env vars via $env (PATH)'          => "/'PATH'/",
+            'putenv() untuk processDownload'    => "/putenv\('PATH/",
+            'marker file anti-duplikat transcode' => '/marker_file/',
+            'folder naming lock'                => '/meel_transcode_folder\.lock/',
+            'stderr pipe untuk progress FFmpeg' => '/\$hls_pipes\[2\]/',
+        ];
+
+        foreach ($tcChecks as $name => $pat) {
+            if (preg_match($pat, $tc)) {
+                record("Transcoder: {$name} ✓", true);
+            } else {
+                record("Transcoder: {$name} ✗ — pattern tidak ditemukan", false, false);
+            }
+        }
+    }
+}
+
 // MAIN
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
-    echo "  " . chr(9553) . "   MEeL Automated Security Test Suite v1.1" . str_repeat(' ', 19) . chr(9553) . "\n";
+    echo "  " . chr(9553) . "   MEeL Automated Security Test Suite v1.2" . str_repeat(' ', 19) . chr(9553) . "\n";
     echo "  " . chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . "\n";
     echo CLR_RESET;
     echo CLR_GRAY . "  Path : " . PROJECT_ROOT . "\n";
@@ -807,6 +907,7 @@ function run(): int {
     testFileIntegrity();
     testSsrfAndPrivateDrive();
     testFatalBugRegression();
+    testAdminContextAndPipelineHardening();
 
     // ─── SUMMARY ───
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
