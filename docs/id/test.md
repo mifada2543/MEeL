@@ -15,7 +15,7 @@ MEeL menggunakan pendekatan testing berlapis:
 | **Integration Test** | PHPUnit 9.6 | Operasi DB real | `tests/integration/` |
 | **Functional Test** | Custom PHP | Alur kerja aplikasi | `tests/functional_test.php` |
 | **Security Test** | Custom PHP | Pemindaian kerentanan | `tests/security_test.php` |
-| **Deployment Check** | Custom PHP | Verifikasi environment (storage, symlink, mod_rewrite) | `tests/check_deploy.php` |
+| **Deployment Check** | Custom PHP | Verifikasi environment (storage, folder upload, .htaccess, mod_rewrite) | `tests/check_deploy.php` |
 | **CI Pipeline** | GitHub Actions | Validasi otomatis | `.github/workflows/ci.yml` |
 
 ---
@@ -273,8 +273,12 @@ php tests/check_deploy.php --no-color               # tanpa warna ANSI (untuk CI
 
 **Memverifikasi:**
 - `MEEL_HDD_BASE` — terdefinisi, bukan placeholder, storage ter-mount & writable
-- Symlink upload — `books/upload`, `music/upload`, `video/upload` resolve ke storage
+- Folder upload + **subdirektori non-auto-create** — `{video,music,books}/upload`
+  resolve ke storage; `music/upload/{file,thumbnail}` & `books/upload/{pdf,thumbnail}`
+  wajib ada (modul music/books **tidak** membuatnya otomatis) — jika hilang: **FAIL**
 - Hardening `.htaccess` folder upload — `php_flag engine off`, `ForceType`, `Options -Indexes`
+- Guard portabilitas `data_drive/` — symlink deploy ke dalam `MEEL_HDD_DRIVE` =
+  **PASS**, menunjuk ke luar = **WARN**
 - PWA `mod_rewrite` — aturan `.htaccess` root + probe HTTP nyata ke `/sw.js`
 
 Exit code `0` = sehat, `1` = minimal satu FAIL (ramah CI). Panduan storage

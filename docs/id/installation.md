@@ -6,6 +6,7 @@ Panduan lengkap untuk menginstal dan menjalankan MEeL-HUB di server lokal Anda.
 
 ## 📋 Daftar Isi
 
+- [Instalasi Otomatis (install.sh)](#instalasi-otomatis-installsh)
 - [Persyaratan Sistem](#persyaratan-sistem)
 - [Instalasi Langkah demi Langkah](#instalasi-langkah-demi-langkah)
 - [Setup Database](#setup-database)
@@ -15,6 +16,49 @@ Panduan lengkap untuk menginstal dan menjalankan MEeL-HUB di server lokal Anda.
 - [Verifikasi Instalasi](#verifikasi-instalasi)
 - [Setup FFmpeg & yt-dlp](#setup-ffmpeg--yt-dlp)
 - [Troubleshooting Instalasi](#troubleshooting-instalasi)
+
+---
+
+## ⚡ Instalasi Otomatis (install.sh)
+
+Installer otomatis yang menjalankan hampir seluruh langkah panduan ini dalam
+satu perintah (diuji di Ubuntu/Debian):
+
+```bash
+./install.sh                 # mode interaktif (tanya konfigurasi)
+./install.sh --yes           # non-interaktif, pakai semua default
+./install.sh --hdd=/path     # set MEEL_HDD_BASE langsung
+./install.sh --skip-apt      # lewati instalasi paket sistem (sudah ada)
+./install.sh --xsendfile     # aktifkan MEEL_USE_XSENDFILE (wajib mod_xsendfile Apache)
+```
+
+Urutan langkah yang dijalankan (idempotent untuk sebagian besar langkah):
+
+1. **Cek dependency** — PHP 8.0+ dengan ekstensi `mysqli`, `pdo_mysql`,
+   `fileinfo`, `mbstring`, `intl`, `gd`, `zip`, `xml`, `curl`, plus
+   MariaDB/MySQL; diinstall via apt bila perlu (`--skip-apt` untuk melewati).
+2. **Setup database** — buat database + import `database/schema.sql` (baris
+   `USE \`MEeL\`` yang hardcoded di schema ditulis ulang ke nama DB
+   konfigurasi); jika DB sudah ada, dilewati dengan aman (reimport hanya atas
+   konfirmasi eksplisit).
+3. **Konfigurasi aplikasi** — buat `auth/settings.php` & `auth/config.php`
+   dari template, patch kredensial DB + `MEEL_HDD_BASE`, dan (opsional)
+   aktifkan `MEEL_USE_XSENDFILE` via `--xsendfile`.
+4. **Direktori storage** — buat struktur lengkap di `MEEL_HDD_BASE`
+   (termasuk `music/upload/{file,thumbnail}` dan
+   `books/upload/{manga,pdf,thumbnail}`), arahkan symlink deploy
+   `{video,music,books}/upload` serta `data_drive/public` ke storage terpusat,
+   dan **salin `.htaccess` hardening ke target** (symlink tidak pernah
+   di-commit).
+5. **Apache** — aktifkan `mod_rewrite` (best-effort).
+6. **Migration** — `php database/migrate.php`.
+7. **Verifikasi akhir** — `php tests/check_deploy.php`; **exit code `1` jika
+   ada FAIL** dan banner akhir dibedakan antara "deployment sehat" vs "server
+   belum siap dipakai".
+
+> 💡 Langkah 7 memvalidasi `MEEL_HDD_BASE` **asli di `auth/settings.php`**
+> (tanpa override `--hdd`) — jadi konfigurasi yang benar-benar dipakai
+> aplikasi yang diuji.
 
 ---
 
@@ -63,6 +107,10 @@ extension=zip
 > ⚠️ **Ekstensi `zip`** diperlukan untuk upload manga (ZIP/CBZ).
 > ⚠️ **Ekstensi `mecab`** Diperlukan untuk translate yang lebih baik
 
+> 💡 `install.sh` menginstal & memverifikasi semua ekstensi di atas otomatis
+> (termasuk `pdo_mysql` dan `fileinfo`) — lihat
+> [Instalasi Otomatis](#instalasi-otomatis-installsh).
+
 ### OS yang Direkomendasikan
 
 **Linux (Ubuntu Server / Debian)** sangat direkomendasikan. Windows memiliki keterbatasan:
@@ -106,6 +154,12 @@ cd MEeL
 
 > **📁 File skema database sudah tersedia di [`database/schema.sql`](../../database/schema.sql).**
 > Setelah impor, jalankan migrasi untuk menyelesaikan setup.
+
+> ⚠️ `schema.sql` meng-hardcode `CREATE DATABASE IF NOT EXISTS \`MEeL\`` +
+> `USE \`MEeL\`;` — impor manual (CLI/phpMyAdmin) selalu menargetkan database
+> bernama `MEeL`. `install.sh` menulis ulang kedua baris itu sesuai nama DB
+> konfigurasi, jadi nama DB non-default (mis. untuk staging) aman dipakai
+> lewat installer.
 
 #### Opsi A — Via MySQL CLI (cepat):
 
@@ -250,18 +304,22 @@ define('MEEL_HDD_DRIVE', MEEL_HDD_BASE . '/drive/'); // base = public/ + private
   langsung), jadi **tidak perlu** symlink untuk `private_admins`. Pratinjau
   publik memakai path web `data_drive/public/...` — agar pratinjau di browser
   tetap jalan di mode HDD, arahkan symlink **saat deploy** (jangan pernah
-  di-commit):
+  di-commit) — **`install.sh` membuatnya otomatis**:
   ```bash
   rm -f data_drive/public && ln -s "$BASE/drive/public" data_drive/public
   ```
+  `tests/check_deploy.php` menilai symlink deploy ini **PASS** (target di dalam
+  `MEEL_HDD_DRIVE`) dan hanya memberi WARN bila target menunjuk ke luar storage
+  Drive (mis. symlink ter-commit `/media/<user>/...`).
 - **Mode fallback (`MEEL_HDD_DRIVE` tidak terdefinisi):** Drive memakai folder
   ter-track `data_drive/public` & `data_drive/private_admins` (folder nyata,
   dibuat otomatis oleh `DriveStorage::ensureDirectoryExists()`). Ini perilaku
   bawaan pada clone baru.
 - **Jangan pernah commit symlink di dalam `data_drive/`**: `.gitignore`
-  memblokir `data_drive/public` / `data_drive/private_admins` sebagai symlink,
-  dan `tests/check_deploy.php` memberi peringatan jika keduanya symlink.
-  Symlink absolut yang ter-commit (mis. `/media/<user>/...`) membocorkan
+  memblokir `data_drive/public` / `data_drive/private_admins` sebagai symlink.
+  `tests/check_deploy.php` hanya memperingatkan symlink yang menunjuk ke LUAR
+  `MEEL_HDD_DRIVE` (mis. `/media/<user>/...`); symlink deploy ke dalam
+  `MEEL_HDD_DRIVE` dinilai PASS. Symlink absolut yang ter-commit membocorkan
   username OS lewat repo publik dan membuat modul Drive crash di mesin lain
   (`RuntimeException: Folder penyimpanan gagal dibuat`).
 - Subtree private tetap di-deny oleh `data_drive/.htaccess` yang ter-track
@@ -292,10 +350,15 @@ mkdir -p "$BASE"/drive/public "$BASE"/drive/private_admins
 #### 3. Tidak ada symlink yang perlu dibuat
 
 Folder upload books/music/video adalah folder nyata di repo — **tidak ada yang
-perlu di-symlink**. Opsional: jika ingin Apache menyajikan file langsung
-(melewati PHP) demi performa, Anda boleh mengarahkan folder ke storage HDD
-**saat deploy** — tetapi jangan pernah commit symlink-nya (`.gitignore`
-memblokir):
+perlu di-symlink** untuk instalasi manual. **`install.sh` otomatis membuat
+symlink deploy** `<root>/{video,music,books}/upload → $MEEL_HDD_BASE/{m}/upload`
+saat `MEEL_HDD_BASE` berbeda dari folder repo, dan **menyalin `.htaccess`
+hardening ke target** agar `check_deploy` tetap PASS (symlink tidak pernah
+ter-commit — `.gitignore` memblokirnya).
+
+Untuk instalasi manual, symlink bersifat opsional — jika ingin Apache
+menyajikan file langsung (melewati PHP) demi performa, Anda boleh mengarahkan
+folder ke storage HDD **saat deploy**:
 
 ```bash
 cd /opt/lampp/htdocs/MEeL
@@ -306,9 +369,11 @@ done
 ls -la books/upload music/upload video/upload   # harus menunjuk ke BASE Anda
 ```
 
-`tests/check_deploy.php` menerima symlink saat deploy yang menunjuk ke
-`MEEL_HDD_BASE` (PASS) dan memperingatkan bila menunjuk ke tempat lain — tetapi
-layout bawaan (folder nyata + endpoint PHP) sama sekali tidak butuh symlink.
+> ⚠️ Jika membuat symlink manual, pastikan `.htaccess` hardening (pola
+> `data_drive/.htaccess`: `php_flag engine off` + `ForceType` +
+> `Options -Indexes`) ada di **target** storage — `install.sh` melakukannya
+> otomatis. `tests/check_deploy.php` menilai symlink yang menunjuk ke
+> `MEEL_HDD_BASE` sebagai PASS, yang menunjuk ke tempat lain sebagai WARN.
 
 #### 5. Perizinan
 
@@ -344,10 +409,15 @@ php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_BASE') ? MEEL_HDD_BA
 
 #### 8. Cek deployment otomatis (satu perintah)
 
-Project menyertakan health-check CLI yang memverifikasi empat area kritis
-deployment dalam satu kali jalan — `MEEL_HDD_BASE`, folder upload (folder nyata atau
-symlink saat deploy), hardening `.htaccess` folder upload, dan aturan
-`mod_rewrite` PWA:
+Project menyertakan health-check CLI yang memverifikasi area kritis deployment
+dalam satu kali jalan — `MEEL_HDD_BASE`, folder upload (folder nyata atau
+symlink saat deploy), **subdirektori non-auto-create** (`music/upload/file`,
+`music/upload/thumbnail`, `books/upload/pdf`, `books/upload/thumbnail` — modul
+music/books **tidak** membuatnya otomatis, jadi jika salah satu hilang:
+**FAIL** → deployment belum siap, exit code `1`), hardening `.htaccess`
+folder upload,
+guard portabilitas `data_drive/` (symlink deploy ke `MEEL_HDD_DRIVE` = PASS;
+menunjuk ke luar = WARN), dan aturan `mod_rewrite` PWA:
 
 ```bash
 php tests/check_deploy.php                           # cek lokal + probe HTTP otomatis
@@ -362,6 +432,11 @@ belum ter-mount, script melaporkan FAIL pada area storage / folder upload /
 `.htaccess` upload — mount storage, set `MEEL_HDD_BASE`, pastikan folder
 upload punya `.htaccess`, lalu jalankan ulang sampai muncul
 `✅ Deployment sehat.`
+
+> 💡 `install.sh` menjalankan health-check ini sebagai langkah verifikasi
+> terakhir **tanpa `--hdd`** (konfigurasi asli `auth/settings.php` yang diuji)
+> dan **keluar dengan code `1`** jika ada minimal satu FAIL — banner akhir
+> dibedakan antara "deployment sehat" dan "server belum siap dipakai".
 
 ### 6. Konfigurasi Apache
 

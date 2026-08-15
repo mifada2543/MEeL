@@ -15,7 +15,7 @@ MEeL uses a multi-layered testing approach:
 | **Integration Tests** | PHPUnit 9.6 | Real DB operations | `tests/integration/` |
 | **Functional Tests** | Custom PHP | Application workflows | `tests/functional_test.php` |
 | **Security Tests** | Custom PHP | Vulnerability scanning | `tests/security_test.php` |
-| **Deployment Check** | Custom PHP | Environment verification (storage, symlink, mod_rewrite) | `tests/check_deploy.php` |
+| **Deployment Check** | Custom PHP | Environment verification (storage, upload dirs, .htaccess, mod_rewrite) | `tests/check_deploy.php` |
 | **CI Pipeline** | GitHub Actions | Automated validation | `.github/workflows/ci.yml` |
 
 ---
@@ -272,8 +272,12 @@ php tests/check_deploy.php --no-color               # no ANSI colors (for CI/log
 
 **Verifies:**
 - `MEEL_HDD_BASE` — defined, not a placeholder, storage mounted & writable
-- Upload symlinks — `books/upload`, `music/upload`, `video/upload` resolve to storage
+- Upload dirs + **non-auto-created subdirectories** — `{video,music,books}/upload`
+  resolve to storage; `music/upload/{file,thumbnail}` & `books/upload/{pdf,thumbnail}`
+  must exist (the music/books modules do **not** create them) — missing ones are a **FAIL**
 - `.htaccess` hardening in upload dirs — `php_flag engine off`, `ForceType`, `Options -Indexes`
+- `data_drive/` portability guard — deploy-time symlinks inside `MEEL_HDD_DRIVE` =
+  **PASS**, pointing outside = **WARN**
 - PWA `mod_rewrite` — root `.htaccess` rule + real HTTP probe of `/sw.js`
 
 Exit code `0` = healthy, `1` = at least one FAIL (CI-friendly). Full storage

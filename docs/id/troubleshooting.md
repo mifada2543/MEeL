@@ -166,7 +166,9 @@ Diagnosa path storage dilakukan lewat perintah filesystem (contoh `ls -la` dan `
    `DriveStorage::ensureDirectoryExists()`.
 
 > ⚠️ **Jangan pernah commit symlink di dalam `data_drive/`** — `.gitignore`
-> memblokirnya dan `tests/check_deploy.php` memberi peringatan. Lihat
+> memblokirnya. `tests/check_deploy.php` hanya memperingatkan symlink yang
+> menunjuk ke LUAR `MEEL_HDD_DRIVE` (mis. `/media/<user>/...`); symlink deploy
+> ke dalam `MEEL_HDD_DRIVE` dinilai PASS. Lihat
 > [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)
 > untuk layout storage Drive (`MEEL_HDD_DRIVE` vs fallback `data_drive/`).
 

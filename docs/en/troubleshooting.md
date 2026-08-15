@@ -297,8 +297,10 @@ $timeout = 43200; // 12 hours in seconds
    `data_drive/public` & `data_drive/private_admins` are auto-created by
    `DriveStorage::ensureDirectoryExists()`.
 
-> ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them and
-> `tests/check_deploy.php` warns. See
+> ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them.
+> `tests/check_deploy.php` only warns about symlinks pointing OUTSIDE
+> `MEEL_HDD_DRIVE` (e.g. `/media/<user>/...`); deploy-time symlinks pointing
+> inside `MEEL_HDD_DRIVE` are rated PASS. See
 > [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)
 > for the Drive storage layout (`MEEL_HDD_DRIVE` vs the `data_drive/` fallback).
 

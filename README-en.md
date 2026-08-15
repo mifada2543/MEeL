@@ -106,7 +106,7 @@
 | **Pagination Metadata** | UI displays page info (`total_pages`, `from`, `to`) |
 | **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
 | **PWA Offline** | Dynamic service worker (`sw.js.php` + `SwPrecache`) — auto precache per module via `manifest.php`, installable + offline support |
-| **Deployment Health Check** | `tests/check_deploy.php` — verifies MEEL_HDD_BASE, upload symlinks, upload .htaccess, PWA mod_rewrite |
+| **Deployment Health Check** | `tests/check_deploy.php` — verifies MEEL_HDD_BASE, upload dirs/subdirectories, upload .htaccess, data_drive symlink guard, PWA mod_rewrite |
 
 ---
 
@@ -247,6 +247,23 @@ extension=zip       # For manga file extraction (ZIP/CBZ)
 
 ## 🚀 Quick Install
 
+> ⚡ **Automatic installer (recommended, Ubuntu/Debian):** run `./install.sh` to
+> automate all steps below — database setup + `schema.sql` import, create
+> `auth/settings.php`/`auth/config.php` (patch DB + `MEEL_HDD_BASE`), full
+> storage tree + deploy-time symlinks to the centralized storage (`.htaccess`
+> hardening is copied along), enable mod_rewrite, run the migration, then the
+> final `tests/check_deploy.php` verification (**exit code `1` on any FAIL**):
+>
+> ```bash
+> ./install.sh                 # interactive mode (asks for configuration)
+> ./install.sh --yes           # non-interactive, uses all defaults
+> ./install.sh --hdd=/path     # set MEEL_HDD_BASE directly
+> ./install.sh --skip-apt      # skip system package installation (already present)
+> ./install.sh --xsendfile     # enable MEEL_USE_XSENDFILE (requires Apache mod_xsendfile)
+> ```
+>
+> Full details → [docs/en/installation.md](docs/en/installation.md).
+
 ### 1. Clone Repository
 
 ```bash
@@ -272,7 +289,8 @@ cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php` and fill in your database credentials.
+Edit `auth/settings.php` and fill in your database credentials (+ set
+`MEEL_HDD_BASE`).
 
 ### 4. Setup Runtime Directories
 
@@ -295,6 +313,13 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 > the OS username through the public repo and crash the Drive module
 > (`RuntimeException: Folder penyimpanan gagal dibuat`) on other machines.
 
+> 💡 **`install.sh` does this automatically:** the full storage tree (including
+> `music/upload/{file,thumbnail}` & `books/upload/{manga,pdf,thumbnail}` — the
+> music/books modules do **not** create them), deploy-time symlinks
+> `{video,music,books}/upload` + `data_drive/public` → `MEEL_HDD_BASE`, with the
+> `.htaccess` hardening copied to the target. Missing subdirectories make the
+> first upload fail — verify with `tests/check_deploy.php`.
+
 ### 5. Enable Apache mod_rewrite
 
 ```bash
@@ -307,6 +332,16 @@ sudo systemctl restart apache2
 ```bash
 /opt/lampp/bin/php database/migrate.php
 ```
+
+### 7. Verify Deployment
+
+```bash
+php tests/check_deploy.php        # exit 0 = healthy, 1 = FAIL
+```
+
+Verifies `MEEL_HDD_BASE`, upload dirs + non-auto-created subdirectories
+(`music/upload/{file,thumbnail}`, `books/upload/{pdf,thumbnail}`), `.htaccess`
+hardening, the `data_drive/` symlink guard, and the PWA `mod_rewrite` rule.
 
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 

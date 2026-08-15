@@ -106,7 +106,7 @@
 | **Pagination Metadata** | UI menampilkan info halaman (`total_pages`, `from`, `to`) |
 | **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
 | **PWA Offline** | Service worker dinamis (`sw.js.php` + `SwPrecache`) — precache otomatis per modul via `manifest.php`, installable + offline support |
-| **Deployment Health Check** | `tests/check_deploy.php` — verifikasi MEEL_HDD_BASE, symlink upload, .htaccess upload, mod_rewrite PWA |
+| **Deployment Health Check** | `tests/check_deploy.php` — verifikasi MEEL_HDD_BASE, folder/subdirektori upload, .htaccess upload, guard symlink data_drive, mod_rewrite PWA |
 
 ---
 
@@ -247,6 +247,25 @@ extension=zip       # Untuk ekstraksi file manga (ZIP/CBZ)
 
 ## 🚀 Instalasi Cepat
 
+> ⚡ **Instalasi otomatis (disarankan, Ubuntu/Debian):** jalankan `./install.sh`
+> untuk menjalankan semua langkah di bawah secara otomatis — setup database +
+> import `schema.sql`, buat `auth/settings.php`/`auth/config.php` (patch DB +
+> `MEEL_HDD_BASE`), struktur storage lengkap + symlink deploy ke storage
+> terpusat (hardening `.htaccess` ikut disalin), aktifkan mod_rewrite, jalankan
+> migrasi, lalu verifikasi akhir `tests/check_deploy.php` (**exit code `1` jika
+> ada FAIL**):
+>
+> ```bash
+> sudo chmod +x install.sh
+> ./install.sh                 # mode interaktif (tanya konfigurasi)
+> ./install.sh --yes           # non-interaktif, pakai semua default
+> ./install.sh --hdd=/path     # set MEEL_HDD_BASE langsung
+> ./install.sh --skip-apt      # lewati instalasi paket sistem (sudah ada)
+> ./install.sh --xsendfile     # aktifkan MEEL_USE_XSENDFILE (wajib mod_xsendfile Apache)
+> ```
+>
+> Detail lengkap → [docs/id/installation.md](docs/id/installation.md).
+
 ### 1. Kloning Repositori
 
 ```bash
@@ -296,6 +315,13 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 > membuat modul Drive crash (`RuntimeException: Folder penyimpanan gagal dibuat`)
 > di mesin orang lain.
 
+> 💡 **`install.sh` melakukannya otomatis:** struktur storage lengkap (termasuk
+> subdirektori `music/upload/{file,thumbnail}` & `books/upload/{manga,pdf,thumbnail}` —
+> modul music/books **tidak** membuatnya sendiri), symlink deploy
+> `{video,music,books}/upload` + `data_drive/public` → `MEEL_HDD_BASE`, dengan
+> `.htaccess` hardening ikut disalin ke target. Subdirektori yang hilang membuat
+> upload pertama gagal — cek via `tests/check_deploy.php`.
+
 ### 5. Aktifkan mod_rewrite Apache
 
 ```bash
@@ -308,6 +334,16 @@ sudo systemctl restart apache2
 ```bash
 /opt/lampp/bin/php database/migrate.php
 ```
+
+### 7. Verifikasi Deployment
+
+```bash
+php tests/check_deploy.php        # exit 0 = sehat, 1 = ada FAIL
+```
+
+Memverifikasi `MEEL_HDD_BASE`, folder upload + subdirektori non-auto-create
+(`music/upload/{file,thumbnail}`, `books/upload/{pdf,thumbnail}`), hardening
+`.htaccess`, guard symlink `data_drive/`, dan mod_rewrite PWA.
 
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 
