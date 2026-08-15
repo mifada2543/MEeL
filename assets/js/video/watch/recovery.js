@@ -26,6 +26,11 @@ function destroyPlayer() {
       console.error("Gagal destroy player:", e);
     }
     player = null;
+    /* Plyr.destroy() memulihkan atribut `controls` native pada <video>.
+       Hapus agar kontrol native TIDAK muncul (flash) saat video diganti,
+       khususnya saat gap async HLS (manifest belum parse, Plyr baru belum
+       dibuat) di mode mini-player. */
+    videoElement && videoElement.removeAttribute("controls");
   }
   if (hls) {
     try {

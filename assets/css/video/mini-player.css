@@ -34,9 +34,13 @@
     0 24px 60px rgba(0, 0, 0, 0.95),
     0 0 0 1px rgba(255, 255, 255, 0.12) !important;
 }
-/* Gesture sentuh di area video mini-player dipakai untuk drag, bukan scroll */
-.mini-player-mode .plyr__video-wrapper,
-.mini-player-mode .plyr__video-wrapper video {
+/* Gesture sentuh di area video mini-player dipakai untuk drag, bukan scroll.
+   CATATAN: semua aturan mini-player discope ke #mini-player-shell (bukan
+   class .mini-player-mode di wrapper) karena #main-video-wrapper bisa
+   DIGANTI oleh swap pemulihan HTMX (recovery) — elemen baru dari server
+   tidak membawa class tersebut, sehingga control full bisa muncul. */
+#mini-player-shell .plyr__video-wrapper,
+#mini-player-shell .plyr__video-wrapper video {
   touch-action: none;
 }
 #mini-player-shell.mini-dragging * {
@@ -57,7 +61,7 @@
 }
 /* Batas tinggi video di mini-player agar shell tidak melebihi layar
    (video potret/9:16). Video dirender contain (letterbox hitam). */
-.mini-player-mode .plyr__video-wrapper {
+#mini-player-shell .plyr__video-wrapper {
   max-height: 60vh;
 }
 #mini-player-shell:hover {
@@ -66,7 +70,7 @@
     0 0 0 1px rgba(220, 38, 38, 0.35) !important;
 }
 /* ─── Mini-player mode (inside shell) ─── */
-.mini-player-mode {
+#mini-player-shell #main-video-wrapper {
   position: relative !important;
   width: 100% !important;
   height: auto !important;
@@ -74,10 +78,10 @@
   box-shadow: none !important;
   cursor: default !important;
 }
-.mini-player-mode .plyr {
+#mini-player-shell .plyr {
   pointer-events: auto !important;
 }
-.mini-player-mode .plyr::before {
+#mini-player-shell .plyr::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -95,18 +99,18 @@
   pointer-events: none;
 }
 #mini-player-shell:hover .plyr::before,
-.mini-player-mode .plyr.plyr--pressed::before {
+#mini-player-shell .plyr.plyr--pressed::before {
   opacity: 1;
   visibility: visible;
 }
-.mini-player-mode button[data-plyr="fullscreen"],
-.mini-player-mode button[data-plyr="pip"],
-.mini-player-mode button[data-plyr="play"],
-.mini-player-mode button[data-plyr="settings"],
-.mini-player-mode button[data-plyr="meel-miniplayer"] {
+#mini-player-shell button[data-plyr="fullscreen"],
+#mini-player-shell button[data-plyr="pip"],
+#mini-player-shell button[data-plyr="play"],
+#mini-player-shell button[data-plyr="settings"],
+#mini-player-shell button[data-plyr="meel-miniplayer"] {
   display: none !important;
 }
-.mini-player-mode .plyr__controls {
+#mini-player-shell .plyr__controls {
   padding-left: 16px !important;
   background: 0 0 !important;
   padding: 10px 12px !important;
@@ -121,11 +125,11 @@
   right: 0 !important;
 }
 #mini-player-shell:hover .plyr__controls,
-.mini-player-mode .plyr.plyr--pressed .plyr__controls {
+#mini-player-shell .plyr.plyr--pressed .plyr__controls {
   opacity: 1 !important;
   visibility: visible !important;
 }
-.mini-player-mode .plyr__progress input[type="range"] {
+#mini-player-shell .plyr__progress input[type="range"] {
   cursor: pointer !important;
 }
 /* ─── Close & Expand buttons ─── */
