@@ -90,31 +90,60 @@ function cancelMiniSnap() {
     (miniSnapPending.shell.style.bottom = "auto"),
     (miniSnapPending = null));
 }
-/* Lepas drag: shell DIAM DI TEMPAT persis di posisi dilepas — TANPA snap
-   ke tepi, tanpa momentum, tanpa lari ke samping. Hanya skala 1.02→1
-   yang menyusut mulus (via transform, GPU-composited); posisi left/top
-   di-commit setelah animasi selesai. */
+/* Pilih pojok TERDEKAT dari posisi shell (YouTube-style). Margin mengikuti
+   CSS: desktop 24px; <=640px 12/16; <=480px 8/12. */
+function pickMiniCorner(left, top, w, h) {
+  const vw = window.innerWidth,
+    vh = window.innerHeight,
+    small = vw <= 480,
+    tiny = vw <= 640,
+    mx = tiny ? (small ? 8 : 12) : 24,
+    my = tiny ? (small ? 12 : 16) : 24;
+  const targets = [
+    { left: mx, top: my },
+    { left: Math.max(0, vw - w - mx), top: my },
+    { left: mx, top: Math.max(0, vh - h - my) },
+    { left: Math.max(0, vw - w - mx), top: Math.max(0, vh - h - my) },
+  ];
+  const cx = left + w / 2,
+    cy = top + h / 2;
+  let best = targets[0],
+    bd = Infinity;
+  for (const t of targets) {
+    const d = (t.left + w / 2 - cx) ** 2 + (t.top + h / 2 - cy) ** 2;
+    d < bd && ((bd = d), (best = t));
+  }
+  return best;
+}
+/* Lepas drag: shell otomatis meluncur ke POJOK TERDEKAT (kanan-atas /
+   kiri-atas / kanan-bawah / kiri-bawah) — seperti YouTube. Animasi via
+   transform (GPU-composited): skala 1.02→1 menyusut mulus sambil posisi
+   meluncur dengan easing lembut; left/top di-commit setelah selesai. */
 function snapMiniPlayer(e, base, applied) {
   cancelMiniSnap();
-  const targetLeft = base.left + applied.x,
-    targetTop = base.top + applied.y;
+  // Posisi shell saat dilepas = base rect (scale 1) + delta terkunci.
+  const curLeft = base.left + applied.x,
+    curTop = base.top + applied.y,
+    corner = pickMiniCorner(curLeft, curTop, base.width, base.height),
+    dx = corner.left - base.left,
+    dy = corner.top - base.top;
   e.classList.add("mini-snapping");
-  e.style.transform = `translate3d(${applied.x}px, ${applied.y}px, 0) scale(1)`;
+  e.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1)`;
   miniSnapPending = {
     shell: e,
-    left: targetLeft,
-    top: targetTop,
+    left: corner.left,
+    top: corner.top,
     timer: setTimeout(() => {
       e.classList.remove("mini-snapping");
       (e.style.transform = "none"),
-        (e.style.left = targetLeft + "px"),
-        (e.style.top = targetTop + "px"),
+        (e.style.left = corner.left + "px"),
+        (e.style.top = corner.top + "px"),
         (e.style.right = "auto"),
         (e.style.bottom = "auto");
       miniSnapPending = null;
     }, 320),
   };
-  saveMiniPlayerPos(targetLeft, targetTop);
+  saveMiniPlayerPos(corner.left, corner.top);
 }
 function initMiniPlayerDrag(e) {
   let rafId = null,
