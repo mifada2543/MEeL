@@ -37,7 +37,7 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 class: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
-| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v11 (idempotent) |
+| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v12 (idempotent) |
 | **PWA Precache** | `modules/core/SwPrecache.php` | Generator precache service worker dinamis — membaca `assets/css/*/manifest.php`, `SW_VERSION` otomatis dari hash konten |
 | **PWA Generator** | `sw.js.php` | Service worker dibangkitkan per request (disajikan sebagai `/sw.js` via rewrite `.htaccess`) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
@@ -70,9 +70,10 @@ Selamat datang di dokumentasi resmi **MEeL** — Platform Media Hub Pribadi untu
 - **Type hints:** Properti class dan parameter constructor sekarang menggunakan type hints (`\mysqli`, `int`, `string`, dll.)
 - **Activity Log Integration:** `log_activity()` function + integrasi di login, logout, upload, dan admin actions — audit trail penuh ke tabel `activity_log`
 - **Admin Activity Log Viewer:** Halaman `admin/activity_log.php` untuk melihat, filter, dan cleanup trail audit
-- **Database Alignment:** `schema.sql` dan `migrate.php` tersinkronisasi (v1–v11) — FULLTEXT, FK, UNIQUE KEY, activity_log, MFA, composite index comments, unique key interactions
+- **Database Alignment:** `schema.sql` dan `migrate.php` tersinkronisasi (v1–v12) — FULLTEXT, FK, UNIQUE KEY, activity_log, MFA, composite index comments, unique key interactions, chess room identity
 - **Migrasi v10:** Index komposit `(video_id, created_at)` & `(music_id, created_at)` pada tabel `comments`
 - **Migrasi v11:** Unique key `interactions` dipecah menjadi `(user_id, video_id)` & `(user_id, music_id)` — NULL di unique key gabungan tidak mencegah duplikat
+- **Migrasi v12:** Ikat identitas user ke room catur (`white_user_id`, `black_user_id`) — cegah akses ilegal via `room_code`
 - **Modul Anime dihapus:** Modul placeholder "Coming Soon" yang sudah tidak relevan dihapus dari kodebase
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — proteksi endpoint like, comment, upload dari abuse dengan per-user limits dan role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` sekarang mengembalikan metadata pagination (`total_pages`, `from`, `to`) — UI menampilkan info halaman

@@ -18,7 +18,6 @@ $is_admin  = ($user_role === 'admin');
 // Upload 1 jam terakhir — window sama dengan System::checkRateLimit
 $hour_count = get_hourly_upload_count($conn, $user_id, 'music');
 
-// Total upload
 $total_uploads = get_total_upload_count($conn, $user_id, 'music');
 
 // Limit upload per jam — konsisten dengan enforcement (member 2x lipat)

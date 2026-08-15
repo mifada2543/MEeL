@@ -95,13 +95,6 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-// Cara aktivasi:
-// 2. Aktifkan di httpd.conf:
-// XSendFile on
-// XSendFilePath "/opt/lampp/htdocs/MEeL/music/upload/file"
-// 3. Restart Apache
-// 4. Tambahkan define berikut di auth/config.php:
-// define('MEEL_USE_XSENDFILE', true);
 if (defined('MEEL_USE_XSENDFILE') && MEEL_USE_XSENDFILE === true) {
     header("X-Sendfile: " . $filePath);
     header("Content-Length: " . $size);

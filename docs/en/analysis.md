@@ -62,7 +62,7 @@ MEeL/
 
 ## 🔒 Security Assessment
 
-### Security Test: ✅ 97/100 — Score: 97/100 (A) (5 non-critical warnings, 0 fails)
+### Security Test: ✅ 98/100 — Score: 98/100 (A) (5 non-critical warnings, 0 fails)
 
 | Category | Status | Detail |
 |---|---|---|
@@ -79,17 +79,18 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 161/157 — Score: 99/100 (A) (4 non-critical warnings)
+### Functional Test: ✅ 55/50 — Score: 95/100 (A) (5 non-critical warnings)
 
-**4 Warnings (non-critical):**
+**5 Warnings (non-critical):**
 | Warning | Category | Notes |
 |---|---|---|
-| Session name (meel) not detected | Minor | Static detection — session bootstrapped from central `modules/core/helpers/session.php` |
-| Session GC maxlifetime not detected | Minor | Static detection — see `meel_boot_session()` |
-| Session cookie params not detected | Minor | Static detection |
-| `verify_csrf_token` not detected | Minor | Central function in `modules/core/helpers.php` |
+| `modules/media/MediaViewer.php` — 2 raw queries (mixed with prepared statements) | Minor | `SELECT MAX(id) AS max_id FROM {$table}` — needs review |
+| `controllers/profile/profile_edit.php` — MIME check | Minor | Needs review |
+| Unique session name (meel) not detected | Minor | Static detection — session bootstrapped from central `modules/core/helpers/session.php` |
+| Session timeout (`gc_maxlifetime`) not detected | Minor | Static detection — see `meel_boot_session()` |
+| HTTP-only cookie params not detected | Minor | Static detection |
 
-### PHP Syntax Check: ✅ 20/20 Files Passed
+### PHP Syntax Check: ✅ 175/175 Files Passed
 
 ### Performance Improvements
 
@@ -173,11 +174,11 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 
 | Test | Total | Pass | Warn | Fail | Score |
 |---|---|---|---|---|---|
-| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 161 | 157 | 4 warn | **0** | **✅ 99/100** |
-| **Security Test** | 98 | 93 | 5 warn | **0** | **✅ 97/100** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **Functional Test** | 55 | 50 | 5 warn | **0** | **✅ 95/100** |
+| **Security Test** | 125 | 120 | 5 warn | **0** | **✅ 98/100** |
+| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 ---
 
@@ -198,7 +199,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 ### Low Priority
 
 7. **Docker support** — consistent deployment environment
-8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (255 unit + 79 integration = 334 tests)
+8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (266 unit + 79 integration = 345 tests)
 
 ---
 
@@ -215,8 +216,8 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 | **Performance optimizations** | 6 (FULLTEXT, pagination cache, session_write_close) |
 | **Code quality improvements** | 12 (autoloader, template, static cache, deduplication) |
 | **Documentation updated** | 13 docs + README.md |
-| **Functional test score** | 99/100 (A) |
-| **Security test score** | 97/100 (93 pass, 5 non-critical warnings) |
+| **Functional test score** | 95/100 (A) |
+| **Security test score** | 98/100 (120 pass, 5 non-critical warnings) |
 
 > **Status:** ✅ **Production-ready with 0 critical, 0 high, 0 medium, and 0 low issues.** All identified low issues have been resolved.
 

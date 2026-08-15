@@ -24,7 +24,6 @@ function get_real_ip()
     $remote = $_SERVER["REMOTE_ADDR"] ?? '0.0.0.0';
     return $valid($remote) ? $remote : '0.0.0.0';
 }
-// 2. Fungsi Deteksi Tipe Akses & Validasi IP
 function validate_and_format_ip($ip)
 {
     $ip = trim($ip);
@@ -58,7 +57,6 @@ function validate_and_format_ip($ip)
     return ['ip' => 'Unknown', 'display' => 'Unknown', 'is_local' => false, 'version' => 'unknown'];
 }
 
-// 3. Fungsi Deteksi Metode Akses
 function get_access_method()
 {
     $trusted = trust_proxy_headers();
@@ -80,12 +78,10 @@ function get_access_method()
     return 'Direct';
 }
 
-// 4. Fungsi Deteksi IPv6 vs IPv4 Access
 function get_connection_protocol()
 {
     $ip = get_real_ip();
 
-    // Check if IPv6 (includes IPv4-mapped IPv6)
     if (strpos($ip, ':') !== false) {
         return 'IPv6';
     }
@@ -210,7 +206,7 @@ if (isset($conn)) {
                 }
             }
         } elseif ($current_page == 'stream.php' && $dir_name == 'music') {
-            // server dengan query berulang untuk lagu yang sama.
+            // Throttle: hindari query berulang untuk lagu yang sama.
             $last_stream_id = $_SESSION['_last_stream_id'] ?? null;
             if ($last_stream_id !== $id_get) {
                 $_SESSION['_last_stream_id'] = $id_get;
@@ -226,7 +222,7 @@ if (isset($conn)) {
                     }
                 }
             } elseif (isset($_SESSION['_last_stream_page'])) {
-                // sudah di-cache di session, bukan query ulang ke DB.
+                // Sudah di-cache di session — tidak perlu query ulang ke DB.
                 $current_page = $_SESSION['_last_stream_page'];
             }
         } elseif ($current_page == 'index.php' && $dir_name == 'profile') {
@@ -275,7 +271,7 @@ if (isset($conn)) {
         $uid = $_SESSION['user_id'];
         $current_sid = session_id();
 
-        // 1. MIRO: AMBIL DATA SESI & STATUS DARI DB SEKALIGUS
+        // 1. Ambil data sesi & status dari DB sekaligus
         $stmt_check = $conn->prepare("SELECT last_session_id, role FROM users WHERE id = ?");
         $stmt_check->bind_param("i", $uid);
         $stmt_check->execute();
@@ -303,7 +299,7 @@ if (isset($conn)) {
             $stmt_update_sid->execute();
         }
 
-        // 3. UPDATE AKTIVITAS (Lanjutkan proses logger asli kamu)
+        // 2. Update aktivitas user
         $stmt = $conn->prepare("UPDATE users SET last_page = ?, user_agent = ?, access_via = ?, ip_address = ?, last_activity = NOW() WHERE id = ?");
         $stmt->bind_param("ssssi", $current_page, $device, $access_via, $user_ip, $uid);
         $stmt->execute();

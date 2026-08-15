@@ -78,7 +78,13 @@ function report(string $status, string $label, string $hint = ''): void
 function cmd_output(string $cmd): ?string
 {
     $out = @shell_exec($cmd . ' 2>&1');
-    return is_string($out) && trim($out) !== '' ? $out : null;
+    if (!is_string($out) || trim($out) === '') {
+        return null;
+    }
+    if (preg_match('/:\s*(not found|No such file or directory)\b/i', $out)) {
+        return null;
+    }
+    return $out;
 }
 
 // 1. MEEL_HDD_BASE
@@ -130,30 +136,49 @@ if ($hdd === '') {
 
     // ─── Direktori turunan ───
     $derived = [
-        'MEEL_HDD_VIDEO_UPLOAD' => 'video/upload',
-        'MEEL_HDD_VIDEO_DIR'    => 'video/upload/video',
-        'MEEL_HDD_THUMB_DIR'    => 'video/upload/thumbnail',
-        'MEEL_HDD_MUSIC_UPLOAD' => 'music/upload',
-        'MEEL_HDD_BOOKS_UPLOAD' => 'books/upload',
-        'MEEL_HDD_DRIVE'        => 'drive',
+        'MEEL_HDD_VIDEO_UPLOAD' => ['video/upload',           'auto'],
+        'MEEL_HDD_VIDEO_DIR'    => ['video/upload/video',     'auto'],
+        'MEEL_HDD_THUMB_DIR'    => ['video/upload/thumbnail', 'manual'],
+        'MEEL_HDD_MUSIC_UPLOAD' => ['music/upload',           'manual'],
+        'MEEL_HDD_BOOKS_UPLOAD' => ['books/upload',           'manual'],
+        'MEEL_HDD_DRIVE'        => ['drive',                  'auto'],
     ];
-    foreach ($derived as $const => $rel) {
+    foreach ($derived as $const => [$rel, $mode]) {
 
         $dir = ($hddOverride !== null || !defined($const))
             ? $hdd . '/' . $rel
             : rtrim((string) constant($const), '/');
         if (!is_dir($dir)) {
-            report('WARN', "{$const} belum ada: {$dir}",
-                'dibuat otomatis saat upload pertama — pastikan parent writable');
+            $status = ($mode === 'auto') ? 'WARN' : 'FAIL';
+            $hint = ($mode === 'auto')
+                ? 'dibuat otomatis saat upload pertama — pastikan parent writable'
+                : 'TIDAK dibuat otomatis — upload modul terkait AKAN GAGAL. Buat manual: mkdir -p ' . $dir . ' (atau jalankan install.sh)';
+            report($status, "{$const} belum ada: {$dir}", $hint);
+        }
+    }
+
+    $musicBase = ($hddOverride !== null || !defined('MEEL_HDD_MUSIC_UPLOAD'))
+        ? $hdd . '/music/upload'
+        : rtrim((string) constant('MEEL_HDD_MUSIC_UPLOAD'), '/');
+    $booksBase = ($hddOverride !== null || !defined('MEEL_HDD_BOOKS_UPLOAD'))
+        ? $hdd . '/books/upload'
+        : rtrim((string) constant('MEEL_HDD_BOOKS_UPLOAD'), '/');
+
+    $requiredSubdirs = [
+        'music/upload/file'      => $musicBase . '/file',
+        'music/upload/thumbnail' => $musicBase . '/thumbnail',
+        'books/upload/pdf'       => $booksBase . '/pdf',
+        'books/upload/thumbnail' => $booksBase . '/thumbnail',
+    ];
+    foreach ($requiredSubdirs as $label => $dir) {
+        if (!is_dir($dir)) {
+            report('FAIL', "{$label} belum ada: {$dir}",
+                'TIDAK dibuat otomatis — upload modul terkait AKAN GAGAL. Buat manual: mkdir -p ' . $dir . ' (atau jalankan install.sh)');
         }
     }
 }
 
 // 2. Upload dirs (books / music / video)
-// Sejak refactor portabilitas, books/music/video/upload adalah folder NYATA
-// ter-track di repo (placeholder .gitkeep + .htaccess hardening) — storage
-// fallback bawaan. Saat MEEL_HDD_BASE digunakan, symlink dibuat SAAT deploy
-// (jangan pernah di-commit; .gitignore memblokir).
 section('2. Upload dirs (books / music / video)');
 
 foreach (['books', 'music', 'video'] as $m) {
@@ -176,8 +201,6 @@ foreach (['books', 'music', 'video'] as $m) {
             report('PASS', $label, "→ {$target}");
         }
     } elseif (is_dir($path)) {
-        // Folder nyata ter-track = fallback bawaan repo (valid). Kalau
-        // MEEL_HDD_BASE diset, sebaiknya arahkan symlink saat deploy.
         $hint = $hdd !== ''
             ? 'folder nyata (fallback) — untuk storage terpusat buat symlink saat deploy: ln -s ' . rtrim($hdd, '/') . "/{$m}/upload " . $path
             : 'folder nyata (fallback ter-track repo) — storage lokal OK';
@@ -246,16 +269,24 @@ if (!is_file($driveHt)) {
     }
 }
 
-// ─── Guard portabilitas: data_drive/public & private_admins harus folder ───
-// nyata (bukan symlink ter-track). Storage Drive diset terpusat lewat
-// MEEL_HDD_DRIVE di auth/settings.php; symlink lama (/media/<username>/...)
-// mem-bocorkan username OS developer & membuat modul Drive crash di mesin
-// lain (RuntimeException: Folder penyimpanan gagal dibuat).
+$driveRoot = ($hddOverride !== null || !defined('MEEL_HDD_DRIVE'))
+    ? $hdd . '/drive'
+    : rtrim((string) constant('MEEL_HDD_DRIVE'), '/');
+
 foreach (['public', 'private_admins'] as $driveSub) {
     $driveEntry = MEEL_ROOT . '/data_drive/' . $driveSub;
-    if (is_link($driveEntry)) {
-        report('WARN', "data_drive/{$driveSub} masih symlink → " . (string) readlink($driveEntry),
-            'jadikan folder nyata ATAU set MEEL_HDD_DRIVE di auth/settings.php (jangan commit symlink)');
+    if (!is_link($driveEntry)) {
+        continue;
+    }
+    $target       = (string) readlink($driveEntry);
+    $targetNorm   = rtrim($target, '/');
+    $expected     = $driveRoot . '/' . $driveSub;
+    $expectedNorm = rtrim($expected, '/');
+    if ($expectedNorm !== '' && ($targetNorm === $expectedNorm || str_starts_with($targetNorm, $expectedNorm . '/'))) {
+        report('PASS', "data_drive/{$driveSub} → {$target} (symlink deploy sah — target di dalam MEEL_HDD_DRIVE)");
+    } else {
+        report('WARN', "data_drive/{$driveSub} masih symlink → {$target}",
+            'target di LUAR MEEL_HDD_DRIVE — jadikan folder nyata ATAU arahkan ke ' . $expected . ' (jangan commit symlink)');
     }
 }
 
@@ -269,8 +300,6 @@ if (!is_file($vpClass) || !is_file($vpScript)) {
     report('FAIL', 'PHP_BINARY tidak dapat dieksekusi untuk spawn proxy',
         'ValidatingProxy menjalankan php CLI (proc_open)');
 } else {
-    // Spawn proxy nyata sebentar lewat class (handshake stdout dibaca sendiri
-    // oleh ValidatingProxy, jadi tidak ada proses yang menggantung di sini).
     $proxyOk = false;
     try {
         require_once $vpClass;

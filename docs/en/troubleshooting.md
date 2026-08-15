@@ -164,6 +164,26 @@ mysql -u root -p -e "SHOW DATABASES;"
 - Check credentials in `auth/settings.php`
 - Check MySQL port (default: 3306)
 
+**MariaDB-specific: `root` uses the `unix_socket` auth plugin**
+
+On default MariaDB installs, `root` authenticates via the `unix_socket` plugin
+— connections are only valid from a process running as the OS `root` user (via
+the socket). So `mysql -u root` works from the CLI, but connections from the
+web-server process (`www-data`) fail with **"Access denied"** even with an
+empty password. Recommended fix: create a dedicated database user for the app:
+
+```sql
+CREATE USER 'meel'@'localhost' IDENTIFIED BY 'strong_password';
+GRANT ALL PRIVILEGES ON MEeL.* TO 'meel'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Then use those credentials in `auth/settings.php` (`$username`/`$password`).
+Alternative (less recommended): switch `root` to `mysql_native_password`:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('new_password');
+```
+
 ### ❌ "Table not found"
 
 **Solution:**
@@ -297,8 +317,10 @@ $timeout = 43200; // 12 hours in seconds
    `data_drive/public` & `data_drive/private_admins` are auto-created by
    `DriveStorage::ensureDirectoryExists()`.
 
-> ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them and
-> `tests/check_deploy.php` warns. See
+> ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them.
+> `tests/check_deploy.php` only warns about symlinks pointing OUTSIDE
+> `MEEL_HDD_DRIVE` (e.g. `/media/<user>/...`); deploy-time symlinks pointing
+> inside `MEEL_HDD_DRIVE` are rated PASS. See
 > [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)
 > for the Drive storage layout (`MEEL_HDD_DRIVE` vs the `data_drive/` fallback).
 

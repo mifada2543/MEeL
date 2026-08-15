@@ -431,7 +431,6 @@ class Uploader
 
         exec($cmd, $output, $result);
 
-        // Generate sprite & VTT ke work_folder
         if ($result === 0) {
             $this->generateSpriteAndVTT($staged_video, $work_folder);
         }
@@ -465,7 +464,6 @@ class Uploader
             }
         }
 
-        // Hapus staged video setelah FFmpeg selesai
         $this->removeFile($staged_video);
 
         if ($result !== 0) {
@@ -506,7 +504,6 @@ class Uploader
             }
         }
 
-        // Bersihkan work_folder (seharusnya sudah kosong)
         if ($move_locked) {
             flock($lock_move, LOCK_UN);
             fclose($lock_move);

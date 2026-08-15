@@ -6,6 +6,7 @@ Complete guide to install and run MEeL-HUB on your local server.
 
 ## 📋 Table of Contents
 
+- [Automatic Installer (install.sh)](#automatic-installer-installsh)
 - [System Requirements](#system-requirements)
 - [Step-by-Step Installation](#step-by-step-installation)
 - [Database Setup](#database-setup)
@@ -15,6 +16,50 @@ Complete guide to install and run MEeL-HUB on your local server.
 - [Installation Verification](#installation-verification)
 - [FFmpeg & yt-dlp Setup](#ffmpeg--yt-dlp-setup)
 - [Installation Troubleshooting](#installation-troubleshooting)
+
+---
+
+## ⚡ Automatic Installer (install.sh)
+
+An automatic installer that runs almost every step of this guide in a single
+command (tested on Ubuntu/Debian):
+
+```bash
+./install.sh                 # interactive mode (asks for configuration)
+./install.sh --yes           # non-interactive, uses all defaults
+./install.sh --hdd=/path     # set MEEL_HDD_BASE directly
+./install.sh --skip-apt      # skip system package installation (already present)
+./install.sh --xsendfile     # enable MEEL_USE_XSENDFILE (requires Apache mod_xsendfile)
+```
+
+Steps it runs (idempotent for most of them):
+
+1. **Check dependencies** — PHP 8.0+ with the `mysqli`, `pdo_mysql`,
+   `fileinfo`, `mbstring`, `intl`, `gd`, `zip`, `xml`, `curl` extensions, plus
+   MariaDB/MySQL; installed via apt when needed (`--skip-apt` to skip).
+2. **Database setup** — create the database and import `database/schema.sql`
+   (the hardcoded `USE \`MEeL\`` line in the schema is rewritten to the
+   configured DB name); if the DB already exists it is safely skipped
+   (reimport only on explicit confirmation).
+3. **Application configuration** — create `auth/settings.php` &
+   `auth/config.php` from the templates, patch the DB credentials +
+   `MEEL_HDD_BASE`, and (optionally) enable `MEEL_USE_XSENDFILE` via
+   `--xsendfile`.
+4. **Storage directories** — create the full tree under `MEEL_HDD_BASE`
+   (including `music/upload/{file,thumbnail}` and
+   `books/upload/{manga,pdf,thumbnail}`), point deploy-time symlinks
+   `{video,music,books}/upload` and `data_drive/public` at the centralized
+   storage, and **copy the `.htaccess` hardening to the target** (symlinks are
+   never committed).
+5. **Apache** — enable `mod_rewrite` (best-effort).
+6. **Migration** — `php database/migrate.php`.
+7. **Final verification** — `php tests/check_deploy.php`; **exit code `1` on
+   any FAIL** and a final banner that distinguishes "deployment healthy" from
+   "server not ready".
+
+> 💡 Step 7 validates the **real `MEEL_HDD_BASE` from `auth/settings.php`**
+> (no `--hdd` override) — so the configuration the app actually uses is what
+> gets tested.
 
 ---
 
@@ -63,6 +108,10 @@ extension=zip
 > ⚠️ **`zip` extension** is required for manga uploads (ZIP/CBZ).
 > ⚠️ **mecab extension** Required for better translation support.
 
+> 💡 `install.sh` installs & verifies all of the extensions above automatically
+> (including `pdo_mysql` and `fileinfo`) — see
+> [Automatic Installer](#automatic-installer-installsh).
+
 ### Recommended OS
 
 **Linux (Ubuntu Server / Debian)** is highly recommended. Windows has limitations:
@@ -106,6 +155,12 @@ cd MEeL
 
 > **📁 The database schema file is available at [`database/schema.sql`](../../database/schema.sql).**
 > After importing, run the migration to complete the setup.
+
+> ⚠️ `schema.sql` hardcodes `CREATE DATABASE IF NOT EXISTS \`MEeL\`` +
+> `USE \`MEeL\`;` — manual imports (CLI/phpMyAdmin) always target a database
+> named `MEeL`. `install.sh` rewrites both lines to the configured database
+> name, so a non-default DB name (e.g. for staging) is safe to use through the
+> installer.
 
 #### Option A — Via MySQL CLI (fast):
 
@@ -250,20 +305,24 @@ define('MEEL_HDD_DRIVE', MEEL_HDD_BASE . '/drive/'); // base = public/ + private
   `MEEL_HDD_DRIVE` directly), so **no** symlink is needed for `private_admins`.
   Public previews use web paths under `data_drive/public/...`, so to keep
   in-browser previews working in HDD mode, point a **deploy-time** symlink at the
-  storage (never commit it):
+  storage (never commit it) — **`install.sh` does this automatically**:
   ```bash
   rm -f data_drive/public && ln -s "$BASE/drive/public" data_drive/public
   ```
+  `tests/check_deploy.php` rates this deploy-time symlink **PASS** (target
+  inside `MEEL_HDD_DRIVE`) and only warns when the target points outside the
+  Drive storage (e.g. a committed `/media/<user>/...` symlink).
 - **Fallback mode (`MEEL_HDD_DRIVE` not defined):** Drive uses the repo-tracked
   folders `data_drive/public` & `data_drive/private_admins` (real directories,
   auto-created by `DriveStorage::ensureDirectoryExists()`). This is the
   out-of-the-box behavior on a fresh clone.
 - **Never commit symlinks inside `data_drive/`**: `.gitignore` blocks
-  `data_drive/public` / `data_drive/private_admins` as symlinks, and
-  `tests/check_deploy.php` warns if they are links. A committed absolute symlink
-  (e.g. `/media/<user>/...`) leaks your OS username through the public repo and
-  crashes the Drive module on other machines
-  (`RuntimeException: Folder penyimpanan gagal dibuat`).
+  `data_drive/public` / `data_drive/private_admins` as symlinks.
+  `tests/check_deploy.php` only warns about symlinks pointing OUTSIDE
+  `MEEL_HDD_DRIVE` (e.g. `/media/<user>/...`); deploy-time symlinks pointing
+  inside `MEEL_HDD_DRIVE` are rated PASS. A committed absolute symlink leaks
+  your OS username through the public repo and crashes the Drive module on
+  other machines (`RuntimeException: Folder penyimpanan gagal dibuat`).
 - The private subtree stays hard-denied by the tracked `data_drive/.htaccess`
   (`RewriteRule ^private_admins/ - [F,L]`) plus
   `data_drive/private_admins/.htaccess` (`Require all denied` — tracked in the
@@ -292,10 +351,15 @@ mkdir -p "$BASE"/drive/public "$BASE"/drive/private_admins
 #### 3. No symlinks to create
 
 The books/music/video upload folders are real directories in the repo — there
-is **nothing to symlink**. Optional: if you prefer Apache to serve files
-directly (bypassing PHP) for performance, you may point the folder at your HDD
-storage **at deploy time** — but never commit the symlink (`.gitignore` blocks
-it):
+is **nothing to symlink** for a manual install. **`install.sh` automatically
+creates deploy-time symlinks** `<root>/{video,music,books}/upload →
+$MEEL_HDD_BASE/{m}/upload` when `MEEL_HDD_BASE` differs from the repo folder,
+and **copies the `.htaccess` hardening to the target** so `check_deploy` keeps
+passing (symlinks are never committed — `.gitignore` blocks them).
+
+For a manual install, symlinks are optional — if you prefer Apache to serve
+files directly (bypassing PHP) for performance, you may point the folder at
+your HDD storage **at deploy time**:
 
 ```bash
 cd /opt/lampp/htdocs/MEeL
@@ -306,9 +370,11 @@ done
 ls -la books/upload music/upload video/upload   # harus menunjuk ke BASE Anda
 ```
 
-`tests/check_deploy.php` accepts a deploy-time symlink that points at
-`MEEL_HDD_BASE` (PASS) and warns if it points elsewhere — but the default
-layout (real folders + PHP endpoints) needs no symlink at all.
+> ⚠️ If you create symlinks manually, make sure the `.htaccess` hardening
+> (pattern of `data_drive/.htaccess`: `php_flag engine off` + `ForceType` +
+> `Options -Indexes`) exists on the **target** storage — `install.sh` does this
+> automatically. `tests/check_deploy.php` rates symlinks pointing at
+> `MEEL_HDD_BASE` as PASS and anything else as WARN.
 
 #### 5. Permissions
 
@@ -344,10 +410,15 @@ php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_BASE') ? MEEL_HDD_BA
 
 #### 8. Automated deployment check (one command)
 
-The project ships a CLI health-check that verifies the four deployment-critical
+The project ships a CLI health-check that verifies the deployment-critical
 areas in a single run — `MEEL_HDD_BASE`, upload dirs (real folders or
-deploy-time symlinks), upload-dir `.htaccess` hardening, and the PWA
-`mod_rewrite` rule:
+deploy-time symlinks), **non-auto-created subdirectories**
+(`music/upload/file`, `music/upload/thumbnail`, `books/upload/pdf`,
+`books/upload/thumbnail` — the music/books modules do **not** create them
+automatically, so a missing one is a **FAIL** → deployment not ready, exit
+code `1`), upload-dir `.htaccess` hardening, the `data_drive/`
+portability guard (deploy-time symlinks inside `MEEL_HDD_DRIVE` = PASS;
+pointing outside = WARN), and the PWA `mod_rewrite` rule:
 
 ```bash
 php tests/check_deploy.php                           # local check + auto HTTP probe
@@ -362,6 +433,11 @@ storage is not mounted yet, the script reports `FAIL` on the storage / upload
 dir / upload-`.htaccess` areas — mount the storage, set `MEEL_HDD_BASE`, ensure
 upload dirs have their `.htaccess`, then re-run until you see
 `✅ Deployment sehat.`
+
+> 💡 `install.sh` runs this health-check as its final verification step
+> **without `--hdd`** (the real `auth/settings.php` config is tested) and
+> **exits with code `1`** on any FAIL — the final banner distinguishes
+> "deployment healthy" from "server not ready".
 
 ### 6. Apache Configuration
 
@@ -508,12 +584,13 @@ After all setup is complete, run the database migration to optimize the schema:
 ```
 
 The migration is **idempotent** — safe to run multiple times. It manages
-**v1–v11** (automatic tracker in the `db_version` table):
+**v1–v12** (automatic tracker in the `db_version` table):
 - **v1–v5:** FULLTEXT indexes, performance indexes, structural sync, foreign keys, title type
 - **v6–v7:** `activity_log` table, UNIQUE KEY on username
 - **v8–v9:** role column sync, **MFA columns** (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`)
 - **v10:** composite indexes on `comments` `(video_id, created_at)` & `(music_id, created_at)`
 - **v11:** `interactions` unique keys split into `(user_id, video_id)` & `(user_id, music_id)`
+- **v12:** bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code`
 
 ### 11. Setup cookies.txt (for yt-dlp)
 

@@ -2,7 +2,22 @@
 let isMiniPlayerActive = !1,
   watchUrl = window.location.href,
   savedWatchScrollY = 0,
-  miniShell = null;
+  miniShell = null,
+  miniDragState = null,
+  miniDragSuppressClick = !1,
+  miniSnapPending = null;
+const MINI_POS_KEY = MEEL_KEYS.MINI_PLAYER_POS,
+  /* Skala halus saat shell "digenggam" (drag) — memberi umpan balik visual */
+  MINI_DRAG_SCALE = 1.02;
+/* ─── Ikon statis (tanpa konten user — aman via innerHTML) ─── */
+const MINI_ICON_EXPAND =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm16 5h-5v2h7v-7h-2v5z"/></svg>',
+  MINI_ICON_CLOSE =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
+  MINI_ICON_VOLUME =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  MINI_ICON_MUTED =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
 function setNavbarSearchTarget(e) {
   (["v-search-watch", "v-search-mobile"].forEach((t) => {
     const n = document.getElementById(t);
@@ -12,60 +27,326 @@ function setNavbarSearchTarget(e) {
       .querySelectorAll('button[hx-include="#v-search-watch"]')
       .forEach((t) => t.setAttribute("hx-target", e)));
 }
-function buildMiniShell(e) {
-  if (!e) {
-    console.error("buildMiniShell: main-video-wrapper tidak ditemukan");
-    return null;
+/* ─── Padding body dinamis (ukur tinggi shell aktual) ─── */
+function syncMiniPlayerBodyPadding() {
+  if (!isMiniPlayerActive || !miniShell)
+    return void (document.body.style.paddingBottom = "");
+  const e = miniShell.offsetHeight;
+  document.body.style.paddingBottom = e ? `${e + 32}px` : "120px";
+}
+function clampMiniPlayerToViewport(e) {
+  cancelMiniSnap();
+  const t = e.getBoundingClientRect(),
+    n = e.offsetWidth,
+    o = e.offsetHeight,
+    l = window.innerWidth,
+    a = window.innerHeight;
+  if (n >= l && o >= a) return;
+  const c = Math.min(Math.max(0, t.left), Math.max(0, l - n)),
+    d = Math.min(Math.max(0, t.top), Math.max(0, a - o));
+  (c !== t.left || d !== t.top) &&
+    ((e.style.left = c + "px"),
+    (e.style.top = d + "px"),
+    (e.style.right = "auto"),
+    (e.style.bottom = "auto"));
+}
+window.addEventListener("resize", () => {
+  if (!isMiniPlayerActive) return;
+  miniShell && !miniDragState && clampMiniPlayerToViewport(miniShell);
+  syncMiniPlayerBodyPadding();
+});
+/* ─── Posisi tersimpan (drag + snap) ─── */
+function saveMiniPlayerPos(e, t) {
+  try {
+    localStorage.setItem(MINI_POS_KEY, JSON.stringify({ left: e, top: t }));
+  } catch (e) {}
+}
+function applyMiniPlayerPos(e) {
+  let t = null;
+  try {
+    t = JSON.parse(localStorage.getItem(MINI_POS_KEY) || "null");
+  } catch (e) {
+    t = null;
   }
+  if (!t || !Number.isFinite(t.left) || !Number.isFinite(t.top)) return;
+  const n = e.offsetWidth || 360,
+    o = e.offsetHeight || 200;
+  e.style.left =
+    Math.min(Math.max(0, t.left), Math.max(0, window.innerWidth - n - 8)) +
+    "px";
+  e.style.top =
+    Math.min(Math.max(0, t.top), Math.max(0, window.innerHeight - o - 8)) +
+    "px";
+  (e.style.right = "auto"), (e.style.bottom = "auto");
+}
+function cancelMiniSnap() {
+  miniSnapPending &&
+    (clearTimeout(miniSnapPending.timer),
+    miniSnapPending.shell.classList.remove("mini-snapping"),
+    (miniSnapPending.shell.style.transform = "none"),
+    (miniSnapPending.shell.style.left = miniSnapPending.left + "px"),
+    (miniSnapPending.shell.style.top = miniSnapPending.top + "px"),
+    (miniSnapPending.shell.style.right = "auto"),
+    (miniSnapPending.shell.style.bottom = "auto"),
+    (miniSnapPending = null));
+}
+/* Pilih pojok TERDEKAT dari posisi shell (YouTube-style). Margin mengikuti
+   CSS: desktop 24px; <=640px 12/16; <=480px 8/12. */
+function pickMiniCorner(left, top, w, h) {
+  const vw = window.innerWidth,
+    vh = window.innerHeight,
+    small = vw <= 480,
+    tiny = vw <= 640,
+    mx = tiny ? (small ? 8 : 12) : 24,
+    my = tiny ? (small ? 12 : 16) : 24;
+  const targets = [
+    { left: mx, top: my },
+    { left: Math.max(0, vw - w - mx), top: my },
+    { left: mx, top: Math.max(0, vh - h - my) },
+    { left: Math.max(0, vw - w - mx), top: Math.max(0, vh - h - my) },
+  ];
+  const cx = left + w / 2,
+    cy = top + h / 2;
+  let best = targets[0],
+    bd = Infinity;
+  for (const t of targets) {
+    const d = (t.left + w / 2 - cx) ** 2 + (t.top + h / 2 - cy) ** 2;
+    d < bd && ((bd = d), (best = t));
+  }
+  return best;
+}
+/* Lepas drag: shell otomatis meluncur ke POJOK TERDEKAT (kanan-atas /
+   kiri-atas / kanan-bawah / kiri-bawah) — seperti YouTube. Animasi via
+   transform (GPU-composited): skala 1.02→1 menyusut mulus sambil posisi
+   meluncur dengan easing lembut; left/top di-commit setelah selesai. */
+function snapMiniPlayer(e, base, applied) {
+  cancelMiniSnap();
+  // Posisi shell saat dilepas = base rect (scale 1) + delta terkunci.
+  const curLeft = base.left + applied.x,
+    curTop = base.top + applied.y,
+    corner = pickMiniCorner(curLeft, curTop, base.width, base.height),
+    dx = corner.left - base.left,
+    dy = corner.top - base.top;
+  e.classList.add("mini-snapping");
+  e.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1)`;
+  miniSnapPending = {
+    shell: e,
+    left: corner.left,
+    top: corner.top,
+    timer: setTimeout(() => {
+      e.classList.remove("mini-snapping");
+      (e.style.transform = "none"),
+        (e.style.left = corner.left + "px"),
+        (e.style.top = corner.top + "px"),
+        (e.style.right = "auto"),
+        (e.style.bottom = "auto");
+      miniSnapPending = null;
+    }, 320),
+  };
+  saveMiniPlayerPos(corner.left, corner.top);
+}
+function initMiniPlayerDrag(e) {
+  let rafId = null,
+    captured = !1,
+    appliedX = 0,
+    appliedY = 0;
+  const applyTransform = () => {
+    rafId = null;
+    const t = miniDragState;
+    if (!t) return;
+    // Posisi target diklamp agar shell SELALU berada di dalam viewport.
+    const n = t.rect,
+      o = t.curX - t.startX,
+      l = t.curY - t.startY,
+      a = Math.max(0, window.innerWidth - n.width),
+      c = Math.max(0, window.innerHeight - n.height),
+      d = Math.min(Math.max(0, n.left + o), a),
+      h = Math.min(Math.max(0, n.top + l), c);
+    (appliedX = d - n.left), (appliedY = h - n.top);
+    e.style.transform = `translate3d(${appliedX}px, ${appliedY}px, 0) scale(${MINI_DRAG_SCALE})`;
+  };
+  const endDrag = () => {
+    rafId !== null && (cancelAnimationFrame(rafId), (rafId = null));
+    const t = miniDragState;
+    if (!t) return;
+    const n = t.rect,
+      o = { x: appliedX, y: appliedY };
+    captured &&
+      (e.hasPointerCapture(t.pointerId) &&
+        e.releasePointerCapture(t.pointerId),
+      (captured = !1));
+    miniDragState = null;
+    e.classList.remove("mini-dragging");
+    if (t.moved) {
+      miniDragSuppressClick = !0;
+      setTimeout(() => (miniDragSuppressClick = !1), 0);
+      snapMiniPlayer(e, n, o);
+    }
+  };
+  e.addEventListener("pointerdown", (t) => {
+    if (0 !== t.button) return;
+    if (
+      t.target.closest(
+        "button, a, input, select, textarea, .plyr__controls, .plyr__menu",
+      )
+    )
+      return;
+    cancelMiniSnap();
+    miniDragState = {
+      pointerId: t.pointerId,
+      startX: t.clientX,
+      startY: t.clientY,
+      curX: t.clientX,
+      curY: t.clientY,
+      rect: e.getBoundingClientRect(),
+      moved: !1,
+    };
+    e.classList.add("mini-dragging");
+  });
+  const t = (t) => {
+    const n = miniDragState;
+    if (!n || t.pointerId !== n.pointerId) return;
+    (n.curX = t.clientX),
+      (n.curY = t.clientY);
+    if (
+      Math.abs(n.curX - n.startX) + Math.abs(n.curY - n.startY) > 4 &&
+      !n.moved
+    ) {
+      // Capture pointer SETELAH gerakan terdeteksi: pointerup tetap sampai
+      // walau dilepas di luar viewport (mencegah shell terjebak di luar
+      // layar), tanpa mengganggu tap (tap tanpa gerakan tidak di-capture).
+      n.moved = !0;
+      if (!captured)
+        try {
+          e.setPointerCapture(t.pointerId), (captured = !0);
+        } catch (e) {}
+    }
+    rafId === null && (rafId = requestAnimationFrame(applyTransform));
+  };
+  const n = (t) => {
+    const n = miniDragState;
+    (!n || t.pointerId !== n.pointerId) || endDrag();
+  };
+  window.addEventListener("pointermove", t);
+  window.addEventListener("pointerup", n);
+  window.addEventListener("pointercancel", n);
+  window.addEventListener("blur", endDrag);
+  document.addEventListener("visibilitychange", () => {
+    document.hidden && endDrag();
+  });
+}
+document.addEventListener(
+  "click",
+  (e) => {
+    miniDragSuppressClick &&
+      (e.stopPropagation(), e.preventDefault());
+  },
+  !0,
+);
+/* ─── Tombol mute cepat ─── */
+function updateMiniMuteBtn() {
+  const e = document.getElementById("mini-mute-btn");
+  if (!e) return;
+  const t = !!(player && (player.muted || player.volume === 0));
+  (e.innerHTML = t ? MINI_ICON_MUTED : MINI_ICON_VOLUME),
+    (e.title = t ? "Suarakan" : "Bisukan"),
+    e.setAttribute("aria-label", e.title);
+}
+let _miniMuteWiredPlayer = null;
+function wireMiniMuteToPlayer() {
+  if (_miniMuteWiredPlayer === player) return;
+  _miniMuteWiredPlayer &&
+    _miniMuteWiredPlayer.off &&
+    (_miniMuteWiredPlayer.off("mutedchange", updateMiniMuteBtn),
+    _miniMuteWiredPlayer.off("volumechange", updateMiniMuteBtn));
+  player &&
+    player.on &&
+    (player.on("mutedchange", updateMiniMuteBtn),
+    player.on("volumechange", updateMiniMuteBtn));
+  _miniMuteWiredPlayer = player || null;
+}
+/* ─── Awasi ukuran shell: saat tinggi berubah (video load / ganti / potret),
+   posisi di-clamp agar shell selalu sepenuhnya terlihat di viewport. ─── */
+let miniShellResizeObserver = null;
+function watchMiniShellSize(e) {
+  if (!window.ResizeObserver) return;
+  miniShellResizeObserver ||
+    (miniShellResizeObserver = new ResizeObserver(() => {
+      isMiniPlayerActive &&
+        !miniDragState &&
+        clampMiniPlayerToViewport(e);
+    }));
+  miniShellResizeObserver.observe(e);
+}
+/* ─── Bangun shell sekali, reuse antar toggle ─── */
+function buildMiniInfo() {
+  const e = document.createElement("div");
+  e.style.cssText = "flex:1;min-width:0;";
   const t = document.createElement("div");
-  t.id = "mini-player-shell";
-  const n = document.createElement("button");
-  ((n.id = "mini-expand-btn"),
-    (n.title = "Perlebar player"),
-    (n.innerHTML =
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm16 5h-5v2h7v-7h-2v5z"/></svg>'),
-    n.addEventListener("click", (e) => {
+  (t.id = "mini-info-title"),
+    (t.textContent = videoTitle || "");
+  const n = document.createElement("div");
+  (n.id = "mini-info-uploader"),
+    (n.textContent = videoUploader || "");
+  return (e.appendChild(t), e.appendChild(n), e);
+}
+function getMiniShell() {
+  if (miniShell) return miniShell;
+  const e = document.createElement("div");
+  e.id = "mini-player-shell";
+  const t = document.createElement("button");
+  ((t.id = "mini-expand-btn"),
+    (t.type = "button"),
+    (t.title = "Perlebar player"),
+    (t.innerHTML = MINI_ICON_EXPAND),
+    t.addEventListener("click", (e) => {
       (e.stopPropagation(), toggleMiniPlayer());
     }));
-  const o = document.createElement("button");
-  ((o.id = "mini-close-btn"),
-    (o.title = "Tutup mini player"),
-    (o.innerHTML =
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'),
-    o.addEventListener("click", (e) => {
+  const n = document.createElement("button");
+  ((n.id = "mini-close-btn"),
+    (n.type = "button"),
+    (n.title = "Tutup mini player"),
+    (n.innerHTML = MINI_ICON_CLOSE),
+    n.addEventListener("click", (e) => {
       (e.stopPropagation(), closeMiniPlayer());
-    }),
-    t.appendChild(e),
-    t.appendChild(n),
-    t.appendChild(o));
-  const l = videoTitle || "",
-    a = videoUploader || "",
-    r = document.createElement("div");
-  return (
-    (r.id = "mini-player-info"),
-    (r.title = "Kembali ke video"),
-    (r.innerHTML = `\n    <div style="flex:1;min-width:0;">\n      <div id="mini-info-title">${l}</div>\n      <div id="mini-info-uploader">${a}</div>\n    </div>\n  `),
-    r.addEventListener("click", () => toggleMiniPlayer()),
-    t.appendChild(r),
-    t
-  );
+    }));
+  const o = document.createElement("div");
+  (o.id = "mini-player-info"),
+    (o.title = "Kembali ke video");
+  const l = buildMiniInfo(),
+    a = document.createElement("button");
+  ((a.id = "mini-mute-btn"),
+    (a.type = "button"),
+    (a.title = "Bisukan"),
+    (a.innerHTML = MINI_ICON_VOLUME),
+    a.addEventListener("click", (e) => {
+      (e.stopPropagation(),
+        player && (player.muted = !player.muted),
+        updateMiniMuteBtn());
+    }));
+  (o.appendChild(l), o.appendChild(a)),
+    o.addEventListener("click", () => toggleMiniPlayer()),
+    e.appendChild(o),
+    e.appendChild(t),
+    e.appendChild(n),
+    (miniShell = e),
+    (e.style.display = "none"),
+    document.body.appendChild(e),
+    initMiniPlayerDrag(e),
+    watchMiniShellSize(e),
+    wireMiniMuteToPlayer(),
+    updateMiniMuteBtn();
+  return e;
 }
 function closeMiniPlayer() {
   isMiniPlayerActive &&
     (player && player.pause(), (window.location.href = "index.php"));
 }
 function updateMiniPlayerInfo(e, t) {
-  let n = document.getElementById("mini-info-title"),
+  const n = document.getElementById("mini-info-title"),
     o = document.getElementById("mini-info-uploader");
-  if (!n || !o) {
-    const l = document.getElementById("mini-player-info");
-    if (l) {
-      l.innerHTML = `\n    <div style="flex:1;min-width:0;">\n      <div id="mini-info-title">${e || ""}</div>\n      <div id="mini-info-uploader">${t || ""}</div>\n    </div>\n  `;
-      return;
-    }
-    return;
-  }
-  ((n.textContent = e || ""), (o.textContent = t || ""));
+  n && (n.textContent = e || "");
+  o && (o.textContent = t || "");
 }
 function attachMiniPlayerVideoCardListeners(e) {
   e &&
@@ -153,7 +434,16 @@ function attachMiniPlayerVideoCardListeners(e) {
                 },
               ),
               window.lucide && window.lucide.createIcons(),
-              window.htmx && htmx.process(document.body),
+              ["main-video", "watch-details-wrapper", "recommendation-column"].forEach(
+                (e) => {
+                  const t = document.getElementById(e);
+                  t && window.htmx && htmx.process(t);
+                },
+              ),
+              wireMiniMuteToPlayer(),
+              updateMiniMuteBtn(),
+              syncMiniPlayerBodyPadding(),
+              clampMiniPlayerToViewport(miniShell),
               (watchUrl = n),
               window.history.pushState({ miniPlayer: !0 }, "", n));
             const y = document.getElementById("temp-index-content");
@@ -207,7 +497,7 @@ function attachMiniPlayerVideoCardListeners(e) {
           !glowStartFn ||
           glowStartFn());
     }
-    (miniShell && (miniShell.remove(), (miniShell = null)),
+    (miniShell && (miniShell.style.display = "none"),
       (document.body.style.paddingBottom = ""));
     const a = document.getElementById("temp-index-content");
     (a && (a.style.display = "none"),
@@ -246,19 +536,25 @@ function attachMiniPlayerVideoCardListeners(e) {
         window.scrollTo({ top: 0, left: 0, behavior: "instant" }),
         videoWrapper &&
           (videoWrapper.style.removeProperty("aspect-ratio"),
-          videoWrapper.style.removeProperty("height")),
-        (miniShell = buildMiniShell(videoWrapper)),
-        videoWrapper.classList.add("mini-player-mode"));
+          videoWrapper.style.removeProperty("height")));
+      const shell = getMiniShell();
+      (shell.style.display = ""),
+        videoWrapper.classList.add("mini-player-mode"),
+        shell.insertBefore(videoWrapper, shell.firstChild),
+        applyMiniPlayerPos(shell);
       const l = document.getElementById("video-glow-canvas");
       (l && ((l.style.display = "none"), l.classList.remove("glow-active")),
         glowRAF && (cancelAnimationFrame(glowRAF), (glowRAF = null)),
         glowNavbar &&
           glowNavbar.style.setProperty("--navbar-glow-color", "0,0,0"),
-        document.body.appendChild(miniShell),
-        (document.body.style.paddingBottom = "120px"),
+        document.body.appendChild(shell),
+        syncMiniPlayerBodyPadding(),
+        requestAnimationFrame(syncMiniPlayerBodyPadding),
         t && (t.style.display = "none"),
         n && (n.style.display = "none"),
-        o && (o.style.display = "none"));
+        o && (o.style.display = "none"),
+        wireMiniMuteToPlayer(),
+        updateMiniMuteBtn());
       await window.meelLoadTempIndex({
         useOuterHTML: true,
         onLoad: (el) => attachMiniPlayerVideoCardListeners(el),
@@ -269,13 +565,20 @@ function attachMiniPlayerVideoCardListeners(e) {
         err,
       );
       isMiniPlayerActive = !1;
-      miniShell = null;
       setNavbarSearchTarget("#recommendation-column");
       if (videoWrapper) {
         videoWrapper.classList.remove("mini-player-mode");
         videoWrapper.style.removeProperty("aspect-ratio");
         videoWrapper.style.removeProperty("height");
+        if (miniShell && miniShell.contains(videoWrapper)) {
+          const t = document.getElementById("video-glow-container");
+          if (t) {
+            const n = t.querySelector("canvas");
+            n ? t.insertBefore(videoWrapper, n.nextSibling) : t.appendChild(videoWrapper);
+          }
+        }
       }
+      miniShell && (miniShell.style.display = "none");
       document.body.style.paddingBottom = "";
       if (t) t.style.display = "";
       if (n) n.style.display = "";

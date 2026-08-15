@@ -94,7 +94,7 @@
 | **User Profiles** | Avatar, bio, upload statistics |
 | **20-20-20 Eye Care** | Eye rest notifications every 20 minutes |
 | **PSR-4 Autoloader** | Auto-loading core classes (`MediaLibrary`, `Uploader`, etc.) without manual require |
-| **Migration System v1–v11** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, composite indexes, schema sync) |
+| **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, composite indexes, schema sync) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — consistent paths across all subdirectories |
 | **FULLTEXT Search** | Search video/music/books 10-100× faster via `MATCH AGAINST` — query sanitizer + pagination (MySQL 5.7+) |
 | **Admin Panel** | Dashboard monitoring, user management, queue control, activity log viewer |
@@ -106,7 +106,7 @@
 | **Pagination Metadata** | UI displays page info (`total_pages`, `from`, `to`) |
 | **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
 | **PWA Offline** | Dynamic service worker (`sw.js.php` + `SwPrecache`) — auto precache per module via `manifest.php`, installable + offline support |
-| **Deployment Health Check** | `tests/check_deploy.php` — verifies MEEL_HDD_BASE, upload symlinks, upload .htaccess, PWA mod_rewrite |
+| **Deployment Health Check** | `tests/check_deploy.php` — verifies MEEL_HDD_BASE, upload dirs/subdirectories, upload .htaccess, data_drive symlink guard, PWA mod_rewrite |
 
 ---
 
@@ -135,7 +135,7 @@
 | **Downloader** | yt-dlp (optional) | External media URL downloads |
 | **Transliteration** | PHP `intl` (Transliterator) | File name sanitization (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loads 10+ core classes |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v11 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
 | **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
 | **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Auto offline precache + installable |
 
@@ -164,7 +164,7 @@ MEeL/
 │   └── profile/           # profile_edit, fun-manage
 ├── database/              # Database schema
 │   ├── schema.sql         # Standalone schema file (20 tables)
-│   └── migrate.php        # 🔄 Migration system v1–v11 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
+│   └── migrate.php        # 🔄 Migration system v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
 ├── data_drive/            # Cloud Drive runtime storage
 ├── docs/                  # Project documentation
 ├── drive/                 # Cloud Drive module
@@ -247,6 +247,23 @@ extension=zip       # For manga file extraction (ZIP/CBZ)
 
 ## 🚀 Quick Install
 
+> ⚡ **Automatic installer (recommended, Ubuntu/Debian):** run `./install.sh` to
+> automate all steps below — database setup + `schema.sql` import, create
+> `auth/settings.php`/`auth/config.php` (patch DB + `MEEL_HDD_BASE`), full
+> storage tree + deploy-time symlinks to the centralized storage (`.htaccess`
+> hardening is copied along), enable mod_rewrite, run the migration, then the
+> final `tests/check_deploy.php` verification (**exit code `1` on any FAIL**):
+>
+> ```bash
+> ./install.sh                 # interactive mode (asks for configuration)
+> ./install.sh --yes           # non-interactive, uses all defaults
+> ./install.sh --hdd=/path     # set MEEL_HDD_BASE directly
+> ./install.sh --skip-apt      # skip system package installation (already present)
+> ./install.sh --xsendfile     # enable MEEL_USE_XSENDFILE (requires Apache mod_xsendfile)
+> ```
+>
+> Full details → [docs/en/installation.md](docs/en/installation.md).
+
 ### 1. Clone Repository
 
 ```bash
@@ -272,7 +289,8 @@ cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php` and fill in your database credentials.
+Edit `auth/settings.php` and fill in your database credentials (+ set
+`MEEL_HDD_BASE`).
 
 ### 4. Setup Runtime Directories
 
@@ -295,6 +313,13 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 > the OS username through the public repo and crash the Drive module
 > (`RuntimeException: Folder penyimpanan gagal dibuat`) on other machines.
 
+> 💡 **`install.sh` does this automatically:** the full storage tree (including
+> `music/upload/{file,thumbnail}` & `books/upload/{manga,pdf,thumbnail}` — the
+> music/books modules do **not** create them), deploy-time symlinks
+> `{video,music,books}/upload` + `data_drive/public` → `MEEL_HDD_BASE`, with the
+> `.htaccess` hardening copied to the target. Missing subdirectories make the
+> first upload fail — verify with `tests/check_deploy.php`.
+
 ### 5. Enable Apache mod_rewrite
 
 ```bash
@@ -307,6 +332,16 @@ sudo systemctl restart apache2
 ```bash
 /opt/lampp/bin/php database/migrate.php
 ```
+
+### 7. Verify Deployment
+
+```bash
+php tests/check_deploy.php        # exit 0 = healthy, 1 = FAIL
+```
+
+Verifies `MEEL_HDD_BASE`, upload dirs + non-auto-created subdirectories
+(`music/upload/{file,thumbnail}`, `books/upload/{pdf,thumbnail}`), `.htaccess`
+hardening, the `data_drive/` symlink guard, and the PWA `mod_rewrite` rule.
 
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 
@@ -374,7 +409,7 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 ### Migration System
 
 ```bash
-# Upgrade database to latest version (v1–v11)
+# Upgrade database to latest version (v1–v12)
 /opt/lampp/bin/php database/migrate.php
 ```
 
@@ -399,14 +434,14 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 161 | 157 pass, 4 warn | 0 | **0** | **✅ 99/100** |
-| **Security Test** | 98 | 93 pass, 5 warn | 0 | **0** | **✅ 97/100** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
+| **Security Test** | 125 | 120 pass, 5 warn | 0 | **0** | **✅ 98/100** |
+| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 > Security test: 5 non-critical warnings (MediaViewer raw-query review, profile_edit
-> MIME check, and session parameter detection) — not failures; score **97/100**.
+> MIME check, and session parameter detection) — not failures; score **98/100**.
 > Storage & deployment verification: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.

@@ -15,12 +15,12 @@ MEeL menggunakan pendekatan testing berlapis:
 | **Integration Test** | PHPUnit 9.6 | Operasi DB real | `tests/integration/` |
 | **Functional Test** | Custom PHP | Alur kerja aplikasi | `tests/functional_test.php` |
 | **Security Test** | Custom PHP | Pemindaian kerentanan | `tests/security_test.php` |
-| **Deployment Check** | Custom PHP | Verifikasi environment (storage, symlink, mod_rewrite) | `tests/check_deploy.php` |
+| **Deployment Check** | Custom PHP | Verifikasi environment (storage, folder upload, .htaccess, mod_rewrite) | `tests/check_deploy.php` |
 | **CI Pipeline** | GitHub Actions | Validasi otomatis | `.github/workflows/ci.yml` |
 
 ---
 
-## 🧪 PHPUnit Test Suite (255 Unit + 79 Integration = 334 Test)
+## 🧪 PHPUnit Test Suite (266 Unit + 79 Integration = 345 Test)
 
 ### Instalasi
 
@@ -273,8 +273,12 @@ php tests/check_deploy.php --no-color               # tanpa warna ANSI (untuk CI
 
 **Memverifikasi:**
 - `MEEL_HDD_BASE` — terdefinisi, bukan placeholder, storage ter-mount & writable
-- Symlink upload — `books/upload`, `music/upload`, `video/upload` resolve ke storage
+- Folder upload + **subdirektori non-auto-create** — `{video,music,books}/upload`
+  resolve ke storage; `music/upload/{file,thumbnail}` & `books/upload/{pdf,thumbnail}`
+  wajib ada (modul music/books **tidak** membuatnya otomatis) — jika hilang: **FAIL**
 - Hardening `.htaccess` folder upload — `php_flag engine off`, `ForceType`, `Options -Indexes`
+- Guard portabilitas `data_drive/` — symlink deploy ke dalam `MEEL_HDD_DRIVE` =
+  **PASS**, menunjuk ke luar = **WARN**
 - PWA `mod_rewrite` — aturan `.htaccess` root + probe HTTP nyata ke `/sw.js`
 
 Exit code `0` = sehat, `1` = minimal satu FAIL (ramah CI). Panduan storage
@@ -391,10 +395,10 @@ sebelum rilis.
 
 | Suite | Test | Lulus | Gagal | Skor |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 334 | 334 | 0 | ✅ 100% |
-| **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 108 | 108 | 0 | ✅ 100% |
-| **Functional Test** | 161 | 157 pass, 4 warn | 0 | ✅ 99/100 |
-| **Security Test** | 92 | 87 pass, 5 warn | 0 | ✅ 97/100 |
+| **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
+| **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
+| **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
+| **Security Test** | 125 | 120 pass, 5 warn | 0 | ✅ 98/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri

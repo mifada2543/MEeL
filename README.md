@@ -94,7 +94,7 @@
 | **Profil User** | Avatar, bio, statistik upload |
 | **Mode Sehat 20-20-20** | Notifikasi istirahat mata tiap 20 menit |
 | **Autoloader PSR-4** | Auto-loading class core (`MediaLibrary`, `Uploader`, dll.) tanpa require manual |
-| **Migration System v1–v11** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, index komposit, schema sync) |
+| **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, index komposit, schema sync) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — path konsisten di semua subdirektori |
 | **FULLTEXT Search** | Search video/music/books 10-100× lebih cepat via `MATCH AGAINST` — sanitizer query + pagination (MySQL 5.7+) |
 | **Admin Panel** | Dashboard monitoring, manajemen user, queue control, activity log viewer |
@@ -106,7 +106,7 @@
 | **Pagination Metadata** | UI menampilkan info halaman (`total_pages`, `from`, `to`) |
 | **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
 | **PWA Offline** | Service worker dinamis (`sw.js.php` + `SwPrecache`) — precache otomatis per modul via `manifest.php`, installable + offline support |
-| **Deployment Health Check** | `tests/check_deploy.php` — verifikasi MEEL_HDD_BASE, symlink upload, .htaccess upload, mod_rewrite PWA |
+| **Deployment Health Check** | `tests/check_deploy.php` — verifikasi MEEL_HDD_BASE, folder/subdirektori upload, .htaccess upload, guard symlink data_drive, mod_rewrite PWA |
 
 ---
 
@@ -135,7 +135,7 @@
 | **Downloader** | yt-dlp (optional) | Download media dari URL eksternal |
 | **Transliterasi** | PHP `intl` (Transliterator) | Pembersihan nama file (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loading 10+ class core |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v11 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
 | **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
 | **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Precache offline otomatis + installable |
 
@@ -164,7 +164,7 @@ MEeL/
 │   └── profile/           # profile_edit, fun-manage
 ├── database/              # Skema database
 │   ├── schema.sql         # File schema standalone (20 tabel)
-│   └── migrate.php        # 🔄 Migration system v1–v11 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
+│   └── migrate.php        # 🔄 Migration system v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
 ├── data_drive/            # Cloud Drive storage runtime
 ├── docs/                  # Dokumentasi proyek
 ├── drive/                 # Modul Cloud Drive
@@ -247,6 +247,25 @@ extension=zip       # Untuk ekstraksi file manga (ZIP/CBZ)
 
 ## 🚀 Instalasi Cepat
 
+> ⚡ **Instalasi otomatis (disarankan, Ubuntu/Debian):** jalankan `./install.sh`
+> untuk menjalankan semua langkah di bawah secara otomatis — setup database +
+> import `schema.sql`, buat `auth/settings.php`/`auth/config.php` (patch DB +
+> `MEEL_HDD_BASE`), struktur storage lengkap + symlink deploy ke storage
+> terpusat (hardening `.htaccess` ikut disalin), aktifkan mod_rewrite, jalankan
+> migrasi, lalu verifikasi akhir `tests/check_deploy.php` (**exit code `1` jika
+> ada FAIL**):
+>
+> ```bash
+> sudo chmod +x install.sh
+> ./install.sh                 # mode interaktif (tanya konfigurasi)
+> ./install.sh --yes           # non-interaktif, pakai semua default
+> ./install.sh --hdd=/path     # set MEEL_HDD_BASE langsung
+> ./install.sh --skip-apt      # lewati instalasi paket sistem (sudah ada)
+> ./install.sh --xsendfile     # aktifkan MEEL_USE_XSENDFILE (wajib mod_xsendfile Apache)
+> ```
+>
+> Detail lengkap → [docs/id/installation.md](docs/id/installation.md).
+
 ### 1. Kloning Repositori
 
 ```bash
@@ -296,6 +315,13 @@ sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 > membuat modul Drive crash (`RuntimeException: Folder penyimpanan gagal dibuat`)
 > di mesin orang lain.
 
+> 💡 **`install.sh` melakukannya otomatis:** struktur storage lengkap (termasuk
+> subdirektori `music/upload/{file,thumbnail}` & `books/upload/{manga,pdf,thumbnail}` —
+> modul music/books **tidak** membuatnya sendiri), symlink deploy
+> `{video,music,books}/upload` + `data_drive/public` → `MEEL_HDD_BASE`, dengan
+> `.htaccess` hardening ikut disalin ke target. Subdirektori yang hilang membuat
+> upload pertama gagal — cek via `tests/check_deploy.php`.
+
 ### 5. Aktifkan mod_rewrite Apache
 
 ```bash
@@ -308,6 +334,16 @@ sudo systemctl restart apache2
 ```bash
 /opt/lampp/bin/php database/migrate.php
 ```
+
+### 7. Verifikasi Deployment
+
+```bash
+php tests/check_deploy.php        # exit 0 = sehat, 1 = ada FAIL
+```
+
+Memverifikasi `MEEL_HDD_BASE`, folder upload + subdirektori non-auto-create
+(`music/upload/{file,thumbnail}`, `books/upload/{pdf,thumbnail}`), hardening
+`.htaccess`, guard symlink `data_drive/`, dan mod_rewrite PWA.
 
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 
@@ -365,7 +401,7 @@ $url = base_url('/assets/css/style.css'); // → /MEeL/assets/css/style.css
 ### Migration System
 
 ```bash
-# Upgrade database ke versi terbaru (v1–v11)
+# Upgrade database ke versi terbaru (v1–v12)
 /opt/lampp/bin/php database/migrate.php
 ```
 
@@ -390,14 +426,14 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 161 | 157 pass, 4 warn | 0 | **0** | **✅ 99/100** |
-| **Security Test** | 98 | 93 pass, 5 warn | 0 | **0** | **✅ 97/100** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
+| **Security Test** | 125 | 120 pass, 5 warn | 0 | **0** | **✅ 98/100** |
+| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 > Security test: 5 warning non-kritis (review query mentah MediaViewer, cek MIME
-> profile_edit, dan deteksi parameter session) — bukan kegagalan; skor **97/100**.
+> profile_edit, dan deteksi parameter session) — bukan kegagalan; skor **98/100**.
 > Verifikasi storage & deployment: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.

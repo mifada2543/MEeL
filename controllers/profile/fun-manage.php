@@ -192,7 +192,6 @@ function cleanupPendingDeletions(): int
     return $cleaned;
 }
 
-// ─── Hapus folder rekursif ───
 function removeDirectoryRecursive(string $dir): void
 {
     if (!is_dir($dir)) return;
@@ -205,7 +204,6 @@ function removeDirectoryRecursive(string $dir): void
     @rmdir($dir);
 }
 
-// ─── Log activity ───
 function logActivity(mysqli $conn, int $user_id, string $action, string $media_type, int $media_id): void
 {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';

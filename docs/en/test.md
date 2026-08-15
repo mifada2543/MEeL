@@ -15,12 +15,12 @@ MEeL uses a multi-layered testing approach:
 | **Integration Tests** | PHPUnit 9.6 | Real DB operations | `tests/integration/` |
 | **Functional Tests** | Custom PHP | Application workflows | `tests/functional_test.php` |
 | **Security Tests** | Custom PHP | Vulnerability scanning | `tests/security_test.php` |
-| **Deployment Check** | Custom PHP | Environment verification (storage, symlink, mod_rewrite) | `tests/check_deploy.php` |
+| **Deployment Check** | Custom PHP | Environment verification (storage, upload dirs, .htaccess, mod_rewrite) | `tests/check_deploy.php` |
 | **CI Pipeline** | GitHub Actions | Automated validation | `.github/workflows/ci.yml` |
 
 ---
 
-## 🧪 PHPUnit Test Suite (255 Unit + 79 Integration = 334 Tests)
+## 🧪 PHPUnit Test Suite (266 Unit + 79 Integration = 345 Tests)
 
 ### Installation
 
@@ -272,8 +272,12 @@ php tests/check_deploy.php --no-color               # no ANSI colors (for CI/log
 
 **Verifies:**
 - `MEEL_HDD_BASE` — defined, not a placeholder, storage mounted & writable
-- Upload symlinks — `books/upload`, `music/upload`, `video/upload` resolve to storage
+- Upload dirs + **non-auto-created subdirectories** — `{video,music,books}/upload`
+  resolve to storage; `music/upload/{file,thumbnail}` & `books/upload/{pdf,thumbnail}`
+  must exist (the music/books modules do **not** create them) — missing ones are a **FAIL**
 - `.htaccess` hardening in upload dirs — `php_flag engine off`, `ForceType`, `Options -Indexes`
+- `data_drive/` portability guard — deploy-time symlinks inside `MEEL_HDD_DRIVE` =
+  **PASS**, pointing outside = **WARN**
 - PWA `mod_rewrite` — root `.htaccess` rule + real HTTP probe of `/sw.js`
 
 Exit code `0` = healthy, `1` = at least one FAIL (CI-friendly). Full storage
@@ -388,10 +392,10 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 
 | Suite | Tests | Pass | Fail | Score |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 334 | 334 | 0 | ✅ 100% |
-| **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 108 | 108 | 0 | ✅ 100% |
-| **Functional Test** | 161 | 157 pass, 4 warn | 0 | ✅ 99/100 |
-| **Security Test** | 92 | 87 pass, 5 warn | 0 | ✅ 97/100 |
+| **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
+| **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
+| **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
+| **Security Test** | 125 | 120 pass, 5 warn | 0 | ✅ 98/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Numbers are from the hardening pass (August 2026). Run the suites yourself

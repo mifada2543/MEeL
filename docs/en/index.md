@@ -37,7 +37,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 classes: DriveUserContext, DriveStorage, DriveViewRenderer |
 | **Profile Manager** | `controllers/profile/fun-manage.php` | Delete media, pending deletions, cleanup |
-| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v11 (idempotent) |
+| **Migration System** | `database/migrate.php` | Versioned database schema upgrades v1–v12 (idempotent) |
 | **PWA Precache** | `modules/core/SwPrecache.php` | Dynamic service worker precache generator — reads `assets/css/*/manifest.php`, auto `SW_VERSION` from content hash |
 | **PWA Generator** | `sw.js.php` | Service worker generated per request (served as `/sw.js` via `.htaccess` rewrite) |
 | **Autoloader** | `modules/autoload.php` | PSR-4-like autoloading |
@@ -70,9 +70,10 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Type hints:** Class properties and constructor parameters now use type hints (`\mysqli`, `int`, `string`, etc.)
 - **Activity Log Integration:** `log_activity()` function integrated at login, logout, upload, and admin actions — full audit trail to `activity_log` table
 - **Admin Activity Log Viewer:** `admin/activity_log.php` page for viewing, filtering, and cleaning audit trails
-- **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v11) — FULLTEXT, FK, UNIQUE KEY, activity_log, MFA, comments composite indexes, interactions unique keys
+- **Database Alignment:** `schema.sql` and `migrate.php` are synchronized (v1–v12) — FULLTEXT, FK, UNIQUE KEY, activity_log, MFA, comments composite indexes, interactions unique keys, chess room identity
 - **Migration v10:** Composite index `(video_id, created_at)` & `(music_id, created_at)` on `comments`
 - **Migration v11:** `interactions` unique keys split into `(user_id, video_id)` & `(user_id, music_id)` — NULL in a combined unique key did not prevent duplicates
+- **Migration v12:** Bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code`
 - **Anime Module Removed:** The "Coming Soon" placeholder module has been removed from the codebase
 - **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` now return pagination metadata (`total_pages`, `from`, `to`) — UI displays page info

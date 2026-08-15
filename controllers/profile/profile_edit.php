@@ -12,7 +12,6 @@ $user_id = $_SESSION['user_id'];
 $msg = "";
 
 if (isset($_POST['update_profile'])) {
-    // Verifikasi token
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $msg = 'CSRF Token tidak valid.';
     } else {

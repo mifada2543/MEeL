@@ -10,5 +10,6 @@ window.MEEL_KEYS = Object.freeze({
   AUTONAV: 'meel_autonav',
   EQ_STATE: 'meel_music_eq_state',
   HEALTH_ALERT: 'meel_health_alert',
-  GLOW_ENABLED: 'meel_glow_enabled'
+  GLOW_ENABLED: 'meel_glow_enabled',
+  MINI_PLAYER_POS: 'meel_mini_player_pos'
 });

@@ -208,6 +208,67 @@ jobs:
             echo "⚠️  PHPUnit not installed, skipping."
           fi
 
+  # ─── Job 4b: PHPUnit Integration Tests (MySQL service) ───
+  # Integration tests membutuhkan MySQL — service container menyediakan
+  # MySQL 8.0. Database test terpisah `MEeL-test` di-reset, di-import
+  # schema-nya, lalu di-drop OTOMATIS oleh tests/DbTestHelper.php — tidak
+  # pernah menyentuh database produksi dan tidak meninggalkan sisa.
+  phpunit-integration-tests:
+    name: PHPUnit Integration Tests
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          extensions: mysqli
+          tools: composer
+
+      - name: Install Composer Dependencies
+        run: |
+          if [ -f composer.json ]; then
+            composer install --no-progress --no-interaction --prefer-dist
+          else
+            echo "⚠️  composer.json not found, skipping."
+          fi
+
+      - name: Run PHPUnit Integration Tests
+        env:
+          MEEL_TEST_DB_HOST: 127.0.0.1
+          MEEL_TEST_DB_USER: root
+          MEEL_TEST_DB_PASS: root
+        run: |
+          if [ -f vendor/bin/phpunit ]; then
+            php vendor/bin/phpunit --no-coverage --verbose --testsuite='MEeL Integration Tests'
+          else
+            echo "⚠️  PHPUnit not installed, skipping."
+          fi
+
   # ─── Job 5: HTACCESS & Integrity Check ───
   htaccess-check:
     name: HTACCESS & Integrity
@@ -305,8 +366,11 @@ jobs:
           # MEEL_HDD_DRIVE (disimulasikan lewat --hdd), jadi tidak ada symlink
           # yang perlu diarahkan ke temp untuk Drive.
           HDD="$RUNNER_TEMP/meel_storage/media"
+          # check_deploy menganggap subdirektori non-auto-create (music/books)
+          # sebagai FAIL jika hilang — buat struktur lengkap seperti install.sh.
           mkdir -p "$HDD/video/upload/video" "$HDD/video/upload/thumbnail" \
-                   "$HDD/music/upload" "$HDD/books/upload" \
+                   "$HDD/music/upload/file" "$HDD/music/upload/thumbnail" \
+                   "$HDD/books/upload/pdf" "$HDD/books/upload/thumbnail" \
                    "$HDD/drive/private_admins"
 
           # .htaccess hardening untuk tiap upload dir (pola sama dengan deploy)
@@ -376,7 +440,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check, deploy-check, drive-storage-check]
+    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, phpunit-integration-tests, htaccess-check, deploy-check, drive-storage-check]
     if: always()
     steps:
       - name: Generate Job Status Summary
@@ -404,6 +468,7 @@ jobs:
           report_job "Functional Tests" "${{ needs.functional-tests.result }}"
           report_job "Security Tests" "${{ needs.security-tests.result }}"
           report_job "PHPUnit Unit Tests" "${{ needs.phpunit-tests.result }}"
+          report_job "PHPUnit Integration Tests" "${{ needs.phpunit-integration-tests.result }}"
           report_job "HTACCESS & Integrity" "${{ needs.htaccess-check.result }}"
           report_job "Deployment Check" "${{ needs.deploy-check.result }}"
           report_job "Drive Storage Integrity" "${{ needs.drive-storage-check.result }}"

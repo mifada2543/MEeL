@@ -191,7 +191,6 @@ trait FfmpegUtils
             return;
         }
 
-        // Tulis VTT
         $vtt_content = "WEBVTT\n\n";
         for ($i = 0; $i < $total_frames; $i++) {
             $start = $i * $interval;

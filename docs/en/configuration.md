@@ -40,7 +40,7 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 | `modules/autoload.php` | PSR-4-like autoloader | List of scanned directories |
 | `modules/core/SwPrecache.php` | PWA precache generator (service worker) | `baseAssets()`, `moduleAssets()`, `all()`, `version()` |
 | `sw.js.php` | Dynamic service worker generator (served as `/sw.js`) | `SW_VERSION`, `PRECACHE_URLS` (auto) |
-| `database/migrate.php` | Database migration v1–v11 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA, comments indexes, interactions unique keys |
+| `database/migrate.php` | Database migration v1–v12 | FULLTEXT index, FK, activity_log, UNIQUE KEY, MFA, comments indexes, interactions unique keys, chess room identity |
 
 ---
 

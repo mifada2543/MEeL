@@ -72,4 +72,21 @@
       const t = document.getElementById("temp-index-content");
       t && attachMiniPlayerVideoCardListeners(t);
     }
+  }),
+  /* Pemulihan: setelah swap HTMX selesai (termasuk settle task htmx yang
+     me-reset atribut class ke versi server), pastikan mini-player-mode
+     kembali terpasang & wrapper tetap di dalam shell. afterSettle jalan
+     SETELAH task settle htmx, jadi class tidak lagi tertimpa. */
+  document.addEventListener("htmx:afterSettle", function (e) {
+    if ("main-video-wrapper" !== e.detail.target.id || !isMiniPlayerActive)
+      return;
+    const o = document.getElementById("main-video-wrapper");
+    if (!o) return;
+    o.classList.add("mini-player-mode");
+    const l = document.getElementById("mini-player-shell");
+    if (l && o.parentNode !== l) {
+      const a = l.querySelector("#mini-expand-btn");
+      a ? l.insertBefore(o, a) : l.prepend(o);
+    }
+    syncMiniPlayerBodyPadding();
   }));

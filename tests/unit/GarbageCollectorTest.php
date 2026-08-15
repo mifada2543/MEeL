@@ -3,6 +3,13 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers GarbageCollector
+ *
+ * Verifikasi perilaku pembersihan temp/cache yang nyata:
+ *  - cleanDirectory(): hapus file/direktori stale (> 5 menit), pertahankan yang
+ *    fresh, dan JANGAN sentuh cache persisten yt-dlp (ytdlp-cache).
+ *  - run(): end-to-end — bersihkan rate-limit file kadaluarsa lewat
+ *    RateLimiter::cleanup(), pertahankan yang masih dalam window, dan no-op
+ *    pada panggilan kedua (static $hasRun).
  */
 class GarbageCollectorTest extends TestCase
 {
@@ -16,56 +23,163 @@ class GarbageCollectorTest extends TestCase
         $this->testTempDir = MEEL_ROOT . '/temp/gc_test_' . uniqid();
         @mkdir($this->testTempDir, 0755, true);
 
-        // Reset static hasRun flag
+        self::resetHasRun();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeDir($this->testTempDir);
+        parent::tearDown();
+    }
+
+    /* Reset static flag agar run() bisa diuji berulang antar-test. */
+    private static function resetHasRun(): void
+    {
         $ref = new ReflectionClass(GarbageCollector::class);
         $prop = $ref->getProperty('hasRun');
         $prop->setAccessible(true);
         $prop->setValue(false);
     }
 
-    protected function tearDown(): void
+    /* Buat file dengan mtime terkontrol (usia dalam detik). */
+    private function touchAged(string $path, int $ageSeconds): void
     {
-        // Cleanup test directory
-        if (is_dir($this->testTempDir)) {
-            array_map('unlink', glob($this->testTempDir . '/*'));
-            @rmdir($this->testTempDir);
-        }
-
-        parent::tearDown();
+        @mkdir(dirname($path), 0755, true);
+        file_put_contents($path, 'x');
+        touch($path, time() - $ageSeconds);
     }
 
-    public function testCleanGuestsWithoutDb(): void
+    /* Panggil private GarbageCollector::cleanDirectory() via reflection. */
+    private function cleanDirectory(string $dir): void
     {
-        // gracefully (or skip if no DB available)
-        $this->expectNotToPerformAssertions();
+        $ref = new ReflectionClass(GarbageCollector::class);
+        $method = $ref->getMethod('cleanDirectory');
+        $method->setAccessible(true);
+        $method->invoke(null, $dir);
     }
 
-    public function testGarbageCollectorClassExists(): void
+    private function removeDir(string $dir): void
     {
-        $this->assertTrue(class_exists('GarbageCollector'));
-    }
-
-    public function testRunDoesNotThrowWithoutDirectories(): void
-    {
-        // Should not throw even without target directories
-        GarbageCollector::run();
-        $this->assertTrue(true); // If we got here, no exception
-    }
-
-    public function testRunIsIdempotent(): void
-    {
-        // Run twice - second call should be skipped by static flag
-        GarbageCollector::run();
-        GarbageCollector::run();
-        $this->assertTrue(true);
-    }
-
-    public function testCleanGuestsWithInvalidConnection(): void
-    {
-        // Even without DB, properties should be properly defined
-        $this->assertTrue(
-            defined('GarbageCollector') || class_exists('GarbageCollector'),
-            'GarbageCollector class should be loadable'
+        if (!is_dir($dir)) return;
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
         );
+        foreach ($it as $file) {
+            $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname());
+        }
+        @rmdir($dir);
+    }
+
+    // ─── cleanDirectory(): pembersihan file/direktori temp ───
+
+    public function testCleanDirectoryRemovesStaleFilesButKeepsFresh(): void
+    {
+        $stale = $this->testTempDir . '/stale.tmp';
+        $fresh = $this->testTempDir . '/fresh.tmp';
+        $this->touchAged($stale, 400); // > STALE_SECONDS (300)
+        $this->touchAged($fresh, 10);
+
+        $this->cleanDirectory($this->testTempDir);
+
+        $this->assertFileDoesNotExist($stale, 'File dengan mtime > 5 menit harus dihapus');
+        $this->assertFileExists($fresh, 'File dengan mtime < 5 menit harus dipertahankan');
+    }
+
+    public function testCleanDirectoryRemovesStaleDirectoryRecursively(): void
+    {
+        $sub = $this->testTempDir . '/stale-sub';
+        $this->touchAged($sub . '/nested/file.bin', 400);
+        touch($sub, time() - 400);
+
+        $this->cleanDirectory($this->testTempDir);
+
+        $this->assertDirectoryDoesNotExist($sub, 'Direktori stale harus dihapus beserta isinya');
+    }
+
+    public function testCleanDirectoryKeepsFreshDirectory(): void
+    {
+        $sub = $this->testTempDir . '/fresh-sub';
+        $this->touchAged($sub . '/file.bin', 10);
+        touch($sub, time() - 10);
+
+        $this->cleanDirectory($this->testTempDir);
+
+        $this->assertDirectoryExists($sub);
+        $this->assertFileExists($sub . '/file.bin');
+    }
+
+    public function testCleanDirectorySkipsYtdlpPersistentCache(): void
+    {
+        $cache = $this->testTempDir . '/ytdlp-cache';
+        $this->touchAged($cache . '/entries.db', 400);
+        touch($cache, time() - 400);
+
+        $this->cleanDirectory($this->testTempDir);
+
+        $this->assertDirectoryExists($cache, 'ytdlp-cache persisten tidak boleh dihapus');
+        $this->assertFileExists($cache . '/entries.db');
+    }
+
+    // ─── run(): end-to-end (temp dir + RateLimiter::cleanup) ───
+
+    public function testRunCleansExpiredRateLimitCacheButKeepsRecent(): void
+    {
+        $rateDir = MEEL_ROOT . '/temp/ratelimit';
+        @mkdir($rateDir, 0755, true);
+
+        // File rate-limit kadaluarsa: window_start 2 jam lalu (> 1 jam max)
+        $expired = $rateDir . '/gc_test_expired.cache';
+        file_put_contents($expired, json_encode([
+            'count' => 5,
+            'window_start' => time() - 7200,
+        ]));
+
+        $recent = $rateDir . '/gc_test_recent.cache';
+        file_put_contents($recent, json_encode([
+            'count' => 2,
+            'window_start' => time(),
+        ]));
+
+        // Pastikan dir ratelimit dianggap fresh oleh cleanDirectory(temp)
+        // (level-1 GC) sehingga hanya RateLimiter::cleanup() yang menilai file.
+        touch($rateDir, time());
+
+        GarbageCollector::run();
+
+        $this->assertFileDoesNotExist($expired, 'Rate-limit file dengan window_start > 1 jam harus dibersihkan');
+        $this->assertFileExists($recent, 'Rate-limit file dalam window harus dipertahankan');
+
+        @unlink($expired);
+        @unlink($recent);
+    }
+
+    public function testRunSecondCallIsNoOpViaStaticFlag(): void
+    {
+        $rateDir = MEEL_ROOT . '/temp/ratelimit';
+        @mkdir($rateDir, 0755, true);
+        touch($rateDir, time());
+
+        $expired = $rateDir . '/gc_test_first.cache';
+        file_put_contents($expired, json_encode([
+            'count' => 5,
+            'window_start' => time() - 7200,
+        ]));
+
+        GarbageCollector::run();
+        $this->assertFileDoesNotExist($expired, 'run() pertama membersihkan file kadaluarsa');
+
+        // File kadaluarsa BARU dibuat setelah run() pertama — run() kedua no-op.
+        $late = $rateDir . '/gc_test_late.cache';
+        file_put_contents($late, json_encode([
+            'count' => 5,
+            'window_start' => time() - 7200,
+        ]));
+
+        GarbageCollector::run();
+
+        $this->assertFileExists($late, 'run() kedua harus no-op (static $hasRun) — file tidak dibersihkan');
+
+        @unlink($late);
     }
 }
