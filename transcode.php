@@ -5,7 +5,7 @@ require_once 'auth/config.php';
 require_once 'modules/core/Transcoder.php';
 require_once 'modules/core/BrowserProgressObserver.php';
 
-// ffmpeg yang masih berjalan bila request berakhir abnormal.
+// Hentikan proses ffmpeg yang masih berjalan bila request berakhir abnormal.
 $transcoder      = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
 register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 $download_link   = null;
@@ -15,7 +15,6 @@ $alert_message   = "";
 $video_title     = "";
 
 if (isset($_POST['start_transcode'])) {
-    // Verifikasi token
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF Token tidak valid.';
     } else {

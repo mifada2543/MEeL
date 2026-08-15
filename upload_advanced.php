@@ -37,7 +37,6 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-// berakhir abnormal (fatal error, timeout server, dsb).
 $transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
 register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
@@ -45,7 +44,6 @@ require_once 'modules/core/System.php';
 $sys     = new System($conn);
 $is_busy = $sys->isServerBusy();
 
-// Ambil role untuk tampilkan info ekstra
 $user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $is_admin  = ($user_role === 'admin');
 

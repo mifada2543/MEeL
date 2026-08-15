@@ -10,7 +10,7 @@ class GarbageCollector
     // Minimal interval antar auto-cleanup guest (dalam detik)
     private const GUEST_CLEANUP_INTERVAL = 3600; // 1 jam
 
-    // sejak dibuat dianggap lobby basi → dihapus
+    // Room dibuat > 24 jam lalu tanpa lawan join → lobby basi
     private const ROOM_LOBBY_STALE_HOURS = 24;
 
     private const ROOM_GAME_STALE_HOURS = 168; // 7 hari
@@ -251,7 +251,6 @@ class GarbageCollector
             return;
         }
 
-        // lain) tercatat sekali, bukan menjadi warning di setiap file.
         $parent = dirname($dir);
         if (!is_dir($parent) || !is_writable($parent)) {
             error_log("[MEeL] GarbageCollector: direktori tidak writable, dilewati: {$dir}");

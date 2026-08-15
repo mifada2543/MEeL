@@ -149,7 +149,7 @@ class MediaLibrary
 
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        // crash endpoint — fallback ke hasil kosong.
+        // Query FULLTEXT malformed bisa crash endpoint — fallback ke hasil kosong.
         try {
             $stmt->execute();
         } catch (\mysqli_sql_exception $e) {
@@ -289,7 +289,7 @@ class MediaLibrary
             );
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        // crash endpoint — fallback ke hasil kosong.
+        // Query FULLTEXT malformed bisa crash endpoint — fallback ke hasil kosong.
         try {
             $stmt->execute();
         } catch (\mysqli_sql_exception $e) {

@@ -29,7 +29,7 @@ function get_user_role(mysqli $conn, int $user_id): string
         return $role;
     }
 
-    // Level 3: Query database
+    // Level 2: Query database
     $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();

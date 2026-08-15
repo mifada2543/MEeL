@@ -137,7 +137,7 @@ if (typeof BroadcastChannel !== "undefined") {
     healthAlertChannel = new BroadcastChannel(MEEL_KEYS.HEALTH_ALERT);
     healthAlertChannel.onmessage = function (event) {
       if (event.data === "pause") {
-        // pemutaran di tab ini juga (bukan hanya pause sekali).
+        // Jeda pemutaran di tab ini juga (bukan hanya pause sekali).
         window.meelHealthAlertActive = true;
         startBreakEnforcement();
         pauseMediaForHealthBreak();
@@ -185,7 +185,7 @@ function resumeMediaAfterHealthBreak() {
   else if (m.el) m.el.play().catch(() => {});
 }
 
-/* Amankan "lock" antar-tab via Web Locks API: hanya satu tab yang boleh */
+/* Kunci antar-tab via Web Locks API: hanya satu tab yang boleh memicu alarm */
 function acquireHealthAlertLock(task) {
   if (
     typeof navigator !== "undefined" &&
@@ -259,7 +259,7 @@ var healthBannerResolve = null;       // resolve Promise lock banner
 var healthBannerRemoving = false;     // true saat banner sedang fade-out
 var HEALTH_BANNER_MS = 2e4;           // 20.000 ms banner tampil
 
-/* * Mode membaca aktif? (diset halaman books via window flag). */
+/* Mode membaca aktif? (diset halaman books via window flag). */
 function isReadingModeActive() {
   return window.meelHealthActivityMode === "reading";
 }
@@ -269,7 +269,7 @@ function markHealthReadingActivity() {
   healthReadingLastActivity = Date.now();
 }
 
-/* Apakah user sedang aktif membaca? (aktivitas dalam 60 detik terakhir */
+/* Apakah user sedang aktif membaca? (aktivitas dalam 60 detik terakhir) */
 function isReadingActivityActive() {
   if (document.hidden) return false; // tab tidak aktif → jangan ganggu
   if (!healthReadingLastActivity) return true;
@@ -286,7 +286,7 @@ function setupReadingActivityTracking() {
   markHealthReadingActivity();
 }
 
-/* Tampilkan banner 20-20-20 (mode membaca). Mengembalikan Promise agar */
+/* Tampilkan banner 20-20-20 (mode membaca); mengembalikan Promise yang resolve saat banner ditutup. */
 function runReadingHealthBanner() {
   if (healthBannerEl || healthBannerRemoving) return Promise.resolve(); // sudah ada banner
 
@@ -383,7 +383,7 @@ function dismissHealthReadingBanner(doSchedule) {
   }
 }
 
-/* Jalur ramping untuk pagehide: halaman sedang dibongkar, jadi animasi */
+/* Jalur ramping untuk pagehide: halaman sedang dibongkar, jadi banner langsung dihapus tanpa animasi */
 function finalizeReadingBannerOnLeave() {
   if (!healthBannerEl || healthBannerRemoving) return;
   clearTimeout(healthBannerHideTimer);
@@ -403,9 +403,8 @@ function finalizeReadingBannerOnLeave() {
 
 /* 4) ALARM UTAMA — pause, tampilkan modal 20-20-20, countdown 20s */
 
-/* Pemicu utama mode sehat: */
 function triggerPremiumHealthAlert() {
-  // lagi (mencegah alarm ganda saat beberapa tab terbuka).
+  // Cek target lagi (mencegah alarm ganda saat beberapa tab terbuka).
   const targetRaw = localStorage.getItem("health_target_time");
   if (targetRaw && parseInt(targetRaw, 10) - Date.now() > 0) {
     startHealthCountdown();
@@ -435,7 +434,7 @@ function triggerPremiumHealthAlert() {
   });
 }
 
-/* Rangkaian alarm lengkap (pause → modal 20-20-20 → countdown → resume + */
+/* Rangkaian alarm lengkap (pause → modal 20-20-20 → countdown → resume) */
 function runHealthAlertFlow() {
 
   let media = document.getElementById("main-video") || document.getElementById("main-player");

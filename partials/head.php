@@ -9,7 +9,6 @@ if (function_exists('detectProtocol')) {
         : 'http'));
 }
 $_head_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-// (mis. /MEeL/admin + /MEeL/admin/ → /MEeL/admin/MEeL/admin/).
 $_head_base = $_head_proto . '://' . $_head_host;
 
 // ─── Project root base (untuk asset tetap seperti manifest, favicon, OG image) ───

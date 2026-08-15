@@ -162,7 +162,6 @@ class SearchEngine
 
     public function searchVideo(array $params): array
     {
-        // Check cache dahulu
         $cached = self::getFromCache('video', $params);
         if ($cached !== null) {
             return $cached;
@@ -198,7 +197,6 @@ class SearchEngine
 
     public function searchMusic(array $params): array
     {
-        // Check cache dahulu
         $cached = self::getFromCache('music', $params);
         if ($cached !== null) {
             return $cached;

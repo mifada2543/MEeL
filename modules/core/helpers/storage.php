@@ -161,7 +161,6 @@ function require_disk_space(int $required_bytes, string $path, string $label): v
 }
 } // end function_exists('require_disk_space')
 
-/* Log drive operations untuk audit trail */
 if (!function_exists('dir_size')) {
 /**
  * @param string $path Path direktori
