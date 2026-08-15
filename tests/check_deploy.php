@@ -78,7 +78,13 @@ function report(string $status, string $label, string $hint = ''): void
 function cmd_output(string $cmd): ?string
 {
     $out = @shell_exec($cmd . ' 2>&1');
-    return is_string($out) && trim($out) !== '' ? $out : null;
+    if (!is_string($out) || trim($out) === '') {
+        return null;
+    }
+    if (preg_match('/:\s*(not found|No such file or directory)\b/i', $out)) {
+        return null;
+    }
+    return $out;
 }
 
 // 1. MEEL_HDD_BASE
