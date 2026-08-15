@@ -131,7 +131,7 @@ MEeL/
 
 ## 🔒 Assessment Keamanan
 
-### Security Test: ✅ 97/100 — Score: 97/100 (A) (5 warning non-kritis, 0 fail)
+### Security Test: ✅ 98/100 — Score: 98/100 (A) (5 warning non-kritis, 0 fail)
 
 | Kategori | Status | Detail |
 |---|---|---|
@@ -157,18 +157,19 @@ MEeL/
 
 ## 📊 Quality Assessment
 
-### Functional Test: ✅ 161/157 — Score: 99/100 (A) (4 warning non-kritis)
+### Functional Test: ✅ 55/50 — Score: 95/100 (A) (5 warning non-kritis)
 
-**4 Warnings (non-critical):**
+**5 Warnings (non-critical):**
 
 | Warning | Kategori | Notes |
 |---|---|---|
-| Session name (meel) tidak terdeteksi | Minor | Deteksi statis — session diboot dari modul terpusat `modules/core/helpers/session.php` |
-| Session GC maxlifetime tidak terdeteksi | Minor | Deteksi statis — lihat `meel_boot_session()` |
-| Session cookie params tidak terdeteksi | Minor | Deteksi statis |
-| `verify_csrf_token` tidak terdeteksi | Minor | Fungsi terpusat di `modules/core/helpers.php` |
+| `modules/media/MediaViewer.php` — 2 raw query (campur prepared statements) | Minor | `SELECT MAX(id) AS max_id FROM {$table}` — perlu review |
+| `controllers/profile/profile_edit.php` — MIME check | Minor | Perlu review |
+| Session name unik (meel) tidak terdeteksi | Minor | Deteksi statis — session diboot dari modul terpusat `modules/core/helpers/session.php` |
+| Session timeout (`gc_maxlifetime`) tidak terdeteksi | Minor | Deteksi statis — lihat `meel_boot_session()` |
+| HTTP-only cookie params tidak terdeteksi | Minor | Deteksi statis |
 
-### PHP Syntax Check: ✅ 18/18 Files Passed
+### PHP Syntax Check: ✅ 175/175 Files Passed
 
 ### Code Duplication Removed
 
@@ -368,11 +369,11 @@ Tidak ada masalah medium yang tersisa.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |---|---|---|---|---|---|
-| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 161 | 157 | 4 warn | **0** | **✅ 99/100** |
-| **Security Test** | 98 | 93 | 5 warn | **0** | **✅ 97/100** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **Functional Test** | 55 | 50 | 5 warn | **0** | **✅ 95/100** |
+| **Security Test** | 125 | 120 | 5 warn | **0** | **✅ 98/100** |
+| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 ---
 
@@ -393,7 +394,7 @@ Tidak ada masalah medium yang tersisa.
 ### Prioritas Rendah
 
 7. **Docker support** — environment yang konsisten untuk deployment
-8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (255 unit + 79 integration = 334 tests)
+8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (266 unit + 79 integration = 345 tests)
 
 ---
 
@@ -410,7 +411,7 @@ Tidak ada masalah medium yang tersisa.
 | **Performance optimization** | 6 (FULLTEXT, pagination cache, session_write_close) |
 | **Code quality improvement** | 12 (autoloader, template, static cache, deduplikasi) |
 | **Documentation updated** | 8 file docs + README.md |
-| **Functional test score** | 99/100 (A) |
-| **Security test score** | 97/100 (93 pass, 5 warning non-kritis) |
+| **Functional test score** | 95/100 (A) |
+| **Security test score** | 98/100 (120 pass, 5 warning non-kritis) |
 
 > **Status:** ✅ **Production-ready dengan 0 critical, 0 high, 0 medium, dan 0 low issue.** Semua low issue yang teridentifikasi telah diperbaiki.

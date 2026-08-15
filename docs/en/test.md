@@ -20,7 +20,7 @@ MEeL uses a multi-layered testing approach:
 
 ---
 
-## 🧪 PHPUnit Test Suite (255 Unit + 79 Integration = 334 Tests)
+## 🧪 PHPUnit Test Suite (266 Unit + 79 Integration = 345 Tests)
 
 ### Installation
 
@@ -392,10 +392,10 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 
 | Suite | Tests | Pass | Fail | Score |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 334 | 334 | 0 | ✅ 100% |
-| **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 108 | 108 | 0 | ✅ 100% |
-| **Functional Test** | 161 | 157 pass, 4 warn | 0 | ✅ 99/100 |
-| **Security Test** | 92 | 87 pass, 5 warn | 0 | ✅ 97/100 |
+| **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
+| **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
+| **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
+| **Security Test** | 125 | 120 pass, 5 warn | 0 | ✅ 98/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Numbers are from the hardening pass (August 2026). Run the suites yourself

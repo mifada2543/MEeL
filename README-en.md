@@ -94,7 +94,7 @@
 | **User Profiles** | Avatar, bio, upload statistics |
 | **20-20-20 Eye Care** | Eye rest notifications every 20 minutes |
 | **PSR-4 Autoloader** | Auto-loading core classes (`MediaLibrary`, `Uploader`, etc.) without manual require |
-| **Migration System v1–v11** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, composite indexes, schema sync) |
+| **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, composite indexes, schema sync) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — consistent paths across all subdirectories |
 | **FULLTEXT Search** | Search video/music/books 10-100× faster via `MATCH AGAINST` — query sanitizer + pagination (MySQL 5.7+) |
 | **Admin Panel** | Dashboard monitoring, user management, queue control, activity log viewer |
@@ -135,7 +135,7 @@
 | **Downloader** | yt-dlp (optional) | External media URL downloads |
 | **Transliteration** | PHP `intl` (Transliterator) | File name sanitization (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loads 10+ core classes |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v11 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
 | **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
 | **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Auto offline precache + installable |
 
@@ -164,7 +164,7 @@ MEeL/
 │   └── profile/           # profile_edit, fun-manage
 ├── database/              # Database schema
 │   ├── schema.sql         # Standalone schema file (20 tables)
-│   └── migrate.php        # 🔄 Migration system v1–v11 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
+│   └── migrate.php        # 🔄 Migration system v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
 ├── data_drive/            # Cloud Drive runtime storage
 ├── docs/                  # Project documentation
 ├── drive/                 # Cloud Drive module
@@ -409,7 +409,7 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 ### Migration System
 
 ```bash
-# Upgrade database to latest version (v1–v11)
+# Upgrade database to latest version (v1–v12)
 /opt/lampp/bin/php database/migrate.php
 ```
 
@@ -434,14 +434,14 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 255 | 255 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 161 | 157 pass, 4 warn | 0 | **0** | **✅ 99/100** |
-| **Security Test** | 98 | 93 pass, 5 warn | 0 | **0** | **✅ 97/100** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
+| **Security Test** | 125 | 120 pass, 5 warn | 0 | **0** | **✅ 98/100** |
+| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 > Security test: 5 non-critical warnings (MediaViewer raw-query review, profile_edit
-> MIME check, and session parameter detection) — not failures; score **97/100**.
+> MIME check, and session parameter detection) — not failures; score **98/100**.
 > Storage & deployment verification: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.

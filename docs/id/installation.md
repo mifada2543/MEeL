@@ -584,12 +584,13 @@ Setelah semua setup selesai, jalankan migrasi database untuk mengoptimalkan skem
 ```
 
 Migration bersifat **idempotent** — aman dijalankan berulang kali. Mengelola
-**v1–v11** (tracker otomatis di tabel `db_version`):
+**v1–v12** (tracker otomatis di tabel `db_version`):
 - **v1–v5:** FULLTEXT index, performance index, sinkronisasi struktural, foreign key, tipe title
 - **v6–v7:** tabel `activity_log`, UNIQUE KEY pada username
 - **v8–v9:** sync kolom role, **kolom MFA** (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`)
 - **v10:** index komposit `comments` `(video_id, created_at)` & `(music_id, created_at)`
 - **v11:** unique key `interactions` dipecah menjadi `(user_id, video_id)` & `(user_id, music_id)`
+- **v12:** ikat identitas user ke room catur (`white_user_id`, `black_user_id`) — cegah akses ilegal via `room_code`
 
 ### 11. Setup cookies.txt (untuk yt-dlp)
 

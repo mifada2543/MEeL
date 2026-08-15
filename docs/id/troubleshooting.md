@@ -43,6 +43,26 @@ mysql -u root -p -e "SHOW DATABASES;"
 mysql -u root -p -e "CREATE DATABASE MEeL DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 ```
 
+**Khusus MariaDB: `root` memakai plugin `unix_socket`**
+
+Pada instalasi MariaDB default, `root` ter-autentikasi lewat plugin
+`unix_socket` — koneksi hanya sah dari proses yang berjalan sebagai user OS
+`root` (via socket). Akibatnya `mysql -u root` sukses di CLI, tapi koneksi dari
+proses web server (`www-data`) gagal **"Access denied"** meskipun password
+kosong. Solusi yang disarankan: buat user database khusus untuk aplikasi:
+
+```sql
+CREATE USER 'meel'@'localhost' IDENTIFIED BY 'password_kuat';
+GRANT ALL PRIVILEGES ON MEeL.* TO 'meel'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Lalu pakai kredensial itu di `auth/settings.php` (`$username`/`$password`).
+Alternatif (kurang disarankan): ubah `root` ke `mysql_native_password`:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('password_baru');
+```
+
 ### ❌ "Tabel tidak ditemukan"
 
 **Penyebab:** SQL belum di-import
@@ -51,7 +71,7 @@ mysql -u root -p -e "CREATE DATABASE MEeL DEFAULT CHARACTER SET utf8mb4 COLLATE 
 ```bash
 mysql -u root -p MEeL < database/schema.sql
 ```
-File `database/schema.sql` berisi seluruh skema (16 tabel + admin default) — import langsung!
+File `database/schema.sql` berisi seluruh skema (20 tabel + admin default) — import langsung!
 
 ### ❌ "Column 'description' cannot be null" (atau error kolom lain)
 
