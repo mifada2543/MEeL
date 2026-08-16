@@ -29,14 +29,6 @@ body {
     margin: 0 auto;
   }
 }
-/* Mobile swipe overlay arrows */
-.swipe-arrow {
-  position: absolute;
-  color: rgba(34, 197, 94, 0.15);
-  font-size: 2rem;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
 /* Score pulse animation */
 @keyframes score-pop {
   0% { transform: scale(1); }

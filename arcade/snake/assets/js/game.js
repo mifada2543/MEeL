@@ -231,7 +231,6 @@ function draw() {
       ctx.fillStyle = "white";
       let eyeX1, eyeY1, eyeX2, eyeY2;
       const eyeSize = 3;
-      const eyeOffset = 5;
       switch (direction) {
         case "RIGHT":
           eyeX1 = x + 13;
@@ -292,15 +291,7 @@ window.addEventListener("keydown", (e) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
     e.preventDefault();
   }
-  if (
-    !gameState.isPlaying &&
-    !gameState.isGameOver &&
-    (key === " " || key === "Enter")
-  ) {
-    initGame();
-    return;
-  }
-  if (gameState.isGameOver && (key === " " || key === "Enter")) {
+  if (!gameState.isPlaying && (key === " " || key === "Enter")) {
     initGame();
     return;
   }
@@ -338,9 +329,7 @@ canvas.addEventListener(
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
 
-    if (!gameState.isPlaying && !gameState.isGameOver) {
-      initGame();
-    } else if (gameState.isGameOver) {
+    if (!gameState.isPlaying) {
       initGame();
     }
   },
