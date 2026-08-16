@@ -1356,7 +1356,7 @@ class Transcoder
         $stmt_upd->execute();
         $stmt_upd->close();
 
-        $this->removeFile($marker_file); // Hapus marker setelah selesai
+        $this->removeFile($marker_file);
 
         if (!file_exists($output_path) || filesize($output_path) === 0) {
             $this->emit('error', ['message' => 'FFmpeg gagal menghasilkan file output.']);

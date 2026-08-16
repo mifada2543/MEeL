@@ -51,7 +51,6 @@ class MediaViewer
     // ─── 2. AMBIL DATA MEDIA UTAMA ───
     public function getMediaData()
     {
-        // DIUBAH: Menggunakan prepared statement untuk m.id
         $sql = "SELECT m.*, u.username as uploader, u.profile_picture as uploader_pfp
                 FROM {$this->table} m
                 JOIN users u ON m.user_id = u.id

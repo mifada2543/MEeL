@@ -172,7 +172,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                         <span>Admin Panel</span>
                     </a>
                 <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'member'): ?>
-                    <!-- Upload hanya untuk member juga (sesuai nav lama) -->
+                    <!-- Upload tersedia juga untuk member -->
                     <a href="upload.php"
                         title="Unggah media baru ke platform"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
