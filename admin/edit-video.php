@@ -307,7 +307,7 @@ include __DIR__ . '/../partials/link.php';
 
                 <!-- Nav buttons -->
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;">
-                    <a href="../video/watch.php?id=<?= $id ?>" class="btn-secondary" style="justify-content:center;">
+                    <a href="<?= base_url('/video/watch?id=' . (int)$id) ?>" class="btn-secondary" style="justify-content:center;">
                         <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Lihat Video
                     </a>
                     <?php if ($is_admin): ?>

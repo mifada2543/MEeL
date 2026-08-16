@@ -31,7 +31,9 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
     $c_reply_btn_text   = $is_video ? 'text-white' : 'text-black';
     $reply_prefix       = $is_video ? 'vid-' : 'mus-';
     $author_time_color  = $is_video ? 'text-gray-300' : 'text-gray-500';
-    $playlist_qs        = (!$is_video && $playlist_context > 0) ? '&amp;playlist_id=' . $playlist_context : '';
+    // Clean URL tanpa .php untuk action form komentar (fallback no-JS),
+    // dipakai bersama hx-post. Query string dipertahankan.
+    $form_action_url   = base_url(($is_video ? '/video/watch' : '/music/watch') . '?id=' . (int)$id . (!$is_video && $playlist_context > 0 ? '&playlist_id=' . (int)$playlist_context : ''));
 
     foreach ($grouped[$parent_id] as $c):
         $author      = $c['username'] ?? 'Guest';
@@ -121,7 +123,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         Balas
                     </button>
                     <div id="<?= $reply_prefix . $c['id'] ?>" class="hidden mt-3">
-                        <form action="watch.php?id=<?= $id ?><?= $playlist_qs ?>" method="post" class="flex gap-2"
+                        <form action="<?= $form_action_url ?>" method="post" class="flex gap-2"
                             hx-post="../controllers/api/comment.php"
                             hx-target="#comment-list"
                             hx-swap="innerHTML"

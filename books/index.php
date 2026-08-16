@@ -235,7 +235,7 @@ $totalPagesBooks = $meta_books['total_pages'];
                     label += ' (Halaman ' + data.page + '/' + data.total + ')';
                 }
                 titleEl.textContent = label;
-                linkEl.href = 'read.php?id=' + data.id + (data.ch ? '&ch=' + encodeURIComponent(data.ch) : '');
+                linkEl.href = '<?= base_url('/books/read?id=') ?>' + data.id + (data.ch ? '&ch=' + encodeURIComponent(data.ch) : '');
                 banner.classList.add('visible');
 
             } catch(e) {

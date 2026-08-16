@@ -32,7 +32,9 @@ $action  = $_POST['action'] ?? '';
 
 function redirect(string $url): never
 {
-    // Validasi redirect — hanya izinkan URL relatif atau internal
+    // Validasi redirect — izinkan URL relatif lama ATAU clean URL internal
+    // (root-relative dari base_url, mis. /MEeL/music/watch?id=5). Cegah open
+    // redirect: tolak URL absolut eksternal (memuat skema atau host).
     $allowed_prefixes = ['watch.php', 'view_playlist.php', 'index.php'];
     $safe = false;
     foreach ($allowed_prefixes as $prefix) {
@@ -40,6 +42,9 @@ function redirect(string $url): never
             $safe = true;
             break;
         }
+    }
+    if (!$safe && str_starts_with($url, '/') && !str_contains($url, '://')) {
+        $safe = true;
     }
     if (!$safe) {
         $url = 'index.php';
@@ -82,7 +87,7 @@ if ($action === 'create_playlist') {
             exit;
         }
     }
-    redirect("watch.php?id=$music_id&msg=playlist_created");
+    redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=playlist_created');
 }
 
 // ─── 2. TAMBAH LAGU KE PLAYLIST ───
@@ -112,7 +117,7 @@ if ($action === 'add_to_playlist') {
         $conn->rollback();
         die('Error: ' . $e->getMessage());
     }
-    redirect("watch.php?id=$music_id&msg=added_to_playlist");
+    redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=added_to_playlist');
 }
 
 // ─── 3. HAPUS LAGU DARI PLAYLIST ───

@@ -10,7 +10,7 @@ if ($result['count'] > 0) {
     foreach ($result['results'] as $v) {
         if ($result['sidebar']) {
 ?>
-            <a href="watch.php?id=<?= $v['id'] ?>"
+            <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>"
                 class="flex gap-3 group rekomendasi-item htmx-added">
                 <div class="w-28 h-[4.5rem] bg-black rounded-xl overflow-hidden flex-shrink-0 border border-white/[.05]">
                     <img src="upload/thumbnail/<?= htmlspecialchars($v['thumbnail']) ?>"

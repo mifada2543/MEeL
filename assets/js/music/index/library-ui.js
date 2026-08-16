@@ -14,7 +14,7 @@ function setupMusicItemClicks() {
       if (idx >= 0 && idx < items.length - 1) {
         const nextItem = items[idx + 1];
         const nextId = nextItem.dataset.id;
-        if (nextId) nextSongUrl = `watch.php?id=${nextId}`;
+        if (nextId) nextSongUrl = `watch?id=${nextId}`;
       }
       localStorage.removeItem(MEEL_KEYS.LAST_PLAYLIST_ID);
       const state = {
@@ -29,7 +29,7 @@ function setupMusicItemClicks() {
         filename: this.dataset.filename,
         watchUrl: e.target.closest("a")
           ? e.target.closest("a").getAttribute("href")
-          : `watch.php?id=${this.dataset.id}`,
+          : `watch?id=${this.dataset.id}`,
         nextSongUrl: nextSongUrl,
         currentTime: 0,
         isPlaying: true,

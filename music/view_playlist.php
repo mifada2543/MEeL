@@ -84,7 +84,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             </div>
             <div class="flex flex-wrap items-center gap-2 mt-4">
                 <?php if ($first_song): ?>
-                    <a href="watch.php?id=<?= $first_song['id'] ?>&playlist_id=<?= $playlist_id ?>"
+                    <a href="<?= base_url('/music/watch?id=' . (int)$first_song['id'] . '&playlist_id=' . (int)$playlist_id) ?>"
                         class="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white
                               px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest
                               transition-all shadow-lg shadow-orange-600/20 border border-orange-500/20">
@@ -125,7 +125,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                 authorize_stream((int)$s['id']);
                 $s_ext   = strtolower(pathinfo($s['filename'], PATHINFO_EXTENSION));
                 $s_lbl   = $s_ext === 'ogg' ? 'opus' : $s_ext;
-                $watch_url = "watch.php?id={$s['id']}&playlist_id={$playlist_id}";
+                $watch_url = base_url('/music/watch?id=' . (int)$s['id'] . '&playlist_id=' . (int)$playlist_id);
             ?>
                 <div class="group grid grid-cols-[2rem_1fr_auto_2rem] items-center gap-4 px-3 py-2 rounded-xl
                             hover:bg-white/[.04] border border-transparent hover:border-white/[.05] transition-all duration-150

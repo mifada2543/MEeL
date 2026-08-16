@@ -69,7 +69,7 @@ $title = htmlspecialchars($book['title']);
         <!-- Navigation bar -->
         <div class="pdf-nav">
             <div class="pdf-nav-left">
-                <a href="read.php?id=<?= $id ?>" class="pdf-nav-back" title="Kembali ke pembaca">
+                <a href="<?= base_url('/books/read?id=' . (int)$id) ?>" class="pdf-nav-back" title="Kembali ke pembaca">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 </a>
                 <div class="pdf-nav-icon">

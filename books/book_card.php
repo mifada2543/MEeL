@@ -9,7 +9,7 @@
             </a>
         </div>
     <?php endif; ?>
-    <a href="read.php?id=<?= (int)$book['id'] ?>" class="block">
+    <a href="<?= base_url('/books/read?id=' . (int)$book['id']) ?>" class="block">
         <div class="book-card relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/[.06] bg-[#0b0e14] shadow-lg">
             <img src="upload/thumbnail/<?= htmlspecialchars($book['thumbnail']) ?>"
                 loading="lazy"

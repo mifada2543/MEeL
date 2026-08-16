@@ -357,7 +357,9 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
             $hostNorm = strtolower(parse_url('http://' . $host, PHP_URL_HOST) ?: $host);
             if ($parts && isset($parts['host']) && strtolower($parts['host']) === $hostNorm) {
                 $refPath = $parts['path'] ?? '';
-                if (str_contains($refPath, '/video/') && preg_match('#/video/(watch|index)\.php#i', $refPath)) {
+                // Terima pola lama (/video/watch.php, /video/index.php) DAN
+                // clean URL baru (/video/watch?id=X — path /video/watch).
+                if (str_contains($refPath, '/video/') && preg_match('#/video/(watch(?:\.php)?|index\.php)(?:/|$)#i', $refPath)) {
                     $refOk = true;
                 }
             }

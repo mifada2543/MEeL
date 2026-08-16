@@ -14,7 +14,7 @@ if ($result['count'] > 0) {
             $v_ext = strtolower(pathinfo($v['filename'], PATHINFO_EXTENSION));
             $v_lbl = $v_ext === 'ogg' ? 'opus' : $v_ext;
             ?>
-            <a href="watch.php?id=<?= $v['id'] ?>"
+            <a href="<?= base_url('/music/watch?id=' . (int)$v['id']) ?>"
                class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl no-underline htmx-added"
                title="<?= htmlspecialchars($v['title']) ?>">
                 <div class="w-full lg:w-16 aspect-square lg:h-12 lg:aspect-auto rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">

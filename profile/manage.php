@@ -457,11 +457,11 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                             : '../assets/img/video0.webp';
                     ?>
                         <div class="content-card">
-                            <a href="../video/watch.php?id=<?= $v['id'] ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
+                            <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
                                 <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy">
                             </a>
                             <div class="card-body">
-                                <a href="../video/watch.php?id=<?= $v['id'] ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
+                                <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
                                     <?= htmlspecialchars($v['title']) ?>
                                 </a>
                                 <div class="card-meta">
@@ -478,7 +478,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     <span><?= date('d M Y', strtotime($v['upload_date'])) ?></span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="../admin/edit-video.php?id=<?= $v['id'] ?>"
+                                    <a href="<?= base_url('/admin/edit-video?id=' . (int)$v['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit video <?= htmlspecialchars($v['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>
@@ -505,11 +505,11 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                             : '../assets/img/music0.webp';
                     ?>
                         <div class="content-card">
-                            <a href="../music/watch.php?id=<?= $m['id'] ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
+                            <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
                                 <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($m['title']) ?>" loading="lazy">
                             </a>
                             <div class="card-body">
-                                <a href="../music/watch.php?id=<?= $m['id'] ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
+                                <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
                                     <?= htmlspecialchars($m['title']) ?>
                                 </a>
                                 <div class="card-meta">
@@ -526,7 +526,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     </span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="../admin/edit-music.php?id=<?= $m['id'] ?>"
+                                    <a href="<?= base_url('/admin/edit-music?id=' . (int)$m['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit musik <?= htmlspecialchars($m['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>

@@ -56,7 +56,7 @@ abstract class AbstractWatchController
 
     protected function commentRedirectUrl(): string
     {
-        return "watch.php?id={$this->id}#comment-section";
+        return base_url("/video/watch?id={$this->id}#comment-section");
     }
 
     public function isLoggedIn(): bool
@@ -168,7 +168,11 @@ class MusicWatchController extends AbstractWatchController
 
     protected function commentRedirectUrl(): string
     {
-        return "watch.php?id={$this->id}&playlist_id={$this->playlist_id}#comment-section";
+        $url = base_url("/music/watch?id={$this->id}");
+        if ($this->playlist_id > 0) {
+            $url .= '&playlist_id=' . $this->playlist_id;
+        }
+        return $url . '#comment-section';
     }
 
     /* Ambil media data, redirect jika tidak ditemukan. */
@@ -201,11 +205,17 @@ class MusicWatchController extends AbstractWatchController
             $rekom->data_seek(0);
             while ($rec = $rekom->fetch_assoc()) {
                 if ((int)$rec['id'] !== $this->id) {
-                    $next_song_url = "watch.php?id=" . $rec['id'];
+                    $next_song_url = base_url('/music/watch?id=' . (int)$rec['id']);
                     break;
                 }
             }
             $rekom->data_seek(0);
+        }
+
+        // Konversi next_url relatif (watch.php?id=X[&playlist_id=P]) dari
+        // MediaViewer ke clean URL /music/watch?id=X[&playlist_id=P]
+        if ($next_song_url !== '' && preg_match('#^watch\.php\?id=(\d+)(?:&playlist_id=(\d+))?$#', $next_song_url, $m)) {
+            $next_song_url = base_url('/music/watch?id=' . (int)$m[1] . (!empty($m[2]) ? '&playlist_id=' . (int)$m[2] : ''));
         }
 
         // Format detection (via centralized helpers)

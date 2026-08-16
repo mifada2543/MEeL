@@ -342,7 +342,8 @@ window.miniPrevIndex = function () {
 // Tambahkan playlist_id ke URL bila belum ada — konteks playlist tidak boleh hilang.
 function withPlaylistParam(url, playlistId) {
   if (!url || !playlistId || playlistId <= 0) return url;
-  if (url.indexOf("playlist_id=") !== -1) return url;
+  // Clean URL (/music/watch?id=5&playlist_id=3) ATAU query lama sudah membawa konteks
+  if (url.indexOf("playlist_id=") !== -1 || /\/playlist\/\d+/.test(url)) return url;
   // Sisipkan parameter sebelum fragment (#...).
   const hashIdx = url.indexOf("#");
   const base = hashIdx === -1 ? url : url.substring(0, hashIdx);
@@ -374,10 +375,10 @@ function expandPlayerFromMiniPlayer() {
     if (state.watchUrl) {
       target = withPlaylistParam(state.watchUrl, state.playlistId);
     } else if (state.id) {
-      target = withPlaylistParam(`watch.php?id=${state.id}`, state.playlistId);
+      target = withPlaylistParam(`watch?id=${state.id}`, state.playlistId);
     } else if (state.musicId) {
       target = withPlaylistParam(
-        `watch.php?id=${state.musicId}`,
+        `watch?id=${state.musicId}`,
         state.playlistId,
       );
     } else if (state.filename) {
@@ -490,7 +491,7 @@ function setupPlaylistItemClicks() {
         filename: this.dataset.filename,
         watchUrl:
           this.dataset.watchUrl ||
-          `watch.php?id=${this.dataset.id}&playlist_id=${this.dataset.playlistId}`,
+          `watch?id=${this.dataset.id}&playlist_id=${this.dataset.playlistId}`,
         nextSongUrl: nextSongUrl,
         playlistId: this.dataset.playlistId,
         currentTime: 0,

@@ -161,7 +161,7 @@ function _scanSubdirs(string $dir): array {
             <div class="pdf-view">
                 <!-- ═════ DESKTOP: iframe PDF viewer ═════ -->
                 <div class="pdf-body pdf-iframe-wrap" id="readPdfBody">
-                    <iframe src="read_pdf.php?id=<?= (int)$book['id'] ?>&raw=1"
+                    <iframe src="<?= base_url('/books/read-pdf?id=' . (int)$book['id'] . '&raw=1') ?>"
                             id="pdfFrame"
                             title="PDF Viewer"
                             style="width:100%;height:100%;border:none;display:block;"></iframe>
@@ -175,7 +175,7 @@ function _scanSubdirs(string $dir): array {
                         </div>
                         <h2 class="pdf-card-title"><?= htmlspecialchars($book['title']) ?></h2>
                         <p class="pdf-card-meta">Dokumen PDF &middot; <?= $pdf_size_f ?></p>
-                        <a href="read_pdf.php?id=<?= (int)$book['id'] ?>"
+                        <a href="<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>"
                            class="pdf-card-btn">
                             <i data-lucide="external-link" class="w-4 h-4"></i>
                             Buka PDF
@@ -190,7 +190,7 @@ function _scanSubdirs(string $dir): array {
                         <span class="pdf-info-title"><?= htmlspecialchars($book['title']) ?></span>
                         <span class="pdf-info-meta">PDF &middot; <?= $pdf_size_f ?></span>
                     </div>
-                    <a href="read_pdf.php?id=<?= (int)$book['id'] ?>"
+                    <a href="<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>"
                        target="_blank" rel="noopener"
                        class="pdf-info-btn">
                         <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -206,7 +206,7 @@ function _scanSubdirs(string $dir): array {
                 if (!frame) return;
                 // Jika lewat 10 detik iframe masih kosong, redirect ke read_pdf.php
                 var timeout = setTimeout(function() {
-                    window.location.href = 'read_pdf.php?id=<?= (int)$book['id'] ?>';
+                    window.location.href = '<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>';
                 }, 10000);
                 frame.addEventListener('load', function() { clearTimeout(timeout); });
                 frame.addEventListener('error', function() { clearTimeout(timeout); });

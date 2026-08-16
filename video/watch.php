@@ -191,7 +191,7 @@ $__vdir = function($dir) {
                     );
                     if ($can_edit): ?>
                         <div class="flex gap-2">
-                            <a href="../admin/edit-video.php?id=<?= $id ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
+                            <a href="<?= base_url('/admin/edit-video?id=' . (int)$id) ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
                                 <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit Video
                             </a>
                         </div>
@@ -305,7 +305,7 @@ $__vdir = function($dir) {
                         <div id="comment-body">
                             <div class="p-4 sm:p-6">
                                 <div id="comment-alert"></div>
-                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
+                            <form action="<?= base_url('/video/watch?id=' . (int)$id) ?>" method="post" class="mb-6"
                                 hx-post="../controllers/api/comment.php"
                                 hx-target="#comment-list"
                                 hx-swap="innerHTML"
@@ -352,7 +352,7 @@ $__vdir = function($dir) {
             </div>
             <div id="recommendation-column" class="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:gap-0 lg:space-y-1">
                 <?php while ($r = $rekom->fetch_assoc()): ?>
-                    <a href="watch.php?id=<?= $r['id'] ?>"
+                    <a href="<?= base_url('/video/watch?id=' . (int)$r['id']) ?>"
                         class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 px-2 py-2.5 rounded-xl no-underline"
                         title="<?= htmlspecialchars($r['title']) ?>">
                         <div class="w-full lg:w-32 aspect-video lg:h-20 lg:aspect-auto rounded-xl overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">

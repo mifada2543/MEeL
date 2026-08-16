@@ -22,7 +22,11 @@ if ($referer !== '' && $currentHost !== '') {
             $refPath      = $refParts['path'] ?? '';
             $refPage      = basename($refPath);
             $allowedPages = ['watch.php', 'index.php', 'view_playlist.php'];
-            if (strpos($refPath, '/music/') !== false && in_array($refPage, $allowedPages, true)) {
+            // Terima halaman lama (/music/watch.php, /music/index.php,
+            // /music/view_playlist.php) DAN clean URL baru (/music/watch?id=X).
+            if (strpos($refPath, '/music/') !== false &&
+                (in_array($refPage, $allowedPages, true) ||
+                 $refPage === 'watch')) {
                 $refererOk = true;
             }
         }

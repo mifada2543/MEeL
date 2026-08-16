@@ -13,7 +13,7 @@ function saveAudioState() {
   // state.js, = window.location.href di player-core.js) sudah memuat query string asli.
   const url =
     (typeof watchUrl === "string" && watchUrl ? watchUrl : "") ||
-    `watch.php?id=${e.id}`;
+    `watch?id=${e.id}`;
   (sessionStorage.setItem(
     MEEL_KEYS.AUDIO_STATE,
     JSON.stringify({

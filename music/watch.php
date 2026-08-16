@@ -293,7 +293,7 @@ $__vdir = function($dir) {
                                 (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)($v['user_id'] ?? -1))
                             );
                             if ($can_edit): ?>
-                                <a href="../admin/edit-music.php?id=<?= $id ?>" title="Edit Musik"
+                                <a href="<?= base_url('/admin/edit-music?id=' . (int)$id) ?>" title="Edit Musik"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer no-underline bg-orange-600/10 border-orange-600/20 text-orange-400 hover:bg-orange-600 hover:text-white">
                                     <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit
                                 </a>
@@ -384,7 +384,7 @@ $__vdir = function($dir) {
                     <div id="comment-body">
                         <div class="p-4 sm:p-6">
                             <div id="comment-alert"></div>
-                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
+                        <form action="<?= base_url('/music/watch?id=' . (int)$id . ($playlist_context > 0 ? '&playlist_id=' . (int)$playlist_context : '')) ?>" method="post" class="mb-6"
                             hx-post="../controllers/api/comment.php"
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
@@ -436,7 +436,7 @@ $__vdir = function($dir) {
                         while ($q = $queue_query->fetch_assoc()):
                             $is_pl = ($q['id'] == $id);
                         ?>
-                            <a href="watch.php?id=<?= $q['id'] ?>&playlist_id=<?= $playlist_context ?>"
+                            <a href="<?= base_url('/music/watch?id=' . (int)$q['id'] . '&playlist_id=' . (int)$playlist_context) ?>"
                                 class="flex items-center gap-3 px-2 py-2 rounded-xl transition-all no-underline
                               <?= $is_pl ? 'bg-orange-500/8 border border-orange-500/20' : 'hover:bg-white/[.025] border border-transparent' ?>">
                                 <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 <?= $is_pl ? 'opacity-50' : '' ?>">
@@ -464,7 +464,7 @@ $__vdir = function($dir) {
                         $r_ext = strtolower(pathinfo($r['filename'], PATHINFO_EXTENSION));
                         $r_lbl = $r_ext === 'ogg' ? 'opus' : $r_ext;
                     ?>
-                        <a href="watch.php?id=<?= $r['id'] ?>"
+                        <a href="<?= base_url('/music/watch?id=' . (int)$r['id']) ?>"
                             class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl no-underline"
                             title="<?= htmlspecialchars($r['title']) ?>">
                             <div class="w-full lg:w-16 aspect-square lg:h-12 lg:aspect-auto rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">

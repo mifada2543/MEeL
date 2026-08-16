@@ -177,7 +177,7 @@ include __DIR__ . '/../partials/scripts.php';
                             }
                             foreach ($top_picks as $type => $tm):
                                 if ($tm === null) continue;
-                                $link = ($type == 'video') ? "../video/watch.php?id=" : "../music/watch.php?id=";
+                                $link = ($type == 'video') ? base_url('/video/watch?id=') : base_url('/music/watch?id=');
                                 $color = ($type == 'video') ? "text-red-500" : "text-orange-500";
                                 $icon = ($type == 'video') ? "play-circle" : "music-2";
                             ?>
