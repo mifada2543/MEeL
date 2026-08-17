@@ -7,6 +7,7 @@ final class DriveUserContext
     public ?int $userId;
     public string $role;
     public string $username;
+    public ?string $profile_picture = null;
 
     private function __construct(?int $userId, string $role, string $username)
     {
@@ -22,6 +23,29 @@ final class DriveUserContext
             (string) ($session['role'] ?? 'guest'),
             (string) ($session['username'] ?? 'User')
         );
+    }
+
+    /**
+     * Ambil foto profil langsung dari DB (bukan session) agar selalu akurat
+     * walau foto baru saja diganti user di halaman profile.
+     */
+    public function loadProfilePicture(mysqli $conn): void
+    {
+        if ($this->userId === null) {
+            return;
+        }
+
+        $stmt = $conn->prepare('SELECT profile_picture FROM users WHERE id = ?');
+        if (!$stmt) {
+            return;
+        }
+
+        $stmt->bind_param('i', $this->userId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $this->profile_picture = $row['profile_picture'] ?? null;
     }
 
     public function authorize(): void
@@ -133,9 +157,6 @@ final class DriveStorage
             }
 
             if ($scope === self::SCOPE_PRIVATE) {
-                // Private files TIDAK boleh direferensikan lewat path web
-                // langsung (subtree storage di-deny web server). URL pratinjau
-                // harus lewat endpoint stream ber-otorisasi.
                 $path = 'stream?file=' . rawurlencode($fileInfo->getFilename())
                     . '&type=' . rawurlencode($type)
                     . '&scope=private'
@@ -191,16 +212,10 @@ final class DriveStorage
         }
 
         // ─── Kuota ATOMIK ───
-        // Lock per-user menjadikan rangkaian "cek usage → cek kuota → tulis
-        // file" satu unit tak-terputus; usage dihitung segar (bypass cache 5
-        // menit) sehingga angka yang dipakai akurat.
         $lockFp = null;
         if ($quotaLimitBytes > 0 && $this->user->isMember()) {
             $lockFp = @fopen($this->quotaLockPath(), 'c');
             if ($lockFp === false) {
-                // Lock tidak bisa dibuat (temp dir bermasalah) → tetap tegakkan
-                // kuota secara non-atomik. Jangan pernah melewati pengecekan
-                // kuota sama sekali untuk member.
                 $currentUsage = dir_size($this->privateRootForUser($this->user->username), 0);
                 if (($currentUsage + $fileSize) > $quotaLimitBytes) {
                     throw new RuntimeException('quota_full');
@@ -225,14 +240,20 @@ final class DriveStorage
 
         if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
             @unlink($destination); // buang reservasi kosong
-            if (is_resource($lockFp)) { @flock($lockFp, LOCK_UN); @fclose($lockFp); }
+            if (is_resource($lockFp)) {
+                @flock($lockFp, LOCK_UN);
+                @fclose($lockFp);
+            }
             throw new RuntimeException('Gagal mengunggah file. Cek izin folder penyimpanan.');
         }
 
         // Validasi file type menggunakan magic bytes
         if (!$this->validateFileByMagicBytes($destination, $type)) {
             @unlink($destination);
-            if (is_resource($lockFp)) { @flock($lockFp, LOCK_UN); @fclose($lockFp); }
+            if (is_resource($lockFp)) {
+                @flock($lockFp, LOCK_UN);
+                @fclose($lockFp);
+            }
             throw new RuntimeException('Tipe file tidak sesuai dengan extension yang diberikan.');
         }
 
