@@ -86,7 +86,7 @@ MEeL/
 |---|---|---|
 | `modules/media/MediaViewer.php` — 2 raw queries (mixed with prepared statements) | Minor | `SELECT MAX(id) AS max_id FROM {$table}` — needs review |
 | `controllers/profile/profile_edit.php` — MIME check | Minor | Needs review |
-| Unique session name (meel) not detected | Minor | Static detection — session bootstrapped from central `modules/core/helpers/session.php` |
+| Unique session name (meel) not detected | Minor | Static detection — session bootstrapped from central `modules/auth/helpers/session.php` |
 | Session timeout (`gc_maxlifetime`) not detected | Minor | Static detection — see `meel_boot_session()` |
 | HTTP-only cookie params not detected | Minor | Static detection |
 

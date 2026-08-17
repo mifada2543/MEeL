@@ -65,7 +65,7 @@ logs/tests/
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME types, disk space, CSRF, dir_size, protocol detection (data providers) |
 | `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (MeCab-optional) |
-| `GarbageCollectorTest.php` | 5 | Class existence, idempotency, graceful handling |
+| `GarbageCollectorTest.php` | 6 | Class existence, idempotency, graceful handling, rate-limit cleanup (isolated test dir) |
 | `SearchEngineTest.php` | 5 | Parse params, sanitizer (`sanitizeQuery`), default values, constants |
 | `MediaLibraryTest.php` | 11 | Pagination logic (pure math), BookRepository mock |
 | `MediaInteractionTest.php` | 7 | Input validation (invalid IDs, types) |
@@ -257,6 +257,8 @@ php tests/security_test.php
 - Command Injection — escapeshellarg() usage
 - File Upload — magic bytes validation
 - Session Security — cookie params, hijack detection
+- Open Redirect — all referer redirects must pass host validation; `playlist_action.php` rejects `//host` & `://` schemes
+- Fatal-Bug Regression — duplicate class includes (RateLimiter) & raw `HTTP_REFERER` redirects are detected
 
 ## 🚀 Deployment Check (`tests/check_deploy.php`)
 
@@ -395,7 +397,7 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 | **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
 | **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
-| **Security Test** | 125 | 120 pass, 5 warn | 0 | ✅ 98/100 |
+| **Security Test** | 135 | 129 pass, 6 warn | 0 | ✅ 98/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Numbers are from the hardening pass (August 2026). Run the suites yourself

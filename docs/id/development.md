@@ -338,21 +338,23 @@ music ──1:N── playlist_tracks
    helper bersama (trait `FfmpegUtils`, `GarbageCollector::removeFile()`/`removeDirectory()`,
    `meel_write_cache_file()`). Lihat [Konvensi Keamanan Filesystem](modules.md#konvensi-keamanan-filesystem-tanpa-).
 7. **Session Boot Terpusat** — Setiap entry point wajib memanggil `meel_boot_session()`
-   (dari `modules/core/helpers/session.php`) — jangan `session_name()` + `session_start()`
+   (dari `modules/auth/helpers/session.php`) — jangan `session_name()` + `session_start()`
    manual. Fungsi ini yang menjamin cookie sesi memakai flag `HttpOnly`/`SameSite=Lax`/
    `Secure` (auto-detect HTTPS) dan timeout 12 jam secara konsisten.
 
 ### File Structure per Modul
 
-Setiap modul (video, music, books, drive) mengikuti pola:
+Setiap modul (video, music, books, drive) mengikuti pola. Halaman diakses via
+**URL bersih** (front controller `router.php` → `modules/core/Router.php`),
+contoh `video/beranda` → `video/index.php`, `music/watch?id=X` → `music/watch.php`:
 
 ```
 [module]/
-├── index.php          # Katalog / daftar
-├── watch.php          # Player / detail
-├── upload.php         # Form upload
-├── search_[module].php  # Pencarian (HTMX)
-├── load_more.php      # Pagination (HTMX)
+├── index.php          # Katalog / daftar (URL: [module]/beranda)
+├── watch.php          # Player / detail (URL: [module]/watch?id=X)
+├── upload.php         # Form upload (URL: [module]/upload)
+├── search_[module].php  # Pencarian (HTMX) (URL: [module]/search)
+├── load_more.php      # Pagination (HTMX) (URL: [module]/load-more)
 └── [module]_item.php  # Komponen kartu
 ```
 
@@ -361,7 +363,7 @@ Setiap modul (video, music, books, drive) mengikuti pola:
 ```php
 <!-- Trigger -->
 <input type="text" name="search"
-    hx-get="search_video.php"
+    hx-get="video/search"
     hx-trigger="keyup[key=='Enter']"
     hx-target="#video-container"
     hx-indicator="#search-indicator">
@@ -548,7 +550,7 @@ ALTER TABLE users
 2. Ya → Simpan $_SESSION['mfa_temp_uid'] = user_id
           Simpan $_SESSION['mfa_temp_username']
           Simpan $_SESSION['mfa_temp_role']
-3. Redirect ke mfa_verify.php
+3. Redirect ke auth/mfa-verify
 4. User input kode 6-digit
 5. Valid → Set $_SESSION['user_id'], 'username', 'role']
           Set $_SESSION['mfa_verified'] = true
@@ -727,7 +729,7 @@ if (!headers_sent()) {
 | `modules/core/Transcoder.php` | Engine utama (paling kompleks) |
 | `modules/core/Uploader.php` | Proses upload file |
 | `modules/core/System.php` | Queue & monitoring |
-| `modules/core/RateLimiter.php` | API Rate Limiter |
+| `modules/auth/RateLimiter.php` | API Rate Limiter |
 | `modules/core/ProgressObserver.php` | Kontrak event progress (interface + adapter callable) — lihat `modules.md` |
 | `modules/core/BrowserProgressObserver.php` | Presenter browser — memetakan event engine ke overlay/JS `meel*` |
 | `modules/core/GarbageCollector.php` | Auto-cleanup |
@@ -800,7 +802,7 @@ datang dari sesi mini-player yang aktif.
 2. **Download Pipeline** — URL → yt-dlp → FFmpeg → HDD → DB
 3. **Auth Flow** — Login → Session → RBAC → Activity Log
 4. **HTMX Flow** — Event → Request → Server → Response → DOM swap
-5. **MFA Flow** — Login password valid → Cek mfa_enabled → Redirect mfa_verify.php → Verify TOTP → Set session penuh
+5. **MFA Flow** — Login password valid → Cek mfa_enabled → Redirect auth/mfa-verify → Verify TOTP → Set session penuh
 6. **Sesi Music Player & Resume** — Tap kartu/playlist → mini-player (set `skip_resume_once`) → expand → watch (konsumsi flag, aktifkan marker sesi) → auto-continue; kunjungan dingin menampilkan resume-modal
 
 ---

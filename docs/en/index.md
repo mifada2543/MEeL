@@ -32,7 +32,10 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **CommentRenderer** | `modules/core/CommentRenderer.php` | Comment rendering with theme support (`video`/`music`) |
 | **SearchEngine** | `modules/media/SearchEngine.php` | FULLTEXT search engine for video, music & books — with query sanitizer (`sanitizeQuery()`), min query length 3, offset cache key |
 | **GarbageCollector** | `modules/core/GarbageCollector.php` | Auto-cleanup of temporary files, guest accounts & expired rate limit cache |
-| **RateLimiter** | `modules/core/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, etc.) |
+| **RateLimiter** | `modules/auth/RateLimiter.php` | File-based API rate limiter (30 likes/min, 10 comments/min, etc.) |
+| **SsrfGuard** | `modules/auth/SsrfGuard.php` | SSRF-safe URL validation for outbound requests (yt-dlp pipeline) |
+| **Security Helpers** | `modules/auth/helpers/` | Centralized security infrastructure: `authz.php` (admin guards), `csrf.php`, `session.php` (secure cookie), `stream_auth.php`, `mfa.php`, `user.php` — loaded via `modules/auth/loader.php` |
+| **ValidatingProxy** | `modules/auth/ValidatingProxy.php` + `validating_proxy_server.php` | SSRF-defense forward proxy: every hop (incl. redirects) validated by SsrfGuard — the CLI server is spawned as a subprocess |
 | **WatchController** | `controllers/api/WatchController.php` | Combined Video + Music watch pages controller |
 | **UpdateManager** | `controllers/system/UpdateManager.php` | CRUD changelog entries (OOP) |
 | **DriveService** | `drive/DriveService.php` | 3 classes: DriveUserContext, DriveStorage, DriveViewRenderer |
@@ -49,6 +52,60 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **Chess Multiplayer** | `arcade/chess/` | Real-time LAN chess — create/join room, turn-based, legal move validation |
 | **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
 | **Admin Activity Log** | `admin/activity_log.php` | Audit trail viewer with filter, pagination, cleanup |
+
+---
+
+## 🧭 Routing System (Front Controller)
+
+Since the routing migration, all public URLs use **clean URLs** (no `.php` extension).
+Every request goes through the `router.php` front controller, which resolves the path
+back to the real handler file via the route table in `modules/core/Router.php`.
+
+**How it works:**
+
+```
+Request: /MEeL/music/beranda?format=ogg
+  → .htaccess: every non-file/non-dir request is rewritten to router.php (except media upload/)
+  → modules/core/Router.php: routeFor('music/beranda') → handler 'music/index.php'
+  → require music/index.php with the original query string
+```
+
+**`.htaccess` rules (root):**
+- All clean URLs (e.g. `video/watch`, `music/beranda`, `admin/analys`) → `router.php`
+- Legacy `.php` files (e.g. `video/watch.php`, `music/index.php`, `upload_advanced.php`,
+  `admin/cookies.php`) → **301** to the clean URL (query preserved, old bookmarks still work)
+- Trailing-slash variants (e.g. `/video/upload/`) → **301** to the non-slash form
+- `DirectorySlash Off` in media directories (`video/upload`, `music/upload`, `books/upload`)
+  so `/video/upload` is served by the router (not a mod_dir redirect)
+
+**`beranda` scheme:** each module has a `beranda` home page
+(`video/beranda`, `music/beranda`, `books/beranda`, `drive/beranda`, `admin/beranda`,
+`arcade/beranda`). Legacy `index.php` pages remain as aliases.
+
+**Main route table (`modules/core/Router.php`):**
+
+| URL | Handler (file) |
+|---|---|
+| `/` | `index.php` (hub) |
+| `/introduction`, `/update`, `/upload` | `introduction.php`, `update.php`, `upload_advanced.php` |
+| `/video/beranda`, `/video/watch`, `/video/search`, `/video/load-more`, `/video/upload`, `/video/stream` | `video/*.php` |
+| `/music/beranda`, `/music/watch`, `/music/search`, `/music/load-more`, `/music/upload`, `/music/playlist`, `/music/playlist-action`, `/music/stream`, `/music/file` | `music/*.php` |
+| `/music/<playlist-name>` | `music/view_playlist.php` (playlist slug route — see below) |
+| `/books/beranda`, `/books/read`, `/books/read-pdf`, `/books/search`, `/books/upload`, `/books/file` | `books/*.php` |
+| `/drive/beranda`, `/drive/upload`, `/drive/delete`, `/drive/download`, `/drive/stream` | `drive/*.php` |
+| `/profile` (`?u=`), `/profile/edit`, `/profile/manage`, `/profile/manage-action` | `profile/index.php`, `controllers/profile/*.php` |
+| `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/analys`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php`, `controllers/admin/*.php` |
+| `/auth/login`, `/auth/register`, `/auth/logout`, `/auth/mfa-setup`, `/auth/mfa-verify` | `auth/*.php` |
+| `/arcade/beranda`, `/arcade/chess` | `arcade/*.php` |
+| `/api/like`, `/api/comment`, `/api/delete-comment`, `/api/auto-metadata`, `/api/pdf`, `/api/download-transcode`, `/api/post-encode`, `/api/ajax-refresh` | `controllers/api/*.php` |
+| `/system/mfa` | `controllers/system/mfa.php` |
+
+> **Playlist slug route:** playlists have name-based URLs — `/music/<playlist-name>`
+> (e.g. `/music/leo-need`). The slug is derived from the playlist name (`playlistSlug()`),
+> guaranteed unique per user (`getUserPlaylistRoutes()`); non-ASCII names fall back to
+> `playlist`, and names colliding with module routes or other slugs get a `-<id>` suffix.
+> Exact routes (`beranda`, `watch`, etc.) always win; anything else is treated as a
+> playlist slug (`resolvePlaylistSlug()`). The legacy URL `music/playlist?id=X` still works.
 
 ---
 
@@ -75,7 +132,8 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Migration v11:** `interactions` unique keys split into `(user_id, video_id)` & `(user_id, music_id)` — NULL in a combined unique key did not prevent duplicates
 - **Migration v12:** Bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code`
 - **Anime Module Removed:** The "Coming Soon" placeholder module has been removed from the codebase
-- **API Rate Limiting:** File-based rate limiter (`modules/core/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
+- **API Rate Limiting:** File-based rate limiter (`modules/auth/RateLimiter.php`) — protects like, comment, upload endpoints from abuse with per-user limits with role-based adjustment (admin=unlimited, member=2x)
+- **Security Module (`modules/auth/`):** Security helpers & classes consolidated into one directory for easy auditing — `helpers/` (authz, csrf, session, stream_auth, mfa, user) + `RateLimiter.php` + `SsrfGuard.php`, loaded via `modules/auth/loader.php` (the legacy `modules/core/helpers.php` shim still works)
 - **Pagination Metadata:** `MediaLibrary` & `BookRepository` now return pagination metadata (`total_pages`, `from`, `to`) — UI displays page info
 - **Admin Dashboard Charts:** Chart.js 7-Day Activity Chart — views, uploads, active users in the last 7 days
 - **Player Enhancement:** Auto-next overlay with dark backdrop + hide Plyr replay button + mutual exclusion Auto-Next ↔ Loop
@@ -89,7 +147,7 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 - **Search Improvements:** Query sanitizer (`sanitizeQuery()`), `MIN_SEARCH_QUERY = 3`, music search pagination, server-side books search (`BookRepository::searchBooks()`), cache key includes offset, `try/catch` around FULLTEXT queries
 - **Auth Hardening:** Session cookies now `Secure` (auto-detect HTTPS) + `HttpOnly` + `SameSite=Lax`; `MEEL_TRUST_PROXY_HEADERS` (default `false`) to prevent IP spoofing via proxy headers; DB connection charset forced to `utf8mb4`
 - **Admin CSRF:** Approve/reject/delete/kick/unban actions moved from GET links to POST forms with CSRF token
-- **Centralized Session Bootstrap:** New file `modules/core/helpers/session.php` with `meel_boot_session()` — every entry point (index, video, music, auth, controllers/api, err, admin) now calls this single function instead of scattered manual `session_name('meel'); session_start();`. The session cookie is guaranteed `HttpOnly` + `SameSite=Lax` + `Secure` (auto-detect HTTPS), 12-hour timeout, and idempotent (no-op if the session is already active)
+- **Centralized Session Bootstrap:** New file `modules/auth/helpers/session.php` with `meel_boot_session()` — every entry point (index, video, music, auth, controllers/api, err, admin) now calls this single function instead of scattered manual `session_name('meel'); session_start();`. The session cookie is guaranteed `HttpOnly` + `SameSite=Lax` + `Secure` (auto-detect HTTPS), 12-hour timeout, and idempotent (no-op if the session is already active)
 
 ## 📖 About the Project
 

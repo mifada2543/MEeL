@@ -81,7 +81,7 @@ abstract class AbstractWatchController
 
 - `handleRequest()` — records the view and processes comment POSTs with CSRF verification & rate limit (10/min). Redirects via the `commentRedirectUrl()` hook.
 - `baseViewData()` — returns the keys shared by every watch page: `id`, `user_id`, `is_logged_in`, `v`, `user_interaction`, `comments_grouped`, `user_map`, `rekom`.
-- `commentRedirectUrl()` — defaults to `watch.php?id=...#comment-section`; `MusicWatchController` overrides it to append `&playlist_id=...`.
+- `commentRedirectUrl()` — defaults to `music/watch?id=...#comment-section`; `MusicWatchController` overrides it to append `&playlist_id=...`.
 
 ### VideoWatchController
 
@@ -147,13 +147,13 @@ Comment helpers shared by the watch pages & AJAX endpoints:
 
 ### Login
 
-**Endpoint:** `auth/login.php`
+**Endpoint:** `auth/login` (handler: `auth/login.php`)
 **Method:** POST
 **Auth:** None (public)
 
 **Request:**
 ```html
-<form method="POST" action="auth/login.php">
+<form method="POST" action="auth/login">
   <input type="hidden" name="csrf_token" value="...">
   <input type="text" name="username" required>
   <input type="password" name="password" required>
@@ -168,13 +168,13 @@ Comment helpers shared by the watch pages & AJAX endpoints:
 
 ### Logout
 
-**Endpoint:** `auth/logout.php`
+**Endpoint:** `auth/logout` (handler: `auth/logout.php`)
 **Method:** GET
 **Auth:** Required
 
 ### Registration
 
-**Endpoint:** `auth/register.php`
+**Endpoint:** `auth/register` (handler: `auth/register.php`)
 **Method:** POST
 **Auth:** None (public)
 
@@ -199,7 +199,7 @@ Check users.mfa_enabled == 1 && users.mfa_secret IS NOT NULL?
   ↓ Yes                           ↓ No
 Save mfa_temp_uid to session      Set session directly
   ↓                                ↓
-Redirect to mfa_verify.php       Redirect to index.php
+Redirect to auth/mfa-verify       Redirect to index.php
   ↓
 User inputs TOTP 6-digit code
   ↓
@@ -218,7 +218,7 @@ Remove mfa_temp_uid → Redirect to index.php
 
 ## MFA Endpoints
 
-### MFA Setup (`auth/mfa_setup.php`)
+### MFA Setup (`auth/mfa-setup`)
 
 **Method:** POST
 **Auth:** User (login required)
@@ -229,7 +229,7 @@ Multi-step page for enabling, managing, or disabling MFA.
 #### Step 1: Generate Secret
 
 ```html
-<form method="POST" action="auth/mfa_setup.php">
+<form method="POST" action="auth/mfa-setup">
   <input type="hidden" name="csrf_token" value="...">
   <button name="generate_secret" value="1">Start MFA Setup</button>
 </form>
@@ -244,7 +244,7 @@ Multi-step page for enabling, managing, or disabling MFA.
 #### Step 2: Verify Code
 
 ```html
-<form method="POST" action="auth/mfa_setup.php">
+<form method="POST" action="auth/mfa-setup">
   <input type="hidden" name="csrf_token" value="...">
   <input type="hidden" name="verify_code" value="1">
   <input type="text" name="code" maxlength="6" inputmode="numeric" placeholder="000000" required>
@@ -293,7 +293,7 @@ After verification succeeds, 8 backup codes (each 8 hex characters) are displaye
 If MFA is already active, the page shows an option to disable:
 
 ```html
-<form method="POST" action="auth/mfa_setup.php">
+<form method="POST" action="auth/mfa-setup">
   <input type="hidden" name="csrf_token" value="...">
   <button name="disable_mfa" value="1">Disable MFA</button>
 </form>
@@ -303,7 +303,7 @@ If MFA is already active, the page shows an option to disable:
 
 ---
 
-### MFA Verify (`auth/mfa_verify.php`)
+### MFA Verify (`auth/mfa-verify`)
 
 **Method:** POST
 **Auth:** Session temp (`mfa_temp_uid`)
@@ -313,7 +313,7 @@ TOTP verification page shown after login if user has MFA enabled.
 
 **Request:**
 ```html
-<form method="POST" action="auth/mfa_verify.php">
+<form method="POST" action="auth/mfa-verify">
   <input type="hidden" name="csrf_token" value="...">
   <input type="hidden" name="verify" value="1">
   <input type="text" name="code" maxlength="6" inputmode="numeric"
@@ -438,7 +438,7 @@ Store in a safe place!
 
 ---
 
-### Admin MFA Reset (`admin/mfa_reset.php` + `controllers/admin/admin_actions.php`)
+### Admin MFA Reset (`admin/mfa-reset` + `controllers/admin/admin_actions.php`)
 
 **Method:** GET (link with parameters)
 **Auth:** Admin only
@@ -448,7 +448,7 @@ Admins can reset MFA for users who lost access to their Authenticator app.
 
 #### View Users with MFA
 
-Page `admin/mfa_reset.php` shows a list of users with MFA enabled:
+Page `admin/mfa-reset` shows a list of users with MFA enabled:
 
 | Column | Description |
 |---|---|
@@ -465,7 +465,7 @@ Page `admin/mfa_reset.php` shows a list of users with MFA enabled:
 **Trigger:** Click "Reset MFA" → SweetAlert2 confirmation → redirect
 
 ```
-GET admin/mfa_reset.php?reset_mfa=1&user_id=123&csrf_token=...
+GET admin/mfa-reset?reset_mfa=1&user_id=123&csrf_token=...
   ↓
 die(include admin_actions.php)
   ↓
@@ -475,7 +475,7 @@ UPDATE users SET mfa_enabled=0, mfa_secret=NULL, mfa_backup_codes=NULL WHERE id=
   ↓
 log_activity(admin_id, 'reset_mfa', 'user', target_id)
   ↓
-Redirect to mfa_reset.php?msg=reset_ok&user={username}
+Redirect to admin/mfa-reset?msg=reset_ok&user={username}
 ```
 
 **Response Messages:**
@@ -499,7 +499,7 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 ### Like/Dislike
 
-**Endpoint:** `controllers/like.php`
+**Endpoint:** `api/like` (handler: `controllers/api/like.php`)
 **Method:** POST (via HTMX)
 **Auth:** User (non-guest, active)
 **Rate Limit:** 30 requests per minute per user
@@ -526,7 +526,7 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 ### Delete Comment
 
-**Endpoint:** `controllers/api/delete_comment.php?id=123`
+**Endpoint:** `api/delete-comment?id=123` (handler: `controllers/api/delete_comment.php`)
 **Method:** GET
 **Auth:** User (comment owner)
 **Rate Limit:** 10 requests per minute per user
@@ -538,7 +538,7 @@ Redirect to mfa_reset.php?msg=reset_ok&user={username}
 
 ### Auto Metadata
 
-**Endpoint:** `controllers/api/auto_metadata.php`
+**Endpoint:** `api/auto-metadata` (handler: `controllers/api/auto_metadata.php`)
 **Method:** POST
 **Auth:** Admin
 
@@ -546,7 +546,7 @@ Fetches automatic metadata from URL (yt-dlp) for upload forms.
 
 ### PDF Proxy
 
-**Endpoint:** `controllers/api/pdf.php?id=123`
+**Endpoint:** `api/pdf?id=123` (handler: `controllers/api/pdf.php`)
 **Method:** GET
 **Auth:** User/Admin
 
@@ -554,7 +554,7 @@ Streams PDF for book viewer with access protection.
 
 ### Download Transcode
 
-**Endpoint:** `controllers/api/download_transcode.php`
+**Endpoint:** `api/download-transcode` (handler: `controllers/api/download_transcode.php`)
 **Method:** POST
 **Auth:** User/Admin
 
@@ -566,7 +566,7 @@ Downloads transcoded video→audio files.
 
 ### Upload Video (Local)
 
-**Endpoint:** `video/upload.php`
+**Endpoint:** `video/upload` (handler: `video/upload.php`)
 **Method:** POST
 **Auth:** User/Admin
 
@@ -582,19 +582,19 @@ Downloads transcoded video→audio files.
 
 ### Upload Music (Local)
 
-**Endpoint:** `music/upload.php`
+**Endpoint:** `music/upload` (handler: `music/upload.php`)
 **Method:** POST
 **Auth:** User/Admin
 
 ### Upload Book
 
-**Endpoint:** `books/upload.php`
+**Endpoint:** `books/upload` (handler: `books/upload.php`)
 **Method:** POST
 **Auth:** User/Admin
 
 ### Advanced Upload (yt-dlp URL)
 
-**Endpoint:** `upload_advanced.php`
+**Endpoint:** `upload` (handler: `upload_advanced.php`)
 **Method:** POST
 **Auth:** Admin
 
@@ -618,7 +618,7 @@ Phase 4: Done (links to media)
 
 ### Edit Profile
 
-**Endpoint:** `controllers/profile_edit.php`
+**Endpoint:** `profile/edit` (handler: `controllers/profile/profile_edit.php`)
 **Method:** POST
 **Auth:** User
 
@@ -629,7 +629,7 @@ Phase 4: Done (links to media)
 
 ### View Profile
 
-**Endpoint:** `profile/index.php?u=username`
+**Endpoint:** `profile/?u=username` (handler: `profile/index.php`)
 **Method:** GET
 **Auth:** Public
 
@@ -688,35 +688,35 @@ Every POST must carry `csrf_token`.
 ### Video Search
 
 **Trigger:** Enter key on search input
-**Request:** `video/search_video.php?q=keyword`
+**Request:** `video/search?q=keyword` (handler: `video/search_video.php`)
 **Target:** `#video-container`
 **Swap:** `innerHTML`
 
 ### Video Load More
 
 **Trigger:** Click "Load More"
-**Request:** `video/load_more.php?offset=15`
+**Request:** `video/load-more?offset=15` (handler: `video/load_more.php`)
 **Target:** `#load-more-area`
 **Swap:** `outerHTML`
 
 ### Music Search
 
 **Trigger:** Enter key on search input
-**Request:** `music/search_music.php?q=keyword`
+**Request:** `music/search?q=keyword` (handler: `music/search_music.php`)
 **Target:** `#music-list`
 **Swap:** `innerHTML`
 
 ### Music Load More
 
 **Trigger:** Click "Load More"
-**Request:** `music/load_more_music.php?offset=10&format=all&artist=all`
+**Request:** `music/load-more?offset=10&format=all&artist=all` (handler: `music/load_more_music.php`)
 **Target:** `#music-list`
 **Swap:** `beforeend`
 
 ### Books Search
 
 **Trigger:** Search input
-**Request:** `books/search_books.php?q=keyword&type=all&offset=0`
+**Request:** `books/search?q=keyword&type=all&offset=0` (handler: `books/search_books.php`)
 **Target:** `#book-grid`
 **Swap:** `innerHTML`
 **Server-side pagination** via `BookRepository::searchBooks()` (24 per page).
@@ -724,7 +724,7 @@ Every POST must carry `csrf_token`.
 ### Like/Dislike
 
 **Trigger:** Click like/dislike button
-**Request:** `controllers/like.php` with `hx-vals`
+**Request:** `api/like` (handler: `controllers/api/like.php`) with `hx-vals`
 **Target:** `#like-dislike-container`
 **Swap:** `outerHTML`
 
@@ -752,19 +752,19 @@ Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects
 
 ### Upload File
 
-**Endpoint:** `drive/upload.php`
+**Endpoint:** `drive/upload` (handler: `drive/upload.php`)
 **Method:** POST
 **Auth:** Member/Admin
 
 ### Download File
 
-**Endpoint:** `drive/download.php?file=xxx&type=video&scope=public&csrf_token=...`
+**Endpoint:** `drive/download?file=xxx&type=video&scope=public&csrf_token=...` (handler: `drive/download.php`)
 **Method:** GET
 **Auth:** Member/Admin
 
 ### Delete File
 
-**Endpoint:** `drive/delete.php`
+**Endpoint:** `drive/delete` (handler: `drive/delete.php`)
 **Method:** POST
 **Auth:** Member/Admin
 **Body:** `csrf_token` + `file` + `type` + `scope`

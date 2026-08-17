@@ -276,7 +276,7 @@ without breaking the query string:
 
 Endpoints enforce path-traversal protection, an extension whitelist, Range
 support (206 — needed for HLS `.ts` and large video), and a referer gate for
-HLS video (anti-hotlink). Audio playback uses `music/stream.php?id=...`
+HLS video (anti-hotlink). Audio playback uses `music/stream?id=...`
 (session authorization + strict referer gate; optional X-Sendfile
 acceleration — see
 [mod_xsendfile](#enable-mod_xsendfile-optional--for-streaming-acceleration)).

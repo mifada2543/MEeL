@@ -136,7 +136,7 @@
 | **Transliteration** | PHP `intl` (Transliterator) | File name sanitization (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loads 10+ core classes |
 | **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
-| **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
+| **Rate Limiting** | `modules/auth/RateLimiter.php` | File-based rate limiter (flock safety) |
 | **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Auto offline precache + installable |
 
 ---
@@ -364,7 +364,7 @@ hardening, the `data_drive/` symlink guard, and the PWA `mod_rewrite` rule.
 | `modules/core/Uploader.php` | File upload, FFmpeg |
 | `modules/core/helpers.php` | HDD check paths (from `MEEL_HDD_BASE`) |
 | `modules/core/System.php` | Queue & rate limit config |
-| `modules/core/RateLimiter.php` | API rate limiter — per-endpoint limits |
+| `modules/auth/RateLimiter.php` | API rate limiter — per-endpoint limits |
 
 ### Centralized Path Configuration
 
@@ -437,7 +437,7 @@ Migrations are **idempotent** — safe to run repeatedly.
 | **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
-| **Security Test** | 125 | 120 pass, 5 warn | 0 | **0** | **✅ 98/100** |
+| **Security Test** | 135 | 129 pass, 6 warn | 0 | **0** | **✅ 98/100** |
 | **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 > Security test: 5 non-critical warnings (MediaViewer raw-query review, profile_edit

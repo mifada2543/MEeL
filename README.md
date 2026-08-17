@@ -138,7 +138,7 @@
 | **Transliterasi** | PHP `intl` (Transliterator) | Pembersihan nama file (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loading 10+ class core |
 | **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
-| **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
+| **Rate Limiting** | `modules/auth/RateLimiter.php` | File-based rate limiter (flock safety) |
 | **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Precache offline otomatis + installable |
 
 ---
@@ -368,7 +368,7 @@ Memverifikasi `MEEL_HDD_BASE`, folder upload + subdirektori non-auto-create
 | `modules/core/Uploader.php` | Upload file, FFmpeg |
 | `modules/core/helpers.php` | HDD check path (dari `MEEL_HDD_BASE`) |
 | `modules/core/System.php` | Queue & rate limit config |
-| `modules/core/RateLimiter.php` | API rate limiter — per-endpoint limits |
+| `modules/auth/RateLimiter.php` | API rate limiter — per-endpoint limits |
 
 ### Konfigurasi Path Terpusat
 
@@ -431,7 +431,7 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 | **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
-| **Security Test** | 125 | 120 pass, 5 warn | 0 | **0** | **✅ 98/100** |
+| **Security Test** | 135 | 129 pass, 6 warn | 0 | **0** | **✅ 98/100** |
 | **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
 
 > Security test: 5 warning non-kritis (review query mentah MediaViewer, cek MIME

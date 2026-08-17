@@ -112,7 +112,7 @@ Documentation about authentication, authorization, and protection systems in MEe
 ### Session Configuration
 
 ```php
-// modules/core/helpers/session.php — meel_boot_session()
+// modules/auth/helpers/session.php — meel_boot_session()
 // (auth/config.php & auth/auth_helpers.php delegate to this function)
 $timeout = 43200;              // 12 hours
 ini_set('session.gc_maxlifetime', $timeout);
@@ -138,7 +138,7 @@ session_start();
 | `HttpOnly` | `true` | XSS cannot steal the session cookie via JavaScript |
 | `SameSite` | `Lax` | Cross-site POST requests don't carry the cookie (CSRF layer 1) |
 
-The configuration above is now **centralized** in `modules/core/helpers/session.php` as the
+The configuration above is now **centralized** in `modules/auth/helpers/session.php` as the
 `meel_boot_session()` function — the single source of truth for session bootstrapping. Every
 entry point (index, video, music, auth, controllers/api, err, admin) calls it instead of the
 scattered manual `session_name('meel'); session_start();` pattern, so the session cookie is
@@ -291,11 +291,11 @@ function log_activity(
 
 | Event | Action | Location |
 |---|---|---|
-| Successful login | `login` | `auth/login.php` |
-| Logout | `logout` | `auth/logout.php` |
-| Video upload | `upload_video` | `video/upload.php` |
-| Music upload | `upload_music` | `music/upload.php` |
-| Book upload | `upload_book` | `books/upload.php` |
+| Successful login | `login` | `auth/login` |
+| Logout | `logout` | `auth/logout` |
+| Video upload | `upload_video` | `video/upload` |
+| Music upload | `upload_music` | `music/upload` |
+| Book upload | `upload_book` | `books/upload` |
 | URL download | `upload_url` | `upload_advanced.php` |
 | IP Ban | `ban_ip` | `controllers/admin/admin_actions.php` |
 | IP Unban | `unban_ip` | `controllers/admin/admin_actions.php` |
@@ -322,7 +322,7 @@ Page `admin/activity_log.php` provides a dedicated audit trail viewer:
 
 ### Architecture
 
-`modules/core/RateLimiter.php` provides **file-based rate limiting** that protects API endpoints from abuse:
+`modules/auth/RateLimiter.php` provides **file-based rate limiting** that protects API endpoints from abuse:
 
 ```
 Request → RateLimiter::check(key, endpoint)
@@ -364,7 +364,7 @@ Login Flow:
     ↓ Yes                         ↓ No
   Save mfa_temp_uid to session    Set session directly
     ↓                              ↓
-  Redirect to mfa_verify.php     Redirect to index
+  Redirect to auth/mfa-verify     Redirect to index
 ```
 
 ### TOTP Implementation
@@ -450,8 +450,8 @@ Admins can reset a user's MFA from `admin/mfa_reset.php`:
 ### MFA in Profile
 
 Page `profile/index.php` displays MFA status with visual toggle switch:
-- Green "Active" → link to `auth/mfa_setup.php` for management/disable
-- Gray "Inactive" → link to `auth/mfa_setup.php` for setup
+- Green "Active" → link to `auth/mfa-setup` for management/disable
+- Gray "Inactive" → link to `auth/mfa-setup` for setup
 - If active, backup codes also displayed in profile
 
 ---
@@ -528,7 +528,7 @@ The Advanced Upload feature (`upload_advanced.php`) lets authenticated users dow
 
 ### Architecture
 
-`modules/core/SsrfGuard.php` is the **single source of truth** for every outbound request made on behalf of a user:
+`modules/auth/SsrfGuard.php` is the **single source of truth** for every outbound request made on behalf of a user:
 
 ```
 User URL → SsrfGuard::validate()
@@ -613,9 +613,9 @@ The `https://` limitation is therefore resolved: even though the original HTTPS 
 
 | File | Role |
 |---|---|
-| `modules/core/SsrfGuard.php` | Central validation: protocol allowlist, explicit IPv4/IPv6 range checks, DNS all-record validation, HTTP pinning |
-| `modules/core/ValidatingProxy.php` | Spawns/terminates the proxy process, exposes `--proxy` URL (loopback-only) |
-| `modules/core/validating_proxy_server.php` | CLI forward proxy: SsrfGuard on every hop (HTTP absolute-URI + CONNECT tunnel) |
+| `modules/auth/SsrfGuard.php` | Central validation: protocol allowlist, explicit IPv4/IPv6 range checks, DNS all-record validation, HTTP pinning |
+| `modules/auth/ValidatingProxy.php` | Spawns/terminates the proxy process, exposes `--proxy` URL (loopback-only) |
+| `modules/auth/validating_proxy_server.php` | CLI forward proxy: SsrfGuard on every hop (HTTP absolute-URI + CONNECT tunnel) |
 | `modules/core/Transcoder.php` | `processDownload()` / `fetchMetadata()` call the guard and route yt-dlp through `--proxy`; fail closed if the proxy cannot start |
 | `modules/autoload.php` | Autoloads the `SsrfGuard` class |
 
@@ -681,7 +681,7 @@ Both endpoints resolve files through `DriveStorage::getFileForDownload()`, which
 
 ### Preview URLs
 
-`DriveStorage::listFilesByType()` never emits direct web paths for private files. Instead it builds `stream.php?file=…&type=…&scope=private&csrf_token=…` URLs, so the browser never touches the raw storage path (which would also leak filesystem layout).
+`DriveStorage::listFilesByType()` never emits direct web paths for private files. Instead it builds `stream?file=…&type=…&scope=private&csrf_token=…` URLs (clean route — `stream.php?file=…` is still accepted via 301), so the browser never touches the raw storage path (which would also leak filesystem layout).
 
 ### Race-Condition Hardening (Drive Uploads)
 
