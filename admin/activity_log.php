@@ -580,39 +580,18 @@ include __DIR__ . '/../partials/scripts.php';
                         title="Preview CSV">
                         <i data-lucide="eye" class="w-3 h-3"></i>
                     </button>
-                    <a href="?export=csv"
-                        class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
-                        onclick="return meelConfirmLink(event, { title:'Backup CSV', text:'Download backup seluruh log aktivitas sebagai CSV?', confirmButtonText:'DOWNLOAD', icon:'question' })"
-                        title="Download CSV">
-                        <i data-lucide="file-down" class="w-3 h-3"></i>
-                        CSV
-                    </a>
                     <span class="text-amber-500/20">|</span>
                     <button type="button" onclick="previewExport('json')"
                         class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
                         title="Preview JSON">
                         <i data-lucide="eye" class="w-3 h-3"></i>
                     </button>
-                    <a href="?export=json"
-                        class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
-                        onclick="return meelConfirmLink(event, { title:'Backup JSON', text:'Download backup seluruh log aktivitas sebagai JSON?', confirmButtonText:'DOWNLOAD', icon:'question' })"
-                        title="Download JSON">
-                        <i data-lucide="file-code" class="w-3 h-3"></i>
-                        JSON
-                    </a>
                     <span class="text-amber-500/20">|</span>
                     <button type="button" onclick="previewExport('xls')"
                         class="text-[10px] font-bold text-violet-400 hover:text-violet-300 px-2 py-2 rounded-xl border border-amber-500/30 hover:bg-violet-500/10 hover:border-violet-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1"
                         title="Preview XLS">
                         <i data-lucide="eye" class="w-3 h-3"></i>
                     </button>
-                    <a href="?export=xls"
-                        class="text-[10px] font-bold text-violet-400 hover:text-violet-300 px-2.5 py-2 rounded-xl border border-amber-500/30 hover:bg-violet-500/10 hover:border-violet-500/30 transition-all uppercase tracking-wider inline-flex items-center gap-1.5"
-                        onclick="return meelConfirmLink(event, { title:'Backup Excel', text:'Download backup seluruh log aktivitas sebagai Excel?', confirmButtonText:'DOWNLOAD', icon:'question' })"
-                        title="Download Excel">
-                        <i data-lucide="file-spreadsheet" class="w-3 h-3"></i>
-                        XLS
-                    </a>
                 </div>
             </div>
 
