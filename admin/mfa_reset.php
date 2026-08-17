@@ -164,8 +164,7 @@ include __DIR__ . '/../partials/scripts.php';
             <?php endif; ?>
         </div>
         <!-- Back link -->
-        <div class="text-center mt-8">
-            <a href="index.php" class="text-xs text-gray-600 hover:text-blue-500 transition inline-flex items-center gap-1">
+        <div class="text-center mt-8">                <a href="." class="text-xs text-gray-600 hover:text-blue-500 transition inline-flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali ke Dashboard Admin
             </a>
         </div>

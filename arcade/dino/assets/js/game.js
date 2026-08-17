@@ -1,5 +1,3 @@
-// FILE: game.js
-// FUNGSI: Logika Game Utama, Fisika, dan Kontrol UI
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 // 1. STATE & KONFIGURASI GLOBAL
@@ -18,11 +16,9 @@ const cheatState = {
   moonGravity: false,
   hyperSpeed: false,
 };
-// Update Hi-Score awal
 document.getElementById("hiScoreText").innerText = String(
   gameState.hiScore,
 ).padStart(5, "0");
-// Daftarkan 'resetScoreBtn'
 const GAME_CONTROLS = {
   lockableToggles: [
     "themeToggle",
@@ -32,7 +28,6 @@ const GAME_CONTROLS = {
     "resetScoreBtn",
   ],
 };
-// LOGIKA UNTUK RESET HIGH SCORE
 document.getElementById("resetScoreBtn").addEventListener("click", () => {
   if (gameState.isPlaying) return;
 
@@ -48,7 +43,6 @@ document.getElementById("resetScoreBtn").addEventListener("click", () => {
     }
   });
 });
-// LOGIKA MANUALLY STOP/RESET RUNNING GAME
 document.getElementById("resetGameBtn").addEventListener("click", () => {
   if (!gameState.isPlaying) {
     meelAlert({
@@ -69,7 +63,6 @@ document.getElementById("resetGameBtn").addEventListener("click", () => {
     }
   });
 });
-// Fungsi Helper untuk mengunci/membuka UI
 function setGameplayControlsLocked(isLocked) {
   GAME_CONTROLS.lockableToggles.forEach((id) => {
     const toggleBtn = document.getElementById(id);
@@ -87,14 +80,12 @@ function setGameplayControlsLocked(isLocked) {
     }
   });
 }
-// 3. VARIABEL POINTER GAMBAR
 let activeImgRun1 = imgMikuRun1;
 let activeImgRun2 = imgMikuRun2;
 let activeImgJump = imgMikuJump;
 let activeImgDuck = imgMikuDuck;
 let activeImgObstacleDarat = imgNegi;
 let activeImgObstacleUdara = imgSpeakerMiku;
-// Render tema aktif
 function renderStartScreenChibi() {
   const chibiContainer = document.getElementById("chibiIconContainer");
   if (!gameState.isTetoActive) {
@@ -121,8 +112,7 @@ document.getElementById("themeToggle").addEventListener("change", (e) => {
     activeImgObstacleDarat = imgNegi;
     activeImgObstacleUdara = imgSpeakerMiku;
   }
-  // Update UI Colors
-  const root = document.documentElement;
+    const root = document.documentElement;
   const title = document.getElementById("gameTitle");
   const desc = document.getElementById("gameDescription");
   const sync = document.getElementById("syncStatus");
@@ -166,9 +156,7 @@ document.getElementById("themeToggle").addEventListener("change", (e) => {
     miku = new Miku();
     miku.y = 220 - miku.height;
   }
-});
-// Listener Cheat
-document
+});  document
   .getElementById("godModeToggle")
   .addEventListener("change", (e) => (cheatState.godMode = e.target.checked));
 document
@@ -182,7 +170,6 @@ document.getElementById("moonGravityToggle").addEventListener("change", (e) => {
   gameState.gravityValue = cheatState.moonGravity ? 0.25 : 0.6;
   if (miku) miku.gravity = gameState.gravityValue;
 });
-// 5. GAME CLASSES
 class Miku {
   constructor() {
     this.x = 50;
@@ -304,7 +291,6 @@ class BackgroundItem {
     }
   }
 }
-// 6. INITIALIZATION & CORE LOGIC
 let miku;
 let obstacles = [];
 let bgItems = [];
@@ -422,7 +408,6 @@ function gameLoop() {
   }
   requestAnimationFrame(gameLoop);
 }
-// 7. INPUT HANDLING
 const keys = {};
 window.addEventListener("keydown", (e) => {
   keys[e.code] = true;
@@ -468,7 +453,6 @@ document.getElementById("restartBtn").addEventListener("click", resetGame);
 document.getElementById("startScreen").addEventListener("click", () => {
   if (!gameState.isPlaying) resetGame();
 });
-// START
 window.onload = function () {
   renderStartScreenChibi();
   miku = new Miku();

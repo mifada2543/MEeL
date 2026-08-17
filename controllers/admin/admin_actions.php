@@ -13,7 +13,7 @@ if (!is_admin($conn)) {
 
 // ─── CSRF Guard ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_token'] ?? null)) {
-    header("Location: index.php?msg=CSRF_Token_Invalid");
+    header("Location: .?msg=CSRF_Token_Invalid");
     exit();
 }
 
@@ -26,7 +26,7 @@ if (isset($_POST['ban_ip'])) {
     $stmt->bind_param("ss", $ip, $reason);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'ban_ip', 'ip', 0);
-    header("Location: index.php?msg=IP_Banned");
+    header("Location: .?msg=IP_Banned");
     exit();
 }
 
@@ -36,7 +36,7 @@ if (isset($_POST['unban_ip'])) {
     $stmt->bind_param("s", $_POST['unban_ip']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0);
-    header("Location: index.php?msg=IP_Unbanned#unban");
+    header("Location: .?msg=IP_Unbanned#unban");
     exit();
 }
 
@@ -49,9 +49,9 @@ if (isset($_POST['clear_all_guests'])) {
             $new_ai = (int)$result_ai->fetch_assoc()['new_ai'];
             $conn->query("ALTER TABLE users AUTO_INCREMENT = " . (int)$new_ai);
         }
-        header("Location: index.php?msg=Guests_Cleared_Efficiently");
+        header("Location: .?msg=Guests_Cleared_Efficiently");
     } else {
-        header("Location: index.php?msg=Error_Cleaning");
+        header("Location: .?msg=Error_Cleaning");
     }
     exit();
 }
@@ -96,7 +96,7 @@ if (isset($_POST['approve_id'])) {
     if (function_exists('invalidate_user_role_cache')) {
         invalidate_user_role_cache();
     }
-    header("Location: index.php?msg=Approved");
+    header("Location: .?msg=Approved");
     exit();
 }
 
@@ -106,7 +106,7 @@ if (isset($_POST['reject_id'])) {
     $stmt->bind_param("i", $_POST['reject_id']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'reject_user', 'user', (int)$_POST['reject_id']);
-    header("Location: index.php?msg=Rejected");
+    header("Location: .?msg=Rejected");
     exit();
 }
 
@@ -115,12 +115,12 @@ if (isset($_POST['delete_user_id'])) {
     $id = (int)$_POST['delete_user_id'];
 
     if ($id === (int)($_SESSION['user_id'] ?? 0)) {
-        header("Location: index.php?msg=Cannot_Delete_Self");
+        header("Location: .?msg=Cannot_Delete_Self");
         exit();
     }
 
     if (get_user_role($conn, $id) === 'admin') {
-        header("Location: index.php?msg=Cannot_Delete_Admin");
+        header("Location: .?msg=Cannot_Delete_Admin");
         exit();
     }
 
@@ -128,7 +128,7 @@ if (isset($_POST['delete_user_id'])) {
     $stmt->bind_param("i", $id);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'delete_user', 'user', $id);
-    header("Location: index.php?msg=User_Deleted");
+    header("Location: .?msg=User_Deleted");
     exit();
 }
 
@@ -138,7 +138,7 @@ if (isset($_POST['clean_orphans'])) {
     foreach ((array)$files as $f) {
         if (file_exists($f)) @unlink($f);
     }
-    header("Location: index.php?status=cleaned#system_check");
+    header("Location: .?status=cleaned#system_check");
     exit();
 }
 
@@ -152,7 +152,7 @@ if (isset($_POST['kick_user'])) {
     $stmt->bind_param("s", $_POST['kick_user']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0);
-    header("Location: index.php?msg=Kicked_Success#monitor");
+    header("Location: .?msg=Kicked_Success#monitor");
     exit();
 }
 
@@ -160,7 +160,7 @@ if (isset($_POST['kick_user'])) {
 if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
     // CSRF guard
     if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
-        header("Location: ../admin/mfa_reset.php?msg=csrf_invalid");
+        header("Location: ../admin/mfa-reset?msg=csrf_invalid");
         exit;
     }
 
@@ -173,12 +173,12 @@ if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
     $check->close();
 
     if (!$target) {
-        header("Location: ../admin/mfa_reset.php?msg=user_not_found");
+        header("Location: ../admin/mfa-reset?msg=user_not_found");
         exit;
     }
 
     if ($target['role'] === 'admin') {
-        header("Location: ../admin/mfa_reset.php?msg=cannot_reset_admin");
+        header("Location: ../admin/mfa-reset?msg=cannot_reset_admin");
         exit;
     }
 
@@ -186,9 +186,9 @@ if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
     $stmt->bind_param("i", $target_id);
     if ($stmt->execute()) {
         log_activity($conn, (int)$_SESSION['user_id'], 'reset_mfa', 'user', $target_id);
-        header("Location: ../admin/mfa_reset.php?msg=reset_ok&user=" . urlencode($target['username']));
+        header("Location: ../admin/mfa-reset?msg=reset_ok&user=" . urlencode($target['username']));
     } else {
-        header("Location: ../admin/mfa_reset.php?msg=reset_failed");
+        header("Location: ../admin/mfa-reset?msg=reset_failed");
     }
     $stmt->close();
     exit;

@@ -1,6 +1,5 @@
 <?php
 // drive/stream.php — Streaming pratinjau file Drive yang BER-OTORISASI.
-// ─────────────────────────────────────────────────────────────────────────────
 // SECURITY BOUNDARY:
 //   * Private Drive storage (data_drive/private_admins/) di-deny oleh web
 //     server (.htaccess) untuk akses langsung. SATU-SATUNYA jalur untuk
@@ -12,7 +11,6 @@
 //   * Mendukung Range request agar seeking video/audio tetap berfungsi.
 //     Audit log sengaja tidak ditulis per request streaming (bisa membanjiri
 //     log dengan ratusan request Range per pemutaran).
-// ─────────────────────────────────────────────────────────────────────────────
 error_reporting(0);
 
 require '../auth/auth.php';

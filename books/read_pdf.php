@@ -8,7 +8,7 @@ require_once '../modules/media/MediaLibrary.php';
 // ─── Validasi ID ───
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id < 1) {
-    header("Location: index.php");
+    header("Location: ..");
     exit();
 }
 
@@ -17,7 +17,7 @@ $repo  = new BookRepository($conn);
 $book  = $repo->getBookById($id);
 
 if (!$book || $book['type'] !== 'pdf') {
-    header("Location: index.php");
+    header("Location: ..");
     exit();
 }
 $pdf_path   = meel_media_base_path('books') . '/pdf/' . basename($book['path_folder']);
@@ -81,7 +81,7 @@ $title = htmlspecialchars($book['title']);
                 </div>
             </div>
             <div class="pdf-nav-actions">
-                <a href="../controllers/api/pdf.php?id=<?= $id ?>" target="_blank" rel="noopener" class="pdf-nav-btn">
+                <a href="../api/pdf?id=<?= $id ?>" target="_blank" rel="noopener" class="pdf-nav-btn">
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                     Buka Mentah
                 </a>
@@ -102,7 +102,7 @@ $title = htmlspecialchars($book['title']);
                 </div>
 
                 <!-- Tombol akses langsung (jika redirect tidak jalan) -->
-                <a href="../controllers/api/pdf.php?id=<?= $id ?>"
+                <a href="../api/pdf?id=<?= $id ?>"
                     target="_blank" rel="noopener"
                     class="btn" id="directBtn">
                     <i data-lucide="external-link" class="w-4 h-4"></i>
@@ -123,7 +123,7 @@ $title = htmlspecialchars($book['title']);
             var _redirected = false;
             setTimeout(function() {
                 _redirected = true;
-                window.location.href = '../controllers/api/pdf.php?id=<?= $id ?>';
+                window.location.href = '../api/pdf?id=<?= $id ?>';
             }, 1800);
             setTimeout(function() {
                 if (_redirected) return;

@@ -20,7 +20,7 @@ if ($isAjax) {
 } else {
     // Non-AJAX: Form submit klik tombol — submit_upload WAJIB ada
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_upload'], $_FILES['file_drive'])) {
-        header('Location: index.php');
+        header('Location: .');
         exit();
     }
 }
@@ -54,7 +54,7 @@ if (!$limit['allowed']) {
         echo json_encode(['status' => 'error', 'message' => 'Batas unggah terlampaui. Coba lagi dalam ' . $limit['minutes'] . ' menit.']);
         exit();
     }
-    header('Location: index.php?status=rate_limit&minutes=' . $limit['minutes']);
+    header('Location: .?status=rate_limit&minutes=' . $limit['minutes']);
     exit();
 }
 
@@ -102,7 +102,7 @@ try {
         exit();
     }
 
-    header('Location: index.php?scope=' . urlencode($result['scope']) . '&status=success');
+    header('Location: .?scope=' . urlencode($result['scope']) . '&status=success');
     exit();
 } catch (RuntimeException $exception) {
     log_drive_operation(
@@ -127,7 +127,7 @@ try {
     }
 
     if ($errMsg === 'quota_full') {
-        header('Location: index.php?status=quota_full');
+        header('Location: .?status=quota_full');
         exit();
     }
 

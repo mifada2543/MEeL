@@ -2,7 +2,7 @@
 /* @package MEeL\Controllers */
 
 require_once __DIR__ . '/../../modules/core/helpers.php';
-require_once __DIR__ . '/../../modules/core/RateLimiter.php';
+require_once __DIR__ . '/../../modules/auth/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 
 // ABSTRACT BASE: WATCH CONTROLLER
@@ -99,7 +99,7 @@ class VideoWatchController extends AbstractWatchController
     {
         $v = $this->viewer->getMediaData();
         if (!$v) {
-            header('Location: index.php');
+            header('Location: ..');
             exit;
         }
         $this->mediaData = $v;
@@ -180,7 +180,7 @@ class MusicWatchController extends AbstractWatchController
     {
         $v = $this->viewer->getMediaData();
         if (!$v) {
-            header('Location: index.php');
+            header('Location: ..');
             exit;
         }
         $this->mediaData = $v;
@@ -199,8 +199,7 @@ class MusicWatchController extends AbstractWatchController
 
         $rekom = $this->viewer->getRecommendations(15);
 
-        // Compute next song URL
-        $next_song_url = $next_url;
+                $next_song_url = $next_url;
         if (empty($next_song_url) && $rekom && $rekom->num_rows > 0) {
             $rekom->data_seek(0);
             while ($rec = $rekom->fetch_assoc()) {

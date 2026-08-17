@@ -160,7 +160,7 @@ include __DIR__ . '/partials/scripts.php';
 
             <!-- ── Masthead ── -->
             <div class="masthead">
-                <a href="index.php" class="masthead-logo">
+                <a href="./" class="masthead-logo">
                     <img src="assets/MEeL.png" alt="MEeL">
                 </a>
                 <div>
@@ -188,7 +188,7 @@ include __DIR__ . '/partials/scripts.php';
                     <span style="font-family:var(--font-mono);font-size:.6rem;color:var(--muted);letter-spacing:.1em;">
                         No queue limit · Extended timeout · Priority processing
                     </span>
-                    <a href="admin/index.php" class="admin-btn" style="margin-left:auto;">
+                    <a href="admin/beranda" class="admin-btn" style="margin-left:auto;">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7" />
                             <rect x="14" y="3" width="7" height="7" />
@@ -422,7 +422,7 @@ include __DIR__ . '/partials/scripts.php';
 
                             <?php if ($is_admin): ?>
                                 <div style="height:1px;background:var(--border);"></div>
-                                <a href="admin/index.php#queues" style="font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);text-decoration:none;display:flex;align-items:center;gap:.4rem;opacity:.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">
+                                <a href="admin/beranda#queues" style="font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);text-decoration:none;display:flex;align-items:center;gap:.4rem;opacity:.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
                                         <polyline points="15 3 21 3 21 9" />
@@ -494,21 +494,21 @@ include __DIR__ . '/partials/scripts.php';
 
                     <!-- Nav links -->
                     <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-                        <a href="index.php" class="check-btn" style="flex:1;">
+                        <a href="./" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M3 12L12 3l9 9" />
                                 <path d="M9 21V12h6v9" />
                             </svg>
                             Portal
                         </a>
-                        <a href="video/index.php" class="check-btn" style="flex:1;">
+                        <a href="video/beranda" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polygon points="23 7 16 12 23 17 23 7" />
                                 <rect x="1" y="5" width="15" height="14" rx="2" />
                             </svg>
                             Video
                         </a>
-                        <a href="music/index.php" class="check-btn" style="flex:1;">
+                        <a href="music/beranda" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M9 18V5l12-2v13" />
                                 <circle cx="6" cy="18" r="3" />

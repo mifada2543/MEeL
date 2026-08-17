@@ -36,7 +36,6 @@ di-commit ke repo) di MEeL-HUB. File ini dibuat dari hasil audit keamanan
 - **htmx 1.9.10** — dari string `version:"1.9.10"` di dalam bundle.
 - **lucide 0.575.0** — dari header lisensi (`@license lucide v0.575.0 - ISC`).
 - **chart.js 4.4.7** — dari header lisensi + path asal jsDelivr (`/npm/chart.js@4.4.7`).
-- **marked 15.0.12** — dari header lisensi (`marked v15.0.12`).
 - **tailwind.min.css — UNKNOWN** — bundle minified tanpa header versi yang bisa diverifikasi
   otomatis. Lihat TODO di bawah.
 

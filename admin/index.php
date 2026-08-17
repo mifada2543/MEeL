@@ -4,7 +4,7 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 include_once '../modules/core/activity_logger.php';
 include_once '../modules/core/GarbageCollector.php';
-include_once '../modules/core/RateLimiter.php';
+include_once '../modules/auth/RateLimiter.php';
 
 // Guard terpusat: harus login + role admin
 require_admin($conn);
@@ -69,7 +69,7 @@ include __DIR__ . '/../partials/scripts.php';
     $is_admin = true;
     $page_title = 'Dashboard';
     $media_type = 'dashboard';
-    $back_url = '../index.php';
+    $back_url = '../';
     include 'header-admin.php';
     ?>
     <div class="max-w-5xl mx-auto px-4 md:px-8 py-8">
@@ -198,13 +198,13 @@ include __DIR__ . '/../partials/scripts.php';
                     </div>
                 </div>
 
-                <a href="activity_log.php" class="block mb-2 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat trail audit aktivitas pengguna">
+                <a href="activity-log" class="block mb-2 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat trail audit aktivitas pengguna">
                     <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Activity Log
                 </a>
-                <a href="mfa_reset.php" class="block mb-2 text-center text-[9px] text-purple-400 border border-purple-400/20 py-2.5 rounded-xl hover:bg-purple-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Kelola autentikasi dua faktor (MFA) user">
+                <a href="mfa-reset" class="block mb-2 text-center text-[9px] text-purple-400 border border-purple-400/20 py-2.5 rounded-xl hover:bg-purple-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Kelola autentikasi dua faktor (MFA) user">
                     <i data-lucide="shield" class="w-3 h-3 inline mr-1"></i> MFA Management
                 </a>
-                        <a href="cookies.php" class="block text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
+                        <a href="cookies" class="block text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
                     Full Reports
                 </a>
 
@@ -325,7 +325,6 @@ include __DIR__ . '/../partials/scripts.php';
                                     </td>
                                     <td class="py-4 px-6 text-right">
                                         <?php
-                                        // Tombol Hapus HANYA muncul jika role BUKAN admin
                                         if ($u['role'] !== 'admin'):
                                         ?>
                                             <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })">
@@ -355,7 +354,7 @@ include __DIR__ . '/../partials/scripts.php';
                     <i data-lucide="server" class="w-5 h-5 text-purple-500"></i>
                     <h3 class="text-xs font-bold text-purple-500 uppercase">Active Background Tasks</h3>
                 </div>
-                <form method="POST" action="index.php" onsubmit="return meelConfirmForm(event, { title: 'Bersihkan Antrean', text: 'Bersihkan semua antrean yang stuck (> 30 menit)?', confirmButtonText: 'BERSIHKAN' });">
+                <form method="POST" action="." onsubmit="return meelConfirmForm(event, { title: 'Bersihkan Antrean', text: 'Bersihkan semua antrean yang stuck (> 30 menit)?', confirmButtonText: 'BERSIHKAN' });">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <button type="submit" name="clean_stuck_queues" value="1" class="flex items-center gap-2 text-[9px] bg-purple-600/10 text-purple-400 border border-purple-500/20 px-3 py-1.5 rounded-xl hover:bg-purple-600 hover:text-white transition-all font-bold uppercase cursor-pointer" title="Bersihkan semua antrean yang macet (> 30 menit)">
                         <i data-lucide="refresh-cw" class="w-3 h-3"></i>
@@ -395,7 +394,7 @@ include __DIR__ . '/../partials/scripts.php';
                                         <div class="flex items-center justify-end gap-3">
                                             <span class="text-gray-500 font-mono text-[10px]"><?= $q['created_at'] ?></span>
 
-                                            <form method="POST" action="index.php" class="m-0" onsubmit="return meelConfirmForm(event, { title: 'Hentikan Proses', text: 'Hentikan paksa proses spesifik ini?', confirmButtonText: 'HENTIKAN' });">
+                                            <form method="POST" action="." class="m-0" onsubmit="return meelConfirmForm(event, { title: 'Hentikan Proses', text: 'Hentikan paksa proses spesifik ini?', confirmButtonText: 'HENTIKAN' });">
                                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                                 <input type="hidden" name="queue_id" value="<?= $q['id'] ?>">
                                                 <input type="hidden" name="task_type" value="<?= $q['task_type'] ?>">
@@ -423,7 +422,7 @@ include __DIR__ . '/../partials/scripts.php';
         <div class="glass rounded-3xl overflow-hidden shadow-2xl" id="monitor">
             <div class="p-6 border-b border-white/5 justify-between flex items-center">
                 <h3 class="text-xs font-bold text-gray-500 uppercase">Live Activity Monitor</h3>
-                <form method="POST" action="index.php" onsubmit="return meelConfirmForm(event, { title: 'Hapus Guest', text: 'Hapus semua Guest?', confirmButtonText: 'HAPUS' });">
+                <form method="POST" action="." onsubmit="return meelConfirmForm(event, { title: 'Hapus Guest', text: 'Hapus semua Guest?', confirmButtonText: 'HAPUS' });">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <button type="submit" name="clear_all_guests" value="1" class="group flex flex-col items-end gap-1 cursor-pointer" title="Hapus semua user guest yang tidak aktif">
                         <div class="flex items-center gap-2 text-[9px] bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold uppercase">
@@ -518,7 +517,6 @@ include __DIR__ . '/../partials/scripts.php';
                                         <span class="text-xs text-gray-400 font-mono"><?= date('H:i:s', strtotime($row['last_activity'])) ?></span>
 
                                         <?php
-                                        // Hitung ulang status online di dalam loop agar akurat
                                         $is_online = (time() - strtotime($row['last_activity'])) < 300;
 
                                         if ($is_online && $row['username'] !== $_SESSION['username'] && $row['role'] !== 'guest'):

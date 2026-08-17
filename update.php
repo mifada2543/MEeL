@@ -40,7 +40,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
     <div class="wrap">
 
         <header class="masthead">
-            <a href="index.php" class="masthead-logo" title="Beranda">
+            <a href="./" class="masthead-logo" title="Beranda">
                 <img src="assets/MEeL.png" alt="MEeL">
             </a>
             <div>
@@ -114,7 +114,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
                                             <button onclick="openEditModal(<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>)" style="background:none;border:none;cursor:pointer;color:#60a5fa;" title="Edit Update">
                                                 <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
                                             </button>
-                                            <form action="update.php" method="POST" onsubmit="return meelConfirmForm(event, { title:'Hapus Update', text:'Apakah Anda yakin ingin menghapus update versi <?= htmlspecialchars($row['version']) ?> ini?', confirmButtonText:'HAPUS' });" style="display:inline;">
+                                            <form action="update" method="POST" onsubmit="return meelConfirmForm(event, { title:'Hapus Update', text:'Apakah Anda yakin ingin menghapus update versi <?= htmlspecialchars($row['version']) ?> ini?', confirmButtonText:'HAPUS' });" style="display:inline;">
                                                 <input type="hidden" name="action" value="delete_update">
                                                 <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -197,7 +197,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
         <div id="modal-add-update" class="modal-backdrop" onclick="handleBackdropClick(event, 'modal-add-update')">
             <div class="modal-box">
                 <div class="modal-title">TAMBAH <span>UPDATE</span></div>
-                <form action="update.php" method="POST">
+                <form action="update" method="POST">
                     <input type="hidden" name="action" value="update">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
@@ -226,7 +226,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
         <div id="modal-edit-update" class="modal-backdrop" onclick="handleBackdropClick(event, 'modal-edit-update')">
             <div class="modal-box">
                 <div class="modal-title">EDIT <span>UPDATE</span></div>
-                <form action="update.php" method="POST">
+                <form action="update" method="POST">
                     <input type="hidden" name="action" value="edit_update">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <input type="hidden" name="id" id="edit-id">
@@ -255,7 +255,7 @@ $is_admin     = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] 
         <div id="modal-edit-sidebar" class="modal-backdrop" onclick="handleBackdropClick(event, 'modal-edit-sidebar')">
             <div class="modal-box">
                 <div class="modal-title">EDIT <span>SIDEBAR</span></div>
-                <form action="update.php" method="POST">
+                <form action="update" method="POST">
                     <input type="hidden" name="action" value="sidebar">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <div style="margin-bottom:1rem">

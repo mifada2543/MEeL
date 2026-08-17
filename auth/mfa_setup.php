@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 $user_id   = (int)$_SESSION['user_id'];
@@ -319,7 +319,7 @@ include __DIR__ . '/partials/auth_head.php';
                     Akun Anda sekarang lebih aman dengan autentikasi dua faktor.
                     Setiap login akan meminta kode 6-digit dari aplikasi Authenticator.
                 </p>
-                <a href="../index.php"
+                <a href="../"
                     class="inline-block mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all">
                     Kembali ke Beranda
                 </a>

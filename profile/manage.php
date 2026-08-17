@@ -2,10 +2,11 @@
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/core/helpers.php';
+require_once '../modules/media/ProfileRepository.php';
 
 // ─── Hanya user login ───
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 
@@ -13,22 +14,17 @@ $user_id   = (int)$_SESSION['user_id'];
 $username  = htmlspecialchars($_SESSION['username'] ?? '');
 $is_admin  = ($_SESSION['role'] ?? '') === 'admin';
 
-// ─── Cek apakah user punya konten ───
-$q_vid_count = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
-$q_vid_count->bind_param("i", $user_id);
-$q_vid_count->execute();
-$total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
+$profileRepo = new ProfileRepository($conn);
 
-$q_mus_count = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ?");
-$q_mus_count->bind_param("i", $user_id);
-$q_mus_count->execute();
-$total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
+// ─── Cek apakah user punya konten ───
+$total_video = $profileRepo->countVideo($user_id);
+$total_music = $profileRepo->countMusic($user_id);
 
 $has_content = ($total_video + $total_music) > 0;
 
 // ─── Redirect jika tidak punya konten ───
 if (!$has_content) {
-    header("Location: ../upload_advanced.php?first=1");
+    header("Location: ../upload?first=1");
     exit();
 }
 
@@ -61,10 +57,8 @@ if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
 
         $delete_msg = $result['message'];
         if ($result['success']) {
-            $q_vid_count->execute();
-            $total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
-            $q_mus_count->execute();
-            $total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
+            $total_video = $profileRepo->countVideo($user_id);
+            $total_music = $profileRepo->countMusic($user_id);
         }
     }
 }
@@ -82,25 +76,11 @@ $videos = [];
 $music_list = [];
 
 if ($active_tab === 'video') {
-    $q = $conn->prepare("SELECT id, title, thumbnail, views, likes, dislikes, upload_date FROM video WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
-    $q->bind_param("iii", $user_id, $page_size, $offset);
-    $q->execute();
-    $videos = $q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $q_total = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
-    $q_total->bind_param("i", $user_id);
-    $q_total->execute();
-    $total_items = (int)$q_total->get_result()->fetch_row()[0];
+    $videos      = $profileRepo->getVideosPaginated($user_id, $page_size, $offset);
+    $total_items = $profileRepo->countVideo($user_id);
 } else {
-    $q = $conn->prepare("SELECT id, title, artist, thumbnail, views, likes, dislikes, upload_date FROM music WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
-    $q->bind_param("iii", $user_id, $page_size, $offset);
-    $q->execute();
-    $music_list = $q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $q_total = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ?");
-    $q_total->bind_param("i", $user_id);
-    $q_total->execute();
-    $total_items = (int)$q_total->get_result()->fetch_row()[0];
+    $music_list  = $profileRepo->getMusicPaginated($user_id, $page_size, $offset);
+    $total_items = $profileRepo->countMusic($user_id);
 }
 
 $total_pages = max(1, ceil($total_items / $page_size));

@@ -4,7 +4,7 @@ require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
 include '../../auth/config.php';
-include '../../modules/core/RateLimiter.php';
+include '../../modules/auth/RateLimiter.php';
 include '../../modules/media/MediaInteraction.php';
 
 // Verifikasi token untuk AJAX POST
@@ -65,7 +65,6 @@ if ($user_id) {
     exit;
 }
 
-// Gunakan MediaInteraction class jika lolos validasi di atas
 $interaction = new MediaInteraction($conn, $user_id);
 $result = $interaction->toggleLike($id, $media_type, $type);
 
@@ -92,7 +91,7 @@ $inactive_class = 'bg-gray-900/40 border-gray-800 text-gray-400 hover:bg-gray-80
 ?>
 <div id="like-dislike-container" class="flex items-center gap-2 mt-4 sm:mt-0" hx-get-trigger="load">
     <button
-        hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+        hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
         hx-vals='{"id":"<?= $id ?>","media_type":"<?= $media_type ?>","type":"like","csrf_token":"<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>"}'
         class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer <?= $user_interaction === 'like' ? $like_active_class : $inactive_class ?>">
         <i data-lucide="thumbs-up" class="w-3.5 h-3.5 <?= $user_interaction === 'like' ? 'fill-current' : '' ?>"></i>
@@ -100,7 +99,7 @@ $inactive_class = 'bg-gray-900/40 border-gray-800 text-gray-400 hover:bg-gray-80
     </button>
 
     <button
-        hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+        hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
         hx-vals='{"id":"<?= $id ?>","media_type":"<?= $media_type ?>","type":"dislike","csrf_token":"<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>"}'
         class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer <?= $user_interaction === 'dislike' ? $dislike_active_class : $inactive_class ?>">
         <i data-lucide="thumbs-down" class="w-3.5 h-3.5 <?= $user_interaction === 'dislike' ? 'fill-current' : '' ?>"></i>

@@ -10,7 +10,7 @@ $user_id = (int)$_SESSION['user_id'];
 $role    = $repo->getUserRole($user_id);
 
 if ($role !== 'admin') {
-    header("Location: index.php?error=unauthorized");
+    header("Location: ..?error=unauthorized");
     exit();
 }
 
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
 
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-2xl font-black">Upload to Library</h1>
-            <a href="index.php" class="text-gray-500 hover:text-white transition">
+            <a href="beranda" class="text-gray-500 hover:text-white transition">
                 <i data-lucide="x"></i>
             </a>
         </div>

@@ -45,8 +45,8 @@ if (!defined('MEEL_BASE_URL')) {
     require_once __DIR__ . '/../modules/core/base_url.php';
     define('MEEL_BASE_URL', meel_base_url_path());
 }
-// SESSION CONFIGURATION (terpusat di helpers/session.php — satu sumber kebenaran)
-require_once __DIR__ . '/../modules/core/helpers/session.php';
+// SESSION CONFIGURATION (terpusat di modules/auth/helpers/session.php — satu sumber kebenaran)
+require_once __DIR__ . '/../modules/auth/helpers/session.php';
 meel_boot_session();
 // AUTOLOADER & HELPERS
 require_once __DIR__ . '/../modules/autoload.php';
@@ -79,7 +79,9 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
     if ($elapsed_time > 43200) {
         session_unset();
         session_destroy();
-        header("Location: ../auth/login.php?reason=expired");
+        // base_url() mutlak — handler bisa disajikan di kedalaman URL mana pun
+        // (hub di "/", modul di "/video/", dst.), jadi ../ relatif tidak aman.
+        header("Location: " . base_url('/auth/login?reason=expired'));
         exit;
     }
 }

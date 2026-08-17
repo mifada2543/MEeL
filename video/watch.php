@@ -67,7 +67,7 @@ $__vdir = function($dir) {
     <nav class="border-b border-white/[.04] sticky top-0 z-50">
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
-            <a href="index.php" class="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-xl transition-all" title="MEeL Video">
+            <a href="beranda" class="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-xl transition-all" title="MEeL Video">
                 <div class="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -91,7 +91,7 @@ $__vdir = function($dir) {
                     </div>
                 </div>
                 <button id="v-search-btn"
-                    hx-get="search_video.php?exclude=<?= $id ?>"
+                    hx-get="search?exclude=<?= $id ?>"
                     title="Cari"
                     hx-include="#v-search-watch"
                     hx-target="#recommendation-column"
@@ -126,7 +126,7 @@ $__vdir = function($dir) {
                 name="search"
                 placeholder="Cari video..."
                 class="w-full bg-white/[.06] border border-white/[.08] rounded-xl py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:border-red-500/40 text-gray-300"
-                hx-get="search_video.php?exclude=<?= $id ?>"
+                hx-get="search?exclude=<?= $id ?>"
                 hx-trigger="keyup[key=='Enter']"
                 hx-target="#recommendation-column"
                 autocomplete="off">
@@ -225,14 +225,14 @@ $__vdir = function($dir) {
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <?php if (isset($_SESSION['username'])): ?>
-                            <a href="../transcode.php?id=<?= $id ?>"
+                            <a href="../transcode?id=<?= $id ?>"
                                 class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-gray-800/50 border border-white/[.05] text-gray-500 hover:bg-gray-700 hover:text-gray-300 no-underline"
                                 title="Download audio saja">
                                 <i data-lucide="download" class="w-3.5 h-3.5"></i> Audio
                             </a>
                             <div id="like-dislike-container" class="flex items-center gap-2">
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"video","type":"like","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     title="Suka video"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
@@ -243,7 +243,7 @@ $__vdir = function($dir) {
                                     Like<?= ($v['likes'] ?? 0) > 0 ? " <span class='tabular-nums ml-0.5'>{$v['likes']}</span>" : '' ?>
                                 </button>
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"video","type":"dislike","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     title="Tidak suka video"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
@@ -306,7 +306,7 @@ $__vdir = function($dir) {
                             <div class="p-4 sm:p-6">
                                 <div id="comment-alert"></div>
                             <form action="<?= base_url('/video/watch?id=' . (int)$id) ?>" method="post" class="mb-6"
-                                hx-post="../controllers/api/comment.php"
+                                hx-post="../api/comment"
                                 hx-target="#comment-list"
                                 hx-swap="innerHTML"
                                 hx-vals='{"id":"<?= $id ?>","media_type":"video"}'

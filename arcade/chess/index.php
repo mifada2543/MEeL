@@ -26,7 +26,7 @@ include __DIR__ . '/../../partials/scripts.php';
   <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3 shadow-lg shadow-slate-900/20">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <img src="../../assets/MEeL.png" class="w-6 h-6 cursor-pointer" alt="logo catur" onclick="window.location.href='../index.php'" title="Kembali ke arcade" />
+        <img src="../../assets/MEeL.png" class="w-6 h-6 cursor-pointer" alt="logo catur" onclick="window.location.href='../'" title="Kembali ke arcade" />
         <div>
           <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">MEeL-Chess</h1>
           <p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Klasik & Interaktif</p>

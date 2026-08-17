@@ -1,8 +1,9 @@
 <?php
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
+require_once '../modules/media/ProfileRepository.php';
 // activity_logger loaded via auth/config.php
-$back_url = '../index.php';
+$back_url = '../';
 
 // ─── Validasi Referer (Back URL) menggunakan MEEL_HOST constant ───
 $allowed_hosts = [
@@ -28,7 +29,10 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     if ($host_valid) {
 
         $ref_path = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages = ['profile_edit.php', 'index.php', 'manage.php', 'mfa_setup.php', 'mfa_backup.php', 'edit-music.php', 'edit-video.php'];
+        // Nama file lama (profile_edit.php) DAN varian route bersih
+        // (/profile/edit, /profile/manage, /auth/mfa-setup — referer kini
+        // memakai URL bersih tanpa .php)
+        $excluded_pages = ['profile_edit.php', 'edit', 'index.php', 'manage.php', 'manage', 'mfa_setup.php', 'mfa-setup', 'mfa_backup.php', 'edit-music.php', 'edit-video.php'];
 
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
@@ -43,15 +47,13 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         }
     }
 }
-// 1. Ambil username dari URL
 $target_user = $_GET['u'] ?? '';
 
 if (empty($target_user)) {
-    header("Location: ../index.php");
+    header("Location: ../");
     exit();
 }
 
-// 2. Query Data User
 $stmt = $conn->prepare("SELECT id, username, bio, role, profile_picture, last_activity FROM users WHERE username = ?");
 $stmt->bind_param("s", $target_user);
 $stmt->execute();
@@ -65,18 +67,9 @@ if (!$u) {
 
 $profile_id = $u['id'];
 
-$stmt_vid = $conn->prepare("SELECT COUNT(*) as total FROM video WHERE user_id = ?");
-$stmt_vid->bind_param("i", $profile_id);
-$stmt_vid->execute();
-$total_video = (int)$stmt_vid->get_result()->fetch_assoc()['total'];
-$stmt_vid->close();
-
-// Hitung total Musik (prepared statement)
-$stmt_mus = $conn->prepare("SELECT COUNT(*) as total FROM music WHERE user_id = ?");
-$stmt_mus->bind_param("i", $profile_id);
-$stmt_mus->execute();
-$total_music = (int)$stmt_mus->get_result()->fetch_assoc()['total'];
-$stmt_mus->close();
+$profileRepo  = new ProfileRepository($conn);
+$total_video  = $profileRepo->countVideo($profile_id);
+$total_music  = $profileRepo->countMusic($profile_id);
 
 $total_uploads = $total_video + $total_music;
 $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
@@ -204,19 +197,19 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                     ?>
                         <div class="grid grid-cols-2 gap-3 mb-2">
                             <!-- Baris 1: Edit Profile + Kelola Konten -->
-                            <a href="../controllers/profile/profile_edit.php"
+                            <a href="../profile/edit"
                                class="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                                title="Edit profil dan bio Anda">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Profile
                             </a>
-                            <a href="manage.php"
+                            <a href="manage"
                                class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 hover:border-blue-500/50 px-4 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                                title="Kelola konten video dan musik Anda">
                                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Kelola Konten
                             </a>
 
                             <!-- Baris 2: MFA + Backup Codes (jika aktif) -->
-                            <a href="../auth/mfa_setup.php"
+                            <a href="../auth/mfa-setup"
                                class="mfa-switch justify-center"
                                role="link"
                                aria-label="MFA: saat ini <?= $_mfa_on ? 'aktif' : 'nonaktif' ?>. Klik untuk kelola."
@@ -332,8 +325,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             }).then(function(result) {
                 if (!result.isConfirmed || !result.value) return;
 
-                // Kirim request ke server
-                fetch('../controllers/system/mfa.php', {
+                                fetch('../system/mfa', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'action=generate_backup&password=' + encodeURIComponent(result.value) + '&csrf_token=<?= $_SESSION['csrf_token'] ?>'
@@ -365,8 +357,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                             }
                         });
 
-                        // Simpan codes untuk download
-                        window._lastBackupCodes = data.codes;
+                                                window._lastBackupCodes = data.codes;
                         window._meelBackupCodes = data.codes;
                     } else {
                         Swal.fire({

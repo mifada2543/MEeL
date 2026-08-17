@@ -48,7 +48,7 @@ $counts  = $library->getCounts();
 
             <!-- MUSIC (diperbesar di tengah) -->
             <div class="media-card card-music flex flex-col gap-4 md:h-64"
-                onclick="window.location.href='music/index.php'"
+                onclick="window.location.href='music/beranda'"
                 title="MEeL Music">
                 <div class="flex items-start justify-between">
                     <div class="card-icon-wrap">
@@ -72,7 +72,7 @@ $counts  = $library->getCounts();
 
             <!-- VIDEO -->
             <div class="media-card card-video flex flex-col gap-4 md:h-64"
-                onclick="window.location.href='video/index.php'"
+                onclick="window.location.href='video/beranda'"
                 title="MEeL Video" hx-boost="true">
                 <div class="flex items-start justify-between">
                     <div class="card-icon-wrap">
@@ -97,7 +97,7 @@ $counts  = $library->getCounts();
             <!-- BOOKS -->
             <?php if ($is_logged_in): ?>
                 <div class="media-card card-books flex flex-col gap-4 md:h-64"
-                    onclick="window.location.href='books/index.php'"
+                    onclick="window.location.href='books/beranda'"
                     title="MEeL Books">
                     <div class="flex items-start justify-between">
                         <div class="card-icon-wrap">
@@ -125,20 +125,20 @@ $counts  = $library->getCounts();
         <div class="flex flex-wrap items-center justify-center gap-3">
             <?php if ($is_logged_in && isset($_SESSION['role'])): ?>
                 <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <a href="admin/index.php" class="bottom-link" title="Panel Admin untuk mengelola konten dan pengguna">
+                    <a href="admin/beranda" class="bottom-link" title="Panel Admin untuk mengelola konten dan pengguna">
                         <i data-lucide="settings" class="w-3 h-3"></i> Admin Panel
                     </a>
-                    <a href="upload_advanced.php" class="bottom-link" title="Unggah media baru ke platform">
+                    <a href="upload" class="bottom-link" title="Unggah media baru ke platform">
                         <i data-lucide="upload-cloud" class="w-3 h-3"></i> Upload Media
                     </a>
                 <?php endif; ?>
                 <?php if (in_array($_SESSION['role'], ['member', 'admin'])): ?>
-                    <a href="drive/index.php" class="bottom-link" title="Akses drive Anda untuk mengelola file dan dokumen">
+                    <a href="drive/beranda" class="bottom-link" title="Akses drive Anda untuk mengelola file dan dokumen">
                         <i data-lucide="hard-drive" class="w-3 h-3"></i> Drive
                     </a>
                 <?php endif; ?>
             <?php endif; ?>
-            <a href="update.php" class="bottom-link" title="Lihat perubahan terbaru dan pembaruan platform">
+            <a href="update" class="bottom-link" title="Lihat perubahan terbaru dan pembaruan platform">
                 <i data-lucide="radio" class="w-3 h-3"></i> Changelog
             </a>
             <a href="docs/index.html" class="bottom-link" title="Lihat dokumentasi platform">
@@ -181,8 +181,7 @@ $counts  = $library->getCounts();
             const banner = document.getElementById('demoBanner');
             const closeBtn = document.getElementById('demoBannerClose');
 
-            // Selalu tampilkan banner setiap kali halaman di-refresh
-            if (banner) {
+                    if (banner) {
 
                 banner.style.visibility = 'hidden';
                 banner.style.display = 'block';
@@ -199,8 +198,7 @@ $counts  = $library->getCounts();
 
             if (closeBtn && banner) {
                 closeBtn.addEventListener('click', function() {
-                    // Kembalikan navbar ke posisi semula
-                    document.body.classList.remove('demo-banner-active');
+                                    document.body.classList.remove('demo-banner-active');
                     banner.classList.remove('demo-banner-visible');
                     banner.classList.add('demo-banner-hiding');
 
@@ -213,12 +211,10 @@ $counts  = $library->getCounts();
 
         // ─── SWEETALERT2 ───
         (function() {
-            // Hanya tampilkan sekali per sesi browser
-            if (sessionStorage.getItem('meelDemoAlertShown')) return;
+                    if (sessionStorage.getItem('meelDemoAlertShown')) return;
             sessionStorage.setItem('meelDemoAlertShown', '1');
 
-            // Tunda sedikit agar banner sempat render dulu
-            setTimeout(() => {
+                    setTimeout(() => {
                 Swal.fire({
                     icon: 'warning',
                     iconHtml: '<div style="font-size:1.8rem">⚠️</div>',

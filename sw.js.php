@@ -56,7 +56,6 @@ const PRECACHE_URLS = <?php echo json_encode($sw_precache_urls, JSON_PRETTY_PRIN
 self.addEventListener('install', (event) => {
   console.log('[SW] Install ' + SW_VERSION);
 
-  // Pre-cache static assets
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch((err) => {
@@ -73,7 +72,6 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activate ' + SW_VERSION);
 
-  // Clean up old caches
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -106,7 +104,6 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
   if (request.method !== 'GET') return;
 
   // Skip non-origin requests (CDN, external)
@@ -250,11 +247,14 @@ function isApiRequest(url) {
   // pathname absolut (/MEeL/controllers/... ATAU /controllers/... di root) —
   // pakai includes('/.../') agar cocok untuk subdir maupun root deployment.
   const p = url.pathname;
+  // Pola lama (file .php) dipertahankan untuk kompatibilitas + pola rute bersih
+  // front controller (router.php): /api/*, /system/mfa, /music/stream, dll.
   return p.includes('/controllers/') ||
          p.includes('/auth/') ||
          p.includes('/partials/engine/') ||
          p.includes('/controller/') ||      // polling catur (arcade/chess/controller/)
          p.includes('/api/') ||
+         p.includes('/system/') ||
          p.includes('/search_') ||
          p.includes('load_more') ||
          p.includes('like.php') ||
@@ -266,7 +266,16 @@ function isApiRequest(url) {
          p.includes('read_pdf') ||
          p.includes('download') ||          // drive/download.php, download_transcode.php
          p.includes('post_encode') ||
-         p.includes('download_transcode');
+         p.includes('download_transcode') ||
+         // ── Rute bersih front controller (network-only) ──
+         /\/(api|system)\/[^/]+\/?$/.test(p) ||      // api/like, api/comment, system/mfa
+         /\/(music|video|drive|books)\/stream\/?$/.test(p) || // streaming
+         /\/(music|video|books)\/search\/?$/.test(p) ||
+         /\/(music|video)\/load-more\/?$/.test(p) ||
+         /\/music\/playlist-action\/?$/.test(p) ||
+         /\/books\/read-pdf\/?$/.test(p) ||
+         /\/admin\/(actions|data)\/?$/.test(p) ||
+         /\/profile\/(edit|manage-action)\/?$/.test(p);
 }
 
 function isStreamingMedia(url) {

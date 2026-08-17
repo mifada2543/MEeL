@@ -1,6 +1,3 @@
-// FILE: assets.js
-// FUNGSI: Menyimpan variabel warna dan data SVG murni
-// Miku HD
 const MIKU_COLORS = {
   hair: "#39C5BB",
   hairDark: "#1d968f",
@@ -13,7 +10,6 @@ const MIKU_COLORS = {
   pink: "#FF4081",
   eye: "#1A857D",
 };
-// Kasane Teto HD
 const TETO_COLORS = {
   hair: "#FF5E7E",
   hairDark: "#C2185B",
@@ -281,7 +277,6 @@ const speakerTetoSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns
   <circle cx="20" cy="20" r="2" fill="#FFFFFF" />
 </svg>`)}`;
 
-// Instansiasi Objek Gambar Gambar Aktif
 const imgMikuRun1 = new Image();
 imgMikuRun1.src = mikuRun1Svg;
 const imgMikuRun2 = new Image();

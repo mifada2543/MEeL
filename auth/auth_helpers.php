@@ -3,11 +3,11 @@ if (!function_exists('auth_boot_session')) {
 
     function auth_boot_session(): void
     {
-        // Inisialisasi session terpusat (cookie flags aman) — lihat helpers/session.php
-        require_once __DIR__ . '/../modules/core/helpers/session.php';
+        // Inisialisasi session terpusat (cookie flags aman) — lihat modules/auth/helpers/session.php
+        require_once __DIR__ . '/../modules/auth/helpers/session.php';
         meel_boot_session();
         if (isset($_SESSION['user_id'])) {
-            header("Location: ../index.php");
+            header("Location: ../");
             exit;
         }
     }
@@ -33,7 +33,7 @@ if (!function_exists('auth_back_url')) {
     /* @param string[] $exclude Nama file yang tidak boleh menjadi back_url */
     function auth_back_url(array $exclude = ['login.php', 'register.php']): string
     {
-        $back_url = '../index.php';
+        $back_url = '../';
         if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             $ref  = $_SERVER['HTTP_REFERER'];
             $host = parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST);
@@ -44,7 +44,9 @@ if (!function_exists('auth_back_url')) {
                 $refPath    = parse_url($ref, PHP_URL_PATH) ?? '';
                 $isExcluded = false;
                 foreach ($exclude as $file) {
-                    if (strpos($refPath, $file) !== false) {
+                    // Cocokkan nama file lama (login.php) maupun clean URL (/auth/login)
+                    if (strpos($refPath, $file) !== false
+                        || strpos($refPath, pathinfo($file, PATHINFO_FILENAME)) !== false) {
                         $isExcluded = true;
                         break;
                     }

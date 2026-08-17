@@ -46,7 +46,7 @@ $result = $transcoder->encodeMusic($temp_file, $title, $artist, $album, $duratio
 
 if ($result['status'] === 'success') {
     unset($_SESSION['meel_pending_music'][$meta_key]);
-    header("Location: ../../upload_advanced.php?success=1&file=" . urlencode($result['filename']));
+    header("Location: ../../upload?success=1&file=" . urlencode($result['filename']));
     exit;
 } else {
     echo "<h1>FFmpeg Gagal Menghasilkan Ogg!</h1>";

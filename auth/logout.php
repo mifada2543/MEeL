@@ -21,5 +21,4 @@ if (ini_get("session.use_cookies")) {
         'samesite'=> $params['samesite'] ?? 'Lax',
     ]);
 }
-session_destroy();
-header("Location: login.php");
+session_destroy();            header("Location: login");

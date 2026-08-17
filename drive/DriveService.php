@@ -136,7 +136,7 @@ final class DriveStorage
                 // Private files TIDAK boleh direferensikan lewat path web
                 // langsung (subtree storage di-deny web server). URL pratinjau
                 // harus lewat endpoint stream ber-otorisasi.
-                $path = 'stream.php?file=' . rawurlencode($fileInfo->getFilename())
+                $path = 'stream?file=' . rawurlencode($fileInfo->getFilename())
                     . '&type=' . rawurlencode($type)
                     . '&scope=private'
                     . '&csrf_token=' . rawurlencode(get_csrf_token());

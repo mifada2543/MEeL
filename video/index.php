@@ -44,7 +44,7 @@ $__v = function($f) {
     <!-- NAVBAR -->
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
-            <a href="../index.php" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="Kembali ke MEeL HUB">
+            <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="Kembali ke MEeL HUB">
                 <div class="w-6 h-6 sm:w-7 sm:h-7 bg-red-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -54,7 +54,7 @@ $__v = function($f) {
             </a>
 
             <form
-                    hx-get="search_video.php"
+                    hx-get="search"
                     hx-trigger="submit"
                     hx-target="#video-container"
                     hx-indicator="#search-indicator"
@@ -118,7 +118,7 @@ $__v = function($f) {
             <?php if ($total > $perPage): ?>
                 <button type="button" id="load-more-area"
                     class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
-                    hx-get="load_more.php?offset=<?= $perPage ?>&page=<?= $page ?>"
+                    hx-get="load-more?offset=<?= $perPage ?>&page=<?= $page ?>"
                     hx-target="#load-more-area"
                     hx-swap="outerHTML"
                     aria-label="Muat lebih banyak video">

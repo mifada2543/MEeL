@@ -4,7 +4,7 @@ require_once '../../auth/config.php';
 
 // Pastikan hanya user yang login bisa akses
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 
@@ -221,7 +221,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
 $_META_TITLE = 'Edit Profile | MEeL';
 $_META_DESC  = 'Edit profil Anda di MEeL. Ubah bio dan foto profil.';
 include __DIR__ . '/../../partials/link.php';
-$scripts_root = '../../';
+$scripts_root = '../'; // halaman disajikan di /MEeL/profile/edit (depth 3)
 include __DIR__ . '/../../partials/scripts.php';
 ?>
     <style>        body {
@@ -248,7 +248,7 @@ include __DIR__ . '/../../partials/scripts.php';
             <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                 <div class="flex flex-col items-center gap-4">
-                    <img id="avatarPreview" src="../../profile/upload/<?= htmlspecialchars($data['profile_picture'] ?: 'default_avatar.png', ENT_QUOTES, 'UTF-8') ?>" class="w-24 h-24 rounded-3xl object-cover border-2 border-blue-500/30" alt="Foto profil">
+                    <img id="avatarPreview" src="../profile/upload/<?= htmlspecialchars($data['profile_picture'] ?: 'default_avatar.png', ENT_QUOTES, 'UTF-8') ?>" class="w-24 h-24 rounded-3xl object-cover border-2 border-blue-500/30" alt="Foto profil">
                     <label class="cursor-pointer bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest uppercase transition">
                         Ganti Foto
                         <input id="avatarInput" type="file" name="avatar" class="hidden" accept="image/jpeg,image/png,image/jpg,image/webp">
@@ -260,7 +260,7 @@ include __DIR__ . '/../../partials/scripts.php';
                 <div id="avatarModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="batalPreview()"></div>
                     <div class="relative glass rounded-[2rem] border border-white/10 shadow-2xl w-full max-w-xs p-8 text-center">
-                        <img src="../../profile/upload/<?= htmlspecialchars($data['profile_picture'] ?: 'default_avatar.png', ENT_QUOTES, 'UTF-8') ?>" alt="Foto profil saat ini" class="w-16 h-16 mx-auto mb-2 rounded-2xl object-cover border-2 border-white/10 shadow-lg" title="Foto profil Anda saat ini">
+                        <img src="../profile/upload/<?= htmlspecialchars($data['profile_picture'] ?: 'default_avatar.png', ENT_QUOTES, 'UTF-8') ?>" alt="Foto profil saat ini" class="w-16 h-16 mx-auto mb-2 rounded-2xl object-cover border-2 border-white/10 shadow-lg" title="Foto profil Anda saat ini">
                         <p class="text-xs text-gray-500 uppercase tracking-widest mb-4">Foto Saat Ini</p>
                         <h3 class="text-sm font-black text-white uppercase tracking-widest mb-4">Pratinjau Foto</h3>
                         <p class="text-[10px] text-gray-500 mb-4">Geser foto untuk memilih bagian yang dipakai</p>
@@ -288,7 +288,7 @@ include __DIR__ . '/../../partials/scripts.php';
                 </button>
             </form>
 
-            <a href="../../profile/?u=<?= $_SESSION['username'] ?>" class="block text-center mt-6 text-xs text-gray-600 hover:text-gray-400">Batal dan Kembali</a>
+            <a href="../profile/?u=<?= $_SESSION['username'] ?>" class="block text-center mt-6 text-xs text-gray-600 hover:text-gray-400">Batal dan Kembali</a>
         </div>
     </div>
     <script>        lucide.createIcons();

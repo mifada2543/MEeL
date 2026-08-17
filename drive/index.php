@@ -47,7 +47,7 @@ if ($user->isMember()) {
     <div class="flex min-h-screen">
         <aside class="w-64 glass border-r border-gray-800 hidden md:flex flex-col sticky top-0 h-screen">
             <div class="p-6">
-                <div class="flex items-center gap-3 mb-8" onclick="window.location.href='../index.php'" style="cursor: pointer;">
+                <div class="flex items-center gap-3 mb-8" onclick="window.location.href='../'" style="cursor: pointer;">
                     <img src="../assets/MEeL.png" class="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" alt="Logo">
                     <div>
                         <h1 class="font-bold text-lg leading-none">MEeL <span class="text-blue-500">Cloud</span></h1>
@@ -95,7 +95,7 @@ if ($user->isMember()) {
         <main class="flex-1 p-4 md:p-10 w-full overflow-x-hidden">
             <!-- Mobile Header -->
             <div class="md:hidden flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
-                <div class="flex items-center gap-3" onclick="window.location.href='../index.php'" style="cursor: pointer;" title="Kembali ke MEeL HUB">
+                <div class="flex items-center gap-3" onclick="window.location.href='../'" style="cursor: pointer;" title="Kembali ke MEeL HUB">
                     <img src="../assets/MEeL.png" class="w-8 h-8 rounded-lg shadow-lg shadow-blue-500/20" alt="Logo">
                     <div>
                         <h1 class="font-bold text-base leading-none">MEeL <span class="text-blue-500">Cloud</span></h1>
@@ -187,7 +187,7 @@ if ($user->isMember()) {
                     <span class="dropzone-hint-sub">atau klik area ini untuk memilih file</span>
                 </div>
 
-                <form id="uploadForm" action="upload.php?ajax=1" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row items-center gap-6">
+                <form id="uploadForm" action="upload?ajax=1" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row items-center gap-6">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8') ?>">
 

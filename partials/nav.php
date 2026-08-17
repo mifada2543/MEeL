@@ -29,27 +29,27 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
 <!-- ── Cross-link Video ↔ Music (DESKTOP) ── -->
 <?php if ($_nav_is_video): ?>
-    <a href="<?= $_nav_root ?>music/index.php"
+    <a href="<?= $_nav_root ?>music/beranda"
         class="hidden sm:flex items-center gap-1.5 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] text-gray-300 hover:text-orange-500 transition-all"
         title="MEeL Music - Streaming Audio dengan kualitas terbaik">
         <i data-lucide="music" class="w-3.5 h-3.5"></i>
         <span class="hidden md:inline">Music</span>
     </a>
 <?php elseif ($_nav_is_music): ?>
-    <a href="<?= $_nav_root ?>video/index.php"
+    <a href="<?= $_nav_root ?>video/beranda"
         class="hidden sm:flex items-center gap-1.5 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] text-gray-600 hover:text-red-500 transition-all"
         title="MEeL Video">
         <i data-lucide="play" class="w-3.5 h-3.5"></i>
         <span class="hidden md:inline">Video</span>
     </a>
 <?php elseif ($_nav_is_books): ?>
-    <a href="<?= $_nav_root ?>video/index.php"
+    <a href="<?= $_nav_root ?>video/beranda"
         class="hidden sm:flex items-center gap-1.5 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] text-gray-600 hover:text-red-500 transition-all"
         title="MEeL Video">
         <i data-lucide="play" class="w-3.5 h-3.5"></i>
         <span class="hidden md:inline">Video</span>
     </a>
-    <a href="<?= $_nav_root ?>music/index.php"
+    <a href="<?= $_nav_root ?>music/beranda"
         class="hidden sm:flex items-center gap-1.5 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] text-gray-600 hover:text-orange-500 transition-all"
         title="MEeL Music - Streaming Audio dengan kualitas terbaik">
         <i data-lucide="music" class="w-3.5 h-3.5"></i>
@@ -140,32 +140,32 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                 </a>
 
                 <?php if (!$_nav_is_books): ?>
-                <a href="<?= $_nav_root ?>books/index.php" title="Akses MEeL Books"
+                <a href="<?= $_nav_root ?>books/beranda" title="Akses MEeL Books"
                     class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-green-400 hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="book-open" class="w-3.5 h-3.5 flex-shrink-0"></i>
                     <span>Books</span>
                 </a>
                 <?php endif; ?>
-                <a href="<?= $_nav_root ?>introduction.php" title="Cara bernavigasi di MEeL"
+                <a href="<?= $_nav_root ?>introduction" title="Cara bernavigasi di MEeL"
                     class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="compass" class="w-3.5 h-3.5 flex-shrink-0"></i>
                     <span>Cara Navigasi</span>
                 </a>
 
                 <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['member', 'admin'])): ?>
-                    <a href="<?= $_nav_root ?>drive/index.php" title="Akses drive Anda untuk mengelola file dan dokumen"
+                    <a href="<?= $_nav_root ?>drive/beranda" title="Akses drive Anda untuk mengelola file dan dokumen"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
                         <i data-lucide="hard-drive" class="w-3.5 h-3.5 flex-shrink-0"></i>
                         <span>Drive</span>
                     </a>
                 <?php endif; ?>
                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <a href="upload.php" title="Unggah media baru ke platform"
+                    <a href="upload" title="Unggah media baru ke platform"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
                         <i data-lucide="upload-cloud" class="w-3.5 h-3.5 flex-shrink-0"></i>
                         <span>Upload Media</span>
                     </a>
-                    <a href="<?= $_nav_root ?>admin/index.php"
+                    <a href="<?= $_nav_root ?>admin/beranda"
                         title="Panel admin untuk mengelola pengguna dan konten"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-red-400 hover:bg-white/[.04] transition-all no-underline">
                         <i data-lucide="settings" class="w-3.5 h-3.5 flex-shrink-0"></i>
@@ -173,7 +173,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                     </a>
                 <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'member'): ?>
                     <!-- Upload tersedia juga untuk member -->
-                    <a href="upload.php"
+                    <a href="upload"
                         title="Unggah media baru ke platform"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
                         <i data-lucide="upload-cloud" class="w-3.5 h-3.5 flex-shrink-0"></i>
@@ -183,7 +183,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             </div>
 
             <div class="border-t border-white/[.05] py-1.5">
-                <a href="<?= $_nav_root ?>auth/logout.php"
+                <a href="<?= $_nav_root ?>auth/logout"
                     data-meel-confirm-link
                     data-meel-confirm-size="sm"
                     data-meel-confirm-title="Logout"
@@ -268,63 +268,63 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                 <span>Profil Saya</span>
             </a>
             <?php if (!$_nav_is_books): ?>
-            <a href="<?= $_nav_root ?>books/index.php"
+            <a href="<?= $_nav_root ?>books/beranda"
                 title="Baca manga dan PDF digital"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-green-400 hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="book-open" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Books</span>
             </a>
             <?php endif; ?>
-            <a href="<?= $_nav_root ?>introduction.php"
+            <a href="<?= $_nav_root ?>introduction"
                 title="Panduan penggunaan fitur MEeL"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="compass" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Cara Navigasi</span>
             </a>
             <?php if ($_nav_is_video): ?>
-                <a href="<?= $_nav_root ?>music/index.php"
+                <a href="<?= $_nav_root ?>music/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-orange-400 hover:bg-orange-500/[.06] transition-all no-underline">
                     <i data-lucide="music" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Music</span>
                 </a>
             <?php elseif ($_nav_is_music): ?>
-                <a href="<?= $_nav_root ?>video/index.php"
+                <a href="<?= $_nav_root ?>video/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-red-400 hover:bg-red-500/[.06] transition-all no-underline">
                     <i data-lucide="play" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Video</span>
                 </a>
             <?php elseif ($_nav_is_books): ?>
-                <a href="<?= $_nav_root ?>video/index.php"
+                <a href="<?= $_nav_root ?>video/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-red-400 hover:bg-red-500/[.06] transition-all no-underline">
                     <i data-lucide="play" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Video</span>
                 </a>
-                <a href="<?= $_nav_root ?>music/index.php"
+                <a href="<?= $_nav_root ?>music/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-orange-400 hover:bg-orange-500/[.06] transition-all no-underline">
                     <i data-lucide="music" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Music</span>
                 </a>
             <?php endif; ?>
             <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['member', 'admin'])): ?>
-                <a href="<?= $_nav_root ?>drive/index.php"
+                <a href="<?= $_nav_root ?>drive/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="hard-drive" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Drive</span>
                 </a>
             <?php endif; ?>
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                <a href="upload.php"
+                <a href="upload"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="upload-cloud" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Upload Media</span>
                 </a>
-                <a href="<?= $_nav_root ?>admin/index.php"
+                <a href="<?= $_nav_root ?>admin/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-red-400 hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="settings" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Admin Panel</span>
                 </a>
             <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'member'): ?>
-                <a href="upload.php"
+                <a href="upload"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
                     <i data-lucide="upload-cloud" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Upload</span>
@@ -332,7 +332,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             <?php endif; ?>
             <div class="mx-6 my-3 h-px bg-white/[.05]"></div>
 
-            <a href="<?= $_nav_root ?>update.php"
+            <a href="<?= $_nav_root ?>update"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-500 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="radio" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Changelog</span>
@@ -340,7 +340,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         </nav>
 
         <div class="border-t border-white/[.05] p-5">
-            <a href="<?= $_nav_root ?>auth/logout.php"
+            <a href="<?= $_nav_root ?>auth/logout"
                 data-meel-confirm-link
                 data-meel-confirm-size="sm"
                 data-meel-confirm-title="Logout"
@@ -355,17 +355,17 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 <?php else: ?>
     <!-- Belum login - DESKTOP -->
     <div class="hidden sm:flex items-center gap-2">
-        <a href="<?= $_nav_root ?>auth/login.php"
+        <a href="<?= $_nav_root ?>auth/login"
             title="Login"
             class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/40">
             LOGIN
         </a>
-        <a href="<?= $_nav_root ?>auth/register.php"
+        <a href="<?= $_nav_root ?>auth/register"
             title="Daftar"
             class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-gray-900/30">
             DAFTAR
         </a>
-        <a href="<?= $_nav_root ?>introduction.php"
+        <a href="<?= $_nav_root ?>introduction"
             class="text-gray-500 hover:text-white transition-all p-2 rounded-lg hover:bg-white/5"
             title="Cara Bernavigasi">
             <i data-lucide="compass" class="w-4 h-4"></i>
@@ -407,42 +407,42 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
         <!-- Drawer menu items -->
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
-            <a href="<?= $_nav_root ?>auth/login.php"
+            <a href="<?= $_nav_root ?>auth/login"
                 class="flex items-center gap-4 px-6 py-4 text-base text-blue-400 hover:text-blue-300 hover:bg-blue-500/[.06] transition-all no-underline font-bold">
                 <i data-lucide="log-in" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Login</span>
             </a>
-            <a href="<?= $_nav_root ?>auth/register.php"
+            <a href="<?= $_nav_root ?>auth/register"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="user-plus" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Daftar</span>
             </a>
 
             <?php if ($_nav_is_video): ?>
-                <a href="<?= $_nav_root ?>music/index.php"
+                <a href="<?= $_nav_root ?>music/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-orange-400 hover:bg-orange-500/[.06] transition-all no-underline">
                     <i data-lucide="music" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Music</span>
                 </a>
             <?php elseif ($_nav_is_music): ?>
-                <a href="<?= $_nav_root ?>video/index.php"
+                <a href="<?= $_nav_root ?>video/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-red-400 hover:bg-red-500/[.06] transition-all no-underline">
                     <i data-lucide="play" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Video</span>
                 </a>
             <?php elseif ($_nav_is_books): ?>
-                <a href="<?= $_nav_root ?>video/index.php"
+                <a href="<?= $_nav_root ?>video/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-red-400 hover:bg-red-500/[.06] transition-all no-underline">
                     <i data-lucide="play" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Video</span>
                 </a>
-                <a href="<?= $_nav_root ?>music/index.php"
+                <a href="<?= $_nav_root ?>music/beranda"
                     class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-orange-400 hover:bg-orange-500/[.06] transition-all no-underline">
                     <i data-lucide="music" class="w-5 h-5 flex-shrink-0"></i>
                     <span>Music</span>
                 </a>
             <?php endif; ?>
-            <a href="<?= $_nav_root ?>introduction.php"
+            <a href="<?= $_nav_root ?>introduction"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="compass" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Introduction</span>
@@ -478,12 +478,10 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         if (!drawer) return;
         const open = drawer.classList.contains('open');
         if (open) {
-            // PROSES MENUTUP
             drawer.style.transform = '';
             overlay.classList.add('hidden');
             drawer.classList.remove('open');
 
-            // Lepas kunci scroll di Body dan HTML
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
 
@@ -500,7 +498,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             }, 300);
 
         } else {
-            // PROSES MEMBUKA
             drawer.classList.remove('hidden');
             drawer.classList.add('flex');
 
@@ -511,7 +508,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             overlay.classList.remove('hidden');
 
-            // Kunci paksa scroll di Body dan HTML
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
 
@@ -522,7 +518,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         }
     }
 
-    // Fungsi pembantu untuk menangani intersep klik di area utama
     function closeDrawerOnMainClick(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -538,12 +533,10 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         if (!drawer) return;
         const open = drawer.classList.contains('open');
         if (open) {
-            // PROSES MENUTUP
             drawer.style.transform = '';
             overlay.classList.add('hidden');
             drawer.classList.remove('open');
 
-            // Lepas kunci scroll
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
 
@@ -559,7 +552,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                 }
             }, 300);
         } else {
-            // PROSES MEMBUKA
             drawer.classList.remove('hidden');
             drawer.classList.add('flex');
 
@@ -570,7 +562,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             overlay.classList.remove('hidden');
 
-            // Kunci scroll
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
 

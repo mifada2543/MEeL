@@ -14,14 +14,14 @@
        font-size:9px;color:rgba(239,68,68,.65);text-align:left;line-height:1.65;
        white-space:pre-wrap;word-break:break-all"></div>
   <div style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap;justify-content:center">
-    <a href="upload_advanced.php" class="meel-nav-btn" style="color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07)">
+    <a href="upload" class="meel-nav-btn" style="color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <polyline points="1 4 1 10 7 10" />
         <path d="M3.51 15a9 9 0 1 0 .49-3.28" />
       </svg>
       Coba Lagi
     </a>
-    <a href="index.php" class="meel-nav-btn" style="color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
+    <a href="./" class="meel-nav-btn" style="color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
       Beranda
     </a>
   </div>

@@ -88,12 +88,12 @@ if (!headers_sent()) {
 
 // ─── Modul asal (dari referer) → tema warna & label ───
 $modules = [
-    'video'   => ['accent' => '#ef4444', 'accent2' => '#f87171', 'label' => 'Video Library', 'back' => '../video/index.php'],
-    'music'   => ['accent' => '#f97316', 'accent2' => '#fb923c', 'label' => 'Music Library', 'back' => '../music/index.php'],
-    'books'   => ['accent' => '#eab308', 'accent2' => '#facc15', 'label' => 'Book Library', 'back' => '../books/index.php'],
-    'drive'   => ['accent' => '#3b82f6', 'accent2' => '#60a5fa', 'label' => 'Drive', 'back' => '../drive/index.php'],
-    'admin'   => ['accent' => '#a855f7', 'accent2' => '#c084fc', 'label' => 'Dashboard Admin', 'back' => '../admin/index.php'],
-    'profile' => ['accent' => '#22d3ee', 'accent2' => '#67e8f9', 'label' => 'Profil', 'back' => '../profile/index.php'],
+    'video'   => ['accent' => '#ef4444', 'accent2' => '#f87171', 'label' => 'Video Library', 'back' => '../video/beranda'],
+    'music'   => ['accent' => '#f97316', 'accent2' => '#fb923c', 'label' => 'Music Library', 'back' => '../music/beranda'],
+    'books'   => ['accent' => '#eab308', 'accent2' => '#facc15', 'label' => 'Book Library', 'back' => '../books/beranda'],
+    'drive'   => ['accent' => '#3b82f6', 'accent2' => '#60a5fa', 'label' => 'Drive', 'back' => '../drive/beranda'],
+    'admin'   => ['accent' => '#a855f7', 'accent2' => '#c084fc', 'label' => 'Dashboard Admin', 'back' => '../admin/beranda'],
+    'profile' => ['accent' => '#22d3ee', 'accent2' => '#67e8f9', 'label' => 'Profil', 'back' => '../profile/'],
 ];
 
 $module = null;
@@ -112,7 +112,7 @@ if (isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER'] !== '') {
 }
 
 // ─── Tombol kembali: ?back= → referer GET → home modul → hub ───
-$action_pages = ['delete.php', 'stream.php', 'action.php', 'actions.php', 'post_encode.php', 'playlist_action.php', 'transcode.php'];
+$action_pages = ['delete.php', 'stream.php', 'action.php', 'actions.php', 'post_encode.php', 'playlist_action.php', 'transcode.php', 'delete', 'stream', 'playlist-action', 'transcode'];
 $ref_is_action = false;
 foreach ($action_pages as $ap) {
     if (str_contains($ref_path, $ap)) {
@@ -121,7 +121,7 @@ foreach ($action_pages as $ap) {
     }
 }
 
-$back       = $meel_base . '/index.php';
+$back       = $meel_base . '/';
 $back_label = 'Kembali Ke Hub';
 if (isset($_GET['back']) && is_string($_GET['back']) && $_GET['back'] !== '') {
     $raw = $_GET['back'];
@@ -282,7 +282,7 @@ include __DIR__ . '/../partials/scripts.php';
                     <i data-lucide="arrow-left" class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1"></i>
                     <?= htmlspecialchars($back_label) ?>
                 </a>
-                <a href="<?= $meel_base ?>/index.php"
+                <a href="<?= $meel_base ?>"
                     class="group relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/[.04] border border-white/[.08] hover:bg-white/[.08] text-slate-300 font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0">
                     <i data-lucide="home" class="w-4 h-4"></i>
                     Ke Halaman Utama

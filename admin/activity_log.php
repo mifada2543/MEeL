@@ -7,6 +7,9 @@ include_once '../modules/core/helpers.php';
 
 // Guard terpusat: harus login + role admin
 require_admin($conn);
+require_once __DIR__ . '/../modules/media/AdminActivityRepository.php';
+
+$logRepo = new AdminActivityRepository($conn);
 
 // ─── Filter & Pagination ───
 $action_filter = $_GET['action'] ?? '';
@@ -14,7 +17,6 @@ $search_q     = trim($_GET['q'] ?? '');
 $days         = max(1, min(365, (int)($_GET['days'] ?? 7)));
 $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 50;
-$offset       = ($page - 1) * $per_page;
 
 // ─── Clear Old Logs (POST) ───
 $clear_msg = '';
@@ -23,20 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
         $clear_msg = 'CSRF Token tidak valid.';
     } else {
         $clear_days = max(1, (int)($_POST['clear_days'] ?? 30));
-        $stmt_del = $conn->prepare("DELETE FROM activity_log WHERE created_at < NOW() - INTERVAL ? DAY");
-        $stmt_del->bind_param("i", $clear_days);
-        $stmt_del->execute();
-        $deleted = $stmt_del->affected_rows;
-        $next_id = 1;
-        $max_res = $conn->query("SELECT MAX(id) AS max_id FROM activity_log");
+        $deleted    = $logRepo->clearOlderThan($clear_days);
+        $next_id    = 1;
+        $max_res    = $conn->query('SELECT MAX(id) AS max_id FROM activity_log');
         if ($max_res) {
             $max_row = $max_res->fetch_assoc();
             $next_id = $max_row['max_id'] ? (int)$max_row['max_id'] + 1 : 1;
-            $conn->query("ALTER TABLE activity_log AUTO_INCREMENT = " . (int)$next_id);
         }
-
         $clear_msg = "Berhasil menghapus {$deleted} log lebih dari {$clear_days} hari. Auto-increment di-reset ke {$next_id}.";
-        $stmt_del->close();
     }
 }
 
@@ -45,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $clear_msg = 'CSRF Token tidak valid.';
     } else {
-        if ($conn->query("TRUNCATE TABLE activity_log")) {
+        if ($logRepo->clearAll()) {
             $clear_msg = 'Semua log aktivitas berhasil dihapus. Auto-increment telah di-reset ke 1.';
         } else {
             $clear_msg = 'Gagal menghapus log: ' . $conn->error;
@@ -53,100 +49,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     }
 }
 
-// ─── Build Query ───
-$where_conditions = ["1=1"];
-$params = [];
-$types  = "";
+// ─── Query via repository (filter, count, rows, actions, stats) ───
+$logRepo->buildFilter($action_filter, $search_q, $days);
 
-if (!empty($action_filter)) {
-    $where_conditions[] = "al.action = ?";
-    $params[] = $action_filter;
-    $types .= "s";
-}
-
-if (!empty($search_q)) {
-    $where_conditions[] = "(u.username LIKE ? OR al.ip_address LIKE ?)";
-    $search_like = "%{$search_q}%";
-    $params[] = $search_like;
-    $params[] = $search_like;
-    $types .= "ss";
-}
-
-// Batasi default ke N hari terakhir
-$where_conditions[] = "al.created_at >= NOW() - INTERVAL ? DAY";
-$params[] = $days;
-$types .= "i";
-
-$where_sql = implode(" AND ", $where_conditions);
-
-// ─── Count total ───
-$stmt_count = $conn->prepare("SELECT COUNT(*) AS total FROM activity_log al LEFT JOIN users u ON al.user_id = u.id WHERE {$where_sql}");
-if (!empty($params)) {
-    $stmt_count->bind_param($types, ...$params);
-}
-$stmt_count->execute();
-$total_rows = (int)$stmt_count->get_result()->fetch_assoc()['total'];
-$stmt_count->close();
+$total_rows = $logRepo->countFiltered();
 $total_pages = max(1, (int)ceil($total_rows / $per_page));
 $page = min($page, $total_pages); // Cegah offset tak berguna
 $offset = ($page - 1) * $per_page;
 
-// ─── Fetch rows ───
-$stmt_rows = $conn->prepare(
-    "SELECT al.*, u.username
-     FROM activity_log al
-     LEFT JOIN users u ON al.user_id = u.id
-     WHERE {$where_sql}
-     ORDER BY al.created_at DESC
-     LIMIT ? OFFSET ?"
-);
-$all_params = array_merge($params, [$per_page, $offset]);
-$all_types  = $types . "ii";
-$stmt_rows->bind_param($all_types, ...$all_params);
-$stmt_rows->execute();
-$rows = $stmt_rows->get_result();
-$stmt_rows->close();
-
-// ─── Get distinct actions for filter dropdown ───
-$actions_res = $conn->query("SELECT DISTINCT action FROM activity_log ORDER BY action ASC");
-$all_actions = [];
-if ($actions_res) {
-    while ($a = $actions_res->fetch_assoc()) {
-        $all_actions[] = $a['action'];
-    }
-}
-
-// ─── Stats ───
-$stats_res = $conn->query("SELECT COUNT(*) AS total, COUNT(DISTINCT user_id) AS unique_users FROM activity_log WHERE created_at >= NOW() - INTERVAL 7 DAY");
-$stats = $stats_res ? $stats_res->fetch_assoc() : ['total' => 0, 'unique_users' => 0]; // ─── Helper: Export Query ───
-function export_query_data(mysqli $conn, string $where_sql, array $params, string $types): array
-{
-    $stmt = $conn->prepare(
-        "SELECT al.*, u.username
-         FROM activity_log al
-         LEFT JOIN users u ON al.user_id = u.id
-         WHERE {$where_sql}
-         ORDER BY al.created_at DESC"
-    );
-    if (!empty($params)) {
-        $stmt->bind_param($types, ...$params);
-    }
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $rows = [];
-    while ($r = $result->fetch_assoc()) {
-        $rows[] = $r;
-    }
-    $stmt->close();
-    return $rows;
-}
+$rows       = $logRepo->fetchPage($per_page, $offset);
+$all_actions = $logRepo->getDistinctActions();
+$stats      = $logRepo->getWeeklyStats();
 
 // ─── Multi-Format Export ───
 $export_format = $_GET['export'] ?? '';
 if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $timestamp = date('Y-m-d_H-i-s');
     $filename_base = "activity-log-export-{$timestamp}";
-    $rows = export_query_data($conn, $where_sql, $params, $types);
+    $rows = $logRepo->fetchAll();
 
     switch ($export_format) {
         // ─── CSV ───
@@ -252,7 +172,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
 // ─── Preview Handler ───
 if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['format'] ?? '', ['csv', 'json', 'xls'], true)) {
     $preview_format = $_GET['format'];
-    $all_rows = export_query_data($conn, $where_sql, $params, $types);
+    $all_rows = $logRepo->fetchAll();
     $preview_total = count($all_rows);
     $preview_limit = 15;
     $preview_rows = array_slice($all_rows, 0, $preview_limit);
@@ -484,51 +404,11 @@ include __DIR__ . '/../partials/scripts.php';
                     <i data-lucide="filter" class="w-3.5 h-3.5"></i>
                     Terapkan
                 </button>
-                <a href="activity_log.php"
+                <a href="activity-log"
                     class="text-[10px] text-gray-500 hover:text-white px-4 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-2 rounded-xl hover:bg-white/[.03]">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     Reset
-                </a><span class="text-white/10 text-[10px]">|</span>
-                <div class="flex items-center gap-1">
-                    <button type="button" onclick="previewExport('csv')"
-                        class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
-                        title="Preview CSV">
-                        <i data-lucide="eye" class="w-3 h-3"></i>
-                    </button>
-                    <span class="text-white/10 text-[10px]">|</span>
-                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'csv'])) ?>"
-                        class="text-[10px] text-emerald-500 hover:text-emerald-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-emerald-500/[.06] border border-transparent hover:border-emerald-500/20 font-bold"
-                        title="Download CSV">
-                        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
-                        CSV
-                    </a>
-                    <span class="text-white/10 text-[10px]">|</span>
-                    <button type="button" onclick="previewExport('json')"
-                        class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
-                        title="Preview JSON">
-                        <i data-lucide="eye" class="w-3 h-3"></i>
-                    </button>
-                    <span class="text-white/10 text-[10px]">|</span>
-                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'json'])) ?>"
-                        class="text-[10px] text-sky-500 hover:text-sky-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-sky-500/[.06] border border-transparent hover:border-sky-500/20 font-bold"
-                        title="Download JSON">
-                        <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
-                        JSON
-                    </a>
-                    <span class="text-white/10 text-[10px]">|</span>
-                    <button type="button" onclick="previewExport('xls')"
-                        class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
-                        title="Preview XLS">
-                        <i data-lucide="eye" class="w-3 h-3"></i>
-                    </button>
-                    <span class="text-white/10 text-[10px]">|</span>
-                    <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'xls'])) ?>"
-                        class="text-[10px] text-violet-500 hover:text-violet-400 px-2.5 py-3 transition-all uppercase tracking-wider inline-flex items-center gap-1.5 rounded-xl hover:bg-violet-500/[.06] border border-transparent hover:border-violet-500/20 font-bold"
-                        title="Download XLS">
-                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-                        XLS
-                    </a>
-                </div>
+                </a>
             </div>
         </div>
 
@@ -552,7 +432,6 @@ include __DIR__ . '/../partials/scripts.php';
                     <tbody class="divide-y divide-gray-800">
                         <?php if ($rows && $rows->num_rows > 0): ?>
                             <?php while ($row = $rows->fetch_assoc()):
-                                // Color-code by action type
                                 $action = $row['action'];
                                 if (str_contains($action, 'login') || str_contains($action, 'logout')) {
                                     $ac_color = 'text-blue-400 bg-blue-500/10 border-blue-500/20';

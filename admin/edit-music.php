@@ -6,7 +6,7 @@ require_once '../modules/core/japanese.php';
 
 // Proteksi: harus login
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 
@@ -16,18 +16,18 @@ $is_admin   = is_admin($conn);
 
 // Tolak guest
 if ($curr_role === 'guest') {
-    header("Location: ../index.php");
+    header("Location: ../");
     exit();
 }
 
 // ─── Back URL (smart referer) ───
-$back_url = $is_admin ? 'cookies.php' : '../music/index.php';
+$back_url = $is_admin ? 'analys' : '../music/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
     $host     = $_SERVER['HTTP_HOST'];
     if (parse_url($ref, PHP_URL_HOST) === $host) {
         $ref_path       = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages = ['edit-music.php', 'edit-video.php'];
+        $excluded_pages = ['edit-music.php', 'edit-music', 'edit-video.php', 'edit-video'];
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -38,11 +38,11 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         if (!$should_exclude) $back_url = $ref;
     }
 }
+require_once __DIR__ . '/../modules/media/MediaAdminRepository.php';
+$adminMedia = new MediaAdminRepository($conn);
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt_music = $conn->prepare("SELECT m.*, u.username AS uploader, u.profile_picture AS uploader_pfp FROM music m JOIN users u ON m.user_id = u.id WHERE m.id = ? LIMIT 1");
-$stmt_music->bind_param("i", $id);
-$stmt_music->execute();
-$music = $stmt_music->get_result()->fetch_assoc();
+$music = $adminMedia->getMedia('music', $id);
 if (!$music) {
     header("Location: ../err/?code=not_found");
     exit;
@@ -64,9 +64,7 @@ if (isset($_POST['update'])) {
         $album = trim($_POST['album'] ?? 'Single');
         $description = trim($_POST['description'] ?? '');
         $thumbnail_url = $music['thumbnail'];
-        // Handle cover thumbnail upload — konversi ke WebP
         if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
-            // Validasi ukuran file (maks 5MB)
             $max_size = 5 * 1024 * 1024;
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file cover maksimal 5MB.';
@@ -117,9 +115,7 @@ if (isset($_POST['update'])) {
         } else {
 
             $meta = generate_search_metadata($title, $artist, $album);
-            $stmt_update = $conn->prepare("UPDATE music SET title = ?, artist = ?, album = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
-            $stmt_update->bind_param("ssssssi", $title, $artist, $album, $description, $thumbnail_url, $meta, $id);
-            if ($stmt_update->execute()) {
+            if ($adminMedia->updateMusic($id, $title, $artist, $album, $description, $thumbnail_url, $meta)) {
                 $status = "success";
                 $music['title'] = $title;
                 $music['artist'] = $artist;
@@ -262,11 +258,11 @@ include __DIR__ . '/../partials/link.php';
                         <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Lihat Musik
                     </a>
                     <?php if ($is_admin): ?>
-                        <a href="index.php" class="btn-secondary" style="justify-content:center;">
+                        <a href="." class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Dashboard Admin
                         </a>
                     <?php else: ?>
-                        <a href="../profile/index.php" class="btn-secondary" style="justify-content:center;">
+                        <a href="../profile/" class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="user" style="width:13px;height:13px;"></i> Profil Saya
                         </a>
                     <?php endif; ?>
