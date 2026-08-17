@@ -340,7 +340,7 @@ function getMiniShell() {
 }
 function closeMiniPlayer() {
   isMiniPlayerActive &&
-    (player && player.pause(), (window.location.href = "index.php"));
+    (player && player.pause(), (window.location.href = "beranda"));
 }
 function updateMiniPlayerInfo(e, t) {
   const n = document.getElementById("mini-info-title"),

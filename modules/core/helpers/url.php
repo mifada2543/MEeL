@@ -34,7 +34,7 @@ if (!function_exists('resolve_binary')) {
     }
     return $candidates[0];
 }
-} // end function_exists('resolve_binary')
+}
 
 if (!function_exists('base_url')) {
 
@@ -53,7 +53,7 @@ function base_url(string $path = ''): string
     }
     return $base . '/' . ltrim($path, '/');
 }
-} // end function_exists('base_url')
+}
 
 if (!function_exists('detectProtocol')) {
 
@@ -81,7 +81,7 @@ function detectProtocol(): string
     // 5. Fallback
     return 'http';
 }
-} // end function_exists('detectProtocol')
+}
 
 if (!function_exists('time_ago')) {
 function time_ago(string|int $timestamp): string
@@ -95,7 +95,7 @@ function time_ago(string|int $timestamp): string
     }
     return 'Baru saja';
 }
-} // end function_exists('time_ago')
+}
 
 if (!function_exists('format_bytes')) {
 function format_bytes(int|float $bytes, int $precision = 2): string
@@ -107,4 +107,4 @@ function format_bytes(int|float $bytes, int $precision = 2): string
     $bytes /= pow(1024, $pow);
     return round($bytes, $precision) . ' ' . $units[$pow];
 }
-} // end function_exists('format_bytes')
+}

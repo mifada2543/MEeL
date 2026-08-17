@@ -123,7 +123,12 @@ window.goBackToLibrary = function () {
   // (mis. balik ke index lalu expand lagi). Buang.
   skipResumeModalOnce = false;
   var playlistId = window.MEEL_MUSIC_CONFIG?.playlistId;
-  var url = playlistId && playlistId > 0 ? "index.php?playlist_id=" + playlistId : "index.php";
+  // Route bersih: dari /music/watch, beranda = '/music/beranda' (relative
+  // '..' justru naik ke root → hub — sudah dibuktikan resolve-nya salah).
+  var url =
+    playlistId && playlistId > 0
+      ? "beranda?playlist_id=" + playlistId
+      : "beranda";
   if (window.meelNavigateView) {
     // AJAX partial-swap: audio-engine (dgn <audio> yg sedang berjalan)
     // TIDAK disentuh sama sekali di sini — cuma direparent oleh

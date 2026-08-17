@@ -1,23 +1,9 @@
-# Deny all web access — PHP include-only files
+# Security defaults for controllers
+# Catatan: akses langsung ke controllers/*.php kini di-301 oleh .htaccess root
+# ke rute bersih (api/*, admin/actions, dll.) — rule [F] lama dihapus karena
+# mengganggu redirect parent (per-dir processing). File include-only (kelas)
+# yang diakses langsung akan 301 → 404 oleh router, tetap tidak terekspos.
 Options -Indexes
-
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    # Izinkan file yang benar-benar ada (API endpoint seperti post_encode.php),
-    # blokir sisanya (termasuk redirect loop /err/err/err/...).
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^ - [F]
-</IfModule>
-
-<IfModule !mod_rewrite.c>
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order allow,deny
-        Deny from all
-    </IfModule>
-</IfModule>
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"

@@ -5,12 +5,10 @@
   document.addEventListener('DOMContentLoaded', function () {
     var deleteModal = document.getElementById('delete-modal');
     if (deleteModal) {
-      // Close on backdrop click
       deleteModal.addEventListener('click', function (e) {
         if (e.target === this) closeDeleteModal();
       });
     }
-    // Close on Escape key
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeDeleteModal();
     });

@@ -158,7 +158,6 @@
       container.appendChild(piece);
       pieces.push(piece);
     }
-    // Cleanup setelah animasi selesai
     setTimeout(function () {
       pieces.forEach(function (p) {
         if (p.parentNode) p.parentNode.removeChild(p);
@@ -181,8 +180,7 @@
     if (card.classList.contains("minimized")) {
       card.classList.remove("minimized");
     } else {
-      // Hanya bisa minimize kalau upload sudah complete
-      if (card.classList.contains("upload-prog-complete")) {
+    if (card.classList.contains("upload-prog-complete")) {
         card.classList.add("minimized");
       }
     }
@@ -351,8 +349,7 @@
         label.classList.remove("text-gray-400", "font-medium");
         label.classList.add("text-blue-400", "font-bold");
       }
-      // Build FormData manual
-      var fd = new FormData(form);
+    var fd = new FormData(form);
       fd.delete("file_drive");
       fd.append("file_drive", file, file.name);
       if (!fd.has("submit_upload")) {
@@ -363,7 +360,6 @@
   }
   // ─── XHR Upload (reusable) ───
   function startUpload(formData, fileName, totalSize) {
-    // Abort upload sebelumnya jika masih jalan
     if (currentXhr) {
       try {
         currentXhr.abort();

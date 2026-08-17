@@ -247,6 +247,66 @@ class MediaLibrary
         return $stmt->get_result();
     }
 
+    /**
+     * Slug URL untuk nama playlist: "Leo/Need" → "leo-need".
+     * Nama tanpa karakter alfanumerik (mis. aksara non-Latin) → "playlist".
+     */
+    public static function playlistSlug(string $name): string
+    {
+        $slug = strtolower(trim($name));
+        $slug = (string) preg_replace('/[^a-z0-9]+/', '-', $slug);
+        $slug = trim($slug, '-');
+        return $slug !== '' ? $slug : 'playlist';
+    }
+
+    /**
+     * Nama rute music/ yang dipesan — slug playlist yang bentrok diberi akhiran
+     * "-<id>" agar music/<slug> tidak menabrak halaman modul.
+     */
+    private const RESERVED_MUSIC_ROUTES = [
+        'index', 'beranda', 'watch', 'upload', 'search', 'load-more', 'stream',
+        'file', 'playlist', 'playlist-action',
+    ];
+
+    /**
+     * Peta id playlist → slug URL (mis. "miku"), unik per user.
+     * Slug yang bentrok (nama sama / slug kosong / nama rute modul dipesan)
+     * diberi akhiran "-<id>" agar deterministik — ORDER BY id ASC sama untuk
+     * pembuatan link & resolusi.
+     *
+     * @return array<int, string> id playlist → slug
+     */
+    public function getUserPlaylistRoutes(int $user_id): array
+    {
+        $routes = [];
+        $used   = [];
+        $res    = $this->conn->query("SELECT id, name FROM playlists WHERE user_id = " . (int) $user_id . " ORDER BY id ASC");
+        while ($row = $res->fetch_assoc()) {
+            $id   = (int) $row['id'];
+            $base = self::playlistSlug((string) $row['name']);
+            $slug = $base;
+            if (isset($used[$slug]) || in_array($slug, self::RESERVED_MUSIC_ROUTES, true)) {
+                $slug = $base . '-' . $id;
+            }
+            $used[$slug] = true;
+            $routes[$id] = $slug;
+        }
+        return $routes;
+    }
+
+    /**
+     * Resolve slug URL → id playlist milik user (kebalikan getUserPlaylistRoutes).
+     */
+    public function resolvePlaylistSlug(string $slug, int $user_id): int
+    {
+        foreach ($this->getUserPlaylistRoutes($user_id) as $id => $route) {
+            if ($route === $slug) {
+                return $id;
+            }
+        }
+        return 0;
+    }
+
     public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
     {
         $limit = $fetchLimit; // Fetch limit+1 untuk efficiently check hasMore
@@ -526,10 +586,8 @@ class BookUploader
             return ['success' => false, 'message' => 'Error: Data tidak lengkap atau tipe tidak valid.'];
         }
 
-        // 1. Thumbnail
         $thumb_name = $this->handleThumbnail($files['thumbnail'] ?? []);
 
-        // 2. File konten
         $content = ($type === 'pdf')
             ? $this->handlePdf($files['book_file'] ?? [], $title)
             : $this->handleManga($files['book_file'] ?? [], $title);
@@ -542,7 +600,6 @@ class BookUploader
             return ['success' => true, 'message' => $content['message']];
         }
 
-        // 4. Insert ke database
         return $this->insertBook($title, $author, $type, $content['has_chapters'], $category, $content['path_result'], $thumb_name, $user_id);
     }
 

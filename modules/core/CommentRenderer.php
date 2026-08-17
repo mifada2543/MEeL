@@ -148,7 +148,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
         render_comments((int)$c['id'], $grouped, $level + 1, $theme, $playlist_context);
     endforeach;
 }
-} // end function_exists('render_comments')
+}
 
 if (!function_exists('comment_preview')) {
 /**
@@ -181,7 +181,7 @@ function comment_preview(array $grouped, int $limit = 4): array
 
     return ['text' => $preview_txt, 'latest_comment' => $latest_comment, 'items' => $items];
 }
-} // end function_exists('comment_preview')
+}
 
 if (!function_exists('render_comment_empty_state')) {
 /* @param string $theme 'video' (merah) atau 'music' (oranye) */
@@ -190,4 +190,4 @@ function render_comment_empty_state(string $theme = 'video'): void
     $color = ($theme === 'music') ? 'text-gray-700' : 'text-gray-300';
     echo "<div class='py-10 text-center text-[10px] $color uppercase tracking-widest'>Jadilah komentar pertama.</div>";
 }
-} // end function_exists('render_comment_empty_state')
+}

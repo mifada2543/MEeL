@@ -48,7 +48,13 @@ function loadPlaylistById(id) {
   var savedLMUrl = null;
   var savedBtn = document.getElementById("load-more-btn");
   if (savedBtn) savedLMUrl = savedBtn.getAttribute("hx-get");
-  fetch("view_playlist.php?id=" + id + "&content_only=1")
+  var plEl = document.querySelector('[data-playlist-id="' + id + '"]');
+  var url =
+    plEl && plEl.dataset.playlistUrl
+      ? plEl.dataset.playlistUrl
+      : "playlist?id=" + id;
+  var sep = url.indexOf("?") === -1 ? "?" : "&";
+  fetch(url + sep + "content_only=1")
     .then(function (r) {
       return r.text();
     })
@@ -57,8 +63,11 @@ function loadPlaylistById(id) {
       if (!main) return;
       main.innerHTML = html;
       setActivePlaylist(id);
+      if (typeof resetLibraryFilters === "function") resetLibraryFilters();
+      if (typeof window.meelSyncViewTitle === "function")
+        window.meelSyncViewTitle();
       if (typeof history !== "undefined") {
-        history.pushState(null, "", "view_playlist.php?id=" + id);
+        history.pushState(null, "", url);
       }
       if (typeof lucide !== "undefined") lucide.createIcons();
       if (savedLMUrl) {
@@ -128,7 +137,6 @@ window.navigateToPlaylistMobile = function (id) {
   );
   if (label && activeBtn) label.textContent = activeBtn.textContent.trim();
 };
-// Close dropdown ketika klik di luar
 document.addEventListener("click", (e) => {
   const artistDropdown = document.getElementById("artist-options");
   const artistTrigger = e.target.closest("#custom-artist-dropdown");
@@ -201,12 +209,19 @@ function setActivePlaylist(id) {
 }
 window.loadPlaylistMobile = function (id) {
   if (!id) return;
-  htmx.ajax("GET", "view_playlist.php?id=" + id + "&content_only=1", {
+  var plEl = document.querySelector('[data-playlist-id="' + id + '"]');
+  var url =
+    plEl && plEl.dataset.playlistUrl
+      ? plEl.dataset.playlistUrl
+      : "playlist?id=" + id;
+  var sep = url.indexOf("?") === -1 ? "?" : "&";
+  htmx.ajax("GET", url + sep + "content_only=1", {
     target: "main",
     swap: "innerHTML",
-    pushUrl: "view_playlist.php?id=" + id,
+    pushUrl: url,
   });
   setActivePlaylist(id);
+  if (typeof resetLibraryFilters === "function") resetLibraryFilters();
 };
 window.resetActivePlaylist = function () {
   document.querySelectorAll(".pl-link").forEach(function (el) {
@@ -226,4 +241,22 @@ window.resetArtistHighlight = function () {
   allArtistBtns.forEach(function (btn) {
     btn.classList.remove("text-orange-500", "font-bold");
   });
+};
+// Reset pill format ke "All" — dipakai saat masuk playlist (sidebar beranda
+// tetap tampil, tapi state filter tidak boleh "mengikuti" pengguna ke playlist).
+window.resetFormatPills = function () {
+  document.querySelectorAll(".format-pill").forEach(function (el) {
+    el.classList.remove("active-orange", "active-green", "active-blue");
+  });
+  document
+    .querySelectorAll('a.format-pill[href*="format=all"]')
+    .forEach(function (el) {
+      el.classList.add("active-orange");
+    });
+};
+// Reset semua filter library (artist + format) — konsisten dengan sidebar
+// halaman playlist (tidak ada artist/format yang aktif).
+window.resetLibraryFilters = function () {
+  if (typeof resetArtistHighlight === "function") resetArtistHighlight();
+  if (typeof resetFormatPills === "function") resetFormatPills();
 };

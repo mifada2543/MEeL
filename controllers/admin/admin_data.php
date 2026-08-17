@@ -168,8 +168,7 @@ foreach ($check_map as $rel_path => $table) {
             }
         }
         else {
-            // Music / Books
-            if ($table === 'books' && (in_array($fname, $db_data['books_folders'], true) || in_array($fname, $db_data['books_thumbs'], true))) {
+                        if ($table === 'books' && (in_array($fname, $db_data['books_folders'], true) || in_array($fname, $db_data['books_thumbs'], true))) {
                 $is_orphan = false;
             } elseif ($table === 'music' && in_array($fname, $db_data['music_files'], true)) {
                 $is_orphan = false;
@@ -203,8 +202,7 @@ for ($i = 6; $i >= 0; $i--) {
         ) AS t
     ");
 
-    // Uploads per day
-    $uploads = __admin_get_count($conn, "
+        $uploads = __admin_get_count($conn, "
         SELECT COUNT(*) FROM (
             SELECT id FROM video WHERE DATE(upload_date) = '$date'
             UNION ALL
@@ -214,13 +212,11 @@ for ($i = 6; $i >= 0; $i--) {
         ) AS u
     ");
 
-    // Active users (activity_log entries)
-    $active_users = __admin_get_count($conn, "
+        $active_users = __admin_get_count($conn, "
         SELECT COUNT(DISTINCT user_id) FROM activity_log WHERE DATE(created_at) = '$date'
     ");
 
-    // New registrations per day
-    $new_users = __admin_get_count($conn, "
+        $new_users = __admin_get_count($conn, "
         SELECT COUNT(*) FROM users WHERE DATE(created_at) = '$date' AND role != 'guest'
     ");
 

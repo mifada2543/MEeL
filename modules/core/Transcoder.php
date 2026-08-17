@@ -18,8 +18,8 @@ require_once __DIR__ . '/../exceptions/ProcessException.php';
 require_once __DIR__ . '/../exceptions/DownloadException.php';
 require_once __DIR__ . '/../exceptions/TranscodeException.php';
 require_once __DIR__ . '/ProgressObserver.php';
-require_once __DIR__ . '/SsrfGuard.php';
-require_once __DIR__ . '/ValidatingProxy.php';
+require_once __DIR__ . '/../auth/SsrfGuard.php';
+require_once __DIR__ . '/../auth/ValidatingProxy.php';
 
 class Transcoder
 {

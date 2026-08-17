@@ -32,4 +32,4 @@ function generate_search_metadata(string $title, string $artist = '', string $al
     $combined = trim($original . ' ' . $title_analysis['romaji'] . $extra_romaji . ' ' . $title_analysis['english']);
     return mb_strtolower($combined, 'UTF-8');
 }
-} // end function_exists('generate_search_metadata')
+}

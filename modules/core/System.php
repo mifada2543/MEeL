@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/RateLimiter.php';
+require_once __DIR__ . '/../auth/RateLimiter.php';
 
 class System
 {

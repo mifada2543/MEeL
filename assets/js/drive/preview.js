@@ -56,7 +56,6 @@ function closePreview() {
   modal.classList.remove("flex");
   content.innerHTML = "";
 }
-// Click outside modal content to close
 (function () {
   var modal = document.getElementById("previewModal");
   if (modal) {

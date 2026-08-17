@@ -1,4 +1,5 @@
-# Deny all web access — PHP include-only files
+# Deny all web access — helper keamanan (authz, csrf, session, stream_auth,
+# mfa, user) hanya boleh di-include via PHP.
 Options -Indexes
 
 <IfModule mod_rewrite.c>
