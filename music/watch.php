@@ -353,6 +353,18 @@ $__vdir = function($dir) {
                     document.addEventListener('DOMContentLoaded', checkDescriptionLengthMusic);
                     document.body.addEventListener('htmx:afterOnLoad', checkDescriptionLengthMusic);
                     window.addEventListener('resize', checkDescriptionLengthMusic);
+                    const descContainer = document.querySelector('.desc-container');
+                    if (descContainer && 'IntersectionObserver' in window) {
+                        const descObserver = new IntersectionObserver((entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    descObserver.disconnect();
+                                    checkDescriptionLengthMusic();
+                                }
+                            });
+                        });
+                        descObserver.observe(descContainer);
+                    }
 </script>
             <?php endif; ?>
             <?php if ($is_logged_in): ?>
