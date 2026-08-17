@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Susun tetromino jatuh, bersihkan baris, dan cetak skor tertinggi!"
+    />
+    <meta property="og:title" content="MEeL — Tetris" />
+    <meta
+      property="og:description"
+      content="Susun tetromino jatuh, bersihkan baris, dan cetak skor tertinggi!"
+    />
+    <meta property="og:image" content="https://meel.local/assets/MEeL.png" />
+    <meta property="og:url" content="https://meel.local/arcade/tetris/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="manifest" href="../../assets/manifest.json" />
+    <title>MEeL — Tetris</title>
+    <link rel="icon" type="image/png" href="../../assets/MEeL.png" />
+    <link href="../../assets/css/tailwind.min.css" rel="stylesheet" />
+    <script src="../../assets/js/compatibilitas/lucide.js"></script>
+    <link href="../../assets/css/font.css" rel="stylesheet" />
+    <link href="assets/css/style.css" rel="stylesheet" />
+  </head>
+
+  <body
+    class="flex items-center justify-center min-h-dvh text-gray-200 px-3 py-4 sm:px-4 sm:py-6 lg:p-6 overflow-x-hidden"
+  >
+    <div
+      class="w-full max-w-4xl bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 lg:p-6 relative overflow-hidden backdrop-blur-lg flex flex-col lg:flex-row gap-4 lg:gap-6"
+    >
+      <div
+        class="absolute top-0 left-0 w-full h-1.5"
+        style="background: linear-gradient(to right, #a855f7, #6366f1)"
+      ></div>
+
+      <!-- Left / Game Area -->
+      <div class="flex-1 flex flex-col justify-between relative z-10">
+        <!-- Header -->
+        <div
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3"
+        >
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <h1
+                class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-violet-300 to-indigo-400 tracking-tight flex items-center gap-2"
+              >
+                <a href="../" class="text-inherit no-underline">MEeL — Tetris</a>
+              </h1>
+              <p class="text-[11px] sm:text-xs text-gray-400 mt-0.5 max-w-md">
+                Susun blok jatuh, bersihkan baris, jangan sampai menumpuk!
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 mt-1">
+              <button
+                id="resetScoreBtn"
+                class="p-2 bg-slate-950/80 hover:bg-slate-900 border border-slate-700 hover:border-purple-500/40 text-gray-400 hover:text-purple-400 rounded-xl transition-all duration-300 active:scale-95 flex items-center gap-1.5 justify-center shadow-md group text-xs font-semibold"
+                title="Reset High Score"
+              >
+                <svg
+                  class="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-500"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                  />
+                </svg>
+                <span>Reset High Score</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Score Display -->
+          <div
+            class="flex flex-wrap items-center gap-x-4 gap-y-2 bg-slate-950/90 px-4 py-2.5 rounded-xl border border-slate-800 pixel-font text-[9px] sm:text-[10px] shadow-inner w-full sm:w-auto justify-between sm:justify-start"
+          >
+            <div class="flex items-center gap-4">
+              <div>
+                HI <span id="hiScoreText" class="text-gray-400">00000</span>
+              </div>
+              <div>
+                SCORE <span id="scoreText" class="text-purple-400">00000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div
+          class="relative bg-slate-950 rounded-2xl border border-slate-800/80 overflow-hidden shadow-[inset_0_4px_20px_rgba(0,0,0,0.8)] flex items-center justify-center"
+        >
+          <canvas
+            id="gameCanvas"
+            width="320"
+            height="480"
+            class="w-full block"
+          ></canvas>
+
+          <!-- Start Screen -->
+          <div
+            id="startScreen"
+            class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-sm transition-opacity duration-300 cursor-pointer select-none"
+          >
+            <i
+              data-lucide="blocks"
+              class="w-14 h-14 text-purple-400 mb-4"
+            ></i>
+            <h2
+              class="pixel-font text-xs sm:text-sm mb-3 text-center text-white tracking-wider"
+            >
+              TEKAN SPASI ATAU TAP UNTUK MULAI
+            </h2>
+            <p class="text-xs text-gray-500 text-center px-4 max-w-md">
+              ← → geser • ↑ / X putar • ↓ turun cepat • SPASI jatuhkan • P
+              pause
+            </p>
+          </div>
+
+          <!-- Game Over Screen -->
+          <div
+            id="gameOverScreen"
+            class="absolute inset-0 flex flex-col items-center justify-center bg-black/85 backdrop-blur-sm hidden select-none"
+            style="opacity: 0; pointer-events: none"
+          >
+            <div class="flex flex-col items-center p-6">
+              <div
+                class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-full flex items-center justify-center mb-4 shadow-lg shadow-purple-500/20 ring-4 ring-purple-500/10"
+              >
+                <i data-lucide="trophy" class="w-8 h-8"></i>
+              </div>
+              <div
+                class="pixel-font text-purple-400 text-lg mb-2 tracking-widest"
+              >
+                GAME OVER
+              </div>
+              <div class="text-sm text-gray-400 mb-1">Skor Akhir</div>
+              <div
+                class="text-3xl font-extrabold text-white pixel-font mb-2"
+                id="finalScore"
+              >
+                00000
+              </div>
+              <div
+                id="newHighScore"
+                class="hidden text-[10px] font-bold text-yellow-400 uppercase tracking-widest animate-pulse mb-4"
+              >
+                <i data-lucide="sparkles" class="w-3 h-3 inline"></i> HIGH SCORE
+                BARU!
+              </div>
+              <button
+                id="restartBtn"
+                class="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white rounded-xl font-bold shadow-[0_0_20px_rgba(168,85,247,0.3)] transform active:scale-95 transition-all text-sm"
+              >
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                Main Lagi
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div class="grid grid-cols-5 gap-2 mt-4 sm:hidden">
+          <button
+            id="btn-left"
+            class="px-2 py-3 bg-purple-500/10 active:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold active:scale-95 select-none transition-all flex items-center justify-center"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+          </button>
+          <button
+            id="btn-rotate"
+            class="px-2 py-3 bg-purple-500/10 active:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold active:scale-95 select-none transition-all flex items-center justify-center"
+          >
+            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+          </button>
+          <button
+            id="btn-right"
+            class="px-2 py-3 bg-purple-500/10 active:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold active:scale-95 select-none transition-all flex items-center justify-center"
+          >
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+          </button>
+          <button
+            id="btn-down"
+            class="px-2 py-3 bg-purple-500/10 active:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold active:scale-95 select-none transition-all flex items-center justify-center"
+          >
+            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+          </button>
+          <button
+            id="btn-drop"
+            class="px-2 py-3 bg-indigo-500/20 active:bg-indigo-500/40 text-indigo-300 border border-indigo-500/40 rounded-xl text-xs font-bold active:scale-95 select-none transition-all flex items-center justify-center"
+          >
+            <i data-lucide="move-down" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <div
+          class="flex justify-between items-center mt-4 pt-4 border-t border-slate-800/60"
+        >
+          <span class="text-[11px] text-gray-600">MEeL Arcade — Tetris</span>
+          <span class="text-[11px] text-gray-600">Arrow / WASD / Space</span>
+        </div>
+      </div>
+    </div>
+
+    <script src="../../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../../assets/js/compatibilitas/script.min.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
+    <script src="assets/js/game.js"></script>
+  </body>
+</html>
