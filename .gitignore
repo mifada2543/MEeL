@@ -38,6 +38,12 @@ data_drive/private_admins/*
 !**/temp/.gitkeep
 !**/temp/.htaccess
 
+# ─── SEO (file & generator — khusus lokal/personal, tidak untuk di-commit) ───
+sitemap.xml
+robots.txt
+sitemap.php
+robots.php
+
 # ─── CACHE & TEMPORARY FILES ──────────────────────────
 .cache/
 cache/

@@ -7,7 +7,7 @@ DirectoryIndex index.php index.html
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-<FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|settings\.php|settings\.example\.php|cookies\.txt|auth\.php)$">
+<FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|settings\.php|settings\.example\.php|cookies\.txt|auth\.php|sitemap\.php|robots\.php)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -22,6 +22,10 @@ DirectoryIndex index.php index.html
     RewriteEngine On
     RewriteRule ^sw\.js$ sw.js.php [END]
 </IfModule>
+
+# ── SEO: /sitemap.xml & /robots.txt disajikan dari FILE FISIK (regenerate
+# via CLI: php sitemap.php [base-url]). Generator sitemap.php/robots.php
+# TIDAK boleh dieksekusi lewat browser — diblokir di FilesMatch di atas ──
 
 # ── Media storage: serve file upload dari MEEL_HDD_*_UPLOAD via PHP ──
 # (pengecualian front controller — endpoint streaming/range request tetap
