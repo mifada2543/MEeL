@@ -1,4 +1,21 @@
 if (typeof lucide !== "undefined") lucide.createIcons();
+// Sembunyikan file yang sedang diputar dari hasil pencarian: setiap request
+// music search otomatis membawa id track aktif (sessionStorage AUDIO_STATE)
+// sebagai parameter `exclude`, jadi track yang sedang diputar tidak muncul
+// duplikat di hasil search.
+document.addEventListener("htmx:configRequest", (e) => {
+  const path = e.detail?.path || e.detail?.requestConfig?.path || "";
+  if (!path.includes("/music/search") && !path.includes("search_music")) return;
+  let id = 0;
+  try {
+    const raw = sessionStorage.getItem(window.MEEL_KEYS?.AUDIO_STATE);
+    if (raw) {
+      const s = JSON.parse(raw);
+      id = s?.musicId ?? s?.id ?? 0;
+    }
+  } catch (err) {}
+  e.detail.parameters["exclude"] = String(id || 0);
+});
 document.addEventListener("DOMContentLoaded", () => {
   bootPlayerIndex();
 });

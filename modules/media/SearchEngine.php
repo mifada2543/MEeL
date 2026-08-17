@@ -30,17 +30,14 @@ class SearchEngine
 
     public function parseParams(): array
     {
-        $query   = self::sanitizeQuery($_GET['search'] ?? '');
-        $exclude = isset($_GET['exclude']) ? max(0, (int)$_GET['exclude']) : 0;
+        $query = self::sanitizeQuery($_GET['search'] ?? '');
 
         return [
             'query'   => $query,
-            // `exclude` (item yang sedang diputar) HANYA berlaku untuk
-            // rekomendasi (query kosong). Pencarian eksplisit (query non-kosong)
-            // selalu exclude=0 supaya hasilnya deterministik: query yang sama
-            // menampilkan hasil yang sama walau tombol Cari diklik berulang
-            // kali / item yang sedang diputar berganti (lihat MediaLibrary).
-            'exclude' => !empty($query) ? 0 : $exclude,
+            // `exclude` (item yang sedang diputar) diterapkan pada SEMUA
+            // pencarian (kosong maupun eksplisit) supaya file yang sedang
+            // diputar tidak muncul duplikat di hasil search.
+            'exclude' => isset($_GET['exclude']) ? max(0, (int)$_GET['exclude']) : 0,
             'offset'  => isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0,
             'sidebar' => $this->detectSidebar(),
             'target'  => $_SERVER['HTTP_HX_TARGET'] ?? '',
