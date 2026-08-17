@@ -43,6 +43,7 @@ GarbageCollector::cleanChessRooms($conn);
  * @var mysqli_result $banned_ips
  * @var object $sys
  * @var array $chart_activity
+ * @var array $server_stats
  */
 ?>
 <!DOCTYPE html>
@@ -208,6 +209,115 @@ include __DIR__ . '/../partials/scripts.php';
                     Full Reports
                 </a>
 
+            </div>
+        </div>
+
+        <!-- Server Stats -->
+        <div class="glass p-6 rounded-3xl mb-8">
+            <div class="flex items-center gap-2 mb-6">
+                <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
+                <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Server Stats — <?= htmlspecialchars($server_stats['info']['hostname'] ?? 'Unknown') ?></h3>
+                <span class="ml-auto text-[8px] text-gray-600 font-mono">Uptime: <?= $server_stats['uptime']['text'] ?></span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <?php
+                // CPU
+                $cpu_color = $server_stats['cpu']['usage_perc'] > 80 ? 'red' : ($server_stats['cpu']['usage_perc'] > 50 ? 'yellow' : 'green');
+                // RAM
+                $ram_color = $server_stats['ram']['usage_perc'] > 80 ? 'red' : ($server_stats['ram']['usage_perc'] > 50 ? 'yellow' : 'cyan');
+                // SWAP
+                $swap_color = $server_stats['swap']['usage_perc'] > 50 ? 'red' : 'gray';
+                // Network
+                $net_rx = $server_stats['network']['rx'];
+                $net_tx = $server_stats['network']['tx'];
+                $net_fmt = function ($bytes) {
+                    if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+                    if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
+                    if ($bytes >= 1024) return round($bytes / 1024, 2) . ' KB';
+                    return $bytes . ' B';
+                };
+
+                $stat_cards = [
+                    [
+                        'label' => 'CPU Load',
+                        'value' => $server_stats['cpu']['load_1m'],
+                        'sub'   => $server_stats['cpu']['cores'] . ' Cores • ' . $server_stats['cpu']['usage_perc'] . '%',
+                        'icon'  => 'cpu',
+                        'color' => $cpu_color,
+                        'bar'   => $server_stats['cpu']['usage_perc'],
+                    ],
+                    [
+                        'label' => 'RAM Usage',
+                        'value' => $net_fmt($server_stats['ram']['used']),
+                        'sub'   => $net_fmt($server_stats['ram']['total']) . ' Total • ' . $server_stats['ram']['usage_perc'] . '%',
+                        'icon'  => 'memory-stick',
+                        'color' => $ram_color,
+                        'bar'   => $server_stats['ram']['usage_perc'],
+                    ],
+                    [
+                        'label' => 'Swap',
+                        'value' => $net_fmt($server_stats['swap']['used']),
+                        'sub'   => $net_fmt($server_stats['swap']['total']) . ' Total • ' . $server_stats['swap']['usage_perc'] . '%',
+                        'icon'  => 'hard-drive',
+                        'color' => $swap_color,
+                        'bar'   => $server_stats['swap']['usage_perc'],
+                    ],
+                    [
+                        'label' => 'Network (Total)',
+                        'value' => $net_fmt($net_rx),
+                        'sub'   => '↑ ' . $net_fmt($net_tx) . ' TX',
+                        'icon'  => 'network',
+                        'color' => 'blue',
+                        'bar'   => 0,
+                    ],
+                ];
+
+                foreach ($stat_cards as $c):
+                    $bar_color = match($c['color']) {
+                        'red'    => 'bg-red-500',
+                        'yellow' => 'bg-yellow-500',
+                        'green'  => 'bg-green-500',
+                        'cyan'   => 'bg-cyan-500',
+                        'blue'   => 'bg-blue-500',
+                        default  => 'bg-gray-500',
+                    };
+                    $text_color = match($c['color']) {
+                        'red'    => 'text-red-400',
+                        'yellow' => 'text-yellow-400',
+                        'green'  => 'text-green-400',
+                        'cyan'   => 'text-cyan-400',
+                        'blue'   => 'text-blue-400',
+                        default  => 'text-gray-400',
+                    };
+                ?>
+                    <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="<?= $c['icon'] ?>" class="w-3.5 h-3.5 <?= $text_color ?>"></i>
+                            <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest"><?= $c['label'] ?></span>
+                        </div>
+                        <p class="text-xl font-black text-white mb-1"><?= $c['value'] ?></p>
+                        <p class="text-[10px] text-gray-500 font-medium mb-3"><?= $c['sub'] ?></p>
+                        <?php if ($c['bar'] > 0): ?>
+                            <div class="w-full bg-gray-800/80 h-1.5 rounded-full">
+                                <div class="<?= $bar_color ?> h-full rounded-full transition-all" style="width:<?= $c['bar'] ?>%"></div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- System Info Row -->
+            <div class="flex flex-wrap gap-4 text-[10px]">
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">OS:</span> <?= htmlspecialchars($server_stats['info']['os']) ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Kernel:</span> <?= htmlspecialchars($server_stats['info']['kernel']) ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">PHP:</span> <?= $server_stats['info']['php_version'] ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Load Avg:</span> <?= $server_stats['cpu']['load_1m'] ?> / <?= $server_stats['cpu']['load_5m'] ?> / <?= $server_stats['cpu']['load_15m'] ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Processes:</span> <?= $server_stats['info']['processes'] ?></span>
             </div>
         </div>
 

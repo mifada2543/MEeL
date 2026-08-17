@@ -45,6 +45,9 @@ require_once __DIR__ . '/../../modules/core/System.php';
 $sys           = new System($conn);
 $storage_usage = $sys->getStorageUsage();
 
+// ─── SERVER STATS ───
+$server_stats = $sys->getServerStats();
+
 $ssd_free  = $storage_usage['ssd']['free'];
 $ssd_total = $storage_usage['ssd']['total'];
 $ssd_used  = $storage_usage['ssd']['used'];

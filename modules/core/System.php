@@ -4,9 +4,9 @@ require_once __DIR__ . '/../auth/RateLimiter.php';
 
 class System
 {
-    private $conn;
+    private mysqli $conn;
 
-    public function __construct($db_connection)
+    public function __construct(mysqli $db_connection)
     {
         $this->conn = $db_connection;
     }
@@ -165,6 +165,110 @@ class System
             return ['allowed' => false, 'minutes' => $rem];
         }
         return ['allowed' => true];
+    }
+
+    // ─── SERVER STATS ───
+
+    public function getServerStats(): array
+    {
+        // CPU Load Average (1, 5, 15 menit)
+        $load = sys_getloadavg();
+        $cpu_load_1m  = $load[0] ?? 0;
+        $cpu_load_5m  = $load[1] ?? 0;
+        $cpu_load_15m = $load[2] ?? 0;
+
+        // CPU Cores
+        $cpu_cores = (int) @exec('nproc') ?: 1;
+        $cpu_perc  = ($cpu_cores > 0) ? round(($cpu_load_1m / $cpu_cores) * 100, 1) : 0;
+        $cpu_perc  = min($cpu_perc, 100);
+
+        // RAM Usage
+        $mem_total = (float) @exec('grep MemTotal /proc/meminfo | awk \'{print $2}\'') * 1024;
+        $mem_avail = (float) @exec('grep MemAvailable /proc/meminfo | awk \'{print $2}\'') * 1024;
+        $mem_used  = $mem_total - $mem_avail;
+        $mem_perc  = ($mem_total > 0) ? round(($mem_used / $mem_total) * 100, 1) : 0;
+
+        // Swap Usage
+        $swap_total = (float) @exec('grep SwapTotal /proc/meminfo | awk \'{print $2}\'') * 1024;
+        $swap_free  = (float) @exec('grep SwapFree /proc/meminfo | awk \'{print $2}\'') * 1024;
+        $swap_used  = $swap_total - $swap_free;
+        $swap_perc  = ($swap_total > 0) ? round(($swap_used / $swap_total) * 100, 1) : 0;
+
+        // Uptime
+        $uptime_raw = @exec('cat /proc/uptime');
+        $uptime_sec = (float) explode(' ', $uptime_raw)[0];
+        $days  = floor($uptime_sec / 86400);
+        $hours = floor(($uptime_sec % 86400) / 3600);
+        $mins  = floor(($uptime_sec % 3600) / 60);
+
+        // Network (total bytes in/out)
+        $net_rx = 0;
+        $net_tx = 0;
+        $net_lines = @file('/proc/net/dev');
+        if ($net_lines) {
+            foreach ($net_lines as $line) {
+                if (preg_match('/^\s*(eth|ens|enp|wlan|lo):\s*(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/', $line, $m)) {
+                    if ($m[1] !== 'lo') {
+                        $net_rx += (int)$m[2];
+                        $net_tx += (int)$m[3];
+                    }
+                }
+            }
+        }
+
+        // Top Processes
+        $top_procs = [];
+        $ps_output = @exec('ps aux --sort=-%cpu | head -6 | tail -5');
+        // Fallback: baca langsung dari file
+        $ps_lines = @file('/proc/stat');
+
+        // Server Info
+        $hostname  = @exec('hostname');
+        $os_info   = @exec('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d\" -f2') ?: PHP_OS;
+        $kernel    = @exec('uname -r');
+        $php_ver   = phpversion();
+
+        // Process count
+        $proc_count = (int) @exec('ls /proc | grep -c \'^[0-9]\'');
+
+        return [
+            'cpu' => [
+                'cores'       => $cpu_cores,
+                'load_1m'     => round($cpu_load_1m, 2),
+                'load_5m'     => round($cpu_load_5m, 2),
+                'load_15m'    => round($cpu_load_15m, 2),
+                'usage_perc'  => $cpu_perc,
+            ],
+            'ram' => [
+                'total'  => $mem_total,
+                'used'   => $mem_used,
+                'avail'  => $mem_avail,
+                'usage_perc' => $mem_perc,
+            ],
+            'swap' => [
+                'total'  => $swap_total,
+                'used'   => $swap_used,
+                'usage_perc' => $swap_perc,
+            ],
+            'uptime' => [
+                'seconds' => (int) $uptime_sec,
+                'days'    => $days,
+                'hours'   => $hours,
+                'mins'    => $mins,
+                'text'    => "{$days}d {$hours}h {$mins}m",
+            ],
+            'network' => [
+                'rx' => $net_rx,
+                'tx' => $net_tx,
+            ],
+            'info' => [
+                'hostname'    => $hostname,
+                'os'          => $os_info,
+                'kernel'      => $kernel,
+                'php_version' => $php_ver,
+                'processes'   => $proc_count,
+            ],
+        ];
     }
 
     // ─── MANAGEMENT ───
