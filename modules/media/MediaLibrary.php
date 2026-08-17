@@ -137,17 +137,22 @@ class MediaLibrary
                 $stmt->bind_param("iii", $exclude, $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking
+            // Full-text search query — optimized dengan proper ranking.
+            // CATATAN: `exclude` TIDAK diterapkan pada pencarian eksplisit
+            // (query non-kosong) supaya hasilnya deterministik: query yang sama
+            // selalu menampilkan hasil yang sama, walau tombol Cari diklik
+            // berulang kali / video yang sedang diputar berubah. `exclude`
+            // hanya berlaku untuk rekomendasi (query kosong) di atas.
             $stmt = $this->conn->prepare(
                 "SELECT v.*, u.username AS uploader_name,
                  MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AS rank
                  FROM video v
                  JOIN users u ON v.user_id = u.id
-                 WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AND v.id != ?
+                 WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE)
                  ORDER BY rank DESC, v.upload_date DESC LIMIT ? OFFSET ?"
             );
 
-            $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
+            $stmt->bind_param("ssii", $q, $q, $limit, $offset);
         }
         // Query FULLTEXT malformed bisa crash endpoint — fallback ke hasil kosong.
         try {
@@ -172,13 +177,14 @@ class MediaLibrary
             );
             $stmt->bind_param("i", $exclude);
         } else {
+            // Sinkron dengan searchVideo(): pencarian eksplisit tidak pernah
+            // menerapkan `exclude` (lihat catatan di searchVideo).
             $stmt = $this->conn->prepare(
                 "SELECT COUNT(*) AS total FROM video v
                  JOIN users u ON v.user_id = u.id
-                 WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE)
-                   AND v.id != ?"
+                 WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE)"
             );
-            $stmt->bind_param("si", $q, $exclude);
+            $stmt->bind_param("s", $q);
         }
 
         try {
@@ -338,16 +344,20 @@ class MediaLibrary
                 $stmt->bind_param("ii", $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking
+            // Full-text search query — optimized dengan proper ranking.
+            // CATATAN: `exclude` TIDAK diterapkan pada pencarian eksplisit
+            // (query non-kosong) supaya hasilnya deterministik — sama seperti
+            // searchVideo(). `exclude` hanya berlaku untuk rekomendasi
+            // (query kosong) di atas.
             $stmt = $this->conn->prepare(
                 "SELECT m.*, u.username AS uploader,
                  (MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)) AS rank
                  FROM music m
                  JOIN users u ON m.user_id = u.id
-                 WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE) AND m.id != ?
+                 WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)
                  ORDER BY rank DESC, m.title ASC LIMIT ? OFFSET ?"
             );
-            $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
+            $stmt->bind_param("ssii", $q, $q, $limit, $offset);
         }
         // Query FULLTEXT malformed bisa crash endpoint — fallback ke hasil kosong.
         try {
@@ -372,13 +382,14 @@ class MediaLibrary
             );
             $stmt->bind_param("i", $exclude);
         } else {
+            // Sinkron dengan searchMusic(): pencarian eksplisit tidak pernah
+            // menerapkan `exclude` (lihat catatan di searchMusic).
             $stmt = $this->conn->prepare(
                 "SELECT COUNT(*) AS total FROM music m
                  JOIN users u ON m.user_id = u.id
-                 WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)
-                   AND m.id != ?"
+                 WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)"
             );
-            $stmt->bind_param("si", $q, $exclude);
+            $stmt->bind_param("s", $q);
         }
 
         try {

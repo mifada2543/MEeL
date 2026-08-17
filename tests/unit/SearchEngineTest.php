@@ -42,8 +42,20 @@ class SearchEngineTest extends TestCase
 
         $params = $this->searchEngine->parseParams();
         $this->assertSame('test query', $params['query']);
-        $this->assertSame(5, $params['exclude']);
+        // Pencarian eksplisit selalu exclude=0 → hasil deterministik.
+        $this->assertSame(0, $params['exclude']);
         $this->assertSame(10, $params['offset']);
+    }
+
+    public function testParseParamsKeepsExcludeOnlyForEmptyQuery(): void
+    {
+        // Query kosong = mode rekomendasi → exclude item yang sedang diputar.
+        $_GET['search'] = '';
+        $_GET['exclude'] = '7';
+
+        $params = $this->searchEngine->parseParams();
+        $this->assertSame('', $params['query']);
+        $this->assertSame(7, $params['exclude']);
     }
 
     public function testConstants(): void
