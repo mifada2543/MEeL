@@ -268,7 +268,7 @@ function log_drive_operation(...);                       // Drive audit trail
   guards — subtrees owned by other users (e.g. `temp/cache/` owned by another
   process) are skipped with an error log instead of a PHP warning
 
-### 11. `modules/core/RateLimiter.php`
+### 11. `modules/auth/RateLimiter.php`
 
 File-based rate limiter with `flock()` safety. Role-based limits (admin = unlimited, member = 2x).
 

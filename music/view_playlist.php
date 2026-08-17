@@ -3,32 +3,29 @@ require_once '../modules/core/helpers.php';
 meel_boot_session();
 include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
+require_once '../modules/media/PlaylistRepository.php';
 
 $playlist_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id     = $_SESSION['user_id'] ?? 0;
 $format_filter = $_GET['format'] ?? 'all';
 
-// Validasi playlist milik user
-$pl_stmt = $conn->prepare("SELECT * FROM playlists WHERE id = ? AND user_id = ?");
-$pl_stmt->bind_param("ii", $playlist_id, $user_id);
-$pl_stmt->execute();
-$playlist = $pl_stmt->get_result()->fetch_assoc();
+// URL slug: music/playlist/<nama-playlist> → id playlist milik user
+$library   = new MediaLibrary($conn);
+$pl_routes = $library->getUserPlaylistRoutes($user_id);
+if ($playlist_id === 0 && isset($_GET['slug']) && $_GET['slug'] !== '') {
+    $playlist_id = $library->resolvePlaylistSlug((string) $_GET['slug'], $user_id);
+}
+
+// Validasi playlist milik user + ambil lagunya lewat repository (tanpa duplikasi)
+$playlistsRepo = new PlaylistRepository($conn);
+$playlist      = $playlistsRepo->getOwnedPlaylist($playlist_id, $user_id);
 
 if (!$playlist) {
     $_GET['code'] = 'denied';
     include '../err/index.php';
     exit;
 }
-$songs_stmt = $conn->prepare("
-    SELECT m.*, pt.id as pivot_id
-    FROM music m
-    JOIN playlist_tracks pt ON m.id = pt.music_id
-    WHERE pt.playlist_id = ?
-    ORDER BY pt.added_at DESC, pt.id DESC
-");
-$songs_stmt->bind_param("i", $playlist_id);
-$songs_stmt->execute();
-$songs_query = $songs_stmt->get_result();
+$songs_query = $playlistsRepo->getTracks($playlist_id);
 $total_songs = $songs_query->num_rows;
 
 $first_song = null;
@@ -37,7 +34,6 @@ if ($total_songs > 0) {
     $songs_query->data_seek(0);
 }
 
-$library       = new MediaLibrary($conn);
 $artists       = $library->getArtists();
 $is_logged_in  = isset($_SESSION['user_id']);
 
@@ -49,11 +45,11 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
     <?php if (!$include_script): ?>
         <div class="mb-6">
             <a href="javascript:void(0)"
-                hx-get="index.php?content_only=1"
+                hx-get="beranda?content_only=1"
                 hx-target="main"
                 hx-swap="innerHTML"
-                hx-push-url="index.php"
-                onclick="if (typeof resetActivePlaylist === 'function') resetActivePlaylist(); if (typeof resetArtistHighlight === 'function') resetArtistHighlight();"
+                hx-push-url="beranda"
+                onclick="if (typeof resetActivePlaylist === 'function') resetActivePlaylist(); if (typeof resetArtistHighlight === 'function') resetArtistHighlight(); if (typeof resetFormatPills === 'function') resetFormatPills();"
                 class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-600 hover:text-orange-400 transition-all">
                 <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Library
             </a>
@@ -84,14 +80,14 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             </div>
             <div class="flex flex-wrap items-center gap-2 mt-4">
                 <?php if ($first_song): ?>
-                    <a href="watch.php?id=<?= $first_song['id'] ?>&playlist_id=<?= $playlist_id ?>"
+                    <a href="<?= base_url('/music/watch?id=' . (int)$first_song['id'] . '&playlist_id=' . (int)$playlist_id) ?>"
                         class="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white
                               px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest
                               transition-all shadow-lg shadow-orange-600/20 border border-orange-500/20">
                         <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Play All
                     </a>
                 <?php endif; ?>
-                <form action="playlist_action.php" method="POST"
+                <form action="playlist-action" method="POST"
                     onsubmit="return meelConfirmForm(event, { title:'Hapus Playlist', text:'Hapus seluruh playlist ini?', confirmButtonText:'HAPUS' })">
                     <input type="hidden" name="action" value="delete_playlist">
                     <input type="hidden" name="playlist_id" value="<?= $playlist_id ?>">
@@ -125,7 +121,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                 authorize_stream((int)$s['id']);
                 $s_ext   = strtolower(pathinfo($s['filename'], PATHINFO_EXTENSION));
                 $s_lbl   = $s_ext === 'ogg' ? 'opus' : $s_ext;
-                $watch_url = "watch.php?id={$s['id']}&playlist_id={$playlist_id}";
+                $watch_url = base_url('/music/watch?id=' . (int)$s['id'] . '&playlist_id=' . (int)$playlist_id);
             ?>
                 <div class="group grid grid-cols-[2rem_1fr_auto_2rem] items-center gap-4 px-3 py-2 rounded-xl
                             hover:bg-white/[.04] border border-transparent hover:border-white/[.05] transition-all duration-150
@@ -184,7 +180,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                     </span>
 
                     <!-- Hapus dari playlist -->
-                    <form action="playlist_action.php" method="POST"
+                    <form action="playlist-action" method="POST"
                         onsubmit="return meelConfirmForm(event, { title:'Hapus dari Playlist', text:'Hapus lagu ini dari playlist?', confirmButtonText:'HAPUS' })">
                         <input type="hidden" name="action" value="remove_from_playlist">
                         <input type="hidden" name="pivot_id" value="<?= $s['pivot_id'] ?>">
@@ -211,7 +207,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                 <div class="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-1">Playlist Kosong</div>
                 <div class="text-[10px] text-gray-700">Tambahkan lagu dari halaman player</div>
             </div>
-            <a href="index.php"
+            <a href="beranda"
                 class="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600/10 border border-orange-500/20
                       text-orange-400 text-[10px] font-black uppercase tracking-widest hover:bg-orange-600/20 transition-all">
                 <i data-lucide="library" class="w-3.5 h-3.5"></i> Buka Library
@@ -290,7 +286,7 @@ $__v = function($f) {
     <!-- NAVBAR — identik dengan index.php -->
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-5 h-14 flex items-center justify-between gap-2 sm:gap-4">
-            <a href="../index.php" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
+            <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
                 <div class="w-6 h-6 sm:w-7 sm:h-7 bg-orange-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="music" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -309,7 +305,7 @@ $__v = function($f) {
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs focus:outline-none focus:border-orange-500/40 transition-all text-gray-300"
                         autocomplete="off">
                 </div>
-                <a href="index.php"
+                <a href="beranda"
                     class="px-2.5 sm:px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-orange-500 hover:border-orange-500/30 transition-all flex-shrink-0">
                     <span class="hidden sm:inline">Library</span>
                     <i data-lucide="library" class="w-3.5 h-3.5 sm:hidden"></i>
@@ -334,13 +330,13 @@ $__v = function($f) {
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3">Format</div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="index.php?format=all"
+                        <a href="beranda?format=all"
                             class="format-pill <?= $format_filter === 'all' ? 'active-orange' : '' ?>">All</a>
-                        <a href="index.php?format=ogg"
+                        <a href="beranda?format=ogg"
                             class="format-pill <?= $format_filter === 'ogg' ? 'active-orange' : '' ?>">Opus</a>
-                        <a href="index.php?format=m4a"
+                        <a href="beranda?format=m4a"
                             class="format-pill <?= $format_filter === 'm4a' ? 'active-green' : '' ?>">M4A</a>
-                        <a href="index.php?format=mp3"
+                        <a href="beranda?format=mp3"
                             class="format-pill <?= $format_filter === 'mp3' ? 'active-blue' : '' ?>">MP3</a>
                     </div>
                 </div>
@@ -351,7 +347,7 @@ $__v = function($f) {
                         <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
                     </div>
                     <div class="space-y-0.5 max-h-[45vh] overflow-y-auto no-scrollbar">
-                        <a href="index.php"
+                        <a href="beranda"
                             class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all
                                  text-gray-600 hover:text-gray-300 hover:bg-white/[.03]">
                             <span>All Collections</span>
@@ -359,7 +355,7 @@ $__v = function($f) {
                         <?php
                         $artists->data_seek(0);
                         while ($a = $artists->fetch_assoc()): ?>
-                            <a href="index.php?artist=<?= urlencode($a['artist']) ?>"
+                            <a href="beranda?artist=<?= urlencode($a['artist']) ?>"
                                 class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all
                                      text-gray-600 hover:text-gray-300 hover:bg-white/[.03]">
                                 <span class="truncate"><?= htmlspecialchars($a['artist']) ?></span>
@@ -379,18 +375,21 @@ $__v = function($f) {
                             $my_pls = $library->getUserPlaylists($user_id);
                             while ($pl = $my_pls->fetch_assoc()):
                                 $is_active = ($pl['id'] == $playlist_id);
+                                $pl_route  = $pl_routes[$pl['id']] ?? ('playlist?id=' . (int) $pl['id']);
+                                $pl_sep    = str_contains($pl_route, '?') ? '&' : '?';
                             ?>
-                                <a href="view_playlist.php?id=<?= $pl['id'] ?>"
-                                    hx-get="view_playlist.php?id=<?= $pl['id'] ?>&content_only=1"
+                                <a href="<?= $pl_route ?>"
+                                    hx-get="<?= $pl_route . $pl_sep ?>content_only=1"
                                     hx-target="#playlist-main"
                                     hx-swap="innerHTML"
-                                    hx-push-url="view_playlist.php?id=<?= $pl['id'] ?>"
+                                    hx-push-url="<?= $pl_route ?>"
                                     class="sidebar-link flex items-center gap-2 px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all
                                          <?= $is_active
                                                ? 'active'
                                                : 'text-gray-600 hover:text-gray-300 hover:bg-white/[.03]' ?>
                                          pl-link"
                                     data-playlist-id="<?= $pl['id'] ?>"
+                                    data-playlist-url="<?= $pl_route ?>"
                                     onclick="setActivePlaylistSidebar(<?= $pl['id'] ?>)">
                                     <i data-lucide="disc-3" class="w-3 h-3 flex-shrink-0"></i>
                                     <span class="truncate"><?= htmlspecialchars($pl['name']) ?></span>
@@ -407,13 +406,13 @@ $__v = function($f) {
 
                     <!-- Format Pills (Mobile) -->
                     <div class="flex flex-wrap gap-2">
-                        <a href="index.php?format=all"
+                        <a href="beranda?format=all"
                             class="format-pill <?= $format_filter === 'all' ? 'active-orange' : '' ?>">All</a>
-                        <a href="index.php?format=ogg"
+                        <a href="beranda?format=ogg"
                             class="format-pill <?= $format_filter === 'ogg' ? 'active-orange' : '' ?>">Opus</a>
-                        <a href="index.php?format=m4a"
+                        <a href="beranda?format=m4a"
                             class="format-pill <?= $format_filter === 'm4a' ? 'active-green' : '' ?>">M4A</a>
-                        <a href="index.php?format=mp3"
+                        <a href="beranda?format=mp3"
                             class="format-pill <?= $format_filter === 'mp3' ? 'active-blue' : '' ?>">MP3</a>
                     </div>
 
@@ -465,9 +464,12 @@ $__v = function($f) {
                                         $my_pls2 = $library->getUserPlaylists($user_id);
                                         while ($pl = $my_pls2->fetch_assoc()):
                                             $pl_active = ($pl['id'] == $playlist_id);
+                                            $pl_route  = $pl_routes[$pl['id']] ?? ('playlist?id=' . (int) $pl['id']);
+                                            $pl_sep    = str_contains($pl_route, '?') ? '&' : '?';
                                         ?>
                                             <button onclick="navigateToPlaylistPL(<?= $pl['id'] ?>)"
                                                 data-playlist-id="<?= $pl['id'] ?>"
+                                                data-playlist-url="<?= $pl_route ?>"
                                                 class="w-full text-left px-4 py-2.5 text-xs transition-colors truncate <?= $pl_active ? 'text-orange-500 font-bold' : 'text-gray-300 hover:bg-white/[.04]' ?>">
                                                 <?= htmlspecialchars($pl['name']) ?>
                                             </button>
@@ -539,6 +541,10 @@ $__v = function($f) {
     <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
     <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
     <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/audio-engine.js<?= $__v('assets/js/shared/audio-engine.js') ?>"></script>
+    <script src="../assets/js/shared/view-router.js<?= $__v('assets/js/shared/view-router.js') ?>"></script>
     <script src="../assets/js/music/shared/mini-player.js<?= $__v('assets/js/music/shared/mini-player.js') ?>"></script>
     <script src="../assets/js/music/view_playlist/view_playlist.js<?= $__v('assets/js/music/view_playlist/view_playlist.js') ?>"></script>
 </body>

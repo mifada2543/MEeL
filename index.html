@@ -406,12 +406,12 @@
       <nav
         class="glass-nav w-full flex items-center justify-between px-4 sm:px-7 py-3 rounded-full"
       >
-        <a href="index.php" class="flex items-center gap-2.5 no-underline">
+        <a href="./" class="flex items-center gap-2.5 no-underline">
           <!-- SVG Vector logo fallback -->
           <div
             class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-mono font-black text-white text-xs shadow-lg shadow-blue-500/30"
           >
-            <img src="assets/MEeL.png" alt="MEeL Logo" class="w-5 h-5" onclick="window.location.href='index.php'" />
+            <img src="assets/MEeL.png" alt="MEeL Logo" class="w-5 h-5" onclick="window.location.href='./'" />
           </div>
           <span
             class="font-display font-black text-sm sm:text-[15px] tracking-tight uppercase text-white"
@@ -1293,7 +1293,6 @@
     </footer>
 
     <script>
-      // Inisialisasi ikon Lucide
       lucide.createIcons();
 
       // ── DEVICE CAPABILITY DETECTION ──
@@ -1325,7 +1324,6 @@
         toggleMenu();
       });
 
-      // Tutup menu drawer saat opsi menu dipilih
       mobileLinks.forEach((link) => {
         link.addEventListener("click", () => {
           if (mobileMenu.classList.contains("open")) {
@@ -1334,7 +1332,6 @@
         });
       });
 
-      // Tutup menu saat pengguna mengklik di luar drawer
       document.addEventListener("click", (e) => {
         if (
           mobileMenu.classList.contains("open") &&
@@ -1478,7 +1475,6 @@
         overlay.style.pointerEvents = "all";
         resetSlices();
 
-        // Slices sliding in
         slices.forEach((s, i) => {
           s.style.transform = "";
           setTimeout(() => s.classList.add("slice-in"), i * 30);
@@ -1493,7 +1489,6 @@
           });
           showLabel(id);
 
-          // Slices sliding out
           slices.forEach((s, i) => {
             s.classList.remove("slice-in");
             s.style.transform = "scaleY(1)";

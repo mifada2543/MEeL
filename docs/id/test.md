@@ -65,7 +65,7 @@ logs/tests/
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME, disk space, CSRF, dir_size, deteksi protokol (data provider) |
 | `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (tanpa MeCab) |
-| `GarbageCollectorTest.php` | 5 | Class existence, idempotency, graceful handling |
+| `GarbageCollectorTest.php` | 6 | Class existence, idempotency, graceful handling, cleanup rate-limit (dir test terisolasi) |
 | `SearchEngineTest.php` | 5 | Parse params, sanitizer (`sanitizeQuery`), default values, constants |
 | `MediaLibraryTest.php` | 11 | Logika pagination (pure math), BookRepository mock |
 | `MediaInteractionTest.php` | 7 | Validasi input (ID/type tidak valid) |
@@ -258,6 +258,8 @@ php tests/security_test.php
 - Command Injection — penggunaan escapeshellarg()
 - File Upload — validasi magic bytes
 - Session Security — cookie params, deteksi hijack
+- Open Redirect — semua redirect referer wajib lewat validasi host; `playlist_action.php` tolak `//host` & skema `://`
+- Fatal-Bug Regression — include kelas ganda (RateLimiter) & redirect mentah `HTTP_REFERER` terdeteksi
 
 ## 🚀 Deployment Check (`tests/check_deploy.php`)
 
@@ -398,7 +400,7 @@ sebelum rilis.
 | **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
 | **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
-| **Security Test** | 125 | 120 pass, 5 warn | 0 | ✅ 98/100 |
+| **Security Test** | 135 | 129 pass, 6 warn | 0 | ✅ 98/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri

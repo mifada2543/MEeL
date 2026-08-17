@@ -10,7 +10,7 @@ if ($result['count'] > 0) {
     foreach ($result['results'] as $v) {
         if ($result['sidebar']) {
 ?>
-            <a href="watch.php?id=<?= $v['id'] ?>"
+            <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>"
                 class="flex gap-3 group rekomendasi-item htmx-added">
                 <div class="w-28 h-[4.5rem] bg-black rounded-xl overflow-hidden flex-shrink-0 border border-white/[.05]">
                     <img src="upload/thumbnail/<?= htmlspecialchars($v['thumbnail']) ?>"
@@ -45,7 +45,7 @@ if ($result['count'] > 0) {
             ?>
             <div id="load-more-area"
                 class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
-                hx-get="search_video.php?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
+                hx-get="search?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
                 hx-target="#load-more-area"
                 hx-swap="outerHTML">
                 <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-300 group-hover:text-red-500 transition-colors">

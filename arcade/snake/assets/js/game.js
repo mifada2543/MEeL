@@ -1,5 +1,3 @@
-// FILE: game.js
-// FUNGSI: Snake Game — Logika, Fisika, Kontrol
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 // ─── KONFIGURASI ───
@@ -20,7 +18,6 @@ let direction = "RIGHT";
 let nextDirection = "RIGHT";
 let gameLoopInterval = null;
 let foodEatenCount = 0;
-// DOM refs
 const scoreEl = document.getElementById("scoreText");
 const hiScoreEl = document.getElementById("hiScoreText");
 const startScreen = document.getElementById("startScreen");
@@ -143,10 +140,8 @@ function fillRoundRect(ctx, x, y, w, h, r) {
 // ─── RENDER ───
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // Background grid
   ctx.fillStyle = "#0d1117";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  // Grid lines (subtle)
   ctx.strokeStyle = "rgba(34, 197, 94, 0.04)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= GRID_SIZE; i++) {
@@ -231,7 +226,6 @@ function draw() {
       ctx.fillStyle = "white";
       let eyeX1, eyeY1, eyeX2, eyeY2;
       const eyeSize = 3;
-      const eyeOffset = 5;
       switch (direction) {
         case "RIGHT":
           eyeX1 = x + 13;
@@ -292,15 +286,7 @@ window.addEventListener("keydown", (e) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
     e.preventDefault();
   }
-  if (
-    !gameState.isPlaying &&
-    !gameState.isGameOver &&
-    (key === " " || key === "Enter")
-  ) {
-    initGame();
-    return;
-  }
-  if (gameState.isGameOver && (key === " " || key === "Enter")) {
+  if (!gameState.isPlaying && (key === " " || key === "Enter")) {
     initGame();
     return;
   }
@@ -338,9 +324,7 @@ canvas.addEventListener(
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
 
-    if (!gameState.isPlaying && !gameState.isGameOver) {
-      initGame();
-    } else if (gameState.isGameOver) {
+    if (!gameState.isPlaying) {
       initGame();
     }
   },
@@ -375,7 +359,6 @@ canvas.addEventListener(
   },
   { passive: false },
 );
-// Mobile buttons
 document.getElementById("btn-up").addEventListener("touchstart", (e) => {
   e.preventDefault();
   if (gameState.isPlaying && direction !== "DOWN") nextDirection = "UP";
@@ -392,7 +375,6 @@ document.getElementById("btn-right").addEventListener("touchstart", (e) => {
   e.preventDefault();
   if (gameState.isPlaying && direction !== "LEFT") nextDirection = "RIGHT";
 });
-// Restart / start buttons
 document.getElementById("restartBtn").addEventListener("click", initGame);
 startScreen.addEventListener("click", () => {
   if (!gameState.isPlaying) initGame();
@@ -413,7 +395,6 @@ function drawEmptyBoard() {
     ctx.lineTo(canvas.width, i * CELL_SIZE);
     ctx.stroke();
   }
-  // Draw a small preview snake
   const preview = [
     { x: 10, y: 10 },
     { x: 9, y: 10 },

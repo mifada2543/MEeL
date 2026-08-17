@@ -58,7 +58,7 @@ MEeL/
   - `modules/core/Transcoder.php` — Transcoding HLS, ekstraksi audio, download yt-dlp
   - `modules/core/System.php` — Queue management, storage monitoring, rate limit
   - `modules/core/GarbageCollector.php` — Pembersihan temporary files + guest + chess rooms + expired rate limit cache
-  - `modules/core/RateLimiter.php` — File-based API rate limiter (30 likes/min, 10 comments/min)
+  - `modules/auth/RateLimiter.php` — File-based API rate limiter (30 likes/min, 10 comments/min)
   - `modules/core/helpers.php` — Fungsi utilitas global (resolve_binary, base_url, get_user_role, require_disk_space, dll.)
   - `modules/core/activity_logger.php` — IP detection, session kick, guest auto-registration
   - `modules/core/japanese.php` — MeCab + transliterator untuk filename Jepang→Romaji
@@ -165,7 +165,7 @@ MEeL/
 |---|---|---|
 | `modules/media/MediaViewer.php` — 2 raw query (campur prepared statements) | Minor | `SELECT MAX(id) AS max_id FROM {$table}` — perlu review |
 | `controllers/profile/profile_edit.php` — MIME check | Minor | Perlu review |
-| Session name unik (meel) tidak terdeteksi | Minor | Deteksi statis — session diboot dari modul terpusat `modules/core/helpers/session.php` |
+| Session name unik (meel) tidak terdeteksi | Minor | Deteksi statis — session diboot dari modul terpusat `modules/auth/helpers/session.php` |
 | Session timeout (`gc_maxlifetime`) tidak terdeteksi | Minor | Deteksi statis — lihat `meel_boot_session()` |
 | HTTP-only cookie params tidak terdeteksi | Minor | Deteksi statis |
 
@@ -276,7 +276,7 @@ Tidak ada masalah medium yang tersisa.
 
 | # | File | Perubahan | Kategori |
 |---|---|---|---|
-| 33 | `modules/core/RateLimiter.php` | **Baru!** File-based API rate limiter | ✨ New |
+| 33 | `modules/auth/RateLimiter.php` | **Baru!** File-based API rate limiter | ✨ New |
 | 34 | `controllers/api/like.php` | Rate limit 30 likes/menit dengan HTMX 429 response | 🛡 Security |
 | 35 | `controllers/api/delete_comment.php` | Rate limit 10 comments/menit | 🛡 Security |
 | 36 | `controllers/api/WatchController.php` | Rate limit komentar di watch pages | 🛡 Security |

@@ -10,7 +10,7 @@ function meel_upload_allowed_table(string $table): string
 {
     return in_array($table, ['music', 'video'], true) ? $table : '';
 }
-} // end function_exists('meel_upload_allowed_table')
+}
 
 /* Jumlah upload user dalam 1 jam terakhir — window sama dengan System::checkRateLimit(). */
 if (!function_exists('get_hourly_upload_count')) {
@@ -31,7 +31,7 @@ function get_hourly_upload_count(\mysqli $conn, int $user_id, string $table): in
     $stmt->close();
     return $count;
 }
-} // end function_exists('get_hourly_upload_count')
+}
 
 /* Total seluruh upload user pada tabel tertentu. */
 if (!function_exists('get_total_upload_count')) {
@@ -52,7 +52,7 @@ function get_total_upload_count(\mysqli $conn, int $user_id, string $table): int
     $stmt->close();
     return $count;
 }
-} // end function_exists('get_total_upload_count')
+}
 
 /* Limit upload per jam — konsisten dengan System::checkRateLimit() (member 2x lipat). */
 if (!function_exists('get_upload_hourly_limit')) {
@@ -62,7 +62,7 @@ if (!function_exists('get_upload_hourly_limit')) {
  */
 function get_upload_hourly_limit(string $user_role): int
 {
-    require_once __DIR__ . '/../RateLimiter.php';
+    require_once __DIR__ . '/../../auth/RateLimiter.php';
     return RateLimiter::getRoleLimit(2, $user_role);
 }
-} // end function_exists('get_upload_hourly_limit')
+}

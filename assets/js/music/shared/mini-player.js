@@ -62,7 +62,7 @@ function loadAudio(state, autoplay) {
 
   // KUNCI GAPLESS: trackId sama → loadTrack() no-op total.
   engine.loadTrack(
-    { id: trackId, streamUrl: `stream.php?id=${trackId}`, isLooping: loopVal },
+    { id: trackId, streamUrl: `stream?id=${trackId}`, isLooping: loopVal },
     { autoplay: !!autoplay, startTime: state.currentTime || 0 },
   );
 
@@ -189,7 +189,7 @@ function initMiniPlayerIndex() {
     // antar-DOM — sync ulang eksplisit (mobile-only).
     const wantId = String(currentState.id ?? currentState.musicId);
     const wantStream =
-      currentState.streamUrl || `stream.php?id=${wantId}`;
+      currentState.streamUrl || `stream?id=${wantId}`;
     const haveSrc = audioPlayer.currentSrc || audioPlayer.src || "";
     let haveId = null;
     try {
@@ -342,7 +342,8 @@ window.miniPrevIndex = function () {
 // Tambahkan playlist_id ke URL bila belum ada — konteks playlist tidak boleh hilang.
 function withPlaylistParam(url, playlistId) {
   if (!url || !playlistId || playlistId <= 0) return url;
-  if (url.indexOf("playlist_id=") !== -1) return url;
+  // Clean URL (/music/watch?id=5&playlist_id=3) ATAU query lama sudah membawa konteks
+  if (url.indexOf("playlist_id=") !== -1 || /\/playlist\/\d+/.test(url)) return url;
   // Sisipkan parameter sebelum fragment (#...).
   const hashIdx = url.indexOf("#");
   const base = hashIdx === -1 ? url : url.substring(0, hashIdx);
@@ -374,10 +375,10 @@ function expandPlayerFromMiniPlayer() {
     if (state.watchUrl) {
       target = withPlaylistParam(state.watchUrl, state.playlistId);
     } else if (state.id) {
-      target = withPlaylistParam(`watch.php?id=${state.id}`, state.playlistId);
+      target = withPlaylistParam(`watch?id=${state.id}`, state.playlistId);
     } else if (state.musicId) {
       target = withPlaylistParam(
-        `watch.php?id=${state.musicId}`,
+        `watch?id=${state.musicId}`,
         state.playlistId,
       );
     } else if (state.filename) {
@@ -490,7 +491,7 @@ function setupPlaylistItemClicks() {
         filename: this.dataset.filename,
         watchUrl:
           this.dataset.watchUrl ||
-          `watch.php?id=${this.dataset.id}&playlist_id=${this.dataset.playlistId}`,
+          `watch?id=${this.dataset.id}&playlist_id=${this.dataset.playlistId}`,
         nextSongUrl: nextSongUrl,
         playlistId: this.dataset.playlistId,
         currentTime: 0,
@@ -540,3 +541,26 @@ document.addEventListener("keydown", (e) => {
 setInterval(() => {
   if (isMiniPlayerIndexActive) saveIndexState();
 }, 5000);
+// ─── Sinkronkan judul dokumen saat konten di-swap via htmx ───
+// (beranda ↔ playlist). Judul library ditangkap saat halaman beranda dimuat;
+// di halaman playlist, cabang library tidak pernah terpakai.
+const meelLibTitle =
+  document.title.indexOf("| Library") !== -1
+    ? document.title
+    : "MEeL Music | Library";
+window.meelSyncViewTitle = function () {
+  const main = document.querySelector("main");
+  if (!main) return;
+  const h1 = main.querySelector("h1");
+  const name = h1 ? (h1.textContent || "").trim() : "";
+  if (name) {
+    document.title = name + " — MEeL Playlist";
+  } else if (main.querySelector(".section-title")) {
+    document.title = meelLibTitle;
+  }
+};
+document.addEventListener("htmx:afterSwap", function () {
+  if (typeof window.meelSyncViewTitle === "function") {
+    window.meelSyncViewTitle();
+  }
+});

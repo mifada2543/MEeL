@@ -24,7 +24,6 @@ if (isset($_POST['start_transcode'])) {
     if ($video_id <= 0) {
         $alert_message = 'ID Video harus berupa angka valid!';
     } else {
-        // Ambil judul video untuk ditampilkan di hasil
         $stmt_title = $conn->prepare("SELECT title FROM video WHERE id = ? LIMIT 1");
         $stmt_title->bind_param("i", $video_id);
         $stmt_title->execute();
@@ -91,9 +90,9 @@ include __DIR__ . '/partials/scripts.php';
 <body class="bg-bg text-[#c9cdd6] font-sans min-h-screen flex flex-col relative">
 
     <nav class="sticky top-0 z-50 h-[52px] bg-[#080b11]/90 backdrop-blur-md border-b border-white/[.06] flex items-center px-5 gap-2.5">
-        <a href="index.php" class="font-syne text-[13px] font-extrabold text-[#f0f2f7] no-underline tracking-[.05em]">MEeL<span class="text-red-500">.</span></a>
+        <a href="./" class="font-syne text-[13px] font-extrabold text-[#f0f2f7] no-underline tracking-[.05em]">MEeL<span class="text-red-500">.</span></a>
         <div class="w-px h-[18px] bg-white/10"></div>
-        <a href="video/index.php" class="text-[11px] font-semibold text-muted no-underline transition-colors hover:text-red-500">Video</a>
+        <a href="video/beranda" class="text-[11px] font-semibold text-muted no-underline transition-colors hover:text-red-500">Video</a>
         <span class="text-[#2c3440] text-[13px]">›</span>
         <span class="text-[11px] font-semibold text-[#f0f2f7]">Transcoder</span>
     </nav>
@@ -139,7 +138,7 @@ include __DIR__ . '/partials/scripts.php';
                     </a>
 
                     <div class="text-center">
-                        <a href="transcode.php" class="inline-block text-[10px] font-bold uppercase tracking-[.14em] text-muted transition-colors hover:text-[#f0f2f7]">
+                        <a href="transcode" class="inline-block text-[10px] font-bold uppercase tracking-[.14em] text-muted transition-colors hover:text-[#f0f2f7]">
                             ← Transcode video lain
                         </a>
                     </div>
@@ -232,9 +231,9 @@ include __DIR__ . '/partials/scripts.php';
             <?php endif; ?>
             <div class="h-px bg-white/[.06]"></div>
             <div class="p-4 pb-5 flex items-center justify-center gap-5">
-                <a href="video/index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Video</a>
-                <a href="music/index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Musik</a>
-                <a href="index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-red-500 no-underline transition-colors hover:text-red-400">Portal</a>
+                <a href="video/beranda" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Video</a>
+                <a href="music/beranda" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Musik</a>
+                <a href="./" class="text-[10px] font-bold uppercase tracking-[.14em] text-red-500 no-underline transition-colors hover:text-red-400">Portal</a>
             </div>
         </div>
     </div>

@@ -6,16 +6,13 @@
     var wrap = document.getElementById(wrapId);
     var input = document.getElementById(inputId);
     if (!wrap || !input) return;
-    // Click → trigger hidden input
     wrap.addEventListener('click', function (e) {
       if (e.target === input) return;
       input.click();
     });
-    // Hidden input change → preview
     input.addEventListener('change', function () {
       if (onChange) onChange(this);
     });
-    // Drag-over visual
     wrap.addEventListener('dragover', function (e) {
       e.preventDefault();
       wrap.classList.add('drag-over');
@@ -23,7 +20,6 @@
     wrap.addEventListener('dragleave', function () {
       wrap.classList.remove('drag-over');
     });
-    // Drop → set file & preview
     wrap.addEventListener('drop', function (e) {
       e.preventDefault();
       wrap.classList.remove('drag-over');

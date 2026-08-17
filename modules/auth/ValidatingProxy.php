@@ -1,5 +1,4 @@
 <?php
-// ─────────────────────────────────────────────────────────────────────────────
 // Manages the validating forward proxy process (validating_proxy_server.php).
 //
 // SECURITY BOUNDARY:
@@ -12,7 +11,6 @@
 //   * The process is spawned via PHP CLI (PHP_BINARY) with stdin/stdout/
 //     stderr pipes; readiness is signalled on stdout ("PORT n / READY").
 //   * Terminated automatically by the destructor / explicit stop().
-// ─────────────────────────────────────────────────────────────────────────────
 final class ValidatingProxy
 {
     private const START_TIMEOUT_SECONDS = 8;

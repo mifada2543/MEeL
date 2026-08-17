@@ -10,13 +10,13 @@ function updateSearchExcludeId(e) {
   (["v-search-watch", "v-search-mobile"].forEach((t) => {
     const n = document.getElementById(t);
     n &&
-      (n.setAttribute("hx-get", `search_video.php?exclude=${e}`),
+      (n.setAttribute("hx-get", `search?exclude=${e}`),
       window.htmx && htmx.process(n));
   }),
     document
       .querySelectorAll('button[hx-include="#v-search-watch"]')
       .forEach((t) => {
-        (t.setAttribute("hx-get", `search_video.php?exclude=${e}`),
+        (t.setAttribute("hx-get", `search?exclude=${e}`),
           window.htmx && htmx.process(t));
       }));
 }

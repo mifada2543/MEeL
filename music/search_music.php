@@ -14,7 +14,7 @@ if ($result['count'] > 0) {
             $v_ext = strtolower(pathinfo($v['filename'], PATHINFO_EXTENSION));
             $v_lbl = $v_ext === 'ogg' ? 'opus' : $v_ext;
             ?>
-            <a href="watch.php?id=<?= $v['id'] ?>"
+            <a href="<?= base_url('/music/watch?id=' . (int)$v['id']) ?>"
                class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl no-underline htmx-added"
                title="<?= htmlspecialchars($v['title']) ?>">
                 <div class="w-full lg:w-16 aspect-square lg:h-12 lg:aspect-auto rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">
@@ -50,7 +50,7 @@ if ($result['count'] > 0) {
         ?>
         <button type="button" id="load-more-music-search"
             class="w-full py-4 border border-dashed border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-[.25em] text-gray-700 hover:text-orange-500 hover:border-orange-500/30 transition-all"
-            hx-get="search_music.php?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
+            hx-get="search?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
             hx-target="#load-more-music-search"
             hx-swap="outerHTML"
             title="Muat lebih banyak lagu">

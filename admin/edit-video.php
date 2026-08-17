@@ -6,7 +6,7 @@ require_once '../modules/core/japanese.php';
 
 // Proteksi: harus login
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 $user_id = $_SESSION['user_id'];
@@ -14,17 +14,17 @@ $curr_role = get_user_role($conn, (int)$user_id);
 $is_admin  = is_admin($conn);
 // Tolak guest
 if ($curr_role === 'guest') {
-    header("Location: ../index.php");
+    header("Location: ../");
     exit();
 }
 // ─── Back URL (smart referer) ───
-$back_url = $is_admin ? 'cookies.php' : '../video/index.php';
+$back_url = $is_admin ? 'analys' : '../video/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
     $host     = $_SERVER['HTTP_HOST'];
     if (parse_url($ref, PHP_URL_HOST) === $host) {
         $ref_path       = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages = ['edit-music.php', 'edit-video.php'];
+        $excluded_pages = ['edit-music.php', 'edit-music', 'edit-video.php', 'edit-video'];
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -35,11 +35,11 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         if (!$should_exclude) $back_url = $ref;
     }
 }
+require_once __DIR__ . '/../modules/media/MediaAdminRepository.php';
+$adminMedia = new MediaAdminRepository($conn);
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt_video = $conn->prepare("SELECT v.*, u.username AS uploader, u.profile_picture AS uploader_pfp FROM video v JOIN users u ON v.user_id = u.id WHERE v.id = ? LIMIT 1");
-$stmt_video->bind_param("i", $id);
-$stmt_video->execute();
-$video = $stmt_video->get_result()->fetch_assoc();
+$video = $adminMedia->getMedia('video', $id);
 if (!$video) {
     header("Location: ../err/?code=not_found");
     exit;
@@ -60,7 +60,6 @@ if (isset($_POST['update'])) {
         $description = trim($_POST['description'] ?? '');
         $thumbnail_url = $video['thumbnail'];
         if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
-            // Validasi ukuran file (maks 5MB)
             $max_size = 5 * 1024 * 1024;
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file thumbnail maksimal 5MB.';
@@ -120,7 +119,6 @@ if (isset($_POST['update'])) {
                     }
                     $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
 
-                    // Lokasi folder HLS video di storage terpusat
                     $hls_folder = basename(dirname($video['filename']));
                     $sub_dir    = meel_media_base_path('video') . '/video/' . $hls_folder . '/';
                     if (is_dir($sub_dir)) {
@@ -145,9 +143,7 @@ if (isset($_POST['update'])) {
         } elseif ($error_message === '') {
 
             $meta = generate_search_metadata($title);
-            $stmt_update = $conn->prepare("UPDATE video SET title = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
-            $stmt_update->bind_param("ssssi", $title, $description, $thumbnail_url, $meta, $id);
-            if ($stmt_update->execute()) {
+            if ($adminMedia->updateVideo($id, $title, $description, $thumbnail_url, $meta)) {
                 $status = "success";
                 $video['title'] = $title;
                 $video['description'] = $description;
@@ -307,11 +303,11 @@ include __DIR__ . '/../partials/link.php';
 
                 <!-- Nav buttons -->
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;">
-                    <a href="../video/watch.php?id=<?= $id ?>" class="btn-secondary" style="justify-content:center;">
+                    <a href="<?= base_url('/video/watch?id=' . (int)$id) ?>" class="btn-secondary" style="justify-content:center;">
                         <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Lihat Video
                     </a>
                     <?php if ($is_admin): ?>
-                        <a href="index.php" class="btn-secondary" style="justify-content:center;">
+                        <a href="." class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Dashboard Admin
                         </a>
                     <?php else: ?>

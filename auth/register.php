@@ -115,8 +115,8 @@ include __DIR__ . '/partials/auth_head.php';
                 <h3 class="text-lg font-bold text-white">Batas Pendaftaran</h3>
                 <p class="text-xs text-gray-300 leading-relaxed">Anda telah mencapai batas maksimal pendaftaran (<?= $max_reg_attempts ?> akun per jam). Silakan coba lagi nanti.</p>
                 <div class="flex justify-center gap-3 pt-2">
-                    <a href="login.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all" title="Login ke akun yang sudah ada">Login</a>
-                    <a href="../index.php" class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold rounded-xl transition-all" title="Kembali ke beranda">Kembali</a>
+                    <a href="login" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all" title="Login ke akun yang sudah ada">Login</a>
+                    <a href="../" class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold rounded-xl transition-all" title="Kembali ke beranda">Kembali</a>
                 </div>
             </div>
         <?php elseif ($is_locked): ?>
@@ -125,7 +125,7 @@ include __DIR__ . '/partials/auth_head.php';
             $countdown_seconds = $remaining;
             $countdown_color   = 'text-red-500';
             $countdown_extra   = '<div class="pt-2">
-                    <a href="login.php" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all" title="Pergi ke halaman login">Ke Halaman Login</a>
+                    <a href="login" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all" title="Pergi ke halaman login">Ke Halaman Login</a>
                 </div>';
             include __DIR__ . '/partials/auth_countdown.php';
             ?>
@@ -158,8 +158,8 @@ include __DIR__ . '/partials/auth_head.php';
                     <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
                 </button>
                 <div class="flex items-center justify-between px-1">
-                    <a href="login.php" class="text-xs text-gray-300 hover:text-white transition" title="Login ke akun yang sudah ada">Sudah punya akun?</a>
-                    <a href="../index.php" class="text-xs text-red-500 font-bold hover:underline" title="Kembali ke beranda">Kembali</a>
+                    <a href="login" class="text-xs text-gray-300 hover:text-white transition" title="Login ke akun yang sudah ada">Sudah punya akun?</a>
+                    <a href="../" class="text-xs text-red-500 font-bold hover:underline" title="Kembali ke beranda">Kembali</a>
                 </div>
             </div>
         <?php endif; ?>

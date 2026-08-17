@@ -5,13 +5,13 @@ include '../auth/config.php';
 
 // ─── Proteksi Admin ───
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 
 // Guard terpusat: role admin (helper is_admin)
 if (!is_admin($conn)) {
-    header("Location: ../index.php");
+    header("Location: ../");
     exit();
 }
 
@@ -22,7 +22,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $host     = $_SERVER['HTTP_HOST'];
     if (parse_url($ref, PHP_URL_HOST) === $host) {
         $ref_path       = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages = ['cookies.php', 'edit-music.php', 'edit-video.php', 'index.php'];
+        $excluded_pages = ['cookies.php', 'cookies', 'analys.php', 'analys', 'edit-music.php', 'edit-music', 'edit-video.php', 'edit-video', 'index.php'];
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -245,11 +245,11 @@ while ($rc = $r->fetch_assoc()) {
 
     <!-- ── Top Nav ── -->
     <nav class="top-nav">
-        <a href="../index.php" class="font-sans text-sm font-extrabold text-white no-underline tracking-wider">
+        <a href="../" class="font-sans text-sm font-extrabold text-white no-underline tracking-wider">
             MEeL<span class="text-blue-600">Admin</span>
         </a>
         <div class="w-px h-5 bg-white/[0.08]"></div>
-        <a href="index.php" class="text-[11px] font-semibold text-[#555e6e] no-underline">Dashboard</a>
+        <a href="." class="text-[11px] font-semibold text-[#555e6e] no-underline">Dashboard</a>
         <span class="text-[#353d4a]">›</span>
         <span class="text-[11px] font-semibold text-[#e2e6ef]">Media Analytics</span>
         <div class="ml-auto flex items-center gap-2">
@@ -416,8 +416,8 @@ while ($rc = $r->fetch_assoc()) {
                                 while ($row = $result_media->fetch_assoc()):
                                     $row_i++;
                                     $is_video   = ($row['media_type'] === 'video');
-                                    $watch_url  = $is_video ? "../video/watch.php?id={$row['id']}" : "../music/watch.php?id={$row['id']}";
-                                    $edit_url   = $is_video ? "edit-video.php?id={$row['id']}" : "edit-music.php?id={$row['id']}";
+                                    $watch_url  = $is_video ? base_url('/video/watch?id=' . (int)$row['id']) : base_url('/music/watch?id=' . (int)$row['id']);
+                                    $edit_url   = $is_video ? base_url('/admin/edit-video?id=' . (int)$row['id']) : base_url('/admin/edit-music?id=' . (int)$row['id']);
                                     $type_color = $is_video ? '#ef4444' : '#f97316';
                                     $type_bg    = $is_video ? 'rgba(239,68,68,.1)' : 'rgba(249,115,22,.1)';
                                     $type_bdr   = $is_video ? 'rgba(239,68,68,.2)' : 'rgba(249,115,22,.2)';

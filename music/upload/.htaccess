@@ -32,3 +32,9 @@ ForceType inherit
 
 # 5. Matikan Directory Listing (Mencegah intip struktur folder)
 Options -Indexes
+
+# 6. Nonaktifkan redirect trailing-slash mod_dir untuk URL /music/upload
+#    (halaman upload disajikan router di URL bersih /music/upload — tanpa
+#    trailing slash, aset relatif ../assets/ resolve ke base proyek dengan
+#    benar. Dengan redirect ke /music/upload/, depth berubah dan CSS/JS 404.)
+DirectorySlash Off

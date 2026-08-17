@@ -20,12 +20,153 @@ DirectoryIndex index.php index.html
 # ── PWA: /sw.js disajikan dari generator PHP (precache dinamis dari manifest.php) ──
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^sw\.js$ sw.js.php [L]
+    RewriteRule ^sw\.js$ sw.js.php [END]
 </IfModule>
 
 # ── Media storage: serve file upload dari MEEL_HDD_*_UPLOAD via PHP ──
+# (pengecualian front controller — endpoint streaming/range request tetap
+#  dipanggil langsung agar performa & header tidak terganggu)
 <IfModule mod_rewrite.c>
-    RewriteRule ^video/upload/(.+)$ video/stream.php?f=$1 [L,QSA,B]
-    RewriteRule ^music/upload/(.+)$ music/file.php?f=$1 [L,QSA,B]
-    RewriteRule ^books/upload/(.+)$ books/file.php?f=$1 [L,QSA,B]
+    RewriteRule ^video/upload/(.+)$ video/stream.php?f=$1 [END,QSA,B]
+    RewriteRule ^music/upload/(.+)$ music/file.php?f=$1 [END,QSA,B]
+    RewriteRule ^books/upload/(.+)$ books/file.php?f=$1 [END,QSA,B]
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════════════════
+# FRONT CONTROLLER ROUTING (router.php)
+#
+# Semua halaman & API melewati satu entry point: router.php
+#   /video/watch?id=5            → router.php (route: video/watch)
+#   /music/watch?id=5            → router.php (route: music/watch)
+#   /books/read?id=3             → router.php (route: books/read)
+#   /admin/edit-video?id=5       → router.php (route: admin/edit-video)
+#   /api/like                    → router.php (route: api/like)
+#
+# URL tetap query-style — kedalaman URL tidak berubah, sehingga semua link
+# relatif, form POST, dan JS tetap bekerja TANPA <base>.
+#
+# 1) Redirect 301: URL lama (dengan .php) → URL bersih (query dipertahankan QSA)
+# 2) Rute modul root di-rewrite eksplisit (bentrok dengan direktori fisik)
+# 3) Catch-all: semua yang bukan file/aset nyata → router.php
+# ═══════════════════════════════════════════════════════════════════════
+<IfModule mod_rewrite.c>
+
+    # ── 1. Redirect 301: .php lama → bersih (query dipertahankan via QSA) ──
+    # PENTING: target memakai %{REQUEST_URI} capture (%1) sehingga hasil
+    # redirect adalah URL-path absolut (/MEeL/...) — portabel untuk deploy di
+    # subdirektori. Target RELATIF ("video", "./") menghasilkan path filesystem
+    # (/opt/lampp/htdocs/MEeL/...) di header Location → redirect rusak.
+
+    # index.php modul home → /modul/beranda (harus sebelum rule generik di bawah)
+    # (profile TIDAK pakai beranda — home-nya tetap /profile/?u=)
+    RewriteCond %{REQUEST_URI} ^(.*)/(video|music|books|drive|admin|arcade)/index\.php$ [NC]
+    RewriteRule ^ %1/%2/beranda [R=301,L,QSA]
+    # err/index.php → err/ (err bukan modul home)
+    RewriteCond %{REQUEST_URI} ^(.*)/err/index\.php$ [NC]
+    RewriteRule ^ %1/err/ [R=301,L,QSA]
+    # index.php lain (root, arcade/chess, dll.) → direktori bersih
+    RewriteCond %{REQUEST_URI} ^(.*)/index\.php$ [NC]
+    RewriteRule ^ %1/ [R=301,L,QSA]
+
+    # Rute yang NAMA FILENYA ≠ nama route (harus SEBELUM rule generik di bawah)
+    RewriteCond %{REQUEST_URI} ^(.*)/upload_advanced\.php$ [NC]
+    RewriteRule ^ %1/upload [R=301,L,QSA]
+    # URL lama /upload-advanced (sebelum rename ke /upload) → /upload
+    RewriteCond %{REQUEST_URI} ^(.*)/upload-advanced([?#]?)$ [NC]
+    RewriteRule ^ %1/upload [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/video/search_video\.php$ [NC]
+    RewriteRule ^ %1/video/search [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/video/load_more\.php$ [NC]
+    RewriteRule ^ %1/video/load-more [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/music/search_music\.php$ [NC]
+    RewriteRule ^ %1/music/search [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/music/load_more_music\.php$ [NC]
+    RewriteRule ^ %1/music/load-more [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/music/view_playlist\.php$ [NC]
+    RewriteRule ^ %1/music/playlist [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/music/playlist_action\.php$ [NC]
+    RewriteRule ^ %1/music/playlist-action [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/books/search_books\.php$ [NC]
+    RewriteRule ^ %1/books/search [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/books/read_pdf\.php$ [NC]
+    RewriteRule ^ %1/books/read-pdf [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/activity_log\.php$ [NC]
+    RewriteRule ^ %1/admin/activity-log [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/mfa_reset\.php$ [NC]
+    RewriteRule ^ %1/admin/mfa-reset [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/auth/mfa_setup\.php$ [NC]
+    RewriteRule ^ %1/auth/mfa-setup [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/auth/mfa_verify\.php$ [NC]
+    RewriteRule ^ %1/auth/mfa-verify [R=301,L,QSA]
+    # admin/cookies.php & URL lama admin/cookies → admin/analys
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/cookies\.php$ [NC]
+    RewriteRule ^ %1/admin/analys [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/cookies([?#]?)$ [NC]
+    RewriteRule ^ %1/admin/analys [R=301,L,QSA]
+
+    # Controllers: controllers/... → rute bersih (api|admin|profile|system)
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/delete_comment\.php$ [NC]
+    RewriteRule ^ %1/api/delete-comment [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/auto_metadata\.php$ [NC]
+    RewriteRule ^ %1/api/auto-metadata [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/download_transcode\.php$ [NC]
+    RewriteRule ^ %1/api/download-transcode [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/post_encode\.php$ [NC]
+    RewriteRule ^ %1/api/post-encode [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/ajax_refresh\.php$ [NC]
+    RewriteRule ^ %1/api/ajax-refresh [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/(like|comment|pdf)\.php$ [NC]
+    RewriteRule ^ %1/api/%2 [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/system/mfa\.php$ [NC]
+    RewriteRule ^ %1/system/mfa [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/profile/profile_edit\.php$ [NC]
+    RewriteRule ^ %1/profile/edit [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/profile/fun-manage\.php$ [NC]
+    RewriteRule ^ %1/profile/manage-action [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/admin/admin_actions\.php$ [NC]
+    RewriteRule ^ %1/admin/actions [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/controllers/admin/admin_data\.php$ [NC]
+    RewriteRule ^ %1/admin/data [R=301,L,QSA]
+
+    # Generik: file.php → route dengan nama sama (watch, read, upload, login,
+    # register, logout, update, introduction, transcode, cookies, catur, dll.)
+    # — DITEMPATKAN PALING AKHIR agar rule rename di atas menang lebih dulu.
+    # Sub-app arcade/chess (controller/*.php) DILINDUNGI — endpoint polling-nya
+    # harus tetap file nyata, bukan rute front controller.
+    RewriteCond %{REQUEST_URI} !(^|/)arcade/chess/
+    RewriteCond %{REQUEST_URI} ^(.*)/([a-z0-9_-]+)\.php$ [NC]
+    RewriteRule ^ %1/%2 [R=301,L,QSA]
+
+    # ── 2. Kanonik: modul home → /modul/beranda ──
+    # /video dan /video/ → /video/beranda (index.php modul). profile & err
+    # TIDAK pakai beranda — home-nya /profile/?u= dan /err/. Target memakai
+    # %{REQUEST_URI} capture (%1) — target relatif menghasilkan path filesystem.
+    RewriteCond %{REQUEST_URI} ^(.*)/(video|music|books|drive|admin|arcade)/?([?#]?)$ [NC]
+    RewriteRule ^ %1/%2/beranda [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/profile([?#]?)$ [NC]
+    RewriteRule ^ %1/profile/ [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/err([?#]?)$ [NC]
+    RewriteRule ^ %1/err/ [R=301,L,QSA]
+
+    # ── 3. Rute khusus yang tetap dilayani langsung router ──
+    # (modul home sudah di-301 ke /modul/beranda di section 2)
+    # upload/ adalah direktori media NYATA → DirectorySlash Off di tiap
+    # direktori membuat /modul/upload dilayani tanpa trailing slash.
+    # Varian trailing-slash dinormalisasi ke non-slash agar depth ../assets/
+    # tetap benar (kalau dibiarkan, CSS/JS resolve ke /modul/assets/ → 404).
+    RewriteCond %{REQUEST_URI} ^(.*)/(video|music|books|drive)/upload/$ [NC]
+    RewriteRule ^ %1/%2/upload [R=301,L,QSA]
+    RewriteRule ^video/upload/?$ router.php [END,QSA]
+    RewriteRule ^music/upload/?$ router.php [END,QSA]
+    RewriteRule ^books/upload/?$ router.php [END,QSA]
+    RewriteRule ^drive/upload/?$ router.php [END,QSA]
+    RewriteRule ^profile/?$ router.php [END,QSA]
+    RewriteRule ^err/?$ router.php [END,QSA]
+    RewriteRule ^arcade/chess/?$ router.php [END,QSA]
+    RewriteRule ^$ router.php [END]
+
+    # ── 4. Catch-all: semua request yang bukan file/aset nyata → router.php ──
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ router.php [END,QSA]
 </IfModule>

@@ -44,7 +44,7 @@ $totalPagesBooks = $meta_books['total_pages'];
     <!-- NAVBAR -->
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
-            <a href="../index.php" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
+            <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
                 <div class="w-6 h-6 sm:w-7 sm:h-7 bg-green-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="library" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -55,7 +55,7 @@ $totalPagesBooks = $meta_books['total_pages'];
 
             <!-- Search (server-side FULLTEXT via search_books.php) -->
             <form
-                    hx-get="search_books.php"
+                    hx-get="search"
                     hx-trigger="submit"
                     hx-target="#book-container"
                     hx-swap="innerHTML"
@@ -127,21 +127,21 @@ $totalPagesBooks = $meta_books['total_pages'];
 
         <!-- FILTER PILLS -->
         <div class="flex gap-2 mb-8 flex-wrap">
-            <a href="index.php?type=all"
+            <a href="?type=all"
                 class="filter-pill <?= $filter === 'all' ? 'active' : '' ?>">
                 All
             </a>
-            <a href="index.php?type=manga"
+            <a href="?type=manga"
                 class="filter-pill <?= $filter === 'manga' ? 'active' : '' ?>">
                 <i data-lucide="book-open" class="w-3 h-3 inline-block -ml-0.5 mr-1"></i> Manga
             </a>
-            <a href="index.php?type=pdf"
+            <a href="?type=pdf"
                 class="filter-pill <?= $filter === 'pdf' ? 'active' : '' ?>">
                 <i data-lucide="file-text" class="w-3 h-3 inline-block -ml-0.5 mr-1"></i> PDF
             </a>
 
             <?php if ($role === 'admin'): ?>
-                <a href="upload.php"
+                <a href="upload"
                     class="filter-pill ml-auto text-green-500 border-green-500/30 hover:border-green-500 hover:text-green-400 hover:bg-green-500/5">
                     <i data-lucide="upload-cloud" class="w-3 h-3 inline-block -ml-0.5 mr-1"></i> Upload
                 </a>
@@ -167,7 +167,7 @@ $totalPagesBooks = $meta_books['total_pages'];
                         Pustaka masih kosong
                     </p>
                     <?php if ($role === 'admin'): ?>
-                        <a href="upload.php"
+                        <a href="upload"
                             class="mt-6 px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-green-900/30">
                             Upload Sekarang
                         </a>
@@ -182,7 +182,7 @@ $totalPagesBooks = $meta_books['total_pages'];
     <?php if ($totalPagesBooks > 1): ?>
         <div class="flex items-center justify-center gap-2 mt-10 mb-6">
             <?php if ($bookPage > 1): ?>
-                <a href="index.php?type=<?= $filter ?>&page=<?= $bookPage - 1 ?>"
+                <a href="?type=<?= $filter ?>&page=<?= $bookPage - 1 ?>"
                     class="px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-green-500 hover:border-green-500/30 transition-all">
                     <i data-lucide="chevron-left" class="w-3.5 h-3.5 inline -ml-1"></i> Prev
                 </a>
@@ -191,13 +191,13 @@ $totalPagesBooks = $meta_books['total_pages'];
             $startPage = max(1, $bookPage - 2);
             $endPage = min($totalPagesBooks, $bookPage + 2);
             for ($i = $startPage; $i <= $endPage; $i++): ?>
-                <a href="index.php?type=<?= $filter ?>&page=<?= $i ?>"
+                <a href="?type=<?= $filter ?>&page=<?= $i ?>"
                     class="w-9 h-9 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all <?= $i === $bookPage ? 'bg-green-600 text-white shadow-lg shadow-green-900/30' : 'bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-green-500 hover:border-green-500/30' ?>">
                     <?= $i ?>
                 </a>
             <?php endfor; ?>
             <?php if ($bookPage < $totalPagesBooks): ?>
-                <a href="index.php?type=<?= $filter ?>&page=<?= $bookPage + 1 ?>"
+                <a href="?type=<?= $filter ?>&page=<?= $bookPage + 1 ?>"
                     class="px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-green-500 hover:border-green-500/30 transition-all">
                     Next <i data-lucide="chevron-right" class="w-3.5 h-3.5 inline -mr-1"></i>
                 </a>
@@ -235,7 +235,7 @@ $totalPagesBooks = $meta_books['total_pages'];
                     label += ' (Halaman ' + data.page + '/' + data.total + ')';
                 }
                 titleEl.textContent = label;
-                linkEl.href = 'read.php?id=' + data.id + (data.ch ? '&ch=' + encodeURIComponent(data.ch) : '');
+                linkEl.href = '<?= base_url('/books/read?id=') ?>' + data.id + (data.ch ? '&ch=' + encodeURIComponent(data.ch) : '');
                 banner.classList.add('visible');
 
             } catch(e) {
@@ -251,7 +251,6 @@ $totalPagesBooks = $meta_books['total_pages'];
             }
         })();
 
-        // Re-init icons after HTMX swaps
         document.body.addEventListener('htmx:afterOnLoad', function() {
             lucide.createIcons();
         });

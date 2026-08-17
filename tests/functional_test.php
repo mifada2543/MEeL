@@ -67,8 +67,8 @@ function testClassLoading(): void {
         'MediaInteraction'   => 'modules/media/MediaInteraction.php',
         'System'             => 'modules/core/System.php',
         'GarbageCollector'   => 'modules/core/GarbageCollector.php',
-        'SsrfGuard'          => 'modules/core/SsrfGuard.php',
-        'ValidatingProxy'    => 'modules/core/ValidatingProxy.php',
+        'SsrfGuard'          => 'modules/auth/SsrfGuard.php',
+        'ValidatingProxy'    => 'modules/auth/ValidatingProxy.php',
         'UpdateManager'      => 'controllers/system/UpdateManager.php',
         'BookRepository'     => 'modules/media/MediaLibrary.php',
         'BookUploader'       => 'modules/media/MediaLibrary.php',
@@ -111,9 +111,9 @@ function testFunctionExistence(): void {
         'time_ago'              => 'modules/core/helpers/url.php',
         'format_bytes'          => 'modules/core/helpers/url.php',
         'music_thumbnail_url'   => 'modules/core/helpers/storage.php',
-        'get_user_usage'        => 'modules/core/helpers/user.php',
-        'get_csrf_token'        => 'modules/core/helpers/csrf.php',
-        'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
+        'get_user_usage'        => 'modules/auth/helpers/user.php',
+        'get_csrf_token'        => 'modules/auth/helpers/csrf.php',
+        'verify_csrf_token'     => 'modules/auth/helpers/csrf.php',
         'log_drive_operation'   => 'modules/core/helpers/storage.php',
         'generate_search_metadata' => 'modules/core/helpers/metadata.php',
         // japanese.php
@@ -122,7 +122,7 @@ function testFunctionExistence(): void {
 
         'log_activity'          => 'modules/core/activity_logger.php',
 
-        'verify_csrf_token'     => 'modules/core/helpers/csrf.php',
+        'verify_csrf_token'     => 'modules/auth/helpers/csrf.php',
     ];
 
     $warning_funcs = ['log_activity']; // fungsi ini boleh warning, bukan failure

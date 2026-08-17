@@ -4,7 +4,7 @@ require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
 include '../../auth/config.php';
-include '../../modules/core/RateLimiter.php';
+include '../../modules/auth/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 require_once __DIR__ . '/../../modules/core/CommentRenderer.php';
 

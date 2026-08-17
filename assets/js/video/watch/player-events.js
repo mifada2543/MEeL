@@ -189,11 +189,6 @@ function setupMeelPlayerEvents() {
         lang: t.getAttribute("srclang") || "und",
         label: t.getAttribute("label") || "",
       }));
-      ((videoId =
-        new URL(t.href, window.location.href).searchParams.get("id") ||
-        videoId),
-        (storageKeyVideo = `video_pos_${videoId}`),
-        (vttSrc = p));
       let u = {};
       (r.querySelectorAll("script:not([src])").forEach((e) => {
         const t = e.textContent.match(
@@ -204,6 +199,14 @@ function setupMeelPlayerEvents() {
             u = JSON.parse(t[1]);
           } catch (e) {}
       }),
+        (videoId =
+          u.id ||
+          new URL(t.href, window.location.href).searchParams.get("id") ||
+          (new URL(t.href, window.location.href).href.match(
+            /[?&]id=(\d+)/,
+          ) || [])[1] ||
+          videoId),
+        (storageKeyVideo = `video_pos_${videoId}`),
         (videoTitle = u.title || ""),
         (videoUploader = u.uploader || ""),
         (window.playerConfig = {

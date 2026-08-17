@@ -21,10 +21,10 @@ if (!$is_loopback && isset($_SESSION['mfa_locked_until'])) {
 // ─── Cek pending MFA ───
 if (!isset($_SESSION['mfa_temp_uid'])) {
     if (isset($_SESSION['user_id'])) {
-        header("Location: ../index.php");
+        header("Location: ../");
         exit;
     }
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 $error = '';
@@ -48,7 +48,7 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
             $stmt->close();
             if (!$u || empty($u['mfa_secret'])) {
                 unset($_SESSION['mfa_temp_uid'], $_SESSION['mfa_temp_username'], $_SESSION['mfa_temp_role']);
-                header("Location: login.php");
+                header("Location: login");
                 exit;
             }
             $valid = false;
@@ -85,7 +85,7 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
                 $stmt->bind_param("is", $temp_id, $ip);
                 $stmt->execute();
                 $stmt->close();
-                header("Location: ../index.php");
+                header("Location: ../");
                 exit;
             } else {
                 $error = 'Kode tidak valid. Periksa aplikasi Authenticator atau gunakan kode cadangan.';
@@ -204,7 +204,7 @@ include __DIR__ . '/partials/auth_head.php';
         </button>
         <!-- Cancel / back -->
         <div class="text-center pt-2">
-            <a href="login.php" class="text-xs text-gray-500 hover:text-gray-300 transition flex items-center justify-center gap-1">
+            <a href="login" class="text-xs text-gray-500 hover:text-gray-300 transition flex items-center justify-center gap-1">
                 <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali ke Login
             </a>
         </div>

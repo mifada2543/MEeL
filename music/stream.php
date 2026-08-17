@@ -19,10 +19,13 @@ if ($referer !== '' && $currentHost !== '') {
         $currentHostNorm = strtolower(parse_url('http://' . $currentHost, PHP_URL_HOST) ?: $currentHost);
         if (strtolower($refParts['host']) === $currentHostNorm) {
 
-            $refPath      = $refParts['path'] ?? '';
-            $refPage      = basename($refPath);
-            $allowedPages = ['watch.php', 'index.php', 'view_playlist.php'];
-            if (strpos($refPath, '/music/') !== false && in_array($refPage, $allowedPages, true)) {
+            $refPath = $refParts['path'] ?? '';
+            // Gate: referer harus halaman dalam modul /music — tanpa batasan
+            // basename, karena semua rute bersih (/music/beranda, /music/watch,
+            // /music/playlist, /music/<slug-playlist>) adalah halaman musik sah
+            // yang memutar lewat mini-player. Allowlist basename lama melewatkan
+            // 'beranda' & slug → stream dari mini-player di halaman itu ditolak.
+            if (preg_match('#/music(?:/|$)#i', $refPath)) {
                 $refererOk = true;
             }
         }

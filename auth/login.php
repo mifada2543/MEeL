@@ -77,7 +77,7 @@ if (isset($_POST['login']) && !$is_locked) {
                                 $upd->bind_param("i", $u['id']);
                                 $upd->execute();
                                 $upd->close();
-                                header("Location: mfa_verify.php");
+                                header("Location: mfa-verify");
                                 exit;
                             }
                             // ─── LOGIN LENGKAP (tanpa MFA) ───
@@ -93,7 +93,7 @@ if (isset($_POST['login']) && !$is_locked) {
                             if ($upd) {
                                 $upd->bind_param("si", $current_sid, $u['id']);
                                 $upd->execute();
-                                header("Location: ../index.php");
+                                header("Location: ../");
                                 exit;
                             }
                         }
@@ -185,7 +185,7 @@ include __DIR__ . '/partials/auth_head.php';
         <?php endif; ?>
         <!-- Opsi lain -->
         <div class="flex items-center justify-between px-1">
-            <a href="register.php" class="text-xs text-gray-300 hover:text-white transition" title="Daftar untuk mendapatkan akun">
+            <a href="register" class="text-xs text-gray-300 hover:text-white transition" title="Daftar untuk mendapatkan akun">
                 Belum punya akun?
             </a>
             <a href="<?= htmlspecialchars($back_url) ?>" class="text-xs text-blue-500 font-bold hover:underline" title="Kembali">

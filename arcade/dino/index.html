@@ -55,7 +55,7 @@
                 id="gameTitle"
                 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-teal-300 to-pink-400 tracking-tight flex items-center gap-2 transition-all duration-300"
               >
-                <a href="../index.php" class="text-inherit no-underline"
+                <a href="../" class="text-inherit no-underline"
                   >MEeL - Dino run</a
                 >
               </h1>
@@ -334,8 +334,7 @@
     <script src="assets/js/assets.js"></script>
     <script src="assets/js/game.js"></script>
     <script>
-      // Mencegah scroll saat menyentuh area game
-      const gameCanvasEl = document.getElementById("gameCanvas");
+    const gameCanvasEl = document.getElementById("gameCanvas");
       document.body.addEventListener(
         "touchstart",
         function (e) {
@@ -349,8 +348,7 @@
         },
         { passive: false },
       );
-      // Toggle cheat panel ketika score diklik
-      const scoreText = document.getElementById("scoreText");
+    const scoreText = document.getElementById("scoreText");
       const hiScoreText = document.getElementById("hiScoreText");
       const cheatToggleBtn = document.getElementById("cheatToggleBtn");
       const cheatPanel = document.getElementById("cheatPanel");
@@ -369,8 +367,7 @@
       if (cheatToggleBtn)
         cheatToggleBtn.addEventListener("click", toggleCheatPanel);
 
-      // Tambahkan cursor pointer untuk visual feedback
-      if (scoreText) {
+    if (scoreText) {
         scoreText.style.cursor = "pointer";
         scoreText.classList.add(
           "hover:brightness-150",

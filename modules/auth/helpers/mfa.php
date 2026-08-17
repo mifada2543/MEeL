@@ -25,7 +25,7 @@ function base32_decode(string $input): string
     }
     return $output;
 }
-} // end function_exists('base32_decode')
+}
 
 if (!function_exists('generate_mfa_secret')) {
 /* @return string Base32 secret key */
@@ -38,7 +38,7 @@ function generate_mfa_secret(): string
     }
     return $secret;
 }
-} // end function_exists('generate_mfa_secret')
+}
 
 if (!function_exists('generate_totp')) {
 /* @param string $secret Base32 secret key; @param int|null $time_slice Unix timestamp / 30 (null = waktu sekarang); @return string Kode 6-digit */
@@ -60,7 +60,7 @@ function generate_totp(string $secret, ?int $time_slice = null): string
 
     return str_pad((string)($code % 1000000), 6, '0', STR_PAD_LEFT);
 }
-} // end function_exists('generate_totp')
+}
 
 if (!function_exists('verify_totp')) {
 /* @param string $secret Base32 secret key; @param string $code Kode 6-digit yang dimasukkan user; @return bool True jika valid */
@@ -74,7 +74,7 @@ function verify_totp(string $secret, string $code): bool
     }
     return false;
 }
-} // end function_exists('verify_totp')
+}
 
 if (!function_exists('generate_otpauth_url')) {
 /* @param string $secret Base32 secret; @param string $username Username pengguna; @return string OTP Auth URL */
@@ -84,7 +84,7 @@ function generate_otpauth_url(string $secret, string $username): string
     $label = rawurlencode("$issuer:$username");
     return "otpauth://totp/{$label}?secret={$secret}&issuer={$issuer}";
 }
-} // end function_exists('generate_otpauth_url')
+}
 
 if (!function_exists('generate_backup_codes')) {
 /* @return array ['plain' => string[], 'hashed' => string[]] */
@@ -100,7 +100,7 @@ function generate_backup_codes(): array
     }
     return ['plain' => $plain, 'hashed' => $hashed];
 }
-} // end function_exists('generate_backup_codes')
+}
 
 if (!function_exists('verify_backup_code')) {
 /**
@@ -123,4 +123,4 @@ function verify_backup_code(string $hashed_json, string $input): array
     }
     return ['valid' => false, 'remaining' => null];
 }
-} // end function_exists('verify_backup_code')
+}

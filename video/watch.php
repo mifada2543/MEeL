@@ -67,7 +67,7 @@ $__vdir = function($dir) {
     <nav class="border-b border-white/[.04] sticky top-0 z-50">
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
-            <a href="index.php" class="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-xl transition-all" title="MEeL Video">
+            <a href="beranda" class="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-xl transition-all" title="MEeL Video">
                 <div class="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -91,7 +91,7 @@ $__vdir = function($dir) {
                     </div>
                 </div>
                 <button id="v-search-btn"
-                    hx-get="search_video.php?exclude=<?= $id ?>"
+                    hx-get="search?exclude=<?= $id ?>"
                     title="Cari"
                     hx-include="#v-search-watch"
                     hx-target="#recommendation-column"
@@ -126,7 +126,7 @@ $__vdir = function($dir) {
                 name="search"
                 placeholder="Cari video..."
                 class="w-full bg-white/[.06] border border-white/[.08] rounded-xl py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:border-red-500/40 text-gray-300"
-                hx-get="search_video.php?exclude=<?= $id ?>"
+                hx-get="search?exclude=<?= $id ?>"
                 hx-trigger="keyup[key=='Enter']"
                 hx-target="#recommendation-column"
                 autocomplete="off">
@@ -191,7 +191,7 @@ $__vdir = function($dir) {
                     );
                     if ($can_edit): ?>
                         <div class="flex gap-2">
-                            <a href="../admin/edit-video.php?id=<?= $id ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
+                            <a href="<?= base_url('/admin/edit-video?id=' . (int)$id) ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
                                 <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit Video
                             </a>
                         </div>
@@ -225,14 +225,14 @@ $__vdir = function($dir) {
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <?php if (isset($_SESSION['username'])): ?>
-                            <a href="../transcode.php?id=<?= $id ?>"
+                            <a href="../transcode?id=<?= $id ?>"
                                 class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-gray-800/50 border border-white/[.05] text-gray-500 hover:bg-gray-700 hover:text-gray-300 no-underline"
                                 title="Download audio saja">
                                 <i data-lucide="download" class="w-3.5 h-3.5"></i> Audio
                             </a>
                             <div id="like-dislike-container" class="flex items-center gap-2">
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"video","type":"like","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     title="Suka video"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
@@ -243,7 +243,7 @@ $__vdir = function($dir) {
                                     Like<?= ($v['likes'] ?? 0) > 0 ? " <span class='tabular-nums ml-0.5'>{$v['likes']}</span>" : '' ?>
                                 </button>
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"video","type":"dislike","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     title="Tidak suka video"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
@@ -305,8 +305,8 @@ $__vdir = function($dir) {
                         <div id="comment-body">
                             <div class="p-4 sm:p-6">
                                 <div id="comment-alert"></div>
-                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
-                                hx-post="../controllers/api/comment.php"
+                            <form action="<?= base_url('/video/watch?id=' . (int)$id) ?>" method="post" class="mb-6"
+                                hx-post="../api/comment"
                                 hx-target="#comment-list"
                                 hx-swap="innerHTML"
                                 hx-vals='{"id":"<?= $id ?>","media_type":"video"}'
@@ -352,7 +352,7 @@ $__vdir = function($dir) {
             </div>
             <div id="recommendation-column" class="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:gap-0 lg:space-y-1">
                 <?php while ($r = $rekom->fetch_assoc()): ?>
-                    <a href="watch.php?id=<?= $r['id'] ?>"
+                    <a href="<?= base_url('/video/watch?id=' . (int)$r['id']) ?>"
                         class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 px-2 py-2.5 rounded-xl no-underline"
                         title="<?= htmlspecialchars($r['title']) ?>">
                         <div class="w-full lg:w-32 aspect-video lg:h-20 lg:aspect-auto rounded-xl overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">

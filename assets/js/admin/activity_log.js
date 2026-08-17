@@ -26,7 +26,6 @@
           panel.classList.add("hidden");
         });
       });
-      // Close on outside click
       document.addEventListener("click", function () {
         if (!panel.classList.contains("hidden")) {
           panel.classList.add("hidden");
@@ -73,7 +72,7 @@
     if (q && q.value.trim()) params.set("q", q.value.trim());
     if (days && days.value) params.set("days", days.value);
 
-    window.location.href = "activity_log.php?" + params.toString();
+    window.location.href = "activity-log?" + params.toString();
   };
   // ─── Action Dropdown Toggle ───
   window.toggleActionDropdown = function () {

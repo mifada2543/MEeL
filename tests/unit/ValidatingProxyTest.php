@@ -1,11 +1,11 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-require_once dirname(__DIR__, 2) . '/modules/core/ValidatingProxy.php';
+require_once dirname(__DIR__, 2) . '/modules/auth/ValidatingProxy.php';
 
 /**
  * Regression tests for the validating forward proxy
- * (modules/core/ValidatingProxy.php + validating_proxy_server.php).
+ * (modules/auth/ValidatingProxy.php + validating_proxy_server.php).
  *
  * These spawn a REAL proxy process on 127.0.0.1:<ephemeral> and send real
  * CONNECT / absolute-URI requests to it, verifying that:

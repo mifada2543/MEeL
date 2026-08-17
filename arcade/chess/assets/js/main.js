@@ -10,7 +10,6 @@ import {
   sendGameActionAPI,
 } from "./api.js";
 const game = new ChessGame();
-// State Variables
 let roomCode = null;
 let myColor = null;
 let lastMoveId = 0;
@@ -35,7 +34,6 @@ let opponentOfflineNotified = false; // sudah pernah menampilkan modal terputus?
 let opponentOfflineNextPromptAt = 0; // kapan boleh prompt ulang (ms) — anti spam modal
 let opponentOfflineModalOpen = false; // modal klaim kemenangan sedang terbuka
 let gameOverEventSent = false; // event game_over sudah dikirim ke server (dedup)
-// DOM Elements
 const boardEl = document.getElementById("chess-board");
 const moveHistoryList = document.getElementById("move-history-list");
 const promotionModal = document.getElementById("promotion-modal");
@@ -232,7 +230,6 @@ function tungguLawanBergabung(code) {
     }
   }, 2000);
 }
-// RENDERING BOARD
 function isBoardFlipped() {
   if (game.gameMode === "online") return myColor === "b";
   if (game.gameMode === "local") return localBoardFlipped;
@@ -296,8 +293,7 @@ function renderBoard() {
             game.lastMove &&
             game.lastMove.to.r === boardR &&
             game.lastMove.to.c === boardC;
-          // Determine animation class
-          let animClass = "";
+    let animClass = "";
           if (isJustPlaced) {
             if (game.lastMoveType === "capture") {
               animClass = "piece-capture-land";
@@ -309,8 +305,7 @@ function renderBoard() {
               animClass = "piece-anim";
             }
           }
-          // Ghost overlay
-          if (game.lastCapturedPiece && pendingCaptureSvg) {
+    if (game.lastCapturedPiece && pendingCaptureSvg) {
             const isCapturePos =
               game.lastCapturedPiece.r === boardR &&
               game.lastCapturedPiece.c === boardC;
@@ -1539,9 +1534,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!sounds.initialized) sounds.init();
     },
     { once: true },
-  );
-  // Inisialisasi ikon Lucide
-  if (window.lucide) {
+  );    if (window.lucide) {
     window.lucide.createIcons();
   }
   renderBoard();

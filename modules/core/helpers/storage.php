@@ -23,7 +23,7 @@ function meel_media_base_path(string $module): string
     }
     return dirname(__DIR__, 3) . '/' . $module . '/upload';
 }
-} // end function_exists('meel_media_base_path')
+}
 
 if (!function_exists('music_thumbnail_url')) {
 function music_thumbnail_url(?string $thumbnail): string
@@ -66,7 +66,7 @@ function music_thumbnail_url(?string $thumbnail): string
     }
     return $default_thumb;
 }
-} // end function_exists('music_thumbnail_url')
+}
 
 if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
     define('MEEL_HDD_CHECKED', true);
@@ -99,7 +99,7 @@ function meel_drive_base_path(?string $hddDriveOverride = null): string
     // File ini berada di modules/core/helpers/, jadi dirname(__DIR__, 3) = root proyek.
     return dirname(__DIR__, 3) . '/data_drive';
 }
-} // end function_exists('meel_drive_base_path')
+}
 
 /**
  * @param int $required_bytes Jumlah byte yang dibutuhkan
@@ -139,7 +139,7 @@ function check_disk_space(int $required_bytes, string $path): array
         'error'    => null,
     ];
 }
-} // end function_exists('check_disk_space')
+}
 
 /**
  * @param int $required_bytes Jumlah byte minimum yang diperlukan
@@ -159,7 +159,7 @@ function require_disk_space(int $required_bytes, string $path, string $label): v
 
     throw new \RuntimeException("Ruang {$label} tidak mencukupi! {$error_ms}");
 }
-} // end function_exists('require_disk_space')
+}
 
 if (!function_exists('dir_size')) {
 /**
@@ -207,7 +207,7 @@ function dir_size(string $path, int $cache_ttl = 300): float
     }
     return $size;
 }
-} // end function_exists('dir_size')
+}
 
 if (!function_exists('invalidate_dir_size_cache')) {
 /* @param string $username Nama user */
@@ -223,7 +223,7 @@ function invalidate_dir_size_cache(string $username): void
         }
     }
 }
-} // end function_exists('invalidate_dir_size_cache')
+}
 
 if (!function_exists('meel_write_cache_file')) {
 /* @param string $path Path file cache; @param string $content Isi file */
@@ -236,7 +236,7 @@ function meel_write_cache_file(string $path, string $content): void
     }
     file_put_contents($path, $content, LOCK_EX);
 }
-} // end function_exists('meel_write_cache_file')
+}
 
 if (!function_exists('log_drive_operation')) {
 function log_drive_operation(int $userId, string $username, string $operation, string $filename, string $type, string $scope, string $status = 'success'): void
@@ -272,7 +272,7 @@ function log_drive_operation(int $userId, string $username, string $operation, s
         error_log("[MEeL] log_drive_operation: gagal menulis log: {$logFile}");
     }
 }
-} // end function_exists('log_drive_operation')
+}
 
 /**
  * Serve file media dari storage terpusat (MEEL_HDD_*_UPLOAD / folder lokal
@@ -357,7 +357,14 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
             $hostNorm = strtolower(parse_url('http://' . $host, PHP_URL_HOST) ?: $host);
             if ($parts && isset($parts['host']) && strtolower($parts['host']) === $hostNorm) {
                 $refPath = $parts['path'] ?? '';
-                if (str_contains($refPath, '/video/') && preg_match('#/video/(watch|index)\.php#i', $refPath)) {
+                // Terima pola lama (/video/watch.php, /video/index.php) DAN
+                // clean URL baru (/video/watch?id=X — path /video/watch,
+                // /video/beranda). Mini-player mem-push URL ke 'beranda' saat
+                // mode mini aktif — tanpa 'beranda', segment HLS yang diminta
+                // dengan referer /video/beranda ditolak → video loading terus.
+                // Tetap tolak halaman lain seperti /video/upload (tidak pernah
+                // menjadi referer pemuat HLS).
+                if (preg_match('#/video(?:/(?:watch(?:\.php)?|index(?:\.php)?|beranda))?(?:[?\#]|/?$)#i', $refPath)) {
                     $refOk = true;
                 }
             }
@@ -368,7 +375,7 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
             // base URL proyek = dirname(SCRIPT_NAME, 2).
             $script = $_SERVER['SCRIPT_NAME'] ?? '';
             $basePath = rtrim(dirname(dirname($script)), '/');
-            header('Location: ' . $basePath . '/err/denied.php');
+            header('Location: ' . $basePath . '/err/?code=denied');
             exit;
         }
     }
@@ -432,4 +439,4 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
     fclose($fp);
     exit;
 }
-} // end function_exists('meel_serve_media_file')
+}

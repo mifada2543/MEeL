@@ -340,7 +340,7 @@ function getMiniShell() {
 }
 function closeMiniPlayer() {
   isMiniPlayerActive &&
-    (player && player.pause(), (window.location.href = "index.php"));
+    (player && player.pause(), (window.location.href = "beranda"));
 }
 function updateMiniPlayerInfo(e, t) {
   const n = document.getElementById("mini-info-title"),
@@ -350,7 +350,7 @@ function updateMiniPlayerInfo(e, t) {
 }
 function attachMiniPlayerVideoCardListeners(e) {
   e &&
-    e.querySelectorAll('a[href*="watch.php"]').forEach((e) => {
+    e.querySelectorAll('a[href*="watch.php"], a[href*="/video/watch"]').forEach((e) => {
       e.dataset.miniIntercepted ||
         ((e.dataset.miniIntercepted = "1"),
         e.addEventListener("click", async (t) => {
@@ -384,7 +384,7 @@ function attachMiniPlayerVideoCardListeners(e) {
                 "true" === l.isHls ||
                 "true" === a?.dataset?.ishls,
               d = a?.dataset?.poster || "",
-              p = l.id || new URL(n).searchParams.get("id") || "";
+              p = l.id || new URL(n).searchParams.get("id") || (n.match(/[?&]id=(\d+)/) || [])[1] || "";
             updateSearchExcludeId(p);
             const u = l.vttSrc || "";
             if (!s) return void (window.location.href = n);

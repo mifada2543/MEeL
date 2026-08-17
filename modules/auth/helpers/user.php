@@ -11,7 +11,7 @@ function get_user_usage(string $username): int|float
 
     return dir_size($path);
 }
-} // end function_exists('get_user_usage')
+}
 
 /* @param \mysqli $conn Koneksi database; @param int $user_id ID user; @return string Role user ('admin', 'member', 'user', 'guest') */
 if (!function_exists('get_user_role')) {
@@ -45,7 +45,7 @@ function get_user_role(mysqli $conn, int $user_id): string
 
     return $role;
 }
-} // end function_exists('get_user_role')
+}
 
 /* Invalidate role cache di session — panggil saat role user berubah. */
 if (!function_exists('invalidate_user_role_cache')) {
@@ -53,7 +53,7 @@ function invalidate_user_role_cache(): void
 {
     unset($_SESSION['role']);
 }
-} // end function_exists('invalidate_user_role_cache')
+}
 
 /* Hapus akun guest non-aktif lalu reset AUTO_INCREMENT users (aksi admin & GC).
  * @param \mysqli $conn Koneksi database aktif
@@ -82,4 +82,4 @@ function purge_guest_users(mysqli $conn): ?int
     }
     return $deleted;
 }
-} // end function_exists('purge_guest_users')
+}

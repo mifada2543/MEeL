@@ -205,7 +205,7 @@ class UpdateManager
     private function redirect(): void
     {
 
-        header("Location: " . base_url('/update.php'));
+        header("Location: " . base_url('/update'));
         exit;
     }
 }

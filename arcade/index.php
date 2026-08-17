@@ -24,7 +24,7 @@ sort($categories);
   <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
-        <div class="p-2 bg-pink-500/10 rounded-lg border border-pink-500/30 animate-pulse cursor-pointer" onclick="window.location.href='../index.php'" title="Kembali ke MEeL Hub">
+        <div class="p-2 bg-pink-500/10 rounded-lg border border-pink-500/30 animate-pulse cursor-pointer" onclick="window.location.href='../'" title="Kembali ke MEeL Hub">
           <img src="../assets/MEeL.png" alt="Logo MEeL-Arcade" class="w-10 h-10 object-contain" />
         </div>
         <div>

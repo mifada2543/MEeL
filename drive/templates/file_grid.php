@@ -45,7 +45,7 @@ if (empty($files)): ?>
                         <i data-lucide='trash-2' class='w-4 h-4'></i>
                     </button>
 
-                    <form id='<?= $deleteFormId ?>' action='delete.php' method='POST' style='display:none;'>
+                    <form id='<?= $deleteFormId ?>' action='delete' method='POST' style='display:none;'>
                         <input type='hidden' name='csrf_token' value='<?= $safeCsrfToken ?>'>
                         <input type='hidden' name='file' value='<?= $safeFileName ?>'>
                         <input type='hidden' name='type' value='<?= htmlspecialchars($type, ENT_QUOTES, 'UTF-8') ?>'>

@@ -92,7 +92,7 @@ Dokumentasi tentang sistem keamanan, autentikasi, otorisasi, dan proteksi yang a
 // Proteksi halaman - redirect jika belum login
 if (!isset($_SESSION['user_id'])) {
     $next = urlencode($_SERVER['REQUEST_URI'] ?? '/');
-    header("Location: ../auth/login.php?next={$next}");
+    header("Location: ../auth/login?next={$next}");
     exit;
 }
 ```
@@ -106,7 +106,7 @@ $stmt->execute();
 $user_role = $stmt->get_result()->fetch_assoc()['role'] ?? 'user';
 
 if ($user_role !== 'admin') {
-    header("Location: ../index.php?error=ditolak");
+    header("Location: ../?error=ditolak");
     exit();
 }
 ```
@@ -160,7 +160,7 @@ final class DriveUserContext {
 ### Session Configuration
 
 ```php
-// modules/core/helpers/session.php — meel_boot_session()
+// modules/auth/helpers/session.php — meel_boot_session()
 // (auth/config.php & auth/auth_helpers.php mendelegasikan ke fungsi ini)
 $timeout = 43200;              // 12 jam
 ini_set('session.gc_maxlifetime', $timeout);
@@ -186,7 +186,7 @@ session_start();
 | `HttpOnly` | `true` | XSS tidak bisa mencuri session cookie via JavaScript |
 | `SameSite` | `Lax` | Request POST lintas-situs tidak membawa cookie (CSRF layer 1) |
 
-Konfigurasi di atas kini **dipusatkan** di `modules/core/helpers/session.php` sebagai fungsi
+Konfigurasi di atas kini **dipusatkan** di `modules/auth/helpers/session.php` sebagai fungsi
 `meel_boot_session()` — satu-satunya sumber kebenaran inisialisasi session. Semua entry point
 (index, video, music, auth, controllers/api, err, admin) memanggilnya menggantikan pola lama
 `session_name('meel'); session_start();` yang tersebar di banyak file, sehingga cookie sesi
@@ -224,7 +224,7 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
     if ($elapsed_time > $timeout) {
         session_unset();
         session_destroy();
-        header("Location: ../auth/login.php?reason=expired");
+        header("Location: ../auth/login?reason=expired");
         exit;
     }
 }
@@ -275,7 +275,7 @@ Login Flow:
     ↓ Ya                             ↓ Tidak
   Simpan mfa_temp_uid ke session    Set session langsung
     ↓                                ↓
-  Redirect ke mfa_verify.php       Redirect ke index
+  Redirect ke auth/mfa-verify       Redirect ke index
 ```
 
 ### TOTP Implementation
@@ -361,8 +361,8 @@ Admin dapat mereset MFA user dari halaman `admin/mfa_reset.php`:
 ### MFA di Profile
 
 Halaman `profile/index.php` menampilkan status MFA dengan toggle switch visual:
-- Hijau "Aktif" → link ke `auth/mfa_setup.php` untuk kelola/disable
-- Abu-abu "Nonaktif" → link ke `auth/mfa_setup.php` untuk setup
+- Hijau "Aktif" → link ke `auth/mfa-setup` untuk kelola/disable
+- Abu-abu "Nonaktif" → link ke `auth/mfa-setup` untuk setup
 - Jika aktif, backup codes juga ditampilkan di profil
 
 ---
@@ -589,7 +589,7 @@ Detil yang ditampilkan:
 
 ### Arsitektur
 
-`modules/core/RateLimiter.php` menyediakan **file-based rate limiter** yang melindungi API endpoint dari abuse:
+`modules/auth/RateLimiter.php` menyediakan **file-based rate limiter** yang melindungi API endpoint dari abuse:
 
 ```
 Request → RateLimiter::check(key, endpoint)
@@ -644,7 +644,7 @@ if (!$rateCheck['allowed']) {
 $rateCheck = RateLimiter::check('user_'.$userId, 'comment');
 if (!$rateCheck['allowed']) {
     $_SESSION['error'] = 'Terlalu banyak komentar.';
-    header("Location: watch.php?id={$id}#comment-section");
+    header("Location: music/watch?id={$id}#comment-section");
     exit;
 }
 ```
@@ -771,7 +771,7 @@ Fitur Advanced Upload (`upload_advanced.php`) mengizinkan user terautentikasi me
 
 ### Arsitektur
 
-`modules/core/SsrfGuard.php` adalah **satu-satunya sumber kebenaran** untuk setiap request keluar yang dibuat atas nama user:
+`modules/auth/SsrfGuard.php` adalah **satu-satunya sumber kebenaran** untuk setiap request keluar yang dibuat atas nama user:
 
 ```
 User URL → SsrfGuard::validate()
@@ -856,9 +856,9 @@ Keterbatasan `https://` dengan demikian teratasi: meskipun URL HTTPS asli tidak 
 
 | File | Peran |
 |---|---|
-| `modules/core/SsrfGuard.php` | Validasi sentral: allowlist protokol, cek range IPv4/IPv6 eksplisit, validasi semua record DNS, HTTP pinning |
-| `modules/core/ValidatingProxy.php` | Spawn/terminate proses proxy, expose URL `--proxy` (loopback-only) |
-| `modules/core/validating_proxy_server.php` | CLI forward proxy: SsrfGuard di setiap hop (HTTP absolute-URI + CONNECT tunnel) |
+| `modules/auth/SsrfGuard.php` | Validasi sentral: allowlist protokol, cek range IPv4/IPv6 eksplisit, validasi semua record DNS, HTTP pinning |
+| `modules/auth/ValidatingProxy.php` | Spawn/terminate proses proxy, expose URL `--proxy` (loopback-only) |
+| `modules/auth/validating_proxy_server.php` | CLI forward proxy: SsrfGuard di setiap hop (HTTP absolute-URI + CONNECT tunnel) |
 | `modules/core/Transcoder.php` | `processDownload()` / `fetchMetadata()` memanggil guard dan mengarahkan yt-dlp lewat `--proxy`; fail closed jika proxy tidak bisa start |
 | `modules/autoload.php` | Mengautoload kelas `SsrfGuard` |
 
@@ -924,7 +924,7 @@ Kedua endpoint me-resolve file melalui `DriveStorage::getFileForDownload()`, yan
 
 ### URL Preview
 
-`DriveStorage::listFilesByType()` tidak pernah mengeluarkan path web langsung untuk file private. Sebagai gantinya ia membangun URL `stream.php?file=…&type=…&scope=private&csrf_token=…`, sehingga browser tidak pernah menyentuh path storage mentah (yang juga membocorkan struktur filesystem).
+`DriveStorage::listFilesByType()` tidak pernah mengeluarkan path web langsung untuk file private. Sebagai gantinya ia membangun URL `stream?file=…&type=…&scope=private&csrf_token=…` (rute bersih — `stream.php?file=…` juga tetap diterima via 301), sehingga browser tidak pernah menyentuh path storage mentah (yang juga membocorkan struktur filesystem).
 
 ### Hardening Race Condition (Upload Drive)
 

@@ -75,7 +75,6 @@ function handleSubmit() {
     baseDelay: baseDelay,
   });
 }
-// Drag-and-drop audio
 const audioZone = document.getElementById("audio-zone");
 const audioInput = document.getElementById("audio-input");
 audioZone.addEventListener("dragover", (e) => {
@@ -96,7 +95,6 @@ audioZone.addEventListener("drop", (e) => {
     handleAudioFile(audioInput);
   }
 });
-// Drag-and-drop cover
 const coverZone = document.getElementById("cover-zone");
 const coverInput = document.getElementById("cover-input");
 coverZone.addEventListener("dragover", (e) => {
@@ -155,7 +153,7 @@ function autoFillMetadata() {
   if (csrfInput && csrfInput.value) {
     formData.append("csrf_token", csrfInput.value);
   }
-  fetch("../controllers/api/auto_metadata.php", {
+  fetch("../api/auto-metadata", {
     method: "POST",
     body: formData,
   })

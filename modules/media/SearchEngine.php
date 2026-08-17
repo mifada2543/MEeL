@@ -228,9 +228,4 @@ class SearchEngine
         return $result;
     }
 
-    /* Clear cache — useful untuk testing atau manual cache invalidation. */
-    public static function clearCache(): void
-    {
-        self::$cache = [];
-    }
 }

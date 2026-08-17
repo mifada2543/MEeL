@@ -127,19 +127,19 @@ class DriveSecurityTest extends TestCase
         $this->storage('alice')->getFileForDownload('', 'video', 'private');
     }
 
-    // ─── Preview routing: private must go through stream.php ───
+    // ─── Preview routing: private must go through stream (route bersih) ───
 
     public function testPrivateListingUsesAuthenticatedStreamEndpoint(): void
     {
         file_put_contents($this->baseDir . '/private_admins/alice/video/x.mp4', 'data');
         $files = $this->storage('alice')->listFilesByType('video', 'private');
         $this->assertCount(1, $files);
-        $this->assertStringStartsWith('stream.php?file=' . rawurlencode('x.mp4'), $files[0]['path']);
+        $this->assertStringStartsWith('stream?file=' . rawurlencode('x.mp4'), $files[0]['path']);
         $this->assertStringContainsString('scope=private', $files[0]['path']);
         $this->assertStringContainsString('csrf_token=test_token_123', $files[0]['path']);
         // Must NOT expose the raw filesystem/web path of the private file.
         $this->assertStringNotContainsString('private_admins', $files[0]['path']);
-        $this->assertStringNotContainsString('/x.mp4', str_replace('stream.php', '', $files[0]['path']));
+        $this->assertStringNotContainsString('/x.mp4', str_replace('stream?file=', '', $files[0]['path']));
     }
 
     public function testPublicListingUsesDirectWebPath(): void

@@ -180,20 +180,45 @@ music ──1:N── playlist_tracks
    helpers (`FfmpegUtils` trait, `GarbageCollector::removeFile()`/`removeDirectory()`,
    `meel_write_cache_file()`). See the [Filesystem Safety Convention](modules.md#filesystem-safety-convention-no--suppression).
 7. **Centralized Session Boot** — Every entry point must call `meel_boot_session()`
-   (from `modules/core/helpers/session.php`) — never raw `session_name()` + `session_start()`.
+   (from `modules/auth/helpers/session.php`) — never raw `session_name()` + `session_start()`.
    This function guarantees the session cookie uses `HttpOnly`/`SameSite=Lax`/`Secure`
    (auto-detect HTTPS) flags and the 12-hour timeout consistently.
 
 ### File Structure per Module
 
+Each module (video, music, books, drive) follows this pattern. Pages are reached
+via **clean URLs** (front controller `router.php` → `modules/core/Router.php`),
+e.g. `video/beranda` → `video/index.php`, `music/watch?id=X` → `music/watch.php`:
+
 ```
 [module]/
-├── index.php          # Catalog / listing
-├── watch.php          # Player / detail
-├── upload.php         # Upload form
-├── search_[module].php  # Search (HTMX)
-├── load_more.php      # Pagination (HTMX)
+├── index.php          # Catalog / listing (URL: [module]/beranda)
+├── watch.php          # Player / detail (URL: [module]/watch?id=X)
+├── upload.php         # Upload form (URL: [module]/upload)
+├── search_[module].php  # Search (HTMX) (URL: [module]/search)
+├── load_more.php      # Pagination (HTMX) (URL: [module]/load-more)
 └── [module]_item.php  # Card component
+```
+
+### HTMX Pattern
+
+```php
+<!-- Trigger -->
+<input type="text" name="search"
+    hx-get="video/search"
+    hx-trigger="keyup[key=='Enter']"
+    hx-target="#video-container"
+    hx-indicator="#search-indicator">
+
+<!-- Target -->
+<div id="video-container">
+    <!-- Results loaded here -->
+</div>
+
+<!-- Indicator -->
+<div id="search-indicator" class="htmx-indicator">
+    <div class="animate-spin">⏳</div>
+</div>
 ```
 
 ---
@@ -325,7 +350,7 @@ ALTER TABLE users
 2. Yes → Save $_SESSION['mfa_temp_uid'] = user_id
           Save $_SESSION['mfa_temp_username']
           Save $_SESSION['mfa_temp_role']
-3. Redirect to mfa_verify.php
+3. Redirect to auth/mfa-verify
 4. User inputs 6-digit code
 5. Valid → Set $_SESSION['user_id', 'username', 'role']
           Set $_SESSION['mfa_verified'] = true
@@ -434,7 +459,7 @@ main (stable)
 | `modules/core/Transcoder.php` | Main engine (most complex) |
 | `modules/core/Uploader.php` | File upload process |
 | `modules/core/System.php` | Queue & monitoring |
-| `modules/core/RateLimiter.php` | API Rate Limiter |
+| `modules/auth/RateLimiter.php` | API Rate Limiter |
 | `modules/core/ProgressObserver.php` | Progress event contract (interface + callable adapter) — see `modules.md` |
 | `modules/core/BrowserProgressObserver.php` | Browser presenter — maps engine events to the overlay/`meel*` JS |
 | `modules/core/GarbageCollector.php` | Auto-cleanup |

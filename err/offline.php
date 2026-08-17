@@ -114,7 +114,7 @@
             Silakan periksa koneksi internet dan coba lagi.
         </p>
         <a href="javascript:location.reload()" class="btn btn-primary">Coba Lagi</a>
-        <a href="../index.php" class="btn" style="margin-left:0.5rem">Ke Halaman Utama</a>
+        <a href="../" class="btn" style="margin-left:0.5rem">Ke Halaman Utama</a>
         <div class="footer">MEeL &mdash; Media Hub Platform</div>
     </div>
 </body>

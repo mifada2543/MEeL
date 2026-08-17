@@ -36,7 +36,7 @@ if (count($rows) > 0) {
         ?>
         <div id="load-more-book-area"
             class="col-span-full py-8 flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-green-500/30 hover:bg-white/[.03] transition-all group"
-            hx-get="search_books.php?search=<?= urlencode($q) ?>&type=<?= $type ?>&offset=<?= $offset + $limit ?>"
+            hx-get="search?search=<?= urlencode($q) ?>&type=<?= $type ?>&offset=<?= $offset + $limit ?>"
             hx-target="#load-more-book-area"
             hx-swap="outerHTML"
             title="Muat lebih banyak buku">

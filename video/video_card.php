@@ -22,7 +22,7 @@
              height="236">
 
         <!-- PLAY OVERLAY -->
-        <a href="watch.php?id=<?= $v['id'] ?>"
+        <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>"
            class="absolute inset-0 flex items-center justify-center
                   opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity duration-300"
            aria-label="Tonton video <?= htmlspecialchars($v['title']) ?>"
@@ -41,7 +41,7 @@
 
     <!-- META -->
     <div class="px-3 py-3">
-        <a href="watch.php?id=<?= $v['id'] ?>"
+        <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>"
            class="block text-[12px] font-bold text-gray-300 line-clamp-2 leading-snug
                   hover:text-red-400 transition-colors"
            title="<?= htmlspecialchars($v['title']) ?>">

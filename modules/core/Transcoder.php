@@ -18,8 +18,8 @@ require_once __DIR__ . '/../exceptions/ProcessException.php';
 require_once __DIR__ . '/../exceptions/DownloadException.php';
 require_once __DIR__ . '/../exceptions/TranscodeException.php';
 require_once __DIR__ . '/ProgressObserver.php';
-require_once __DIR__ . '/SsrfGuard.php';
-require_once __DIR__ . '/ValidatingProxy.php';
+require_once __DIR__ . '/../auth/SsrfGuard.php';
+require_once __DIR__ . '/../auth/ValidatingProxy.php';
 
 class Transcoder
 {
@@ -1356,7 +1356,7 @@ class Transcoder
         $stmt_upd->execute();
         $stmt_upd->close();
 
-        $this->removeFile($marker_file); // Hapus marker setelah selesai
+        $this->removeFile($marker_file);
 
         if (!file_exists($output_path) || filesize($output_path) === 0) {
             $this->emit('error', ['message' => 'FFmpeg gagal menghasilkan file output.']);

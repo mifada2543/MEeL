@@ -78,9 +78,9 @@ $__v = function($f) {
 
         <!-- Nav -->
         <nav class="top-nav">
-            <a href="../index.php" class="nav-brand">MEeL<span>Music</span></a>
+            <a href="../" class="nav-brand">MEeL<span>Music</span></a>
             <div class="nav-sep"></div>
-            <a href="index.php" class="nav-crumb">Library</a>
+            <a href="beranda" class="nav-crumb">Library</a>
             <span class="nav-chevron">›</span>
             <span class="nav-crumb-current">Upload</span>
             <?php if ($is_admin): ?>
@@ -272,11 +272,11 @@ $__v = function($f) {
 
                     <!-- Footer links -->
                     <div class="footer-links">
-                        <a href="index.php" class="footer-link">Library</a>
-                        <a href="../index.php" class="footer-link">Portal</a>
-                        <a href="../video/upload.php" class="footer-link accent">Go to Video</a>
-                        <a href="../upload_advanced.php" class="footer-link"
-                            onclick="return meelAlertRedirect({ title:'Upload Lanjutan', text:'Anda dan Server memerlukan koneksi internet', icon:'info', redirectUrl:'../upload_advanced.php' })">
+                        <a href="beranda" class="footer-link">Library</a>
+                        <a href="../" class="footer-link">Portal</a>
+                        <a href="../video/upload" class="footer-link accent">Go to Video</a>
+                        <a href="../upload" class="footer-link"
+                            onclick="return meelAlertRedirect({ title:'Upload Lanjutan', text:'Anda dan Server memerlukan koneksi internet', icon:'info', redirectUrl:'../upload' })">
                             Upload Lanjutan
                         </a>
                     </div>
@@ -323,7 +323,7 @@ $__v = function($f) {
                 title: 'Upload Music',
                 text: <?= json_encode($alert_message) ?>,
                 icon: 'warning',
-                redirectUrl: 'upload.php'
+                redirectUrl: 'upload'
             });
         <?php endif; ?>
         <?php if ($status === "success"): ?>

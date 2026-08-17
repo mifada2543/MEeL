@@ -5,6 +5,7 @@ meel_boot_session();
 include '../auth/config.php';
 require_once '../modules/core/helpers.php';
 require_once '../modules/core/CommentRenderer.php';
+require_once '../modules/media/MediaLibrary.php';
 require_once '../controllers/api/WatchController.php';
 
 $id          = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -72,7 +73,7 @@ $__vdir = function($dir) {
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
-            <a href="index.php" class="flex items-center gap-2 flex-shrink-0" title="MEeL Music">
+            <a href="beranda" class="flex items-center gap-2 flex-shrink-0" title="MEeL Music">
                 <div class="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="music" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -95,7 +96,7 @@ $__vdir = function($dir) {
                     </div>
                 </div>
                 <button id="m-search-btn"
-                    hx-get="search_music.php?exclude=<?= $id ?>"
+                    hx-get="search?exclude=<?= $id ?>"
                     hx-include="#m-search-watch"
                     hx-target="#music-recommendation-column"
                     hx-indicator="#music-search-indicator"
@@ -146,7 +147,7 @@ $__vdir = function($dir) {
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="text-center sm:text-left flex-1 min-w-0">
                                 <div class="track-title truncate" title="<?= htmlspecialchars($v['title']) ?>"><?= htmlspecialchars($v['title']) ?></div>
-                                <a href="index.php?artist=<?= urlencode($v['artist']) ?>"
+                                <a href="beranda?artist=<?= urlencode($v['artist']) ?>"
                                     class="text-orange-400 font-bold text-sm uppercase tracking-widest hover:underline block mt-2 truncate">
                                     <?= htmlspecialchars($v['artist']) ?>
                                 </a>
@@ -263,7 +264,7 @@ $__vdir = function($dir) {
                         <div class="flex items-center gap-2 flex-wrap">
                             <div id="like-dislike-container" class="flex items-center gap-2 flex-wrap">
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"music","type":"like","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
                                    <?= $user_interaction === 'like'
@@ -273,7 +274,7 @@ $__vdir = function($dir) {
                                     Like<?= ($v['likes'] ?? 0) > 0 ? " <span class='tabular-nums ml-0.5'>{$v['likes']}</span>" : '' ?>
                                 </button>
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"music","type":"dislike","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
                                    <?= $user_interaction === 'dislike'
@@ -293,7 +294,7 @@ $__vdir = function($dir) {
                                 (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)($v['user_id'] ?? -1))
                             );
                             if ($can_edit): ?>
-                                <a href="../admin/edit-music.php?id=<?= $id ?>" title="Edit Musik"
+                                <a href="<?= base_url('/admin/edit-music?id=' . (int)$id) ?>" title="Edit Musik"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer no-underline bg-orange-600/10 border-orange-600/20 text-orange-400 hover:bg-orange-600 hover:text-white">
                                     <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit
                                 </a>
@@ -384,8 +385,7 @@ $__vdir = function($dir) {
                     <div id="comment-body">
                         <div class="p-4 sm:p-6">
                             <div id="comment-alert"></div>
-                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6"
-                            hx-post="../controllers/api/comment.php"
+                        <form action="<?= base_url('/music/watch?id=' . (int)$id . ($playlist_context > 0 ? '&playlist_id=' . (int)$playlist_context : '')) ?>" method="post" class="mb-6"                                hx-post="../api/comment"
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
                             hx-vals='{"id":"<?= $id ?>","media_type":"music"<?= $playlist_context > 0 ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'
@@ -436,7 +436,7 @@ $__vdir = function($dir) {
                         while ($q = $queue_query->fetch_assoc()):
                             $is_pl = ($q['id'] == $id);
                         ?>
-                            <a href="watch.php?id=<?= $q['id'] ?>&playlist_id=<?= $playlist_context ?>"
+                            <a href="<?= base_url('/music/watch?id=' . (int)$q['id'] . '&playlist_id=' . (int)$playlist_context) ?>"
                                 class="flex items-center gap-3 px-2 py-2 rounded-xl transition-all no-underline
                               <?= $is_pl ? 'bg-orange-500/8 border border-orange-500/20' : 'hover:bg-white/[.025] border border-transparent' ?>">
                                 <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 <?= $is_pl ? 'opacity-50' : '' ?>">
@@ -464,7 +464,7 @@ $__vdir = function($dir) {
                         $r_ext = strtolower(pathinfo($r['filename'], PATHINFO_EXTENSION));
                         $r_lbl = $r_ext === 'ogg' ? 'opus' : $r_ext;
                     ?>
-                        <a href="watch.php?id=<?= $r['id'] ?>"
+                        <a href="<?= base_url('/music/watch?id=' . (int)$r['id']) ?>"
                             class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl no-underline"
                             title="<?= htmlspecialchars($r['title']) ?>">
                             <div class="w-full lg:w-16 aspect-square lg:h-12 lg:aspect-auto rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">
@@ -505,14 +505,11 @@ $__vdir = function($dir) {
                     </div>
                     <div class="space-y-1.5 mb-4 max-h-[180px] overflow-y-auto pr-1 no-scrollbar">
                         <?php
-                        $stmt_pl = $conn->prepare("SELECT * FROM playlists WHERE user_id = ? ORDER BY id DESC");
-                        $stmt_pl->bind_param("i", $_SESSION['user_id']);
-                        $stmt_pl->execute();
-                        $my_playlists = $stmt_pl->get_result();
+                        $my_playlists = (new MediaLibrary($conn))->getUserPlaylists((int) $_SESSION['user_id']);
                         if ($my_playlists && $my_playlists->num_rows > 0):
                             while ($pl = $my_playlists->fetch_assoc()):
                         ?>
-                                <form action="playlist_action.php" method="POST">
+                                <form action="playlist-action" method="POST">
                                     <input type="hidden" name="action" value="add_to_playlist">
                                     <input type="hidden" name="music_id" value="<?= $id ?>">
                                     <input type="hidden" name="playlist_id" value="<?= $pl['id'] ?>">
@@ -528,7 +525,7 @@ $__vdir = function($dir) {
                         <?php endif; ?>
                     </div>
                     <div class="border-t border-white/[.05] pt-4">
-                        <form action="playlist_action.php" method="POST" class="flex gap-2">
+                        <form action="playlist-action" method="POST" class="flex gap-2">
                             <input type="hidden" name="action" value="create_playlist">
                             <input type="hidden" name="music_id" value="<?= $id ?>">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
@@ -604,7 +601,7 @@ $__vdir = function($dir) {
             thumbnail: <?= json_encode($v['thumbnail']) ?>,
             thumbnailUrl: <?= json_encode(music_thumbnail_url($v['thumbnail'])) ?>,
             filename: <?= json_encode($v['filename']) ?>,
-            streamUrl: <?= json_encode('stream.php?id=' . $id) ?>,
+            streamUrl: <?= json_encode('stream?id=' . $id) ?>,
             mimeType: <?= json_encode($mimeType) ?>
         };
         document.addEventListener('DOMContentLoaded', () => {
@@ -612,7 +609,6 @@ $__vdir = function($dir) {
                 lucide.createIcons();
             }
 
-            // Handle Enter key untuk music search
             const searchInput = document.getElementById('m-search-watch');
             const searchBtn = document.getElementById('m-search-btn');
             if (searchInput && searchBtn) {

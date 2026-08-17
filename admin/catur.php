@@ -57,7 +57,6 @@ if (isset($_GET['auto_cleanup'])) {
 // ─── Helpers ───
 function purgeInactiveRooms(mysqli $conn): array
 {
-    // Kumpulkan room_code yang mau dihapus
     $sql = "
         SELECT r.room_code
         FROM rooms r
@@ -119,7 +118,6 @@ $stats = [
     'total_moves'  => array_sum(array_column($rooms, 'total_moves')),
 ];
 
-// Log file (last 20 lines)
 $log_file = __DIR__ . '/../logs/chess_cleanup.log';
 $log_lines = [];
 if (file_exists($log_file)) {

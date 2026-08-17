@@ -20,4 +20,4 @@ function require_admin(mysqli $conn): void
         die(include __DIR__ . '/../../../err/index.php');
     }
 }
-} // end function_exists('require_admin')
+}

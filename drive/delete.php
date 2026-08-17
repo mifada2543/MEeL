@@ -55,7 +55,7 @@ try {
         invalidate_dir_size_cache($user->username);
     }
 
-    header('Location: index.php?scope=' . urlencode($normalizedScope) . '&status=deleted');
+    header('Location: .?scope=' . urlencode($normalizedScope) . '&status=deleted');
     exit();
 } catch (RuntimeException $exception) {
     log_drive_operation(

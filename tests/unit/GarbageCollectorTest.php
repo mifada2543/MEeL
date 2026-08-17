@@ -123,10 +123,37 @@ class GarbageCollectorTest extends TestCase
 
     // ─── run(): end-to-end (temp dir + RateLimiter::cleanup) ───
 
+    /* Arahkan RateLimiter::$storageDir ke direktori test terisolasi.
+     * Temp/ratelimit asli milik daemon (Apache, mode 755) — menulis ke sana
+     * dari CLI test gagal (Permission denied). Konvensi sama dengan
+     * RateLimiterTest: override storageDir via reflection, restore di tearDown.
+     */
+    private string $origRateStorageDir = '';
+
+    private function isolateRateLimiterDir(): string
+    {
+        $ref = new ReflectionClass(RateLimiter::class);
+        $prop = $ref->getProperty('storageDir');
+        $prop->setAccessible(true);
+        $this->origRateStorageDir = (string) $prop->getValue();
+
+        $rateDir = $this->testTempDir . '/ratelimit';
+        @mkdir($rateDir, 0755, true);
+        $prop->setValue($rateDir . '/');
+        return $rateDir;
+    }
+
+    private function restoreRateLimiterDir(): void
+    {
+        $ref = new ReflectionClass(RateLimiter::class);
+        $prop = $ref->getProperty('storageDir');
+        $prop->setAccessible(true);
+        $prop->setValue($this->origRateStorageDir);
+    }
+
     public function testRunCleansExpiredRateLimitCacheButKeepsRecent(): void
     {
-        $rateDir = MEEL_ROOT . '/temp/ratelimit';
-        @mkdir($rateDir, 0755, true);
+        $rateDir = $this->isolateRateLimiterDir();
 
         // File rate-limit kadaluarsa: window_start 2 jam lalu (> 1 jam max)
         $expired = $rateDir . '/gc_test_expired.cache';
@@ -150,14 +177,12 @@ class GarbageCollectorTest extends TestCase
         $this->assertFileDoesNotExist($expired, 'Rate-limit file dengan window_start > 1 jam harus dibersihkan');
         $this->assertFileExists($recent, 'Rate-limit file dalam window harus dipertahankan');
 
-        @unlink($expired);
-        @unlink($recent);
+        $this->restoreRateLimiterDir();
     }
 
     public function testRunSecondCallIsNoOpViaStaticFlag(): void
     {
-        $rateDir = MEEL_ROOT . '/temp/ratelimit';
-        @mkdir($rateDir, 0755, true);
+        $rateDir = $this->isolateRateLimiterDir();
         touch($rateDir, time());
 
         $expired = $rateDir . '/gc_test_first.cache';
@@ -180,6 +205,6 @@ class GarbageCollectorTest extends TestCase
 
         $this->assertFileExists($late, 'run() kedua harus no-op (static $hasRun) — file tidak dibersihkan');
 
-        @unlink($late);
+        $this->restoreRateLimiterDir();
     }
 }

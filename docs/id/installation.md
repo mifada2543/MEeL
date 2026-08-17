@@ -276,7 +276,7 @@ tetap lolos rewrite tanpa merusak query string:
 
 Endpoint menerapkan proteksi path traversal, whitelist ekstensi, dukungan
 Range (206 — diperlukan untuk HLS `.ts` dan video besar), serta referer gate
-untuk HLS video (anti-hotlink). Pemutaran audio memakai `music/stream.php?id=...`
+untuk HLS video (anti-hotlink). Pemutaran audio memakai `music/stream?id=...`
 (otorisasi session + referer gate ketat; akselerasi X-Sendfile opsional —
 lihat [mod_xsendfile](#aktifkan-mod_xsendfile-opsional--untuk-akselerasi-streaming)).
 

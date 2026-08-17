@@ -60,9 +60,9 @@ window.closeArtistDropdownPL = function () {
 window.navigateToArtistPL = function (artist) {
   closeArtistDropdownPL();
   if (artist === "all") {
-    window.location.href = "index.php";
+    window.location.href = "beranda";
   } else {
-    window.location.href = "index.php?artist=" + encodeURIComponent(artist);
+    window.location.href = "beranda?artist=" + encodeURIComponent(artist);
   }
 };
 // ─── Mobile Playlist Dropdown ───
@@ -103,10 +103,16 @@ window.closePlaylistDropdownPL = function () {
 window.navigateToPlaylistPL = function (id) {
   closePlaylistDropdownPL();
   setActivePlaylistSidebar(id);
-  htmx.ajax("GET", "view_playlist.php?id=" + id + "&content_only=1", {
+  var plEl = document.querySelector('[data-playlist-id="' + id + '"]');
+  var url =
+    plEl && plEl.dataset.playlistUrl
+      ? plEl.dataset.playlistUrl
+      : "playlist?id=" + id;
+  var sep = url.indexOf("?") === -1 ? "?" : "&";
+  htmx.ajax("GET", url + sep + "content_only=1", {
     target: "#playlist-main",
     swap: "innerHTML",
-    pushUrl: "view_playlist.php?id=" + id,
+    pushUrl: url,
   });
 };
 // ─── Close dropdowns on outside click ───

@@ -2,10 +2,11 @@
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/core/helpers.php';
+require_once '../modules/media/ProfileRepository.php';
 
 // ─── Hanya user login ───
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 
@@ -13,22 +14,17 @@ $user_id   = (int)$_SESSION['user_id'];
 $username  = htmlspecialchars($_SESSION['username'] ?? '');
 $is_admin  = ($_SESSION['role'] ?? '') === 'admin';
 
-// ─── Cek apakah user punya konten ───
-$q_vid_count = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
-$q_vid_count->bind_param("i", $user_id);
-$q_vid_count->execute();
-$total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
+$profileRepo = new ProfileRepository($conn);
 
-$q_mus_count = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ?");
-$q_mus_count->bind_param("i", $user_id);
-$q_mus_count->execute();
-$total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
+// ─── Cek apakah user punya konten ───
+$total_video = $profileRepo->countVideo($user_id);
+$total_music = $profileRepo->countMusic($user_id);
 
 $has_content = ($total_video + $total_music) > 0;
 
 // ─── Redirect jika tidak punya konten ───
 if (!$has_content) {
-    header("Location: ../upload_advanced.php?first=1");
+    header("Location: ../upload?first=1");
     exit();
 }
 
@@ -61,10 +57,8 @@ if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
 
         $delete_msg = $result['message'];
         if ($result['success']) {
-            $q_vid_count->execute();
-            $total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
-            $q_mus_count->execute();
-            $total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
+            $total_video = $profileRepo->countVideo($user_id);
+            $total_music = $profileRepo->countMusic($user_id);
         }
     }
 }
@@ -82,25 +76,11 @@ $videos = [];
 $music_list = [];
 
 if ($active_tab === 'video') {
-    $q = $conn->prepare("SELECT id, title, thumbnail, views, likes, dislikes, upload_date FROM video WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
-    $q->bind_param("iii", $user_id, $page_size, $offset);
-    $q->execute();
-    $videos = $q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $q_total = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
-    $q_total->bind_param("i", $user_id);
-    $q_total->execute();
-    $total_items = (int)$q_total->get_result()->fetch_row()[0];
+    $videos      = $profileRepo->getVideosPaginated($user_id, $page_size, $offset);
+    $total_items = $profileRepo->countVideo($user_id);
 } else {
-    $q = $conn->prepare("SELECT id, title, artist, thumbnail, views, likes, dislikes, upload_date FROM music WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
-    $q->bind_param("iii", $user_id, $page_size, $offset);
-    $q->execute();
-    $music_list = $q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $q_total = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ?");
-    $q_total->bind_param("i", $user_id);
-    $q_total->execute();
-    $total_items = (int)$q_total->get_result()->fetch_row()[0];
+    $music_list  = $profileRepo->getMusicPaginated($user_id, $page_size, $offset);
+    $total_items = $profileRepo->countMusic($user_id);
 }
 
 $total_pages = max(1, ceil($total_items / $page_size));
@@ -457,11 +437,11 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                             : '../assets/img/video0.webp';
                     ?>
                         <div class="content-card">
-                            <a href="../video/watch.php?id=<?= $v['id'] ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
+                            <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
                                 <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy">
                             </a>
                             <div class="card-body">
-                                <a href="../video/watch.php?id=<?= $v['id'] ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
+                                <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
                                     <?= htmlspecialchars($v['title']) ?>
                                 </a>
                                 <div class="card-meta">
@@ -478,7 +458,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     <span><?= date('d M Y', strtotime($v['upload_date'])) ?></span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="../admin/edit-video.php?id=<?= $v['id'] ?>"
+                                    <a href="<?= base_url('/admin/edit-video?id=' . (int)$v['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit video <?= htmlspecialchars($v['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>
@@ -505,11 +485,11 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                             : '../assets/img/music0.webp';
                     ?>
                         <div class="content-card">
-                            <a href="../music/watch.php?id=<?= $m['id'] ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
+                            <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
                                 <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($m['title']) ?>" loading="lazy">
                             </a>
                             <div class="card-body">
-                                <a href="../music/watch.php?id=<?= $m['id'] ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
+                                <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
                                     <?= htmlspecialchars($m['title']) ?>
                                 </a>
                                 <div class="card-meta">
@@ -526,7 +506,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     </span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="../admin/edit-music.php?id=<?= $m['id'] ?>"
+                                    <a href="<?= base_url('/admin/edit-music?id=' . (int)$m['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit musik <?= htmlspecialchars($m['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>

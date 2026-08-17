@@ -292,6 +292,8 @@ function testHtaccessSecurity(): void {
         // PHP-include only folders
         'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
         'modules', 'modules/core', 'modules/core/helpers', 'modules/media', 'modules/transcoder', 'modules/exceptions',
+        // Security module (helpers + class keamanan)
+        'modules/auth', 'modules/auth/helpers',
         'partials', 'drive/templates', 'docs/partials',
         // Auth & config
         'auth', 'database',
@@ -305,6 +307,8 @@ function testHtaccessSecurity(): void {
         // di data_drive/.htaccess. Saat MEEL_HDD_DRIVE diset, storage pindah ke
         // lokasi eksternal dan .htaccess deny dibuat ulang saat deploy.
         'data_drive', 'books/upload', 'music/upload', 'video/upload',
+        // User-upload avatars (harus disable PHP)
+        'profile/upload',
     ];
 
     $missing = [];
@@ -340,7 +344,11 @@ function testHtaccessSecurity(): void {
         'controllers/.htaccess'     => ['Deny from all'],
         'modules/.htaccess'         => ['Deny from all'],
         'modules/core/.htaccess'    => ['Deny from all'],
+        'modules/core/helpers/.htaccess' => ['Deny from all'],
+        'modules/auth/.htaccess'    => ['Deny from all'],
+        'modules/auth/helpers/.htaccess' => ['Deny from all'],
         'modules/exceptions/.htaccess' => ['Deny from all'],
+        'profile/upload/.htaccess'  => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'partials/.htaccess'        => ['Deny from all'],
         'docs/partials/.htaccess'   => ['Deny from all'],
         'drive/templates/.htaccess' => ['Deny from all'],
@@ -502,8 +510,8 @@ function testFileIntegrity(): void {
         'modules/core/helpers.php',
         'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
-        'modules/core/Transcoder.php', 'modules/core/SsrfGuard.php', 'modules/core/ValidatingProxy.php',
-        'modules/core/validating_proxy_server.php', 'modules/media/MediaInteraction.php',
+        'modules/core/Transcoder.php', 'modules/auth/SsrfGuard.php', 'modules/auth/ValidatingProxy.php',
+        'modules/auth/validating_proxy_server.php', 'modules/media/MediaInteraction.php',
         'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php', 'modules/core/japanese.php',
         'admin/.htaccess', 'auth/.htaccess', 'data_drive/.htaccess',
@@ -530,9 +538,9 @@ function testSsrfAndPrivateDrive(): void {
     print_header('TEST 13: SSRF Guard & Private Drive Hardening');
 
     // ─── 13a: SsrfGuard ada dan dipakai di jalur download ───
-    $guardFile = PROJECT_ROOT . '/modules/core/SsrfGuard.php';
+    $guardFile = PROJECT_ROOT . '/modules/auth/SsrfGuard.php';
     if (!file_exists($guardFile)) {
-        record('modules/core/SsrfGuard.php — FILE TIDAK DITEMUKAN!', false, false);
+        record('modules/auth/SsrfGuard.php — FILE TIDAK DITEMUKAN!', false, false);
     } else {
         $gc = file_get_contents($guardFile);
         foreach (['function validate', 'function isPrivateIp', 'function resolvePublicAddresses', 'function pinHttpUrl'] as $m) {
@@ -579,9 +587,9 @@ function testSsrfAndPrivateDrive(): void {
         }
     }
 
-    $proxyClass = PROJECT_ROOT . '/modules/core/ValidatingProxy.php';
+    $proxyClass = PROJECT_ROOT . '/modules/auth/ValidatingProxy.php';
     if (!file_exists($proxyClass)) {
-        record('modules/core/ValidatingProxy.php — FILE TIDAK DITEMUKAN!', false, false);
+        record('modules/auth/ValidatingProxy.php — FILE TIDAK DITEMUKAN!', false, false);
     } else {
         $pc = file_get_contents($proxyClass);
         if (strpos($pc, '127.0.0.1') !== false && strpos($pc, 'proc_open') !== false) {
@@ -591,9 +599,9 @@ function testSsrfAndPrivateDrive(): void {
         }
     }
 
-    $proxyServer = PROJECT_ROOT . '/modules/core/validating_proxy_server.php';
+    $proxyServer = PROJECT_ROOT . '/modules/auth/validating_proxy_server.php';
     if (!file_exists($proxyServer)) {
-        record('modules/core/validating_proxy_server.php — FILE TIDAK DITEMUKAN!', false, false);
+        record('modules/auth/validating_proxy_server.php — FILE TIDAK DITEMUKAN!', false, false);
     } else {
         $ps = file_get_contents($proxyServer);
         foreach (['SsrfGuard', 'CONNECT', 'resolvePublicAddresses'] as $pat) {
@@ -660,7 +668,13 @@ function testSsrfAndPrivateDrive(): void {
     $dsFile = PROJECT_ROOT . '/drive/DriveService.php';
     if (file_exists($dsFile)) {
         $ds = file_get_contents($dsFile);
-        if (strpos($ds, "'stream.php?file='") !== false) {
+        // Rute bersih ('stream?file=') sejak migrasi routing; 'stream.php?file='
+        // adalah bentuk legacy. Keduanya menunjuk endpoint stream ber-otorisasi
+        // (drive/stream.php) — bukan path web langsung ke subtree private.
+        $usesAuthStream =
+            strpos($ds, "'stream?file='") !== false ||
+            strpos($ds, "'stream.php?file='") !== false;
+        if ($usesAuthStream) {
             record('DriveService: listing private memakai stream.php ber-auth', true);
         } else {
             record('DriveService: listing private TIDAK memakai stream.php', false, false,
@@ -883,6 +897,87 @@ function testAdminContextAndPipelineHardening(): void {
     }
 }
 
+// TEST 16: OPEN-REDIRECT & REDIRECT-HARDENING REGRESSION GUARD
+// Guard statis untuk audit referer gate / redirect. Bug yang pernah terjadi:
+//   1) delete_comment.php redirect ke HTTP_REFERER mentah tanpa validasi host
+//      (open redirect), plus include ganda RateLimiter.php -> fatal
+//      "Cannot declare class RateLimiter" (regresi konsolidasi auth).
+//   2) playlist_action.php redirect() membiarkan //evil.com (protocol-relative
+//      lolos dari cek '://') dan allowlist prefix usang (.php saja).
+function testOpenRedirectHardening(): void {
+    print_header('TEST 16: Open-Redirect & Redirect-Hardening Guard');
+
+    // ─── 16a: delete_comment.php — semua redirect lewat safe_comment_back_url() ───
+    $dcFile = PROJECT_ROOT . '/controllers/api/delete_comment.php';
+    if (!file_exists($dcFile)) {
+        record('controllers/api/delete_comment.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $dc = (string) file_get_contents($dcFile);
+
+        // Semua Location header harus memakai helper tervalidasi.
+        preg_match_all('/header\s*\(\s*["\']Location:/i', $dc, $locMs);
+        $locCount = count($locMs[0]);
+        preg_match_all('/header\s*\(\s*["\']Location:\s*["\']\s*\.\s*safe_comment_back_url\(\)/i', $dc, $safeMs);
+        $safeCount = count($safeMs[0]);
+        if ($locCount > 0 && $locCount === $safeCount) {
+            record("delete_comment: {$locCount} Location header — semua via safe_comment_back_url()", true);
+        } else {
+            record("delete_comment: {$locCount} Location, hanya {$safeCount} via helper tervalidasi — open redirect!", false, false,
+                'Semua redirect harus lewat safe_comment_back_url() (validasi host referer)');
+        }
+
+        // Tidak boleh ada redirect ke HTTP_REFERER mentah.
+        if (preg_match('/header\s*\(\s*["\']Location:\s*["\']\s*\.\s*\$_SERVER\[\'HTTP_REFERER\'\]/i', $dc)) {
+            record('delete_comment: redirect ke HTTP_REFERER MENTAH — open redirect!', false, false,
+                'Redirect referer harus lewat safe_comment_back_url()');
+        } else {
+            record('delete_comment: tidak ada redirect ke HTTP_REFERER mentah', true);
+        }
+
+        // 16a-2: Tidak boleh include RateLimiter ganda (regresi fatal).
+        if (preg_match('/include[^;]*RateLimiter\.php/i', $dc)) {
+            record('delete_comment: include RateLimiter.php tersisa — fatal Cannot declare class!', false, false,
+                'Hapus include; loader.php sudah require otomatis');
+        } else {
+            record('delete_comment: tanpa include RateLimiter.php (loader.php sudah require)', true);
+        }
+    }
+
+    // ─── 16b: playlist_action.php — redirect() tolak //evil.com + clean route ───
+    $paFile = PROJECT_ROOT . '/music/playlist_action.php';
+    if (!file_exists($paFile)) {
+        record('music/playlist_action.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $pa = (string) file_get_contents($paFile);
+
+        if (strpos($pa, "str_starts_with(\$url, '//')") !== false) {
+            record('playlist_action: redirect() tolak //host (protocol-relative)', true);
+        } else {
+            record('playlist_action: redirect() TIDAK menolak //host — open redirect!', false, false,
+                'Tambah cek str_starts_with($url, \'//\') sebelum menerima URL root-relative');
+        }
+
+        if (strpos($pa, "str_contains(\$url, '://')") !== false) {
+            record('playlist_action: redirect() tolak URL dengan skema (://)', true);
+        } else {
+            record('playlist_action: redirect() TIDAK menolak skema (://)', false, false,
+                'Tambah cek str_contains($url, \'://\')');
+        }
+
+        // Allowlist prefix harus mencakup rute bersih (beranda/playlist/watch/music/).
+        $hasClean = strpos($pa, "'beranda'") !== false
+            && strpos($pa, "'playlist'") !== false
+            && strpos($pa, "'watch'") !== false
+            && strpos($pa, "'music/'" ) !== false;
+        if ($hasClean) {
+            record('playlist_action: allowlist redirect mencakup rute bersih (beranda/playlist/watch/music/)', true);
+        } else {
+            record('playlist_action: allowlist redirect TIDAK lengkap (rute bersih hilang)', false, false,
+                'Prefix harus mencakup beranda, playlist, watch, music/');
+        }
+    }
+}
+
 // MAIN
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
@@ -908,6 +1003,7 @@ function run(): int {
     testSsrfAndPrivateDrive();
     testFatalBugRegression();
     testAdminContextAndPipelineHardening();
+    testOpenRedirectHardening();
 
     // ─── SUMMARY ───
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";

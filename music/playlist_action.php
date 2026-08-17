@@ -6,7 +6,7 @@ include '../auth/config.php';
 // Kembali ke halaman asal jika referer valid (host sama), fallback ke index
 function playlist_back_url(): string
 {
-    $back = 'index.php';
+    $back = 'beranda';
     if (isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER'] !== '') {
         $ref_host = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
         if ($ref_host === ($_SERVER['HTTP_HOST'] ?? '')) {
@@ -17,7 +17,7 @@ function playlist_back_url(): string
 }
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../auth/login.php');
+    header('Location: ../auth/login');
     exit;
 }
 
@@ -32,8 +32,16 @@ $action  = $_POST['action'] ?? '';
 
 function redirect(string $url): never
 {
-    // Validasi redirect — hanya izinkan URL relatif atau internal
-    $allowed_prefixes = ['watch.php', 'view_playlist.php', 'index.php'];
+    // Validasi redirect — izinkan URL relatif lama ATAU clean URL internal
+    // (root-relative dari base_url, mis. /MEeL/music/watch?id=5). Cegah open
+    // redirect: tolak URL absolut eksternal (memuat skema, host, atau
+    // protocol-relative //host — yang terakhir lolos dari cek '://').
+    $allowed_prefixes = [
+        // Bentuk lama (.php) — kompatibilitas
+        'watch.php', 'view_playlist.php', 'index.php',
+        // Route bersih relatif — dipakai caller tanpa base_url()
+        'watch', 'playlist', 'beranda', 'music/',
+    ];
     $safe = false;
     foreach ($allowed_prefixes as $prefix) {
         if (str_starts_with($url, $prefix)) {
@@ -41,8 +49,15 @@ function redirect(string $url): never
             break;
         }
     }
+    // Root-relative internal (/MEeL/...) — TAPI tolak //host (protocol-relative).
+    if (!$safe
+        && str_starts_with($url, '/')
+        && !str_starts_with($url, '//')
+        && !str_contains($url, '://')) {
+        $safe = true;
+    }
     if (!$safe) {
-        $url = 'index.php';
+        $url = 'beranda';
     }
     header("Location: $url");
     exit;
@@ -82,7 +97,7 @@ if ($action === 'create_playlist') {
             exit;
         }
     }
-    redirect("watch.php?id=$music_id&msg=playlist_created");
+    redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=playlist_created');
 }
 
 // ─── 2. TAMBAH LAGU KE PLAYLIST ───
@@ -112,7 +127,7 @@ if ($action === 'add_to_playlist') {
         $conn->rollback();
         die('Error: ' . $e->getMessage());
     }
-    redirect("watch.php?id=$music_id&msg=added_to_playlist");
+    redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=added_to_playlist');
 }
 
 // ─── 3. HAPUS LAGU DARI PLAYLIST ───
@@ -124,7 +139,7 @@ if ($action === 'remove_from_playlist') {
     $stmt->bind_param('i', $pivot_id);
     $stmt->execute();
     $stmt->close();
-    redirect("view_playlist.php?id=$playlist_id");
+    redirect(base_url('/music/playlist?id=' . (int)$playlist_id));
 }
 
 // ─── 4. HAPUS TOTAL PLAYLIST ───
@@ -152,5 +167,5 @@ if ($action === 'delete_playlist') {
         $conn->rollback();
         die('Error: ' . $e->getMessage());
     }
-    redirect('index.php?msg=playlist_deleted');
+    redirect(base_url('/music/beranda?msg=playlist_deleted'));
 }

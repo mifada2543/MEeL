@@ -29,7 +29,7 @@ function convert_srt_to_vtt(string $srt): string
 
     return implode("\n", $out) . "\n";
 }
-} // end function_exists('convert_srt_to_vtt')
+}
 
 if (!function_exists('strip_utf8_bom')) {
 /* @param string $content Konten teks mentah; @return string Konten tanpa BOM */
@@ -37,7 +37,7 @@ function strip_utf8_bom(string $content): string
 {
     return preg_replace('/^\xEF\xBB\xBF/', '', $content) ?? $content;
 }
-} // end function_exists('strip_utf8_bom')
+}
 
 if (!function_exists('sanitize_subtitle_lang')) {
 /**
@@ -53,7 +53,7 @@ function sanitize_subtitle_lang(?string $lang, string $default = 'id'): string
     }
     return $default;
 }
-} // end function_exists('sanitize_subtitle_lang')
+}
 
 if (!function_exists('lang_map')) {
 /* @return array<string,string> Map kode bahasa => label tampilan */
@@ -77,7 +77,7 @@ function lang_map(): array
         'vi' => 'Tiếng Việt',
     ];
 }
-} // end function_exists('lang_map')
+}
 
 if (!function_exists('subtitle_lang_map')) {
 /* @return array<string,string> Map kode bahasa => label tampilan */
@@ -85,7 +85,7 @@ function subtitle_lang_map(): array
 {
     return lang_map();
 }
-} // end function_exists('subtitle_lang_map')
+}
 
 if (!function_exists('lang_label')) {
 /* @param string $lang Kode bahasa (id, en, ja, ...); @return string Label tampilan (Indonesia, English, 日本語, ...) */
@@ -95,7 +95,7 @@ function lang_label(string $lang): string
     $labels = lang_map();
     return $labels[$lang] ?? strtoupper($lang);
 }
-} // end function_exists('lang_label')
+}
 
 if (!function_exists('subtitle_lang_label')) {
 /* @param string $lang Kode bahasa (id, en, ja, ...); @return string Label tampilan (Indonesia, English, 日本語, ...) */
@@ -103,7 +103,7 @@ function subtitle_lang_label(string $lang): string
 {
     return lang_label($lang);
 }
-} // end function_exists('subtitle_lang_label')
+}
 
 if (!function_exists('validate_subtitle_file')) {
 /* @param string $tmp_path Path file upload di temp; @return bool True jika aman untuk diproses */
@@ -121,4 +121,4 @@ function validate_subtitle_file(string $tmp_path): bool
 
     return true;
 }
-} // end function_exists('validate_subtitle_file')
+}

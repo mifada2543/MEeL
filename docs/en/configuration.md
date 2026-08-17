@@ -31,7 +31,7 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 | `modules/core/helpers.php` | HDD check path + various utilities | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, `resolve_binary()`, `dir_size()`, `check_disk_space()`, etc. |
 | `modules/core/System.php` | Queue management | Rate limit constants |
 | `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guests + chess rooms + rate limits | `STALE_SECONDS`, `GUEST_STALE_HOURS`, `ROOM_LOBBY_STALE_HOURS`, `ROOM_GAME_STALE_HOURS`, `CHESS_CLEANUP_INTERVAL` |
-| `modules/core/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, etc.) |
+| `modules/auth/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, etc.) |
 | `modules/core/japanese.php` | Japanese text processing (MeCab + transliterator) | `getRomajiName()`, `analyzeJapaneseText()` |
 | `modules/core/activity_logger.php` | Activity logging, IP banning, session kick | `get_real_ip()`, `log_activity()`, `validate_and_format_ip()` |
 | `modules/core/bootstrap.php` | Bootstrap (env detection, error reporting, timezone) | `MEEL_ENV`, error log config |
@@ -272,7 +272,7 @@ return $active >= 2; // isServerBusy()
 
 ## Rate Limiting
 
-### File: `modules/core/RateLimiter.php`
+### File: `modules/auth/RateLimiter.php`
 
 File-based rate limiter for API endpoints:
 
@@ -284,7 +284,7 @@ File-based rate limiter for API endpoints:
 | Transcode | 5 | 1 hour | —
 | API Generic | 60 | 1 minute | — |
 
-**Configuration:** Edit directly in `modules/core/RateLimiter.php`:
+**Configuration:** Edit directly in `modules/auth/RateLimiter.php`:
 ```php
 private static array $limits = [
     'like'      => ['requests' => 30, 'window' => 60],

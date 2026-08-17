@@ -3,7 +3,7 @@ include 'config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 if (!isset($_SESSION['user_id'])) {
     $next = urlencode($_SERVER['REQUEST_URI'] ?? '/');
-    header("Location: " . base_url('/auth/login.php?next=' . $next));
+    header("Location: " . base_url('/auth/login?next=' . $next));
     exit;
 }
 $user_id = $_SESSION['user_id'];
@@ -16,7 +16,7 @@ if ($user_data) {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         if ($user_data['role'] !== 'admin' && !empty($user_data['last_session_id']) && $user_data['last_session_id'] !== session_id()) {
             session_destroy();
-            header("Location: " . base_url('/auth/login.php?error=session_expired'));
+            header("Location: " . base_url('/auth/login?error=session_expired'));
             exit;
         }
     }

@@ -291,11 +291,11 @@ foreach (['public', 'private_admins'] as $driveSub) {
 }
 
 // 3c. Validating forward proxy — wajib tersedia untuk download URL (SSRF per hop)
-$vpClass = MEEL_ROOT . '/modules/core/ValidatingProxy.php';
-$vpScript = MEEL_ROOT . '/modules/core/validating_proxy_server.php';
+$vpClass = MEEL_ROOT . '/modules/auth/ValidatingProxy.php';
+$vpScript = MEEL_ROOT . '/modules/auth/validating_proxy_server.php';
 if (!is_file($vpClass) || !is_file($vpScript)) {
     report('FAIL', 'Validating proxy tidak lengkap',
-        'butuh modules/core/ValidatingProxy.php + validating_proxy_server.php');
+        'butuh modules/auth/ValidatingProxy.php + validating_proxy_server.php');
 } elseif (PHP_BINARY === '' || !is_executable(PHP_BINARY)) {
     report('FAIL', 'PHP_BINARY tidak dapat dieksekusi untuk spawn proxy',
         'ValidatingProxy menjalankan php CLI (proc_open)');

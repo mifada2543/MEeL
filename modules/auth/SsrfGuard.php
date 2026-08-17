@@ -1,5 +1,4 @@
 <?php
-// ─────────────────────────────────────────────────────────────────────────────
 // SSRF-safe URL validation — the single source of truth for every outbound
 // request the application makes on behalf of a user (currently the Advanced
 // Upload / yt-dlp pipeline in Transcoder.php).
@@ -19,7 +18,6 @@
 // The caller (Transcoder) additionally pins plain-HTTP connections to the
 // validated public IP and forces the original Host header, which closes the
 // DNS-rebinding window between validation and the real outbound request.
-// ─────────────────────────────────────────────────────────────────────────────
 final class SsrfGuard
 {
     private const ALLOWED_SCHEMES = ['http', 'https'];

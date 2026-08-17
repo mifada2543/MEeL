@@ -8,7 +8,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $host = $_SERVER['HTTP_HOST'];
     if (parse_url($ref, PHP_URL_HOST) === $host) {
         $ref_path        = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages  = ['profile_edit.php', 'index.php'];
+        $excluded_pages  = ['profile_edit.php', 'edit', 'index.php'];
         $should_exclude  = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -353,13 +353,11 @@ include __DIR__ . '/partials/scripts.php';
             let scrollTop, scrollHeight, clientHeight;
 
             if (window.innerWidth <= 768) {
-                // Mobile: body/html is the scroll container
-                scrollTop = window.scrollY || document.documentElement.scrollTop;
+                            scrollTop = window.scrollY || document.documentElement.scrollTop;
                 scrollHeight = document.documentElement.scrollHeight;
                 clientHeight = window.innerHeight;
             } else if (mainEl) {
-                // Desktop: .main is the scroll container
-                scrollTop = mainEl.scrollTop;
+                            scrollTop = mainEl.scrollTop;
                 scrollHeight = mainEl.scrollHeight;
                 clientHeight = mainEl.clientHeight;
             } else {
@@ -374,8 +372,7 @@ include __DIR__ . '/partials/scripts.php';
             }
         }
 
-        // Throttled scroll listener
-        let ticking = false;
+            let ticking = false;
         function onScroll() {
             if (!ticking) {
                 requestAnimationFrame(function() {

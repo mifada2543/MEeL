@@ -1,5 +1,4 @@
 <?php
-// ─────────────────────────────────────────────────────────────────────────────
 // Validating forward proxy (CLI ONLY). yt-dlp runs behind this proxy so that
 // EVERY destination — including every redirect hop — is resolved and checked
 // against SsrfGuard before any bytes are exchanged. This closes the open
@@ -27,7 +26,6 @@
 //     php validating_proxy_server.php
 //   Prints "PORT <n>\nREADY\n" on stdout once the listener is bound, then
 //   serves until terminated (SIGTERM).
-// ─────────────────────────────────────────────────────────────────────────────
 
 if (PHP_SAPI !== 'cli') {
     exit(1); // web access never reaches the proxy

@@ -8,8 +8,7 @@ if (!defined('MEEL_MANAGE_ACCESS')) {
 // ─── Hapus Video ───
 function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
 {
-    // 1. Ambil data video (hanya jika milik user ini)
-    $stmt = $conn->prepare("SELECT filename, thumbnail, user_id FROM video WHERE id = ?");
+        $stmt = $conn->prepare("SELECT filename, thumbnail, user_id FROM video WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $video = $stmt->get_result()->fetch_assoc();
@@ -22,7 +21,6 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         return ['success' => false, 'message' => 'Anda tidak memiliki akses ke video ini.'];
     }
 
-    // 2. Catat file yang akan dihapus nanti
     $pending = [
         'timestamp' => time(),
         'files'     => []
@@ -49,19 +47,16 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         }
     }
 
-    // 3. Hapus dari database
     $stmt_del = $conn->prepare("DELETE FROM video WHERE id = ? AND user_id = ?");
     $stmt_del->bind_param("ii", $id, $user_id);
     if (!$stmt_del->execute()) {
         return ['success' => false, 'message' => 'Gagal menghapus dari database.'];
     }
 
-    // 4. Simpan ke pending deletions
     if (!empty($pending['files'])) {
         savePendingDeletions($pending);
     }
 
-    // 5. Log aktivitas
     include_once __DIR__ . '/../../modules/core/activity_logger.php';
     logActivity($conn, $user_id, 'delete', 'video', $id);
 
@@ -71,8 +66,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
 // ─── Hapus Music ───
 function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
 {
-    // 1. Ambil data music
-    $stmt = $conn->prepare("SELECT filename, thumbnail, user_id FROM music WHERE id = ?");
+        $stmt = $conn->prepare("SELECT filename, thumbnail, user_id FROM music WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $music = $stmt->get_result()->fetch_assoc();
@@ -85,7 +79,6 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
         return ['success' => false, 'message' => 'Anda tidak memiliki akses ke musik ini.'];
     }
 
-    // 2. Catat file yang akan dihapus nanti
     $pending = [
         'timestamp' => time(),
         'files'     => []
@@ -103,19 +96,16 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
         }
     }
 
-    // 3. Hapus dari database
     $stmt_del = $conn->prepare("DELETE FROM music WHERE id = ? AND user_id = ?");
     $stmt_del->bind_param("ii", $id, $user_id);
     if (!$stmt_del->execute()) {
         return ['success' => false, 'message' => 'Gagal menghapus dari database.'];
     }
 
-    // 4. Simpan ke pending deletions
     if (!empty($pending['files'])) {
         savePendingDeletions($pending);
     }
 
-    // 5. Log aktivitas
     include_once __DIR__ . '/../../modules/core/activity_logger.php';
     logActivity($conn, $user_id, 'delete', 'music', $id);
 

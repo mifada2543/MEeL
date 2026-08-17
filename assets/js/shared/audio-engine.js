@@ -310,7 +310,7 @@
         currentTrackId = id;
         freshLoadPending = true;
         audio.pause();
-        audio.src = meta.streamUrl || "stream.php?id=" + id;
+        audio.src = meta.streamUrl || "stream?id=" + id;
         audio.loop = !!meta.isLooping;
         // Sinkronkan Plyr config.loop.active — state loop self-consistent.
         if (player) player.loop = !!meta.isLooping;

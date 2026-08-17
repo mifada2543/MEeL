@@ -33,7 +33,7 @@ document.addEventListener("htmx:afterSwap", (e) => {
   // pemicu request), jadi e.detail.elt TIDAK bisa membedakan sumber request
   // (search vs load-more). Pakai URL request sebagai pembeda yang deterministik.
   const searchReqUrl = `${e.detail?.requestConfig?.path || ""} ${e.detail?.xhr?.responseURL || ""}`;
-  if (targetId === "music-list" && searchReqUrl.includes("search_music.php")) {
+  if (targetId === "music-list" && searchReqUrl.includes("/music/search")) {
     const lm = document.getElementById("load-more-music");
     if (lm) lm.remove();
   }

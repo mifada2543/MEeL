@@ -18,7 +18,6 @@ export class ChessGame {
     this.lastMove = null;
     this.isGameOver = false;
     this.promotionPending = null;
-    // Animasi tracking
     this.lastCapturedPiece = null;
     this.lastMoveType = null;
     // Aturan Draw: 50-move rule & Threefold Repetition
@@ -336,7 +335,6 @@ export class ChessGame {
     if (captured) {
       this.captured[this.turn].push(captured.type);
     }
-    // Mainkan sound effect yang sesuai
     if (!this.muteSounds) {
       if (captured) {
         this.lastMoveType = "capture";
@@ -385,7 +383,6 @@ export class ChessGame {
         : "+";
       if (!this.muteSounds) sounds.playCheck();
     }
-    // Cek Game Over
     if (noMovesLeft) {
       this.isGameOver = true;
       if (!this.muteSounds) sounds.playGameOver();
@@ -393,7 +390,6 @@ export class ChessGame {
         ? { status: "checkmate", winner: enemyColor === "w" ? "b" : "w" }
         : { status: "stalemate" };
     }
-    // Cek Draw
     if (this.halfMoveClock >= 100) {
       this.isGameOver = true;
       return { status: "stalemate", reason: "50-move rule" };
@@ -409,9 +405,7 @@ export class ChessGame {
       return { status: "stalemate", reason: "Threefold repetition" };
     }
     return { status: "success", check: enemyInCheck };
-  }
-  // Clone Board State untuk AI Alpha-Beta
-  cloneState() {
+  }    cloneState() {
     return {
       board: this.board.map((row) => row.map((p) => (p ? { ...p } : null))),
       kingPositions: JSON.parse(JSON.stringify(this.kingPositions)),
@@ -539,8 +533,7 @@ export class ChessGame {
       if (captures.length > 0) {
         const pVal = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
         captures.sort((a, b) => {
-          // En passant
-          const pieceA = a.to.isEnPassant
+    const pieceA = a.to.isEnPassant
             ? this.board[a.from.r][a.to.c]
             : this.board[a.to.r][a.to.c];
           const pieceB = b.to.isEnPassant
@@ -554,7 +547,6 @@ export class ChessGame {
       }
       return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     }
-    // AI Hard
     const minimax = (depth, alpha, beta, isMaximizing, currColor) => {
       if (depth === 0) return this.evaluateBoard();
       let moves = [];
@@ -566,8 +558,8 @@ export class ChessGame {
           }
         }
       }
-      // Move ordering
-      const mvvLva = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 };
+    // Move ordering
+    const mvvLva = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 };
       moves.sort((a, b) => {
         const capA = this.board[a.to.r][a.to.c];
         const capB = this.board[b.to.r][b.to.c];

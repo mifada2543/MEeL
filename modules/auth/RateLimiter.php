@@ -216,7 +216,6 @@ class RateLimiter
             // diekstrak dari hash. Kita baca data dan hitung active count.
             $windowStart = $data['window_start'] ?? 0;
             if (($now - $windowStart) < 3600 && $data['count'] > 0) {
-                // Active rate limiter entry
                 $stats[] = [
                     'file'  => $file,
                     'count' => $data['count'],

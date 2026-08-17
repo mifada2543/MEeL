@@ -182,7 +182,6 @@ class GarbageCollector
             self::cleanDirectory($dir);
         }
 
-        // Cleanup expired rate limit files
         if (class_exists('RateLimiter')) {
             RateLimiter::cleanup();
         }

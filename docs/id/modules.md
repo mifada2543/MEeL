@@ -209,7 +209,7 @@ Semua fungsi dibungkus `function_exists()` guard:
   proaktif — subtree milik user lain (mis. `temp/cache/` milik proses lain)
   dilewati dengan error log, bukan warning PHP
 
-### 11. `modules/core/RateLimiter.php`
+### 11. `modules/auth/RateLimiter.php`
 
 File-based rate limiter dengan `flock()` safety. Role-based (admin = unlimited, member = 2x).
 

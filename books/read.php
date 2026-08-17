@@ -7,7 +7,7 @@ require_once '../modules/media/MediaLibrary.php';
 
 // ─── Validasi ID ───
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
-    header("Location: index.php");
+    header("Location: ..");
     exit();
 }
 
@@ -103,7 +103,7 @@ function _scanSubdirs(string $dir): array {
     <!-- READER NAVBAR -->
     <div class="reader-nav sticky top-0 z-50 px-3 sm:px-6 h-14 flex items-center justify-between transition-all duration-300" id="reader-navbar">
         <div class="flex items-center gap-3 min-w-0">
-            <a href="index.php" class="p-2 hover:bg-white/[.06] rounded-xl transition-all flex-shrink-0 group">
+            <a href="beranda" class="p-2 hover:bg-white/[.06] rounded-xl transition-all flex-shrink-0 group">
                 <i data-lucide="arrow-left" class="w-4 h-4 text-gray-500 group-hover:text-green-500 transition-colors"></i>
             </a>
             <div class="min-w-0">
@@ -151,7 +151,6 @@ function _scanSubdirs(string $dir): array {
         <?php if ($book['type'] === 'pdf'): ?>
             <!-- ═══════════════ MODE PDF ═══════════════ -->
             <?php
-            // Ambil ukuran file untuk ditampilkan
             $pdf_path   = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
             $pdf_size   = is_file($pdf_path) ? filesize($pdf_path) : 0;
             $pdf_size_f = $pdf_size > 1048576
@@ -161,7 +160,7 @@ function _scanSubdirs(string $dir): array {
             <div class="pdf-view">
                 <!-- ═════ DESKTOP: iframe PDF viewer ═════ -->
                 <div class="pdf-body pdf-iframe-wrap" id="readPdfBody">
-                    <iframe src="read_pdf.php?id=<?= (int)$book['id'] ?>&raw=1"
+                    <iframe src="<?= base_url('/books/read-pdf?id=' . (int)$book['id'] . '&raw=1') ?>"
                             id="pdfFrame"
                             title="PDF Viewer"
                             style="width:100%;height:100%;border:none;display:block;"></iframe>
@@ -175,7 +174,7 @@ function _scanSubdirs(string $dir): array {
                         </div>
                         <h2 class="pdf-card-title"><?= htmlspecialchars($book['title']) ?></h2>
                         <p class="pdf-card-meta">Dokumen PDF &middot; <?= $pdf_size_f ?></p>
-                        <a href="read_pdf.php?id=<?= (int)$book['id'] ?>"
+                        <a href="<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>"
                            class="pdf-card-btn">
                             <i data-lucide="external-link" class="w-4 h-4"></i>
                             Buka PDF
@@ -190,7 +189,7 @@ function _scanSubdirs(string $dir): array {
                         <span class="pdf-info-title"><?= htmlspecialchars($book['title']) ?></span>
                         <span class="pdf-info-meta">PDF &middot; <?= $pdf_size_f ?></span>
                     </div>
-                    <a href="read_pdf.php?id=<?= (int)$book['id'] ?>"
+                    <a href="<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>"
                        target="_blank" rel="noopener"
                        class="pdf-info-btn">
                         <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -206,7 +205,7 @@ function _scanSubdirs(string $dir): array {
                 if (!frame) return;
                 // Jika lewat 10 detik iframe masih kosong, redirect ke read_pdf.php
                 var timeout = setTimeout(function() {
-                    window.location.href = 'read_pdf.php?id=<?= (int)$book['id'] ?>';
+                    window.location.href = '<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>';
                 }, 10000);
                 frame.addEventListener('load', function() { clearTimeout(timeout); });
                 frame.addEventListener('error', function() { clearTimeout(timeout); });
@@ -353,7 +352,7 @@ function _scanSubdirs(string $dir): array {
                                 <?php else: ?>
                                     <div></div>
                                 <?php endif; ?>
-                                <a href="index.php"
+                                <a href="beranda"
                                     class="text-[9px] text-gray-700 hover:text-green-500 uppercase tracking-widest transition-colors">
                                     Kembali ke Library
                                 </a>
@@ -785,7 +784,7 @@ function _scanSubdirs(string $dir): array {
             }
 
             if (key === 'escape') {
-                window.location.href = 'index.php';
+                window.location.href = '..';
             }
         });
 

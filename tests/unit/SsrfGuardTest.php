@@ -2,7 +2,7 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * Regression tests for the SSRF guard (modules/core/SsrfGuard.php).
+ * Regression tests for the SSRF guard (modules/auth/SsrfGuard.php).
  *
  * These tests verify actual REJECTION/ALLOWANCE behaviour of the guard, not
  * merely that a validation function exists. DNS-dependent cases degrade to
