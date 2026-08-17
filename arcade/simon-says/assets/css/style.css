@@ -1,0 +1,58 @@
+:root {
+  --simon-primary: #34d399;
+  --simon-glow: rgba(52, 211, 153, 0.15);
+  --simon-glow-heavy: rgba(52, 211, 153, 0.4);
+}
+html {
+  touch-action: manipulation;
+}
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  background-color: #080b11;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+.pixel-font {
+  font-family: "Press Start 2P", monospace;
+}
+#gameCanvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  display: block;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+@media (min-width: 600px) {
+  #gameCanvas {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+/* Score pulse animation */
+@keyframes score-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.score-pop {
+  animation: score-pop 0.2s ease;
+}
+/* Game over overlay */
+#gameOverScreen {
+  transition: opacity 0.3s ease;
+}
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--simon-glow);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--simon-glow-heavy);
+}
