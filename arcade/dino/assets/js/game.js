@@ -183,11 +183,17 @@ class Miku {
     this.isDucking = false;
     this.runFrame = 0;
     this.animTimer = 0;
+    // Animasi squash & stretch: stretch saat lepas landas, squash saat mendarat
+    this.scaleY = 1;
+    this.scaleX = 1;
   }
   jump() {
     if (!this.isJumping && !this.isDucking) {
       this.vy = this.jumpForce;
       this.isJumping = true;
+      // Stretch: memanjang ke atas saat melompat
+      this.scaleY = 1.18;
+      this.scaleX = 0.86;
     }
   }
   duck(state) {
@@ -200,11 +206,20 @@ class Miku {
     this.vy += this.gravity;
     this.y += this.vy;
     const groundY = 220 - this.height;
+    const wasAirborne = this.isJumping;
     if (this.y >= groundY) {
       this.y = groundY;
       this.vy = 0;
       this.isJumping = false;
+      if (wasAirborne) {
+        // Squash saat mendarat
+        this.scaleY = 0.82;
+        this.scaleX = 1.16;
+      }
     }
+    // Pulihkan skala ke normal dengan easing
+    this.scaleY += (1 - this.scaleY) * 0.18;
+    this.scaleX += (1 - this.scaleX) * 0.18;
     if (!this.isJumping && !this.isDucking) {
       this.animTimer++;
       if (this.animTimer > 7) {
@@ -215,6 +230,12 @@ class Miku {
   }
   draw() {
     ctx.save();
+    // Terapkan squash & stretch di sekitar dasar karakter
+    const cx = this.x + this.width / 2;
+    const bottom = this.y + this.height;
+    ctx.translate(cx, bottom);
+    ctx.scale(this.scaleX, this.scaleY);
+    ctx.translate(-cx, -bottom);
     if (this.isJumping) {
       ctx.drawImage(activeImgJump, this.x, this.y, this.width, this.height);
     } else if (this.isDucking) {
@@ -326,7 +347,7 @@ function endGame() {
     document.getElementById("hiScoreText").innerText = String(
       gameState.hiScore,
     ).padStart(5, "0");
-  }I
+  }
   setGameplayControlsLocked(false);
 }
 function checkCollision(rect1, rect2) {
