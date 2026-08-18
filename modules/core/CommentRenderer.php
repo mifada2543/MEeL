@@ -97,8 +97,8 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                             'confirmButtonText' => 'HAPUS',
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
                     ?>
-                        <a href="../controllers/api/delete_comment.php?id=<?= (int)$c['id'] ?>"
-                            hx-post="../controllers/api/delete_comment.php"
+                        <a href="<?= base_url('/api/delete-comment') ?>?id=<?= (int)$c['id'] ?>"
+                            hx-post="<?= base_url('/api/delete-comment') ?>"
                             hx-vals='{"id":"<?= (int)$c['id'] ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>","media_id":"<?= (int)$id ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>,"csrf_token":"<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES) ?>"}'
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
@@ -124,7 +124,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                     </button>
                     <div id="<?= $reply_prefix . $c['id'] ?>" class="hidden mt-3">
                         <form action="<?= $form_action_url ?>" method="post" class="flex gap-2"
-                            hx-post="../controllers/api/comment.php"
+                            hx-post="<?= base_url('/api/comment') ?>"
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
                             hx-vals='{"id":"<?= $id ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'
