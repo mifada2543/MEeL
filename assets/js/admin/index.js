@@ -162,8 +162,12 @@
     }
     var icon = document.getElementById("stat-" + card + "-icon");
     if (icon && cls) {
+      // Icon adalah <svg> hasil lucide.createIcons() — className SVG adalah
+      // SVGAnimatedString (bukan string), jadi .replace()/assignment langsung
+      // melempar TypeError. classList aman untuk elemen HTML maupun SVG.
       var tcls = cls.replace("bg-", "text-").replace("-500", "-400");
-      icon.className = icon.className.replace(/text-(red|yellow|green|cyan|blue|gray)-400/g, tcls);
+      icon.classList.remove("text-red-400", "text-yellow-400", "text-green-400", "text-cyan-400", "text-blue-400", "text-gray-400");
+      icon.classList.add(tcls);
     }
   }
 
@@ -195,45 +199,57 @@
   }
 
   function applyServerStats(s) {
-    var cpu = s.cpu, ram = s.ram, swap = s.swap, net = s.network, info = s.info, up = s.uptime;
+    // Semua pembaruan dibungkus try/catch agar satu section yang gagal tidak
+    // diam-diam menghentikan pembaruan lainnya (bug: timestamp & network
+    // membeku karena exception ditelan tanpa log).
+    try {
+      var cpu = s.cpu, ram = s.ram, swap = s.swap, net = s.network, info = s.info, up = s.uptime;
 
-    // CPU
-    setText("stat-cpu-value", cpu.load_1m);
-    setText("stat-cpu-sub", cpu.cores + " Cores • " + cpu.usage_perc + "%");
-    updateBar("cpu", cpu.usage_perc);
+      // CPU
+      setText("stat-cpu-value", cpu.load_1m);
+      setText("stat-cpu-sub", cpu.cores + " Cores • " + cpu.usage_perc + "%");
+      updateBar("cpu", cpu.usage_perc);
 
-    // RAM
-    setText("stat-ram-value", formatBytes(ram.used));
-    setText("stat-ram-sub", formatBytes(ram.total) + " Total • " + ram.usage_perc + "%");
-    updateBar("ram", ram.usage_perc);
+      // RAM
+      setText("stat-ram-value", formatBytes(ram.used));
+      setText("stat-ram-sub", formatBytes(ram.total) + " Total • " + ram.usage_perc + "%");
+      updateBar("ram", ram.usage_perc);
 
-    // Swap
-    setText("stat-swap-value", formatBytes(swap.used));
-    setText("stat-swap-sub", formatBytes(swap.total) + " Total • " + swap.usage_perc + "%");
-    updateBar("swap", swap.usage_perc);
+      // Swap
+      setText("stat-swap-value", formatBytes(swap.used));
+      setText("stat-swap-sub", formatBytes(swap.total) + " Total • " + swap.usage_perc + "%");
+      updateBar("swap", swap.usage_perc);
 
-    // Network — kecepatan download/upload (delta antar polling) + total kumulatif
-    var nowMs = Date.now();
-    if (netPrev.rx !== null && net.rx >= netPrev.rx && net.tx >= netPrev.tx) {
-      var dt = Math.max(0.001, (nowMs - netPrev.t) / 1000);
-      var rxRate = (net.rx - netPrev.rx) / dt;
-      var txRate = (net.tx - netPrev.tx) / dt;
-      setText("stat-net-value", "↓ " + formatSpeed(rxRate));
-      setText("stat-net-sub", "↑ " + formatSpeed(txRate) + " · ↓ " + formatBytes(net.rx) + " / ↑ " + formatBytes(net.tx));
-      pushNetSample(rxRate, txRate);
-    } else {
-      // Polling pertama atau counter di-reset (reboot) — butuh sampel kedua.
-      setText("stat-net-value", "↓ —");
-      setText("stat-net-sub", "↑ — · ↓ " + formatBytes(net.rx) + " / ↑ " + formatBytes(net.tx));
+      // Network — kecepatan realtime download/upload (delta antar polling).
+      // Total kumulatif (sejak boot) dipindah ke tooltip — bukan teks utama,
+      // karena teks harus menampilkan kecepatan MB/s realtime.
+      var nowMs = Date.now();
+      var netTotalsTitle = "Total: ↓ " + formatBytes(net.rx) + " / ↑ " + formatBytes(net.tx);
+      if (netPrev.rx !== null && net.rx >= netPrev.rx && net.tx >= netPrev.tx) {
+        var dt = Math.max(0.001, (nowMs - netPrev.t) / 1000);
+        var rxRate = (net.rx - netPrev.rx) / dt;
+        var txRate = (net.tx - netPrev.tx) / dt;
+        setText("stat-net-value", "↓ " + formatSpeed(rxRate));
+        setText("stat-net-sub", "↑ " + formatSpeed(txRate));
+        pushNetSample(rxRate, txRate);
+      } else {
+        // Polling pertama atau counter di-reset (reboot) — butuh sampel kedua.
+        setText("stat-net-value", "↓ —");
+        setText("stat-net-sub", "↑ —");
+      }
+      var netSubEl = document.getElementById("stat-net-sub");
+      if (netSubEl) netSubEl.title = netTotalsTitle;
+      netPrev = { rx: net.rx, tx: net.tx, t: nowMs };
+
+      // Uptime & info
+      setText("stat-uptime", up.text);
+      setText("stat-load", cpu.load_1m + " / " + cpu.load_5m + " / " + cpu.load_15m);
+      setText("stat-procs", info.processes);
+
+      setLiveStatus(true);
+    } catch (err) {
+      console.error("[server-stats] applyServerStats gagal:", err);
     }
-    netPrev = { rx: net.rx, tx: net.tx, t: nowMs };
-
-    // Uptime & info
-    setText("stat-uptime", up.text);
-    setText("stat-load", cpu.load_1m + " / " + cpu.load_5m + " / " + cpu.load_15m);
-    setText("stat-procs", info.processes);
-
-    setLiveStatus(true);
   }
 
   function refreshServerStats() {

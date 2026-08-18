@@ -138,7 +138,15 @@ if (isset($_POST['clean_orphans'])) {
     foreach ((array)$files as $f) {
         if (file_exists($f)) @unlink($f);
     }
+    @unlink(dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json'); // hasil scan tak lagi valid
     header("Location: .?status=cleaned#system_check");
+    exit();
+}
+
+// ─── RECHECK ORPHAN FILES (paksa scan ulang, buang cache) ───
+if (isset($_POST['recheck_orphans'])) {
+    @unlink(dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json');
+    header("Location: .?msg=Orphan_Rechecked#system_check");
     exit();
 }
 

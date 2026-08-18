@@ -61,7 +61,7 @@ include __DIR__ . '/../partials/scripts.php';
     <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/index.css?v=<?= filemtime('../assets/css/admin/index.css') ?>">
-    <script src="../assets/js/compatibilitas/chart.umd.min.js"></script>
+    <script defer src="../assets/js/compatibilitas/chart.umd.min.js"></script>
 </head>
 
 <body class="text-gray-300 font-sans min-h-screen">
@@ -285,7 +285,7 @@ include __DIR__ . '/../partials/scripts.php';
                         'id'    => 'net',
                         'label' => 'Network',
                         'value' => '↓ —',
-                        'sub'   => '↑ — · ↓ ' . $net_fmt($net_rx) . ' / ↑ ' . $net_fmt($net_tx),
+                        'sub'   => '↑ —',
                         'icon'  => 'network',
                         'color' => 'blue',
                         'bar'   => 0,
@@ -319,7 +319,7 @@ include __DIR__ . '/../partials/scripts.php';
                             <?php endif; ?>
                         </div>
                         <p id="stat-<?= $c['id'] ?>-value" class="text-xl font-black text-white mb-1"><?= $c['value'] ?></p>
-                        <p id="stat-<?= $c['id'] ?>-sub" class="text-[10px] text-gray-500 font-medium mb-3"><?= $c['sub'] ?></p>
+                        <p id="stat-<?= $c['id'] ?>-sub" class="text-[10px] text-gray-500 font-medium mb-3"<?= $c['id'] === 'net' ? ' title="Total: ↓ ' . $net_fmt($net_rx) . ' / ↑ ' . $net_fmt($net_tx) . '"' : '' ?>><?= $c['sub'] ?></p>
                         <?php if ($c['bar'] > 0): ?>
                             <div class="w-full bg-gray-800/80 h-1.5 rounded-full">
                                 <div id="stat-<?= $c['id'] ?>-bar" class="<?= $bar_color ?> h-full rounded-full transition-all" style="width:<?= $c['bar'] ?>%"></div>
@@ -404,8 +404,15 @@ include __DIR__ . '/../partials/scripts.php';
                 </table>
             </div>
         <?php endif; ?>
-        <div class="glass p-6 rounded-3xl mb-8">
-            <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Database Sync Check</h3>
+        <div class="glass p-6 rounded-3xl mb-8" id="system_check">
+            <div class="flex items-center gap-3 mb-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase">Database Sync Check</h3>
+                <span class="text-[9px] text-gray-600 font-mono" title="Hasil scan storage di-cache 10 menit agar halaman tetap responsif">Dicek: <?= $orphan_checked_at ? date('d/m/Y H:i:s', $orphan_checked_at) : '—' ?></span>
+                <form method="POST" class="ml-auto">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                    <button type="submit" name="recheck_orphans" value="1" class="text-[9px] border border-white/10 text-gray-400 px-2.5 py-1 rounded-lg hover:bg-white/5 hover:text-white font-bold uppercase tracking-wider cursor-pointer" title="Paksa scan ulang seluruh storage media sekarang">Cek Ulang</button>
+                </form>
+            </div>
             <?php if (count($orphans) > 0): ?>
                 <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl">
                     <p class="text-xs text-red-400 mb-2">Ditemukan <?= count($orphans) ?> file sampah (tidak ada di DB):</p>
