@@ -934,12 +934,22 @@ function testOpenRedirectHardening(): void {
             record('delete_comment: tidak ada redirect ke HTTP_REFERER mentah', true);
         }
 
-        // 16a-2: Tidak boleh include RateLimiter ganda (regresi fatal).
-        if (preg_match('/include[^;]*RateLimiter\.php/i', $dc)) {
-            record('delete_comment: include RateLimiter.php tersisa — fatal Cannot declare class!', false, false,
-                'Hapus include; loader.php sudah require otomatis');
-        } else {
-            record('delete_comment: tanpa include RateLimiter.php (loader.php sudah require)', true);
+        // 16a-2: Tidak boleh include RateLimiter ganda (regresi fatal) — semua
+        // controller yang memuat helpers.php (→ loader.php → require_once
+        // RateLimiter) TIDAK boleh include ulang RateLimiter.php. include
+        // biasa mengeksekusi file lagi → "Cannot declare class RateLimiter".
+        foreach ([
+            'controllers/api/delete_comment.php',
+            'controllers/api/comment.php',
+            'controllers/api/like.php',
+        ] as $rateFile) {
+            $rfContent = (string) file_get_contents(PROJECT_ROOT . '/' . $rateFile);
+            if (preg_match('/include[^;]*RateLimiter\.php/i', $rfContent)) {
+                record("{$rateFile}: include RateLimiter.php tersisa — fatal Cannot declare class!", false, false,
+                    'Hapus include; loader.php sudah require otomatis');
+            } else {
+                record("{$rateFile}: tanpa include RateLimiter.php (loader.php sudah require)", true);
+            }
         }
     }
 
