@@ -217,7 +217,22 @@ include __DIR__ . '/../partials/scripts.php';
             <div class="flex items-center gap-2 mb-6">
                 <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
                 <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Server Stats — <?= htmlspecialchars($server_stats['info']['hostname'] ?? 'Unknown') ?></h3>
-                <span class="ml-auto text-[8px] text-gray-600 font-mono">Uptime: <?= $server_stats['uptime']['text'] ?></span>
+                <span id="stats-live" class="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 border border-green-500/25 px-2 py-1 rounded-lg" title="Data diperbarui otomatis setiap 3 detik">
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Live
+                </span>
+                <span id="stats-updated" class="text-[8px] text-gray-600 font-mono"></span>
+                <label class="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest text-gray-500 cursor-pointer" title="Interval pembaruan realtime">
+                    <i data-lucide="timer" class="w-3 h-3 text-cyan-400"></i>
+                    Polling
+                    <select id="stats-poll-interval" class="bg-gray-800/80 text-gray-300 text-[9px] font-bold uppercase tracking-widest border border-white/10 rounded-lg px-1.5 py-1 outline-none focus:border-cyan-500 cursor-pointer">
+                        <option value="1000">1s</option>
+                        <option value="3000" selected>3s</option>
+                        <option value="5000">5s</option>
+                        <option value="10000">10s</option>
+                    </select>
+                </label>
+                <span class="ml-auto text-[8px] text-gray-600 font-mono">Uptime: <span id="stat-uptime"><?= $server_stats['uptime']['text'] ?></span></span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -240,6 +255,7 @@ include __DIR__ . '/../partials/scripts.php';
 
                 $stat_cards = [
                     [
+                        'id'    => 'cpu',
                         'label' => 'CPU Load',
                         'value' => $server_stats['cpu']['load_1m'],
                         'sub'   => $server_stats['cpu']['cores'] . ' Cores • ' . $server_stats['cpu']['usage_perc'] . '%',
@@ -248,6 +264,7 @@ include __DIR__ . '/../partials/scripts.php';
                         'bar'   => $server_stats['cpu']['usage_perc'],
                     ],
                     [
+                        'id'    => 'ram',
                         'label' => 'RAM Usage',
                         'value' => $net_fmt($server_stats['ram']['used']),
                         'sub'   => $net_fmt($server_stats['ram']['total']) . ' Total • ' . $server_stats['ram']['usage_perc'] . '%',
@@ -256,6 +273,7 @@ include __DIR__ . '/../partials/scripts.php';
                         'bar'   => $server_stats['ram']['usage_perc'],
                     ],
                     [
+                        'id'    => 'swap',
                         'label' => 'Swap',
                         'value' => $net_fmt($server_stats['swap']['used']),
                         'sub'   => $net_fmt($server_stats['swap']['total']) . ' Total • ' . $server_stats['swap']['usage_perc'] . '%',
@@ -264,9 +282,10 @@ include __DIR__ . '/../partials/scripts.php';
                         'bar'   => $server_stats['swap']['usage_perc'],
                     ],
                     [
-                        'label' => 'Network (Total)',
-                        'value' => $net_fmt($net_rx),
-                        'sub'   => '↑ ' . $net_fmt($net_tx) . ' TX',
+                        'id'    => 'net',
+                        'label' => 'Network',
+                        'value' => '↓ —',
+                        'sub'   => '↑ — · ↓ ' . $net_fmt($net_rx) . ' / ↑ ' . $net_fmt($net_tx),
                         'icon'  => 'network',
                         'color' => 'blue',
                         'bar'   => 0,
@@ -291,16 +310,25 @@ include __DIR__ . '/../partials/scripts.php';
                         default  => 'text-gray-400',
                     };
                 ?>
-                    <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                    <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4<?= $c['id'] === 'net' ? ' md:col-span-4' : '' ?>">
                         <div class="flex items-center gap-2 mb-3">
-                            <i data-lucide="<?= $c['icon'] ?>" class="w-3.5 h-3.5 <?= $text_color ?>"></i>
+                            <i data-lucide="<?= $c['icon'] ?>" id="stat-<?= $c['id'] ?>-icon" class="w-3.5 h-3.5 <?= $text_color ?>"></i>
                             <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest"><?= $c['label'] ?></span>
+                            <?php if ($c['id'] === 'net'): ?>
+                                <span id="stat-net-ping" class="ml-auto text-[9px] font-mono font-bold text-gray-500" title="Latensi koneksi ke server (RTT polling / handshake SSE)">—</span>
+                            <?php endif; ?>
                         </div>
-                        <p class="text-xl font-black text-white mb-1"><?= $c['value'] ?></p>
-                        <p class="text-[10px] text-gray-500 font-medium mb-3"><?= $c['sub'] ?></p>
+                        <p id="stat-<?= $c['id'] ?>-value" class="text-xl font-black text-white mb-1"><?= $c['value'] ?></p>
+                        <p id="stat-<?= $c['id'] ?>-sub" class="text-[10px] text-gray-500 font-medium mb-3"><?= $c['sub'] ?></p>
                         <?php if ($c['bar'] > 0): ?>
                             <div class="w-full bg-gray-800/80 h-1.5 rounded-full">
-                                <div class="<?= $bar_color ?> h-full rounded-full transition-all" style="width:<?= $c['bar'] ?>%"></div>
+                                <div id="stat-<?= $c['id'] ?>-bar" class="<?= $bar_color ?> h-full rounded-full transition-all" style="width:<?= $c['bar'] ?>%"></div>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($c['id'] === 'net'): ?>
+                            <!-- Grafik riwayat kecepatan network (diisi realtime oleh index.js) -->
+                            <div class="h-24 mt-2">
+                                <canvas id="netChart"></canvas>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -315,9 +343,9 @@ include __DIR__ . '/../partials/scripts.php';
                 <span class="text-gray-600">•</span>
                 <span class="text-gray-500"><span class="text-gray-400 font-bold">PHP:</span> <?= $server_stats['info']['php_version'] ?></span>
                 <span class="text-gray-600">•</span>
-                <span class="text-gray-500"><span class="text-gray-400 font-bold">Load Avg:</span> <?= $server_stats['cpu']['load_1m'] ?> / <?= $server_stats['cpu']['load_5m'] ?> / <?= $server_stats['cpu']['load_15m'] ?></span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Load Avg:</span> <span id="stat-load"><?= $server_stats['cpu']['load_1m'] ?> / <?= $server_stats['cpu']['load_5m'] ?> / <?= $server_stats['cpu']['load_15m'] ?></span></span>
                 <span class="text-gray-600">•</span>
-                <span class="text-gray-500"><span class="text-gray-400 font-bold">Processes:</span> <?= $server_stats['info']['processes'] ?></span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Processes:</span> <span id="stat-procs"><?= $server_stats['info']['processes'] ?></span></span>
             </div>
         </div>
 
@@ -560,7 +588,7 @@ include __DIR__ . '/../partials/scripts.php';
                             $is_cloud = strpos($row['access_via'] ?? '', 'trycloudflare.com') !== false;
                             $is_mobile = strpos($row['user_agent'] ?? '', 'Smartphone') !== false || strpos($row['user_agent'] ?? '', 'Android') !== false;
                         ?>
-                            <tr class="group hover:bg-white/[0.02] transition-colors">
+                            <tr class="group hover:bg-white/[0.02] transition-colors" data-sec-since="<?= max(0, time() - strtotime($row['last_activity'])) ?>">
                                 <td class="py-4 px-2">
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold <?= $row['role'] === 'guest' ? 'text-gray-500 italic' : 'text-white' ?>">
@@ -614,9 +642,9 @@ include __DIR__ . '/../partials/scripts.php';
                                     </div>
                                 </td>
                                 <td class="py-4 px-2">
-                                    <div class="flex items-center gap-2 <?= $is_online ? 'text-green-500' : 'text-gray-600' ?>">
-                                        <span class="h-1.5 w-1.5 rounded-full <?= $is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-700' ?>"></span>
-                                        <span class="text-[10px] font-black uppercase tracking-tighter"><?= $is_online ? 'Online' : 'Offline' ?></span>
+                                    <div class="monitor-status flex items-center gap-2 <?= $is_online ? 'text-green-500' : 'text-gray-600' ?>">
+                                        <span class="monitor-dot h-1.5 w-1.5 rounded-full <?= $is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-700' ?>"></span>
+                                        <span class="monitor-label text-[10px] font-black uppercase tracking-tighter"><?= $is_online ? 'Online' : 'Offline' ?></span>
                                     </div>
                                 </td>
                                 <td class="py-4 px-2">
@@ -715,7 +743,11 @@ include __DIR__ . '/../partials/scripts.php';
         </div>
     </div>
     <!-- Chart data (PHP → JS bridge) -->
-    <script>var activityData = <?= json_encode($chart_activity) ?>;</script>
+    <script>
+        var activityData = <?= json_encode($chart_activity) ?>;
+        var serverStatsUrl = <?= json_encode(base_url('/api/server-stats')) ?>;
+        var serverStatsSseUrl = <?= json_encode(base_url('/api/server-stats-sse')) ?>;
+    </script>
     <script src="../assets/js/admin/shared/modal.js?v=<?= filemtime('../assets/js/admin/shared/modal.js') ?>"></script>
     <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
     <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>
