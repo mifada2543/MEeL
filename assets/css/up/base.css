@@ -2,7 +2,7 @@
 body::after {
   background: linear-gradient(90deg, transparent, #3b82f6, transparent);
 }
-/* ─── Two-col layout ─── */
+/* Two-col layout */
 .page-grid {
   display: grid;
   grid-template-columns: 1fr 340px;

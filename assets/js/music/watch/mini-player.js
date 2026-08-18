@@ -4,7 +4,7 @@
 /* mini-player.js — Mode mini-player music (Spotify-style) untuk */
 // Track state paused terakhir untuk update ikon play/pause
 let _mpPrevPaused = null;
-// ─── Update UI mini-player ───
+// Update UI mini-player
 window.updateMiniPlayerUI = function () {
   if (!isMiniPlayerActive) return;
   miniEls ||
@@ -27,7 +27,7 @@ window.updateMiniPlayerUI = function () {
     n && (n.textContent = formatTime(player.currentTime)),
     a && (a.textContent = formatTime(player.duration)));
 };
-// ─── Toggle mini-player ───
+// Toggle mini-player
 window.toggleMiniPlayer = async function () {
   const e = document.getElementById("player-container"),
     t = document.querySelector(
@@ -78,7 +78,7 @@ window.toggleMiniPlayer = async function () {
 setInterval(() => {
   isMiniPlayerActive && saveAudioState();
 }, 5e3);
-// ─── Kontrol mini-player ───
+// Kontrol mini-player
 window.miniPlayPause = function () {
   player &&
     (window.meelHealthAlertActive ||

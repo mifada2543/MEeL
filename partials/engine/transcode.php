@@ -1,6 +1,6 @@
 <?php
 ?>
-<!-- ── FASE: TRANSCODE HLS ── -->
+<!-- FASE: TRANSCODE HLS -->
 <div class="meel-phase" id="meel-phase-transcode">
   <div style="display:flex;align-items:center;gap:8px">
     <div class="meel-eq"><span></span><span></span><span></span><span></span></div>

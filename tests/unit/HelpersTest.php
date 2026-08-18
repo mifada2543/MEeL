@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 /* @coversNothing */
 class HelpersTest extends TestCase
 {
-    // ─── format_bytes() ───
+    // format_bytes()
 
     /** @dataProvider bytesProvider */
     public function testFormatBytes(int|float $bytes, int $precision, string $expected): void
@@ -27,7 +27,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── time_ago() ───
+    // time_ago()
 
     /** @dataProvider timeAgoProvider */
     public function testTimeAgo(int $secondsAgo, string $expectedRegex): void
@@ -50,7 +50,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_mime_type() ───
+    // get_audio_mime_type()
 
     /** @dataProvider mimeTypeProvider */
     public function testGetAudioMimeType(string $ext, string $expected): void
@@ -72,7 +72,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_format_label() ───
+    // get_audio_format_label()
 
     /** @dataProvider formatLabelProvider */
     public function testGetAudioFormatLabel(string $ext, string $expected): void
@@ -92,7 +92,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── get_audio_format_description() ───
+    // get_audio_format_description()
 
     /** @dataProvider formatDescriptionProvider */
     public function testGetAudioFormatDescription(string $ext, string $expectedContains): void
@@ -113,7 +113,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // ─── detectProtocol() ───
+    // detectProtocol()
 
     public function testDetectProtocolDefaultHttp(): void
     {
@@ -133,7 +133,7 @@ class HelpersTest extends TestCase
         if ($origForwardedProto !== null) $_SERVER['HTTP_X_FORWARDED_PROTO'] = $origForwardedProto;
     }
 
-    // ─── base_url() ───
+    // base_url()
 
     public function testBaseUrl(): void
     {
@@ -173,7 +173,7 @@ class HelpersTest extends TestCase
         $this->assertSame($expected . '/auth/login.php?next=x', trim($output[0]));
     }
 
-    // ─── check_disk_space() ───
+    // check_disk_space()
 
     public function testCheckDiskSpaceOnExistingPath(): void
     {
@@ -194,7 +194,7 @@ class HelpersTest extends TestCase
         $this->assertArrayHasKey('path', $result);
     }
 
-    // ─── CSRF functions ───
+    // CSRF functions
 
     public function testCsrfTokenFunctions(): void
     {
@@ -206,7 +206,7 @@ class HelpersTest extends TestCase
         $this->assertFalse(verify_csrf_token('wrong_token'));
     }
 
-    // ─── dir_size() ───
+    // dir_size()
 
     public function testDirSizeOnNonExistentPath(): void
     {
@@ -231,7 +231,7 @@ class HelpersTest extends TestCase
         @rmdir($testDir);
     }
 
-    // ─── generate_search_metadata() ───
+    // generate_search_metadata()
     public function testGenerateSearchMetadataWithAliases(): void
     {
         // Bagian romaji ('purojekutosekai') dihasilkan MeCab — skip bila mecab
@@ -253,7 +253,7 @@ class HelpersTest extends TestCase
         $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
     }
 
-    // ─── lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label() ───
+    // lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label()
 
     public function testLangMapHasAllLanguages(): void
     {
@@ -292,5 +292,5 @@ class HelpersTest extends TestCase
         $this->assertSame(lang_label('pt-br'), subtitle_lang_label('pt-br'));
     }
 
-    // ─── get_user_role() requires DB, skip basic test ───
+    // get_user_role() requires DB, skip basic test
     }

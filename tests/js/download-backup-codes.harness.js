@@ -1,9 +1,9 @@
 // Test harness — menjalankan file JS shared di lingkungan browser mock
 // (window/document/Blob/URL), lalu mencetak JSON hasil observasi untuk
 // ditegaskan oleh tests/unit/SharedJsTest.php.
-//
+
 // Pemakaian: node tests/js/download-backup-codes.harness.js [scenario]
-//   normal (default) | empty | unset | noUser | keys
+// normal (default) | empty | unset | noUser | keys
 'use strict';
 const fs = require('fs');
 const path = require('path');

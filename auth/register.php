@@ -11,13 +11,13 @@ $max_ip_attempts = 10;
 $ip_lockout_time = 300; // 5 menit
 $is_locked = false;
 $remaining = 0;
-// ─── IP-BASED LOCKOUT CHECK (shared helper) ───
+// IP-BASED LOCKOUT CHECK (shared helper)
 $ip_address  = auth_get_ip();
 $is_loopback = auth_is_loopback();
 $ip_lock     = $is_loopback ? ['locked' => false, 'remaining' => 0] : auth_ip_lockout_status($conn, $ip_address);
 $is_locked   = $ip_lock['locked'];
 $remaining   = $ip_lock['remaining'];
-// ─── SESSION-BASED RATE LIMIT (registrasi berhasil) — khusus register ───
+// SESSION-BASED RATE LIMIT (registrasi berhasil) — khusus register
 if (!isset($_SESSION['reg_attempts'])) {
     $_SESSION['reg_attempts'] = [];
 }
@@ -25,7 +25,7 @@ $_SESSION['reg_attempts'] = array_filter($_SESSION['reg_attempts'], function ($t
     return $timestamp > (time() - $reg_time_window);
 });
 $session_blocked = !$is_loopback && count($_SESSION['reg_attempts']) >= $max_reg_attempts;
-// ─── FORM PROCESSING ───
+// FORM PROCESSING
 if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = "Sesi keamanan kadaluarsa. Silakan refresh halaman.";
@@ -70,7 +70,7 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
                 }
             }
         }
-        // ─── CATAT PERCOBAAN GAGAL KE IP (shared helper) ───
+        // CATAT PERCOBAAN GAGAL KE IP (shared helper)
         if ($validation_error) {
             $just_locked = auth_record_failed_attempt($conn, $ip_address, $max_ip_attempts, $ip_lockout_time);
             if ($just_locked) {
@@ -88,7 +88,7 @@ if (!$is_loopback && !$is_locked && !$session_blocked) {
         $remaining = $recheck['remaining'];
     }
 }
-// ─── HTML (shell bersama via partials) ───
+// HTML (shell bersama via partials)
 $auth_title       = "MEeL | Register";
 $auth_description = "MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.";
 $auth_og_title    = "MEeL | Register";

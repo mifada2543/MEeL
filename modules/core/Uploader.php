@@ -25,7 +25,7 @@ class Uploader
         $this->user_role = get_user_role($this->conn, $this->user_id);
     }
 
-    // ─── PRIVATE HELPERS ───
+    // PRIVATE HELPERS
 
     private function checkRateLimit(string $table): array
     {
@@ -116,7 +116,7 @@ class Uploader
         return $file_name;
     }
 
-    // ─── MUSIC ───
+    // MUSIC
 
     public function processMusic(array $post, array $files, string $base_dir): array
     {
@@ -195,7 +195,7 @@ class Uploader
         $thumb_dir     = $base_dir . "upload/thumbnail/";
 
         if (!empty($files['thumbnail']['name']) && !empty($files['thumbnail']['tmp_name'])) {
-            // ─── PRIORITAS 1: Cover art manual dari form upload ───
+            // PRIORITAS 1: Cover art manual dari form upload
             $t_clean         = getRomajiName(pathinfo($files['thumbnail']['name'], PATHINFO_FILENAME));
             $thumb_candidate = $this->getUniqueFilename($t_clean, "thumb.webp", $thumb_dir);
             $abs_out         = $thumb_dir . $thumb_candidate;
@@ -208,7 +208,7 @@ class Uploader
         }
 
         if ($thumb_name === "music_default.png") {
-            // ─── PRIORITAS 2: Embedded thumbnail di dalam file audio (ID3/FLAC) ───
+            // PRIORITAS 2: Embedded thumbnail di dalam file audio (ID3/FLAC)
             $thumb_candidate = $this->getUniqueFilename($thumb_base, "thumb.webp", $thumb_dir);
             $abs_out         = $thumb_dir . $thumb_candidate;
 
@@ -272,7 +272,7 @@ class Uploader
         }
     }
 
-    // ─── VIDEO ───
+    // VIDEO
     public function processVideo(array $post, array $files, string $upload_dir = ""): array
     {
         GarbageCollector::run();
@@ -339,7 +339,7 @@ class Uploader
                 $counter++;
             }
 
-            // ─── DIREKTORI KERJA — PRIORITAS RAM DISK (/dev/shm) ───
+            // DIREKTORI KERJA — PRIORITAS RAM DISK (/dev/shm)
             $shm_path  = '/dev/shm';
             $use_shm   = false;
             if (is_dir($shm_path) && is_writable($shm_path)) {
@@ -364,7 +364,7 @@ class Uploader
             return ['status' => 'error', 'msg' => 'Gagal menyalin file upload ke staging area.', 'alert' => true];
         }
 
-        // ─── THUMBNAIL ───
+        // THUMBNAIL
         $thumb_name    = "default_thumb.webp";
         $thumb_dir     = $this->base_dir . "thumbnail/";
         $thumb_from_user = false;
@@ -373,7 +373,7 @@ class Uploader
             !empty($files['thumbnail']['tmp_name']) && is_uploaded_file($files['thumbnail']['tmp_name'])
             && $files['thumbnail']['error'] === UPLOAD_ERR_OK
         ) {
-            // ─── PRIORITAS 1: User upload thumbnail ───
+            // PRIORITAS 1: User upload thumbnail
             $t_name = $clean_name . "_thumb.webp";
             $t_dst  = $thumb_dir . $t_name;
 
@@ -394,7 +394,7 @@ class Uploader
         }
 
         if (!$thumb_from_user) {
-            // ─── PRIORITAS 2: Auto-generate dari frame video ───
+            // PRIORITAS 2: Auto-generate dari frame video
             $thumb_name  = $clean_name . "_thumb.webp";
             $work_thumb  = $work_folder . $thumb_name;
 
@@ -419,7 +419,7 @@ class Uploader
             }
         }
 
-        // ─── TRANSCODE KE HLS (output ke work_folder) ───
+        // TRANSCODE KE HLS (output ke work_folder)
         $work_m3u8 = $work_folder . $folder_name . ".m3u8";
         $db_filename = "video/" . $folder_name . "/" . $folder_name . ".m3u8";
 
@@ -435,7 +435,7 @@ class Uploader
             $this->generateSpriteAndVTT($staged_video, $work_folder);
         }
 
-        // ─── SUBTITLE (OPSIONAL) ───
+        // SUBTITLE (OPSIONAL)
         if (
             $result === 0
             && !empty($files['subtitle']['tmp_name'])
@@ -472,7 +472,7 @@ class Uploader
             return ['status' => 'error', 'msg' => 'FFmpeg Error: ' . implode("\n", $output)];
         }
 
-        // ─── PINDAHKAN KE HDD ───
+        // PINDAHKAN KE HDD
         $hdd_target_folder = $hdd_video_dir . $folder_name . "/";
         $hdd_thumb_dir     = $this->base_dir . "thumbnail/";
 
@@ -519,7 +519,7 @@ class Uploader
             return ['status' => 'error', 'msg' => 'Gagal memindahkan file ke storage. Cek permission HDD.', 'alert' => true];
         }
 
-        // ─── INSERT DATABASE (WITH TRANSACTION) ───
+        // INSERT DATABASE (WITH TRANSACTION)
         $title       = trim($post['title'] ?? 'Untitled Video');
         $description = trim($post['description'] ?? '');
         $meta        = generate_search_metadata($title);
@@ -555,5 +555,5 @@ class Uploader
             return ['status' => 'error', 'msg' => 'Database error! [' . $e->getMessage() . '] | title_len=' . strlen($title) . ' meta_len=' . strlen($meta) . ' filename=' . $db_filename];
         }
     }
-    // ─── SPRITE & VTT disediakan oleh FfmpegUtils trait ───
+    // SPRITE & VTT disediakan oleh FfmpegUtils trait
 }

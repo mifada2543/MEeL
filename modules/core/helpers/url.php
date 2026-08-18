@@ -59,7 +59,6 @@ if (!function_exists('detectProtocol')) {
 
 function detectProtocol(): string
 {
-    // 1. Standard HTTPS
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         return 'https';
     }
@@ -67,18 +66,18 @@ function detectProtocol(): string
     if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
         return 'https';
     }
-    // 3. Cloudflare CF-Visitor header
+
     if (!empty($_SERVER['HTTP_CF_VISITOR'])) {
         $cf = @json_decode($_SERVER['HTTP_CF_VISITOR'], true);
         if (!empty($cf['scheme']) && $cf['scheme'] === 'https') {
             return 'https';
         }
     }
-    // 4. Forwarded scheme
+
     if (!empty($_SERVER['HTTP_X_FORWARDED_SCHEME']) && strtolower($_SERVER['HTTP_X_FORWARDED_SCHEME']) === 'https') {
         return 'https';
     }
-    // 5. Fallback
+
     return 'http';
 }
 }

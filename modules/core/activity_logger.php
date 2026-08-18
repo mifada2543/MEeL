@@ -167,7 +167,6 @@ if (isset($conn)) {
     $dir_name = basename(dirname($_SERVER['PHP_SELF']));
     $id_get = isset($_GET['id']) ? $_GET['id'] : null;
 
-    // ─── 1. LOGIKA DETEKSI JUDUL KONTEN ───
     if ($id_get) {
         if ($current_page == 'watch.php') {
             $table = ($dir_name == 'music') ? 'music' : 'video';
@@ -230,7 +229,6 @@ if (isset($conn)) {
             $current_page = "Viewing Profile: " . htmlspecialchars($target_user);
         }
     } elseif ($current_page == 'index.php') {
-        // ─── 2. LOGIKA DETEKSI HALAMAN INDEX (BROWSING LIBRARY) ───
         switch ($dir_name) {
             case 'video':
                 $current_page = "Browsing Video Library";
@@ -271,7 +269,6 @@ if (isset($conn)) {
         $uid = $_SESSION['user_id'];
         $current_sid = session_id();
 
-        // 1. Ambil data sesi & status dari DB sekaligus
         $stmt_check = $conn->prepare("SELECT last_session_id, role FROM users WHERE id = ?");
         $stmt_check->bind_param("i", $uid);
         $stmt_check->execute();
@@ -299,7 +296,6 @@ if (isset($conn)) {
             $stmt_update_sid->execute();
         }
 
-        // 2. Update aktivitas user
         $stmt = $conn->prepare("UPDATE users SET last_page = ?, user_agent = ?, access_via = ?, ip_address = ?, last_activity = NOW() WHERE id = ?");
         $stmt->bind_param("ssssi", $current_page, $device, $access_via, $user_ip, $uid);
         $stmt->execute();

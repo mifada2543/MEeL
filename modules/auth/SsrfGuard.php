@@ -2,19 +2,19 @@
 // SSRF-safe URL validation — the single source of truth for every outbound
 // request the application makes on behalf of a user (currently the Advanced
 // Upload / yt-dlp pipeline in Transcoder.php).
-//
+
 // SECURITY BOUNDARY:
-//   * Only http/https are allowed. Nothing else may ever reach a subprocess.
-//   * Hostnames are resolved up front and EVERY returned A/AAAA record is
-//     checked against explicit private/reserved IPv4 & IPv6 ranges. A single
-//     non-public record rejects the URL (blocks mixed-answer DNS tricks).
-//   * IP literals (v4 & v6) are validated directly, with no DNS involvement.
-//   * filter_var(FILTER_VALIDATE_URL) is NOT used for the security decision —
-//     parsing is manual so unusual-but-valid representations behave predictably.
-//   * A hostname denylist is kept as defense-in-depth only; the authoritative
-//     check is always the resolved-address validation.
-//   * Resolution fails closed: unresolvable hosts are rejected.
-//
+// * Only http/https are allowed. Nothing else may ever reach a subprocess.
+// * Hostnames are resolved up front and EVERY returned A/AAAA record is
+// checked against explicit private/reserved IPv4 & IPv6 ranges. A single
+// non-public record rejects the URL (blocks mixed-answer DNS tricks).
+// * IP literals (v4 & v6) are validated directly, with no DNS involvement.
+// * filter_var(FILTER_VALIDATE_URL) is NOT used for the security decision —
+// parsing is manual so unusual-but-valid representations behave predictably.
+// * A hostname denylist is kept as defense-in-depth only; the authoritative
+// check is always the resolved-address validation.
+// * Resolution fails closed: unresolvable hosts are rejected.
+
 // The caller (Transcoder) additionally pins plain-HTTP connections to the
 // validated public IP and forces the original Host header, which closes the
 // DNS-rebinding window between validation and the real outbound request.
@@ -50,7 +50,7 @@ final class SsrfGuard
      *
      * @param string $url The raw URL (scheme, host, optional port/path/query).
      * @throws \RuntimeException With a safe, generic message when the URL is
-     *         not safe to fetch. Never includes the URL, IPs or resolver details.
+     * not safe to fetch. Never includes the URL, IPs or resolver details.
      */
     public function validate(string $url): void
     {
@@ -197,8 +197,8 @@ final class SsrfGuard
      *
      * @param string $url Validated http(s) URL.
      * @return array{0:string,1:string} [pinned_url, extra yt-dlp args] —
-     *         https URLs are returned untouched (TLS SNI/cert validation must
-     *         keep the hostname) together with an empty extra-args string.
+     * https URLs are returned untouched (TLS SNI/cert validation must
+     * keep the hostname) together with an empty extra-args string.
      * @throws \RuntimeException When the URL is unsafe or unresolved.
      */
     public function pinHttpUrl(string $url): array
@@ -339,7 +339,7 @@ final class SsrfGuard
 
     /**
      * @return string|null The bare IP when $host is an IPv4 or IPv6 literal
-     *         (brackets stripped), otherwise null.
+     * (brackets stripped), otherwise null.
      */
     private function extractIpLiteral(string $host): ?string
     {

@@ -69,7 +69,7 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('Colorful Stage', $result['english']);
     }
 
-    // ─── Alias baru (japanese_aliases.php) ───
+    // Alias baru (japanese_aliases.php)
 
     public function testAnalyzeJapaneseTextWithTouhouAlias(): void
     {
@@ -104,7 +104,7 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('Ensemble Stars', $result['english']);
     }
 
-    // ─── Partikel & homofon tidak boleh diterjemahkan per-token ───
+    // Partikel & homofon tidak boleh diterjemahkan per-token
     public function testAnalyzeJapaneseTextDoesNotGlossParticlesAsHomophones(): void
     {
         $this->skipIfNoMecab();

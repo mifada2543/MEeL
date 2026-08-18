@@ -1,5 +1,5 @@
 /* layout.css — Tata letak struktural halaman admin */
-/* ─── Sticky Top Nav ─── */
+/* Sticky Top Nav */
 .top-nav {
   position: sticky;
   top: 0;
@@ -14,13 +14,13 @@
   align-items: center;
   gap: 12px;
 }
-/* ─── Responsive ─── */
+/* Responsive */
 @media (max-width: 768px) {
   .top-nav {
     padding: 0 12px;
   }
 }
-/* ─── Page Layout ─── */
+/* Page Layout */
 .admin-page {
   max-width: 1200px;
   margin: 0 auto;

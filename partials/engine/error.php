@@ -1,6 +1,6 @@
 <?php
 ?>
-<!-- ── FASE: ERROR ── -->
+<!-- FASE: ERROR -->
 <div class="meel-phase" id="meel-phase-error">
   <div class="meel-icon-wrap" style="background:rgba(239,68,68,.09);border:0.5px solid rgba(239,68,68,.28)">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round">

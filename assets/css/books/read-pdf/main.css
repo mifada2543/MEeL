@@ -12,7 +12,7 @@ body {
   display: flex;
   flex-direction: column;
 }
-/* ─── PDF Navbar ─── */
+/* PDF Navbar */
 .pdf-nav {
   display: flex;
   align-items: center;
@@ -92,7 +92,7 @@ body {
   color: #22c55e;
   background: rgba(255, 255, 255, 0.04);
 }
-/* ─── PDF Body ─── */
+/* PDF Body */
 .pdf-body {
   flex: 1;
   min-height: 0;
@@ -103,7 +103,7 @@ body {
   justify-content: center;
   padding: 2rem;
 }
-/* ─── Branded redirect card ─── */
+/* Branded redirect card */
 .pdf-redirect-card {
   text-align: center;
   max-width: 420px;

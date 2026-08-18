@@ -1,7 +1,7 @@
 <?php
 /** MEeL-HUB — Contoh Konfigurasi Server (Template)
  * Copy file ini ke settings.php dan sesuaikan dengan environment Anda:
- *   cp auth/settings.example.php auth/settings.php
+ * cp auth/settings.example.php auth/settings.php
  * File ini HANYA memuat data konfigurasi (DB credentials + MEEL_*
  * constants) — tanpa session, header, atau logic lain.
  */
@@ -69,7 +69,7 @@ if (!defined('MEEL_YTDLP_PATH')) {
 if (!defined('MEEL_HDD_BASE')) {
     define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 
-    // ─── Path turunan (jangan diubah kecuali paham struktur folder) ───
+    // Path turunan (jangan diubah kecuali paham struktur folder)
     define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
     define('MEEL_HDD_VIDEO_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'video/');
     define('MEEL_HDD_THUMB_DIR',    MEEL_HDD_VIDEO_UPLOAD . 'thumbnail/');

@@ -9,7 +9,7 @@ let isMiniPlayerActive = !1,
 const MINI_POS_KEY = MEEL_KEYS.MINI_PLAYER_POS,
   /* Skala halus saat shell "digenggam" (drag) — memberi umpan balik visual */
   MINI_DRAG_SCALE = 1.02;
-/* ─── Ikon statis (tanpa konten user — aman via innerHTML) ─── */
+/* Ikon statis (tanpa konten user — aman via innerHTML)   */
 const MINI_ICON_EXPAND =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm16 5h-5v2h7v-7h-2v5z"/></svg>',
   MINI_ICON_CLOSE =
@@ -27,7 +27,7 @@ function setNavbarSearchTarget(e) {
       .querySelectorAll('button[hx-include="#v-search-watch"]')
       .forEach((t) => t.setAttribute("hx-target", e)));
 }
-/* ─── Padding body dinamis (ukur tinggi shell aktual) ─── */
+/* Padding body dinamis (ukur tinggi shell aktual)   */
 function syncMiniPlayerBodyPadding() {
   if (!isMiniPlayerActive || !miniShell)
     return void (document.body.style.paddingBottom = "");
@@ -55,7 +55,7 @@ window.addEventListener("resize", () => {
   miniShell && !miniDragState && clampMiniPlayerToViewport(miniShell);
   syncMiniPlayerBodyPadding();
 });
-/* ─── Posisi tersimpan (drag + snap) ─── */
+/* Posisi tersimpan (drag + snap)   */
 function saveMiniPlayerPos(e, t) {
   try {
     localStorage.setItem(MINI_POS_KEY, JSON.stringify({ left: e, top: t }));
@@ -243,7 +243,7 @@ document.addEventListener(
   },
   !0,
 );
-/* ─── Tombol mute cepat ─── */
+/* Tombol mute cepat   */
 function updateMiniMuteBtn() {
   const e = document.getElementById("mini-mute-btn");
   if (!e) return;
@@ -265,8 +265,8 @@ function wireMiniMuteToPlayer() {
     player.on("volumechange", updateMiniMuteBtn));
   _miniMuteWiredPlayer = player || null;
 }
-/* ─── Awasi ukuran shell: saat tinggi berubah (video load / ganti / potret),
-   posisi di-clamp agar shell selalu sepenuhnya terlihat di viewport. ─── */
+/* Awasi ukuran shell: saat tinggi berubah (video load / ganti / potret),
+   posisi di-clamp agar shell selalu sepenuhnya terlihat di viewport. */
 let miniShellResizeObserver = null;
 function watchMiniShellSize(e) {
   if (!window.ResizeObserver) return;
@@ -278,7 +278,7 @@ function watchMiniShellSize(e) {
     }));
   miniShellResizeObserver.observe(e);
 }
-/* ─── Bangun shell sekali, reuse antar toggle ─── */
+/* Bangun shell sekali, reuse antar toggle   */
 function buildMiniInfo() {
   const e = document.createElement("div");
   e.style.cssText = "flex:1;min-width:0;";

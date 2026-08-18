@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli') {
 
 define('MEEL_ROOT', rtrim(realpath(__DIR__ . '/..') ?: (__DIR__ . '/..'), '/'));
 
-// ─── Argumen sederhana ───
+// Argumen sederhana
 $url         = null;   // URL basis project untuk probe HTTP (opsional)
 $hddOverride = null;   // override MEEL_HDD_BASE untuk testing/CI (opsional)
 $color       = true;
@@ -43,7 +43,7 @@ HELP);
     }
 }
 
-// ─── State & helper output ───
+// State & helper output
 $passed = 0;
 $warned = 0;
 $failed = 0;
@@ -134,7 +134,7 @@ if ($hdd === '') {
 } else {
     report('PASS', "MEEL_HDD_BASE OK: {$hdd}" . ($hddOverride !== null ? ' (override --hdd)' : ''));
 
-    // ─── Direktori turunan ───
+    // Direktori turunan
     $derived = [
         'MEEL_HDD_VIDEO_UPLOAD' => ['video/upload',           'auto'],
         'MEEL_HDD_VIDEO_DIR'    => ['video/upload/video',     'auto'],

@@ -1,5 +1,5 @@
 <?php
-// ─── Ambil profile picture dari session (nav.php bisa di-include dari mana saja) ───
+// Ambil profile picture dari session (nav.php bisa di-include dari mana saja)
 $_nav_pfp = null;
 if (isset($_SESSION['user_id']) && isset($conn)) {
     $stmt_nav = $conn->prepare("SELECT profile_picture FROM users WHERE id = ? LIMIT 1");
@@ -9,14 +9,14 @@ if (isset($_SESSION['user_id']) && isset($conn)) {
     $_nav_pfp  = $_nav_user['profile_picture'] ?? null;
 }
 
-// ─── Deteksi halaman aktif ───
+// Deteksi halaman aktif
 $_nav_is_books  = str_contains($_SERVER['PHP_SELF'], '/books/');
 $_nav_is_video  = str_contains($_SERVER['PHP_SELF'], '/video/');
 $_nav_is_music  = str_contains($_SERVER['PHP_SELF'], '/music/');
 $_nav_is_drive  = str_contains($_SERVER['PHP_SELF'], '/drive/');
 $_nav_in_subdir = $_nav_is_books || $_nav_is_video || $_nav_is_music || $_nav_is_drive;
 
-// ─── Tentukan prefix path relatif (root vs subfolder) ───
+// Tentukan prefix path relatif (root vs subfolder)
 $_nav_pfp_base = $_nav_in_subdir ? '../profile/upload/' : 'profile/upload/';
 $_nav_root     = $_nav_in_subdir ? '../' : '';
 ?>
@@ -27,7 +27,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     }
 </style>
 
-<!-- ── Cross-link Video ↔ Music (DESKTOP) ── -->
+<!-- Cross-link Video ↔ Music (DESKTOP) -->
 <?php if ($_nav_is_video): ?>
     <a href="<?= $_nav_root ?>music/beranda"
         class="hidden sm:flex items-center gap-1.5 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] text-gray-300 hover:text-orange-500 transition-all"
@@ -57,7 +57,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </a>
 <?php endif; ?>
 <?php if (isset($_SESSION['username'])): ?>
-    <!-- ── AVATAR DROPDOWN (desktop) ── -->
+    <!-- AVATAR DROPDOWN (desktop) -->
     <div class="relative hidden sm:block" id="nav-dropdown-wrap">
         <button id="nav-avatar-btn"
             onclick="toggleNavDropdown()"
@@ -198,14 +198,14 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         </div>
     </div>
 
-    <!-- ── HAMBURGER (mobile only) ── -->        <button id="nav-hamburger"
+    <!-- HAMBURGER (mobile only) -->        <button id="nav-hamburger"
         onclick="toggleNavDrawer()"
         class="sm:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-white transition-all"
         title="Buka menu navigasi">
         <i data-lucide="menu" class="w-6 h-6"></i>
     </button>
 
-    <!-- ── MOBILE DRAWER ── -->
+    <!-- MOBILE DRAWER -->
     <div id="nav-drawer-overlay"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden sm:hidden"
         onclick="toggleNavDrawer()"></div>
@@ -452,7 +452,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </div>
 <?php endif; ?>
 <?php $scripts_root = $_nav_root; include __DIR__ . '/scripts.php'; ?>
-<script>    // ─── Dropdown desktop ───
+<script>    // Dropdown desktop
     function toggleNavDropdown() {
         const dd = document.getElementById('nav-dropdown');
         const ch = document.getElementById('nav-chevron');
@@ -524,7 +524,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         toggleNavDrawer();
     }
 
-    // ─── Guest Drawer (mobile, belum login) ───
+    // Guest Drawer (mobile, belum login)
     function toggleNavDrawerGuest() {
         const drawer = document.getElementById('nav-drawer-guest');
         const overlay = document.getElementById('nav-drawer-guest-overlay');

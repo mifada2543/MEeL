@@ -20,7 +20,7 @@
 #autonext-overlay.active .autonext-card {
   transform: translateY(0) scale(1);
 }
-/* ─── Default: medium player width ~360-600px ─── */
+/* Default: medium player width ~360-600px */
 .autonext-card {
   width: min(300px, 45cqw, 60vw);
   background: rgba(10, 12, 18, 0.92);
@@ -151,12 +151,12 @@
 .autonext-cancel:active {
   background: rgba(220, 38, 38, 0.18);
 }
-/* ─── Hide Plyr poster & replay button for auto-next ─── */
+/* Hide Plyr poster & replay button for auto-next */
 body.meel-autonext-active .plyr__poster,
 body.meel-autonext-active .plyr__control--overlaid {
   display: none !important;
 }
-/* ─── Small player <=360px ─── */
+/* Small player <=360px */
 @container (max-width: 360px) {
   #autonext-overlay {
     padding: 6px;
@@ -205,7 +205,7 @@ body.meel-autonext-active .plyr__control--overlaid {
     border-radius: 0 0 0 8px;
   }
 }
-/* ─── Large player (>=600px) ─── */
+/* Large player (>=600px) */
 @container (min-width: 600px) {
   #autonext-overlay {
     padding: 24px;

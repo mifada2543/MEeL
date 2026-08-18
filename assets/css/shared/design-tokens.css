@@ -1,10 +1,10 @@
 /* ============================================================ * shared/design-tokens.css — Universal Design Tokens * Tujuan: Satu sumber kebenaran untuk variabel CSS universal * yang digunakan di seluruh modul. * Digunakan oleh: * - shared/upload-form.css * - video/upload/main.css * - music/upload/main.css * - (modul lain via @import) * ============================================================ */
 :root {
-  /* ─── Background Colors ─── */
+  /* Background Colors */
   --bg-base: #080b11;
   --bg-card: #0e1118;
   --bg-panel: #131720;
-  /* ─── Border Colors ─── */
+  /* Border Colors */
   --border: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.10);
 }

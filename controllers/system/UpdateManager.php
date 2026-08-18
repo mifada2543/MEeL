@@ -10,7 +10,7 @@ class UpdateManager
         $this->db = $db;
     }
 
-    /* ─── Entry point ─── */
+    /* Entry point   */
 
     public function handle(): void
     {
@@ -35,7 +35,7 @@ class UpdateManager
         };
     }
 
-    /* ─── Aksi: sidebar ─── */
+    /* Aksi: sidebar   */
 
     private function saveSidebar(): void
     {
@@ -58,7 +58,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ─── Aksi: tambah update entry (Create) ─── */
+    /* Aksi: tambah update entry (Create)   */
 
     private function saveUpdate(): void
     {
@@ -93,7 +93,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ─── Aksi: edit update entry (Update) ─── */
+    /* Aksi: edit update entry (Update)   */
 
     private function saveEditUpdate(): void
     {
@@ -129,7 +129,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ─── Aksi: hapus update entry (Delete) ─── */
+    /* Aksi: hapus update entry (Delete)   */
 
     private function deleteUpdate(): void
     {
@@ -156,7 +156,7 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ─── Query helpers ─── */
+    /* Query helpers   */
 
     public function getSidebarData(): array
     {
@@ -173,7 +173,7 @@ class UpdateManager
         return $rows;
     }
 
-    /* ─── Flash message ─── */
+    /* Flash message   */
 
     public function getFlash(): array
     {
@@ -194,7 +194,7 @@ class UpdateManager
         $_SESSION['flash']         = $this->flash;
     }
 
-    /* ─── Utilities ─── */
+    /* Utilities   */
 
     private function clean(string $val): string
     {

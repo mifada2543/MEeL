@@ -1,5 +1,5 @@
 <?php
-// ─── Open Graph & Twitter Card (Legacy) ───
+// Open Graph & Twitter Card (Legacy)
 $_META_TITLE = $_META_TITLE ?? 'MEeL | Media Hub';
 $_META_DESC  = $_META_DESC  ?? '';
 include __DIR__ . '/head.php';

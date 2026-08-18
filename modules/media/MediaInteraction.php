@@ -29,16 +29,9 @@ class MediaInteraction {
             $col = ($media_type === 'music') ? 'music_id' : 'video_id';
             $table = ($media_type === 'music') ? 'music' : 'video';
 
-            // 1. Cek interaksi sebelumnya
             $existing = $this->getExistingInteraction($col, $media_id);
-
-            // 2. INSERT / UPDATE / DELETE
             $this->performInteractionOperation($existing, $col, $media_id, $like_type);
-
-            // 3. Sinkronisasi likes/dislikes
             $this->syncLikesCount($table, $col, $media_id);
-
-            // 4. Ambil data terbaru
             $data = $this->getLikesData($table, $media_id, $col);
             return $this->getResponse(true, 'Berhasil', 200, $data);
 

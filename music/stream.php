@@ -7,7 +7,7 @@ meel_boot_session();
 // File besar seperti FLAC 34MB+ butuh waktu streaming lama
 session_write_close();
 
-// ─── Referer Gate (ketat): stream HANYA boleh diminta DARI halaman musik MEeL ───
+// Referer Gate (ketat): stream HANYA boleh diminta DARI halaman musik MEeL
 $referer = $_SERVER['HTTP_REFERER'] ?? '';
 $currentHost = $_SERVER['HTTP_HOST'] ?? '';
 $refererOk = false;
@@ -36,7 +36,7 @@ if (!$refererOk) {
     exit;
 }
 
-// ─── Fail-fast: otorisasi session SEBELUM include config.php / koneksi DB ───
+// Fail-fast: otorisasi session SEBELUM include config.php / koneksi DB
 require_once __DIR__ . '/../modules/core/helpers.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -70,7 +70,6 @@ if (!file_exists($filePath) || !is_readable($filePath)) {
     exit("File fisik tidak tersedia di server.");
 }
 
-// 3. Tentukan MIME Type yang sesuai secara dinamis
 $ext      = strtolower(pathinfo($v['filename'], PATHINFO_EXTENSION));
 $mimeType = get_audio_mime_type($ext);
 

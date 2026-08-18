@@ -219,7 +219,7 @@ class SsrfGuardTest extends TestCase
         $this->assertAllowed('http://www.youtube.com/watch?v=abc123');
     }
 
-    // ─── HTTP connection pinning ───
+    // HTTP connection pinning
 
     public function testPinHttpUrlRewritesHostToPublicIpAndForcesHostHeader(): void
     {

@@ -3,8 +3,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Verifikasi file JS hasil dedup:
- *  - assets/js/shared/state-keys.js      (konstanta storage key terpusat)
- *  - assets/js/shared/download-backup-codes.js (format file TXT backup codes)
+ * - assets/js/shared/state-keys.js      (konstanta storage key terpusat)
+ * - assets/js/shared/download-backup-codes.js (format file TXT backup codes)
  *
  * @coversNothing
  */
@@ -127,7 +127,7 @@ class SharedJsTest extends TestCase
         }
     }
 
-    /* ── download-backup-codes.js (via harness Node + mock browser) ── */
+    /* download-backup-codes.js (via harness Node + mock browser)   */
 
     private static function nodeAvailable(): bool
     {

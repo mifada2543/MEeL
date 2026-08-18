@@ -49,7 +49,7 @@
   var netChart = null;
   var NET_HISTORY_MAX = 60; // sampel terakhir (60 × interval polling)
 
-  // ─── GRAFIK RIWAYAT KECEPATAN NETWORK ───
+  // GRAFIK RIWAYAT KECEPATAN NETWORK
   function setupNetChart() {
     var canvas = document.getElementById("netChart");
     if (!canvas || typeof Chart === "undefined") return;
@@ -273,7 +273,7 @@
       });
   }
 
-  // ─── PENGATURAN INTERVAL POLLING ───
+  // PENGATURAN INTERVAL POLLING
 
   function loadPref(key, fallback) {
     try {
@@ -302,7 +302,7 @@
     pollTimer = setInterval(refreshServerStats, currentPollInterval());
   }
 
-  // ─── SSE: PUSH REALTIME DARI SERVER ───
+  // SSE: PUSH REALTIME DARI SERVER
 
   function startStatsStream() {
     if (source) return;
@@ -456,7 +456,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
-    // ─── 7-DAY ACTIVITY BAR CHART ───
+    // 7-DAY ACTIVITY BAR CHART
     var ctx2 = document.getElementById("activityChart");
     if (
       ctx2 &&
@@ -540,12 +540,12 @@
       }
     }
 
-    // ─── REALTIME SERVER STATS (SSE push, fallback polling otomatis) ───
+    // REALTIME SERVER STATS (SSE push, fallback polling otomatis)
     setupNetChart();
     startStatsStream();
     setupIntervalControl();
 
-    // ─── LIVE ACTIVITY MONITOR (status online/offline tiap detik) ───
+    // LIVE ACTIVITY MONITOR (status online/offline tiap detik)
     startMonitorTicking();
   });
 })();

@@ -45,7 +45,7 @@ let glowTargetData = new Float32Array(GLOW_W * GLOW_H * 4),
   glowStopFn = null,
   glowEnabled = "false" !== localStorage.getItem(MEEL_KEYS.GLOW_ENABLED),
   glowNavbar = null;
-/* ─── Auto Next ─── */
+/* Auto Next   */
 const _meelAutoNavFlag = sessionStorage.getItem(MEEL_KEYS.AUTONAV) === "1";
 sessionStorage.removeItem(MEEL_KEYS.AUTONAV);
 let autoNextEnabled = localStorage.getItem(MEEL_KEYS.AUTONEXT_ENABLED) === "true";

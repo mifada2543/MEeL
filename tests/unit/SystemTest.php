@@ -5,9 +5,9 @@ use PHPUnit\Framework\TestCase;
  * @covers System
  *
  * Verifikasi getServerStats():
- *  - bentuk array output konsisten (dipakai admin/index.php & api/server-stats)
- *  - info identitas server di-cache ke temp/cache/server_stats_info.json
- *    sehingga polling realtime tidak menjalankan perintah shell berulang.
+ * - bentuk array output konsisten (dipakai admin/index.php & api/server-stats)
+ * - info identitas server di-cache ke temp/cache/server_stats_info.json
+ * sehingga polling realtime tidak menjalankan perintah shell berulang.
  */
 class SystemTest extends TestCase
 {

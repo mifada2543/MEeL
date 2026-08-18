@@ -118,7 +118,7 @@ class VideoWatchController extends AbstractWatchController
             ? $video_dir . '/thumbnails.vtt'
             : '';
 
-        // ─── Subtitle: deteksi semua file .vtt di folder video ───
+        // Subtitle: deteksi semua file .vtt di folder video
         $subtitles = [];
         foreach (glob($fs_dir . '/*.vtt') ?: [] as $sub_file) {
             $sub_base = basename($sub_file);

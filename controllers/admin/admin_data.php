@@ -1,19 +1,19 @@
 <?php
-// ─── Guard Direct Access ───
+// Guard Direct Access
 if (!defined('MEEL_ADMIN_CONTEXT')) {
     $_GET['code'] = 'denied';
     die(include __DIR__ . '/../../err/index.php');
 }
 
-// ─── BANNED IPS ───
+// BANNED IPS
 $banned_ips = $conn->query("SELECT * FROM ip_ban ORDER BY banned_at DESC");
 
-// ─── ALL NON-GUEST USERS ───
+// ALL NON-GUEST USERS
 $all_users = $conn->query(
     "SELECT id, username, role, is_active, created_at FROM users WHERE role != 'guest' ORDER BY role ASC, username ASC"
 );
 
-// ─── STATISTICS ───
+// STATISTICS
 // 1 query gabungan — menggantikan 7 query COUNT/SUM terpisah per load.
 $stats_row = $conn->query("
     SELECT
@@ -37,19 +37,19 @@ $stats = [
     'pending'       => (int)($stats_row['pending'] ?? 0),
 ];
 
-// ─── TOP MEDIA ───
+// TOP MEDIA
 $top_media = $conn->query("
     (SELECT id, title, views, 'video' AS type FROM video ORDER BY views DESC LIMIT 1)
     UNION ALL
     (SELECT id, title, views, 'music' AS type FROM music ORDER BY views DESC LIMIT 1)
 ");
 
-// ─── STORAGE USAGE ───
+// STORAGE USAGE
 require_once __DIR__ . '/../../modules/core/System.php';
 $sys           = new System($conn);
 $storage_usage = $sys->getStorageUsage();
 
-// ─── SERVER STATS ───
+// SERVER STATS
 $server_stats = $sys->getServerStats();
 
 $ssd_free  = $storage_usage['ssd']['free'];
@@ -72,7 +72,7 @@ $p_mus   = $storage_usage['percentages']['music'];
 $p_book  = $storage_usage['percentages']['books'];
 $p_drive = $storage_usage['percentages']['drive'];
 
-// ─── ORPHAN CHECK (Database Sync) ───
+// ORPHAN CHECK (Database Sync)
 // Scan seluruh pohon media (10rb+ file HLS .ts di folder video) sangat mahal
 // bila dijalankan di SETIAP buka halaman — apalagi storage di HDD eksternal.
 // Hasilnya di-cache 10 menit; admin bisa memaksa cek ulang via tombol.
@@ -228,16 +228,16 @@ foreach ($check_map as $rel_path => $table) {
     }
 }
 
-// ─── PENDING USERS ───
+// PENDING USERS
 $pending_users = $conn->query("SELECT id, username, created_at FROM users WHERE is_active = 2");
 
-// ─── ACTIVITY MONITOR ───
+// ACTIVITY MONITOR
 $result_monitor = $conn->query(
     "SELECT username, role, last_activity, last_page, user_agent, access_via, ip_address
      FROM users ORDER BY last_activity DESC LIMIT 10"
 );
 
-// ─── CHART DATA: 7-Day Activity ───
+// CHART DATA: 7-Day Activity
 // Dulu 28 query per load (7 hari × 4 metrik, pakai DATE(col) = ... yang tidak
 // bisa memakai index). Sekarang 6 query GROUP BY — isi hari tanpa data = 0.
 $chart_from = date('Y-m-d', strtotime('-6 days'));

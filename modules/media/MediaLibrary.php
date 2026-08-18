@@ -9,7 +9,7 @@ class MediaLibrary
         $this->conn = $db_connection;
     }
 
-    // ─── HUB ───
+    // HUB
     public function getCounts(): array
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
@@ -53,7 +53,7 @@ class MediaLibrary
         }
     }
 
-    // ─── PAGINATION HELPER ───
+    // PAGINATION HELPER
     /**
      * @param mysqli_result|false $result Result set dari query data
      * @param int $total Total record
@@ -90,7 +90,7 @@ class MediaLibrary
         return $this->paginateResult($data, $total, $page, $perPage);
     }
 
-    // ─── VIDEO ───
+    // VIDEO
     public function getVideos(int $limit = 15, int $offset = 0)
     {
         $stmt = $this->conn->prepare("SELECT * FROM video ORDER BY upload_date DESC LIMIT ? OFFSET ?");
@@ -194,7 +194,7 @@ class MediaLibrary
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
-    // ─── MUSIC ───
+    // MUSIC
 
     /**
      * @param string $format Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
@@ -398,7 +398,7 @@ class MediaLibrary
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
-    // ─── PRIVATE HELPER ───
+    // PRIVATE HELPER
 
     private function buildMusicWhere(string $format, string $artist): array
     {
@@ -611,7 +611,7 @@ class BookUploader
         return $this->insertBook($title, $author, $type, $content['has_chapters'], $category, $content['path_result'], $thumb_name, $user_id);
     }
 
-    // ─── PRIVATE HELPERS ───
+    // PRIVATE HELPERS
 
     private function handleThumbnail(array $file): string
     {

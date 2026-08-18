@@ -37,7 +37,7 @@ if ($total_songs > 0) {
 $artists       = $library->getArtists();
 $is_logged_in  = isset($_SESSION['user_id']);
 
-// ─── Fungsi render konten utama ───
+// Fungsi render konten utama
 function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, $include_script = true)
 {
 ?>
@@ -217,7 +217,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
 <?php
 }
 
-// ─── Mode content_only untuk HTMX swap ───
+// Mode content_only untuk HTMX swap
 if (isset($_GET['content_only'])) {
     renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, false);
     exit;

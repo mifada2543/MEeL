@@ -1,5 +1,5 @@
 /* base.css — Variabel, reset, body, scrollbar */
-/* ─── CSS Variables ─── */
+/* CSS Variables */
 :root {
   --admin-bg: #0b0e14;
   --admin-surface: rgba(14, 17, 24, 0.8);
@@ -15,7 +15,7 @@
   --admin-green: #4ade80;
   --admin-dark-text: #2c3440;
 }
-/* ─── Body ─── */
+/* Body */
 body {
   background-color: var(--admin-bg);
   font-family: "DM Sans", sans-serif;
@@ -23,7 +23,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* ─── Scrollbar ─── */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -38,7 +38,7 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
 }
-/* ─── Selection ─── */
+/* Selection */
 ::selection {
   background: rgba(37, 99, 235, 0.3);
   color: #fff;

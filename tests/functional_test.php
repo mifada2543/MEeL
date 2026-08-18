@@ -390,7 +390,7 @@ function run(): int {
     echo CLR_GRAY . "  Path : " . PROJECT_ROOT . "\n";
     echo "  Time : " . $GLOBALS['test_timestamp'] . "\n" . CLR_RESET;
 
-    // ─── RUN ALL TESTS ───
+    // RUN ALL TESTS
     testPhpSyntax();
     testClassLoading();
     testFunctionExistence();
@@ -400,7 +400,7 @@ function run(): int {
     testIndexPages();
     testErrorPages();
 
-    // ─── SUMMARY ───
+    // SUMMARY
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
     echo chr(9553) . "                    FUNCTIONAL TEST SUMMARY" . str_repeat(' ', 20) . chr(9553) . "\n";
     echo chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . CLR_RESET . "\n\n";

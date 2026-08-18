@@ -46,7 +46,7 @@ body::before {
 .page-wrap {
   grid-template-columns: 1fr;
 }
-/* ── Layout ── */
+/* Layout */
 .upload-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -62,7 +62,7 @@ body::before {
     grid-template-columns: 360px 1fr;
   }
 }
-/* ── Hero — waveform visual ── */
+/* Hero — waveform visual */
 .hero-waveform {
   width: 100%;
   aspect-ratio: 16/9;
@@ -155,7 +155,7 @@ body::before {
     opacity: 0.85;
   }
 }
-/* ── Guide ── */
+/* Guide */
 .guide-list {
   display: flex;
   flex-direction: column;
@@ -192,7 +192,7 @@ body::before {
   color: #cbd5e1;
   line-height: 1.4;
 }
-/* ── Drop zones ── */
+/* Drop zones */
 .drop-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -278,7 +278,7 @@ body::before {
   display: none;
   border: 1px solid var(--border-strong);
 }
-/* ── Toggle (anti-transcode) ── */
+/* Toggle (anti-transcode) */
 .toggle-card {
   display: flex;
   align-items: center;
@@ -328,7 +328,7 @@ body::before {
 .toggle-switch input:checked + .toggle-track::after {
   transform: translateX(16px);
 }
-/* ── Buttons ── */
+/* Buttons */
 .btn-auto {
   display: inline-flex;
   align-items: center;
@@ -382,7 +382,7 @@ body::before {
     transform: rotate(360deg);
   }
 }
-/* ── Upload overlay ── */
+/* Upload overlay */
 #upload-overlay {
   display: none;
   position: fixed;
@@ -576,11 +576,11 @@ body::before {
 .footer-link.accent:hover {
   color: #fb923c;
 }
-/* ── Alert in upload context needs margin-bottom ── */
+/* Alert in upload context needs margin-bottom */
 .alert {
   margin-bottom: 20px;
 }
-/* ── Primary button full-width ── */
+/* Primary button full-width */
 .btn-primary {
   width: 100%;
   padding-top: 15px;

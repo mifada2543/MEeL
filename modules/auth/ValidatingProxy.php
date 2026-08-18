@@ -1,16 +1,16 @@
 <?php
 // Manages the validating forward proxy process (validating_proxy_server.php).
-//
+
 // SECURITY BOUNDARY:
-//   * The proxy binds to 127.0.0.1 on an ephemeral port and applies
-//     SsrfGuard to EVERY hop (including redirects) — this closes the
-//     open-redirect → private IP SSRF gap.
-//   * Download flow (Transcoder) MUST route yt-dlp through this proxy via
-//     --proxy. If the proxy cannot start, the download is REFUSED (fail
-//     closed) — we never fall back to an unprotected download.
-//   * The process is spawned via PHP CLI (PHP_BINARY) with stdin/stdout/
-//     stderr pipes; readiness is signalled on stdout ("PORT n / READY").
-//   * Terminated automatically by the destructor / explicit stop().
+// * The proxy binds to 127.0.0.1 on an ephemeral port and applies
+// SsrfGuard to EVERY hop (including redirects) — this closes the
+// open-redirect → private IP SSRF gap.
+// * Download flow (Transcoder) MUST route yt-dlp through this proxy via
+// --proxy. If the proxy cannot start, the download is REFUSED (fail
+// closed) — we never fall back to an unprotected download.
+// * The process is spawned via PHP CLI (PHP_BINARY) with stdin/stdout/
+// stderr pipes; readiness is signalled on stdout ("PORT n / READY").
+// * Terminated automatically by the destructor / explicit stop().
 final class ValidatingProxy
 {
     private const START_TIMEOUT_SECONDS = 8;
@@ -89,12 +89,12 @@ final class ValidatingProxy
         $candidates = [];
 
         // 1) PHP_BINARY — benar saat CLI; bisa menunjuk ke binary non-CLI di
-        //    SAPI lain (mod_php/FPM/CGI) — verifikasi nyata di bawah menolaknya.
+        // SAPI lain (mod_php/FPM/CGI) — verifikasi nyata di bawah menolaknya.
         if (defined('PHP_BINARY') && PHP_BINARY !== '') {
             $candidates[] = PHP_BINARY;
         }
         // 2) Lokasi umum php (XAMPP/LAMPP, distro) — PATH Apache sering tidak
-        //    menyertakan direktori php sehingga 'php' mentah tidak ditemukan.
+        // menyertakan direktori php sehingga 'php' mentah tidak ditemukan.
         foreach (['/opt/lampp/bin/php', '/usr/bin/php', '/usr/local/bin/php'] as $c) {
             $candidates[] = $c;
         }

@@ -177,7 +177,7 @@ $counts  = $library->getCounts();
     <script>
         lucide.createIcons();
 
-        // ─── BANNER LOGIC ───
+        // BANNER LOGIC
         (function() {
             const banner = document.getElementById('demoBanner');
             const closeBtn = document.getElementById('demoBannerClose');
@@ -209,7 +209,7 @@ $counts  = $library->getCounts();
             }
         })();
 
-        // ─── SWEETALERT2 ───
+        // SWEETALERT2
         (function() {
             if (sessionStorage.getItem('meelDemoAlertShown')) return;
             sessionStorage.setItem('meelDemoAlertShown', '1');

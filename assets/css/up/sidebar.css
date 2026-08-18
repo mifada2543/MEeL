@@ -1,5 +1,5 @@
 /* up/sidebar.css — Kartu sidebar: status, dot, support list, queue */
-/* ─── Sidebar cards ─── */
+/* Sidebar cards */
 .side-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -22,7 +22,7 @@
 .side-card-body {
   padding: 1.25rem;
 }
-/* ─── Status dot ─── */
+/* Status dot */
 .status-dot {
   width: 7px;
   height: 7px;
@@ -39,7 +39,7 @@
   box-shadow: 0 0 6px #f97316;
   animation: pulse-dot 1s infinite;
 }
-/* ─── Supported list ─── */
+/* Supported list */
 .support-row {
   display: flex;
   align-items: center;
@@ -62,7 +62,7 @@
   font-weight: 600;
   margin-left: auto;
 }
-/* ─── Queue indicator ─── */
+/* Queue indicator */
 .queue-chip {
   display: inline-flex;
   align-items: center;

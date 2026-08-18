@@ -11,7 +11,7 @@ class System
         $this->conn = $db_connection;
     }
 
-    // ─── MONITORING ───
+    // MONITORING
 
     public function getActiveQueues(): array
     {
@@ -125,7 +125,7 @@ class System
         ];
     }
 
-    // ─── LIMITING ───
+    // LIMITING
 
     public function isServerBusy(): bool
     {
@@ -167,7 +167,7 @@ class System
         return ['allowed' => true];
     }
 
-    // ─── SERVER STATS ───
+    // SERVER STATS
 
     public function getServerStats(): array
     {
@@ -332,7 +332,7 @@ class System
         return $info;
     }
 
-    // ─── MANAGEMENT ───
+    // MANAGEMENT
 
     public function cleanStuckQueues(): int
     {

@@ -5,7 +5,7 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// ─── Validasi ID ───
+// Validasi ID
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     header("Location: ..");
     exit();
@@ -21,7 +21,7 @@ if (!$book) {
     exit;
 }
 
-// ─── Sanitasi chapter — cegah path traversal ───
+// Sanitasi chapter — cegah path traversal
 $raw_chapter     = $_GET['ch'] ?? '';
 $current_chapter = basename($raw_chapter);
 
@@ -49,7 +49,7 @@ if ($book['type'] !== 'pdf') {
     }
 }
 
-// ─── Helper: scan direktori untuk file gambar ───
+// Helper: scan direktori untuk file gambar
 function _scanImages(string $dir): array {
     if (!is_dir($dir)) return [];
     $extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'JPG', 'PNG'];
@@ -149,7 +149,7 @@ function _scanSubdirs(string $dir): array {
     <!-- KONTEN -->
     <div class="flex-grow overflow-y-auto" id="scroll-container">
         <?php if ($book['type'] === 'pdf'): ?>
-            <!-- ═══════════════ MODE PDF ═══════════════ -->
+            <!-- MODE PDF -->
             <?php
             $pdf_path   = __DIR__ . '/upload/pdf/' . basename($book['path_folder']);
             $pdf_size   = is_file($pdf_path) ? filesize($pdf_path) : 0;
@@ -158,7 +158,7 @@ function _scanSubdirs(string $dir): array {
                 : number_format($pdf_size / 1024, 1) . ' KB';
             ?>
             <div class="pdf-view">
-                <!-- ═════ DESKTOP: iframe PDF viewer ═════ -->
+                <!-- DESKTOP: iframe PDF viewer -->
                 <div class="pdf-body pdf-iframe-wrap" id="readPdfBody">
                     <iframe src="<?= base_url('/books/read-pdf?id=' . (int)$book['id'] . '&raw=1') ?>"
                             id="pdfFrame"
@@ -166,7 +166,7 @@ function _scanSubdirs(string $dir): array {
                             style="width:100%;height:100%;border:none;display:block;"></iframe>
                 </div>
 
-                <!-- ═════ MOBILE: card redirect ke read_pdf.php → api/pdf.php ═════ -->
+                <!-- MOBILE: card redirect ke read_pdf.php → api/pdf.php -->
                 <div class="pdf-body pdf-mobile-card">
                     <div class="pdf-card-inner">
                         <div class="pdf-card-icon">
@@ -213,7 +213,7 @@ function _scanSubdirs(string $dir): array {
             </script>
 
         <?php else: ?>
-            <!-- ═══════════════ MODE MANGA ═══════════════ -->
+            <!-- MODE MANGA -->
             <div class="py-0 space-y-0" id="manga-container">
                 <?php
                 $ch_base   = "upload/manga/" . $book['path_folder'];
@@ -283,7 +283,7 @@ function _scanSubdirs(string $dir): array {
                     </div>
                 <?php endif; ?>
                 <?php
-                // ─── Tentukan path gambar (filesystem di storage terpusat) ───
+                // Tentukan path gambar (filesystem di storage terpusat)
                 $target_path = $ch_fs;
 
                 if ($book['has_chapters'] == 1) {
@@ -308,7 +308,7 @@ function _scanSubdirs(string $dir): array {
                     }
                 }
 
-                // ─── Render gambar dengan Intersection Observer ───
+                // Render gambar dengan Intersection Observer
                 if ($target_path !== null && is_dir($target_path)):
                     $images = _scanImages($target_path);
                     natsort($images);
@@ -440,7 +440,7 @@ function _scanSubdirs(string $dir): array {
     <script>
         lucide.createIcons();
 
-        // ── Intersection Observer — lazy load gambar manga ───────────────────
+        // Intersection Observer — lazy load gambar manga
         (function() {
             const lazyImages = document.querySelectorAll('img.manga-img.lazy');
             if (!lazyImages.length) return;
@@ -474,7 +474,7 @@ function _scanSubdirs(string $dir): array {
             });
         })();
 
-        // ── Track scroll position for page counter & nav indicators ─────────
+        // Track scroll position for page counter & nav indicators
         (function() {
             const pageDisplay = document.getElementById('current-page-display');
             const navPage = document.getElementById('nav-current-page');
@@ -576,7 +576,7 @@ function _scanSubdirs(string $dir): array {
             setTimeout(updateScrollState, 300);
         })();
 
-        // ── Scroll to top function ───────────────────────────────────────────
+        // Scroll to top function
         function scrollToTop() {
             const el = document.getElementById('scroll-container');
             if (el && el.scrollHeight > el.clientHeight) {
@@ -586,7 +586,7 @@ function _scanSubdirs(string $dir): array {
             }
         }
 
-        // ── Chapter Custom Dropdown ────────────────────────────────────────
+        // Chapter Custom Dropdown
         (function() {
             var activeDropdown = null;
 
@@ -634,7 +634,7 @@ function _scanSubdirs(string $dir): array {
             });
         })();
 
-        // ── Smooth chapter transition ──────────────────────────────────────
+        // Smooth chapter transition
         (function() {
             var isTransitioning = false;
 
@@ -676,7 +676,7 @@ function _scanSubdirs(string $dir): array {
             });
         })();
 
-        // ── Fungsi simpan progress ke localStorage (throttled) ───────────────
+        // Fungsi simpan progress ke localStorage (throttled)
         var _saveTimer = null;
         function saveProgress(extra) {
             if (_saveTimer) clearTimeout(_saveTimer);
@@ -716,7 +716,7 @@ function _scanSubdirs(string $dir): array {
             } catch(e) {}
         });
 
-        // ── Auto-scroll ke halaman terakhir (dari localStorage) ────────────
+        // Auto-scroll ke halaman terakhir (dari localStorage)
         (function() {
             try {
                 var raw = localStorage.getItem('meel_book_progress');
@@ -760,7 +760,7 @@ function _scanSubdirs(string $dir): array {
             } catch(e) {}
         })();
 
-        // ── Keyboard shortcuts ──────────────────────────────────────────────
+        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
 

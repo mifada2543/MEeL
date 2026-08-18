@@ -4,7 +4,7 @@ require_once '../auth/config.php';
 require_once '../modules/core/helpers.php';
 require_once '../modules/media/ProfileRepository.php';
 
-// ─── Hanya user login ───
+// Hanya user login
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -16,26 +16,26 @@ $is_admin  = ($_SESSION['role'] ?? '') === 'admin';
 
 $profileRepo = new ProfileRepository($conn);
 
-// ─── Cek apakah user punya konten ───
+// Cek apakah user punya konten
 $total_video = $profileRepo->countVideo($user_id);
 $total_music = $profileRepo->countMusic($user_id);
 
 $has_content = ($total_video + $total_music) > 0;
 
-// ─── Redirect jika tidak punya konten ───
+// Redirect jika tidak punya konten
 if (!$has_content) {
     header("Location: ../upload?first=1");
     exit();
 }
 
-// ─── Load backend functions ───
+// Load backend functions
 define('MEEL_MANAGE_ACCESS', true);
 require_once '../controllers/profile/fun-manage.php';
 
-// ─── Cleanup files >30 menit setiap kali halaman dimuat ───
+// Cleanup files >30 menit setiap kali halaman dimuat
 $cleaned_count = cleanupPendingDeletions();
 
-// ─── Handle delete action ───
+// Handle delete action
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
     // Dukungan POST tetap dipertahankan untuk kompatibilitas.
@@ -63,11 +63,11 @@ if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
     }
 }
 
-// ─── Tab aktif ───
+// Tab aktif
 $active_tab = $_GET['tab'] ?? 'video';
 if (!in_array($active_tab, ['video', 'music'])) $active_tab = 'video';
 
-// ─── Ambil data konten ───
+// Ambil data konten
 $page_size = 20;
 $page = max(1, (int)($_GET['p'] ?? 1));
 $offset = ($page - 1) * $page_size;
@@ -111,7 +111,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border-radius: 24px;
         }
 
-        /* ─── Tabs ─── */
+        /* Tabs   */
         .manage-tabs {
             display: flex;
             gap: 4px;
@@ -152,7 +152,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border: 1px solid rgba(239, 68, 68, 0.15);
         }
 
-        /* ─── Content card ─── */
+        /* Content card   */
         .content-card {
             background: rgba(20, 24, 32, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -209,7 +209,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             gap: 8px;
         }
 
-        /* ─── Action buttons ─── */
+        /* Action buttons   */
         .action-btn {
             display: inline-flex;
             align-items: center;
@@ -249,7 +249,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border-color: rgba(239, 68, 68, 0.3);
         }
 
-        /* ─── Stats bar ─── */
+        /* Stats bar   */
         .stats-bar {
             display: flex;
             gap: 16px;
@@ -282,7 +282,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             color: #f97316;
         }
 
-        /* ─── Pagination ─── */
+        /* Pagination   */
         .pagination {
             display: flex;
             justify-content: center;
@@ -334,7 +334,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             letter-spacing: 0.15em;
         }
 
-        /* ─── Alert ─── */
+        /* Alert   */
         .alert-bar {
             padding: 12px 18px;
             border-radius: 14px;

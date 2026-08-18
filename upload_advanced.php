@@ -16,7 +16,7 @@ require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
-// ─── GLOBAL ERROR HANDLER ───
+// GLOBAL ERROR HANDLER
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
@@ -51,7 +51,7 @@ $is_admin  = ($user_role === 'admin');
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
-// ─── Hitung sisa kuota upload per jam ───
+// Hitung sisa kuota upload per jam
 // Konsisten dengan System::checkRateLimit(): member mendapat 2x lipat (4/jam).
 $upload_max = get_upload_hourly_limit($user_role);
 $quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     } elseif ($is_busy) {
         $message = 'busy';
     } else {
-        // ─── Rate limit check (sama seperti Uploader.php) ───
+        // Rate limit check (sama seperti Uploader.php)
         $type        = $_POST['type'] ?? '';
         $limit_table = ($type === 'music') ? 'music' : 'video';
         $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
@@ -151,14 +151,14 @@ include __DIR__ . '/partials/scripts.php';
 
 <body class="min-h-screen flex flex-col">
 
-    <!-- ── MEeL Engine Overlay (dari ui.php) ── -->
+    <!-- MEeL Engine Overlay (dari ui.php) -->
     <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
         <?php include 'partials/ui.php'; ?>
     <?php endif; ?>
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
 
-            <!-- ── Masthead ── -->
+            <!-- Masthead -->
             <div class="masthead">
                 <a href="./" class="masthead-logo">
                     <img src="assets/MEeL.png" alt="MEeL">
@@ -176,7 +176,7 @@ include __DIR__ . '/partials/scripts.php';
                 </div>
             </div>
 
-            <!-- ── Admin bar ── -->
+            <!-- Admin bar -->
             <?php if ($is_admin): ?>
                 <div class="admin-bar">
                     <span class="admin-badge">
@@ -199,10 +199,10 @@ include __DIR__ . '/partials/scripts.php';
                     </a>
                 </div>
             <?php endif; ?>
-            <!-- ── Main grid ── -->
+            <!-- Main grid -->
             <div class="page-grid">
 
-                <!-- ── LEFT: Form ── -->
+                <!-- LEFT: Form -->
                 <div>
                     <!-- Alert banners -->
                     <?php if ($message === 'success'): ?>
@@ -355,7 +355,7 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- ── RIGHT: Sidebar ── -->
+                <!-- RIGHT: Sidebar -->
                 <aside>
                     <!-- Server status card -->
                     <div class="side-card">
@@ -388,7 +388,7 @@ include __DIR__ . '/partials/scripts.php';
                                 </span>
                             </div>
 
-                            <!-- ── Quota bar ── -->
+                            <!-- Quota bar -->
                             <div style="height:1px;background:var(--border);"></div>
                             <div>
                                 <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">

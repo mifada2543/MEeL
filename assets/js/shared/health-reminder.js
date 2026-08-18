@@ -2,7 +2,7 @@
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
 /* health-reminder.js — Mode Sehat 20-20-20 (pengingat istirahat mata) */
-/* ─── State global (variabel global agar konsisten antar fungsi) ─── */
+/* State global (variabel global agar konsisten antar fungsi)   */
 var healthReminderTimer = null;
 var HEALTH_INTERVAL_MS  = 12e5;          // 1.200.000 ms = 20 menit
 function formatHealthRemaining(ms) {
@@ -209,7 +209,7 @@ function acquireHealthAlertLock(task) {
   task(); // tanpa Web Locks → perilaku lama
 }
 
-/* ─── Penegakan mode jeda: tolak SEMUA pemutaran media ─── */
+/* Penegakan mode jeda: tolak SEMUA pemutaran media   */
 var breakEnforceTimer = null;
 var breakPlayBlock = null;
 
@@ -497,7 +497,7 @@ function runHealthAlertFlow() {
     }
   };
 
-  // ─── Modal 1: instruksi 20-20-20 ───
+  // Modal 1: instruksi 20-20-20
   return Swal.fire({
     title: "WAKTUNYA ISTIRAHATKAN MATA!",
     html: `
@@ -555,7 +555,7 @@ function runHealthAlertFlow() {
     },
   }).then((result) => {
     if (result.isConfirmed) {
-      // ─── Modal 2: countdown 20 detik relaksasi ───
+      // Modal 2: countdown 20 detik relaksasi
       let countdownInterval;
       Swal.fire({
         title: "RELAKSASI DIMULAI",
@@ -592,7 +592,7 @@ function runHealthAlertFlow() {
           clearInterval(countdownInterval);
         },
       }).then(() => {
-        // ─── Modal 3: konfirmasi selesai, lalu resume ───
+        // Modal 3: konfirmasi selesai, lalu resume
         Swal.fire({
           title: "SELESAI!",
           text: "Mata Anda kembali bugar. Selamat menonton kembali!",

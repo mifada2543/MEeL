@@ -1,6 +1,6 @@
 <?php
 // controllers/api/server_stats.php — Endpoint realtime Server Stats admin.
-//
+
 // Dipanggil via AJAX polling (GET) oleh assets/js/admin/index.js setiap
 // beberapa detik untuk memperbarui kartu CPU / RAM / Swap / Network pada
 // dashboard admin tanpa reload halaman. Tidak ada efek samping — hanya

@@ -113,8 +113,8 @@ final class DriveStorage
      * ada breaking change.
      *
      * @param string|null $hddDriveOverride Untuk pengujian: simulasikan nilai
-     *        MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
-     *        konstanta sungguhan; '' = paksa fallback lokal.
+     * MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
+     * konstanta sungguhan; '' = paksa fallback lokal.
      */
     public static function defaultBasePath(?string $hddDriveOverride = null): string
     {
@@ -186,8 +186,8 @@ final class DriveStorage
      * @param array $file Entry $_FILES untuk satu file
      * @param string|null $requestedScope Scope yang diminta (public/private)
      * @param int $quotaLimitBytes Batas kuota member (0 = tanpa penegakan kuota).
-     *        Penegakan kuota dilakukan ATOMIK di dalam lock per-user sehingga
-     *        upload berbarengan tidak bisa melewati kuota secara kolektif.
+     * Penegakan kuota dilakukan ATOMIK di dalam lock per-user sehingga
+     * upload berbarengan tidak bisa melewati kuota secara kolektif.
      * @throws RuntimeException 'quota_full' saat kuota terlampaui
      */
     public function upload(array $file, ?string $requestedScope, int $quotaLimitBytes = 0): array
@@ -211,7 +211,7 @@ final class DriveStorage
             throw new RuntimeException($e->getMessage());
         }
 
-        // ─── Kuota ATOMIK ───
+        // Kuota ATOMIK
         $lockFp = null;
         if ($quotaLimitBytes > 0 && $this->user->isMember()) {
             $lockFp = @fopen($this->quotaLockPath(), 'c');
@@ -231,7 +231,7 @@ final class DriveStorage
             }
         }
 
-        // ─── Reservasi nama ATOMIK ───
+        // Reservasi nama ATOMIK
         // fopen('x') = O_CREAT|O_EXCL mengklaim nama file secara atomik, jadi
         // dua upload berbarengan dengan nama sama tidak bisa sama-sama menang
         // (menutup TOCTOU antara cek file_exists dan move_uploaded_file).

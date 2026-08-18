@@ -1,5 +1,5 @@
 /* upload.css — Upload dropzone, drag & drop, progress card */
-/* ─── Upload Dropzone ─── */
+/* Upload Dropzone */
 .upload-zone {
   border: 1.5px dashed rgba(255, 255, 255, 0.15);
   border-radius: 12px;
@@ -13,7 +13,7 @@
   border-color: var(--accent-b);
   background: rgba(59, 130, 246, 0.05);
 }
-/* ─── Full Dropzone ─── */
+/* Full Dropzone */
 .upload-dropzone {
   position: relative;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -30,7 +30,7 @@
   opacity: 1;
   transform: translateY(0);
 }
-/* ─── Dropzone Hint Overlay (on drag) ─── */
+/* Dropzone Hint Overlay (on drag) */
 .dropzone-hint {
   position: absolute;
   inset: 0;
@@ -82,7 +82,7 @@
     box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.15);
   }
 }
-/* ─── Upload Input Label ─── */
+/* Upload Input Label */
 .upload-label {
   display: flex;
   align-items: center;
@@ -133,7 +133,7 @@
 .upload-prog-card.hidden {
   display: none;
 }
-/* ─── Header ─── */
+/* Header */
 .upload-prog-header {
   display: flex;
   align-items: center;
@@ -201,14 +201,14 @@
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
-/* ─── Body ─── */
+/* Body */
 .upload-prog-body {
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-/* ─── Progress Track ─── */
+/* Progress Track */
 .upload-prog-track {
   width: 100%;
   height: 4px;
@@ -255,7 +255,7 @@
     transform: translate3d(400%, 0, 0);
   }
 }
-/* ─── Info Row ─── */
+/* Info Row */
 .upload-prog-info {
   display: flex;
   align-items: center;
@@ -275,7 +275,7 @@
   font-weight: 600;
   color: rgba(255, 255, 255, 0.4);
 }
-/* ─── Stats Grid ─── */
+/* Stats Grid */
 .upload-prog-stats {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -304,7 +304,7 @@
   color: rgba(255, 255, 255, 0.8);
   font-variant-numeric: tabular-nums;
 }
-/* ─── Result Section ─── */
+/* Result Section */
 .upload-prog-result {
   display: flex;
   align-items: center;
@@ -339,7 +339,7 @@
   font-size: 13px;
   font-weight: 700;
 }
-/* ─── Color States ─── */
+/* Color States */
 .upload-prog-card.upload-prog-success .upload-prog-result-text {
   color: #10b981;
 }
@@ -354,7 +354,7 @@
   background: linear-gradient(90deg, #ef4444, #f87171);
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
 }
-/* ─── Animated Checkmark ─── */
+/* Animated Checkmark */
 .upload-checkmark {
   display: block;
 }
@@ -376,7 +376,7 @@
     stroke-dashoffset: 0;
   }
 }
-/* ─── Confetti ─── */
+/* Confetti */
 .upload-confetti {
   position: absolute;
   top: 0;
@@ -412,7 +412,7 @@
     opacity: 0;
   }
 }
-/* ─── Minimized State ─── */
+/* Minimized State */
 .upload-prog-card.minimized {
   width: 280px;
   cursor: pointer;
@@ -449,7 +449,7 @@
 .upload-prog-card:not(.minimized) .upload-prog-toggle-icon {
   color: rgba(255, 255, 255, 0.25);
 }
-/* ─── Slide Animations ─── */
+/* Slide Animations */
 @keyframes upload-prog-slide-in {
   from {
     transform: translateY(20px) scale(0.95);
@@ -470,7 +470,7 @@
     opacity: 0;
   }
 }
-/* ─── Mobile ─── */
+/* Mobile */
 @media (max-width: 480px) {
   .upload-prog-card {
     bottom: 16px;

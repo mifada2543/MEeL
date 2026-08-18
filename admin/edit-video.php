@@ -17,7 +17,7 @@ if ($curr_role === 'guest') {
     header("Location: ../");
     exit();
 }
-// ─── Back URL (smart referer) ───
+// Back URL (smart referer)
 $back_url = $is_admin ? 'analys' : '../video/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -105,7 +105,7 @@ if (isset($_POST['update'])) {
                 }
             }
         }
-        // ─── SUBTITLE (OPSIONAL): Upload / timpa file subtitle ── Konvensi nama... ───
+        // SUBTITLE (OPSIONAL): Upload / timpa file subtitle   Konvensi nama...
         if (empty($error_message) && isset($_FILES['subtitle']) && $_FILES['subtitle']['error'] === UPLOAD_ERR_OK) {
             $sub_ext     = strtolower(pathinfo($_FILES['subtitle']['name'], PATHINFO_EXTENSION));
             $sub_lang    = sanitize_subtitle_lang($_POST['subtitle_lang'] ?? 'id');
@@ -152,7 +152,7 @@ if (isset($_POST['update'])) {
                 $error_message = "Gagal menyimpan perubahan ke database.";
             }
         }
-        // ─── ROLLBACK THUMBNAIL ───
+        // ROLLBACK THUMBNAIL
         if ($error_message !== '' && $thumbnail_url !== $video['thumbnail']) {
             $orphan_thumb = meel_media_base_path('video') . '/thumbnail/' . basename($thumbnail_url);
             if (is_file($orphan_thumb)) {
@@ -161,7 +161,7 @@ if (isset($_POST['update'])) {
         }
     }
 }
-// ─── SUBTITLE: Hapus file subtitle berdasarkan bahasa (handler terpisah) ───
+// SUBTITLE: Hapus file subtitle berdasarkan bahasa (handler terpisah)
 if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== '') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
@@ -181,7 +181,7 @@ if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== 
     }
 }
 
-// ─── DAFTAR SUBTITLE EXISTING format {folder}.{lang}.vtt. ───
+// DAFTAR SUBTITLE EXISTING format {folder}.{lang}.vtt.
 $existing_subtitles = [];
 $hls_folder_dir    = basename(dirname($video['filename']));
 $sub_scan_dir      = meel_media_base_path('video') . '/video/' . $hls_folder_dir . '/';
@@ -226,7 +226,7 @@ include __DIR__ . '/../partials/link.php';
         ?>
         <div class="edit-layout">
 
-            <!-- ── LEFT: Sidebar ── -->
+            <!-- LEFT: Sidebar -->
             <aside class="sidebar-panel">
                 <!-- Thumbnail — klik atau drag untuk ganti -->
                 <div class="thumb-wrap" id="thumb-wrap">
@@ -318,7 +318,7 @@ include __DIR__ . '/../partials/link.php';
                 </div>
             </aside>
 
-            <!-- ── RIGHT: Form panel ── -->
+            <!-- RIGHT: Form panel -->
             <section class="form-panel">
                 <div class="form-header">
                     <div>

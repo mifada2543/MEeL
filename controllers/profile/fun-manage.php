@@ -1,11 +1,11 @@
 <?php
-// ─── Cegah akses langsung ───
+// Cegah akses langsung
 if (!defined('MEEL_MANAGE_ACCESS')) {
     header('HTTP/1.0 403 Forbidden');
     exit('Direct access not allowed.');
 }
 
-// ─── Hapus Video ───
+// Hapus Video
 function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
 {
         $stmt = $conn->prepare("SELECT filename, thumbnail, user_id FROM video WHERE id = ?");
@@ -63,7 +63,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
     return ['success' => true, 'message' => 'Video dihapus. File akan dibersihkan otomatis.'];
 }
 
-// ─── Hapus Music ───
+// Hapus Music
 function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
 {
         $stmt = $conn->prepare("SELECT filename, thumbnail, user_id FROM music WHERE id = ?");
@@ -112,7 +112,7 @@ function handleDeleteMusic(int $id, int $user_id, mysqli $conn): array
     return ['success' => true, 'message' => 'Musik dihapus. File akan dibersihkan otomatis.'];
 }
 
-// ─── Simpan daftar file yang akan dihapus nanti ───
+// Simpan daftar file yang akan dihapus nanti
 function savePendingDeletions(array $pending): void
 {
     $file = __DIR__ . '/../../temp/pending_delete.json';
@@ -139,7 +139,7 @@ function savePendingDeletions(array $pending): void
     @file_put_contents($file, json_encode($existing, JSON_PRETTY_PRINT), LOCK_EX);
 }
 
-// ─── Bersihkan file yang sudah >30 menit sejak dihapus ───
+// Bersihkan file yang sudah >30 menit sejak dihapus
 function cleanupPendingDeletions(): int
 {
     $file = __DIR__ . '/../../temp/pending_delete.json';

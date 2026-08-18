@@ -85,7 +85,7 @@ if (!$result['success']) {
     exit;
 }
 
-// ─── Mode AJAX: render ulang daftar komentar ───
+// Mode AJAX: render ulang daftar komentar
 if ($is_ajax) {
     require_once __DIR__ . '/../../modules/media/MediaViewer.php';
     require_once __DIR__ . '/../../modules/core/CommentRenderer.php';
@@ -121,7 +121,7 @@ if ($is_ajax) {
     exit;
 }
 
-// ─── Fallback non-JS: flash message + redirect balik (dengan validasi host) ───
+// Fallback non-JS: flash message + redirect balik (dengan validasi host)
 $_SESSION['success'] = $result['message'];
 header('Location: ' . safe_comment_back_url());
 exit;

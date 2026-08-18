@@ -8,7 +8,7 @@
   transform: translateY(-4px);
   border-color: rgba(220, 38, 38, 0.3) !important;
 }
-/* ─── Comment & Recommendation hover ─── */
+/* Comment & Recommendation hover */
 .comment-row,
 .rekomendasi-item {
   border-left: 2px solid transparent;

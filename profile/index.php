@@ -5,7 +5,7 @@ require_once '../modules/media/ProfileRepository.php';
 // activity_logger loaded via auth/config.php
 $back_url = '../';
 
-// ─── Validasi Referer (Back URL) menggunakan MEEL_HOST constant ───
+// Validasi Referer (Back URL) menggunakan MEEL_HOST constant
 $allowed_hosts = [
     defined('MEEL_HOST') && !empty(MEEL_HOST) ? MEEL_HOST : ($_SERVER['HTTP_HOST'] ?? ''),
     'localhost',
@@ -286,7 +286,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
     <script>
         lucide.createIcons();
 
-        // ── Modal Backup Codes (dengan verifikasi password) ──
+        // Modal Backup Codes (dengan verifikasi password)
         function showBackupModal() {
             Swal.fire({
                 title: 'Kode Cadangan MFA',
@@ -383,7 +383,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             });
         }
 
-        // ── Download Backup Codes sebagai TXT (fungsi shared) ──
+        // Download Backup Codes sebagai TXT (fungsi shared)
         window._meelBackupUser = '<?= htmlspecialchars($_SESSION['username'] ?? 'user') ?>';
     </script>
 </body>

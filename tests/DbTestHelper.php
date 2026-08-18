@@ -9,9 +9,9 @@
  * tidak ada sisa database tertinggal setelah test.
  *
  * Kredensial server MySQL (host/user/pass) dapat dioverride lewat env var
- *   MEEL_TEST_DB_HOST / MEEL_TEST_DB_USER / MEEL_TEST_DB_PASS
+ * MEEL_TEST_DB_HOST / MEEL_TEST_DB_USER / MEEL_TEST_DB_PASS
  * (default localhost/root/tanpa password — environment XAMPP lokal; CI
- *  memakai nilai milik runner, bukan kredensial pengguna).
+ * memakai nilai milik runner, bukan kredensial pengguna).
  * Nama database SELALU di-generate sendiri — tidak pernah memakai nama
  * database pengguna.
  */

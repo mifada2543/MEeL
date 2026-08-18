@@ -1,6 +1,6 @@
 /* MEeL — Documentation Shared JavaScript */
 
-// ─── Navigation Structure ───
+// Navigation Structure
 const DOCS = {
     en: {
         label: 'English',
@@ -42,7 +42,7 @@ const DOCS = {
     }
 };
 
-// ─── Partial Loader ───
+// Partial Loader
 async function loadPartial(url, targetId) {
     try {
         const res = await fetch(url);
@@ -57,7 +57,7 @@ async function loadPartial(url, targetId) {
     }
 }
 
-// ─── URL Params ───
+// URL Params
 function getDocParams() {
     const p = new URLSearchParams(window.location.search);
     return {
@@ -66,7 +66,7 @@ function getDocParams() {
     };
 }
 
-// ─── Render Navbar ───
+// Render Navbar
 function renderNavbar(lang, activeFile) {
     const docs = DOCS[lang] || DOCS.en;
     const otherLang = lang === 'en' ? 'id' : 'en';
@@ -92,7 +92,7 @@ function renderNavbar(lang, activeFile) {
     }
 }
 
-// ─── Load & Render Markdown ───
+// Load & Render Markdown
 const DOC_STATE = { lang: 'en', file: 'index' };
 
 async function loadDoc(lang, file) {
@@ -159,12 +159,12 @@ async function loadDoc(lang, file) {
     }
 }
 
-// ─── Load Footer ───
+// Load Footer
 async function loadFooter() {
     await loadPartial('partials/footer.html', 'footer');
 }
 
-// ─── Init Documentation Page ───
+// Init Documentation Page
 function initDocViewer() {
     const params = getDocParams();
     DOC_STATE.lang = params.lang;
@@ -172,7 +172,7 @@ function initDocViewer() {
     loadDoc(params.lang, params.file);
 }
 
-// ─── Auto-init ───
+// Auto-init
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('content')) {
         initDocViewer();

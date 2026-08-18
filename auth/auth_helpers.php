@@ -165,15 +165,13 @@ if (!function_exists('auth_validate_credentials')) {
     /* @return string|null Pesan error, atau null jika valid */
     function auth_validate_credentials(string $user, string $pass): ?string
     {
-        // 1. Validasi Panjang Karakter
         if (strlen($user) < 8 || strlen($pass) < 8) {
             return "Username min 8 karakter, Password min 8 karakter!";
         }
-        // 2. Hanya huruf, angka, underscore
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $user)) {
             return "Username hanya boleh berisi huruf, angka, dan underscore (_)!";
         }
-        // 3. Blacklist username 'Guest' (dicadangkan sistem)
+        // Username 'Guest' dicadangkan sistem
         if (stripos($user, 'guest') !== false) {
             return "Username 'Guest' tidak dapat didaftarkan karena dicadangkan untuk sistem!";
         }

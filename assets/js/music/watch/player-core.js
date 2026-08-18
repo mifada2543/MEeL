@@ -72,7 +72,7 @@
     }
   }
 
-  // ── Semua listener yang menempel ke `audio`/`player` (elemen persisten) ──
+  // Semua listener yang menempel ke `audio`/`player` (elemen persisten)
   // Dipasang SEKALI SEUMUR SESI, tidak peduli berapa kali user
   // toggle mini<->full.
   function bindEngineOnce(engine) {
@@ -82,7 +82,7 @@
     const audio = engine.audio,
       player = engine.player;
 
-    // ── FLAC loading-overlay & timeout ──
+    // FLAC loading-overlay & timeout
     let loadingTimeout = null,
       secondaryTimeout = null,
       metadataLoaded = false,
@@ -176,7 +176,7 @@
       hideLoadingOverlay();
     });
 
-    // ── Visualizer / bitrate — pakai analyser dari engine ──
+    // Visualizer / bitrate — pakai analyser dari engine
     let rafId = null,
       visLastTs = 0,
       visualizerOn = window.innerWidth >= 1024,
@@ -448,7 +448,7 @@
     updateVisualizerUI(engine.__vis ? engine.__vis.isOn() : window.innerWidth >= 1024);
 
     if (!isFreshTrack) {
-      // ── Mobile-only ──
+      // Mobile-only
       // iOS Safari menghentikan <audio> saat elemen dipindah antar-DOM
       // oleh view-router — sync ulang eksplisit.
       const wantStream = window.MEEL_MUSIC_CONFIG.streamUrl || "";
@@ -490,7 +490,7 @@
       return;
     }
 
-    // ── Hanya untuk track yang BENAR-BENAR baru ──
+    // Hanya untuk track yang BENAR-BENAR baru
     // setLoop menyinkronkan media.loop + Plyr config + localStorage secara atomik.
     engine.setLoop(savedLoop);
     updateLoopUI();

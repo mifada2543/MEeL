@@ -1,5 +1,5 @@
 <?php
-// ─── Deteksi protokol & host ───
+// Deteksi protokol & host
 if (function_exists('detectProtocol')) {
     $_head_proto = detectProtocol();
 } else {
@@ -11,13 +11,13 @@ if (function_exists('detectProtocol')) {
 $_head_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $_head_base = $_head_proto . '://' . $_head_host;
 
-// ─── Project root base (untuk asset tetap seperti manifest, favicon, OG image) ───
+// Project root base (untuk asset tetap seperti manifest, favicon, OG image)
 $_head_root_path = str_replace('\\', '/', dirname(__DIR__));
 $_head_doc_root  = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '/');
 $_head_root_rel  = str_replace(rtrim($_head_doc_root, '/'), '', $_head_root_path);
 $_head_root      = $_head_proto . '://' . $_head_host . rtrim($_head_root_rel, '/\\');
 
-// ─── Default values ───
+// Default values
 $_META_TITLE        = $_META_TITLE        ?? 'MEeL | Media Hub';
 $_META_DESC         = $_META_DESC         ?? 'Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.';
 $_META_IMAGE        = $_META_IMAGE        ?? $_head_root . '/assets/MEeL.png';
@@ -33,7 +33,7 @@ $_META_ROBOTS       = $_META_ROBOTS       ?? 'index, follow';
 $_META_CANONICAL    = $_META_CANONICAL    ?? $_META_URL;
 $_META_EXTRA        = $_META_EXTRA        ?? '';
 
-// ─── Escape semuanya ───
+// Escape semuanya
 $_e_title    = htmlspecialchars($_META_TITLE, ENT_QUOTES, 'UTF-8');
 $_e_desc     = htmlspecialchars($_META_DESC, ENT_QUOTES, 'UTF-8');
 $_e_image    = htmlspecialchars($_META_IMAGE, ENT_QUOTES, 'UTF-8');
@@ -123,7 +123,7 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
         // updateViaCache:'none' → sw.js SELALU diambil fresh dari server
         // (browser default hanya mengecek update SW maks 1x/24 jam, bikin
-        //  perubahan logo/asset baru tidak muncul saat Ctrl+R)
+        // perubahan logo/asset baru tidak muncul saat Ctrl+R)
         navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' }).then(function(reg) {
             // Cek update di setiap load halaman → SW baru (mis. versi baru
             // dengan logo/asset baru) langsung ter-install tanpa nunggu 24 jam

@@ -1,11 +1,11 @@
 /** MEeL - Media Hub Platform
  * @copyright Copyright (C) 2026 Mifada
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* ────────────────────────────────────────────────────────────────
+/*
  * upload/upload.js — JS halaman video/upload.php: drop-zone handler,
  * overlay upload (progress manual), drag-and-drop, dan @keyframes spin.
  * Depends on: shared/upload-progress.js (meelUploadProgress)
- * ──────────────────────────────────────────────────────────────── */
+ * */
 function handleVideoFile(input) {
   const file = input.files[0];
   if (!file) return;

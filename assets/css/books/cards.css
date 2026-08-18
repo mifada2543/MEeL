@@ -1,5 +1,5 @@
 /* cards.css — Book cards, filter pills, type badges */
-/* ─── Filter Pills ─── */
+/* Filter Pills */
 .filter-pill {
   font-size: 0.6rem;
   letter-spacing: 0.2em;
@@ -23,7 +23,7 @@
   color: #fff;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
-/* ─── Book Card ─── */
+/* Book Card */
 .book-card {
   transition:
     transform 0.25s ease,
@@ -52,7 +52,7 @@
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-/* ─── Type Badges ─── */
+/* Type Badges */
 .type-badge {
   font-size: 9px;
   font-weight: 900;

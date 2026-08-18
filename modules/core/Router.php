@@ -7,24 +7,24 @@
  * oleh Apache sebagai file nyata).
  *
  * URL bersih query-style:
- *   /video/watch?id=5            → video/watch.php
- *   /music/watch?id=5&playlist_id=3 → music/watch.php
- *   /admin/edit-video?id=5       → admin/edit-video.php
- *   /api/like                    → controllers/api/like.php
+ * /video/watch?id=5            → video/watch.php
+ * /music/watch?id=5&playlist_id=3 → music/watch.php
+ * /admin/edit-video?id=5       → admin/edit-video.php
+ * /api/like                    → controllers/api/like.php
  *
  * Mengapa query-style (bukan /video/watch/5):
- *   Kedalaman URL tidak berubah dari file aslinya, sehingga semua link relatif,
- *   form POST, dan JS tetap bekerja TANPA <base>.
+ * Kedalaman URL tidak berubah dari file aslinya, sehingga semua link relatif,
+ * form POST, dan JS tetap bekerja TANPA <base>.
  *
  * Mekanisme dispatch:
- *   1. router.php (root) memanggil MeelRouter::resolvePath() → path bersih.
- *   2. MeelRouter::dispatch() mencocokkan path ke routing table.
- *   3. Handler (file .php lama) di-include — require relatif di dalamnya
- *      tetap di-resolve PHP terhadap direktori file sumber, jadi tidak ada
- *      perubahan pada handler.
- *   4. $_SERVER['SCRIPT_NAME'] & PHP_SELF disimulasikan ke handler asli
- *      sehingga deteksi halaman (partials/nav.php, activity_logger.php)
- *      tetap bekerja tanpa perubahan.
+ * 1. router.php (root) memanggil MeelRouter::resolvePath() → path bersih.
+ * 2. MeelRouter::dispatch() mencocokkan path ke routing table.
+ * 3. Handler (file .php lama) di-include — require relatif di dalamnya
+ * tetap di-resolve PHP terhadap direktori file sumber, jadi tidak ada
+ * perubahan pada handler.
+ * 4. $_SERVER['SCRIPT_NAME'] & PHP_SELF disimulasikan ke handler asli
+ * sehingga deteksi halaman (partials/nav.php, activity_logger.php)
+ * tetap bekerja tanpa perubahan.
  *
  * @license GPL v3
  */
@@ -32,7 +32,7 @@ final class MeelRouter
 {
     /** @var array<string, array{handler: string, script: string}> */
     private const ROUTES = [
-        // ── Root pages ──
+        // Root pages
         ''                => ['handler' => 'index.php',           'script' => '/index.php'],
         'introduction'    => ['handler' => 'introduction.php',    'script' => '/introduction.php'],
         'update'          => ['handler' => 'update.php',          'script' => '/update.php'],
@@ -41,7 +41,7 @@ final class MeelRouter
         'err'             => ['handler' => 'err/index.php',       'script' => '/err/index.php'],
         'err/offline'     => ['handler' => 'err/offline.php',     'script' => '/err/offline.php'],
 
-        // ── Video ──
+        // Video
         'video'           => ['handler' => 'video/index.php',       'script' => '/video/index.php'],
         'video/beranda'   => ['handler' => 'video/index.php',       'script' => '/video/index.php'],
         'video/watch'     => ['handler' => 'video/watch.php',       'script' => '/video/watch.php'],
@@ -50,7 +50,7 @@ final class MeelRouter
         'video/upload'    => ['handler' => 'video/upload.php',      'script' => '/video/upload.php'],
         'video/stream'    => ['handler' => 'video/stream.php',      'script' => '/video/stream.php'],
 
-        // ── Music ──
+        // Music
         'music'                 => ['handler' => 'music/index.php',          'script' => '/music/index.php'],
         'music/beranda'         => ['handler' => 'music/index.php',          'script' => '/music/index.php'],
         'music/watch'           => ['handler' => 'music/watch.php',          'script' => '/music/watch.php'],
@@ -62,7 +62,7 @@ final class MeelRouter
         'music/stream'          => ['handler' => 'music/stream.php',          'script' => '/music/stream.php'],
         'music/file'            => ['handler' => 'music/file.php',            'script' => '/music/file.php'],
 
-        // ── Books ──
+        // Books
         'books'        => ['handler' => 'books/index.php',     'script' => '/books/index.php'],
         'books/beranda'=> ['handler' => 'books/index.php',     'script' => '/books/index.php'],
         'books/read'   => ['handler' => 'books/read.php',      'script' => '/books/read.php'],
@@ -71,7 +71,7 @@ final class MeelRouter
         'books/upload' => ['handler' => 'books/upload.php',    'script' => '/books/upload.php'],
         'books/file'   => ['handler' => 'books/file.php',      'script' => '/books/file.php'],
 
-        // ── Drive ──
+        // Drive
         'drive'          => ['handler' => 'drive/index.php',   'script' => '/drive/index.php'],
         'drive/beranda'  => ['handler' => 'drive/index.php',   'script' => '/drive/index.php'],
         'drive/upload'   => ['handler' => 'drive/upload.php',  'script' => '/drive/upload.php'],
@@ -79,13 +79,13 @@ final class MeelRouter
         'drive/download' => ['handler' => 'drive/download.php','script' => '/drive/download.php'],
         'drive/stream'   => ['handler' => 'drive/stream.php',  'script' => '/drive/stream.php'],
 
-        // ── Profile ──
+        // Profile
         'profile'            => ['handler' => 'profile/index.php',              'script' => '/profile/index.php'],
         'profile/manage'     => ['handler' => 'profile/manage.php',             'script' => '/profile/manage.php'],
         'profile/edit'       => ['handler' => 'controllers/profile/profile_edit.php', 'script' => '/controllers/profile/profile_edit.php'],
         'profile/manage-action' => ['handler' => 'controllers/profile/fun-manage.php', 'script' => '/controllers/profile/fun-manage.php'],
 
-        // ── Admin ──
+        // Admin
         'admin'             => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
         'admin/beranda'     => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
         'admin/edit-video'  => ['handler' => 'admin/edit-video.php',          'script' => '/admin/edit-video.php'],
@@ -97,19 +97,19 @@ final class MeelRouter
         'admin/actions'     => ['handler' => 'controllers/admin/admin_actions.php', 'script' => '/controllers/admin/admin_actions.php'],
         'admin/data'        => ['handler' => 'controllers/admin/admin_data.php',    'script' => '/controllers/admin/admin_data.php'],
 
-        // ── Auth ──
+        // Auth
         'auth/login'    => ['handler' => 'auth/login.php',    'script' => '/auth/login.php'],
         'auth/register' => ['handler' => 'auth/register.php', 'script' => '/auth/register.php'],
         'auth/logout'   => ['handler' => 'auth/logout.php',   'script' => '/auth/logout.php'],
         'auth/mfa-setup'=> ['handler' => 'auth/mfa_setup.php','script' => '/auth/mfa_setup.php'],
         'auth/mfa-verify' => ['handler' => 'auth/mfa_verify.php','script' => '/auth/mfa_verify.php'],
 
-        // ── Arcade (halaman; sub-app chess + aset tetap file nyata) ──
+        // Arcade (halaman; sub-app chess + aset tetap file nyata)
         'arcade'       => ['handler' => 'arcade/index.php',    'script' => '/arcade/index.php'],
         'arcade/beranda'=> ['handler' => 'arcade/index.php',   'script' => '/arcade/index.php'],
         'arcade/chess' => ['handler' => 'arcade/chess/index.php','script' => '/arcade/chess/index.php'],
 
-        // ── API (controllers/) ──
+        // API (controllers/)
         'api/like'               => ['handler' => 'controllers/api/like.php',              'script' => '/controllers/api/like.php'],
         'api/comment'            => ['handler' => 'controllers/api/comment.php',           'script' => '/controllers/api/comment.php'],
         'api/delete-comment'     => ['handler' => 'controllers/api/delete_comment.php',    'script' => '/controllers/api/delete_comment.php'],

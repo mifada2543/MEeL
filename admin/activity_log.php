@@ -11,14 +11,14 @@ require_once __DIR__ . '/../modules/media/AdminActivityRepository.php';
 
 $logRepo = new AdminActivityRepository($conn);
 
-// ─── Filter & Pagination ───
+// Filter & Pagination
 $action_filter = $_GET['action'] ?? '';
 $search_q     = trim($_GET['q'] ?? '');
 $days         = max(1, min(365, (int)($_GET['days'] ?? 7)));
 $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 50;
 
-// ─── Clear Old Logs (POST) ───
+// Clear Old Logs (POST)
 $clear_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
     }
 }
 
-// ─── Clear All Logs (POST) ───
+// Clear All Logs (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $clear_msg = 'CSRF Token tidak valid.';
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     }
 }
 
-// ─── Query via repository (filter, count, rows, actions, stats) ───
+// Query via repository (filter, count, rows, actions, stats)
 $logRepo->buildFilter($action_filter, $search_q, $days);
 
 $total_rows = $logRepo->countFiltered();
@@ -61,7 +61,7 @@ $rows       = $logRepo->fetchPage($per_page, $offset);
 $all_actions = $logRepo->getDistinctActions();
 $stats      = $logRepo->getWeeklyStats();
 
-// ─── Multi-Format Export ───
+// Multi-Format Export
 $export_format = $_GET['export'] ?? '';
 if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $timestamp = date('Y-m-d_H-i-s');
@@ -69,7 +69,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $rows = $logRepo->fetchAll();
 
     switch ($export_format) {
-        // ─── CSV ───
+        // CSV
         case 'csv':
             header('Content-Type: text/csv; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.csv\"");
@@ -93,7 +93,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             fclose($output);
             break;
 
-        // ─── JSON ───
+        // JSON
         case 'json':
             header('Content-Type: application/json; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.json\"");
@@ -114,7 +114,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             echo json_encode($json_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
-        // ─── XLS (XML Spreadsheet 2003) ───
+        // XLS (XML Spreadsheet 2003)
         case 'xls':
             header('Content-Type: application/vnd.ms-excel; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.xls\"");
@@ -169,7 +169,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     exit;
 }
 
-// ─── Preview Handler ───
+// Preview Handler
 if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['format'] ?? '', ['csv', 'json', 'xls'], true)) {
     $preview_format = $_GET['format'];
     $all_rows = $logRepo->fetchAll();

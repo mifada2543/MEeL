@@ -1,7 +1,7 @@
 /* * MEeL Admin — Shared: Delete Confirmation Modal * */
 (function () {
   'use strict';
-  // ─── Delete Modal ───
+  // Delete Modal
   document.addEventListener('DOMContentLoaded', function () {
     var deleteModal = document.getElementById('delete-modal');
     if (deleteModal) {

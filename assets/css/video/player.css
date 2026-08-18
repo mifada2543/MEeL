@@ -10,7 +10,7 @@
 .plyr__control--overlaid {
   transition: opacity 0.25s ease !important;
 }
-/* ─── Volume slider ─── */
+/* Volume slider */
 .plyr__volume {
   position: relative !important;
   display: flex !important;
@@ -61,7 +61,7 @@
 .plyr__volume .plyr__control .plyr__tooltip {
   display: none !important;
 }
-/* ─── Mini-player button in controls ─── */
+/* Mini-player button in controls */
 button[data-plyr="meel-miniplayer"] {
   position: relative;
 }

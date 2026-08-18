@@ -130,7 +130,7 @@
 .pdf-info-btn i {
   flex-shrink: 0;
 }
-/* ─── Mobile: fallback card (hidden on desktop) ─── */
+/* Mobile: fallback card (hidden on desktop) */
 @media (max-width: 639px) {
   .pdf-embed {
     display: none;

@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
  * 1. Query queue memakai tie-breaker: ORDER BY pt.added_at DESC, pt.id DESC
  * 2. Query "current" ikut mengambil pt.id (untuk row-value comparison)
  * 3. Query "next" memakai row-value comparison (added_at, id) < (?, ?) dengan
- *    urutan yang sama, sehingga track ber-added_at identik (detik yang sama)
- *    tidak terlewat / urutannya tidak ambigu.
+ * urutan yang sama, sehingga track ber-added_at identik (detik yang sama)
+ * tidak terlewat / urutannya tidak ambigu.
  */
 class MediaViewerTest extends TestCase
 {

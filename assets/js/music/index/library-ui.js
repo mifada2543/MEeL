@@ -1,5 +1,5 @@
 /* library-ui.js — UI interaksi halaman Music Library (index.php): */
-// ─── Setup klik item musik di library (dimuat via HTMX) ───
+// Setup klik item musik di library (dimuat via HTMX)
 function setupMusicItemClicks() {
   const allItems = () => Array.from(document.querySelectorAll(".music-item"));
   document.querySelectorAll(".music-item").forEach((item) => {
@@ -42,7 +42,7 @@ function setupMusicItemClicks() {
     });
   });
 }
-// ─── Muat konten playlist ───
+// Muat konten playlist
 function loadPlaylistById(id) {
   if (!id) return;
   var savedLMUrl = null;
@@ -82,13 +82,13 @@ function loadPlaylistById(id) {
       console.warn("Gagal load playlist:", err);
     });
 }
-// ─── Boot & Perbaikan Sinkronisasi ───
+// Boot & Perbaikan Sinkronisasi
 function bootPlayerIndex() {
   initMiniPlayerIndex();
   setupMusicItemClicks();
   scrollToActiveArtistDesktop();
 }
-// ─── Auto-scroll sidebar desktop ke artist yg aktif ───
+// Auto-scroll sidebar desktop ke artist yg aktif
 function scrollToActiveArtistDesktop() {
   var artistList = document.getElementById("desktop-artist-list");
   if (!artistList) return;
@@ -97,7 +97,7 @@ function scrollToActiveArtistDesktop() {
     activeItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 }
-// ─── Mobile Playlist Dropdown (custom toggle) ───
+// Mobile Playlist Dropdown (custom toggle)
 window.togglePlaylistDropdown = function () {
   const dropdown = document.getElementById("playlist-options");
   if (dropdown) {
@@ -191,7 +191,7 @@ window.closeArtistDropdown = function () {
     }
   }, 350);
 };
-// ─── Fungsi navigasi playlist ───
+// Fungsi navigasi playlist
 function setActivePlaylist(id) {
   document.querySelectorAll(".pl-link").forEach(function (el) {
     if (el.dataset.playlistId == id) {

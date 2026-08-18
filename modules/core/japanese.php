@@ -1,5 +1,5 @@
 <?php
-// ─── HELPER: Resolve MeCab binary (static cache per request) ───
+// HELPER: Resolve MeCab binary (static cache per request)
 if (!function_exists('getMecabPath')) {
     function getMecabPath(): string
     {
@@ -27,7 +27,7 @@ if (!function_exists('getMecabPath')) {
     }
 }
 
-// ─── ROMAJI CONVERTER ───
+// ROMAJI CONVERTER
 if (!function_exists('getRomajiName')) {
     function getRomajiName(string $text): string
     {
@@ -35,7 +35,7 @@ if (!function_exists('getRomajiName')) {
         $text = Normalizer::normalize($text, Normalizer::FORM_C) ?: $text;
         $original_text = $text;
 
-        // 1. Kamus Koreksi Karakter Spesifik & Simbol
+        // Kamus koreksi karakter spesifik & simbol
         $search = [
             '×',
             'x',
@@ -100,12 +100,10 @@ if (!function_exists('getRomajiName')) {
             $text = trim($parsedText);
         }
 
-        // 3. Transliterasi via php-intl
         $rule = "Katakana-Latin; Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; Latin-ASCII; Any-Lower;";
         $transliterator = Transliterator::create($rule);
         if ($transliterator) $text = $transliterator->transliterate($text);
 
-        // 4. Sanitasi Slug
         $clean = preg_replace('/[^a-z0-9\-]/u', '-', $text);
         $clean = preg_replace('/-+/', '-', trim($clean, '-'));
 
@@ -119,7 +117,7 @@ if (!function_exists('getRomajiName')) {
     }
 }
 
-// ─── ANALISIS GABUNGAN (romaji + english) ───
+// ANALISIS GABUNGAN (romaji + english)
 if (!function_exists('analyzeJapaneseText')) {
     function analyzeJapaneseText(string $text): array
     {
@@ -127,7 +125,6 @@ if (!function_exists('analyzeJapaneseText')) {
         if (empty(trim($text))) return $result;
         $text = Normalizer::normalize($text, Normalizer::FORM_C) ?: $text;
 
-        // 1. Preprocessing
         $search  = ['×', 'x', 'X', '*', '&', '/', '【', '】', '「', '」', '(', ')', '鏡音', '巡音', '初音'];
         $replace = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'かがみね', 'めぐりね', 'hatsune'];
         $original_text = $text; // Simpan asli untuk fallback
@@ -164,7 +161,7 @@ if (!function_exists('analyzeJapaneseText')) {
         $matched_phrases = array_keys($alias_glosses);
         $alias_glosses = array_values($alias_glosses);
 
-        // 2. MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
+        // MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
         $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
@@ -181,7 +178,7 @@ if (!function_exists('analyzeJapaneseText')) {
         fclose($pipes[1]);
         proc_close($process);
 
-        // 3. Koneksi kamus offline (static — sekali per request)
+        // Koneksi kamus offline (static — sekali per request)
         static $pdo = null, $dict_ready = null, $dict_stmt = null;
         if ($dict_ready === null) {
 
@@ -217,7 +214,7 @@ if (!function_exists('analyzeJapaneseText')) {
             elseif (isset($features[8]) && $features[8] !== '*') $yomi = $features[8];
             $parsed_romaji .= ' ' . (($yomi !== '*' && !preg_match('/[a-zA-Z]/', $yomi)) ? $yomi : $surface);
 
-            // ─── FILTER KATA FUNGSIONAL ───
+            // FILTER KATA FUNGSIONAL
             // Partikel & kata fungsional tidak diterjemahkan per-token:
             // lookup JMdict berbasis reading rentan homofon tanpa konteks frasa.
             $pos = $features[0] ?? '';

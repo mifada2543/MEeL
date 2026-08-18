@@ -99,7 +99,7 @@ class MediaLibraryTest extends TestCase
         $this->assertSame(0, $result['total']);
     }
 
-    // ─── BookRepository Tests ───
+    // BookRepository Tests
 
     public function testBookRepositoryConstructs(): void
     {

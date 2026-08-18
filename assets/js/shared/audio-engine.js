@@ -35,7 +35,7 @@
 
   function createEngine() {
     ensureEngineStyle();
-    // ── Root persisten, langsung child <body> ──
+    // Root persisten, langsung child <body>
     // Di luar area yang akan di-innerHTML-replace oleh view-router.
     var root = document.createElement("div");
     root.id = "meel-audio-engine-root";
@@ -61,7 +61,7 @@
       console.error("❌ audio-engine: Plyr init error:", e);
     }
 
-    // ── Gabungkan current/duration jadi format "[current / total]" ──
+    // Gabungkan current/duration jadi format "[current / total]"
     if (player) {
       var _durEl =
         player.elements &&
@@ -138,7 +138,7 @@
       _updateCombinedTime();
     }
 
-    // ── AudioContext / EQ chain ──
+    // AudioContext / EQ chain
     // createMediaElementSource() hanya boleh dipanggil sekali seumur hidup <audio>.
     var ctx = null,
       analyser = null,
@@ -261,7 +261,7 @@
         return analyser;
       },
 
-      // ── LOOP: satu-satunya titik ubah state loop ──
+      // LOOP: satu-satunya titik ubah state loop
       // Tulis semua representasi secara atomik (media.loop, player.loop,
       // localStorage) agar tidak pernah divergen (desync index<->watch).
       setLoop: function (active) {

@@ -91,7 +91,7 @@ $__v = function($f) {
         <main>
             <div class="upload-layout">
 
-            <!-- ── LEFT: Sidebar ── -->
+            <!-- LEFT: Sidebar -->
             <aside class="sidebar-panel">
 
                 <!-- Hero waveform -->
@@ -160,7 +160,7 @@ $__v = function($f) {
 
             </aside>
 
-            <!-- ── RIGHT: Form panel ── -->
+            <!-- RIGHT: Form panel -->
             <section class="form-panel">
                 <div class="form-header">
                     <div>
@@ -288,7 +288,7 @@ $__v = function($f) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <!-- ── Upload Overlay ── -->
+    <!-- Upload Overlay -->
     <div id="upload-overlay">
         <div class="overlay-card">
             <div class="upload-wave">

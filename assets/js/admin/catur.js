@@ -3,7 +3,7 @@
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    // ─── Countdown & Auto-cleanup ───
+    // Countdown & Auto-cleanup
     var INTERVAL_MS = 10 * 60 * 1000; // 10 menit
     var remaining = INTERVAL_MS / 1000;
     var countdownEl = document.getElementById('countdown');
