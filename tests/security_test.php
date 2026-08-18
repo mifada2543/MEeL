@@ -773,18 +773,19 @@ function testFatalBugRegression(): void {
     }
 
     // ─── 14b: Query chart 7-Day Activity di admin_data.php ───
-    // Subquery UNION video+music diberi alias t; query luar harus pakai
-    // COALESCE(SUM(views), 0) — bukan v.views/m.views (kolom tidak eksis).
+    // Agregasi per hari harus pakai COALESCE(SUM(views), 0) + GROUP BY
+    // tanggal (optimasi: 28 query per load → 6 query GROUP BY) — bukan
+    // referensi v.views/m.views (kolom tidak eksis di query lama).
     $adFile = PROJECT_ROOT . '/controllers/admin/admin_data.php';
     if (!file_exists($adFile)) {
         record('controllers/admin/admin_data.php — FILE TIDAK DITEMUKAN!', false, false);
     } else {
         $ad = (string) file_get_contents($adFile);
 
-        if (strpos($ad, 'COALESCE(SUM(views), 0)') !== false && strpos($ad, ') AS t') !== false) {
-            record('admin_data: chart 7-Day pakai COALESCE(SUM(views),0) dari subquery AS t', true);
+        if (strpos($ad, 'COALESCE(SUM(views), 0)') !== false && strpos($ad, 'GROUP BY DATE(upload_date)') !== false) {
+            record('admin_data: chart 7-Day pakai COALESCE(SUM(views),0) + GROUP BY tanggal', true);
         } else {
-            record('admin_data: chart 7-Day TIDAK memakai COALESCE(SUM(views),0)/AS t', false, false,
+            record('admin_data: chart 7-Day TIDAK memakai COALESCE(SUM(views),0)/GROUP BY', false, false,
                 'Query lama gagal: Unknown column v.views in field list');
         }
 
