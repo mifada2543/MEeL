@@ -289,7 +289,7 @@ MEeL menggunakan **TOTP (Time-based One-Time Password)** dengan algoritma:
 ### Secret Generation
 
 ```php
-// modules/core/helpers.php
+// modules/auth/helpers/mfa.php
 function generate_mfa_secret(): string {
     $random = random_bytes(20);  // 160-bit random
     $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -306,26 +306,26 @@ Secret disimpan di kolom `mfa_secret` (VARCHAR(64)) di tabel `users`, di-hash? *
 
 ### Backup Codes
 
-- **8 backup codes** — masing-masing 8 karakter alfanumerik
-- **Disimpan sebagai SHA256 hash** — tidak bisa dibaca balik
+- **8 backup codes** — masing-masing 6 digit angka
+- **Disimpan sebagai hash `password_hash()` (bcrypt)** — tidak bisa dibaca balik
 - **Sekali pakai** — setelah digunakan, hash dihapus dari daftar
 
 ```php
 function generate_backup_codes(): array {
-    $codes = [];
-    $hashes = [];
+    $plain = [];
+    $hashed = [];
     for ($i = 0; $i < 8; $i++) {
-        $plain = bin2hex(random_bytes(4)); // 8 karakter hex
-        $codes[] = $plain;
-        $hashes[] = hash('sha256', $plain);
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT); // 6 digit
+        $plain[] = $code;
+        $hashed[] = password_hash($code, PASSWORD_DEFAULT); // bcrypt
     }
-    return ['plain' => $codes, 'hashed' => $hashes];
+    return ['plain' => $plain, 'hashed' => $hashed];
 }
 
 function verify_backup_code(string $hashedCodes, string $code): array {
     $codes = json_decode($hashedCodes, true) ?? [];
     foreach ($codes as $i => $hash) {
-        if (hash_equals($hash, hash('sha256', $code))) {
+        if (password_verify($code, $hash)) {
             array_splice($codes, $i, 1); // Hapus yang sudah dipakai
             return ['valid' => true, 'remaining' => $codes];
         }
@@ -381,7 +381,7 @@ if (empty($_SESSION['csrf_token'])) {
 ### Token Validation
 
 ```php
-// verify_csrf_token() — didefinisikan di modules/core/helpers.php
+// verify_csrf_token() — didefinisikan di modules/auth/helpers/csrf.php
 // Menggunakan hash_equals() untuk timing-attack safety
 function verify_csrf_token(?string $token = null): bool
 {

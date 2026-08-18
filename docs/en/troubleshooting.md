@@ -121,7 +121,7 @@ ffmpeg -version   # Should return version
 **Solution:**
 ```bash
 sudo apt install ffmpeg
-# Or set path in auth/config.php
+# Or set the binary path in auth/settings.php (MEEL_FFMPEG_PATH)
 ```
 
 ### ❌ "yt-dlp not found"
@@ -216,7 +216,7 @@ sudo chmod -R 775 /path/to/upload/dir
 
 **Check:**
 ```php
-// auth/config.php
+// auth/settings.php
 define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 ```
 

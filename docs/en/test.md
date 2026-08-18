@@ -20,7 +20,7 @@ MEeL uses a multi-layered testing approach:
 
 ---
 
-## 🧪 PHPUnit Test Suite (266 Unit + 79 Integration = 345 Tests)
+## 🧪 PHPUnit Test Suite (268 Unit + 79 Integration = 347 Tests)
 
 ### Installation
 
@@ -64,7 +64,7 @@ logs/tests/
 |---|---|---|
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME types, disk space, CSRF, dir_size, protocol detection (data providers) |
-| `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (MeCab-optional) |
+| `JapaneseTest.php` | 15 | Romaji conversion, analyzeJapaneseText, English translation (MeCab-optional) |
 | `GarbageCollectorTest.php` | 6 | Class existence, idempotency, graceful handling, rate-limit cleanup (isolated test dir) |
 | `SearchEngineTest.php` | 5 | Parse params, sanitizer (`sanitizeQuery`), default values, constants |
 | `MediaLibraryTest.php` | 11 | Pagination logic (pure math), BookRepository mock |
@@ -76,7 +76,9 @@ logs/tests/
 | `StreamAuthTest.php` | 8 | Stream endpoint authorization guards |
 | `SsrfGuardTest.php` | 76 | **SSRF guard** — protocol allowlist, private/public IP ranges (v4 & v6), DNS mixed-record rejection, hostname denylist, HTTP pinning (see below) |
 | `DriveSecurityTest.php` | 13 | **Private Drive** — cross-user access, path traversal, symlink escape, realpath boundary, quota, atomic filename reservation (see below) |
-| `ValidatingProxyTest.php` | 19 | **Validating forward proxy** — real CONNECT/GET probes: private targets refused (502), public targets tunneled, loopback-only bind (see below) |
+| `DriveStorageBasePathTest.php` | 8 | Drive storage base-path resolution — `MEEL_HDD_DRIVE` constant, fallback, priority |
+| `SystemTest.php` | 2 | System class existence & utilities |
+| `ValidatingProxyTest.php` | 20 | **Validating forward proxy** — real CONNECT/GET probes: private targets refused (502), public targets tunneled, loopback-only bind (see below) |
 
 #### Integration Tests (`tests/integration/`)
 
@@ -394,7 +396,7 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 
 | Suite | Tests | Pass | Fail | Score |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
+| **PHPUnit (unit + integration)** | 347 | 347 | 0 | ✅ 100% |
 | **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
 | **Security Test** | 135 | 129 pass, 6 warn | 0 | ✅ 98/100 |

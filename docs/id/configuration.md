@@ -28,7 +28,9 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 | `database/schema.sql` | Skema database standalone | — |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
-| `modules/core/helpers.php` | HDD check path + berbagai utilitas | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, `resolve_binary()`, `dir_size()`, `check_disk_space()`, dll. |
+| `modules/core/helpers.php` | **Shim** — me-require `helpers/main.php` + `modules/auth/loader.php` (backward-compat) | — |
+| `modules/core/helpers/*.php` | Utilitas per domain (main, storage, audio, url) | `dir_size()`, `check_disk_space()`, `get_audio_mime_type()`, `resolve_binary()`, `log_drive_operation()` |
+| `modules/auth/helpers/user.php` | Helper user & role | `get_user_role()`, `get_user_usage()`, `invalidate_user_role_cache()` |
 | `modules/core/System.php` | Queue management | Rate limit constants |
 | `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guest + chess rooms + rate limit | `STALE_SECONDS`, `GUEST_STALE_HOURS`, `ROOM_LOBBY_STALE_HOURS`, `ROOM_GAME_STALE_HOURS`, `CHESS_CLEANUP_INTERVAL` |
 | `modules/auth/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, dll.) |
@@ -132,7 +134,7 @@ Jepang, dan teks multibyte tersimpan/terbaca dengan benar.
 // Auto-generated token
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-// Fungsi verifikasi (didefinisikan di modules/core/helpers.php)
+// Fungsi verifikasi (didefinisikan di modules/auth/helpers/csrf.php)
 // Menggunakan hash_equals() untuk timing-attack safety
 function verify_csrf_token(?string $token = null): bool
 {
@@ -279,11 +281,6 @@ Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, halaman maintenance `err/?
 // ─── KONSTANTA HARDWARE ───────────────────────────────────
 private const FFMPEG_THREADS        = 8;
 
-// Sprite thumbnail dimensions
-private const SPRITE_TILE_W         = 160;
-private const SPRITE_TILE_H         = 90;
-private const SPRITE_COLS           = 5;
-
 // HLS segment duration (detik)
 private const HLS_SEGMENT_DURATION  = 10;
 
@@ -293,6 +290,10 @@ private const DOWNLOAD_TIMEOUT      = 900;
 // PATH STORAGE — sekarang lihat auth/settings.php (MEEL_HDD_*)
 // private const HDD_BASE = "..."; // DIPINDAHKAN
 ```
+
+> ⚠️ **Perubahan:** Konstanta sprite `SPRITE_TILE_W/H/COLS` sudah **dihapus**.
+> Dimensi sprite (160×90, 5 kolom) kini hardcoded di `modules/transcoder/FfmpegUtils.php`
+> (`generateSpriteAndVTT()`: `$w = 160; $h = 90; $cols = 5;`) bersama interval dinamisnya.
 
 ### Binary Path Resolution
 

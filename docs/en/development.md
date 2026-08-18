@@ -257,7 +257,7 @@ MEeL implements TOTP per [RFC 6238](https://datatracker.ietf.org/doc/html/rfc623
 | Window | ±1 (90 seconds tolerance) |
 | Encoding | Base32 |
 
-### Helper Functions (in `modules/core/helpers.php`)
+### Helper Functions (in `modules/auth/helpers/mfa.php`)
 
 ```php
 // ─── GENERATE SECRET ───────────────────────────────────────
@@ -312,9 +312,9 @@ function generate_backup_codes(): array {
     $plain = [];
     $hashed = [];
     for ($i = 0; $i < 8; $i++) {
-        $code = bin2hex(random_bytes(4));  // 8 hex characters
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);  // 6 digits
         $plain[] = $code;
-        $hashed[] = hash('sha256', $code);
+        $hashed[] = password_hash($code, PASSWORD_DEFAULT);  // bcrypt
     }
     return ['plain' => $plain, 'hashed' => $hashed];
 }
@@ -323,7 +323,7 @@ function generate_backup_codes(): array {
 function verify_backup_code(string $hashedJson, string $code): array {
     $codes = json_decode($hashedJson, true) ?? [];
     foreach ($codes as $i => $hash) {
-        if (hash_equals($hash, hash('sha256', $code))) {
+        if (password_verify($code, $hash)) {
             array_splice($codes, $i, 1);  // Remove used code
             return ['valid' => true, 'remaining' => $codes];
         }
@@ -369,7 +369,7 @@ ALTER TABLE users
 ### Security Considerations
 
 1. **TOTP Secret** — Stored plaintext in DB (TOTP secrets must be readable)
-2. **Backup Codes** — Stored as SHA256 hash (one-way, cannot be reversed)
+2. **Backup Codes** — Stored as password_hash()/bcrypt hashes (one-way, cannot be reversed)
 3. **Session Temp** — `mfa_temp_uid` only exists in session, not in cookies
 4. **Brute Force** — 10 failed MFA attempts → lock 5 minutes
 5. **QR Code** — 100% offline (local qrcode.min.js library, no data sent to external server)

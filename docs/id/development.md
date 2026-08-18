@@ -47,11 +47,11 @@ ini_set('display_errors', 1);
 ```
 
 4. **Path konfigurasi terpusat:**
-   Semua path penyimpanan dikelola dari **satu tempat** (`auth/config.php`):
+   Semua path penyimpanan dikelola dari **satu tempat** (`auth/settings.php`):
    ```php
    define('MEEL_HDD_BASE', '/media/username/MEeL/media');
    ```
-   Tidak perlu lagi mencari-cari path di banyak file.
+   Tidak perlu lagi mencari-cari path di banyak file. (`auth/config.php` hanya entry point — tidak berisi konstanta storage.)
 
 4. **Tools yang disarankan:**
 - Editor: VS Code dengan PHP Intelephense
@@ -457,7 +457,7 @@ MEeL mengimplementasikan TOTP sesuai [RFC 6238](https://datatracker.ietf.org/doc
 | Window | ±1 (90 detik toleransi) |
 | Encoding | Base32 |
 
-### Helper Functions (di `modules/core/helpers.php`)
+### Helper Functions (di `modules/auth/helpers/mfa.php`)
 
 ```php
 // ─── GENERATE SECRET ───────────────────────────────────────
@@ -512,9 +512,9 @@ function generate_backup_codes(): array {
     $plain = [];
     $hashed = [];
     for ($i = 0; $i < 8; $i++) {
-        $code = bin2hex(random_bytes(4));  // 8 karakter hex
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);  // 6 digit
         $plain[] = $code;
-        $hashed[] = hash('sha256', $code);
+        $hashed[] = password_hash($code, PASSWORD_DEFAULT);  // bcrypt
     }
     return ['plain' => $plain, 'hashed' => $hashed];
 }
@@ -523,7 +523,7 @@ function generate_backup_codes(): array {
 function verify_backup_code(string $hashedJson, string $code): array {
     $codes = json_decode($hashedJson, true) ?? [];
     foreach ($codes as $i => $hash) {
-        if (hash_equals($hash, hash('sha256', $code))) {
+        if (password_verify($code, $hash)) {
             array_splice($codes, $i, 1);  // Hapus yang sudah dipakai
             return ['valid' => true, 'remaining' => $codes];
         }
@@ -569,7 +569,7 @@ ALTER TABLE users
 ### Security Considerations
 
 1. **Secret TOTP** — Disimpan plaintext di DB (TOTP secret harus bisa dibaca)
-2. **Backup Codes** — Disimpan sebagai SHA256 hash (one-way, tidak bisa dibaca balik)
+2. **Backup Codes** — Disimpan sebagai hash password_hash()/bcrypt (one-way, tidak bisa dibaca balik)
 3. **Session Temp** — `mfa_temp_uid` hanya ada di session, tidak di cookie
 4. **Brute Force** — 10 percobaan MFA gagal → lock 5 menit
 5. **QR Code** — 100% offline (library qrcode.min.js lokal, tidak ada data dikirim ke server eksternal)
@@ -725,7 +725,7 @@ if (!headers_sent()) {
 |---|---|
 | `auth/config.php` | Entry point configurasi |
 | `auth/auth.php` | Authentication middleware |
-| `modules/core/helpers.php` | Fungsi utilitas global |
+| `modules/core/helpers/` | Utilitas global (helpers.php = shim) |
 | `modules/core/Transcoder.php` | Engine utama (paling kompleks) |
 | `modules/core/Uploader.php` | Proses upload file |
 | `modules/core/System.php` | Queue & monitoring |

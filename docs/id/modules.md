@@ -57,17 +57,22 @@ modules/
 │   ├── System.php          # Queue management, storage monitoring
 │   ├── Uploader.php        # Upload file lokal (video + music)
 │   ├── Transcoder.php      # Engine download yt-dlp & transcoding
-│   ├── helpers.php         # Fungsi utilitas global
+│   ├── helpers.php         # Shim backward-compat → require helpers/main.php + auth/loader.php
+│   ├── helpers/            # Utilitas per domain: main.php, storage.php, audio.php, url.php
 │   ├── bootstrap.php       # Environment detection & error reporting
 │   ├── base_url.php        # Perhitungan base URL terpusat (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
-│   ├── RateLimiter.php     # File-based API rate limiter
 │   ├── ProgressObserver.php # Kontrak event progress (interface + adapter callable)
 │   ├── BrowserProgressObserver.php # Presenter browser — event progress → overlay/JS
 │   ├── CommentRenderer.php # Render komentar nested
 │   ├── japanese.php        # Pemrosesan teks Jepang (MeCab)
 │   └── SwPrecache.php      # Generator precache PWA (service worker)
+├── auth/                   # Infrastruktur keamanan terpusat (dimuat via loader.php)
+│   ├── RateLimiter.php     # File-based API rate limiter
+│   ├── SsrfGuard.php       # Validasi URL SSRF-safe
+│   ├── ValidatingProxy.php # Forward proxy SSRF-defense
+│   └── helpers/            # authz.php, csrf.php, session.php, stream_auth.php, mfa.php, user.php
 ├── media/                  # Modul query media
 │   ├── MediaLibrary.php    # Query DB, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, komentar, rekomendasi
@@ -170,9 +175,10 @@ Activity logging & IP Banning:
 
 Fitur: Guest auto-registration (ON DUPLICATE KEY UPDATE), session kick detection, stream.php throttling, device/page detection, IPv4-mapped IPv6.
 
-### 8. `modules/core/helpers.php`
+### 8. `modules/core/helpers/` (utilitas global)
 
-Semua fungsi dibungkus `function_exists()` guard:
+`helpers.php` kini shim yang me-require `helpers/main.php` + `modules/auth/loader.php`.
+Fungsi-fungsi dibungkus `function_exists()` guard dan tersebar di subfolder per domain:
 - `resolve_binary(array): string` — Binary path (MEEL_*_PATH override)
 - `base_url(string): string` — Dynamic base URL (fallback via `meel_base_url_path()`, lihat `base_url.php`)
 - `detectProtocol(): string` — HTTPS + Cloudflare
@@ -363,12 +369,12 @@ Multi-Factor Authentication (TOTP) melindungi akun user:
 
 **Flow:** `login.php` → cek `mfa_enabled` → redirect `mfa_verify.php` → valid TOTP → set session penuh
 
-**Helper functions** (di `modules/core/helpers.php`):
+**Helper functions** (di `modules/auth/helpers/mfa.php`):
 ```php
 function generate_mfa_secret(): string;      // Base32 random secret
 function generate_totp(string $secret): string;// TOTP kode 6 digit
 function verify_totp(string $secret, string $code): bool; // Verifikasi dengan window ±1
-function generate_backup_codes(): array;      // 8 backup codes (SHA256 hashed)
+function generate_backup_codes(): array;      // 8 backup codes (6 digit, password_hash/bcrypt)
 function verify_backup_code(string $stored, string $code): array; // Verify + consume code
 ```
 

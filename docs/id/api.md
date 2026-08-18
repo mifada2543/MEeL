@@ -25,11 +25,15 @@ controllers/
 ├── api/
 │   ├── WatchController.php   # Controller watch page (Video + Music)
 │   ├── like.php              # Like/dislike toggle
+│   ├── comment.php           # Tambah komentar (HTMX/AJAX)
 │   ├── delete_comment.php    # Hapus komentar
 │   ├── auto_metadata.php     # Auto-fetch metadata (yt-dlp info)
 │   ├── pdf.php               # PDF viewer proxy
 │   ├── download_transcode.php# Download hasil transcode
-│   └── post_encode.php       # Post-encode music (after yt-dlp)
+│   ├── post_encode.php       # Post-encode music (after yt-dlp)
+│   ├── ajax_refresh.php      # Refresh fragment AJAX (search, dll.)
+│   ├── server_stats.php      # Statistik server (JSON)
+│   └── server_stats_sse.php  # Statistik server via Server-Sent Events
 ├── profile/
 │   ├── fun-manage.php        # Delete media, pending deletions, cleanup
 │   └── profile_edit.php      # Update profil user
@@ -186,7 +190,7 @@ User input TOTP 6 digit
   ↓
 Verify via TOTP (HMAC-SHA1, 30s step, window ±1)
   ↓ Gagal
-Coba backup code (SHA256 hash, sekali pakai)
+Coba backup code (password_hash/bcrypt, sekali pakai)
   ↓ Gagal total
 Increment fail count → max 10 → Lock 5 menit
   ↓ Valid
@@ -268,11 +272,11 @@ Halaman multi-step untuk mengaktifkan, mengelola, atau menonaktifkan MFA.
 
 #### Step 3: Backup Codes
 
-Setelah verifikasi berhasil, 8 backup codes (masing-masing 8 karakter hex) ditampilkan **sekali saja**:
+Setelah verifikasi berhasil, 8 backup codes (masing-masing 6 digit angka) ditampilkan **sekali saja**:
 
 ```html
-<div class="backup-code">a1b2c3d4</div>
-<div class="backup-code">e5f6g7h8</div>
+<div class="backup-code">483920</div>
+<div class="backup-code">710265</div>
 <!-- ... 8 codes total -->
 
 <button onclick="downloadBackupCodes()">Download Backup Codes (.txt)</button>
@@ -283,7 +287,7 @@ Setelah verifikasi berhasil, 8 backup codes (masing-masing 8 karakter hex) ditam
 ```
 
 **Backup codes disimpan sebagai:**
-- Database: `JSON array of SHA256 hashes`
+- Database: `JSON array` berisi hash `password_hash()` (bcrypt) dari tiap kode
 - Tidak bisa dibaca balik (one-way hash)
 - Setelah dipakai, hash dihapus dari array
 
@@ -378,7 +382,7 @@ fetch('../controllers/system/mfa.php', {
 {
   "status": "success",
   "message": "Kode cadangan baru berhasil dibuat.",
-  "codes": ["a1b2c3d4", "e5f6g7h8", ...]  // 8 codes
+  "codes": ["483920", "710265", ...]  // 8 kode (6 digit)
 }
 ```
 
@@ -418,8 +422,8 @@ Generated: 2026-01-15 14:30:00
 Setiap kode hanya bisa digunakan SEKALI.
 Simpan di tempat yang aman!
 
-  a1b2c3d4
-  e5f6g7h8
+  483920
+  710265
   ...
 ```
 

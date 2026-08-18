@@ -57,17 +57,22 @@ modules/
 │   ├── System.php          # Queue management, storage monitoring
 │   ├── Uploader.php        # Local file upload (video + music)
 │   ├── Transcoder.php      # yt-dlp download & transcoding engine
-│   ├── helpers.php         # Global utility functions
+│   ├── helpers.php         # Backward-compat shim → requires helpers/main.php + auth/loader.php
+│   ├── helpers/            # Per-domain utilities: main.php, storage.php, audio.php, url.php
 │   ├── bootstrap.php       # Environment detection & error reporting
 │   ├── base_url.php        # Centralized base URL computation (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
 │   ├── GarbageCollector.php# Auto-cleanup temp files & guests
-│   ├── RateLimiter.php     # File-based API rate limiter
 │   ├── ProgressObserver.php# Progress event contract (interface + callable adapter)
 │   ├── BrowserProgressObserver.php # Browser presenter — progress events → overlay/JS
 │   ├── CommentRenderer.php # Nested comment rendering
 │   ├── japanese.php        # Japanese text processing (MeCab)
 │   └── SwPrecache.php      # PWA precache generator (service worker)
+├── auth/                   # Centralized security infrastructure (loaded via loader.php)
+│   ├── RateLimiter.php     # File-based API rate limiter
+│   ├── SsrfGuard.php       # SSRF-safe URL validation
+│   ├── ValidatingProxy.php # SSRF-defense forward proxy
+│   └── helpers/            # authz.php, csrf.php, session.php, stream_auth.php, mfa.php, user.php
 ├── media/                  # Media query modules
 │   ├── MediaLibrary.php    # DB queries, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, comments, recommendations
@@ -224,9 +229,10 @@ function log_activity(...);          // INSERT INTO activity_log (audit trail)
 - IP ban check with admin bypass
 - IPv4-mapped IPv6 support (`::ffff:192.168.x.x`)
 
-### 8. `modules/core/helpers.php`
+### 8. `modules/core/helpers/` (global utilities)
 
-Global utility functions — all wrapped in `function_exists()` guard:
+`helpers.php` is now a shim that requires `helpers/main.php` + `modules/auth/loader.php`.
+Functions are wrapped in `function_exists()` guard and split across per-domain subfolders:
 
 ```php
 function resolve_binary(array $candidates): string;     // Binary path discovery (with MEEL_*_PATH constant override)
@@ -443,12 +449,12 @@ Multi-Factor Authentication (TOTP) protects user accounts:
 
 **Flow:** `login.php` → check `mfa_enabled` → redirect `mfa_verify.php` → valid TOTP → set full session
 
-**Helper functions** (in `modules/core/helpers.php`):
+**Helper functions** (in `modules/auth/helpers/mfa.php`):
 ```php
 function generate_mfa_secret(): string;      // Base32 random secret
 function generate_totp(string $secret): string;// TOTP 6-digit code
 function verify_totp(string $secret, string $code): bool; // Verify with window ±1
-function generate_backup_codes(): array;      // 8 backup codes (SHA256 hashed)
+function generate_backup_codes(): array;      // 8 backup codes (6 digits, password_hash/bcrypt)
 function verify_backup_code(string $stored, string $code): array; // Verify + consume code
 ```
 

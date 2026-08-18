@@ -202,7 +202,7 @@ After making changes:
 | `upload_advanced.php` | Advanced upload form + POST handler |
 | `modules/core/Transcoder.php` | Download, HLS transcode, finalize |
 | `modules/core/Uploader.php` | Direct file upload processing |
-| `modules/core/helpers.php` | `resolve_binary()`, `require_disk_space()` |
+| `modules/core/helpers/` | `resolve_binary()`, `require_disk_space()` (helpers.php = shim) |
 | `modules/core/System.php` | Server busy, rate limit, queue mgmt |
 | `modules/core/japanese.php` | `getRomajiName()` filename sanitization |
 | `modules/transcoder/FfmpegUtils.php` | `probeDuration()`, `generateSpriteAndVTT()`, `moveFile()` |

@@ -59,7 +59,7 @@ MEeL/
   - `modules/core/System.php` — Queue management, storage monitoring, rate limit
   - `modules/core/GarbageCollector.php` — Pembersihan temporary files + guest + chess rooms + expired rate limit cache
   - `modules/auth/RateLimiter.php` — File-based API rate limiter (30 likes/min, 10 comments/min)
-  - `modules/core/helpers.php` — Fungsi utilitas global (resolve_binary, base_url, get_user_role, require_disk_space, dll.)
+  - `modules/core/helpers/` — Utilitas global per domain (helpers.php = shim → main.php + auth/loader.php)
   - `modules/core/activity_logger.php` — IP detection, session kick, guest auto-registration
   - `modules/core/japanese.php` — MeCab + transliterator untuk filename Jepang→Romaji
   - `modules/core/CommentRenderer.php` — Render komentar nested
@@ -360,7 +360,7 @@ Tidak ada masalah medium yang tersisa.
 | 89 | `profile/index.php` | Tampilkan status MFA (toggle switch visual) + link ke setup | 📊 UI |
 | 90 | `database/schema.sql` | Tambah kolom MFA (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`) | 🗄 Database |
 | 91 | `database/migrate.php` | **Migration v9** — alter tabel users tambah kolom MFA | 🗄 Database |
-| 92 | `modules/core/helpers.php` | **Tambah helper MFA/TOTP:** `generate_mfa_secret()`, `generate_totp()`, `verify_totp()`, `verify_backup_code()`, `generate_backup_codes()` | ✨ New |
+| 92 | `modules/auth/helpers/mfa.php` | **Tambah helper MFA/TOTP:** `generate_mfa_secret()`, `generate_totp()`, `verify_totp()`, `verify_backup_code()`, `generate_backup_codes()` | ✨ New |
 | 93 | `arcade/chess/` | **Baru!** Multiplayer catur real-time via LAN — create/join room, turn-based, legal move validation | ✨ New |
 
 ---
@@ -369,7 +369,7 @@ Tidak ada masalah medium yang tersisa.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |---|---|---|---|---|---|
-| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 268 | 268 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 50 | 5 warn | **0** | **✅ 95/100** |
 | **Security Test** | 125 | 120 | 5 warn | **0** | **✅ 98/100** |
@@ -394,7 +394,7 @@ Tidak ada masalah medium yang tersisa.
 ### Prioritas Rendah
 
 7. **Docker support** — environment yang konsisten untuk deployment
-8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (266 unit + 79 integration = 345 tests)
+8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (268 unit + 79 integration = 347 tests)
 
 ---
 

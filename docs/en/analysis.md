@@ -165,7 +165,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 - `profile/index.php` — MFA status toggle + setup link
 - `database/schema.sql` — MFA columns (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`)
 - `database/migrate.php` — **Migration v9** — adds MFA columns
-- `modules/core/helpers.php` — 5 MFA helper functions (`generate_mfa_secret()`, `generate_totp()`, `verify_totp()`, `generate_backup_codes()`, `verify_backup_code()`)
+- `modules/auth/helpers/mfa.php` — 5 MFA helper functions (`generate_mfa_secret()`, `generate_totp()`, `verify_totp()`, `generate_backup_codes()`, `verify_backup_code()`)
 - `arcade/chess/` — Real-time LAN multiplayer chess
 
 ---
@@ -174,7 +174,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 
 | Test | Total | Pass | Warn | Fail | Score |
 |---|---|---|---|---|---|
-| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 268 | 268 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 50 | 5 warn | **0** | **✅ 95/100** |
 | **Security Test** | 125 | 120 | 5 warn | **0** | **✅ 98/100** |
@@ -199,7 +199,7 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 ### Low Priority
 
 7. **Docker support** — consistent deployment environment
-8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (266 unit + 79 integration = 345 tests)
+8. ~~**Unit tests** — PHPUnit for core classes~~ ✅ **Implemented** (268 unit + 79 integration = 347 tests)
 
 ---
 
