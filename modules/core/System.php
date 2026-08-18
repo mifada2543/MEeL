@@ -171,43 +171,50 @@ class System
 
     public function getServerStats(): array
     {
-        // CPU Load Average (1, 5, 15 menit)
+        // Identitas server (hostname, OS, kernel, cores) — jarang berubah,
+        // di-cache agar polling realtime tidak menjalankan perintah shell
+        // (hostname, os-release, uname, nproc) setiap 3 detik.
+        $info = $this->getCachedServerInfo();
+
+        // CPU Load Average (1, 5, 15 menit) — native PHP, tanpa shell
         $load = sys_getloadavg();
         $cpu_load_1m  = $load[0] ?? 0;
         $cpu_load_5m  = $load[1] ?? 0;
         $cpu_load_15m = $load[2] ?? 0;
 
-        // CPU Cores
-        $cpu_cores = (int) @exec('nproc') ?: 1;
+        $cpu_cores = $info['cores'];
         $cpu_perc  = ($cpu_cores > 0) ? round(($cpu_load_1m / $cpu_cores) * 100, 1) : 0;
         $cpu_perc  = min($cpu_perc, 100);
 
-        // RAM Usage
-        $mem_total = (float) @exec('grep MemTotal /proc/meminfo | awk \'{print $2}\'') * 1024;
-        $mem_avail = (float) @exec('grep MemAvailable /proc/meminfo | awk \'{print $2}\'') * 1024;
-        $mem_used  = $mem_total - $mem_avail;
-        $mem_perc  = ($mem_total > 0) ? round(($mem_used / $mem_total) * 100, 1) : 0;
+        // RAM & Swap — baca /proc/meminfo SEKALI, parse native (tanpa grep|awk)
+        $meminfo    = self::readProcMeminfo();
+        $mem_total  = $meminfo['MemTotal'] ?? 0;
+        $mem_avail  = $meminfo['MemAvailable'] ?? 0;
+        $mem_used   = $mem_total - $mem_avail;
+        $mem_perc   = ($mem_total > 0) ? round(($mem_used / $mem_total) * 100, 1) : 0;
 
-        // Swap Usage
-        $swap_total = (float) @exec('grep SwapTotal /proc/meminfo | awk \'{print $2}\'') * 1024;
-        $swap_free  = (float) @exec('grep SwapFree /proc/meminfo | awk \'{print $2}\'') * 1024;
+        $swap_total = $meminfo['SwapTotal'] ?? 0;
+        $swap_free  = $meminfo['SwapFree'] ?? 0;
         $swap_used  = $swap_total - $swap_free;
         $swap_perc  = ($swap_total > 0) ? round(($swap_used / $swap_total) * 100, 1) : 0;
 
-        // Uptime
-        $uptime_raw = @exec('cat /proc/uptime');
-        $uptime_sec = (float) explode(' ', $uptime_raw)[0];
+        // Uptime — baca /proc/uptime native (file read, tanpa subprocess)
+        $uptime_raw = @file_get_contents('/proc/uptime');
+        $uptime_sec = (float) explode(' ', (string) $uptime_raw)[0];
         $days  = floor($uptime_sec / 86400);
         $hours = floor(($uptime_sec % 86400) / 3600);
         $mins  = floor(($uptime_sec % 3600) / 60);
 
-        // Network (total bytes in/out)
+        // Network (total bytes in/out) — native file read
         $net_rx = 0;
         $net_tx = 0;
         $net_lines = @file('/proc/net/dev');
         if ($net_lines) {
             foreach ($net_lines as $line) {
-                if (preg_match('/^\s*(eth|ens|enp|wlan|lo):\s*(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/', $line, $m)) {
+                // Regex lama (eth|ens|enp|wlan) hanya cocok interface tanpa
+                // suffix angka (eth0/enp3s0/wlan0 dst.) — selalu menghasilkan 0.
+                // Sekarang cocokkan nama interface apa pun, kecuali loopback (lo).
+                if (preg_match('/^\s*([a-zA-Z0-9_.-]+):\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/', $line, $m)) {
                     if ($m[1] !== 'lo') {
                         $net_rx += (int)$m[2];
                         $net_tx += (int)$m[3];
@@ -216,20 +223,9 @@ class System
             }
         }
 
-        // Top Processes
-        $top_procs = [];
-        $ps_output = @exec('ps aux --sort=-%cpu | head -6 | tail -5');
-        // Fallback: baca langsung dari file
-        $ps_lines = @file('/proc/stat');
-
-        // Server Info
-        $hostname  = @exec('hostname');
-        $os_info   = @exec('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d\" -f2') ?: PHP_OS;
-        $kernel    = @exec('uname -r');
-        $php_ver   = phpversion();
-
-        // Process count
-        $proc_count = (int) @exec('ls /proc | grep -c \'^[0-9]\'');
+        // Process count — native glob /proc/<pid>, tanpa ls|grep
+        $proc_list  = @glob('/proc/[0-9]*');
+        $proc_count = is_array($proc_list) ? count($proc_list) : 0;
 
         return [
             'cpu' => [
@@ -262,13 +258,78 @@ class System
                 'tx' => $net_tx,
             ],
             'info' => [
-                'hostname'    => $hostname,
-                'os'          => $os_info,
-                'kernel'      => $kernel,
-                'php_version' => $php_ver,
+                'hostname'    => $info['hostname'],
+                'os'          => $info['os'],
+                'kernel'      => $info['kernel'],
+                'php_version' => $info['php_version'],
                 'processes'   => $proc_count,
             ],
         ];
+    }
+
+    /**
+     * Baca /proc/meminfo sekali dan kembalikan [KEY => bytes] (nilai kB → byte).
+     * Native file read — menggantikan 4x exec('grep ... | awk ...') agar
+     * polling realtime tidak menjalankan perintah shell berulang.
+     *
+     * @return array<string, int>
+     */
+    private static function readProcMeminfo(): array
+    {
+        $lines = @file('/proc/meminfo');
+        if (!$lines) {
+            return [];
+        }
+        $info = [];
+        foreach ($lines as $line) {
+            if (preg_match('/^(\w+):\s+(\d+)\s*kB/', $line, $m)) {
+                $info[$m[1]] = (int)$m[2] * 1024;
+            }
+        }
+        return $info;
+    }
+
+    /**
+     * Info identitas server yang jarang berubah — di-cache ke temp/cache
+     * (konvensi sama seperti MediaLibrary::getCounts()). TTL 300 detik.
+     * Bila cache tidak ada/kadaluarsa/rusak, hitung ulang; bila gagal
+     * ditulis, tetap kembalikan nilai fresh (cache hanya optimasi).
+     *
+     * @return array{hostname: string, os: string, kernel: string, php_version: string, cores: int}
+     */
+    private function getCachedServerInfo(): array
+    {
+        // Path bisa di-override konstanta (dipakai test suite — lihat
+        // phpunit.xml) agar test tidak bergantung izin tulis temp/cache
+        // milik web server.
+        $cache_file = defined('MEEL_SERVER_STATS_CACHE')
+            ? MEEL_SERVER_STATS_CACHE
+            : __DIR__ . '/../../temp/cache/server_stats_info.json';
+        $cache_ttl  = 300; // detik
+
+        if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
+            $cached = json_decode((string) file_get_contents($cache_file), true);
+            if (is_array($cached)
+                && isset($cached['hostname'], $cached['os'], $cached['kernel'], $cached['php_version'], $cached['cores'])) {
+                return $cached;
+            }
+        }
+
+        $info = [
+            'hostname'    => @exec('hostname') ?: gethostname(),
+            'os'          => @exec('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d\" -f2') ?: PHP_OS,
+            'kernel'      => @exec('uname -r') ?: PHP_OS,
+            'php_version' => phpversion(),
+            'cores'       => (int) (@exec('nproc') ?: 1),
+        ];
+
+        $cache_dir = dirname($cache_file);
+        if (!is_dir($cache_dir)) {
+            @mkdir($cache_dir, 0755, true);
+        }
+        @file_put_contents($cache_file, json_encode($info, JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+        return $info;
     }
 
     // ─── MANAGEMENT ───

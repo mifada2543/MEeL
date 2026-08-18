@@ -118,6 +118,8 @@ final class MeelRouter
         'api/download-transcode' => ['handler' => 'controllers/api/download_transcode.php','script' => '/controllers/api/download_transcode.php'],
         'api/post-encode'        => ['handler' => 'controllers/api/post_encode.php',       'script' => '/controllers/api/post_encode.php'],
         'api/ajax-refresh'       => ['handler' => 'controllers/api/ajax_refresh.php',      'script' => '/controllers/api/ajax_refresh.php'],
+        'api/server-stats'       => ['handler' => 'controllers/api/server_stats.php',      'script' => '/controllers/api/server_stats.php'],
+        'api/server-stats-sse'   => ['handler' => 'controllers/api/server_stats_sse.php',  'script' => '/controllers/api/server_stats_sse.php'],
         'system/mfa'             => ['handler' => 'controllers/system/mfa.php',            'script' => '/controllers/system/mfa.php'],
     ];
 

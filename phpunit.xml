@@ -22,6 +22,9 @@
         <const name="MEEL_FFPROBE_PATH" value=""/>
         <const name="MEEL_NODE_PATH" value=""/>
         <const name="MEEL_YTDLP_PATH" value=""/>
+        <!-- Cache System::getServerStats() dialihkan ke dir test (temp/cache
+             milik web server tidak writable oleh proses test CLI). -->
+        <const name="MEEL_SERVER_STATS_CACHE" value="temp/cache-test/server_stats_info.json"/>
     </php>
 
     <logging>
