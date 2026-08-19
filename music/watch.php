@@ -53,6 +53,16 @@ $__vdir = function($dir) {
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($v['title']) ?> — MEeL Music">
     <meta property="og:description" content="Dengarkan <?= htmlspecialchars($v['title']) ?> oleh <?= htmlspecialchars($v['artist'] ?? 'Unknown') ?> di MEeL Music.">
+    <?php
+    $__thumb_raw = music_thumbnail_url($v['thumbnail']);
+    $__og_image  = str_starts_with($__thumb_raw, '../')
+        ? detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/' . substr($__thumb_raw, 3)
+        : detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/music/' . ltrim($__thumb_raw, '/');
+    ?>
+    <meta property="og:image" content="<?= $__og_image ?>">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:type" content="music.song">
     <title><?= htmlspecialchars($v['title']) ?> — MEeL Music</title>
     <?php include '../partials/link.php'; ?>
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>

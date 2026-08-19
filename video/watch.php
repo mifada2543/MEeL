@@ -50,6 +50,17 @@ $__vdir = function($dir) {
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($v['title']) ?> — MEeL Video">
     <meta property="og:description" content="Tonton <?= htmlspecialchars($v['title']) ?> di MEeL Video - Streaming HLS dengan kualitas terbaik.">
+    <?php
+    $__thumb_name = $v['thumbnail'] ?? '';
+    $__thumb_ok   = $__thumb_name !== '' && is_file(meel_media_base_path('video') . '/thumbnail/' . basename($__thumb_name));
+    $__og_image   = $__thumb_ok
+        ? detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/video/upload/thumbnail/' . rawurlencode($__thumb_name)
+        : detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/assets/img/video0.webp';
+    ?>
+    <meta property="og:image" content="<?= $__og_image ?>">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="720">
+    <meta property="og:type" content="video.other">
     <title><?= htmlspecialchars($v['title']) ?> | MEeL Video</title>
     <?php include '../partials/link.php'; ?>
     <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
