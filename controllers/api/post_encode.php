@@ -12,7 +12,6 @@ if (empty($temp_file)) {
     die("<h1>Error: Parameter temp_file tidak ditemukan.</h1>");
 }
 
-// Fallback ke parameter URL tetap ada untuk kompatibilitas.
 $meta_key = pathinfo($temp_file, PATHINFO_FILENAME);
 $pending  = is_array($_SESSION['meel_pending_music'] ?? null)
     ? ($_SESSION['meel_pending_music'][$meta_key] ?? null)
@@ -30,9 +29,6 @@ if (is_array($pending)) {
     $album       = (string)($pending['album']       ?? $album);
     $duration    = (int)($pending['duration']       ?? $duration);
     $description = (string)($pending['description'] ?? $description);
-    // NOTE: entri meel_pending_music di-unset SETELAH encode sukses (di bawah),
-    // bukan di sini — request duplikat yang tiba bersamaan tetap bisa membaca
-    // metadata asli, dan encode yang gagal bisa di-retry tanpa kehilangan data.
 } else {
     $title       = $_GET['title']       ?? $title;
     $artist      = $_GET['artist']      ?? $artist;

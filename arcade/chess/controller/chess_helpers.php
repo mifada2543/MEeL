@@ -3,11 +3,6 @@ if (!defined('CHESS_OPPONENT_OFFLINE_SECONDS')) {
     define('CHESS_OPPONENT_OFFLINE_SECONDS', 90);
 }
 
-/**
- * @param \mysqli $conn Koneksi database aktif
- * @param int $opponentId user_id lawan (0 = lawan belum ada)
- * @return bool true jika last_activity < CHESS_OPPONENT_OFFLINE_SECONDS
- */
 function chess_opponent_online(\mysqli $conn, int $opponentId): bool
 {
     if ($opponentId <= 0) {
@@ -28,7 +23,6 @@ function chess_opponent_online(\mysqli $conn, int $opponentId): bool
     return (time() - strtotime($row['last_activity'])) < CHESS_OPPONENT_OFFLINE_SECONDS;
 }
 
-/* @param \mysqli $conn Koneksi database aktif; @param string $room Room code; @return bool true jika sudah ada event terminal */
 function chess_has_terminal_event(\mysqli $conn, string $room): bool
 {
     $stmt = $conn->prepare(
@@ -66,13 +60,7 @@ function chess_last_move_color(\mysqli $conn, string $room): ?string
     return $row ? $row['color'] : null;
 }
 
-/**
- * @param \mysqli $conn Koneksi database aktif
- * @param string $room Room code
- * @param string $loserColor Warna PECUNDANG ('w'/'b') — dikirim client
- * @param string $reason 'checkmate' | 'stalemate'
- * @return array{success:bool, message?:string, id?:int}
- */
+/** @return array{success:bool, message?:string, id?:int} */
 function chess_record_game_over(\mysqli $conn, string $room, string $loserColor, string $reason): array
 {
     if (!in_array($reason, ['checkmate', 'stalemate'], true)) {

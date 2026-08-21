@@ -1,7 +1,5 @@
 <?php
-// helpers/subtitle.php — Subtitle & WebVTT Helpers
 if (!function_exists('convert_srt_to_vtt')) {
-/* @param string $srt Konten file .srt; @return string Konten .vtt yang valid */
 function convert_srt_to_vtt(string $srt): string
 {
     $srt = strip_utf8_bom($srt);

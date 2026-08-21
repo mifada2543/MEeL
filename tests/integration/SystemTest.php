@@ -1,19 +1,10 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers System
- *
- * Verifikasi getServerStats():
- * - bentuk array output konsisten (dipakai admin/index.php & api/server-stats)
- * - info identitas server di-cache ke temp/cache/server_stats_info.json
- * sehingga polling realtime tidak menjalankan perintah shell berulang.
- */
+/** @covers System */
 class SystemTest extends TestCase
 {
-    // Path cache test — di-override lewat phpunit.xml (MEEL_SERVER_STATS_CACHE)
-    // karena temp/cache produksi milik web server dan tidak writable oleh
-    // proses test CLI.
+    // Cache path overridden via phpunit.xml (MEEL_SERVER_STATS_CACHE).
     private static function cacheFile(): string
     {
         return MEEL_ROOT . '/' . ltrim(MEEL_SERVER_STATS_CACHE, '/');

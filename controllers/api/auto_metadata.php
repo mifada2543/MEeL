@@ -4,7 +4,6 @@ require_once __DIR__ . '/../../auth/config.php';
 
 header('Content-Type: application/json');
 
-// Cek login
 include __DIR__ . '/../../auth/auth.php';
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -12,14 +11,12 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// CSRF
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'CSRF token tidak valid.']);
     exit;
 }
 
-// Validasi file upload
 if (empty($_FILES['audio']['tmp_name']) || !is_uploaded_file($_FILES['audio']['tmp_name'])) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Tidak ada file audio yang diterima.']);

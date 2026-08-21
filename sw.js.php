@@ -1,23 +1,6 @@
 <?php
-/**
- * sw.js.php — Service Worker MEeL (DIBANGKITKAN DINAMIS oleh PHP).
- *
- * File ini di-serve sebagai /sw.js lewat rewrite di .htaccess:
- * RewriteRule ^sw\.js$ sw.js.php [L]
- *
- * Mengapa dinamis:
- * - Daftar precache CSS modul diambil otomatis dari setiap manifest.php
- * di subfolder assets/css — menambah folder modul baru TIDAK perlu
- * mengubah file ini.
- * - SW_VERSION dihitung dari hash isi semua aset precache (SwPrecache::version)
- * → setiap perubahan konten otomatis menaikkan versi SW (update + purge cache).
- *
- * Output DIJAGA DETERMINISTIK (tanpa timestamp) agar browser tidak menganggap
- * SW berubah pada setiap kunjungan — update SW hanya terjadi saat konten asli
- * benar-benar berubah.
- *
- * @license GPL v3
- */
+// Service Worker generator — di-serve sebagai /sw.js via .htaccess rewrite.
+// Precache list dari SwPrecache; version dari hash konten (deterministik, no timestamp).
 require_once __DIR__ . '/modules/core/SwPrecache.php';
 
 $sw_precache_urls = SwPrecache::all();

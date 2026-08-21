@@ -1,19 +1,8 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* view-router.js — AJAX partial-navigation antara music/watch.php dan
- * music/index.php untuk transisi mini<->full player. Swap seluruh <body>
- * (kecuali node data-meel-persist) tanpa reload, sehingga audio-engine yang
- * persisten tidak pernah dibuat ulang. Script di-load via loadScriptOnce()
- * (anti duplikasi deklarasi `let`/`const` top-level), dan bootstrap UI tiap
- * halaman dipanggil ulang tiap landing (idempotent).
- */
+// AJAX partial-navigation for music watch<->index. Swaps <body> (except data-meel-persist)
+// without reload. Scripts loaded via loadScriptOnce() (no let/const duplication).
 (function () {
   "use strict";
 
-  // Dedupe + cache-busting script: dedupe per pathname, fetch dengan
-  // cache-buster stabil per session — hindari duplikasi deklarasi & cache
-  // immutable 1 tahun yang menyajikan konten lama.
   function toPathname(absSrc) {
     try {
       return new URL(absSrc, window.location.href).pathname;
@@ -22,11 +11,8 @@
     }
   }
 
-  // Script yang sudah ada di dokumen awal dianggap "loaded" (per pathname).
   var loadedScriptSrcs = new Set();
 
-  // Seeding dua kali (eksekusi & DOMContentLoaded) agar semua script awal
-  // — termasuk yang via document.write — masuk ke Set sebelum transisi AJAX.
   function seedLoadedScripts() {
     Array.prototype.forEach.call(
       document.querySelectorAll("script[src]"),

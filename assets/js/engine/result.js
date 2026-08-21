@@ -1,16 +1,4 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* engine/result.js — Fase selesai & error overlay + penangkap error */
-
-// NAVIGASI FINAL (upload music → post_encode.php)
-// Dipanggil dari dokumen penutup upload_advanced.php SETELAH seluruh streaming
-// selesai (meta refresh sebagai fallback tanpa JS). Guard mencegah eksekusi
-// ganda; location.replace() (bukan location.href) membuat halaman POST tidak
-// masuk history sehingga tombol back tidak me-resubmit form upload.
-// CATATAN: guard ini hanya mencegah double-execution dalam satu dokumen —
-// duplikat di level jaringan ditangani di server (flock single-flight +
-// idempotensi di Transcoder::encodeMusic); perbaikan server itu TIDAK boleh dihapus.
+// Final navigation guard — prevents double-execution. location.replace() keeps POST out of history.
 var _meelRedirectFired = false;
 window.meelRedirect = function (url) {
   if (_meelRedirectFired) return;

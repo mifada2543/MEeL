@@ -25,10 +25,7 @@ final class DriveUserContext
         );
     }
 
-    /**
-     * Ambil foto profil langsung dari DB (bukan session) agar selalu akurat
-     * walau foto baru saja diganti user di halaman profile.
-     */
+    // Load dari DB (bukan session) agar selalu akurat setelah user update foto.
     public function loadProfilePicture(mysqli $conn): void
     {
         if ($this->userId === null) {

@@ -1,13 +1,5 @@
 <?php
 
-/**
- * MediaAdminRepository — akses data video/music untuk halaman admin
- * edit-video & edit-music.
- *
- * Sebelumnya kedua halaman menulis query fetch + UPDATE yang hampir identik
- * (beda kolom saja). Query tersebut dikonsolidasi di sini agar tidak ada
- * duplikasi logika akses data.
- */
 class MediaAdminRepository
 {
     private \mysqli $conn;

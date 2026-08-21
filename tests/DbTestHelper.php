@@ -1,23 +1,8 @@
 <?php
-/**
- * DbTestHelper — koneksi DB test TERISOLASI.
- *
- * Database produksi TIDAK PERNAH disentuh: test memakai database terpisah
- * dengan nama tetap `MEeL-test`. DB di-reset (DROP + import schema.sql) di
- * awal, lalu DROP lagi saat suite selesai (register_shutdown_function).
- * Dengan begitu tidak ada data/ENV pengguna yang dibaca maupun bocor, dan
- * tidak ada sisa database tertinggal setelah test.
- *
- * Kredensial server MySQL (host/user/pass) dapat dioverride lewat env var
- * MEEL_TEST_DB_HOST / MEEL_TEST_DB_USER / MEEL_TEST_DB_PASS
- * (default localhost/root/tanpa password — environment XAMPP lokal; CI
- * memakai nilai milik runner, bukan kredensial pengguna).
- * Nama database SELALU di-generate sendiri — tidak pernah memakai nama
- * database pengguna.
- */
+// Isolated test DB — production DB never touched. Reset on suite start, dropped on shutdown.
+// Credentials overridable via MEEL_TEST_DB_HOST/USER/PASS env vars.
 class DbTestHelper
 {
-    /** Nama database test terpisah (bukan DB produksi) — di-drop otomatis. */
     private const TEST_DB_NAME = 'MEeL-test';
 
     private static ?string $testDbName = null;

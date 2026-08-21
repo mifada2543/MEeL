@@ -1,12 +1,5 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* engine/core.js — State bersama & kontrol fase utama overlay. */
-
-// State bersama overlay (global — dipakai modul sibling)
 var _segsBuilt = false;
 var _errorTimeout = null;
-// KONTROL ANIMASI MERAYAP (TRICKLE EFFECT) FOR SPRITE
 var meelSpriteTimer = null;
 var meelSpriteCurrentPct = 0;
 function startSpriteTrickle() {

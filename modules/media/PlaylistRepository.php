@@ -1,12 +1,5 @@
 <?php
 
-/**
- * PlaylistRepository — akses data playlist untuk halaman music.
- *
- * Mengkonsolidasi query playlist yang sebelumnya tersebar di beberapa file
- * halaman (view_playlist.php, watch.php) ke satu tempat, sehingga tidak ada
- * duplikasi logika akses data.
- */
 class PlaylistRepository
 {
     private \mysqli $conn;
@@ -16,11 +9,7 @@ class PlaylistRepository
         $this->conn = $conn;
     }
 
-    /**
-     * Ambil playlist milik user (validasi kepemilikan).
-     *
-     * @return array|null Baris playlist, atau null jika tidak ada / bukan milik user.
-     */
+    /** @return array|null Playlist row atau null jika tidak ada/bukan milik user. */
     public function getOwnedPlaylist(int $playlist_id, int $user_id): ?array
     {
         $stmt = $this->conn->prepare("SELECT * FROM playlists WHERE id = ? AND user_id = ?");
@@ -31,11 +20,7 @@ class PlaylistRepository
         return $row ?: null;
     }
 
-    /**
-     * Ambil semua lagu dalam sebuah playlist (dengan pivot id), terbaru dulu.
-     *
-     * @return \mysqli_result
-     */
+    /** @return \mysqli_result */
     public function getTracks(int $playlist_id)
     {
         $stmt = $this->conn->prepare(
@@ -49,5 +34,4 @@ class PlaylistRepository
         $stmt->execute();
         return $stmt->get_result();
     }
-
 }

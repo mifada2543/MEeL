@@ -1,12 +1,5 @@
 <?php
 
-/**
- * AdminActivityRepository — akses data activity log untuk halaman admin.
- *
- * Mengkonsolidasi query & mutasi activity log (filter, pagination, stats,
- * clear) yang sebelumnya inline di admin/activity_log.php, agar halaman hanya
- * menampilkan data dan tidak ada duplikasi logika akses data.
- */
 class AdminActivityRepository
 {
     private \mysqli $conn;

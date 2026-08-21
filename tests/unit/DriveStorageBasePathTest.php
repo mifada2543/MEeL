@@ -1,29 +1,11 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// DriveStorage/DriveUserContext TIDAK dipetakan ke nama kelasnya di autoload
-// (map autoload memakai nama 'DriveService'), jadi load eksplisit seperti
-// yang dilakukan drive/index.php, drive/download.php, dst. Bootstrap PHPUnit
-// sudah me-load modules/core/helpers.php → meel_drive_base_path() tersedia.
+// DriveStorage not in autoload (class name differs from file). Explicit load.
 require_once MEEL_ROOT . '/drive/DriveService.php';
 
-/**
- * Regression tests untuk RESOLUSI BASE PATH storage Drive (portabilitas).
- *
- * Konteks bug: data_drive/public & data_drive/private_admins sebelumnya adalah
- * symlink ter-track menunjuk ke path absolut development (/media/<username>/...)
- * — username OS bocor lewat repo publik dan siapa pun yang clone repo crash
- * saat membuka modul Drive (RuntimeException "Folder penyimpanan gagal dibuat").
- *
- * Setelah refactor, base path di-resolve terpusat:
- * 1. MEEL_HDD_DRIVE (terpusat di auth/settings.php) bila didefinisikan —
- * konsisten dengan Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD.
- * 2. Fallback <root>/data_drive (folder nyata) bila konstanta belum ada —
- * supaya tidak ada breaking change di lingkungan lama.
- *
- * Override parameter dipakai untuk menguji kedua cabang secara deterministik
- * tanpa mencemari konstanta global (konstanta PHP tidak bisa di-unset).
- */
+// Regression tests for Drive storage base path resolution (portability).
+// Tests MEEL_HDD_DRIVE when defined vs fallback to <root>/data_drive.
 class DriveStorageBasePathTest extends TestCase
 {
     private function hddValue(): string

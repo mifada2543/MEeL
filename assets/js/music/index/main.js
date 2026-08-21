@@ -1,7 +1,3 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* index/main.js — Entry point folder index/ (halaman music/index.php). */
 (function () {
   'use strict';
   var src =
@@ -18,10 +14,7 @@
     'load-more.js',
     'index.js'
   ];
-  // Dipakai oleh assets/js/shared/view-router.js supaya bundle ini bisa
-  // dimuat ulang (SEKALI per page-session) tanpa duplikasi daftar file.
-  // Catatan: shared/mini-player.js dimuat terpisah (bukan lewat loader
-  // ini) — router memuatnya sendiri lewat daftar <script> langsung.
+  // Used by view-router.js to reload bundle once per session.
   window.MEEL_INDEX_BUNDLE = {
     base: base,
     qs: qs,
