@@ -20,7 +20,8 @@ GarbageCollector::run();
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
-    echo "<script>meelError(" . json_encode($safe_msg) . ");</script>";
+    $js = 'if(typeof meelError==="function"){meelError(' . json_encode($safe_msg) . ')}';
+    echo '<script>' . $js . '</script>';
     echo str_repeat(' ', 1024);
     flush();
     return true;
@@ -29,7 +30,8 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) {
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        echo "<script>meelError(" . json_encode($error['message']) . ");</script>";
+        $js = 'if(typeof meelError==="function"){meelError(' . json_encode($error['message']) . ')}';
+        echo '<script>' . $js . '</script>';
         echo str_repeat(' ', 1024);
         flush();
     }
@@ -37,8 +39,6 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
-register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
 require_once 'modules/core/System.php';
 $sys     = new System($conn);
@@ -46,6 +46,9 @@ $is_busy = $sys->isServerBusy();
 
 $user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $is_admin  = ($user_role === 'admin');
+
+$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver($is_admin));
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
 // Queue stats
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
@@ -109,12 +112,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     exit;
                 }
             } catch (Exception $e) {
-                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($is_admin) {
+                    $msg = $e->getMessage();
+                    echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
+                } else {
+                    header('Location: err/index.php?code=server_error');
+                    exit;
+                }
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
             } catch (Throwable $e) {
-                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($is_admin) {
+                    $msg = $e->getMessage();
+                    echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
+                } else {
+                    header('Location: err/index.php?code=server_error');
+                    exit;
+                }
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;

@@ -75,6 +75,18 @@ $types = [
         'meta_t'   => 'Maintenance | MEeL',
         'meta_d'   => 'MEeL sedang dalam perawatan.',
     ],
+    'server_error' => [
+        'status'   => 500,
+        'protocol' => '500_Server_Error',
+        'title'    => 'Kesalahan Server',
+        'desc'     => 'Terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi beberapa saat lagi.',
+        'icon'     => 'server-crash',
+        'dot'      => 'ERROR',
+        'accent'   => '#ef4444',
+        'accent2'  => '#f87171',
+        'meta_t'   => 'Kesalahan Server | MEeL',
+        'meta_d'   => 'Terjadi kesalahan server. Silakan coba lagi.',
+    ],
 ];
 
 $code = (isset($_GET['code']) && is_string($_GET['code'])) ? $_GET['code'] : 'not_found';

@@ -7,6 +7,12 @@ class BrowserProgressObserver implements ProgressObserver
 {
 
     private bool $overlayInjected = false;
+    private bool $isAdmin;
+
+    public function __construct(bool $isAdmin = false)
+    {
+        $this->isAdmin = $isAdmin;
+    }
 
     /* @throws \RuntimeException Tidak dilempar — method ini tidak melempar */
     public function onProgress(string $stage, array $data = []): void
@@ -67,7 +73,16 @@ class BrowserProgressObserver implements ProgressObserver
                 break;
 
             case 'error':
-                $this->emitJs('meelError(' . json_encode($data['message'] ?? '') . ');');
+                if ($this->isAdmin) {
+                    // Admin: tampilkan detail error di overlay
+                    if (!$this->overlayInjected) {
+                        $this->injectOverlay('error');
+                    }
+                    $this->emitJs('meelError(' . json_encode($data['message'] ?? '') . ');');
+                } else {
+                    // Non-admin: redirect ke halaman error generik
+                    $this->emitJs('window.location.href="err/index.php?code=server_error";');
+                }
                 break;
 
             default:

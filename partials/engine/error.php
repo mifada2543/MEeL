@@ -10,7 +10,7 @@
   </div>
   <div class="meel-label" style="color:#ef4444">Proses Gagal</div>
   <div id="meel-error-log" style="width:100%;background:rgba(239,68,68,.06);border:0.5px solid rgba(239,68,68,.18);
-       border-radius:6px;padding:10px 12px;max-height:80px;overflow:auto;
+       border-radius:6px;padding:10px 12px;max-height:180px;overflow:auto;
        font-size:9px;color:rgba(239,68,68,.65);text-align:left;line-height:1.65;
        white-space:pre-wrap;word-break:break-all"></div>
   <div style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap;justify-content:center">

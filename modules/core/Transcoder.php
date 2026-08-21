@@ -311,15 +311,8 @@ class Transcoder
         exec($cmd, $output_array, $return_var);
         $output = implode("\n", $output_array);
 
-        if ($return_var !== 0) {
-            throw new ProcessException(
-                "yt-dlp gagal mengambil metadata (exit code $return_var)",
-                $cmd,
-                $return_var,
-                $output
-            );
-        }
-
+        // Coba parse JSON DULU — yt-dlp kadang return exit 1 padahal
+        // JSON-nya valid (misalnya ada WARNING yang di-promote ke error).
         $start = strpos($output, '{');
         $end   = strrpos($output, '}');
 
@@ -331,11 +324,15 @@ class Transcoder
             }
         }
 
-        error_log("[MEeL-Transcoder] Gagal parsing metadata untuk URL: " . $url);
-        throw new DownloadException(
-            "Gagal parsing metadata dari yt-dlp",
-            $url,
-            'metadata'
+        // JSON tidak valid / tidak ada — baru throw error dengan detail
+        $detail = trim($output);
+        $detail = preg_replace('/\s+/', ' ', $detail);
+        $detail = mb_substr($detail, 0, 500);
+        throw new ProcessException(
+            "yt-dlp gagal mengambil metadata (exit $return_var): " . ($detail ?: '(no output)'),
+            $cmd,
+            $return_var,
+            $output
         );
     }
 
@@ -577,10 +574,14 @@ class Transcoder
                 $error_msg = "Timeout: yt-dlp gagal mengunduh fragment berulang kali (retry 1/10, 2/10, dst). "
                     . "Proses dihentikan otomatis. Coba lagi nanti atau gunakan URL lain.";
             } else {
-                $error_msg  = "Download gagal. Detail disimpan di server.";
-                $last_lines = array_slice(explode("\n", $error_log), -3);
-                $detail     = trim(implode(" | ", $last_lines));
-                if ($detail) $error_msg = substr($detail, 0, 200);
+                // Tampilkan SEMUA baris error dari yt-dlp (ERROR, WARNING, trace)
+                $lines = array_filter(explode("\n", $error_log), fn($l) => $l !== '');
+                // Ambil max 10 baris terakhir agar tidak terlalu panjang
+                $lines = array_slice($lines, -10);
+                $detail = trim(implode("\n", $lines));
+                $error_msg = $detail !== ''
+                    ? "Download gagal:\n" . $detail
+                    : 'Download gagal tanpa detail error.';
             }
 
             $this->emit('error', ['message' => $error_msg]);
