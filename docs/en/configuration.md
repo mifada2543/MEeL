@@ -28,7 +28,9 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 | `database/schema.sql` | Standalone database schema | — |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
-| `modules/core/helpers.php` | HDD check path + various utilities | `MEEL_HDD_BASE`, `get_user_role()`, `get_audio_mime_type()`, `resolve_binary()`, `dir_size()`, `check_disk_space()`, etc. |
+| `modules/core/helpers.php` | **Shim** — requires `helpers/main.php` + `modules/auth/loader.php` (backward-compat) | — |
+| `modules/core/helpers/*.php` | Per-domain utilities (main, storage, audio, url) | `dir_size()`, `check_disk_space()`, `get_audio_mime_type()`, `resolve_binary()`, `log_drive_operation()` |
+| `modules/auth/helpers/user.php` | User & role helpers | `get_user_role()`, `get_user_usage()`, `invalidate_user_role_cache()` |
 | `modules/core/System.php` | Queue management | Rate limit constants |
 | `modules/core/GarbageCollector.php` | Auto-cleanup temp files + guests + chess rooms + rate limits | `STALE_SECONDS`, `GUEST_STALE_HOURS`, `ROOM_LOBBY_STALE_HOURS`, `ROOM_GAME_STALE_HOURS`, `CHESS_CLEANUP_INTERVAL` |
 | `modules/auth/RateLimiter.php` | File-based API rate limiter | Per-endpoint limits (30 likes/min, 10 comments/min, etc.) |
@@ -126,7 +128,7 @@ Jepang, dan teks multibyte tersimpan/terbaca dengan benar.
 // Auto-generated token
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-// Verification function (defined in modules/core/helpers.php)
+// Verification function (defined in modules/auth/helpers/csrf.php)
 // Uses hash_equals() for timing-attack safety
 function verify_csrf_token(?string $token = null): bool
 {
@@ -210,17 +212,16 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 // ─── HARDWARE CONSTANTS ───────────────────────────────────
 private const FFMPEG_THREADS        = 8;
 
-// Sprite thumbnail dimensions
-private const SPRITE_TILE_W         = 160;
-private const SPRITE_TILE_H         = 90;
-private const SPRITE_COLS           = 5;
-
 // HLS segment duration (seconds)
 private const HLS_SEGMENT_DURATION  = 10;
 
 // Download timeout (seconds)
 private const DOWNLOAD_TIMEOUT      = 900;
 ```
+
+> ⚠️ **Change:** Sprite constants `SPRITE_TILE_W/H/COLS` have been **removed**.
+> Sprite dimensions (160×90, 5 columns) are now hardcoded in `modules/transcoder/FfmpegUtils.php`
+> (`generateSpriteAndVTT()`: `$w = 160; $h = 90; $cols = 5;`) together with the dynamic interval.
 
 ### Sprite Interval (Dynamic)
 

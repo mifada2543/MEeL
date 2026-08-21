@@ -23,7 +23,7 @@ Panduan pemecahan masalah umum di MEeL-HUB.
 
 **Penyebab:**
 - MySQL/MariaDB tidak berjalan
-- Kredensial di `auth/config.php` salah
+- Kredensial di `auth/settings.php` salah
 - Database `MEeL` belum dibuat
 
 **Solusi:**
@@ -106,7 +106,7 @@ ALTER TABLE comments ADD COLUMN comment text NOT NULL;
    lsblk
    ```
 
-2. Sesuaikan path di `auth/config.php` — **hanya satu baris**:
+2. Sesuaikan path di `auth/settings.php` — **hanya satu baris**:
    ```php
    define('MEEL_HDD_BASE', '/path/yang/benar');
    ```

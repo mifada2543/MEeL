@@ -5,11 +5,11 @@ use PHPUnit\Framework\TestCase;
  * @covers GarbageCollector
  *
  * Verifikasi perilaku pembersihan temp/cache yang nyata:
- *  - cleanDirectory(): hapus file/direktori stale (> 5 menit), pertahankan yang
- *    fresh, dan JANGAN sentuh cache persisten yt-dlp (ytdlp-cache).
- *  - run(): end-to-end — bersihkan rate-limit file kadaluarsa lewat
- *    RateLimiter::cleanup(), pertahankan yang masih dalam window, dan no-op
- *    pada panggilan kedua (static $hasRun).
+ * - cleanDirectory(): hapus file/direktori stale (> 5 menit), pertahankan yang
+ * fresh, dan JANGAN sentuh cache persisten yt-dlp (ytdlp-cache).
+ * - run(): end-to-end — bersihkan rate-limit file kadaluarsa lewat
+ * RateLimiter::cleanup(), pertahankan yang masih dalam window, dan no-op
+ * pada panggilan kedua (static $hasRun).
  */
 class GarbageCollectorTest extends TestCase
 {
@@ -71,7 +71,7 @@ class GarbageCollectorTest extends TestCase
         @rmdir($dir);
     }
 
-    // ─── cleanDirectory(): pembersihan file/direktori temp ───
+    // cleanDirectory(): pembersihan file/direktori temp
 
     public function testCleanDirectoryRemovesStaleFilesButKeepsFresh(): void
     {
@@ -121,7 +121,7 @@ class GarbageCollectorTest extends TestCase
         $this->assertFileExists($cache . '/entries.db');
     }
 
-    // ─── run(): end-to-end (temp dir + RateLimiter::cleanup) ───
+    // run(): end-to-end (temp dir + RateLimiter::cleanup)
 
     /* Arahkan RateLimiter::$storageDir ke direktori test terisolasi.
      * Temp/ratelimit asli milik daemon (Apache, mode 755) — menulis ke sana

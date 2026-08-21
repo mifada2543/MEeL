@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   function initHoverEffects() {
-    // ─── Table row hover effect ───
+    // Table row hover effect
     document.querySelectorAll(".admin-table tbody tr").forEach(function (row) {
       row.addEventListener("mouseenter", function () {
         this.style.background = "rgba(255, 255, 255, 0.02)";
@@ -11,7 +11,7 @@
         this.style.background = "transparent";
       });
     });
-    // ─── Action button hover effects ───
+    // Action button hover effects
     document.querySelectorAll(".action-btn-edit").forEach(function (btn) {
       btn.addEventListener("mouseenter", function () {
         this.style.background = "#2563eb";

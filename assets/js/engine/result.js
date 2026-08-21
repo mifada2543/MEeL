@@ -3,7 +3,7 @@
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
 /* engine/result.js — Fase selesai & error overlay + penangkap error */
 
-// ─── NAVIGASI FINAL (upload music → post_encode.php) ───
+// NAVIGASI FINAL (upload music → post_encode.php)
 // Dipanggil dari dokumen penutup upload_advanced.php SETELAH seluruh streaming
 // selesai (meta refresh sebagai fallback tanpa JS). Guard mencegah eksekusi
 // ganda; location.replace() (bukan location.href) membuat halaman POST tidak

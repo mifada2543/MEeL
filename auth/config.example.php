@@ -3,15 +3,15 @@
  * MEeL-HUB — Contoh Konfigurasi Aplikasi (Entry Point)
  *
  * File ini adalah TEMPLATE entry point. Semua DATA konfigurasi
- *    (DB credentials + MEEL_* constants) dipindah ke settings.example.php:
- *      require __DIR__ . '/settings.example.php';
+ * (DB credentials + MEEL_* constants) dipindah ke settings.example.php:
+ * require __DIR__ . '/settings.example.php';
  *
  * Cara install baru:
- *   cp auth/settings.example.php auth/settings.php
- *   cp auth/config.example.php auth/config.php
+ * cp auth/settings.example.php auth/settings.php
+ * cp auth/config.example.php auth/config.php
  * Lalu isi nilai di auth/settings.php sesuai environment Anda.
  *
- * ─── PORTABILITY TIP ───
+ * PORTABILITY TIP
  * Semua path penyimpanan media terpusat di konstanta MEEL_HDD_BASE
  * (di settings.example.php). Cukup ubah nilainya, seluruh sistem
  * akan mengikuti.
@@ -67,7 +67,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../modules/autoload.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 
-// ─── Security Headers ───
+// Security Headers
 if (!headers_sent()) {
     header("X-Frame-Options: SAMEORIGIN");
     header("X-Content-Type-Options: nosniff");
@@ -80,12 +80,12 @@ if (!headers_sent()) {
     header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
 }
 
-// ─── CSRF Token ───
+// CSRF Token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// ─── Session Timeout Check (12 jam) ───
+// Session Timeout Check (12 jam)
 if (isset($_SESSION['LAST_ACTIVITY'])) {
     $elapsed_time = time() - $_SESSION['LAST_ACTIVITY'];
     if ($elapsed_time > 43200) {
@@ -97,7 +97,7 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
 }
 $_SESSION['LAST_ACTIVITY'] = time();
 
-// ─── Activity Logger ───
+// Activity Logger
 if (PHP_SAPI !== 'cli') {
     include_once __DIR__ . '/../modules/core/activity_logger.php';
 }

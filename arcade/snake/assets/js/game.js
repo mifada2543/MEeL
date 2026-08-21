@@ -1,6 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-// ─── KONFIGURASI ───
+// KONFIGURASI
 const GRID_SIZE = 20;
 const CELL_SIZE = canvas.width / GRID_SIZE;
 const gameState = {
@@ -11,13 +11,17 @@ const gameState = {
   speed: 150,
   minSpeed: 60,
 };
-// ─── STATE SNAKE ───
+// STATE SNAKE
 let snake = [];
 let food = {};
 let direction = "RIGHT";
 let nextDirection = "RIGHT";
 let gameLoopInterval = null;
 let foodEatenCount = 0;
+// Animasi: pulse makanan + kilat saat makan (rAF terpisah dari tick game)
+let foodPulse = 0;
+let eatFlash = 0;
+let lastAnimT = 0;
 const scoreEl = document.getElementById("scoreText");
 const hiScoreEl = document.getElementById("hiScoreText");
 const startScreen = document.getElementById("startScreen");
@@ -27,7 +31,7 @@ const newHighScoreEl = document.getElementById("newHighScore");
 function updateHiScoreDisplay() {
   hiScoreEl.textContent = String(gameState.hiScore).padStart(5, "0");
 }
-// ─── FUNGSI GAME ───
+// FUNGSI GAME
 function initGame() {
   snake = [
     { x: 10, y: 10 },
@@ -38,6 +42,8 @@ function initGame() {
   nextDirection = "RIGHT";
   gameState.score = 0;
   foodEatenCount = 0;
+  foodPulse = 0;
+  eatFlash = 0;
   gameState.speed = 150;
   gameState.isGameOver = false;
   gameState.isPlaying = true;
@@ -87,6 +93,8 @@ function gameTick() {
   }
   snake.unshift(head);
   if (head.x === food.x && head.y === food.y) {
+    eatFlash = 12;
+    foodPulse = 0;
     gameState.score += 10;
     foodEatenCount++;
     scoreEl.textContent = String(gameState.score).padStart(5, "0");
@@ -122,7 +130,7 @@ function endGame() {
   gameOverScreen.style.pointerEvents = "auto";
   draw();
 }
-// ─── Helper (cross-browser) ───
+// Helper (cross-browser)
 function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -137,7 +145,7 @@ function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
   ctx.fill();
 }
-// ─── RENDER ───
+// RENDER
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#0d1117";
@@ -154,40 +162,43 @@ function draw() {
     ctx.lineTo(canvas.width, i * CELL_SIZE);
     ctx.stroke();
   }
-  if (food) {
+  if (food && typeof food.x === "number") {
     const fx = food.x * CELL_SIZE;
     const fy = food.y * CELL_SIZE;
+    // Pulse halus (skala & glow bernapas)
+    const pulse = 0.08 * Math.sin(foodPulse * 0.09);
+    const r0 = 0.4 + 0.15 * Math.abs(Math.sin(foodPulse * 0.09));
     const glow = ctx.createRadialGradient(
       fx + CELL_SIZE / 2,
       fy + CELL_SIZE / 2,
       0,
       fx + CELL_SIZE / 2,
       fy + CELL_SIZE / 2,
-      CELL_SIZE,
+      CELL_SIZE * (1 + Math.abs(Math.sin(foodPulse * 0.09)) * 0.35),
     );
-    glow.addColorStop(0, "rgba(239, 68, 68, 0.4)");
+    glow.addColorStop(0, `rgba(239, 68, 68, ${r0})`);
     glow.addColorStop(1, "rgba(239, 68, 68, 0)");
     ctx.fillStyle = glow;
     ctx.fillRect(
-      fx - CELL_SIZE / 2,
-      fy - CELL_SIZE / 2,
+      fx - CELL_SIZE,
+      fy - CELL_SIZE,
       CELL_SIZE * 2,
       CELL_SIZE * 2,
     );
+    const foodR = (CELL_SIZE / 2.5) * (1 + pulse);
     ctx.fillStyle = "#ef4444";
     ctx.beginPath();
-    ctx.arc(
-      fx + CELL_SIZE / 2,
-      fy + CELL_SIZE / 2,
-      CELL_SIZE / 2.5,
-      0,
-      Math.PI * 2,
-    );
+    ctx.arc(fx + CELL_SIZE / 2, fy + CELL_SIZE / 2, foodR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
     ctx.beginPath();
-    ctx.arc(fx + CELL_SIZE / 2 - 2, fy + CELL_SIZE / 2 - 2, 3, 0, Math.PI * 2);
+    ctx.arc(fx + CELL_SIZE / 2 - 2, fy + CELL_SIZE / 2 - 2, 3.2, 0, Math.PI * 2);
     ctx.fill();
+  }
+  // Kilat singkat saat makan
+  if (eatFlash > 0) {
+    ctx.fillStyle = `rgba(255,255,255,${(eatFlash / 12) * 0.12})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   snake.forEach((seg, index) => {
     const x = seg.x * CELL_SIZE;
@@ -280,7 +291,7 @@ function draw() {
     }
   });
 }
-// ─── INPUT ───
+// INPUT
 window.addEventListener("keydown", (e) => {
   const key = e.key;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
@@ -379,7 +390,7 @@ document.getElementById("restartBtn").addEventListener("click", initGame);
 startScreen.addEventListener("click", () => {
   if (!gameState.isPlaying) initGame();
 });
-// ─── DRAW ON LOAD ───
+// DRAW ON LOAD
 function drawEmptyBoard() {
   ctx.fillStyle = "#0d1117";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -416,5 +427,16 @@ function drawEmptyBoard() {
     );
   });
 }
+// Loop animasi halus (pulse makanan, kilat makan) — terpisah dari tick game.
+function animLoop(ts) {
+  const dt = lastAnimT ? Math.min(50, ts - lastAnimT) : 16;
+  lastAnimT = ts;
+  foodPulse++;
+  if (eatFlash > 0) eatFlash--;
+  draw();
+  requestAnimationFrame(animLoop);
+}
+requestAnimationFrame(animLoop);
+
 updateHiScoreDisplay();
 drawEmptyBoard();

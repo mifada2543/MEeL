@@ -13,7 +13,7 @@ if (!function_exists('meel_err_alpha')) {
     }
 }
 
-// ─── Tipe error: kode → status HTTP, ikon, teks, meta ───
+// Tipe error: kode → status HTTP, ikon, teks, meta
 $types = [
     'denied' => [
         'status'   => 403,
@@ -75,6 +75,18 @@ $types = [
         'meta_t'   => 'Maintenance | MEeL',
         'meta_d'   => 'MEeL sedang dalam perawatan.',
     ],
+    'server_error' => [
+        'status'   => 500,
+        'protocol' => '500_Server_Error',
+        'title'    => 'Kesalahan Server',
+        'desc'     => 'Terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi beberapa saat lagi.',
+        'icon'     => 'server-crash',
+        'dot'      => 'ERROR',
+        'accent'   => '#ef4444',
+        'accent2'  => '#f87171',
+        'meta_t'   => 'Kesalahan Server | MEeL',
+        'meta_d'   => 'Terjadi kesalahan server. Silakan coba lagi.',
+    ],
 ];
 
 $code = (isset($_GET['code']) && is_string($_GET['code'])) ? $_GET['code'] : 'not_found';
@@ -86,7 +98,7 @@ if (!headers_sent()) {
     http_response_code($type['status']);
 }
 
-// ─── Modul asal (dari referer) → tema warna & label ───
+// Modul asal (dari referer) → tema warna & label
 $modules = [
     'video'   => ['accent' => '#ef4444', 'accent2' => '#f87171', 'label' => 'Video Library', 'back' => '../video/beranda'],
     'music'   => ['accent' => '#f97316', 'accent2' => '#fb923c', 'label' => 'Music Library', 'back' => '../music/beranda'],
@@ -111,7 +123,7 @@ if (isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER'] !== '') {
     }
 }
 
-// ─── Tombol kembali: ?back= → referer GET → home modul → hub ───
+// Tombol kembali: ?back= → referer GET → home modul → hub
 $action_pages = ['delete.php', 'stream.php', 'action.php', 'actions.php', 'post_encode.php', 'playlist_action.php', 'transcode.php', 'delete', 'stream', 'playlist-action', 'transcode'];
 $ref_is_action = false;
 foreach ($action_pages as $ap) {

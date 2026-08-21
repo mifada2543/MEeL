@@ -174,15 +174,15 @@ $counts  = $library->getCounts();
         </div>
     </div>
 
-    <script>        lucide.createIcons();
+    <script>
+        lucide.createIcons();
 
-        // ─── BANNER LOGIC ───
+        // BANNER LOGIC
         (function() {
             const banner = document.getElementById('demoBanner');
             const closeBtn = document.getElementById('demoBannerClose');
 
-                    if (banner) {
-
+            if (banner) {
                 banner.style.visibility = 'hidden';
                 banner.style.display = 'block';
                 const h = banner.scrollHeight;
@@ -198,7 +198,7 @@ $counts  = $library->getCounts();
 
             if (closeBtn && banner) {
                 closeBtn.addEventListener('click', function() {
-                                    document.body.classList.remove('demo-banner-active');
+                    document.body.classList.remove('demo-banner-active');
                     banner.classList.remove('demo-banner-visible');
                     banner.classList.add('demo-banner-hiding');
 
@@ -209,12 +209,12 @@ $counts  = $library->getCounts();
             }
         })();
 
-        // ─── SWEETALERT2 ───
+        // SWEETALERT2
         (function() {
-                    if (sessionStorage.getItem('meelDemoAlertShown')) return;
+            if (sessionStorage.getItem('meelDemoAlertShown')) return;
             sessionStorage.setItem('meelDemoAlertShown', '1');
 
-                    setTimeout(() => {
+            setTimeout(() => {
                 Swal.fire({
                     icon: 'warning',
                     iconHtml: '<div style="font-size:1.8rem">⚠️</div>',
@@ -244,7 +244,7 @@ $counts  = $library->getCounts();
                 });
             }, 800);
         })();
-</script>
+    </script>
 </body>
 
 </html>

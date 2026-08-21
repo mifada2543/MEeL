@@ -25,7 +25,6 @@ class MediaViewer
         }
     }
 
-    // ─── 1. LOGIKA VIEWS ───
     public function recordView() {
         if (!$this->user_id || !$this->media_id) return false;
 
@@ -38,7 +37,6 @@ class MediaViewer
             $stmt_log->execute();
 
             if ($stmt_log->affected_rows > 0) {
-                // Menggunakan prepared statement untuk update views
                 $stmt_upd = $this->conn->prepare("UPDATE {$this->table} SET views = views + 1 WHERE id = ?");
                 $stmt_upd->bind_param("i", $this->media_id);
                 $stmt_upd->execute();
@@ -48,7 +46,6 @@ class MediaViewer
         return false;
     }
 
-    // ─── 2. AMBIL DATA MEDIA UTAMA ───
     public function getMediaData()
     {
         $sql = "SELECT m.*, u.username as uploader, u.profile_picture as uploader_pfp
@@ -62,7 +59,6 @@ class MediaViewer
         return ($result && $result->num_rows > 0) ? $result->fetch_assoc() : null;
     }
 
-    // ─── 3. LOGIKA INTERAKSI (LIKE/DISLIKE) ───
     public function getUserInteraction()
     {
         if (!$this->user_id) return null;
@@ -74,7 +70,6 @@ class MediaViewer
         return ($row = $res->fetch_assoc()) ? $row['type'] : null;
     }
 
-    // ─── 4. MANAJEMEN KOMENTAR ───
     public function addComment($post_data)
     {
         if (!$this->user_id || empty(trim($post_data['comments']))) return false;
@@ -112,7 +107,6 @@ class MediaViewer
         return ['grouped' => $grouped, 'user_map' => $user_map];
     }
 
-    // ─── 5. REKOMENDASI ───
     public function getRecommendations($limit = 10)
     {
 
@@ -145,7 +139,6 @@ class MediaViewer
         return $stmt->get_result();
     }
 
-    // ─── 6. KHUSUS MUSIC: PLAYLIST QUEUE ───
     public function getPlaylistQueue($playlist_id)
     {
         if ($this->media_type !== 'music' || !$playlist_id) return null;

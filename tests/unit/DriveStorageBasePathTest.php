@@ -16,10 +16,10 @@ require_once MEEL_ROOT . '/drive/DriveService.php';
  * saat membuka modul Drive (RuntimeException "Folder penyimpanan gagal dibuat").
  *
  * Setelah refactor, base path di-resolve terpusat:
- *   1. MEEL_HDD_DRIVE (terpusat di auth/settings.php) bila didefinisikan —
- *      konsisten dengan Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD.
- *   2. Fallback <root>/data_drive (folder nyata) bila konstanta belum ada —
- *      supaya tidak ada breaking change di lingkungan lama.
+ * 1. MEEL_HDD_DRIVE (terpusat di auth/settings.php) bila didefinisikan —
+ * konsisten dengan Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD.
+ * 2. Fallback <root>/data_drive (folder nyata) bila konstanta belum ada —
+ * supaya tidak ada breaking change di lingkungan lama.
  *
  * Override parameter dipakai untuk menguji kedua cabang secara deterministik
  * tanpa mencemari konstanta global (konstanta PHP tidak bisa di-unset).
@@ -31,7 +31,7 @@ class DriveStorageBasePathTest extends TestCase
         return '/media/someuser/MEeL/media/drive/';
     }
 
-    // ─── MEEL_HDD_DRIVE didefinisikan → dipakai sebagai base path ───
+    // MEEL_HDD_DRIVE didefinisikan → dipakai sebagai base path
 
     public function testDefaultBasePathUsesMeelHddDriveWhenDefined(): void
     {
@@ -52,7 +52,7 @@ class DriveStorageBasePathTest extends TestCase
         $this->assertSame('/x/drive', DriveStorage::defaultBasePath('/x/drive'));
     }
 
-    // ─── MEEL_HDD_DRIVE tidak didefinisikan → fallback folder lokal ───
+    // MEEL_HDD_DRIVE tidak didefinisikan → fallback folder lokal
 
     public function testDefaultBasePathFallsBackToLocalDataDrive(): void
     {
@@ -73,7 +73,7 @@ class DriveStorageBasePathTest extends TestCase
         $this->assertSame($expected, DriveStorage::defaultBasePath());
     }
 
-    // ─── Konsistensi helper global (dipakai get_user_usage, invalidate_dir_size_cache) ───
+    // Konsistensi helper global (dipakai get_user_usage, invalidate_dir_size_cache)
 
     public function testHelperMatchesDriveStorageResolution(): void
     {
@@ -96,7 +96,7 @@ class DriveStorageBasePathTest extends TestCase
         $this->assertSame('/media/u/MEeL/drive', meel_drive_base_path('/media/u/MEeL/drive/'));
     }
 
-    // ─── Fallback folder nyata: pastikan subfolder public/private_admins dibuat biasa ───
+    // Fallback folder nyata: pastikan subfolder public/private_admins dibuat biasa
 
     public function testEnsureDirectoryCreatesRealFoldersUnderFallbackBase(): void
     {

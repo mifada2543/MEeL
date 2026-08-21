@@ -15,7 +15,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
     $uploader_id = (int)($uploader_id ?? 0);
     if (!isset($grouped[$parent_id])) return;
 
-    // ─── Theme color mapping ───
+    // Theme color mapping
     $is_video = ($theme === 'video');
 
     $c_avatar_from    = $is_video ? 'from-red-600' : 'from-orange-500';
@@ -49,7 +49,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-[11px] font-bold <?= $c_author ?> truncate">@<?= htmlspecialchars($author) ?></span>
                         <?php
-                        // ─── Badge role: admin (merah) / member (biru) ───
+                        // Badge role: admin (merah) / member (biru)
                         $_c_role = $c['role'] ?? '';
                         if ($_c_role === 'admin' || $_c_role === 'member'):
                             $_badge_color = ($_c_role === 'admin')
@@ -64,14 +64,14 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         <span class="text-[10px] <?= $author_time_color ?> flex-shrink-0"><?= time_ago($c['created_at']) ?></span>
                     </div>
                     <?php
-                        // ─── Hak hapus: pemilik komentar ATAU uploader media ATAU admin ───
+                        // Hak hapus: pemilik komentar ATAU uploader media ATAU admin
                         $is_owner   = (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)$c['user_id']);
                         $is_uploader = ($uploader_id > 0 && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $uploader_id);
                         $is_admin    = (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'admin');
                         $can_delete = $is_owner || $is_uploader || $is_admin;
 
                         if ($can_delete):
-                        // ─── Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi) ───
+                        // Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi)
                         $_c_snippet = trim(preg_replace('/\s+/', ' ', (string)($c['comment'] ?? '')));
                         if (function_exists('mb_strlen') && mb_strlen($_c_snippet) > 60) {
                             $_c_snippet = mb_substr($_c_snippet, 0, 60) . '…';
@@ -97,8 +97,8 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                             'confirmButtonText' => 'HAPUS',
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
                     ?>
-                        <a href="../controllers/api/delete_comment.php?id=<?= (int)$c['id'] ?>"
-                            hx-post="../controllers/api/delete_comment.php"
+                        <a href="<?= base_url('/api/delete-comment') ?>?id=<?= (int)$c['id'] ?>"
+                            hx-post="<?= base_url('/api/delete-comment') ?>"
                             hx-vals='{"id":"<?= (int)$c['id'] ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>","media_id":"<?= (int)$id ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>,"csrf_token":"<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES) ?>"}'
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
@@ -124,7 +124,7 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                     </button>
                     <div id="<?= $reply_prefix . $c['id'] ?>" class="hidden mt-3">
                         <form action="<?= $form_action_url ?>" method="post" class="flex gap-2"
-                            hx-post="../controllers/api/comment.php"
+                            hx-post="<?= base_url('/api/comment') ?>"
                             hx-target="#comment-list"
                             hx-swap="innerHTML"
                             hx-vals='{"id":"<?= $id ?>","media_type":"<?= $is_video ? 'video' : 'music' ?>"<?= (!$is_video && $playlist_context > 0) ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'

@@ -85,8 +85,8 @@ if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
  * breaking change.
  *
  * @param string|null $hddDriveOverride Untuk pengujian: simulasikan nilai
- *        MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
- *        konstanta sungguhan; '' = paksa fallback lokal.
+ * MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
+ * konstanta sungguhan; '' = paksa fallback lokal.
  * @return string Base path TANPA trailing slash
  */
 if (!function_exists('meel_drive_base_path')) {
@@ -281,12 +281,12 @@ function log_drive_operation(int $userId, string $username, string $operation, s
  * rewrite di .htaccess sehingga URL publik tetap `upload/...`.
  *
  * Keamanan:
- *  - Path traversal ditolak (realpath harus di dalam base dir).
- *  - Whitelist ekstensi per tipe media.
- *  - Range request didukung (penting untuk HLS .ts & video mp4).
- *  - Opsional referer gate untuk HLS video (anti hotlink, pola sama dengan
- *    .htaccess storage HDD lama: file di bawah /video/upload/video/ hanya
- *    boleh diminta dari halaman watch/index video MEeL).
+ * - Path traversal ditolak (realpath harus di dalam base dir).
+ * - Whitelist ekstensi per tipe media.
+ * - Range request didukung (penting untuk HLS .ts & video mp4).
+ * - Opsional referer gate untuk HLS video (anti hotlink, pola sama dengan
+ * .htaccess storage HDD lama: file di bawah /video/upload/video/ hanya
+ * boleh diminta dari halaman watch/index video MEeL).
  *
  * @param string $module 'video' | 'music' | 'books'
  * @param string $relPath Path relatif terhadap base dir (mis. 'video/xxx/xxx.m3u8')

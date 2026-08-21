@@ -9,7 +9,7 @@ class MediaLibrary
         $this->conn = $db_connection;
     }
 
-    // ─── HUB ───
+    // HUB
     public function getCounts(): array
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
@@ -53,7 +53,7 @@ class MediaLibrary
         }
     }
 
-    // ─── PAGINATION HELPER ───
+    // PAGINATION HELPER
     /**
      * @param mysqli_result|false $result Result set dari query data
      * @param int $total Total record
@@ -90,7 +90,7 @@ class MediaLibrary
         return $this->paginateResult($data, $total, $page, $perPage);
     }
 
-    // ─── VIDEO ───
+    // VIDEO
     public function getVideos(int $limit = 15, int $offset = 0)
     {
         $stmt = $this->conn->prepare("SELECT * FROM video ORDER BY upload_date DESC LIMIT ? OFFSET ?");
@@ -137,7 +137,9 @@ class MediaLibrary
                 $stmt->bind_param("iii", $exclude, $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking
+            // Full-text search query — optimized dengan proper ranking.
+            // `exclude` (item yang sedang diputar) tetap diterapkan supaya
+            // file yang sedang diputar tidak muncul duplikat di hasil search.
             $stmt = $this->conn->prepare(
                 "SELECT v.*, u.username AS uploader_name,
                  MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AS rank
@@ -172,6 +174,8 @@ class MediaLibrary
             );
             $stmt->bind_param("i", $exclude);
         } else {
+            // Sinkron dengan searchVideo(): `exclude` ikut diterapkan supaya
+            // total konsisten dengan hasil.
             $stmt = $this->conn->prepare(
                 "SELECT COUNT(*) AS total FROM video v
                  JOIN users u ON v.user_id = u.id
@@ -190,7 +194,7 @@ class MediaLibrary
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
-    // ─── MUSIC ───
+    // MUSIC
 
     /**
      * @param string $format Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
@@ -338,7 +342,9 @@ class MediaLibrary
                 $stmt->bind_param("ii", $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking
+            // Full-text search query — optimized dengan proper ranking.
+            // `exclude` (item yang sedang diputar) tetap diterapkan supaya
+            // file yang sedang diputar tidak muncul duplikat di hasil search.
             $stmt = $this->conn->prepare(
                 "SELECT m.*, u.username AS uploader,
                  (MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)) AS rank
@@ -372,6 +378,8 @@ class MediaLibrary
             );
             $stmt->bind_param("i", $exclude);
         } else {
+            // Sinkron dengan searchMusic(): `exclude` ikut diterapkan supaya
+            // total konsisten dengan hasil.
             $stmt = $this->conn->prepare(
                 "SELECT COUNT(*) AS total FROM music m
                  JOIN users u ON m.user_id = u.id
@@ -390,7 +398,7 @@ class MediaLibrary
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
-    // ─── PRIVATE HELPER ───
+    // PRIVATE HELPER
 
     private function buildMusicWhere(string $format, string $artist): array
     {
@@ -603,7 +611,7 @@ class BookUploader
         return $this->insertBook($title, $author, $type, $content['has_chapters'], $category, $content['path_result'], $thumb_name, $user_id);
     }
 
-    // ─── PRIVATE HELPERS ───
+    // PRIVATE HELPERS
 
     private function handleThumbnail(array $file): string
     {

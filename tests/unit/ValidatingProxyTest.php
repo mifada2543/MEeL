@@ -9,10 +9,10 @@ require_once dirname(__DIR__, 2) . '/modules/auth/ValidatingProxy.php';
  *
  * These spawn a REAL proxy process on 127.0.0.1:<ephemeral> and send real
  * CONNECT / absolute-URI requests to it, verifying that:
- *   * private/reserved targets are REFUSED (502 / closed) — including
- *     redirect targets, which is the whole point of the proxy,
- *   * public targets are accepted (200 Connection Established / relayed),
- *   * the process is cleaned up on stop().
+ * * private/reserved targets are REFUSED (502 / closed) — including
+ * redirect targets, which is the whole point of the proxy,
+ * * public targets are accepted (200 Connection Established / relayed),
+ * * the process is cleaned up on stop().
  *
  * Network-dependent acceptance tests degrade to markTestSkipped() when no
  * resolver/egress is available; the rejection tests are fully local.

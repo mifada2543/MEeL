@@ -19,14 +19,12 @@ if (isset($_POST['update_profile'])) {
 
     $conn->begin_transaction();
     try {
-        // 1. UPDATE BIO
         $stmt = $conn->prepare("UPDATE users SET bio = ? WHERE id = ?");
         $stmt->bind_param("si", $bio, $user_id);
         if (!$stmt->execute()) {
             throw new \RuntimeException('Gagal memperbarui bio: ' . $stmt->error);
         }
 
-        // 2. LOGIKA UPLOAD FOTO
         if (!empty($_FILES['avatar']['name'])) {
             $file_tmp  = $_FILES['avatar']['tmp_name'];
 
@@ -93,7 +91,7 @@ if (isset($_POST['update_profile'])) {
                 : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
             $ffmpeg_ok = $ffmpeg_bin !== '' && is_executable($ffmpeg_bin);
 
-            // ─── INPUT WEBP: langsung crop/resize ke 400x400, TANPA transcode format ───
+            // INPUT WEBP: langsung crop/resize ke 400x400, TANPA transcode format
             if ($real_mime === 'image/webp') {
                 if (!$ffmpeg_ok) {
                     throw new \RuntimeException('Format WebP membutuhkan ffmpeg untuk diproses.');
@@ -117,7 +115,7 @@ if (isset($_POST['update_profile'])) {
                     throw new \RuntimeException('Gagal menyimpan foto profil.');
                 }
             } else {
-                // ─── INPUT JPG/PNG: GD center-crop 400x400 lalu transcode ke WebP ───
+                // INPUT JPG/PNG: GD center-crop 400x400 lalu transcode ke WebP
                 $source = null;
                 $tmp_img = null;
                 $tmp_png = null;
@@ -293,7 +291,7 @@ include __DIR__ . '/../../partials/scripts.php';
     </div>
     <script>        lucide.createIcons();
 
-        // ─── Modal preview foto profil + atur posisi crop ───
+        // Modal preview foto profil + atur posisi crop
         var avatarInput        = document.getElementById('avatarInput');
         var avatarPreview      = document.getElementById('avatarPreview');
         var avatarModal        = document.getElementById('avatarModal');

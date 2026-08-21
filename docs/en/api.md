@@ -26,11 +26,15 @@ controllers/
 ├── api/
 │   ├── WatchController.php   # Watch page controller (Video + Music)
 │   ├── like.php              # Like/dislike toggle
+│   ├── comment.php           # Add comment (HTMX/AJAX)
 │   ├── delete_comment.php    # Delete comment
 │   ├── auto_metadata.php     # Auto-fetch metadata (yt-dlp info)
 │   ├── pdf.php               # PDF viewer proxy
 │   ├── download_transcode.php# Download transcoded file
-│   └── post_encode.php       # Post-encode music (after yt-dlp)
+│   ├── post_encode.php       # Post-encode music (after yt-dlp)
+│   ├── ajax_refresh.php      # AJAX fragment refresh (search, etc.)
+│   ├── server_stats.php      # Server statistics (JSON)
+│   └── server_stats_sse.php  # Server statistics via Server-Sent Events
 ├── profile/
 │   ├── fun-manage.php        # Delete media, pending deletions, cleanup
 │   └── profile_edit.php      # Update user profile
@@ -205,7 +209,7 @@ User inputs TOTP 6-digit code
   ↓
 Verify via TOTP (HMAC-SHA1, 30s step, window ±1)
   ↓ Failed
-Try backup code (SHA256 hash, single-use)
+Try backup code (password_hash/bcrypt, single-use)
   ↓ Failed completely
 Increment fail count → max 10 → Lock 5 minutes
   ↓ Valid
@@ -269,11 +273,11 @@ Multi-step page for enabling, managing, or disabling MFA.
 
 #### Step 3: Backup Codes
 
-After verification succeeds, 8 backup codes (each 8 hex characters) are displayed **once**:
+After verification succeeds, 8 backup codes (each 6 numeric digits) are displayed **once**:
 
 ```html
-<div class="backup-code">a1b2c3d4</div>
-<div class="backup-code">e5f6g7h8</div>
+<div class="backup-code">483920</div>
+<div class="backup-code">710265</div>
 <!-- ... 8 codes total -->
 
 <button onclick="downloadBackupCodes()">Download Backup Codes (.txt)</button>
@@ -284,7 +288,7 @@ After verification succeeds, 8 backup codes (each 8 hex characters) are displaye
 ```
 
 **Backup codes stored as:**
-- Database: `JSON array of SHA256 hashes`
+- Database: `JSON array` of `password_hash()` (bcrypt) hashes
 - Cannot be reversed (one-way hash)
 - After use, hash removed from array
 
@@ -379,7 +383,7 @@ fetch('../controllers/system/mfa.php', {
 {
   "status": "success",
   "message": "New backup codes successfully created.",
-  "codes": ["a1b2c3d4", "e5f6g7h8", ...]  // 8 codes
+  "codes": ["483920", "710265", ...]  // 8 codes (6 digits)
 }
 ```
 
@@ -419,8 +423,8 @@ Generated: 2026-01-15 14:30:00
 Each code can only be used ONCE.
 Store in a safe place!
 
-  a1b2c3d4
-  e5f6g7h8
+  483920
+  710265
   ...
 ```
 

@@ -1,11 +1,11 @@
 <?php
-// ─── Keamanan: hanya dari CLI ───
+// Keamanan: hanya dari CLI
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     die('Access denied. Jalankan dari terminal: php database/migrate.php');
 }
 
-// ─── Bootstrap ───
+// Bootstrap
 require_once __DIR__ . '/../auth/config.php';
 
 // Validasi koneksi database
@@ -14,7 +14,7 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
     exit(1);
 }
 
-// ─── Migration Registry ───
+// Migration Registry
 $migrations = [
     1 => [
         'description' => 'Tambah FULLTEXT index untuk pencarian',

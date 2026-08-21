@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="2048">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1c1917"/>
+      <stop offset="100%" stop-color="#0b0e14"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <circle cx="400" cy="210" r="150" fill="#f59e0b" opacity="0.08"/>
+  <!-- Grid 2x2 tile -->
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle">
+    <rect x="300" y="120" width="86" height="86" rx="12" fill="#eee4da"/>
+    <text x="343" y="182" font-size="44" fill="#776e65">2</text>
+    <rect x="394" y="120" width="86" height="86" rx="12" fill="#ede0c8"/>
+    <text x="437" y="182" font-size="44" fill="#776e65">4</text>
+    <rect x="300" y="214" width="86" height="86" rx="12" fill="#f2b179"/>
+    <text x="343" y="276" font-size="44" fill="#f9f6f2">8</text>
+    <rect x="394" y="214" width="86" height="86" rx="12" fill="#f59563"/>
+    <text x="437" y="276" font-size="40" fill="#f9f6f2">16</text>
+  </g>
+  <text x="400" y="380" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="800" text-anchor="middle" fill="url(#title)">2048</text>
+  <text x="400" y="420" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="6" text-anchor="middle" fill="#78716c">MEeL ARCADE</text>
+</svg>

@@ -14,7 +14,7 @@
     };
     reader.readAsDataURL(input.files[0]);
   };
-  // ─── Map untuk backward compatibility ───
+  // Map untuk backward compatibility
   window.handleThumbChange = function (input) {
     window.handleImageChange(input, "thumb-preview", "thumb-changed-badge");
   };

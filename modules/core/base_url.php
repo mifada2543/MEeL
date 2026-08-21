@@ -1,5 +1,5 @@
 <?php
-/**  modules/core/base_url.php — Perhitungan Base URL Terpusat */
+/** modules/core/base_url.php — Perhitungan Base URL Terpusat */
 
 if (!function_exists('meel_base_url_path')) {
     /** @return string Path base URL tanpa trailing slash (bisa kosong). */

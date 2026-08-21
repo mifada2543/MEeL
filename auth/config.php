@@ -2,16 +2,16 @@
 /**
  * MEeL-HUB — Konfigurasi Aplikasi (Entry Point)
  *
- * ═══════════════════════════════════════════════════════════════════
+ *
  * PENTING — Jangan hapus guard !defined() di sekitar konstanta.
- *   File ini bisa di-include dari berbagai entry point (index.php,
- *   auth/auth.php, file admin, dll), guard mencegah redeclare error.
+ * File ini bisa di-include dari berbagai entry point (index.php,
+ * auth/auth.php, file admin, dll), guard mencegah redeclare error.
  *
  * File ini HANYA memuat logic inisialisasi. Semua DATA konfigurasi
- *   (DB credentials + MEEL_* constants) sudah dipindah ke settings.php:
- *     require __DIR__ . '/settings.php';
- *   Ubah nilai server di settings.php, JANGAN di file ini.
- * ═══════════════════════════════════════════════════════════════════
+ * (DB credentials + MEEL_* constants) sudah dipindah ke settings.php:
+ * require __DIR__ . '/settings.php';
+ * Ubah nilai server di settings.php, JANGAN di file ini.
+ *
  */
 
 // PURE CONFIG (DATA) — DB credentials + MEEL_* constants
@@ -52,7 +52,7 @@ meel_boot_session();
 require_once __DIR__ . '/../modules/autoload.php';
 // Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
 require_once __DIR__ . '/../modules/core/helpers.php';
-// ─── Security Headers ───
+// Security Headers
 if (!headers_sent()) {
     header("X-Frame-Options: SAMEORIGIN");
     header("X-Content-Type-Options: nosniff");
@@ -69,11 +69,11 @@ if (!headers_sent()) {
     $csp_worker_src = "worker-src 'self' blob:";
     header("Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self'; frame-src 'self' blob:; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; {$csp_script_src}; {$csp_worker_src}");
 }
-// ─── CSRF Token ───
+// CSRF Token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-// ─── Session Timeout Check (12 jam) ───
+// Session Timeout Check (12 jam)
 if (isset($_SESSION['LAST_ACTIVITY'])) {
     $elapsed_time = time() - $_SESSION['LAST_ACTIVITY'];
     if ($elapsed_time > 43200) {
@@ -86,7 +86,7 @@ if (isset($_SESSION['LAST_ACTIVITY'])) {
     }
 }
 $_SESSION['LAST_ACTIVITY'] = time();
-// ─── Activity Logger (skip di CLI — tidak ada HTTP request) ───
+// Activity Logger (skip di CLI — tidak ada HTTP request)
 if (PHP_SAPI !== 'cli') {
     include_once __DIR__ . '/../modules/core/activity_logger.php';
 }

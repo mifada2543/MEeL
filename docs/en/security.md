@@ -191,7 +191,7 @@ if (empty($_SESSION['csrf_token'])) {
 ### Token Validation
 
 ```php
-// verify_csrf_token() — defined in modules/core/helpers.php
+// verify_csrf_token() — defined in modules/auth/helpers/csrf.php
 // Uses hash_equals() for timing-attack safety
 function verify_csrf_token(?string $token = null): bool
 {
@@ -378,7 +378,7 @@ MEeL uses **TOTP (Time-based One-Time Password)** with algorithm:
 ### Secret Generation
 
 ```php
-// modules/core/helpers.php
+// modules/auth/helpers/mfa.php
 function generate_mfa_secret(): string {
     $random = random_bytes(20);  // 160-bit random
     $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -395,26 +395,26 @@ Secret stored in `mfa_secret` column (VARCHAR(64)) in `users` table. TOTP secret
 
 ### Backup Codes
 
-- **8 backup codes** — each 8 alphanumeric characters
-- **Stored as SHA256 hash** — one-way, cannot be reversed
+- **8 backup codes** — each 6 numeric digits
+- **Stored as `password_hash()` (bcrypt) hashes** — one-way, cannot be reversed
 - **Single-use** — hash removed from array after use
 
 ```php
 function generate_backup_codes(): array {
-    $codes = [];
-    $hashes = [];
+    $plain = [];
+    $hashed = [];
     for ($i = 0; $i < 8; $i++) {
-        $plain = bin2hex(random_bytes(4)); // 8 hex characters
-        $codes[] = $plain;
-        $hashes[] = hash('sha256', $plain);
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT); // 6 digits
+        $plain[] = $code;
+        $hashed[] = password_hash($code, PASSWORD_DEFAULT); // bcrypt
     }
-    return ['plain' => $codes, 'hashed' => $hashes];
+    return ['plain' => $plain, 'hashed' => $hashed];
 }
 
 function verify_backup_code(string $hashedCodes, string $code): array {
     $codes = json_decode($hashedCodes, true) ?? [];
     foreach ($codes as $i => $hash) {
-        if (hash_equals($hash, hash('sha256', $code))) {
+        if (password_verify($code, $hash)) {
             array_splice($codes, $i, 1); // Remove used code
             return ['valid' => true, 'remaining' => $codes];
         }

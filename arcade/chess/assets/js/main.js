@@ -38,7 +38,7 @@ const boardEl = document.getElementById("chess-board");
 const moveHistoryList = document.getElementById("move-history-list");
 const promotionModal = document.getElementById("promotion-modal");
 const blackName = document.getElementById("player-black-name");
-// ─── Color Picker Overlay (multiplayer: pilih warna sebelum game dimulai) ───
+// Color Picker Overlay (multiplayer: pilih warna sebelum game dimulai)
 const colorPickerOverlay = document.getElementById("color-picker-overlay");
 const cpPick = document.getElementById("cp-pick");
 const cpWaiting = document.getElementById("cp-waiting");
@@ -83,7 +83,7 @@ function updateRoomUI() {
     badge.innerText = "Offline";
   }
 }
-// ─── COLOR PICKER OVERLAY ───
+// COLOR PICKER OVERLAY
 function showColorPicker() {
   if (!colorPickerOverlay) return;
 
@@ -221,7 +221,7 @@ function tungguLawanBergabung(code) {
         hideColorPicker(); // game dimulai — papan aktif & bisa diklik
         document.getElementById("room-status").innerText =
           "Lawan bergabung! Menunggu langkah...";
-        //#player-black-name TIDAK ada di HTML arcade/chess/index.php —
+        // #player-black-name TIDAK ada di HTML arcade/chess/index.php —
         if (blackName) blackName.innerText = "Pemain Hitam (Online)";
         startPolling();
       }
@@ -322,7 +322,7 @@ function renderBoard() {
           cell.appendChild(pieceWrapper);
         }
       }
-      // ─── NAVIGATION COORDINATES ───
+      // NAVIGATION COORDINATES
       if (viewC === 0) {
         const rankLabel = document.createElement("span");
         rankLabel.style.cssText = `position:absolute;top:2px;left:3px;font-size:10px;font-weight:700;z-index:30;pointer-events:none;user-select:none;line-height:1;color:${isDark ? "rgba(238,238,210,0.85)" : "rgba(118,150,86,0.85)"}`;
@@ -683,7 +683,7 @@ function updateGameStatus(result) {
   }
   updateActionButtons();
 }
-// ─── RESIGN & DRAW (multiplayer) ───
+// RESIGN & DRAW (multiplayer)
 function updateActionButtons() {
   const offerBtn = document.getElementById("btn-offer-draw");
   const resignBtn = document.getElementById("btn-resign");
@@ -888,7 +888,7 @@ function handleResign() {
       });
     });
 }
-// ─── REMATCH (TANDING ULANG) — multiplayer pasca-game ───
+// REMATCH (TANDING ULANG) — multiplayer pasca-game
 function updateRematchButton() {
   const btn = document.getElementById("btn-rematch");
   const exitBtn = document.getElementById("btn-exit-game");
@@ -1050,7 +1050,7 @@ function showRematchRejectedThenExit(
 function exitToLocalMode() {
   if (typeof exitToLocalModeFn === "function") exitToLocalModeFn();
 }
-// ─── DETEKSI LAWAN TERPUTUS (disconnect) ───
+// DETEKSI LAWAN TERPUTUS (disconnect)
 function handleOpponentStatus(online) {
   if (game.gameMode !== "online" || !roomCode || game.isGameOver) return;
   if (online === opponentOnline) return;
@@ -1187,7 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnAi = document.getElementById("mode-vs-ai");
   const diffCont = document.getElementById("ai-difficulty-container");
   const panel = document.getElementById("multiplayer-panel");
-  // ─── Alert "Game Sedang Berjalan" ───
+  // Alert "Game Sedang Berjalan"
   function confirmSwitchMode(proceed) {
     if (game.history.length > 0 && !game.isGameOver) {
       window.Swal.fire({
@@ -1336,7 +1336,7 @@ document.addEventListener("DOMContentLoaded", () => {
       confirmSwitchMode(enterAiMode);
     });
   }
-  // ─── Multiplayer: alur dimulai dari color picker di atas papan ───
+  // Multiplayer: alur dimulai dari color picker di atas papan
   async function createRoom() {
     if (roomStatusTimer) {
       clearInterval(roomStatusTimer);

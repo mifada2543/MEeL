@@ -16,11 +16,12 @@ require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
-// ─── GLOBAL ERROR HANDLER ───
+// GLOBAL ERROR HANDLER
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
-    echo "<script>meelError(" . json_encode($safe_msg) . ");</script>";
+    $js = 'if(typeof meelError==="function"){meelError(' . json_encode($safe_msg) . ')}';
+    echo '<script>' . $js . '</script>';
     echo str_repeat(' ', 1024);
     flush();
     return true;
@@ -29,7 +30,8 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) {
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        echo "<script>meelError(" . json_encode($error['message']) . ");</script>";
+        $js = 'if(typeof meelError==="function"){meelError(' . json_encode($error['message']) . ')}';
+        echo '<script>' . $js . '</script>';
         echo str_repeat(' ', 1024);
         flush();
     }
@@ -37,8 +39,6 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
-register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
 require_once 'modules/core/System.php';
 $sys     = new System($conn);
@@ -47,11 +47,14 @@ $is_busy = $sys->isServerBusy();
 $user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $is_admin  = ($user_role === 'admin');
 
+$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver($is_admin));
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
+
 // Queue stats
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
-// ─── Hitung sisa kuota upload per jam ───
+// Hitung sisa kuota upload per jam
 // Konsisten dengan System::checkRateLimit(): member mendapat 2x lipat (4/jam).
 $upload_max = get_upload_hourly_limit($user_role);
 $quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
@@ -72,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     } elseif ($is_busy) {
         $message = 'busy';
     } else {
-        // ─── Rate limit check (sama seperti Uploader.php) ───
+        // Rate limit check (sama seperti Uploader.php)
         $type        = $_POST['type'] ?? '';
         $limit_table = ($type === 'music') ? 'music' : 'video';
         $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
@@ -109,12 +112,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     exit;
                 }
             } catch (Exception $e) {
-                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($is_admin) {
+                    $msg = $e->getMessage();
+                    echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
+                } else {
+                    header('Location: err/index.php?code=server_error');
+                    exit;
+                }
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
             } catch (Throwable $e) {
-                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($is_admin) {
+                    $msg = $e->getMessage();
+                    echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
+                } else {
+                    header('Location: err/index.php?code=server_error');
+                    exit;
+                }
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
@@ -151,14 +168,14 @@ include __DIR__ . '/partials/scripts.php';
 
 <body class="min-h-screen flex flex-col">
 
-    <!-- ── MEeL Engine Overlay (dari ui.php) ── -->
+    <!-- MEeL Engine Overlay (dari ui.php) -->
     <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
         <?php include 'partials/ui.php'; ?>
     <?php endif; ?>
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
 
-            <!-- ── Masthead ── -->
+            <!-- Masthead -->
             <div class="masthead">
                 <a href="./" class="masthead-logo">
                     <img src="assets/MEeL.png" alt="MEeL">
@@ -176,7 +193,7 @@ include __DIR__ . '/partials/scripts.php';
                 </div>
             </div>
 
-            <!-- ── Admin bar ── -->
+            <!-- Admin bar -->
             <?php if ($is_admin): ?>
                 <div class="admin-bar">
                     <span class="admin-badge">
@@ -199,10 +216,10 @@ include __DIR__ . '/partials/scripts.php';
                     </a>
                 </div>
             <?php endif; ?>
-            <!-- ── Main grid ── -->
+            <!-- Main grid -->
             <div class="page-grid">
 
-                <!-- ── LEFT: Form ── -->
+                <!-- LEFT: Form -->
                 <div>
                     <!-- Alert banners -->
                     <?php if ($message === 'success'): ?>
@@ -355,7 +372,7 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- ── RIGHT: Sidebar ── -->
+                <!-- RIGHT: Sidebar -->
                 <aside>
                     <!-- Server status card -->
                     <div class="side-card">
@@ -388,7 +405,7 @@ include __DIR__ . '/partials/scripts.php';
                                 </span>
                             </div>
 
-                            <!-- ── Quota bar ── -->
+                            <!-- Quota bar -->
                             <div style="height:1px;background:var(--border);"></div>
                             <div>
                                 <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">

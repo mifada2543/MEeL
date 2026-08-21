@@ -1,11 +1,11 @@
 <?php
-// ─── Keamanan: hanya dari CLI ───
+// Keamanan: hanya dari CLI
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     die('Access denied. Jalankan dari terminal: php database/backfill_english_metadata.php');
 }
 
-// ─── Parse argumen CLI ───
+// Parse argumen CLI
 $dryRun = false;
 $limit  = null;
 foreach (array_slice($argv, 1) as $arg) {
@@ -16,7 +16,7 @@ foreach (array_slice($argv, 1) as $arg) {
     }
 }
 
-// ─── Bootstrap (pola sama dengan database/migrate.php) ───
+// Bootstrap (pola sama dengan database/migrate.php)
 require_once __DIR__ . '/../auth/config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 require_once __DIR__ . '/../modules/core/japanese.php';
@@ -28,7 +28,7 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
 
 echo "[MEeL] " . ($dryRun ? 'DRY-RUN (tidak menulis DB)' : 'BACKFILL') . " dimulai...\n";
 
-// ─── Proses satu tabel dalam batch kecil ───
+// Proses satu tabel dalam batch kecil
 function backfill_process_table(\mysqli $conn, string $table, string $columns, int $batchSize, ?int $limit, bool $dryRun, array &$stats): void
 {
     $offset    = 0;

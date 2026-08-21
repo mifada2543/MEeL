@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../auth/config.php';
 
 header('Content-Type: application/json');
 
-// ─── Cek login ───
+// Cek login
 include __DIR__ . '/../../auth/auth.php';
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -12,14 +12,14 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// ─── CSRF ───
+// CSRF
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'CSRF token tidak valid.']);
     exit;
 }
 
-// ─── Validasi file upload ───
+// Validasi file upload
 if (empty($_FILES['audio']['tmp_name']) || !is_uploaded_file($_FILES['audio']['tmp_name'])) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Tidak ada file audio yang diterima.']);
@@ -53,7 +53,7 @@ if ((int)($_FILES['audio']['size'] ?? 0) > $max_size) {
     exit;
 }
 
-// ─── Resolve binary — pastikan benar-benar executable (bukan fallback path palsu) ───
+// Resolve binary — pastikan benar-benar executable (bukan fallback path palsu)
 $ffprobe = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 $ffmpeg  = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
 
@@ -63,7 +63,7 @@ if (!is_executable($ffprobe)) {
     exit;
 }
 
-// ─── Simpan ke temp ───
+// Simpan ke temp
 $temp_dir  = sys_get_temp_dir() . '/meel_auto_meta';
 if (!is_dir($temp_dir)) @mkdir($temp_dir, 0755, true);
 
@@ -79,7 +79,7 @@ $album       = '';
 $description = '';
 $cover_b64   = '';
 
-// ─── Baca metadata via ffprobe (JSON output → robust) ───
+// Baca metadata via ffprobe (JSON output → robust)
 $meta_cmd = 'export LD_LIBRARY_PATH=\'\'; '
     . escapeshellarg($ffprobe)
     . ' -v error -show_entries format_tags=title,artist,album,comment,description:stream_tags=title,artist,album,comment,description'
@@ -112,7 +112,7 @@ if ($meta_json) {
     }
 }
 
-// ─── Ekstrak cover art via ffmpeg (opsional — dilewati jika ffmpeg tidak ada) ───
+// Ekstrak cover art via ffmpeg (opsional — dilewati jika ffmpeg tidak ada)
 if (is_executable($ffmpeg)) {
     $cover_path = $temp_dir . '/' . uniqid('cover_', true) . '.jpg';
     $cover_cmd  = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($ffmpeg)
@@ -128,12 +128,12 @@ if (is_executable($ffmpeg)) {
     }
 }
 
-// ─── Cleanup ───
+// Cleanup
 @unlink($temp_file);
 if (!empty($cover_path) && file_exists($cover_path)) @unlink($cover_path);
 @rmdir($temp_dir);
 
-// ─── Response ───
+// Response
 echo json_encode([
     'status'      => 'success',
     'title'       => $title,

@@ -1,6 +1,6 @@
 <?php
 ?>
-<!-- ── FASE: SELESAI ── -->
+<!-- FASE: SELESAI -->
 <div class="meel-phase" id="meel-phase-done">
   <div class="meel-icon-wrap" style="background:rgba(34,197,94,.1);border:0.5px solid rgba(34,197,94,.3)">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round">

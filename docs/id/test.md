@@ -20,7 +20,7 @@ MEeL menggunakan pendekatan testing berlapis:
 
 ---
 
-## 🧪 PHPUnit Test Suite (266 Unit + 79 Integration = 345 Test)
+## 🧪 PHPUnit Test Suite (268 Unit + 79 Integration = 347 Test)
 
 ### Instalasi
 
@@ -64,7 +64,7 @@ logs/tests/
 |---|---|---|
 | `RateLimiterTest.php` | 11 | Admin bypass, role limits, blocking, cleanup, stats, fallback, independent keys |
 | `HelpersTest.php` | 50 | format_bytes, time_ago, audio MIME, disk space, CSRF, dir_size, deteksi protokol (data provider) |
-| `JapaneseTest.php` | 14 | Romaji conversion, analyzeJapaneseText, English translation (tanpa MeCab) |
+| `JapaneseTest.php` | 15 | Romaji conversion, analyzeJapaneseText, English translation (tanpa MeCab) |
 | `GarbageCollectorTest.php` | 6 | Class existence, idempotency, graceful handling, cleanup rate-limit (dir test terisolasi) |
 | `SearchEngineTest.php` | 5 | Parse params, sanitizer (`sanitizeQuery`), default values, constants |
 | `MediaLibraryTest.php` | 11 | Logika pagination (pure math), BookRepository mock |
@@ -76,7 +76,9 @@ logs/tests/
 | `StreamAuthTest.php` | 8 | Guard otorisasi endpoint stream |
 | `SsrfGuardTest.php` | 76 | **Guard SSRF** — allowlist protokol, range IP private/publik (v4 & v6), penolakan record DNS campuran, denylist hostname, HTTP pinning (lihat bawah) |
 | `DriveSecurityTest.php` | 13 | **Private Drive** — akses cross-user, path traversal, symlink escape, boundary realpath, kuota, reservasi nama atomik (lihat bawah) |
-| `ValidatingProxyTest.php` | 19 | **Validating forward proxy** — probe CONNECT/GET nyata: target private ditolak (502), target publik di-tunnel, bind loopback-only (lihat bawah) |
+| `DriveStorageBasePathTest.php` | 8 | Resolusi base path storage Drive — konstanta `MEEL_HDD_DRIVE`, fallback, prioritas |
+| `SystemTest.php` | 2 | Class existence & utilitas System |
+| `ValidatingProxyTest.php` | 20 | **Validating forward proxy** — probe CONNECT/GET nyata: target private ditolak (502), target publik di-tunnel, bind loopback-only (lihat bawah) |
 
 #### Integration Test (`tests/integration/`)
 
@@ -397,7 +399,7 @@ sebelum rilis.
 
 | Suite | Test | Lulus | Gagal | Skor |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 345 | 345 | 0 | ✅ 100% |
+| **PHPUnit (unit + integration)** | 347 | 347 | 0 | ✅ 100% |
 | **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
 | **Security Test** | 135 | 129 pass, 6 warn | 0 | ✅ 98/100 |

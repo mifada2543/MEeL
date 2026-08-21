@@ -23,7 +23,7 @@
   opacity: 1;
   pointer-events: auto;
 }
-/* ─── Seekbar ─── */
+/* Seekbar */
 .mp-seekbar {
   position: relative;
   height: 3px;
@@ -55,7 +55,7 @@
 .mp-seekbar:hover .mp-seekbar-thumb {
   transform: translate(-50%, -50%) scale(1);
 }
-/* ─── Body ─── */
+/* Body */
 .mp-body {
   display: flex;
   align-items: center;
@@ -126,7 +126,7 @@
   text-overflow: ellipsis;
   margin-top: 3px;
 }
-/* ─── Controls ─── */
+/* Controls */
 .mp-controls {
   display: flex;
   align-items: center;
@@ -189,7 +189,7 @@
 .mp-close {
   margin-left: 4px;
 }
-/* ─── MP Pulse animation ─── */
+/* MP Pulse animation */
 @keyframes mp-pulse {
   0%,
   100% {
@@ -203,7 +203,7 @@
 #mini-player.active .mp-art {
   animation: mp-pulse 2.4s ease-in-out infinite;
 }
-/* ─── Responsive ─── */
+/* Responsive */
 @media (max-width: 480px) {
   .mp-body {
     padding: 0 12px;
@@ -228,7 +228,7 @@ body:has(#mini-player-index.active),
 body:has(#mini-player.active) {
   padding-bottom: 76px;
 }
-/* ─── Floating Mini Player Mode (watch page) ─── */
+/* Floating Mini Player Mode (watch page) */
 .music-mini-player-mode {
   position: fixed !important;
   bottom: 88px !important;

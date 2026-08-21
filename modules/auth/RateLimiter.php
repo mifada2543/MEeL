@@ -77,7 +77,7 @@ class RateLimiter
      */
     public static function check(string $key, string $endpoint = 'api', string $role = 'user'): array
     {
-        // ─── Admin bebas dari rate limiter ───
+        // Admin bebas dari rate limiter
         if ($role === 'admin') {
             $limitConfig = self::$limits[$endpoint] ?? self::$limits['api'];
             $window = $limitConfig['window'];

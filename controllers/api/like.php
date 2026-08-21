@@ -4,7 +4,9 @@ require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
 include '../../auth/config.php';
-include '../../modules/auth/RateLimiter.php';
+// RateLimiter sudah dimuat oleh modules/core/helpers.php → modules/auth/
+// loader.php (require_once). include ulang di sini = fatal
+// "Cannot declare class RateLimiter" (regresi pemindahan ke modules/auth).
 include '../../modules/media/MediaInteraction.php';
 
 // Verifikasi token untuk AJAX POST

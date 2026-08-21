@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../auth/config.php';
 require_once __DIR__ . '/../../auth/auth.php';
 require_once __DIR__ . '/../../modules/core/helpers.php';
 
-// ─── Hanya user login ───
+// Hanya user login
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'Silakan login terlebih dahulu.']);
@@ -14,7 +14,7 @@ $user_id   = (int)$_SESSION['user_id'];
 $action    = $_POST['action'] ?? '';
 $response  = ['status' => 'error', 'message' => 'Aksi tidak dikenal.'];
 
-// ─── VERIFY PASSWORD ───
+// VERIFY PASSWORD
 if ($action === 'generate_backup' || $action === 'download_backup') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         $response['message'] = 'Method tidak diizinkan.';
@@ -62,7 +62,7 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
                 log_activity($conn, $user_id, 'backup_codes_generated');
 
                 if ($action === 'download_backup') {
-                    // ─── DOWNLOAD SEBAGAI FILE TXT ───
+                    // DOWNLOAD SEBAGAI FILE TXT
                     $username  = $_SESSION['username'] ?? 'user';
                     $date_text = date('Y-m-d H:i:s');
                     $lines = [
@@ -87,7 +87,7 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
                     exit;
                 }
 
-                // ─── RETURN JSON ───
+                // RETURN JSON
                 $response = [
                     'status'  => 'success',
                     'message' => 'Kode cadangan baru berhasil dibuat.',
@@ -98,7 +98,7 @@ if ($action === 'generate_backup' || $action === 'download_backup') {
     }
 }
 
-// ─── RETURN JSON ───
+// RETURN JSON
 if ($action !== 'download_backup') {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);

@@ -4,28 +4,28 @@
 // against SsrfGuard before any bytes are exchanged. This closes the open
 // redirect → private IP SSRF gap that a single pre-flight validation cannot
 // cover (redirects are re-resolved by the client itself).
-//
-//   * HTTP requests arrive as absolute-URI requests (GET http://host/...):
-//     the proxy validates the target, then re-writes the request to
-//     origin-form and forwards it to the validated public IP.
-//   * HTTPS requests arrive as CONNECT host:port: the proxy validates the
-//     target, answers 200 Connection Established, then byte-tunnels.
-//   * A rejected target (private/reserved IP, blocked hostname, unresolvable
-//     host, malformed request) is refused with an error response — the
-//     downloader can never reach it.
-//
+
+// * HTTP requests arrive as absolute-URI requests (GET http://host/...):
+// the proxy validates the target, then re-writes the request to
+// origin-form and forwards it to the validated public IP.
+// * HTTPS requests arrive as CONNECT host:port: the proxy validates the
+// target, answers 200 Connection Established, then byte-tunnels.
+// * A rejected target (private/reserved IP, blocked hostname, unresolvable
+// host, malformed request) is refused with an error response — the
+// downloader can never reach it.
+
 // SECURITY BOUNDARY:
-//   * Binds to 127.0.0.1 only. No external party can use this proxy.
-//   * The Host header the client sends is preserved for the upstream request,
-//     so TLS SNI / virtual-host routing is unaffected.
-//   * Resolution is done ONCE per hop and the connection goes to the resolved
-//     public IP — the same DNS-rebinding protection as pinHttpUrl().
-//   * Fail closed: anything the guard cannot positively accept is refused.
-//
+// * Binds to 127.0.0.1 only. No external party can use this proxy.
+// * The Host header the client sends is preserved for the upstream request,
+// so TLS SNI / virtual-host routing is unaffected.
+// * Resolution is done ONCE per hop and the connection goes to the resolved
+// public IP — the same DNS-rebinding protection as pinHttpUrl().
+// * Fail closed: anything the guard cannot positively accept is refused.
+
 // USAGE (spawned by ValidatingProxy.php — do not run manually):
-//     php validating_proxy_server.php
-//   Prints "PORT <n>\nREADY\n" on stdout once the listener is bound, then
-//   serves until terminated (SIGTERM).
+// php validating_proxy_server.php
+// Prints "PORT <n>\nREADY\n" on stdout once the listener is bound, then
+// serves until terminated (SIGTERM).
 
 if (PHP_SAPI !== 'cli') {
     exit(1); // web access never reaches the proxy
@@ -40,7 +40,7 @@ const PROXY_IDLE_TIMEOUT = 300; // detik per koneksi tanpa aktivitas
 const PROXY_MAX_LIFETIME = 3600; // detik maksimal hidup proses
 const PROXY_CHUNK = 65536;
 
-// ─── Listener ───
+// Listener
 
 $server = @stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
 if ($server === false) {
@@ -65,7 +65,7 @@ if (function_exists('pcntl_async_signals') && function_exists('pcntl_signal')) {
     });
 }
 
-// ─── Request parsing ───
+// Request parsing
 
 /**
  * Read the HTTP request head (request line + headers) from a client socket.
@@ -337,7 +337,7 @@ function handleClient($client, SsrfGuard $guard): void
     relayHttp($guard, $client, $method, $target, $version, $headerLines);
 }
 
-// ─── Accept loop (fork per connection) ───
+// Accept loop (fork per connection)
 
 $startedAt = time();
 while (time() - $startedAt < PROXY_MAX_LIFETIME) {

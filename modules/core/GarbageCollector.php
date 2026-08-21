@@ -84,7 +84,7 @@ class GarbageCollector
 
         $totalCleaned = 0;
 
-        // ─── Step 1: Lobby basi (lawan tak pernah join) ───
+        // Step 1: Lobby basi (lawan tak pernah join)
         $lobbyHours = self::ROOM_LOBBY_STALE_HOURS;
         $stmt = $conn->prepare(
             "DELETE FROM moves WHERE room_code IN (
@@ -108,7 +108,7 @@ class GarbageCollector
             $stmt->close();
         }
 
-        // ─── Step 2: Game ditinggalkan DI TENGAH (belum selesai) ───
+        // Step 2: Game ditinggalkan DI TENGAH (belum selesai)
         $gameHours = self::ROOM_GAME_STALE_HOURS;
         $staleRooms = "SELECT room_code FROM (
                 SELECT r.room_code
@@ -192,23 +192,19 @@ class GarbageCollector
     {
         $dirs = [];
 
-        // 1. Project temp/ fallback
         $project_temp = dirname(__DIR__, 2) . '/temp';
         if (is_dir($project_temp)) {
             $dirs[] = $project_temp;
         }
 
-        // 2. RAM disk Transcoder — upload/download
         if (is_dir('/dev/shm/meel/temp')) {
             $dirs[] = '/dev/shm/meel/temp';
         }
 
-        // 3. RAM disk Uploader
         if (is_dir('/dev/shm/meel/upload')) {
             $dirs[] = '/dev/shm/meel/upload';
         }
 
-        // 4. RAM disk Transcode (khusus ekstrak audio dari video)
         if (is_dir('/dev/shm/meel/transcode')) {
             $dirs[] = '/dev/shm/meel/transcode';
         }
@@ -227,10 +223,10 @@ class GarbageCollector
         foreach ($items as $item) {
             $basename = basename($item);
 
-            // ─── Skip yt-dlp persistent cache ───
+            // Skip yt-dlp persistent cache
             if ($basename === 'ytdlp-cache') continue;
 
-            // ─── Skip file yang masih baru (mtime dalam 5 menit) ───
+            // Skip file yang masih baru (mtime dalam 5 menit)
             if (!file_exists($item)) continue; // lenyap antara glob & stat
             $mtime = filemtime($item);
             if ($mtime === false || $mtime > $cutoff) continue;

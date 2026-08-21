@@ -97,7 +97,7 @@ Request: /MEeL/music/beranda?format=ogg
 | `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/analys`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php`, `controllers/admin/*.php` |
 | `/auth/login`, `/auth/register`, `/auth/logout`, `/auth/mfa-setup`, `/auth/mfa-verify` | `auth/*.php` |
 | `/arcade/beranda`, `/arcade/chess` | `arcade/*.php` |
-| `/api/like`, `/api/comment`, `/api/delete-comment`, `/api/auto-metadata`, `/api/pdf`, `/api/download-transcode`, `/api/post-encode`, `/api/ajax-refresh` | `controllers/api/*.php` |
+| `/api/like`, `/api/comment`, `/api/delete-comment`, `/api/auto-metadata`, `/api/pdf`, `/api/download-transcode`, `/api/post-encode`, `/api/ajax-refresh`, `/api/server-stats`, `/api/server-stats-sse` | `controllers/api/*.php` |
 | `/system/mfa` | `controllers/system/mfa.php` |
 
 > **Playlist slug route:** playlists have name-based URLs — `/music/<playlist-name>`

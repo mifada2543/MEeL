@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_id   = (int)$_SESSION['user_id'];
 $username  = $_SESSION['username'] ?? '';
-// ─── Cek apakah MFA sudah di-set sebelumnya ───
+// Cek apakah MFA sudah di-set sebelumnya
 $stmt = $conn->prepare("SELECT mfa_enabled FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -18,7 +18,7 @@ $step = 'setup'; // setup | verify | backup | done
 $error = '';
 $secret = '';
 $otpauth = '';
-// ─── HANDLE DISABLE MFA ───
+// HANDLE DISABLE MFA
 if (isset($_POST['disable_mfa']) && $mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -32,7 +32,7 @@ if (isset($_POST['disable_mfa']) && $mfa_enabled) {
         $step = 'setup';
     }
 }
-// ─── STEP 1: GENERATE SECRET ───
+// STEP 1: GENERATE SECRET
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_secret']) && !$mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_secret']) &&
         $step = 'verify';
     }
 }
-// ─── STEP 2: VERIFY WITH CODE ───
+// STEP 2: VERIFY WITH CODE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_code']) && !$mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -79,13 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_code']) && !$m
         }
     }
 }
-// ─── STEP 3: BACKUP CODES (once) ───
+// STEP 3: BACKUP CODES (once)
 $backup_codes = $_SESSION['mfa_backup_codes_show'] ?? [];
 if ($step === 'backup' && isset($_POST['backup_done'])) {
     unset($_SESSION['mfa_backup_codes_show']);
     $step = 'done';
 }
-// ─── QR CODE ───
+// QR CODE
 if ($mfa_enabled && $step === 'setup') {
     $stmt = $conn->prepare("SELECT mfa_secret FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
@@ -96,7 +96,7 @@ if ($mfa_enabled && $step === 'setup') {
         $otpauth = generate_otpauth_url($existing_secret, $username);
     }
 }
-// ─── HTML ───
+// HTML
 $auth_title       = "Keamanan Akun | MEeL";
 $auth_description = "MEeL - Kelola autentikasi dua faktor (MFA) akun Anda.";
 $auth_og_title    = "Keamanan Akun | MEeL";
@@ -148,7 +148,7 @@ include __DIR__ . '/partials/auth_head.php';
     <?php endif; ?>
     <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6 anim-fade">
         <?php if ($mfa_enabled && $step === 'setup'): ?>
-            <!-- ─── MFA SUDAH AKTIF ─── -->
+            <!-- MFA SUDAH AKTIF -->
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
                     <i data-lucide="check-circle" class="w-10 h-10"></i>
@@ -220,7 +220,7 @@ include __DIR__ . '/partials/auth_head.php';
                 </script>
             </div>
         <?php elseif ($step === 'verify'): ?>
-            <!-- ─── VERIFY QR CODE ─── -->
+            <!-- VERIFY QR CODE -->
             <input type="hidden" name="verify_code" value="1">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <div class="text-center space-y-4">
@@ -277,7 +277,7 @@ include __DIR__ . '/partials/auth_head.php';
             </div>
 
         <?php elseif ($step === 'backup'): ?>
-            <!-- ─── BACKUP CODES ─── -->
+            <!-- BACKUP CODES -->
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-yellow-500/10 rounded-full text-yellow-400">
                     <i data-lucide="alert-triangle" class="w-10 h-10"></i>
@@ -309,7 +309,7 @@ include __DIR__ . '/partials/auth_head.php';
                 <i data-lucide="check" class="w-4 h-4"></i>
             </button>
         <?php elseif ($step === 'done'): ?>
-            <!-- ─── MFA BERHASIL DIAKTIFKAN ─── -->
+            <!-- MFA BERHASIL DIAKTIFKAN -->
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
                     <i data-lucide="shield-check" class="w-10 h-10"></i>
@@ -325,7 +325,7 @@ include __DIR__ . '/partials/auth_head.php';
                 </a>
             </div>
         <?php else: ?>
-            <!-- ─── SETUP (PERTAMA KALI) ─── -->
+            <!-- SETUP (PERTAMA KALI) -->
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-purple-500/10 rounded-full text-purple-400">
                     <i data-lucide="smartphone" class="w-10 h-10"></i>
@@ -373,7 +373,7 @@ include __DIR__ . '/partials/auth_head.php';
     <script src="../assets/js/shared/download-backup-codes.js"></script>
     <script>
         var _backupCodes = <?= json_encode($backup_codes) ?>;
-        // ── Generate QR Code menggunakan library lokal (offline) ──
+        // Generate QR Code menggunakan library lokal (offline)
         document.addEventListener('DOMContentLoaded', function() {
             var qrContainer = document.getElementById('mfa-qr-canvas');
             if (qrContainer && typeof QRCode !== 'undefined') {
@@ -385,7 +385,7 @@ include __DIR__ . '/partials/auth_head.php';
                 });
             }
         });
-        // ── Download QR Code sebagai PNG ──
+        // Download QR Code sebagai PNG
         function downloadQR() {
             var qrContainer = document.getElementById('mfa-qr-canvas');
             if (!qrContainer) return;
@@ -397,7 +397,7 @@ include __DIR__ . '/partials/auth_head.php';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        } // ── Download Backup Codes sebagai TXT (fungsi shared) ──
+        } // Download Backup Codes sebagai TXT (fungsi shared)
         window._meelBackupCodes = window._backupCodes || [];
         window._meelBackupUser = '<?= htmlspecialchars($username) ?>';
         function copySecret() {

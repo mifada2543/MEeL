@@ -20,7 +20,7 @@ if ($curr_role === 'guest') {
     exit();
 }
 
-// ─── Back URL (smart referer) ───
+// Back URL (smart referer)
 $back_url = $is_admin ? 'analys' : '../music/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -162,7 +162,7 @@ include __DIR__ . '/../partials/link.php';
         <!-- Main edit layout -->
         <div class="edit-layout">
 
-            <!-- ── LEFT: Info sidebar ── -->
+            <!-- LEFT: Info sidebar -->
             <aside class="sidebar-panel">
                 <!-- Cover — klik atau drag untuk ganti -->
                 <div class="cover-wrap" id="cover-wrap">
@@ -269,7 +269,7 @@ include __DIR__ . '/../partials/link.php';
                 </div>
             </aside>
 
-            <!-- ── RIGHT: Form panel ── -->
+            <!-- RIGHT: Form panel -->
             <section class="form-panel">
                 <div class="form-header">
                     <div>

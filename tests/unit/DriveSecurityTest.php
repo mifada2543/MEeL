@@ -10,11 +10,11 @@ require_once MEEL_ROOT . '/drive/DriveService.php';
  * Security regression tests for the Drive module.
  *
  * Covers the private-file ACL boundary:
- *   - owner may download, other users / guests may not
- *   - path traversal and username-prefix confusion cannot escape the boundary
- *   - private previews are routed through the authenticated stream endpoint
- *     (direct web paths are denied by data_drive/private_admins/.htaccess)
- *   - quota enforcement rejects over-limit uploads
+ * - owner may download, other users / guests may not
+ * - path traversal and username-prefix confusion cannot escape the boundary
+ * - private previews are routed through the authenticated stream endpoint
+ * (direct web paths are denied by data_drive/private_admins/.htaccess)
+ * - quota enforcement rejects over-limit uploads
  *
  * Full end-to-end HTTP verification (direct URL fetch → 403) needs a running
  * Apache with AllowOverride; that remains environment-dependent and is
@@ -66,7 +66,7 @@ class DriveSecurityTest extends TestCase
         @rmdir($dir);
     }
 
-    // ─── ACL: authorized vs unauthorized ───
+    // ACL: authorized vs unauthorized
 
     public function testOwnerCanDownloadOwnPrivateFile(): void
     {
@@ -98,7 +98,7 @@ class DriveSecurityTest extends TestCase
         $this->assertSame('p.mp4', $file['name']);
     }
 
-    // ─── Path traversal & prefix confusion ───
+    // Path traversal & prefix confusion
 
     public function testPathTraversalIsBlocked(): void
     {
@@ -127,7 +127,7 @@ class DriveSecurityTest extends TestCase
         $this->storage('alice')->getFileForDownload('', 'video', 'private');
     }
 
-    // ─── Preview routing: private must go through stream (route bersih) ───
+    // Preview routing: private must go through stream (route bersih)
 
     public function testPrivateListingUsesAuthenticatedStreamEndpoint(): void
     {
@@ -150,7 +150,7 @@ class DriveSecurityTest extends TestCase
         $this->assertStringContainsString('data_drive/public/video/p.mp4', $files[0]['path']);
     }
 
-    // ─── Quota enforcement (atomic, rejects over-limit) ───
+    // Quota enforcement (atomic, rejects over-limit)
 
     public function testQuotaEnforcementRejectsOverLimitUpload(): void
     {
@@ -195,7 +195,7 @@ class DriveSecurityTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    // ─── Web-server deny contract for private storage ───
+    // Web-server deny contract for private storage
 
     public function testPrivateStorageDeniedByWebServerConfig(): void
     {

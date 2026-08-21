@@ -5,7 +5,7 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// ─── Bootstrap ───
+// Bootstrap
 $repo  = new BookRepository($conn);
 $u_id  = (int)$_SESSION['user_id'];
 $role  = $repo->getUserRole($u_id);
@@ -207,7 +207,7 @@ $totalPagesBooks = $meta_books['total_pages'];
     <?php include '../partials/footer.php'; ?>
     <script>        lucide.createIcons();
 
-        // ─── CONTINUE READING (localStorage) ───
+        // CONTINUE READING (localStorage)
         (function() {
             var banner = document.getElementById('continueBanner');
             var titleEl = document.getElementById('continueTitle');

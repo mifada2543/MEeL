@@ -1,4 +1,4 @@
-// ─── Helpers auth: kirim token CSRF & tangani 401 ───
+// Helpers auth: kirim token CSRF & tangani 401
 function csrfToken() {
   return window.MEEL_CSRF || "";
 }

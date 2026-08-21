@@ -3,7 +3,7 @@ require_once '../modules/core/helpers.php';
 meel_boot_session();
 include '../auth/config.php';
 
-// ─── Proteksi Admin ───
+// Proteksi Admin
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -15,7 +15,7 @@ if (!is_admin($conn)) {
     exit();
 }
 
-// ─── Back URL (smart referer) ───
+// Back URL (smart referer)
 $back_url = '../index.php';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -34,7 +34,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     }
 }
 
-// ─── Handle DELETE ───
+// Handle DELETE
 $delete_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// ─── Logika Filter & Sorting & Search ───
+// Logika Filter & Sorting & Search
 $sort        = $_GET['sort'] ?? 'views';
 $sort_dir    = strtolower($_GET['dir'] ?? '');
 $type_filter = $_GET['type'] ?? 'all';
@@ -164,7 +164,7 @@ function sortIcon(string $field): string
     return $sort_dir === 'asc' ? '<i data-lucide="chevron-up" class="w-[10px] h-[10px] text-blue-400"></i>' : '<i data-lucide="chevron-down" class="w-[10px] h-[10px] text-blue-400"></i>';
 }
 
-// ─── Query Utama (Prepared Statement) ───
+// Query Utama (Prepared Statement)
 $query_media = "
     SELECT * FROM (
         SELECT id, title, search_metadata, 'video' AS media_type, views,
@@ -243,7 +243,7 @@ while ($rc = $r->fetch_assoc()) {
 
 <body class="text-gray-300 min-h-screen">
 
-    <!-- ── Top Nav ── -->
+    <!-- Top Nav -->
     <nav class="top-nav">
         <a href="../" class="font-sans text-sm font-extrabold text-white no-underline tracking-wider">
             MEeL<span class="text-blue-600">Admin</span>
@@ -259,7 +259,7 @@ while ($rc = $r->fetch_assoc()) {
         </div>
     </nav>
 
-    <!-- ── Page body ── -->
+    <!-- Page body -->
     <div class="max-w-6xl mx-auto px-4 md:px-6 py-8">
 
         <!-- Header -->
@@ -485,7 +485,7 @@ while ($rc = $r->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- ── Delete Confirm Modal ── -->
+    <!-- Delete Confirm Modal -->
     <div id="delete-modal">
         <div class="modal-box">
             <div class="modal-icon-wrap">

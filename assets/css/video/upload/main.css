@@ -45,7 +45,7 @@ body::before {
 .page-wrap {
   grid-template-columns: 1fr;
 }
-/* ── Layout ── */
+/* Layout */
 .upload-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -61,7 +61,7 @@ body::before {
     grid-template-columns: 360px 1fr;
   }
 }
-/* ── Video icon hero ── */
+/* Video icon hero */
 .hero-icon {
   width: 100%;
   aspect-ratio: 16/9;
@@ -104,7 +104,7 @@ body::before {
   position: relative;
   z-index: 1;
 }
-/* ── Guide list ── */
+/* Guide list */
 .guide-list {
   display: flex;
   flex-direction: column;
@@ -141,7 +141,7 @@ body::before {
   color: #cbd5e1;
   line-height: 1.4;
 }
-/* ── Drop zones ── */
+/* Drop zones */
 .drop-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -219,7 +219,7 @@ body::before {
 .drop-zone.has-file .drop-zone-label {
   color: var(--accent);
 }
-/* ── Subtitle drop zone: memanjang satu baris (bukan grid) ── */
+/* Subtitle drop zone: memanjang satu baris (bukan grid) */
 .drop-zone-subtitle {
   flex-direction: row;
   justify-content: flex-start;
@@ -244,7 +244,7 @@ body::before {
 .drop-zone-subtitle .drop-zone-sub {
   margin-top: 2px;
 }
-/* ── Custom dropdown bahasa — meniru .ch-trigger/.ch-options di books/read.php ── */
+/* Custom dropdown bahasa — meniru .ch-trigger/.ch-options di books/read.php */
 .lang-dropdown {
   position: relative;
   z-index: 60;
@@ -344,7 +344,7 @@ body::before {
   display: none;
   border: 1px solid var(--border-strong);
 }
-/* ── Upload overlay ── */
+/* Upload overlay */
 #upload-overlay {
   display: none;
   position: fixed;
@@ -499,11 +499,11 @@ body::before {
 .footer-link.accent:hover {
   color: #f87171;
 }
-/* ── Alert upload ── */
+/* Alert upload */
 .alert {
   margin-bottom: 20px;
 }
-/* ── Primary button ── */
+/* Primary button */
 .btn-primary {
   width: 100%;
   padding-top: 15px;

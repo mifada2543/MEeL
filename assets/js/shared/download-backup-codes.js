@@ -1,6 +1,6 @@
 /* download-backup-codes.js — Download backup codes MFA sebagai file TXT.
  * Data disiapkan oleh halaman pemanggil:
- *   window._meelBackupCodes = [kode...];  window._meelBackupUser = 'username';
+ * window._meelBackupCodes = [kode...];  window._meelBackupUser = 'username';
  */
 function downloadBackupCodes() {
   var codes = window._meelBackupCodes || [];

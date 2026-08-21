@@ -44,7 +44,7 @@ class Transcoder
     /* @var array<int, array{pid:int, group:bool, label:string, started:int}> */
     private array $childProcesses = [];
 
-    // ─── KONSTANTA HARDWARE ───
+    // KONSTANTA HARDWARE
     private const FFMPEG_THREADS        = 8;
 
     // HLS: durasi tiap segment (detik)
@@ -57,7 +57,7 @@ class Transcoder
     // 1 = hentikan segera begitu pola retry fragment terdeteksi.
     private const FRAGMENT_RETRY_LIMIT  = 1;
 
-    // ─── ENV PREFIX ───
+    // ENV PREFIX
     private const ENV_PREFIX = "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
 
     public function __construct(
@@ -132,7 +132,7 @@ class Transcoder
         }
     }
 
-    // ─── PROCESS CONTROL (PID-BASED TERMINATION) ───
+    // PROCESS CONTROL (PID-BASED TERMINATION)
     /**
      * @param int $pid PID (atau PGID bila $processGroup true)
      * @param bool $processGroup True bila proses adalah session/group leader
@@ -249,7 +249,7 @@ class Transcoder
         return file_exists($path) ? $path : null;
     }
 
-    // ─── QUEUE MANAGEMENT ───
+    // QUEUE MANAGEMENT
 
     private function lockQueue(string $url, string $type): int
     {
@@ -273,7 +273,7 @@ class Transcoder
         $stmt->close();
     }
 
-    // ─── METADATA ───
+    // METADATA
 
     /**
      * Pastikan validating forward proxy aktif dan kembalikan argumen yt-dlp
@@ -311,15 +311,8 @@ class Transcoder
         exec($cmd, $output_array, $return_var);
         $output = implode("\n", $output_array);
 
-        if ($return_var !== 0) {
-            throw new ProcessException(
-                "yt-dlp gagal mengambil metadata (exit code $return_var)",
-                $cmd,
-                $return_var,
-                $output
-            );
-        }
-
+        // Coba parse JSON DULU — yt-dlp kadang return exit 1 padahal
+        // JSON-nya valid (misalnya ada WARNING yang di-promote ke error).
         $start = strpos($output, '{');
         $end   = strrpos($output, '}');
 
@@ -331,15 +324,19 @@ class Transcoder
             }
         }
 
-        error_log("[MEeL-Transcoder] Gagal parsing metadata untuk URL: " . $url);
-        throw new DownloadException(
-            "Gagal parsing metadata dari yt-dlp",
-            $url,
-            'metadata'
+        // JSON tidak valid / tidak ada — baru throw error dengan detail
+        $detail = trim($output);
+        $detail = preg_replace('/\s+/', ' ', $detail);
+        $detail = mb_substr($detail, 0, 500);
+        throw new ProcessException(
+            "yt-dlp gagal mengambil metadata (exit $return_var): " . ($detail ?: '(no output)'),
+            $cmd,
+            $return_var,
+            $output
         );
     }
 
-    // ─── FORMAT RESOLVER ───
+    // FORMAT RESOLVER
 
     private function resolveVideoFormat(string $url): string
     {
@@ -371,7 +368,7 @@ class Transcoder
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
         }
 
-        // ─── SSRF GUARD ───
+        // SSRF GUARD
         // Validasi sentral: hanya http/https, dan semua alamat hasil resolusi
         // DNS harus publik (bukan localhost/10.x/172.16-31.x/192.168.x/
         // 169.254.x/IPv6 private, dll). Gagal-fail = tolak URL.
@@ -506,7 +503,7 @@ class Transcoder
 
             $error_log .= $line;
 
-            // ─── TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst") ───
+            // TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst")
             if (preg_match('/Retrying\s+fragment[s]?\b/i', $line)) {
                 $frag_total++;
                 if ($frag_total >= self::FRAGMENT_RETRY_LIMIT) {
@@ -535,7 +532,7 @@ class Transcoder
             }
         }
 
-        // ─── TIMEOUT FRAGMENT / TIMEOUT SISI PHP: hentikan tree proses yt-dlp ───
+        // TIMEOUT FRAGMENT / TIMEOUT SISI PHP: hentikan tree proses yt-dlp
         if ($frag_retry_abort || $php_timeout_abort) {
             $this->terminateChildProcess(
                 $dl_pgid,
@@ -577,10 +574,14 @@ class Transcoder
                 $error_msg = "Timeout: yt-dlp gagal mengunduh fragment berulang kali (retry 1/10, 2/10, dst). "
                     . "Proses dihentikan otomatis. Coba lagi nanti atau gunakan URL lain.";
             } else {
-                $error_msg  = "Download gagal. Detail disimpan di server.";
-                $last_lines = array_slice(explode("\n", $error_log), -3);
-                $detail     = trim(implode(" | ", $last_lines));
-                if ($detail) $error_msg = substr($detail, 0, 200);
+                // Tampilkan SEMUA baris error dari yt-dlp (ERROR, WARNING, trace)
+                $lines = array_filter(explode("\n", $error_log), fn($l) => $l !== '');
+                // Ambil max 10 baris terakhir agar tidak terlalu panjang
+                $lines = array_slice($lines, -10);
+                $detail = trim(implode("\n", $lines));
+                $error_msg = $detail !== ''
+                    ? "Download gagal:\n" . $detail
+                    : 'Download gagal tanpa detail error.';
             }
 
             $this->emit('error', ['message' => $error_msg]);
@@ -595,7 +596,7 @@ class Transcoder
         return $this->finalizeVideo($basename, $basename . ".webp", $title, $duration, $description);
     }
 
-    // ─── FINALIZE MUSIC ───
+    // FINALIZE MUSIC
 
     private function finalizeMusic(
         string $temp_id,
@@ -642,7 +643,7 @@ class Transcoder
         return "File audio tidak ditemukan setelah download.";
     }
 
-    // ─── FINALIZE VIDEO (HLS) ───
+    // FINALIZE VIDEO (HLS)
 
     private function finalizeVideo(
         string $basename,
@@ -670,7 +671,7 @@ class Transcoder
 
         $this->emit('phase', ['phase' => 'transcode']);
 
-        // ─── Tentukan nama folder unik di HDD ───
+        // Tentukan nama folder unik di HDD
         $flock_path = sys_get_temp_dir() . '/meel_transcode_folder.lock';
         $lock_fp    = fopen($flock_path, 'c');
         $locked     = $lock_fp !== false && flock($lock_fp, LOCK_EX);
@@ -695,7 +696,7 @@ class Transcoder
             fclose($lock_fp);
         }
 
-        // ─── Kompres thumbnail ke WebP ───
+        // Kompres thumbnail ke WebP
         $work_thumb = $work_folder . $db_thumb;
         if ($dl_thumb_src && file_exists($dl_thumb_src)) {
             // WebP rata-rata 30-50% lebih kecil dari JPG setara
@@ -715,10 +716,10 @@ class Transcoder
         $thumb_generated = file_exists($work_thumb) && filesize($work_thumb) > 0;
         if (!$thumb_generated) $db_thumb = "default_thumb.webp";
 
-        // ─── Dapatkan durasi video ───
+        // Dapatkan durasi video
         $file_dur = $this->probeDuration($staging_mp4);
 
-        // ─── Transcode ke HLS ───
+        // Transcode ke HLS
         $work_m3u8  = $work_folder . $folder_name . ".m3u8";
 
         $hls_env = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
@@ -769,7 +770,7 @@ class Transcoder
             return "";
         }
 
-        // ─── Sprite & VTT (DIOPTIMALKAN KE RAM DISK) ───
+        // Sprite & VTT (DIOPTIMALKAN KE RAM DISK)
         $this->emit('phase', ['phase' => 'sprite']);
         $this->emit('sprite_progress', ['pct' => 0, 'label' => 'Membuat thumbnail.vtt...']);
 
@@ -807,7 +808,7 @@ class Transcoder
 
         $this->removeFile($staging_mp4);
 
-        // ─── TRANSACTION: Pindahkan ke HDD + INSERT DB (atomik) ───
+        // TRANSACTION: Pindahkan ke HDD + INSERT DB (atomik)
         $hdd_target_folder = MEEL_HDD_VIDEO_DIR . $folder_name . "/";
 
         $this->conn->begin_transaction();
@@ -837,7 +838,7 @@ class Transcoder
 
             $this->removeDir($work_folder);
 
-            // ─── Simpan ke database ───
+            // Simpan ke database
             $hdd_m3u8_full  = MEEL_HDD_VIDEO_UPLOAD . $db_filename;
             $hdd_thumb_full = MEEL_HDD_THUMB_DIR . $db_thumb;
 
@@ -1022,7 +1023,7 @@ class Transcoder
         }
     }
 
-    // ─── THUMBNAIL HELPERS ───
+    // THUMBNAIL HELPERS
 
     private function extractMusicThumbnail(
         string $audio_file,

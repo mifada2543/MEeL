@@ -26,7 +26,7 @@ class SearchEngine
         $this->library = new MediaLibrary($db_connection);
     }
 
-    // ─── PARAMETER PARSING ───
+    // PARAMETER PARSING
 
     public function parseParams(): array
     {
@@ -34,6 +34,9 @@ class SearchEngine
 
         return [
             'query'   => $query,
+            // `exclude` (item yang sedang diputar) diterapkan pada SEMUA
+            // pencarian (kosong maupun eksplisit) supaya file yang sedang
+            // diputar tidak muncul duplikat di hasil search.
             'exclude' => isset($_GET['exclude']) ? max(0, (int)$_GET['exclude']) : 0,
             'offset'  => isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0,
             'sidebar' => $this->detectSidebar(),
@@ -81,7 +84,7 @@ class SearchEngine
         return in_array($target, ['recommendation-column', 'music-recommendation-column'], true);
     }
 
-    // ─── SEARCH RESULT BUILDER ───
+    // SEARCH RESULT BUILDER
 
     private function buildResult(?mysqli_result $data, array $params, int $limit, int $total = 0): array
     {
@@ -127,7 +130,7 @@ class SearchEngine
         ];
     }
 
-    // ─── CACHING HELPERS ───
+    // CACHING HELPERS
 
     private static function getCacheKey(string $type, array $params): string
     {
@@ -158,7 +161,7 @@ class SearchEngine
         self::$cache[$key] = $result;
     }
 
-    // ─── VIDEO SEARCH ───
+    // VIDEO SEARCH
 
     public function searchVideo(array $params): array
     {
@@ -193,7 +196,7 @@ class SearchEngine
         return $result;
     }
 
-    // ─── MUSIC SEARCH ───
+    // MUSIC SEARCH
 
     public function searchMusic(array $params): array
     {

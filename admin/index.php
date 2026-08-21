@@ -43,6 +43,7 @@ GarbageCollector::cleanChessRooms($conn);
  * @var mysqli_result $banned_ips
  * @var object $sys
  * @var array $chart_activity
+ * @var array $server_stats
  */
 ?>
 <!DOCTYPE html>
@@ -60,7 +61,7 @@ include __DIR__ . '/../partials/scripts.php';
     <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="../assets/css/admin/index.css?v=<?= filemtime('../assets/css/admin/index.css') ?>">
-    <script src="../assets/js/compatibilitas/chart.umd.min.js"></script>
+    <script defer src="../assets/js/compatibilitas/chart.umd.min.js"></script>
 </head>
 
 <body class="text-gray-300 font-sans min-h-screen">
@@ -211,6 +212,143 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
 
+        <!-- Server Stats -->
+        <div class="glass p-6 rounded-3xl mb-8">
+            <div class="flex items-center gap-2 mb-6">
+                <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
+                <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Server Stats — <?= htmlspecialchars($server_stats['info']['hostname'] ?? 'Unknown') ?></h3>
+                <span id="stats-live" class="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 border border-green-500/25 px-2 py-1 rounded-lg" title="Data diperbarui otomatis setiap 3 detik">
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Live
+                </span>
+                <span id="stats-updated" class="text-[8px] text-gray-600 font-mono"></span>
+                <label class="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest text-gray-500 cursor-pointer" title="Interval pembaruan realtime">
+                    <i data-lucide="timer" class="w-3 h-3 text-cyan-400"></i>
+                    Polling
+                    <select id="stats-poll-interval" class="bg-gray-800/80 text-gray-300 text-[9px] font-bold uppercase tracking-widest border border-white/10 rounded-lg px-1.5 py-1 outline-none focus:border-cyan-500 cursor-pointer">
+                        <option value="1000">1s</option>
+                        <option value="3000" selected>3s</option>
+                        <option value="5000">5s</option>
+                        <option value="10000">10s</option>
+                    </select>
+                </label>
+                <span class="ml-auto text-[8px] text-gray-600 font-mono">Uptime: <span id="stat-uptime"><?= $server_stats['uptime']['text'] ?></span></span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <?php
+                // CPU
+                $cpu_color = $server_stats['cpu']['usage_perc'] > 80 ? 'red' : ($server_stats['cpu']['usage_perc'] > 50 ? 'yellow' : 'green');
+                // RAM
+                $ram_color = $server_stats['ram']['usage_perc'] > 80 ? 'red' : ($server_stats['ram']['usage_perc'] > 50 ? 'yellow' : 'cyan');
+                // SWAP
+                $swap_color = $server_stats['swap']['usage_perc'] > 50 ? 'red' : 'gray';
+                // Network
+                $net_rx = $server_stats['network']['rx'];
+                $net_tx = $server_stats['network']['tx'];
+                $net_fmt = function ($bytes) {
+                    if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+                    if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
+                    if ($bytes >= 1024) return round($bytes / 1024, 2) . ' KB';
+                    return $bytes . ' B';
+                };
+
+                $stat_cards = [
+                    [
+                        'id'    => 'cpu',
+                        'label' => 'CPU Load',
+                        'value' => $server_stats['cpu']['load_1m'],
+                        'sub'   => $server_stats['cpu']['cores'] . ' Cores • ' . $server_stats['cpu']['usage_perc'] . '%',
+                        'icon'  => 'cpu',
+                        'color' => $cpu_color,
+                        'bar'   => $server_stats['cpu']['usage_perc'],
+                    ],
+                    [
+                        'id'    => 'ram',
+                        'label' => 'RAM Usage',
+                        'value' => $net_fmt($server_stats['ram']['used']),
+                        'sub'   => $net_fmt($server_stats['ram']['total']) . ' Total • ' . $server_stats['ram']['usage_perc'] . '%',
+                        'icon'  => 'memory-stick',
+                        'color' => $ram_color,
+                        'bar'   => $server_stats['ram']['usage_perc'],
+                    ],
+                    [
+                        'id'    => 'swap',
+                        'label' => 'Swap',
+                        'value' => $net_fmt($server_stats['swap']['used']),
+                        'sub'   => $net_fmt($server_stats['swap']['total']) . ' Total • ' . $server_stats['swap']['usage_perc'] . '%',
+                        'icon'  => 'hard-drive',
+                        'color' => $swap_color,
+                        'bar'   => $server_stats['swap']['usage_perc'],
+                    ],
+                    [
+                        'id'    => 'net',
+                        'label' => 'Network',
+                        'value' => '↓ —',
+                        'sub'   => '↑ —',
+                        'icon'  => 'network',
+                        'color' => 'blue',
+                        'bar'   => 0,
+                    ],
+                ];
+
+                foreach ($stat_cards as $c):
+                    $bar_color = match($c['color']) {
+                        'red'    => 'bg-red-500',
+                        'yellow' => 'bg-yellow-500',
+                        'green'  => 'bg-green-500',
+                        'cyan'   => 'bg-cyan-500',
+                        'blue'   => 'bg-blue-500',
+                        default  => 'bg-gray-500',
+                    };
+                    $text_color = match($c['color']) {
+                        'red'    => 'text-red-400',
+                        'yellow' => 'text-yellow-400',
+                        'green'  => 'text-green-400',
+                        'cyan'   => 'text-cyan-400',
+                        'blue'   => 'text-blue-400',
+                        default  => 'text-gray-400',
+                    };
+                ?>
+                    <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4<?= $c['id'] === 'net' ? ' md:col-span-4' : '' ?>">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="<?= $c['icon'] ?>" id="stat-<?= $c['id'] ?>-icon" class="w-3.5 h-3.5 <?= $text_color ?>"></i>
+                            <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest"><?= $c['label'] ?></span>
+                            <?php if ($c['id'] === 'net'): ?>
+                                <span id="stat-net-ping" class="ml-auto text-[9px] font-mono font-bold text-gray-500" title="Latensi koneksi ke server (RTT polling / handshake SSE)">—</span>
+                            <?php endif; ?>
+                        </div>
+                        <p id="stat-<?= $c['id'] ?>-value" class="text-xl font-black text-white mb-1"><?= $c['value'] ?></p>
+                        <p id="stat-<?= $c['id'] ?>-sub" class="text-[10px] text-gray-500 font-medium mb-3"<?= $c['id'] === 'net' ? ' title="Total: ↓ ' . $net_fmt($net_rx) . ' / ↑ ' . $net_fmt($net_tx) . '"' : '' ?>><?= $c['sub'] ?></p>
+                        <?php if ($c['bar'] > 0): ?>
+                            <div class="w-full bg-gray-800/80 h-1.5 rounded-full">
+                                <div id="stat-<?= $c['id'] ?>-bar" class="<?= $bar_color ?> h-full rounded-full transition-all" style="width:<?= $c['bar'] ?>%"></div>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($c['id'] === 'net'): ?>
+                            <!-- Grafik riwayat kecepatan network (diisi realtime oleh index.js) -->
+                            <div class="h-24 mt-2">
+                                <canvas id="netChart"></canvas>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- System Info Row -->
+            <div class="flex flex-wrap gap-4 text-[10px]">
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">OS:</span> <?= htmlspecialchars($server_stats['info']['os']) ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Kernel:</span> <?= htmlspecialchars($server_stats['info']['kernel']) ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">PHP:</span> <?= $server_stats['info']['php_version'] ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Load Avg:</span> <span id="stat-load"><?= $server_stats['cpu']['load_1m'] ?> / <?= $server_stats['cpu']['load_5m'] ?> / <?= $server_stats['cpu']['load_15m'] ?></span></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Processes:</span> <span id="stat-procs"><?= $server_stats['info']['processes'] ?></span></span>
+            </div>
+        </div>
+
         <!-- 7-Day Activity Chart -->
         <div class="glass p-6 rounded-3xl mb-8">
             <div class="flex items-center gap-2 mb-4">
@@ -266,8 +404,15 @@ include __DIR__ . '/../partials/scripts.php';
                 </table>
             </div>
         <?php endif; ?>
-        <div class="glass p-6 rounded-3xl mb-8">
-            <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Database Sync Check</h3>
+        <div class="glass p-6 rounded-3xl mb-8" id="system_check">
+            <div class="flex items-center gap-3 mb-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase">Database Sync Check</h3>
+                <span class="text-[9px] text-gray-600 font-mono" title="Hasil scan storage di-cache 10 menit agar halaman tetap responsif">Dicek: <?= $orphan_checked_at ? date('d/m/Y H:i:s', $orphan_checked_at) : '—' ?></span>
+                <form method="POST" class="ml-auto">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                    <button type="submit" name="recheck_orphans" value="1" class="text-[9px] border border-white/10 text-gray-400 px-2.5 py-1 rounded-lg hover:bg-white/5 hover:text-white font-bold uppercase tracking-wider cursor-pointer" title="Paksa scan ulang seluruh storage media sekarang">Cek Ulang</button>
+                </form>
+            </div>
             <?php if (count($orphans) > 0): ?>
                 <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl">
                     <p class="text-xs text-red-400 mb-2">Ditemukan <?= count($orphans) ?> file sampah (tidak ada di DB):</p>
@@ -450,7 +595,7 @@ include __DIR__ . '/../partials/scripts.php';
                             $is_cloud = strpos($row['access_via'] ?? '', 'trycloudflare.com') !== false;
                             $is_mobile = strpos($row['user_agent'] ?? '', 'Smartphone') !== false || strpos($row['user_agent'] ?? '', 'Android') !== false;
                         ?>
-                            <tr class="group hover:bg-white/[0.02] transition-colors">
+                            <tr class="group hover:bg-white/[0.02] transition-colors" data-sec-since="<?= max(0, time() - strtotime($row['last_activity'])) ?>">
                                 <td class="py-4 px-2">
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold <?= $row['role'] === 'guest' ? 'text-gray-500 italic' : 'text-white' ?>">
@@ -504,9 +649,9 @@ include __DIR__ . '/../partials/scripts.php';
                                     </div>
                                 </td>
                                 <td class="py-4 px-2">
-                                    <div class="flex items-center gap-2 <?= $is_online ? 'text-green-500' : 'text-gray-600' ?>">
-                                        <span class="h-1.5 w-1.5 rounded-full <?= $is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-700' ?>"></span>
-                                        <span class="text-[10px] font-black uppercase tracking-tighter"><?= $is_online ? 'Online' : 'Offline' ?></span>
+                                    <div class="monitor-status flex items-center gap-2 <?= $is_online ? 'text-green-500' : 'text-gray-600' ?>">
+                                        <span class="monitor-dot h-1.5 w-1.5 rounded-full <?= $is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-700' ?>"></span>
+                                        <span class="monitor-label text-[10px] font-black uppercase tracking-tighter"><?= $is_online ? 'Online' : 'Offline' ?></span>
                                     </div>
                                 </td>
                                 <td class="py-4 px-2">
@@ -605,7 +750,11 @@ include __DIR__ . '/../partials/scripts.php';
         </div>
     </div>
     <!-- Chart data (PHP → JS bridge) -->
-    <script>var activityData = <?= json_encode($chart_activity) ?>;</script>
+    <script>
+        var activityData = <?= json_encode($chart_activity) ?>;
+        var serverStatsUrl = <?= json_encode(base_url('/api/server-stats')) ?>;
+        var serverStatsSseUrl = <?= json_encode(base_url('/api/server-stats-sse')) ?>;
+    </script>
     <script src="../assets/js/admin/shared/modal.js?v=<?= filemtime('../assets/js/admin/shared/modal.js') ?>"></script>
     <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
     <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>

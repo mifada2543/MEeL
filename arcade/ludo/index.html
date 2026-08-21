@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Game papan klasik 2-4 pemain. Adu strategi, lempar dadu, dan bawa keempat pionmu ke rumah!"
+    />
+    <meta property="og:title" content="MEeL — Ludo" />
+    <meta
+      property="og:description"
+      content="Game papan klasik 2-4 pemain. Adu strategi, lempar dadu, dan bawa keempat pionmu ke rumah!"
+    />
+    <meta property="og:image" content="https://meel.local/assets/MEeL.png" />
+    <meta property="og:url" content="https://meel.local/arcade/ludo/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="manifest" href="../../assets/manifest.json" />
+    <title>MEeL — Ludo</title>
+    <link rel="icon" type="image/png" href="../../assets/MEeL.png" />
+    <link href="../../assets/css/tailwind.min.css" rel="stylesheet" />
+    <script src="../../assets/js/compatibilitas/lucide.js"></script>
+    <link href="../../assets/css/font.css" rel="stylesheet" />
+    <link href="assets/css/style.css" rel="stylesheet" />
+  </head>
+
+  <body
+    class="flex items-center justify-center min-h-dvh text-gray-200 px-3 py-4 sm:px-4 sm:py-6 lg:p-6 overflow-x-hidden"
+  >
+    <div
+      class="w-full max-w-5xl bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 lg:p-6 relative overflow-hidden backdrop-blur-lg flex flex-col gap-4"
+    >
+      <div
+        class="absolute top-0 left-0 w-full h-1.5"
+        style="background: linear-gradient(to right, #ef4444, #eab308, #22c55e, #3b82f6)"
+      ></div>
+
+      <!-- Header -->
+      <div
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative z-10"
+      >
+        <div class="flex flex-wrap items-center gap-3">
+          <div>
+            <h1
+              class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-emerald-400 tracking-tight flex items-center gap-2"
+            >
+              <a href="../" class="text-inherit no-underline">MEeL — Ludo</a>
+            </h1>
+            <p class="text-[11px] sm:text-xs text-gray-400 mt-0.5 max-w-md">
+              Lempar dadu, kejar pion lawan, dan bawa semua pionmu ke rumah!
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mt-1">
+            <button
+              id="newGameBtn"
+              class="p-2 bg-slate-950/80 hover:bg-slate-900 border border-slate-700 hover:border-amber-500/40 text-gray-400 hover:text-amber-400 rounded-xl transition-all duration-300 active:scale-95 flex items-center gap-1.5 justify-center shadow-md group text-xs font-semibold"
+              title="Mulai Permainan Baru"
+            >
+              <svg
+                class="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-500"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                />
+              </svg>
+              <span>Game Baru</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Player status -->
+        <div
+          class="flex flex-wrap items-center gap-2 bg-slate-950/90 px-4 py-2.5 rounded-xl border border-slate-800 w-full sm:w-auto justify-between sm:justify-start"
+        >
+          <div id="playerBadges" class="flex items-center gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Board + Side Panel -->
+      <div
+        class="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start justify-center"
+      >
+        <!-- Board -->
+        <div
+          class="relative w-full max-w-[560px] mx-auto lg:mx-0 bg-slate-950 rounded-2xl border border-slate-800/80 p-2 sm:p-3 shadow-[inset_0_4px_20px_rgba(0,0,0,0.8)]"
+        >
+          <div id="board" class="board-grid select-none"></div>
+        </div>
+
+        <!-- Side panel: dice & info -->
+        <div
+          class="w-full lg:w-72 bg-slate-950/80 border border-slate-800 rounded-2xl p-5 flex flex-col gap-5 shrink-0"
+        >
+          <div>
+            <div
+              class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-500 mb-2 flex items-center gap-2"
+            >
+              <i data-lucide="dices" class="w-3.5 h-3.5 text-amber-400"></i>
+              Giliran
+            </div>
+            <div
+              id="turnBanner"
+              class="flex items-center gap-3 bg-slate-900 rounded-xl border border-slate-800 px-4 py-3"
+            >
+              <span id="turnDot" class="w-5 h-5 rounded-full shrink-0"></span>
+              <div class="min-w-0">
+                <div id="turnName" class="text-sm font-bold text-white truncate">
+                  -
+                </div>
+                <div id="turnSub" class="text-[11px] text-gray-500">
+                  Klik dadu untuk melempar
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center gap-3">
+            <button
+              id="diceBtn"
+              class="dice-box group relative flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black shadow-[0_0_24px_rgba(245,158,11,0.35)] transform active:scale-95 transition-all"
+              title="Lempar Dadu"
+            >
+              <span
+                id="diceFace"
+                class="dice-face text-4xl pixel-font flex items-center justify-center w-full h-full"
+              >
+                ?
+              </span>
+            </button>
+            <div id="diceHint" class="text-[11px] text-gray-500 text-center min-h-[16px]">
+              Gulingkan dadu untuk memulai
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800/80 pt-4 space-y-2.5 text-[11px] text-gray-500">
+            <div class="flex justify-between">
+              <span>Keluarkan pion</span><span class="text-gray-300">Dadu 6</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Dadu 6</span><span class="text-gray-300">Giliran ekstra</span>
+            </div>
+            <div class="flex justify-between">
+              <span>3x dadu 6 beruntun</span>
+              <span class="text-rose-400">Giliran gugur</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Mendarat di pion lawan</span>
+              <span class="text-gray-300">Kirim ke kandang</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Kotak berawal (★)</span>
+              <span class="text-gray-300">Aman</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Setup Overlay -->
+    <div
+      id="setupOverlay"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+      >
+        <div class="p-6 sm:p-8">
+          <div
+            class="text-[10px] font-bold uppercase tracking-[.25em] text-amber-400 mb-1"
+          >
+            MEeL Arcade
+          </div>
+          <h2 class="text-2xl font-extrabold text-white mb-1">Ludo</h2>
+          <p class="text-xs text-gray-500 mb-6">
+            Atur jumlah pemain dan tipe tiap pemain (Manusia / Bot), lalu mulai
+            permainan!
+          </p>
+
+          <div class="mb-5">
+            <div class="text-xs font-bold text-gray-300 mb-2">Jumlah Pemain</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                class="player-count-btn px-3 py-2.5 rounded-xl border text-sm font-bold transition-all"
+                data-count="2"
+              >
+                2
+              </button>
+              <button
+                class="player-count-btn px-3 py-2.5 rounded-xl border text-sm font-bold transition-all"
+                data-count="3"
+              >
+                3
+              </button>
+              <button
+                class="player-count-btn px-3 py-2.5 rounded-xl border text-sm font-bold transition-all"
+                data-count="4"
+              >
+                4
+              </button>
+            </div>
+          </div>
+
+          <div id="setupPlayers" class="space-y-2.5 mb-6"></div>
+
+          <button
+            id="startGameBtn"
+            class="w-full px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl font-bold shadow-[0_0_20px_rgba(245,158,11,0.3)] transform active:scale-95 transition-all"
+          >
+            Mulai Permainan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Winner Overlay -->
+    <div
+      id="winOverlay"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 hidden"
+      style="opacity: 0; pointer-events: none"
+    >
+      <div class="flex flex-col items-center p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full shadow-2xl">
+        <div
+          class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-full flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20 ring-4 ring-amber-500/10"
+        >
+          <i data-lucide="trophy" class="w-8 h-8"></i>
+        </div>
+        <div class="pixel-font text-amber-400 text-sm mb-2 tracking-widest text-center">
+          PEMENANG!
+        </div>
+        <div id="winnerName" class="text-2xl font-extrabold text-white mb-1 text-center">
+          -
+        </div>
+        <div class="text-xs text-gray-500 mb-6 text-center">
+          Berhasil membawa semua pion ke rumah lebih dulu!
+        </div>
+        <button
+          id="playAgainBtn"
+          class="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl font-bold shadow-[0_0_20px_rgba(245,158,11,0.3)] transform active:scale-95 transition-all text-sm"
+        >
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          Main Lagi
+        </button>
+      </div>
+    </div>
+
+    <script src="../../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../../assets/js/compatibilitas/script.min.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
+    <script src="assets/js/game.js"></script>
+  </body>
+</html>

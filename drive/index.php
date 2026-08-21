@@ -6,6 +6,7 @@ require __DIR__ . '/DriveService.php';
 
 $user = DriveUserContext::fromSession($_SESSION);
 $user->authorize();
+$user->loadProfilePicture($conn);
 
 $storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 $renderer = new DriveViewRenderer();
@@ -38,7 +39,7 @@ if ($user->isMember()) {
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/compatibilitas/script.min.js"></script>
     <?php foreach (require __DIR__ . '/../assets/css/drive/manifest.php' as $__f): ?>
-    <link rel="stylesheet" href="../assets/css/drive/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/drive/' . $__f) ?>">
+        <link rel="stylesheet" href="../assets/css/drive/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/drive/' . $__f) ?>">
     <?php endforeach; ?>
 </head>
 
@@ -81,9 +82,15 @@ if ($user->isMember()) {
 
             <div class="mt-auto p-4 border-t border-gray-800 bg-black/20">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold">
-                        <?= strtoupper(substr($user->username, 0, 1)) ?>
-                    </div>
+                    <?php if (!empty($user->profile_picture) && is_file(__DIR__ . '/../profile/upload/' . $user->profile_picture)): ?>
+                        <img src="../profile/upload/<?= htmlspecialchars($user->profile_picture, ENT_QUOTES, 'UTF-8') ?>"
+                            alt="<?= htmlspecialchars($user->username, ENT_QUOTES, 'UTF-8') ?>"
+                            class="w-10 h-10 rounded-full object-cover border border-gray-800">
+                    <?php else: ?>
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold">
+                            <?= strtoupper(substr($user->username, 0, 1)) ?>
+                        </div>
+                    <?php endif; ?>
                     <div class="overflow-hidden">
                         <p class="text-sm font-semibold truncate"><?= htmlspecialchars($user->username, ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="text-[10px] text-gray-500 uppercase"><?= htmlspecialchars($user->role, ENT_QUOTES, 'UTF-8') ?></p>
@@ -101,9 +108,15 @@ if ($user->isMember()) {
                         <h1 class="font-bold text-base leading-none">MEeL <span class="text-blue-500">Cloud</span></h1>
                     </div>
                 </div>
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs">
-                    <?= strtoupper(substr($user->username, 0, 1)) ?>
-                </div>
+                <?php if (!empty($user->profile_picture) && is_file(__DIR__ . '/../profile/upload/' . $user->profile_picture)): ?>
+                    <img src="../profile/upload/<?= htmlspecialchars($user->profile_picture, ENT_QUOTES, 'UTF-8') ?>"
+                        alt="<?= htmlspecialchars($user->username, ENT_QUOTES, 'UTF-8') ?>"
+                        class="w-8 h-8 rounded-full object-cover border border-gray-800">
+                <?php else: ?>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs">
+                        <?= strtoupper(substr($user->username, 0, 1)) ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Mobile Scope Toggle -->
@@ -192,12 +205,12 @@ if ($user->isMember()) {
                     <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8') ?>">
 
                     <div class="flex-1 w-full">
-                    <label for="fileInput" class="flex items-center justify-center gap-3 p-4 bg-black/30 rounded-xl cursor-pointer hover:bg-black/50 transition border border-gray-800" title="Pilih file untuk diunggah">
+                        <label for="fileInput" class="flex items-center justify-center gap-3 p-4 bg-black/30 rounded-xl cursor-pointer hover:bg-black/50 transition border border-gray-800" title="Pilih file untuk diunggah">
                             <i data-lucide="cloud-upload" class="w-6 h-6 text-blue-500"></i>
                             <span id="fileLabel" class="text-sm text-gray-400 font-medium">Tarik file atau klik untuk memilih</span>
                             <input type="file" name="file_drive" id="fileInput" class="hidden" onchange="updateFileName(this)" required>
                         </label>
-                    </div>                    <button type="submit" name="submit_upload" id="uploadBtn" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20" title="Unggah file yang dipilih">
+                    </div> <button type="submit" name="submit_upload" id="uploadBtn" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20" title="Unggah file yang dipilih">
                         Unggah Berkas <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </button>
                 </form>
@@ -263,8 +276,8 @@ if ($user->isMember()) {
                 <div class="upload-prog-result-icon upload-prog-result-success">
                     <!-- Animated checkmark SVG -->
                     <svg class="upload-checkmark" viewBox="0 0 52 52" width="28" height="28">
-                        <circle class="upload-checkmark-circle" cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="3"/>
-                        <path class="upload-checkmark-check" d="M14 27l7 7 16-16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle class="upload-checkmark-circle" cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="3" />
+                        <path class="upload-checkmark-check" d="M14 27l7 7 16-16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </div>
                 <span class="upload-prog-result-text">Unggah Selesai</span>
@@ -288,7 +301,7 @@ if ($user->isMember()) {
                 <div class="flex items-center gap-2">
                     <i data-lucide="file" class="w-4 h-4 text-blue-500"></i>
                     <h3 id="previewTitle" class="text-sm font-semibold truncate max-w-[200px] md:max-w-md text-gray-300">Nama File</h3>
-                </div>                <button onclick="closePreview()" class="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-lg transition" title="Tutup pratinjau">
+                </div> <button onclick="closePreview()" class="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-500 rounded-lg transition" title="Tutup pratinjau">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>

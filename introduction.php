@@ -36,18 +36,18 @@ include __DIR__ . '/partials/scripts.php';
 
 <body>
 
-    <!-- ── READING PROGRESS ── -->
+    <!-- READING PROGRESS -->
     <div id="reading-progress"></div>
 
-    <!-- ── MOBILE HAMBURGER ── -->
+    <!-- MOBILE HAMBURGER -->
     <button id="hamburger" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Buka menu samping">
         <i data-lucide="menu"></i>
     </button>
 
-    <!-- ── SIDEBAR OVERLAY (mobile) ── -->
+    <!-- SIDEBAR OVERLAY (mobile) -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- ── SIDEBAR ── -->
+    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="<?= htmlspecialchars($back_url) ?>" class="back-link">
@@ -87,11 +87,11 @@ include __DIR__ . '/partials/scripts.php';
         </div>
     </aside>
 
-    <!-- ── MAIN ── -->
+    <!-- MAIN -->
     <main class="main">
         <div class="main-inner">
 
-            <!-- ══ VIDEO GUIDE ══ -->
+            <!-- VIDEO GUIDE -->
             <div id="guide-video" class="guide-section active">
                 <div class="guide-header">
                     <div class="guide-eyebrow">Dokumentasi · Fitur</div>
@@ -205,7 +205,7 @@ include __DIR__ . '/partials/scripts.php';
                 </div>
             </div>
 
-            <!-- ══ MUSIC GUIDE ══ -->
+            <!-- MUSIC GUIDE -->
             <div id="guide-music" class="guide-section">
                 <div class="guide-header">
                     <div class="guide-eyebrow">Dokumentasi · Fitur</div>
@@ -316,7 +316,7 @@ include __DIR__ . '/partials/scripts.php';
         </div><!-- /main-inner -->
     </main>
 
-    <!-- ── LIGHTBOX ── -->
+    <!-- LIGHTBOX -->
     <div id="lightbox" onclick="closeLightbox()" title="Klik untuk menutup">
         <div id="lightbox-close" onclick="closeLightbox()" title="Tutup">
             <i data-lucide="x" style="width:14px;height:14px;color:#9ca3af;"></i>
@@ -326,7 +326,7 @@ include __DIR__ . '/partials/scripts.php';
 
     <script>        lucide.createIcons();
 
-        // ─── Mobile sidebar toggle ───
+        // Mobile sidebar toggle
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -336,7 +336,7 @@ include __DIR__ . '/partials/scripts.php';
             hamburger.classList.toggle('open');
         }
 
-        // ─── Close sidebar on nav click (mobile) ───
+        // Close sidebar on nav click (mobile)
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
@@ -345,7 +345,7 @@ include __DIR__ . '/partials/scripts.php';
             });
         });
 
-        // ─── Reading progress bar ───
+        // Reading progress bar
         const mainEl = document.querySelector('.main');
         const progressBar = document.getElementById('reading-progress');
 

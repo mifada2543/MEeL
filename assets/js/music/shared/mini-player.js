@@ -18,7 +18,7 @@ function getMiniPlayerIndexEl() {
   return document.getElementById("mini-player-index");
 }
 
-// ─── Helpers ───
+// Helpers
 function saveIndexState() {
   // Interval saveIndexState() (5s) tidak boleh menulis state saat view
   // aktif bukan index (menimpa state dengan data stale).
@@ -41,7 +41,7 @@ function ensureIndexAudioListeners(audio) {
   audio.addEventListener("ended", () => miniNextIndex());
 }
 
-// ─── Muat track ke audio-engine persisten (ganti src HANYA kalau beda) ───
+// Muat track ke audio-engine persisten (ganti src HANYA kalau beda)
 function loadAudio(state, autoplay) {
   const engine = window.meelGetAudioEngine();
   if (!audioPlayer) audioPlayer = engine.audio;
@@ -73,7 +73,7 @@ function loadAudio(state, autoplay) {
   setPlayIcon(audioPlayer.paused ? "play" : "pause");
 }
 
-// ─── Update seluruh UI ───
+// Update seluruh UI
 let _idxEls = null;
 function _getIdxEls() {
   if (!_idxEls) {
@@ -129,9 +129,9 @@ function setPlayIcon(icon) {
   }
 }
 
-// ─── Init: dipanggil tiap kali landing di index view (idempotent, DOM baru
-//     tiap kali) — mount audio-engine ke #mini-player-index & baca
-//     sessionStorage. ───
+// Init: dipanggil tiap kali landing di index view (idempotent, DOM baru
+// tiap kali) — mount audio-engine ke #mini-player-index & baca
+// sessionStorage.
 function initMiniPlayerIndex() {
   window.__meelCurrentView = "index";
   _resetIdxEls();
@@ -267,7 +267,7 @@ function initMiniPlayerIndex() {
     console.warn("Mini player init error:", e);
   }
 }
-// ─── Play / Pause ───
+// Play / Pause
 window.miniPlayPauseIndex = function () {
   if (!audioPlayer) return;
 
@@ -282,7 +282,7 @@ window.miniPlayPauseIndex = function () {
     audioPlayer.pause();
   }
 };
-// ─── Seek ───
+// Seek
 window.miniSeekIndex = function (event) {
   if (!audioPlayer) return;
   const rect = event.currentTarget.getBoundingClientRect();
@@ -292,7 +292,7 @@ window.miniSeekIndex = function (event) {
     Math.min(pct * audioPlayer.duration, audioPlayer.duration),
   );
 };
-// ─── Next: Cari lagu berikutnya ───
+// Next: Cari lagu berikutnya
 window.miniNextIndex = function () {
   if (!audioPlayer) return;
 
@@ -318,7 +318,7 @@ window.miniNextIndex = function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
   }
 };
-// ─── Prev: restart jika > 3 detik ───
+// Prev: restart jika > 3 detik
 window.miniPrevIndex = function () {
   if (!audioPlayer) return;
   if (audioPlayer.currentTime > 3) {
@@ -429,7 +429,7 @@ function expandPlayerFromMiniPlayer() {
     console.warn("Mini player expand error:", err);
   }
 }
-// ─── Loop toggle untuk mini player ───
+// Loop toggle untuk mini player
 let isMiniLoopIndexActive = localStorage.getItem(MEEL_KEYS.GLOBAL_LOOP) === "true";
 window.toggleMiniLoopIndex = function () {
   isMiniLoopIndexActive = !isMiniLoopIndexActive;
@@ -451,7 +451,7 @@ function updateMiniLoopUIIndex() {
     btn.style.opacity = "0.5";
   }
 }
-// ─── Tutup ───
+// Tutup
 window.closeMiniPlayerIndex = function () {
   if (audioPlayer) audioPlayer.pause();
   const bar = getMiniPlayerIndexEl();
@@ -464,7 +464,7 @@ window.closeMiniPlayerIndex = function () {
   isMiniPlayerIndexActive = false;
   currentState = null;
 };
-// ─── Setup playlist items (dipakai index & view_playlist) ───
+// Setup playlist items (dipakai index & view_playlist)
 function setupPlaylistItemClicks() {
   document.querySelectorAll(".music-pl-item").forEach(function (item) {
     if (item.dataset.plListenerAdded) return;
@@ -541,7 +541,7 @@ document.addEventListener("keydown", (e) => {
 setInterval(() => {
   if (isMiniPlayerIndexActive) saveIndexState();
 }, 5000);
-// ─── Sinkronkan judul dokumen saat konten di-swap via htmx ───
+// Sinkronkan judul dokumen saat konten di-swap via htmx
 // (beranda ↔ playlist). Judul library ditangkap saat halaman beranda dimuat;
 // di halaman playlist, cabang library tidak pernah terpakai.
 const meelLibTitle =

@@ -250,7 +250,7 @@ include __DIR__ . '/partials/scripts.php';
                 redirectUrl: 'transcode.php<?= $video_id_value ? "?id=$video_id_value" : "" ?>'
             });
         <?php endif; ?>
-        // ── Submit animation ──
+        // Submit animation
         function startProcess() {
             const btn = document.getElementById('btn-submit');
             const progress = document.getElementById('progress-strip');

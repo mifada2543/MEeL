@@ -6,7 +6,7 @@
 // State bersama overlay (global — dipakai modul sibling)
 var _segsBuilt = false;
 var _errorTimeout = null;
-// ─── KONTROL ANIMASI MERAYAP (TRICKLE EFFECT) FOR SPRITE ───
+// KONTROL ANIMASI MERAYAP (TRICKLE EFFECT) FOR SPRITE
 var meelSpriteTimer = null;
 var meelSpriteCurrentPct = 0;
 function startSpriteTrickle() {
@@ -23,7 +23,7 @@ function startSpriteTrickle() {
     }
   }, 135);
 }
-// ─── FASE UTAMA SCRIPT ───
+// FASE UTAMA SCRIPT
 window.meelPhase = function (phase) {
   var overlay = document.getElementById("meel-overlay");
   if (overlay) overlay.style.display = "flex";

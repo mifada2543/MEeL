@@ -6,12 +6,12 @@
  * sw.js.php (rewrite via .htaccess) dan memakai daftar precache dari sini.
  *
  * Kenapa dinamis:
- *  - Daftar CSS modul diambil otomatis dari setiap manifest.php di
- *    subfolder assets/css — menambah folder modul baru TIDAK perlu
- *    menyentuh sw.js/sw.js.php lagi.
- *  - SW_VERSION dihitung dari hash isi semua aset precache
- *    → setiap perubahan konten (aset, manifest, kode generator) otomatis
- *      menaikkan versi SW, memicu update + purge cache lama di browser.
+ * - Daftar CSS modul diambil otomatis dari setiap manifest.php di
+ * subfolder assets/css — menambah folder modul baru TIDAK perlu
+ * menyentuh sw.js/sw.js.php lagi.
+ * - SW_VERSION dihitung dari hash isi semua aset precache
+ * → setiap perubahan konten (aset, manifest, kode generator) otomatis
+ * menaikkan versi SW, memicu update + purge cache lama di browser.
  *
  * @license GPL v3
  */
