@@ -1,7 +1,5 @@
 <?php
-// helpers/url.php — URL, Protocol & Format Helpers
 if (!function_exists('resolve_binary')) {
-    /* @param array $candidates Daftar kandidat path binary; @return string Path binary yang ditemukan */
     function resolve_binary(array $candidates): string
 {
 

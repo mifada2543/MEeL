@@ -1,16 +1,7 @@
 <?php
-// drive/stream.php — Streaming pratinjau file Drive yang BER-OTORISASI.
-// SECURITY BOUNDARY:
-// * Private Drive storage (data_drive/private_admins/) di-deny oleh web
-// server (.htaccess) untuk akses langsung. SATU-SATUNYA jalur untuk
-// memutar/melihat file private adalah endpoint ini dan download.php,
-// yang keduanya memverifikasi session + CSRF + kepemilikan file.
-// * Semua parameter dilewati melalui DriveStorage::getFileForDownload()
-// yang melakukan normalize scope/type, basename() (anti path traversal),
-// dan verifyPrivateFileAccess() (realpath prefix per user).
-// * Mendukung Range request agar seeking video/audio tetap berfungsi.
-// Audit log sengaja tidak ditulis per request streaming (bisa membanjiri
-// log dengan ratusan request Range per pemutaran).
+// SECURITY BOUNDARY: Private storage di-deny .htaccess — SATU-SATUNYA jalur
+// akses via endpoint ini + download.php (session + CSRF + ownership check).
+// Range request didukung untuk seeking; audit log sengaja tidak per-request.
 error_reporting(0);
 
 require '../auth/auth.php';

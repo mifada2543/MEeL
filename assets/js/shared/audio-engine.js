@@ -1,19 +1,5 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* audio-engine.js — Satu titik sumber kebenaran untuk elemen <audio> musik.
- *
- * Dibuat SEKALI per page-session (guard window.__meelAudioEngine) dan
- * dipertahankan (TIDAK PERNAH di-destroy) selama user masih di dalam
- * halaman-halaman musik (watch.php <-> index.php via AJAX). Ini yang bikin
- * transisi mini<->full gapless: <audio>, instance Plyr, dan AudioContext/EQ
- * chain-nya tidak pernah dibuat ulang selama track yang diputar sama.
- *
- * Plyr membungkus <audio> dengan DOM sendiri (`.plyr` wrapper). Sesuai
- * keputusan desain, WRAPPER ITU IKUT DIPINDAH (bukan cuma <audio> mentah) —
- * jadi watch.php & index.php sama-sama menampilkan kontrol Plyr yang identik,
- * hanya beda ukuran (lewat class `meel-engine-compact`).
- */
+// Audio engine — single <audio> instance per session. Persists across watch<->index AJAX transitions.
+// Plyr wrapper moves with <audio> (compact mode via meel-engine-compact class).
 (function () {
   "use strict";
 

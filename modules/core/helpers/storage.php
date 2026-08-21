@@ -1,12 +1,5 @@
 <?php
-// helpers/storage.php — Storage, Disk & Thumbnail Helpers
 
-/**
- * Resolve base path folder upload modul media (video/music/books) secara
- * terpusat — pola sama seperti meel_drive_base_path().
- * @param string $module 'video' | 'music' | 'books'
- * @return string Base path TANPA trailing slash
- */
 if (!function_exists('meel_media_base_path')) {
 function meel_media_base_path(string $module): string
 {

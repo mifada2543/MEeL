@@ -1,20 +1,6 @@
 <?php
-/**
- * SwPrecache — Generator daftar precache untuk service worker (sw.js).
- *
- * sw.js TIDAK lagi ditulis manual: file tersebut dibangkitkan dinamis oleh
- * sw.js.php (rewrite via .htaccess) dan memakai daftar precache dari sini.
- *
- * Kenapa dinamis:
- * - Daftar CSS modul diambil otomatis dari setiap manifest.php di
- * subfolder assets/css — menambah folder modul baru TIDAK perlu
- * menyentuh sw.js/sw.js.php lagi.
- * - SW_VERSION dihitung dari hash isi semua aset precache
- * → setiap perubahan konten (aset, manifest, kode generator) otomatis
- * menaikkan versi SW, memicu update + purge cache lama di browser.
- *
- * @license GPL v3
- */
+// SwPrecache — Precache list generator untuk sw.js (dynamic via sw.js.php).
+// SW_VERSION dihitung dari hash semua aset → content change = version bump = auto update.
 class SwPrecache
 {
 

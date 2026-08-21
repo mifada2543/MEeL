@@ -1,10 +1,6 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* health-reminder.js — Mode Sehat 20-20-20 (pengingat istirahat mata) */
-/* State global (variabel global agar konsisten antar fungsi)   */
+// 20-20-20 eye care reminder.
 var healthReminderTimer = null;
-var HEALTH_INTERVAL_MS  = 12e5;          // 1.200.000 ms = 20 menit
+var HEALTH_INTERVAL_MS  = 12e5; // 20 minutes
 function formatHealthRemaining(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(totalSec / 60);

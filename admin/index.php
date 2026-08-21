@@ -17,34 +17,6 @@ include '../controllers/admin/admin_data.php';
 GarbageCollector::cleanGuests($conn);
 
 GarbageCollector::cleanChessRooms($conn);
-
-/**
- * @var float $ssd_used
- * @var float $ssd_total
- * @var float $hdd_free
- * @var float $hdd_total
- * @var float $p_vid
- * @var float $sz_vid
- * @var float $p_mus
- * @var float $sz_mus
- * @var float $p_book
- * @var float $sz_book
- * @var float $p_drive
- * @var float $sz_d_pub
- * @var float $sz_d_prv
- * @var float $sz_drive_total
- * @var array $stats
- * @var array $orphans
- * @var float $ssd_free
- * @var mysqli_result $top_media
- * @var mysqli_result $pending_users
- * @var mysqli_result $all_users
- * @var mysqli_result $result_monitor
- * @var mysqli_result $banned_ips
- * @var object $sys
- * @var array $chart_activity
- * @var array $server_stats
- */
 ?>
 <!DOCTYPE html>
 <html lang="id">

@@ -1,12 +1,5 @@
 <?php
-/**
- * @var array $files — Array of file data (name, size, time, path, ext)
- * @var string $accent — Warna aksen CSS (contoh: '#3b82f6')
- * @var string $icon — Nama icon Lucide (contoh: 'video', 'file-audio')
- * @var string $type — Tipe file (video, audio, dokumen)
- * @var string $scope — Scope (public, private)
- * @var string $csrfToken — CSRF token dari session
- */
+// Expected vars: $files, $accent, $icon, $type, $scope, $csrfToken
 
 if (empty($files)): ?>
     <div class="flex flex-col items-center justify-center py-20 opacity-20">
