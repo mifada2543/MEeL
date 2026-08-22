@@ -39,7 +39,7 @@ $ALLOWED_AUDIO_MIME = [
 $ALLOWED_AUDIO_EXT = ['mp3', 'ogg', 'opus', 'flac', 'wav'];
 
 // JSON response helper
-function api_respond($data, $code = 200) {
+function api_respond($data, int $code = 200) {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -48,7 +48,7 @@ function api_respond($data, $code = 200) {
     exit;
 }
 
-function api_error($msg, $code = 400) {
+function api_error(string $msg, int $code = 400) {
     api_respond(['error' => $msg], $code);
 }
 
@@ -60,6 +60,7 @@ function require_auth() {
 }
 
 function get_auth_user() {
+    global $conn;
     return [
         'id' => $_SESSION['user_id'] ?? null,
         'username' => $_SESSION['username'] ?? null,
@@ -118,6 +119,7 @@ function transcode_flac_to_opus(string $input): ?string {
  * Validate audio MIME type using finfo
  */
 function validate_audio_mime(string $filepath): ?string {
+    global $ALLOWED_AUDIO_MIME;
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->file($filepath);
     return in_array($mime, $ALLOWED_AUDIO_MIME, true) ? $mime : null;

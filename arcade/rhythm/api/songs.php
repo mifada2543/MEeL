@@ -130,7 +130,7 @@ switch ($sort) {
         break;
     case 'newest':
         // custom first (has created_at), then builtin
-        usort($all_songs, fn($a, $b) => {
+        usort($all_songs, function($a, $b) {
             $ta = $a['created_at'] ?? '2000-01-01';
             $tb = $b['created_at'] ?? '2000-01-01';
             return strcmp($tb, $ta);

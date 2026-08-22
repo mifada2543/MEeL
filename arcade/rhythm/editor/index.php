@@ -194,16 +194,18 @@ if ($is_admin) {
         <div class="editor-stats">
           <div class="stat-item"><span>Click</span><span>Tap note</span></div>
           <div class="stat-item"><span>Click + Drag</span><span>Hold note</span></div>
-          <div class="stat-item"><span>G</span><span>Toggle gold</span></div>
+          <div class="stat-item"><span style="color:#fbbf24">G (pilih note)</span><span style="color:#fbbf24">Toggle gold ⭐</span></div>
           <div class="stat-item"><span>Delete</span><span>Hapus note</span></div>
           <div class="stat-item"><span>Right click</span><span>Hapus note</span></div>
           <div class="stat-item"><span>Ctrl+Z</span><span>Undo</span></div>
           <div class="stat-item"><span>Space</span><span>Play/Pause</span></div>
+          <div class="stat-item"><span>↑ / ↓</span><span>Seek ±1s</span></div>
         </div>
+        <div class="gold-hint">⭐ Klik note → tekan G → Gold note (3x skor!)</div>
       </div>
 
       <div class="sidebar-section">
-        <button id="btnUpload" class="btn btn-primary btn-full" onclick="uploadBeatmap()">
+        <button id="btnUpload" class="btn btn-primary btn-full" onclick="uploadBeatmap()" style="padding:12px;font-size:13px;">
           📤 Upload Beatmap
         </button>
       </div>
@@ -215,6 +217,16 @@ if ($is_admin) {
         <canvas id="editorCanvas"></canvas>
         <!-- Audio element for playback -->
         <audio id="audioPlayer" preload="auto"></audio>
+        <!-- Prompt overlay: upload audio first -->
+        <div id="audioPromptOverlay" class="audio-prompt-overlay">
+          <div class="audio-prompt-card">
+            <div class="audio-prompt-icon">🎵</div>
+            <h3>Pilih File Audio Dulu</h3>
+            <p>Upload file audio (MP3, OGG, OPUS, FLAC, WAV) di sidebar kiri untuk mulai mengedit beatmap.</p>
+            <div class="audio-prompt-formats">MP3 · OGG · OPUS · FLAC · WAV</div>
+            <div class="audio-prompt-arrow">Upload music dulu</div>
+          </div>
+        </div>
       </div>
       <div class="editor-timeline">
         <div class="timeline-bar" id="timelineBar">

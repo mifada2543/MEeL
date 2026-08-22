@@ -111,6 +111,10 @@ final class MeelRouter
         'arcade/rhythm'    => ['handler' => 'arcade/rhythm/index.php',   'script' => '/arcade/rhythm/index.php'],
         'arcade/rhythm/game'=> ['handler' => 'arcade/rhythm/game.php',   'script' => '/arcade/rhythm/game.php'],
         'arcade/rhythm/editor' => ['handler' => 'arcade/rhythm/editor/index.php', 'script' => '/arcade/rhythm/editor/index.php'],
+        'arcade/rhythm/api/upload'   => ['handler' => 'arcade/rhythm/api/upload.php',   'script' => '/arcade/rhythm/api/upload.php'],
+        'arcade/rhythm/api/delete'   => ['handler' => 'arcade/rhythm/api/delete.php',   'script' => '/arcade/rhythm/api/delete.php'],
+        'arcade/rhythm/api/songs'    => ['handler' => 'arcade/rhythm/api/songs.php',    'script' => '/arcade/rhythm/api/songs.php'],
+        'arcade/rhythm/api/beatmap'  => ['handler' => 'arcade/rhythm/api/beatmap.php',  'script' => '/arcade/rhythm/api/beatmap.php'],
 
         // API (controllers/)
         'api/like'               => ['handler' => 'controllers/api/like.php',              'script' => '/controllers/api/like.php'],

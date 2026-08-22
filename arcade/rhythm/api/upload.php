@@ -81,7 +81,7 @@ foreach ($beatmap['notes'] as $i => $note) {
     if (isset($note['e'])) {
         $e = (int) $note['e'];
         if ($e <= $t) api_error("Note ke-" . ($i + 1) . " hold end time harus lebih besar dari start time.");
-        if ($e > MAX_DURATION * 1000) api_error("Note ke-" . ($i + 1) . " hold end time melebihi durasi maksimal.");
+        if ($e > $MAX_DURATION * 1000) api_error("Note ke-" . ($i + 1) . " hold end time melebihi durasi maksimal.");
     }
 }
 
