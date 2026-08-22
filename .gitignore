@@ -60,6 +60,7 @@ session/*
 # ─── DATABASE FILES ───────────────────────────────────
 /mysql/
 *.sql
+!migration.sql
 !install.sql
 !schema.sql
 *.db

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "starlight",
+    "title": "Starlight Serenade",
+    "artist": "Synth Wave",
+    "bpm": 128,
+    "difficulty": 2,
+    "difficultyLabel": "Normal",
+    "color": ["#ec4899", "#a855f7"],
+    "emoji": "✨",
+    "duration": 60,
+    "noteCount": 198
+  },
+  {
+    "id": "neon_pulse",
+    "title": "Neon Pulse",
+    "artist": "Digital Dreams",
+    "bpm": 140,
+    "difficulty": 3,
+    "difficultyLabel": "Hard",
+    "color": ["#22d3ee", "#6366f1"],
+    "emoji": "💜",
+    "duration": 60,
+    "noteCount": 234
+  },
+  {
+    "id": "cyber_dash",
+    "title": "Cyber Dash",
+    "artist": "ElectroByte",
+    "bpm": 160,
+    "difficulty": 4,
+    "difficultyLabel": "Hard",
+    "color": ["#f97316", "#ef4444"],
+    "emoji": "⚡",
+    "duration": 65,
+    "noteCount": 310
+  },
+  {
+    "id": "moonlight",
+    "title": "Moonlight Sonata Remix",
+    "artist": "Classic Meets Beat",
+    "bpm": 110,
+    "difficulty": 1,
+    "difficultyLabel": "Easy",
+    "color": ["#a3e635", "#22d3ee"],
+    "emoji": "🌙",
+    "duration": 55,
+    "noteCount": 143
+  },
+  {
+    "id": "thunder_strike",
+    "title": "Thunder Strike",
+    "artist": "BassDropz",
+    "bpm": 175,
+    "difficulty": 5,
+    "difficultyLabel": "Insane",
+    "color": ["#fbbf24", "#f97316"],
+    "emoji": "⚡",
+    "duration": 70,
+    "noteCount": 371
+  },
+  {
+    "id": "crystal_waves",
+    "title": "Crystal Waves",
+    "artist": "Chillstep Lab",
+    "bpm": 120,
+    "difficulty": 2,
+    "difficultyLabel": "Normal",
+    "color": ["#67e8f9", "#a78bfa"],
+    "emoji": "💎",
+    "duration": 55,
+    "noteCount": 179
+  },
+  {
+    "id": "dark_matter",
+    "title": "Dark Matter",
+    "artist": "Void Engine",
+    "bpm": 185,
+    "difficulty": 5,
+    "difficultyLabel": "Insane",
+    "color": ["#f43f5e", "#7c3aed"],
+    "emoji": "🌀",
+    "duration": 70,
+    "noteCount": 408
+  },
+  {
+    "id": "pixel_dreams",
+    "title": "Pixel Dreams",
+    "artist": "RetroWave",
+    "bpm": 132,
+    "difficulty": 2,
+    "difficultyLabel": "Normal",
+    "color": ["#c084fc", "#fb7185"],
+    "emoji": "🎮",
+    "duration": 60,
+    "noteCount": 210
+  },
+  {
+    "id": "velocity",
+    "title": "Velocity",
+    "artist": "SpeedDemon",
+    "bpm": 195,
+    "difficulty": 5,
+    "difficultyLabel": "Insane",
+    "color": ["#f43f5e", "#fbbf24"],
+    "emoji": "🔥",
+    "duration": 75,
+    "noteCount": 455
+  },
+  {
+    "id": "gentle_rain",
+    "title": "Gentle Rain",
+    "artist": "Ambient Flow",
+    "bpm": 95,
+    "difficulty": 1,
+    "difficultyLabel": "Easy",
+    "color": ["#2dd4bf", "#6366f1"],
+    "emoji": "🌧️",
+    "duration": 50,
+    "noteCount": 112
+  }
+]

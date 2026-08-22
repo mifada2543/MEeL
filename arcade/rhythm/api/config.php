@@ -1,0 +1,147 @@
+<?php
+/**
+ * MEeL!Mania — API Config & Helpers
+ */
+// Boot session with MEeL session name
+require_once __DIR__ . '/../../../modules/auth/helpers/session.php';
+meel_boot_session();
+
+// Database connection
+require_once __DIR__ . '/../../../auth/settings.php';
+$conn = new mysqli($server, $username, $password, $db);
+if ($conn->connect_error) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed']);
+    exit;
+}
+$conn->set_charset('utf8mb4');
+
+// Auth helpers
+require_once __DIR__ . '/../../../modules/auth/helpers/user.php';
+require_once __DIR__ . '/../../../modules/auth/helpers/authz.php';
+
+// FFmpeg paths
+$FFMPEG_BIN  = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : 'ffmpeg';
+$FFPROBE_BIN = defined('MEEL_FFPROBE_PATH') && MEEL_FFPROBE_PATH !== '' ? MEEL_FFPROBE_PATH : 'ffprobe';
+
+// Upload directories
+$UPLOAD_DIR   = __DIR__ . '/../uploads/';
+$AUDIO_DIR    = $UPLOAD_DIR . 'audio/';
+$COVER_DIR    = $UPLOAD_DIR . 'cover/';
+$MAX_DURATION = 300; // 5 minutes in seconds
+$MAX_AUDIO_SIZE = 20 * 1024 * 1024; // 20MB
+$ALLOWED_AUDIO_MIME = [
+    'audio/mpeg', 'audio/mp3',
+    'audio/ogg', 'audio/opus', 'audio/vorbis',
+    'audio/flac', 'audio/x-flac',
+    'audio/wav', 'audio/x-wav',
+];
+$ALLOWED_AUDIO_EXT = ['mp3', 'ogg', 'opus', 'flac', 'wav'];
+
+// JSON response helper
+function api_respond($data, $code = 200) {
+    http_response_code($code);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function api_error($msg, $code = 400) {
+    api_respond(['error' => $msg], $code);
+}
+
+function require_auth() {
+    if (!isset($_SESSION['user_id'])) {
+        api_error('Silakan login terlebih dahulu.', 401);
+    }
+    return (int) $_SESSION['user_id'];
+}
+
+function get_auth_user() {
+    return [
+        'id' => $_SESSION['user_id'] ?? null,
+        'username' => $_SESSION['username'] ?? null,
+        'role' => isset($_SESSION['user_id']) ? get_user_role($conn, (int)$_SESSION['user_id']) : null,
+    ];
+}
+
+/**
+ * Probe audio duration using ffprobe
+ * @return float duration in seconds, or 0 on failure
+ */
+function probe_duration(string $filepath): float {
+    global $FFPROBE_BIN;
+    $cmd = escapeshellarg($FFPROBE_BIN)
+        . ' -v quiet -show_entries format=duration -of csv=p=0 '
+        . escapeshellarg($filepath) . ' 2>&1';
+    $output = trim(shell_exec($cmd));
+    $duration = (float) $output;
+    return ($duration > 0) ? $duration : 0;
+}
+
+/**
+ * Probe audio info using ffprobe (bitrate, format, etc.)
+ */
+function probe_audio_info(string $filepath): array {
+    global $FFPROBE_BIN;
+    $cmd = escapeshellarg($FFPROBE_BIN)
+        . ' -v quiet -print_format json -show_format -show_streams '
+        . escapeshellarg($filepath) . ' 2>&1';
+    $json = shell_exec($cmd);
+    $data = json_decode($json, true);
+    return $data ?? [];
+}
+
+/**
+ * Transcode FLAC to Opus using ffmpeg
+ * @return string|false output filepath on success, false on failure
+ */
+function transcode_flac_to_opus(string $input): ?string {
+    global $FFMPEG_BIN;
+    $output = preg_replace('/\.(flac)$/i', '.ogg', $input);
+    $cmd = "export LD_LIBRARY_PATH=''; "
+        . escapeshellarg($FFMPEG_BIN) . " -y -i "
+        . escapeshellarg($input)
+        . " -c:a libopus -vbr on -compression_level 10 "
+        . escapeshellarg($output) . " 2>&1";
+    exec($cmd, $out, $ret);
+    if ($ret === 0 && file_exists($output) && filesize($output) > 0) {
+        unlink($input);
+        return $output;
+    }
+    return false;
+}
+
+/**
+ * Validate audio MIME type using finfo
+ */
+function validate_audio_mime(string $filepath): ?string {
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($filepath);
+    return in_array($mime, $ALLOWED_AUDIO_MIME, true) ? $mime : null;
+}
+
+/**
+ * Generate unique filename
+ */
+function unique_filename(string $base, string $ext, string $dir): string {
+    $name = $base . '.' . $ext;
+    $counter = 1;
+    while (file_exists($dir . $name)) {
+        $name = $base . '-' . $counter . '.' . $ext;
+        $counter++;
+    }
+    return $name;
+}
+
+/**
+ * Sanitize string for filename
+ */
+function sanitize_filename(string $name): string {
+    $name = preg_replace('/[^\w\-]/u', '_', $name);
+    $name = preg_replace('/_+/', '_', $name);
+    $name = trim($name, '_-');
+    return substr($name, 0, 60) ?: 'beatmap-' . time();
+}
