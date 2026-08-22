@@ -228,29 +228,66 @@ $diff_label = $diff_labels[$difficulty] ?? 'Normal';
 $beatmap_dir = __DIR__ . '/../uploads/beatmap/';
 if (!is_dir($beatmap_dir)) mkdir($beatmap_dir, 0755, true);
 
-// We need song_id first, so insert placeholder then update
+$is_edit = !empty($_POST['song_id']);
+$edit_song_id = $is_edit ? (int) $_POST['song_id'] : 0;
+$existing = null;
+
+// Verify ownership if editing
+if ($is_edit) {
+    $chk = $conn->prepare("SELECT id, user_id, audio_file, cover_file, beatmap_path FROM arcade_song WHERE id = ?");
+    $chk->bind_param("i", $edit_song_id);
+    $chk->execute();
+    $existing = $chk->get_result()->fetch_assoc();
+    $chk->close();
+    if (!$existing) api_error('Beatmap tidak ditemukan.');
+    if ($existing['user_id'] != $user_id && !$is_admin) api_error('Tidak punya akses.');
+}
+
 $conn->begin_transaction();
 try {
-    // Insert with placeholder beatmap_path to get song_id
-    $stmt = $conn->prepare(
-        "INSERT INTO arcade_song
-         (user_id, title, artist, bpm, difficulty, difficulty_label, duration,
-          note_count, audio_file, audio_mime, audio_bitrate, cover_file,
-          beatmap_path, color_primary, color_secondary)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)"
-    );
-    if (!$stmt) throw new RuntimeException('Prepare failed: ' . $conn->error);
-
-    $stmt->bind_param(
-        "issiiiiisssiss",
-        $user_id, $title, $artist, $bpm, $difficulty, $diff_label,
-        $beatmap_duration, $note_count, $audio_filename, $final_mime,
-        $audio_bitrate, $cover_filename, $color_primary, $color_secondary
-    );
-
-    if (!$stmt->execute()) throw new RuntimeException('Execute failed: ' . $stmt->error);
-    $song_id = $conn->insert_id;
-    $stmt->close();
+    if ($is_edit) {
+        // UPDATE existing beatmap
+        $stmt = $conn->prepare(
+            "UPDATE arcade_song SET
+             title = ?, artist = ?, bpm = ?, difficulty = ?, difficulty_label = ?,
+             duration = ?, note_count = ?, audio_file = ?, audio_mime = ?,
+             audio_bitrate = ?, cover_file = ?, color_primary = ?, color_secondary = ?,
+             updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?"
+        );
+        $stmt->bind_param(
+            "ssiiiiisssissi",
+            $title, $artist, $bpm, $difficulty, $diff_label,
+            $beatmap_duration, $note_count, $audio_filename, $final_mime,
+            $audio_bitrate, $cover_filename, $color_primary, $color_secondary,
+            $edit_song_id
+        );
+        if (!$stmt->execute()) throw new RuntimeException('Execute failed: ' . $stmt->error);
+        $song_id = $edit_song_id;
+        $stmt->close();
+        // Delete old audio/cover if replaced
+        if ($existing['audio_file'] && $existing['audio_file'] !== $audio_filename) @unlink($AUDIO_DIR . $existing['audio_file']);
+        if ($existing['cover_file'] && $existing['cover_file'] !== $cover_filename) @unlink($COVER_DIR . $existing['cover_file']);
+    } else {
+        // INSERT new beatmap
+        $stmt = $conn->prepare(
+            "INSERT INTO arcade_song
+             (user_id, title, artist, bpm, difficulty, difficulty_label, duration,
+              note_count, audio_file, audio_mime, audio_bitrate, cover_file,
+              beatmap_path, color_primary, color_secondary)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)"
+        );
+        if (!$stmt) throw new RuntimeException('Prepare failed: ' . $conn->error);
+        $stmt->bind_param(
+            "issiiiiisssiss",
+            $user_id, $title, $artist, $bpm, $difficulty, $diff_label,
+            $beatmap_duration, $note_count, $audio_filename, $final_mime,
+            $audio_bitrate, $cover_filename, $color_primary, $color_secondary
+        );
+        if (!$stmt->execute()) throw new RuntimeException('Execute failed: ' . $stmt->error);
+        $song_id = $conn->insert_id;
+        $stmt->close();
+    }
 
     // Save beatmap.json to filesystem
     $beatmap_filename = 'beatmap_' . $song_id . '.json';

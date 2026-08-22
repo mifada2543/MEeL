@@ -118,6 +118,13 @@ $beatmap_json = json_encode($beatmap_data, JSON_UNESCAPED_UNICODE);
 </head>
 <body>
 
+  <!-- Background image (blur bg option) -->
+  <div id="bgImage" class="game-bg-image hidden"></div>
+  <!-- Dim overlay -->
+  <div id="dimOverlay" class="game-dim-overlay"></div>
+  <!-- FPS counter -->
+  <div id="fpsCounter" class="fps-counter hidden">0 FPS</div>
+
   <canvas id="gameCanvas"></canvas>
   <audio id="audioPlayer" preload="auto"></audio>
 
@@ -166,12 +173,68 @@ $beatmap_json = json_encode($beatmap_data, JSON_UNESCAPED_UNICODE);
   </div>
 
   <div id="pauseOverlay" class="overlay hidden">
-    <div class="overlay-content">
-      <div class="overlay-emoji">⏸</div>
-      <div class="overlay-title">PAUSE</div>
-      <div class="overlay-hint">Tekan ESC atau SPASI untuk lanjut</div>
-      <button id="btnQuit" class="overlay-btn">Keluar ke Lobby</button>
+    <div class="pause-card">
+      <div class="pause-title">Pause Menu</div>
+      <div class="pause-buttons">
+        <button id="btnResume" class="pause-btn" onclick="resumeGame()">
+          <span class="pause-btn-icon">▶</span>
+          <span>Resume</span>
+        </button>
+        <button class="pause-btn" onclick="restartGame()">
+          <span class="pause-btn-icon">↻</span>
+          <span>Restart</span>
+        </button>
+        <button class="pause-btn" onclick="toggleAdvanced()">
+          <span class="pause-btn-icon">⚙</span>
+          <span>Advanced</span>
+        </button>
+        <button id="btnQuit" class="pause-btn pause-btn-danger" onclick="quitToLobby()">
+          <span class="pause-btn-icon">🚪</span>
+          <span>Exit Game</span>
+        </button>
+      </div>
     </div>
+  </div>
+
+  <!-- ─── Advanced Options Overlay ─── -->
+  <div id="optionsOverlay" class="overlay hidden">
+    <div class="options-card">
+      <div class="options-title">Options</div>
+
+      <div class="options-group">
+        <label class="opt-label">Note Speed</label>
+        <input type="range" class="opt-slider" id="optSpeed" min="1" max="20" value="10">
+      </div>
+      <div class="options-group">
+        <label class="opt-label">Background Dim</label>
+        <input type="range" class="opt-slider" id="optDim" min="0" max="100" value="70">
+      </div>
+      <div class="options-group">
+        <label class="opt-label">Game Volume</label>
+        <input type="range" class="opt-slider" id="optVolume" min="0" max="100" value="80">
+      </div>
+
+      <div class="options-checks">
+        <label class="opt-check"><input type="checkbox" id="optBlurBg"><span class="check-box"></span>Blur Background</label>
+        <label class="opt-check"><input type="checkbox" id="optFPS"><span class="check-box"></span>Show FPS</label>
+        <label class="opt-check"><input type="checkbox" id="optLowGfx"><span class="check-box"></span>Low Graphics (Effects Off)</label>
+      </div>
+
+      <div class="options-footer">
+        <button class="pause-btn" onclick="closeOptions()">
+          <span class="pause-btn-icon">←</span>
+          <span>Back</span>
+        </button>
+        <button class="pause-btn pause-btn-primary" onclick="saveOptions()">
+          <span>Done</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Countdown Overlay ─── -->
+  <div id="countdownOverlay" class="overlay hidden" style="background:transparent;backdrop-filter:none;">
+    <div class="countdown-num" id="countdownNum">3</div>
   </div>
 
   <div id="resultsOverlay" class="overlay hidden">

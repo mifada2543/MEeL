@@ -17,25 +17,25 @@ if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Get user's existing songs for management
-$user_songs = [];
-if ($is_logged_in) {
-    $stmt = $conn->prepare("SELECT id, title, artist, bpm, difficulty, note_count, play_count, created_at FROM arcade_song WHERE user_id = ? ORDER BY created_at DESC");
-    $stmt->bind_param("i", $user_id);
+
+
+// Load existing beatmap if editing
+$edit_song = null;
+$edit_beatmap = null;
+$edit_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+if ($edit_id > 0 && $is_logged_in) {
+    $stmt = $conn->prepare("SELECT * FROM arcade_song WHERE id = ? AND (user_id = ? OR ? = 'admin')");
+    $role = $is_admin ? 'admin' : '';
+    $stmt->bind_param("iis", $edit_id, $user_id, $role);
     $stmt->execute();
     $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $user_songs[] = $row;
-    }
+    $edit_song = $result->fetch_assoc();
     $stmt->close();
-}
-
-// Admin: get all songs for management
-$all_songs = [];
-if ($is_admin) {
-    $result = $conn->query("SELECT s.id, s.title, s.artist, s.bpm, s.difficulty, s.note_count, s.play_count, s.created_at, u.username FROM arcade_song s LEFT JOIN users u ON s.user_id = u.id ORDER BY s.created_at DESC LIMIT 200");
-    while ($row = $result->fetch_assoc()) {
-        $all_songs[] = $row;
+    if ($edit_song) {
+        // Load beatmap from file
+        if (!empty($edit_song['beatmap_path']) && file_exists(__DIR__ . '/../' . $edit_song['beatmap_path'])) {
+            $edit_beatmap = json_decode(file_get_contents(__DIR__ . '/../' . $edit_song['beatmap_path']), true);
+        }
     }
 }
 ?>
@@ -59,14 +59,14 @@ if ($is_admin) {
       <h2>Login Diperlukan</h2>
       <p>Anda harus login untuk membuat beatmap.</p>
       <a href="../../auth/login.php" class="btn btn-primary">Login</a>
-      <a href="../" class="btn btn-ghost">Kembali</a>
+      <a href="../manage/" class="btn btn-ghost">Kembali</a>
     </div>
   </div>
   <?php else: ?>
 
   <!-- ─── Navigation ─── -->
   <nav class="nav-bar">
-    <a href="../" class="nav-back">← Kembali</a>
+    <a href="./" class="nav-back">← Kembali</a>
     <div class="nav-brand">
       <span class="brand-icon">♪</span>
       <span>Beatmap Editor</span>
@@ -236,44 +236,7 @@ if ($is_admin) {
       </div>
     </section>
 
-    <!-- ─── Right: My Songs / Management ─── -->
-    <aside class="editor-sidebar right">
-      <div class="sidebar-section">
-        <h3>Lagu Saya (<?= count($user_songs) ?>)</h3>
-        <div class="song-list" id="mySongs">
-          <?php if (empty($user_songs)): ?>
-            <p class="empty-text">Belum ada beatmap.</p>
-          <?php else: ?>
-            <?php foreach ($user_songs as $s): ?>
-              <div class="song-item" data-id="<?= $s['id'] ?>">
-                <div class="song-item-info">
-                  <div class="song-item-title"><?= htmlspecialchars($s['title']) ?></div>
-                  <div class="song-item-meta"><?= $s['bpm'] ?> BPM · <?= $s['note_count'] ?> notes · <?= $s['play_count'] ?> plays</div>
-                </div>
-                <button class="btn-icon btn-delete" onclick="deleteSong(<?= $s['id'] ?>)" title="Hapus">🗑</button>
-              </div>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
-      </div>
 
-      <?php if ($is_admin && !empty($all_songs)): ?>
-      <div class="sidebar-section">
-        <h3>Admin: Semua Song (<?= count($all_songs) ?>)</h3>
-        <div class="song-list" id="allSongs">
-          <?php foreach ($all_songs as $s): ?>
-            <div class="song-item" data-id="<?= $s['id'] ?>">
-              <div class="song-item-info">
-                <div class="song-item-title"><?= htmlspecialchars($s['title']) ?></div>
-                <div class="song-item-meta">by <?= htmlspecialchars($s['username'] ?? '?') ?> · <?= $s['bpm'] ?> BPM</div>
-              </div>
-              <button class="btn-icon btn-delete" onclick="deleteSong(<?= $s['id'] ?>)" title="Hapus (Admin)">🗑</button>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
-      <?php endif; ?>
-    </aside>
 
   </main>
 
@@ -294,6 +257,8 @@ if ($is_admin) {
   <script>
     const CSRF_TOKEN = '<?= $_SESSION['csrf_token'] ?>';
     const IS_ADMIN = <?= $is_admin ? 'true' : 'false' ?>;
+    const EDIT_SONG = <?= $edit_song ? json_encode($edit_song) : 'null' ?>;
+    const EDIT_BEATMAP = <?= $edit_beatmap ? json_encode($edit_beatmap) : 'null' ?>;
   </script>
   <script src="../assets/js/editor.js"></script>
   <?php endif; ?>

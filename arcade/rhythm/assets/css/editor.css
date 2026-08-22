@@ -103,7 +103,7 @@ body {
 /* ─── Layout: FULL HEIGHT ─── */
 .editor-layout {
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  grid-template-columns: 280px 1fr;
   gap: 0;
   height: calc(100dvh - 48px);
 }

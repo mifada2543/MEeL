@@ -40,11 +40,18 @@
      ═══════════════════════════════════════════════════════ */
   const LANE_COUNT = 4;
   const KEY_MAP = { a: 0, s: 1, k: 2, l: 3 };
-  const LANE_COLORS = ["#f43f7a", "#a855f7", "#6366f1", "#818cf8"];
-  const LANE_COLORS_BRIGHT = ["#ff6b9d", "#c084fc", "#818cf8", "#a5b4fc"];
+  // Note colors: click=blue, hold=green, gold=bonus for both
+  const COLOR_CLICK = "#3b82f6";       // blue for tap/click notes
+  const COLOR_CLICK_BRIGHT = "#60a5fa";
+  const COLOR_HOLD = "#22c55e";         // green for hold notes
+  const COLOR_HOLD_BRIGHT = "#4ade80";
+  const GOLD_COLOR = "#fbbf24";         // gold for bonus notes
+  const GOLD_BRIGHT = "#fde047";
+  const LANE_COLORS = [COLOR_CLICK, COLOR_CLICK, COLOR_CLICK, COLOR_CLICK];
+  const LANE_COLORS_BRIGHT = [COLOR_CLICK_BRIGHT, COLOR_CLICK_BRIGHT, COLOR_CLICK_BRIGHT, COLOR_CLICK_BRIGHT];
   const HIT_Y_RATIO = 0.88;
-  const NOTE_HEIGHT_BASE = 16;
-  const NOTE_RADIUS = 5;
+  const NOTE_HEIGHT_BASE = 22;
+  const NOTE_RADIUS = 0; // rectangular notes, no rounding
   const APPROACH_TIME_BASE = 1800;
 
   const TIMING = { perfect: 24, great: 52, good: 85, bad: 115 };
@@ -55,7 +62,6 @@
     perfect: "#fbbf24", great: "#34d399", good: "#60a5fa",
     bad: "#f87171", miss: "#6b7280",
   };
-  const GOLD_COLOR = "#fbbf24";
   const GOLD_GLOW = "rgba(251,191,36,0.4)";
 
   /* ═══════════════════════════════════════════════════════
@@ -201,7 +207,10 @@
 
   function getW() { return canvas.width / (window.devicePixelRatio || 1); }
   function getH() { return canvas.height / (window.devicePixelRatio || 1); }
-  function laneWidth() { return getW() / LANE_COUNT; }
+  // Centered playfield — lanes occupy 40% of screen width, centered
+  const PLAYFIELD_RATIO = 0.40;
+  function laneWidth() { return (getW() * PLAYFIELD_RATIO) / LANE_COUNT; }
+  function playfieldX() { return (getW() - getW() * PLAYFIELD_RATIO) / 2; }
   function hitY() { return getH() * HIT_Y_RATIO; }
 
   /* ═══════════════════════════════════════════════════════
@@ -461,6 +470,16 @@
   /* ═══════════════════════════════════════════════════════
      DRAWING
      ═══════════════════════════════════════════════════════ */
+  // Determine note color based on type and gold status
+  function noteColorFor(note) {
+    if (note.gold) return GOLD_COLOR;
+    return note.endTime ? COLOR_HOLD : COLOR_CLICK;
+  }
+  function noteColorBrightFor(note) {
+    if (note.gold) return GOLD_BRIGHT;
+    return note.endTime ? COLOR_HOLD_BRIGHT : COLOR_CLICK_BRIGHT;
+  }
+
   function draw() {
     const w = getW(), h = getH();
     const lw = laneWidth();
@@ -468,31 +487,35 @@
     const ppm = hy / APPROACH_TIME;
     const ns = getNoteSize();
     const nh = NOTE_HEIGHT_BASE * ns;
+    const pfx = playfieldX(); // left edge of playfield
+    const pfw = lw * LANE_COUNT; // playfield total width
 
     ctx.clearRect(0, 0, w, h);
 
     // Background
     ctx.fillStyle = "#08080f";
     ctx.fillRect(0, 0, w, h);
+    if (gameOptions.lowGfx) { /* skip gradient in low gfx */ } else {
     const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
     bgGrad.addColorStop(0, "rgba(168,85,247,0.03)");
     bgGrad.addColorStop(0.5, "transparent");
     bgGrad.addColorStop(1, "rgba(244,63,122,0.02)");
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
+    } // end else lowGfx
+
+    // Playfield background (subtle dark panel)
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(pfx, 0, pfw, h);
 
     // Lanes
     for (let i = 0; i < LANE_COUNT; i++) {
-      const x = i * lw;
-      const lg = ctx.createLinearGradient(x, 0, x, h);
-      lg.addColorStop(0, "transparent");
-      lg.addColorStop(HIT_Y_RATIO - 0.05, LANE_COLORS[i] + "08");
-      lg.addColorStop(HIT_Y_RATIO, LANE_COLORS[i] + "12");
-      lg.addColorStop(1, LANE_COLORS[i] + "04");
-      ctx.fillStyle = lg;
+      const x = pfx + i * lw;
+      // Subtle lane background
+      ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.01)";
       ctx.fillRect(x, 0, lw, h);
 
-      ctx.strokeStyle = "rgba(255,255,255,0.03)";
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -501,8 +524,9 @@
 
       // Flash
       if (laneFlashes[i] > 0) {
+        const flashColor = lanePressed[i] ? LANE_COLORS_BRIGHT[i] : LANE_COLORS[i];
         const fg = ctx.createLinearGradient(x, hy, x, hy - 100);
-        fg.addColorStop(0, LANE_COLORS_BRIGHT[i] + "50");
+        fg.addColorStop(0, flashColor + "50");
         fg.addColorStop(1, "transparent");
         ctx.fillStyle = fg;
         ctx.globalAlpha = laneFlashes[i] * 0.4;
@@ -519,84 +543,77 @@
         ctx.fillStyle = pg;
         ctx.fillRect(x, hy - 50, lw, 50);
       }
+
+      // Lane border on right
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + lw, 0);
+      ctx.lineTo(x + lw, h);
+      ctx.stroke();
     }
 
-    // Hit line glow
+    // Hit line glow (only within playfield)
     const hlGlow = ctx.createLinearGradient(0, hy - 3, 0, hy + 3);
     hlGlow.addColorStop(0, "transparent");
-    hlGlow.addColorStop(0.5, "rgba(255,255,255,0.06)");
+    hlGlow.addColorStop(0.5, "rgba(255,255,255,0.08)");
     hlGlow.addColorStop(1, "transparent");
     ctx.fillStyle = hlGlow;
-    ctx.fillRect(0, hy - 3, w, 6);
+    ctx.fillRect(pfx, hy - 3, pfw, 6);
 
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(0, hy);
-    ctx.lineTo(w, hy);
+    ctx.moveTo(pfx, hy);
+    ctx.lineTo(pfx + pfw, hy);
     ctx.stroke();
 
-    // Receptors
+    // Receptors — just thin lines, no key labels
     for (let i = 0; i < LANE_COUNT; i++) {
-      const rx = i * lw + lw * 0.15;
-      const ry = hy - 3;
-      const rww = lw * 0.85;
-      const rhh = 6;
-      ctx.fillStyle = lanePressed[i] ? LANE_COLORS[i] + "70" : LANE_COLORS[i] + "25";
-      roundRect(rx, ry, rww, rhh, 3);
-      ctx.fill();
+      const rx = pfx + i * lw;
+      ctx.fillStyle = lanePressed[i] ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)";
+      ctx.fillRect(rx + lw * 0.08, hy - 2, lw * 0.84, 3);
     }
 
     // Hold note trails (draw behind tap notes)
     for (const note of activeNotes) {
       if (!note.endTime || note.hit || note.missed) continue;
-      const cx = note.lane * lw + lw / 2;
+      const cx = pfx + note.lane * lw + lw / 2;
       const cyStart = hy - (note.time - songTime) * ppm;
       const cyEnd = hy - (note.endTime - songTime) * ppm;
       if (cyStart < -200 && cyEnd < -200) continue;
       if (cyStart > h + 50 && cyEnd > h + 50) continue;
 
-      const trailW = lw * 0.65 * ns;
-      const isGold = note.gold;
-      const color = isGold ? GOLD_COLOR : LANE_COLORS[note.lane];
+      const trailW = lw * 0.75 * ns;
+      const color = noteColorFor(note);
 
       // When holding: trail only from hit line to end (already-held part disappears)
-      // When not holding: full trail from start to end
       const drawTop = note.holding ? hy : cyStart;
       const drawBottom = cyEnd;
-      if (drawTop <= drawBottom) continue; // nothing to draw
+      if (drawTop <= drawBottom) continue;
 
       // Trail body
-      ctx.globalAlpha = note.holding ? 0.6 : 0.35;
+      ctx.globalAlpha = note.holding ? 0.75 : 0.5;
       ctx.fillStyle = color;
-      ctx.beginPath();
-      roundRect(cx - trailW / 2, drawBottom, trailW, drawTop - drawBottom, 4);
-      ctx.fill();
+      ctx.fillRect(cx - trailW / 2, drawBottom, trailW, drawTop - drawBottom);
 
-      // Trail glow
-      ctx.globalAlpha = note.holding ? 0.3 : 0.15;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = note.holding ? (isGold ? 24 : 16) : (isGold ? 14 : 8);
-      ctx.beginPath();
-      roundRect(cx - trailW / 2 - 2, drawBottom - 2, trailW + 4, drawTop - drawBottom + 4, 6);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      // Trail border
+      ctx.globalAlpha = note.holding ? 0.9 : 0.6;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx - trailW / 2, drawBottom, trailW, drawTop - drawBottom);
 
-      // Head (start) cap — only show when NOT holding
+      // Head (start) cap
       if (!note.holding) {
-        ctx.globalAlpha = 0.8;
+        ctx.globalAlpha = 0.85;
         ctx.fillStyle = color;
-        ctx.beginPath();
-        roundRect(cx - trailW / 2, cyStart - 4, trailW, 8, 4);
-        ctx.fill();
+        ctx.fillRect(cx - trailW / 2, cyStart - 5, trailW, 10);
       }
 
       // Tail (end) cap
       ctx.globalAlpha = 0.9;
       ctx.fillStyle = color;
-      ctx.beginPath();
-      roundRect(cx - trailW / 2, drawBottom - 4, trailW, 8, 4);
-      ctx.fill();
+      ctx.fillRect(cx - trailW / 2, drawBottom - 5, trailW, 10);
 
       ctx.globalAlpha = 1;
     }
@@ -604,37 +621,37 @@
     // Tap & hold head notes
     for (const note of activeNotes) {
       if (note.hit || note.missed) continue;
-      if (note.holding) continue; // drawn as trail
-      const cx = note.lane * lw + lw / 2;
+      if (note.holding) continue;
+      const cx = pfx + note.lane * lw + lw / 2;
       const cy = hy - (note.time - songTime) * ppm;
       if (cy < -30 || cy > h + 30) continue;
 
       const noteW = lw * 0.85 * ns;
-      const isGold = note.gold;
-      const noteColor = isGold ? GOLD_COLOR : LANE_COLORS[note.lane];
+      const noteColor = noteColorFor(note);
       const noteH = nh;
       const isHold = !!note.endTime;
 
-      ctx.shadowColor = noteColor;
-      ctx.shadowBlur = isGold ? 20 : (isHold ? 14 : 10);
+      // Note body
       ctx.fillStyle = noteColor;
-      roundRect(cx - noteW / 2, cy - noteH / 2, noteW, noteH, NOTE_RADIUS);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      ctx.fillRect(cx - noteW / 2, cy - noteH / 2, noteW, noteH);
 
-      // Highlight
-      ctx.fillStyle = "rgba(255,255,255,0.2)";
-      roundRect(cx - noteW / 2 + 2, cy - noteH / 2 + 1, noteW - 4, noteH * 0.4, NOTE_RADIUS - 1);
-      ctx.fill();
+      // Note border
+      ctx.strokeStyle = "rgba(255,255,255,0.15)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(cx - noteW / 2, cy - noteH / 2, noteW, noteH);
 
-      // Hold indicator (diamond shape on head)
+      // Inner highlight
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.fillRect(cx - noteW / 2 + 2, cy - noteH / 2 + 1, noteW - 4, noteH * 0.35);
+
+      // Hold indicator triangle
       if (isHold) {
-        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
         ctx.beginPath();
-        ctx.moveTo(cx, cy - noteH / 2 - 3);
-        ctx.lineTo(cx + 4, cy - noteH / 2 + 1);
-        ctx.lineTo(cx, cy - noteH / 2 + 5);
-        ctx.lineTo(cx - 4, cy - noteH / 2 + 1);
+        ctx.moveTo(cx, cy - noteH / 2 - 4);
+        ctx.lineTo(cx + 5, cy - noteH / 2 + 2);
+        ctx.lineTo(cx, cy - noteH / 2 + 8);
+        ctx.lineTo(cx - 5, cy - noteH / 2 + 2);
         ctx.closePath();
         ctx.fill();
       }
@@ -642,7 +659,7 @@
 
     // Approach lines
     for (let i = 0; i < LANE_COUNT; i++) {
-      const cx = i * lw + lw / 2;
+      const cx = pfx + i * lw + lw / 2;
       ctx.fillStyle = LANE_COLORS[i] + "15";
       ctx.fillRect(cx - 1, 0, 2, hy);
     }
@@ -658,6 +675,7 @@
     const dt = ts - lastTime;
     lastTime = ts;
     songTime += dt;
+    updateFPS();
 
     const hy = hitY();
     const ppm = hy / APPROACH_TIME;
@@ -712,8 +730,10 @@
 
     draw();
 
-    // End check
-    if (songTime >= songDuration + 2000 && activeNotes.every((n) => n.hit || n.missed)) {
+    // End check — only when all notes have been spawned AND processed
+    const allSpawned = noteIndex >= notes.length;
+    const allProcessed = activeNotes.length === 0 && allSpawned;
+    if (allSpawned && songTime >= songDuration + 2000 && (allProcessed || activeNotes.every((n) => n.hit || n.missed))) {
       showResults();
       return;
     }
@@ -764,9 +784,13 @@
     hud.classList.remove("hidden");
     if (isMobile()) touchLanes.classList.remove("hidden");
 
-    gameState = "playing";
-    startBGM();
-    animFrame = requestAnimationFrame(gameLoop);
+    applyOptions();
+    runCountdown(function () {
+      gameState = "playing";
+      lastTime = 0;
+      startBGM();
+      animFrame = requestAnimationFrame(gameLoop);
+    });
   }
 
   function pauseGame() {
@@ -778,21 +802,193 @@
     lanePressed = [false, false, false, false];
   }
 
-  function resumeGame() {
-    if (gameState !== "paused") return;
-    pauseOverlay.classList.add("hidden");
-    gameState = "playing";
-    lastTime = 0;
-    startBGM();
-    animFrame = requestAnimationFrame(gameLoop);
+  // ─── Countdown (3-2-1-GO) ──────────────────────────
+  var countdownOverlay = document.getElementById("countdownOverlay");
+  var countdownNum = document.getElementById("countdownNum");
+
+  function playCountdownBeep(freq, duration) {
+    if (!audioCtx) return;
+    try {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
   }
 
-  function quitToLobby() {
+  function runCountdown(callback) {
+    gameState = "countdown";
+    countdownOverlay.classList.remove("hidden");
+    var count = 3;
+    countdownNum.textContent = count;
+    countdownNum.className = "countdown-num";
+    void countdownNum.offsetWidth;
+    countdownNum.style.animation = "none";
+    void countdownNum.offsetWidth;
+    countdownNum.style.animation = "";
+
+    // Play first beep immediately
+    playCountdownBeep(440, 0.15);
+
+    var timer = setInterval(function () {
+      count--;
+      if (count > 0) {
+        countdownNum.textContent = count;
+        countdownNum.className = "countdown-num";
+        void countdownNum.offsetWidth;
+        countdownNum.style.animation = "none";
+        void countdownNum.offsetWidth;
+        countdownNum.style.animation = "";
+        playCountdownBeep(440, 0.15); // normal beep
+      } else if (count === 0) {
+        countdownNum.textContent = "GO!";
+        countdownNum.className = "countdown-go";
+        void countdownNum.offsetWidth;
+        countdownNum.style.animation = "none";
+        void countdownNum.offsetWidth;
+        countdownNum.style.animation = "";
+        playCountdownBeep(880, 0.25); // higher pitch for GO!
+      } else {
+        clearInterval(timer);
+        countdownOverlay.classList.add("hidden");
+        callback();
+      }
+    }, 800);
+  }
+
+  window.resumeGame = function () {
+    if (gameState !== "paused") return;
+    pauseOverlay.classList.add("hidden");
+    runCountdown(function () {
+      gameState = "playing";
+      lastTime = 0;
+      startBGM();
+      animFrame = requestAnimationFrame(gameLoop);
+    });
+  };
+
+  window.restartGame = function () {
+    pauseOverlay.classList.add("hidden");
+    // Reset all game state
+    score = 0; combo = 0; maxCombo = 0;
+    judgmentCount = { perfect: 0, great: 0, good: 0, bad: 0, miss: 0 };
+    noteIndex = 0;
+    for (var i = 0; i < 4; i++) { lanePressed[i] = false; laneHeld[i] = false; }
+    audio.currentTime = 0;
+    runCountdown(function () {
+      gameState = "playing";
+      lastTime = 0;
+      startBGM();
+      animFrame = requestAnimationFrame(gameLoop);
+    });
+  };
+
+  // ─── Options/Advanced ─────────────────────────────
+  var optionsOverlay = document.getElementById("optionsOverlay");
+  var gameOptions = {
+    speed: 10, dim: 70, volume: 80,
+    blurBg: false, fps: false, lowGfx: false
+  };
+
+  // FPS counter
+  var fpsDisplay = null;
+  var fpsFrames = 0;
+  var fpsLastTime = performance.now();
+
+  function updateFPS() {
+    if (!gameOptions.fps || !fpsDisplay) return;
+    fpsFrames++;
+    var now = performance.now();
+    if (now - fpsLastTime >= 1000) {
+      fpsDisplay.textContent = fpsFrames + " FPS";
+      fpsFrames = 0;
+      fpsLastTime = now;
+    }
+  }
+
+  function loadOptions() {
+    try {
+      var saved = JSON.parse(localStorage.getItem("mania_options") || "null");
+      if (saved) Object.assign(gameOptions, saved);
+    } catch(e) {}
+    document.getElementById("optSpeed").value = gameOptions.speed;
+    document.getElementById("optDim").value = gameOptions.dim;
+    document.getElementById("optVolume").value = gameOptions.volume;
+    document.getElementById("optBlurBg").checked = gameOptions.blurBg;
+    document.getElementById("optFPS").checked = gameOptions.fps;
+    document.getElementById("optLowGfx").checked = gameOptions.lowGfx;
+  }
+
+  window.toggleAdvanced = function () {
+    pauseOverlay.classList.add("hidden");
+    loadOptions();
+    optionsOverlay.classList.remove("hidden");
+  };
+
+  window.closeOptions = function () {
+    optionsOverlay.classList.add("hidden");
+    pauseOverlay.classList.remove("hidden");
+  };
+
+  window.saveOptions = function () {
+    gameOptions.speed = parseInt(document.getElementById("optSpeed").value);
+    gameOptions.dim = parseInt(document.getElementById("optDim").value);
+    gameOptions.volume = parseInt(document.getElementById("optVolume").value);
+    gameOptions.blurBg = document.getElementById("optBlurBg").checked;
+    gameOptions.fps = document.getElementById("optFPS").checked;
+    gameOptions.lowGfx = document.getElementById("optLowGfx").checked;
+    localStorage.setItem("mania_options", JSON.stringify(gameOptions));
+    applyOptions();
+    optionsOverlay.classList.add("hidden");
+    pauseOverlay.classList.remove("hidden");
+  };
+
+  function applyOptions() {
+    // FPS display
+    if (gameOptions.fps && !fpsDisplay) {
+      fpsDisplay = document.getElementById("fpsCounter");
+      if (fpsDisplay) fpsDisplay.classList.remove("hidden");
+    } else if (!gameOptions.fps && fpsDisplay) {
+      fpsDisplay.classList.add("hidden");
+    }
+    // Background image
+    var bgEl = document.getElementById("bgImage");
+    if (bgEl) {
+      if (gameOptions.blurBg && song && song.cover_url) {
+        bgEl.style.backgroundImage = "url('" + song.cover_url + "')";
+        bgEl.classList.remove("hidden");
+      } else {
+        bgEl.classList.add("hidden");
+      }
+    }
+    // Dim overlay — only active when blur bg is on
+    var dimEl = document.getElementById("dimOverlay");
+    if (dimEl) {
+      if (gameOptions.blurBg && song && song.cover_url) {
+        dimEl.classList.add("active");
+        dimEl.style.opacity = gameOptions.dim / 100;
+      } else {
+        dimEl.classList.remove("active");
+      }
+    }
+  }
+
+  // Load options on init
+  loadOptions();
+
+  window.quitToLobby = function () {
     gameState = "start";
     stopBGM();
     if (animFrame) cancelAnimationFrame(animFrame);
     window.location.href = "./";
-  }
+  };
 
   function showResults() {
     gameState = "results";
@@ -896,8 +1092,9 @@
     if (gameState !== "playing") return;
     for (const touch of e.changedTouches) {
       const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const lane = Math.floor(x / rect.width * LANE_COUNT);
+      const scaleX = getW() / rect.width;
+      const x = (touch.clientX - rect.left) * scaleX;
+      const lane = Math.floor((x - playfieldX()) / laneWidth());
       if (lane >= 0 && lane < LANE_COUNT) hitLane(lane);
     }
   }, { passive: false });
@@ -905,8 +1102,9 @@
   canvas.addEventListener("touchend", (e) => {
     for (const touch of e.changedTouches) {
       const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const lane = Math.floor(x / rect.width * LANE_COUNT);
+      const scaleX = getW() / rect.width;
+      const x = (touch.clientX - rect.left) * scaleX;
+      const lane = Math.floor((x - playfieldX()) / laneWidth());
       if (lane >= 0 && lane < LANE_COUNT) releaseLane(lane);
     }
   });
@@ -915,8 +1113,9 @@
     if (gameState === "start") { startGame(); return; }
     if (gameState !== "playing") return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const lane = Math.floor(x / rect.width * LANE_COUNT);
+    const scaleX = getW() / rect.width;
+    const x = (e.clientX - rect.left) * scaleX;
+    const lane = Math.floor((x - playfieldX()) / laneWidth());
     if (lane >= 0 && lane < LANE_COUNT) hitLane(lane);
   });
 

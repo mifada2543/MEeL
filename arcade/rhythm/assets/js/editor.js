@@ -77,6 +77,10 @@
   var GOLD_COLOR = "#fbbf24";
   var laneWidth = 100; // dynamic, recalculated on resize
   var hasAudio = false; // track if audio is loaded
+  var gridCanvas = null; // offscreen grid buffer
+  var gridDirty = true; // needs redraw
+  var lastUIUpdate = 0; // throttle DOM updates during playback
+  var isDraggingCursor = false; // dragging playback cursor from left handle
 
   /* ═══════════════════════════════════════════════════════
      AUDIO
@@ -131,6 +135,7 @@
     canvas.style.width = w + "px";
     // Height is set directly — scrollable via wrapper overflow
     canvas.style.height = h + "px";
+    gridDirty = true;
   }
 
   function getBPM() {
@@ -160,96 +165,127 @@
   }
 
   /* ═══════════════════════════════════════════════════════
-     DRAW
+     OFFSCREEN GRID BUFFER
      ═══════════════════════════════════════════════════════ */
-  function draw() {
+  function buildGridBuffer() {
     var w = canvas.width;
     var h = canvas.height;
     var lw = laneWidth;
-    var offset = 50; // left padding for time labels
+    var off = 50;
 
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = "#08080f";
-    ctx.fillRect(0, 0, w, h);
+    gridCanvas = document.createElement("canvas");
+    gridCanvas.width = w;
+    gridCanvas.height = h;
+    var gc = gridCanvas.getContext("2d");
+
+    gc.fillStyle = "#08080f";
+    gc.fillRect(0, 0, w, h);
 
     var bpm = getBPM();
     var beatMs = 60000 / bpm;
     var totalMs = audioDuration * 1000;
 
-    // Draw grid
+    // Bar grid lines
     for (var ms = 0; ms <= totalMs; ms += beatMs) {
       var y = msToY(ms);
       if (y > h) break;
       var beatNum = Math.round(ms / beatMs);
       var isBar = beatNum % 4 === 0;
 
-      ctx.strokeStyle = isBar ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
-      ctx.lineWidth = isBar ? 1.5 : 0.5;
-      ctx.beginPath();
-      ctx.moveTo(offset, y);
-      ctx.lineTo(offset + lw * LANE_COUNT, y);
-      ctx.stroke();
+      gc.strokeStyle = isBar ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
+      gc.lineWidth = isBar ? 1.5 : 0.5;
+      gc.beginPath();
+      gc.moveTo(off, y);
+      gc.lineTo(off + lw * LANE_COUNT, y);
+      gc.stroke();
 
       if (isBar) {
-        ctx.fillStyle = "rgba(255,255,255,0.2)";
-        ctx.font = "9px 'JetBrains Mono', monospace";
-        ctx.textAlign = "right";
-        ctx.fillText(Math.round(ms / 1000) + "s", offset - 4, y + 3);
+        gc.fillStyle = "rgba(255,255,255,0.2)";
+        gc.font = "9px 'JetBrains Mono', monospace";
+        gc.textAlign = "right";
+        gc.fillText(Math.round(ms / 1000) + "s", off - 4, y + 3);
       }
     }
 
-    // Draw sub-beat grid
+    // Sub-beat grid
     if (snapDiv > 0) {
       var snap = beatMs / snapDiv;
-      ctx.strokeStyle = "rgba(255,255,255,0.02)";
-      ctx.lineWidth = 0.5;
+      gc.strokeStyle = "rgba(255,255,255,0.02)";
+      gc.lineWidth = 0.5;
       for (var ms2 = 0; ms2 <= totalMs; ms2 += snap) {
         var y2 = msToY(ms2);
         if (y2 > h) break;
         if (Math.round(ms2 / beatMs * snapDiv) % snapDiv !== 0) {
-          ctx.beginPath();
-          ctx.moveTo(offset, y2);
-          ctx.lineTo(offset + lw * LANE_COUNT, y2);
-          ctx.stroke();
+          gc.beginPath();
+          gc.moveTo(off, y2);
+          gc.lineTo(off + lw * LANE_COUNT, y2);
+          gc.stroke();
         }
       }
     }
 
-    // Draw lane backgrounds
+    // Lane backgrounds
     for (var i = 0; i < LANE_COUNT; i++) {
-      var x = offset + i * lw;
+      var x = off + i * lw;
       var alpha = (i % 2 === 0) ? 0.03 : 0.01;
-      ctx.fillStyle = LANE_COLORS[i] + Math.round(alpha * 255).toString(16).padStart(2, "0");
-      ctx.fillRect(x, 0, lw, h);
+      gc.fillStyle = LANE_COLORS[i] + Math.round(alpha * 255).toString(16).padStart(2, "0");
+      gc.fillRect(x, 0, lw, h);
 
-      // Lane header
-      ctx.fillStyle = LANE_COLORS[i] + "40";
-      ctx.fillRect(x, 0, lw, 28);
+      gc.fillStyle = LANE_COLORS[i] + "40";
+      gc.fillRect(x, 0, lw, 28);
 
-      // Lane label
-      ctx.fillStyle = LANE_COLORS[i];
-      ctx.font = "bold 13px 'JetBrains Mono', monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(LANE_KEYS[i], x + lw / 2, 19);
+      gc.fillStyle = LANE_COLORS[i];
+      gc.font = "bold 13px 'JetBrains Mono', monospace";
+      gc.textAlign = "center";
+      gc.fillText(LANE_KEYS[i], x + lw / 2, 19);
 
-      // Lane separator
-      ctx.strokeStyle = "rgba(255,255,255,0.04)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
+      gc.strokeStyle = "rgba(255,255,255,0.04)";
+      gc.lineWidth = 1;
+      gc.beginPath();
+      gc.moveTo(x, 0);
+      gc.lineTo(x, h);
+      gc.stroke();
     }
 
-    // Hold note trails
+    gridDirty = false;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     DRAW (optimized: grid from buffer, viewport culling)
+     ═══════════════════════════════════════════════════════ */
+  function draw() {
+    var w = canvas.width;
+    var h = canvas.height;
+    var lw = laneWidth;
+    var offset = 50;
+
+    // Rebuild grid buffer if needed
+    if (gridDirty || !gridCanvas || gridCanvas.width !== w || gridCanvas.height !== h) {
+      buildGridBuffer();
+    }
+
+    // Copy grid buffer (fast blit)
+    ctx.drawImage(gridCanvas, 0, 0);
+
+    // Viewport bounds for culling during playback only
+    var viewTop = -99999;
+    var viewBot = 99999;
+    if (isPlaying) {
+      var scrollEl = wrap;
+      viewTop = scrollEl.scrollTop - 100;
+      viewBot = viewTop + scrollEl.clientHeight + 200;
+    }
+
+    // Hold note trails (viewport culled)
     for (var ni = 0; ni < notes.length; ni++) {
       var note = notes[ni];
       if (!note.e) continue;
       var cx = offset + note.l * lw + lw / 2;
       var yStart = msToY(note.t);
       var yEnd = msToY(note.e);
-      if (yStart > h && yEnd > h) continue;
-      if (yStart < 0 && yEnd < 0) continue;
+      // Skip notes outside viewport
+      if (yEnd > viewBot && yStart > viewBot) continue;
+      if (yStart < viewTop && yEnd < viewTop) continue;
 
       var trailW = lw * 0.55;
       var isSelected = ni === selectedNoteIdx;
@@ -285,12 +321,13 @@
       ctx.globalAlpha = 1;
     }
 
-    // Tap & hold head notes
+    // Tap & hold head notes (viewport culled)
     for (var ni2 = 0; ni2 < notes.length; ni2++) {
       var note2 = notes[ni2];
       var y3 = msToY(note2.t);
       var x2 = offset + note2.l * lw;
-      if (y3 < 0 || y3 > h) continue;
+      // Skip notes outside viewport
+      if (y3 < viewTop - 30 || y3 > viewBot) continue;
 
       var noteW = lw * 0.82;
       var noteH = 14;
@@ -367,42 +404,52 @@
       }
     }
 
-    // Draw playback cursor
+    // Draw playback cursor (viewport culled)
     if (audio.currentTime > 0) {
       var cursorY = msToY(audio.currentTime * 1000);
-      ctx.strokeStyle = "#fbbf24";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(offset, cursorY);
-      ctx.lineTo(offset + lw * LANE_COUNT, cursorY);
-      ctx.stroke();
+      if (cursorY >= viewTop - 20 && cursorY <= viewBot) {
+        ctx.strokeStyle = "#fbbf24";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(offset, cursorY);
+        ctx.lineTo(offset + lw * LANE_COUNT, cursorY);
+        ctx.stroke();
 
-      ctx.fillStyle = "#fbbf24";
-      ctx.beginPath();
-      ctx.moveTo(offset - 6, cursorY - 4);
-      ctx.lineTo(offset, cursorY);
-      ctx.lineTo(offset - 6, cursorY + 4);
-      ctx.fill();
+        // Draggable handle on left side
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.moveTo(offset - 10, cursorY - 8);
+        ctx.lineTo(offset - 2, cursorY);
+        ctx.lineTo(offset - 10, cursorY + 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
 
-    // Update UI
-    document.getElementById("noteCount").textContent = notes.length;
-    document.getElementById("durationDisplay").textContent = formatTime(audioDuration);
-    document.getElementById("positionDisplay").textContent = formatTime(audio.currentTime || 0);
-
-    var pct = audioDuration > 0 ? (audio.currentTime / audioDuration * 100) : 0;
-    document.getElementById("timelineProgress").style.width = pct + "%";
-    document.getElementById("timelineCursor").style.left = pct + "%";
+    // Update UI (throttled — only every 200ms during playback)
+    var now = performance.now();
+    if (!isPlaying || now - lastUIUpdate > 200) {
+      lastUIUpdate = now;
+      document.getElementById("noteCount").textContent = notes.length;
+      document.getElementById("durationDisplay").textContent = formatTime(audioDuration);
+      document.getElementById("positionDisplay").textContent = formatTime(audio.currentTime || 0);
+      var pct = audioDuration > 0 ? (audio.currentTime / audioDuration * 100) : 0;
+      document.getElementById("timelineProgress").style.width = pct + "%";
+      document.getElementById("timelineCursor").style.left = pct + "%";
+    }
   }
 
   /* ═══════════════════════════════════════════════════════
      INPUT: CLICK TO PLACE/REMOVE NOTES
      ═══════════════════════════════════════════════════════ */
   function getCanvasPos(e) {
-    var rect = canvas.getBoundingClientRect();
+    var wrapRect = wrap.getBoundingClientRect();
     return {
-      x: e.clientX - rect.left + canvas.parentElement.scrollLeft,
-      y: e.clientY - rect.top + canvas.parentElement.scrollTop,
+      x: e.clientX - wrapRect.left + wrap.scrollLeft,
+      y: e.clientY - wrapRect.top + wrap.scrollTop,
     };
   }
 
@@ -426,6 +473,17 @@
 
   canvas.addEventListener("mousedown", function (e) {
     var pos = getCanvasPos(e);
+
+    // Check if clicking cursor handle (left side, near cursor Y)
+    if (audio.currentTime > 0) {
+      var cursorY = msToY(audio.currentTime * 1000);
+      if (pos.x < 50 && Math.abs(pos.y - cursorY) < 15) {
+        isDraggingCursor = true;
+        e.preventDefault();
+        return;
+      }
+    }
+
     var info = getLaneAndTime(pos);
     if (!info) return;
 
@@ -485,12 +543,24 @@
   });
 
   canvas.addEventListener("mousemove", function (e) {
+    var pos = getCanvasPos(e);
+    if (isDraggingCursor) {
+      // Drag cursor to seek audio
+      var ms = yToMs(pos.y);
+      audio.currentTime = Math.max(0, Math.min(audioDuration, ms / 1000));
+      draw();
+      return;
+    }
     if (!isDragging || dragLane < 0) return;
-    lastDragPos = getCanvasPos(e);
+    lastDragPos = pos;
     draw();
   });
 
   canvas.addEventListener("mouseup", function (e) {
+    if (isDraggingCursor) {
+      isDraggingCursor = false;
+      return;
+    }
     if (!isDragging || dragLane < 0) {
       isDragging = false;
       dragLane = -1;
@@ -533,8 +603,23 @@
 
   canvas.addEventListener("mouseleave", function () {
     isDragging = false;
+    isDraggingCursor = false;
     dragLane = -1;
     dragNoteIdx = -1;
+  });
+
+  // Cursor handle hover cursor
+  canvas.addEventListener("mousemove", function (e) {
+    if (isDragging || isDraggingCursor) return;
+    var pos = getCanvasPos(e);
+    if (audio.currentTime > 0) {
+      var cursorY = msToY(audio.currentTime * 1000);
+      if (pos.x < 50 && Math.abs(pos.y - cursorY) < 15) {
+        canvas.style.cursor = "ew-resize";
+        return;
+      }
+    }
+    canvas.style.cursor = "crosshair";
   });
 
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
@@ -737,14 +822,23 @@
      ═══════════════════════════════════════════════════════ */
   window.setZoom = function (val) {
     zoom = parseInt(val);
+    gridDirty = true;
     resizeCanvas();
     draw();
   };
 
   window.setSnap = function (val) {
     snapDiv = parseInt(val);
+    gridDirty = true;
     draw();
   };
+
+  // Rebuild grid when BPM changes
+  document.getElementById("f-bpm").addEventListener("input", function () {
+    gridDirty = true;
+    resizeCanvas();
+    draw();
+  });
 
   window.clearNotes = function () {
     if (notes.length === 0) return;
@@ -781,6 +875,9 @@
     // Sort notes
     notes.sort(function (a, b) { return a.t - b.t; });
     formData.set("beatmap_json", JSON.stringify({ notes: notes }));
+    if (typeof EDIT_SONG !== "undefined" && EDIT_SONG) {
+      formData.set("song_id", EDIT_SONG.id);
+    }
 
     // Show overlay
     var overlay = document.getElementById("uploadOverlay");

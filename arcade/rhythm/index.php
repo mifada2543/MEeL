@@ -123,7 +123,7 @@ $songs_json = json_encode($all_songs, JSON_UNESCAPED_UNICODE);
     </div>
     <div class="nav-actions">
       <?php if ($is_logged_in): ?>
-        <a href="editor/" class="nav-btn" title="Buat Beatmap" style="text-decoration:none;">
+        <a href="manage/" class="nav-btn" title="Kelola Beatmap" style="text-decoration:none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         </a>
       <?php endif; ?>
