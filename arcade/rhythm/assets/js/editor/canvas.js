@@ -67,11 +67,18 @@ export function resizeCanvas() {
 }
 
 export function getCanvasPos(e) {
-  var wrap = DOM.wrap;
-  var wrapRect = wrap.getBoundingClientRect();
+  var canvas = DOM.canvas, wrap = DOM.wrap;
+  var rect = canvas.getBoundingClientRect();
+  // Scale from rendered CSS px to the canvas's actual pixel-buffer space.
+  // Normally 1:1 (canvas.style.width/height are kept in sync with
+  // canvas.width/height in resizeCanvas), but this guards against any
+  // divergence — e.g. HiDPI quirks or a stale layout — the same way the
+  // Ctrl+right-click seek handler already protects itself.
+  var scaleX = canvas.width / rect.width;
+  var scaleY = canvas.height / rect.height;
   return {
-    x: e.clientX - wrapRect.left + wrap.scrollLeft,
-    y: e.clientY - wrapRect.top + wrap.scrollTop,
+    x: (e.clientX - rect.left) * scaleX + wrap.scrollLeft * scaleX,
+    y: (e.clientY - rect.top) * scaleY + wrap.scrollTop * scaleY,
   };
 }
 

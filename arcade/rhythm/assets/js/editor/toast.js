@@ -1,24 +1,10 @@
 /**
  * MEeL!Mania — Toast Notifications
- * Uses SweetAlert2 when available, falls back to a custom DOM toast.
+ * Lightweight custom DOM toast (no SweetAlert2 dependency).
  */
 
 export function showToast(message, type) {
   type = type || "info";
-
-  if (typeof Swal !== "undefined") {
-    var bg = "#0e1118";
-    Swal.fire({
-      title: type === "error" ? "Error" : type === "success" ? "Berhasil!" : "Info",
-      text: message,
-      icon: type === "error" ? "error" : type === "success" ? "success" : "info",
-      confirmButtonColor: "#f43f7a",
-      background: bg,
-      color: "#fff",
-      timer: type === "success" ? 3000 : undefined,
-    });
-    return;
-  }
 
   var existing = document.getElementById("editorToast");
   if (existing) existing.remove();
