@@ -53,7 +53,10 @@
      CONSTANTS
      ═══════════════════════════════════════════════════════ */
   var LANE_COUNT = 4;
-  var LANE_COLORS = ["#f43f7a", "#a855f7", "#6366f1", "#818cf8"];
+  var COLOR_CLICK = "#3b82f6";    // blue for tap/click notes
+  var COLOR_HOLD = "#22c55e";     // green for hold notes
+  var GOLD_COLOR_EDITOR = "#fbbf24"; // gold for bonus notes
+  var LANE_COLORS = [COLOR_CLICK, COLOR_CLICK, COLOR_CLICK, COLOR_CLICK];
   var LANE_KEYS = ["A", "S", "K", "L"];
   var ROW_HEIGHT = 30; // pixels per beat row — more spacious
   var LANE_WIDTH_MIN = 80;
@@ -74,13 +77,83 @@
   var dragStartMs = -1;
   var dragNoteIdx = -1;
   var selectedNoteIdx = -1;
-  var GOLD_COLOR = "#fbbf24";
+  var GOLD_COLOR = GOLD_COLOR_EDITOR;
   var laneWidth = 100; // dynamic, recalculated on resize
   var hasAudio = false; // track if audio is loaded
   var gridCanvas = null; // offscreen grid buffer
   var gridDirty = true; // needs redraw
   var lastUIUpdate = 0; // throttle DOM updates during playback
   var isDraggingCursor = false; // dragging playback cursor from left handle
+  var isMovingNote = false; // dragging an existing note to new position
+  var moveNoteIdx = -1;
+  var moveNoteOrigT = 0;
+  var moveNoteOrigL = -1;
+  var moveNoteOrigE = null;
+
+  /* ═══════════════════════════════════════════════════════
+     LOCALSTORAGE SAVE / LOAD
+     ═══════════════════════════════════════════════════════ */
+  function getStorageKey() {
+    // Use song title + artist as key, or fall back to URL param
+    var titleInput = document.getElementById("songTitle");
+    var artistInput = document.getElementById("songArtist");
+    var key = "editor_";
+    if (titleInput && titleInput.value) {
+      key += titleInput.value.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      if (artistInput && artistInput.value) {
+        key += "_" + artistInput.value.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      }
+    } else {
+      key += window.location.search.replace(/[^a-z0-9]/gi, "_");
+    }
+    return key;
+  }
+
+  function saveNotesToStorage() {
+    try {
+      var data = {
+        notes: notes,
+        bpm: parseInt(document.getElementById("bpmInput").value) || 120,
+        title: document.getElementById("songTitle").value || "",
+        artist: document.getElementById("songArtist").value || "",
+        difficulty: document.getElementById("difficultySelect").value || "normal",
+        savedAt: Date.now()
+      };
+      localStorage.setItem(getStorageKey(), JSON.stringify(data));
+    } catch (e) { /* quota exceeded or other error */ }
+  }
+
+  function loadNotesFromStorage() {
+    try {
+      var raw = localStorage.getItem(getStorageKey());
+      if (!raw) return false;
+      var data = JSON.parse(raw);
+      if (data && Array.isArray(data.notes)) {
+        notes = data.notes;
+        if (data.bpm) {
+          var bpmInput = document.getElementById("bpmInput");
+          if (bpmInput) bpmInput.value = data.bpm;
+        }
+        if (data.title) {
+          var titleInput = document.getElementById("songTitle");
+          if (titleInput) titleInput.value = data.title;
+        }
+        if (data.artist) {
+          var artistInput = document.getElementById("songArtist");
+          if (artistInput) artistInput.value = data.artist;
+        }
+        if (data.difficulty) {
+          var diffSelect = document.getElementById("difficultySelect");
+          if (diffSelect) diffSelect.value = data.difficulty;
+        }
+        notes.sort(function (a, b) { return a.t - b.t; });
+        gridDirty = true;
+        updateNoteInfo();
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
 
   /* ═══════════════════════════════════════════════════════
      AUDIO
@@ -120,21 +193,32 @@
   /* ═══════════════════════════════════════════════════════
      CANVAS — RESPONSIVE LANE WIDTH
      ═══════════════════════════════════════════════════════ */
+  var virtualHeight = 600;
+  var MAX_CANVAS_H = 16384;
   function resizeCanvas() {
-    // Fill available width
     var availW = wrap.clientWidth - 20;
     laneWidth = Math.max(LANE_WIDTH_MIN, Math.min(LANE_WIDTH_MAX, (availW - 60) / LANE_COUNT));
     var w = Math.max(LANE_COUNT * laneWidth + 60, 380);
-    // Full height based on song duration — NO cap, scrollable
-    var h = 600;
+    virtualHeight = 600;
     if (audioDuration > 0) {
-      h = Math.max(800, audioDuration * ROW_HEIGHT * zoom * getBPM() / 60 + 100);
+      virtualHeight = Math.max(800, audioDuration * ROW_HEIGHT * zoom * getBPM() / 60 + 100);
     }
+    // Canvas height capped at browser limit
+    var h = Math.min(virtualHeight, MAX_CANVAS_H);
     canvas.width = w;
     canvas.height = h;
     canvas.style.width = w + "px";
-    // Height is set directly — scrollable via wrapper overflow
     canvas.style.height = h + "px";
+    // Add a spacer div so the wrapper can scroll to full virtual height
+    var spacer = document.getElementById("canvasSpacer");
+    if (!spacer) {
+      spacer = document.createElement("div");
+      spacer.id = "canvasSpacer";
+      spacer.style.width = "1px";
+      wrap.appendChild(spacer);
+    }
+    // Spacer only fills the gap beyond the capped canvas
+    spacer.style.height = (virtualHeight - h) + "px";
     gridDirty = true;
   }
 
@@ -169,7 +253,7 @@
      ═══════════════════════════════════════════════════════ */
   function buildGridBuffer() {
     var w = canvas.width;
-    var h = canvas.height;
+    var h = Math.min(virtualHeight, MAX_CANVAS_H);
     var lw = laneWidth;
     var off = 50;
 
@@ -258,14 +342,22 @@
     var h = canvas.height;
     var lw = laneWidth;
     var offset = 50;
+    var scrollTop = wrap ? wrap.scrollTop : 0;
 
-    // Rebuild grid buffer if needed
-    if (gridDirty || !gridCanvas || gridCanvas.width !== w || gridCanvas.height !== h) {
+    // Rebuild grid buffer if needed (use virtual content size)
+    var gw = w;
+    var gh = Math.min(virtualHeight, 16384); // cap for grid buffer
+    if (gridDirty || !gridCanvas || gridCanvas.width !== gw || gridCanvas.height !== gh) {
       buildGridBuffer();
     }
 
-    // Copy grid buffer (fast blit)
-    ctx.drawImage(gridCanvas, 0, 0);
+    // Clear canvas and draw grid buffer offset by scroll
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(gridCanvas, 0, scrollTop, w, h, 0, 0, w, h);
+
+    // Translate so notes are drawn relative to scroll position
+    ctx.save();
+    ctx.translate(0, -scrollTop);
 
     // Viewport bounds for culling during playback only
     var viewTop = -99999;
@@ -290,7 +382,7 @@
       var trailW = lw * 0.55;
       var isSelected = ni === selectedNoteIdx;
       var isGold = note.g;
-      var color = isGold ? GOLD_COLOR : LANE_COLORS[note.l];
+      var color = isGold ? GOLD_COLOR : COLOR_HOLD;
 
       ctx.globalAlpha = isSelected ? 0.5 : 0.3;
       ctx.fillStyle = color;
@@ -335,7 +427,7 @@
       var noteY = y3 - noteH / 2;
       var isSelected2 = ni2 === selectedNoteIdx;
       var isGold2 = note2.g;
-      var noteColor = isGold2 ? GOLD_COLOR : LANE_COLORS[note2.l];
+      var noteColor = isGold2 ? GOLD_COLOR : (note2.e ? COLOR_HOLD : COLOR_CLICK);
 
       // Selection highlight — BOLD white border
       if (isSelected2) {
@@ -429,6 +521,9 @@
       }
     }
 
+    // Restore context after scroll translation
+    ctx.restore();
+
     // Update UI (throttled — only every 200ms during playback)
     var now = performance.now();
     if (!isPlaying || now - lastUIUpdate > 200) {
@@ -489,8 +584,11 @@
 
     lastDragPos = pos;
 
-    // Right click = delete
-    if (e.button === 2) {
+    // Ctrl+Right-click = seek (handled by contextmenu), skip mousedown
+    if (e.button === 2 && e.ctrlKey) return;
+
+    // Right click = delete (only when Ctrl is NOT held)
+    if (e.button === 2 && !e.ctrlKey) {
       e.preventDefault();
       var idx = findNoteAt(info.lane, info.ms);
       if (idx >= 0) {
@@ -500,6 +598,7 @@
         else if (selectedNoteIdx > idx) selectedNoteIdx--;
         draw();
         updateNoteInfo();
+        saveNotesToStorage();
       }
       return;
     }
@@ -526,6 +625,12 @@
           return;
         }
       }
+      // Start move-note mode: drag to reposition
+      isMovingNote = true;
+      moveNoteIdx = idx2;
+      moveNoteOrigT = notes[idx2].t;
+      moveNoteOrigL = notes[idx2].l;
+      moveNoteOrigE = notes[idx2].e || null;
       draw();
       updateNoteInfo();
       return;
@@ -545,10 +650,24 @@
   canvas.addEventListener("mousemove", function (e) {
     var pos = getCanvasPos(e);
     if (isDraggingCursor) {
-      // Drag cursor to seek audio
       var ms = yToMs(pos.y);
       audio.currentTime = Math.max(0, Math.min(audioDuration, ms / 1000));
       draw();
+      return;
+    }
+    // Moving an existing note
+    if (isMovingNote && moveNoteIdx >= 0) {
+      var info2 = getLaneAndTime(pos);
+      if (info2) {
+        var dt = info2.ms - moveNoteOrigT;
+        var dl = info2.lane - moveNoteOrigL;
+        notes[moveNoteIdx].t = Math.max(0, Math.round(moveNoteOrigT + dt));
+        notes[moveNoteIdx].l = Math.max(0, Math.min(LANE_COUNT - 1, moveNoteOrigL + dl));
+        if (moveNoteOrigE !== null) {
+          notes[moveNoteIdx].e = Math.round(moveNoteOrigE + dt);
+        }
+        draw();
+      }
       return;
     }
     if (!isDragging || dragLane < 0) return;
@@ -559,6 +678,17 @@
   canvas.addEventListener("mouseup", function (e) {
     if (isDraggingCursor) {
       isDraggingCursor = false;
+      return;
+    }
+    // Finish moving a note
+    if (isMovingNote && moveNoteIdx >= 0) {
+      undoStack.push(JSON.parse(JSON.stringify(notes)));
+      notes.sort(function (a, b) { return a.t - b.t; });
+      isMovingNote = false;
+      moveNoteIdx = -1;
+      draw();
+      updateNoteInfo();
+      saveNotesToStorage();
       return;
     }
     if (!isDragging || dragLane < 0) {
@@ -599,6 +729,7 @@
     dragLane = -1;
     dragNoteIdx = -1;
     draw();
+    saveNotesToStorage();
   });
 
   canvas.addEventListener("mouseleave", function () {
@@ -608,9 +739,13 @@
     dragNoteIdx = -1;
   });
 
-  // Cursor handle hover cursor
+  // Cursor handle hover cursor + time tooltip on canvas
+  var canvasTooltip = null;
   canvas.addEventListener("mousemove", function (e) {
-    if (isDragging || isDraggingCursor) return;
+    if (isDragging || isDraggingCursor) {
+      if (canvasTooltip) canvasTooltip.style.display = "none";
+      return;
+    }
     var pos = getCanvasPos(e);
     if (audio.currentTime > 0) {
       var cursorY = msToY(audio.currentTime * 1000);
@@ -620,19 +755,65 @@
       }
     }
     canvas.style.cursor = "crosshair";
+    // Time tooltip near cursor
+    if (audioDuration > 0) {
+      var ms = yToMs(pos.y);
+      if (ms >= 0 && ms <= audioDuration * 1000) {
+        if (!canvasTooltip) {
+          canvasTooltip = document.createElement("div");
+          canvasTooltip.style.cssText = "position:fixed;z-index:9999;background:#1e1e2e;color:#e2e8f0;font:12px 'JetBrains Mono',monospace;padding:3px 8px;border-radius:4px;pointer-events:none;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 8px rgba(0,0,0,0.4);";
+          document.body.appendChild(canvasTooltip);
+        }
+        var sec = (ms / 1000).toFixed(1);
+        canvasTooltip.textContent = sec + "s";
+        canvasTooltip.style.display = "block";
+        canvasTooltip.style.left = (e.clientX + 14) + "px";
+        canvasTooltip.style.top = (e.clientY - 10) + "px";
+      } else {
+        if (canvasTooltip) canvasTooltip.style.display = "none";
+      }
+    }
+  });
+  canvas.addEventListener("mouseleave", function () {
+    if (canvasTooltip) canvasTooltip.style.display = "none";
   });
 
-  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  // Ctrl+Right-click on canvas = seek to that time position
+  canvas.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+    if (!e.ctrlKey || !audioDuration) return;
+    var rect = canvas.getBoundingClientRect();
+    var scaleY = canvas.height / rect.height;
+    var canvasY = (e.clientY - rect.top) * scaleY + wrap.scrollTop;
+    var ms = yToMs(canvasY);
+    if (ms < 0) ms = 0;
+    if (ms > audioDuration * 1000) ms = audioDuration * 1000;
+    audio.currentTime = ms / 1000;
+    draw();
+    var sec = (ms / 1000).toFixed(1);
+    showToast("Seek: " + sec + "s", "info");
+  });
 
   /* ═══════════════════════════════════════════════════════
-     TIMELINE CLICK
+     TIMELINE CLICK + DRAG
      ═══════════════════════════════════════════════════════ */
-  document.getElementById("timelineBar").addEventListener("click", function (e) {
-    var rect = e.currentTarget.getBoundingClientRect();
-    var pct = (e.clientX - rect.left) / rect.width;
+  var timelineDragging = false;
+  var timelineBar = document.getElementById("timelineBar");
+  function seekTimeline(e) {
+    var rect = timelineBar.getBoundingClientRect();
+    var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     audio.currentTime = pct * audioDuration;
     draw();
+  }
+  timelineBar.addEventListener("mousedown", function (e) {
+    timelineDragging = true;
+    seekTimeline(e);
   });
+  document.addEventListener("mousemove", function (e) {
+    if (!timelineDragging) return;
+    seekTimeline(e);
+  });
+  document.addEventListener("mouseup", function () { timelineDragging = false; });
 
   /* ═══════════════════════════════════════════════════════
      KEYBOARD SHORTCUTS
@@ -648,6 +829,7 @@
         selectedNoteIdx = -1;
         draw();
         updateNoteInfo();
+        saveNotesToStorage();
       }
       return;
     }
@@ -659,6 +841,7 @@
       notes[selectedNoteIdx].g = !notes[selectedNoteIdx].g;
       draw();
       updateNoteInfo();
+      saveNotesToStorage();
       showToast(notes[selectedNoteIdx].g ? "⭐ Gold note!" : "Gold removed", "success");
       return;
     }
@@ -749,12 +932,12 @@
 
   window.editorDeleteSelected = function () {
     if (selectedNoteIdx < 0) return;
-    undoStack.push(JSON.parse(JSON.stringify(notes)));
-    notes.splice(selectedNoteIdx, 1);
-    selectedNoteIdx = -1;
-    draw();
-    updateNoteInfo();
-  };
+    undoStack.push(JSON.parse(JSON.stringify(notes)));      notes.splice(selectedNoteIdx, 1);
+      selectedNoteIdx = -1;
+      draw();
+      updateNoteInfo();
+      saveNotesToStorage();
+    };
 
   window.editorConvertToHold = function () {
     if (selectedNoteIdx < 0) return;
@@ -764,6 +947,7 @@
       note.e = note.t + 1000;
       draw();
       updateNoteInfo();
+      saveNotesToStorage();
     }
   };
 
@@ -775,6 +959,7 @@
       delete note.e;
       draw();
       updateNoteInfo();
+      saveNotesToStorage();
     }
   };
 
@@ -822,10 +1007,17 @@
      ═══════════════════════════════════════════════════════ */
   window.setZoom = function (val) {
     zoom = parseInt(val);
+    var pctEl = document.getElementById("zoomPercent");
+    if (pctEl) pctEl.textContent = Math.round(zoom / 3 * 100) + "%";
     gridDirty = true;
     resizeCanvas();
     draw();
   };
+  // Init display
+  (function() {
+    var pctEl = document.getElementById("zoomPercent");
+    if (pctEl) pctEl.textContent = Math.round(3 / 3 * 100) + "%";
+  })();
 
   window.setSnap = function (val) {
     snapDiv = parseInt(val);
@@ -847,6 +1039,7 @@
     notes = [];
     selectedNoteIdx = -1;
     draw();
+    saveNotesToStorage();
     updateNoteInfo();
   };
 
@@ -966,6 +1159,11 @@
      ═══════════════════════════════════════════════════════ */
   function init() {
     resizeCanvas();
+    // Load saved notes from localStorage if available
+    var loaded = loadNotesFromStorage();
+    if (loaded) {
+      showToast("Notes loaded from cache", "success");
+    }
     draw();
     window.addEventListener("resize", function () { resizeCanvas(); draw(); });
     // If no audio loaded yet, show the prompt overlay

@@ -312,6 +312,13 @@ body {
   display: block;
   cursor: crosshair;
 }
+#audioPlayer {
+  display: none !important;
+}
+#canvasSpacer {
+  width: 1px !important;
+  pointer-events: none;
+}
 
 /* ─── Timeline ─── */
 .editor-timeline {

@@ -46,9 +46,9 @@ if ($edit_id > 0 && $is_logged_in) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="robots" content="noindex, nofollow">
   <title>MEeL!Mania — Beatmap Editor</title>
-  <link rel="icon" type="image/png" href="../../assets/MEeL.png">
-  <link href="../../assets/css/font.css" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/editor.css">
+  <link rel="icon" type="image/png" href="/MEeL/assets/MEeL.png">
+  <link href="/MEeL/assets/css/font.css" rel="stylesheet">
+  <link rel="stylesheet" href="/MEeL/arcade/rhythm/assets/css/editor.css">
 </head>
 <body>
 
@@ -58,7 +58,7 @@ if ($edit_id > 0 && $is_logged_in) {
       <div class="auth-icon">🔒</div>
       <h2>Login Diperlukan</h2>
       <p>Anda harus login untuk membuat beatmap.</p>
-      <a href="../../auth/login.php" class="btn btn-primary">Login</a>
+      <a href="/MEeL/auth/login" class="btn btn-primary">Login</a>
       <a href="../manage/" class="btn btn-ghost">Kembali</a>
     </div>
   </div>
@@ -168,7 +168,7 @@ if ($edit_id > 0 && $is_logged_in) {
           </div>
         </div>
         <div class="form-group">
-          <label>Zoom</label>
+          <label>Zoom <span id="zoomPercent" style="color:var(--accent-cyan);font-family:var(--font-mono)">100%</span></label>
           <input type="range" id="zoomSlider" min="1" max="10" value="3" oninput="setZoom(this.value)">
         </div>
         <div class="form-group">
@@ -252,15 +252,103 @@ if ($edit_id > 0 && $is_logged_in) {
     </div>
   </div>
 
-  <script src="../../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
-  <script src="../../assets/js/compatibilitas/script.min.js"></script>
+  <script src="/MEeL/assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+  <script src="/MEeL/assets/js/compatibilitas/script.min.js"></script>
   <script>
     const CSRF_TOKEN = '<?= $_SESSION['csrf_token'] ?>';
     const IS_ADMIN = <?= $is_admin ? 'true' : 'false' ?>;
     const EDIT_SONG = <?= $edit_song ? json_encode($edit_song) : 'null' ?>;
     const EDIT_BEATMAP = <?= $edit_beatmap ? json_encode($edit_beatmap) : 'null' ?>;
+
+    // Global notes reference — module updates this, upload reads from it
+    window.__editorNotes = [];
   </script>
-  <script src="../assets/js/editor.js"></script>
+
+  <!-- Upload/Delete as regular scripts (not module) — guaranteed to load -->
+  <script>
+    function uploadBeatmap() {
+      var form = document.getElementById('beatmapForm');
+      if (!form) return;
+      var formData = new FormData(form);
+
+      var title = formData.get('title');
+      if (!title || title.trim() === '') {
+        if (typeof Swal !== 'undefined') Swal.fire({title:'Error',text:'Judul wajib diisi!',icon:'error',confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+        else alert('Judul wajib diisi!');
+        return;
+      }
+      if (!formData.get('audio') || formData.get('audio').size === 0) {
+        if (typeof Swal !== 'undefined') Swal.fire({title:'Error',text:'File audio wajib diupload!',icon:'error',confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+        else alert('File audio wajib diupload!');
+        return;
+      }
+      var currentNotes = window.__editorNotes || [];
+      if (currentNotes.length < 10) {
+        if (typeof Swal !== 'undefined') Swal.fire({title:'Error',text:'Minimal 10 notes dalam beatmap! (saat ini: ' + currentNotes.length + ')',icon:'error',confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+        else alert('Minimal 10 notes! (saat ini: ' + currentNotes.length + ')');
+        return;
+      }
+
+      currentNotes.sort(function(a,b){return a.t-b.t;});
+      formData.set('beatmap_json', JSON.stringify({notes: currentNotes}));
+      if (typeof EDIT_SONG !== 'undefined' && EDIT_SONG) {
+        formData.set('song_id', EDIT_SONG.id);
+      }
+
+      var overlay = document.getElementById('uploadOverlay');
+      overlay.classList.remove('hidden');
+      document.getElementById('uploadStatus').textContent = 'Mengirim ke server...';
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/MEeL/arcade/rhythm/api/upload', true);
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          var pct = Math.round(e.loaded / e.total * 100);
+          document.getElementById('uploadProgress').style.width = pct + '%';
+          document.getElementById('uploadStatus').textContent = 'Mengirim... ' + pct + '%';
+        }
+      };
+      xhr.onload = function() {
+        overlay.classList.add('hidden');
+        try {
+          var res = JSON.parse(xhr.responseText);
+          if (res.success) {
+            if (typeof Swal !== 'undefined') Swal.fire({title:'Berhasil!',text:'Beatmap berhasil diupload! \ud83c\udf89',icon:'success',timer:3000,confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+            setTimeout(function(){ window.location.reload(); }, 1500);
+          } else {
+            if (typeof Swal !== 'undefined') Swal.fire({title:'Error',text:res.error||'Upload gagal',icon:'error',confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+            else alert(res.error || 'Upload gagal');
+          }
+        } catch(ex) {
+          if (typeof Swal !== 'undefined') Swal.fire({title:'Error',text:'Response tidak valid dari server (HTTP ' + xhr.status + ')',icon:'error',confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+          else alert('Response tidak valid (HTTP ' + xhr.status + ')');
+        }
+      };
+      xhr.onerror = function() {
+        overlay.classList.add('hidden');
+        if (typeof Swal !== 'undefined') Swal.fire({title:'Error',text:'Koneksi gagal!',icon:'error',confirmButtonColor:'#f43f7a',background:'#0e1118',color:'#fff'});
+        else alert('Koneksi gagal!');
+      };
+      xhr.send(formData);
+    }
+
+    function deleteSong(id) {
+      if (!confirm('Hapus beatmap ini?')) return;
+      var fd = new FormData();
+      fd.append('song_id', id);
+      fd.append('csrf_token', CSRF_TOKEN);
+      fetch('/MEeL/arcade/rhythm/api/delete', {method:'POST', body:fd})
+        .then(function(r){return r.json();})
+        .then(function(res){
+          if (res.success) { alert('Beatmap terhapus!'); setTimeout(function(){location.reload();}, 1000); }
+          else alert(res.error || 'Gagal menghapus');
+        })
+        .catch(function(){ alert('Gagal menghapus beatmap'); });
+    }
+  </script>
+
+  <!-- Editor module (canvas, draw, input, etc.) -->
+  <script type="module" src="/MEeL/arcade/rhythm/assets/js/editor/main.js"></script>
   <?php endif; ?>
 </body>
 </html>
