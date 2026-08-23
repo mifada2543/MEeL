@@ -9,10 +9,10 @@ import {
   countdownOverlay, countdownNum, optionsOverlay, touchLanes, hud,
   TIMING, APPROACH_TIME, ACC_WEIGHT,
 } from "./state.js";
-import { initAudio, resumeAudio, startBGM, stopBGM, playCountdownBeep } from "./audio.js";
-import { draw, updateHUD, pad6 } from "./renderer.js";
+import { initAudio, resumeAudio, startBGM, stopBGM, playCountdownBeep, playSFX } from "./audio.js";
+import { draw, updateHUD, pad6, showJudgment } from "./renderer.js";
 import { hitY } from "./canvas.js";
-import { releaseLane } from "./hitDetection.js";
+import { releaseLane, checkHoldSustain } from "./hitDetection.js";
 
 function isMobile() {
   return "ontouchstart" in window || navigator.maxTouchPoints > 0;
@@ -37,7 +37,6 @@ export function gameLoop(ts) {
     updateFPS();
 
     const hy = hitY();
-    const ppm = hy / APPROACH_TIME;
 
     // Spawn notes
     while (S.noteIndex < S.notes.length && S.notes[S.noteIndex].time - S.songTime <= APPROACH_TIME) {
@@ -45,11 +44,21 @@ export function gameLoop(ts) {
       S.noteIndex++;
     }
 
-    // Miss detection
+    // Miss detection for click notes
     for (const n of S.activeNotes) {
       if (n.hit || n.missed) continue;
       if (n.holding) continue;
-      if (n.time - S.songTime < -TIMING.bad - 30) {
+      // Only miss click notes — hold notes are handled differently
+      if (!n.endTime && n.time - S.songTime < -TIMING.bad - 30) {
+        n.missed = true;
+        S.judgmentCounts.miss++;
+        S.combo = 0;
+        showJudgment("miss");
+        updateHUD();
+        playSFX("miss");
+      }
+      // Hold note start missed (never pressed)
+      if (n.endTime && !n.holding && n.time - S.songTime < -TIMING.bad * 1.4 - 30) {
         n.missed = true;
         S.judgmentCounts.miss++;
         S.combo = 0;
@@ -59,18 +68,15 @@ export function gameLoop(ts) {
       }
     }
 
-    // Release holds: user stopped pressing OR end time passed
+    // Check hold sustain for all active holds
     const holdLanes = Object.keys(S.holdNotes).map(Number);
     for (const lane of holdLanes) {
-      const hold = S.holdNotes[lane];
-      if (!hold) { delete S.holdNotes[lane]; continue; }
-
-      // User released key — score the release
-      if (!S.lanePressed[lane]) {
-        try {
-          releaseLane(lane);
-        } catch (e) {
-          // Fallback: manually release if releaseLane fails
+      try {
+        checkHoldSustain(lane);
+      } catch (e) {
+        // Fallback: release on error
+        const hold = S.holdNotes[lane];
+        if (hold) {
           hold.hit = true;
           hold.holding = false;
           delete S.holdNotes[lane];
@@ -79,23 +85,10 @@ export function gameLoop(ts) {
           if (S.combo > S.maxCombo) S.maxCombo = S.combo;
           updateHUD();
         }
-        continue;
-      }
-
-      // Hold end time passed + tolerance — auto-release as miss
-      if (S.songTime > hold.endTime + TIMING.bad + 50) {
-        hold.hit = true;
-        hold.holding = false;
-        delete S.holdNotes[lane];
-        S.judgmentCounts.miss++;
-        S.combo = 0;
-        showJudgment("miss");
-        updateHUD();
-        playSFX("miss");
       }
     }
 
-    // Cleanup
+    // Cleanup old notes
     S.activeNotes = S.activeNotes.filter((n) => {
       if (n.hit || n.missed) return (n.time - S.songTime) > -500;
       return true;
@@ -189,8 +182,12 @@ export function startGame() {
   initAudio();
   resumeAudio();
 
-  S.score = 0; S.combo = 0; S.maxCombo = 0; S.noteIndex = 0;
-  S.songTime = 0; S.lastTime = 0;
+  S.score = 0;
+  S.combo = 0;
+  S.maxCombo = 0;
+  S.noteIndex = 0;
+  S.songTime = 0;
+  S.lastTime = 0;
   S.activeNotes = [];
   S.laneFlashes = [0, 0, 0, 0];
   S.lanePressed = [false, false, false, false];
@@ -205,8 +202,10 @@ export function startGame() {
     missed: false,
     holding: false,
     holdType: null,
+    holdStartTime: null,
   }));
   S.holdNotes = {};
+  S.holdPending = {};
   S.songDuration = S.beatmapData.duration;
   S.totalNotes = S.notes.length;
 
@@ -246,6 +245,7 @@ export function pauseGame() {
   if (S.animFrame) cancelAnimationFrame(S.animFrame);
   pauseOverlay.classList.remove("hidden");
   S.lanePressed = [false, false, false, false];
+  S.holdPending = {};
 
   // Release all active holds — prevent zombie holds after resume
   for (const laneStr of Object.keys(S.holdNotes)) {
@@ -273,10 +273,14 @@ window.resumeGame = function () {
 
 window.restartGame = function () {
   pauseOverlay.classList.add("hidden");
-  S.score = 0; S.combo = 0; S.maxCombo = 0;
+  S.score = 0;
+  S.combo = 0;
+  S.maxCombo = 0;
   S.judgmentCounts = { perfect: 0, great: 0, good: 0, bad: 0, miss: 0 };
   S.noteIndex = 0;
   S.lanePressed = [false, false, false, false];
+  S.holdNotes = {};
+  S.holdPending = {};
   audioElement.currentTime = 0;
   runCountdown(function () {
     S.gameState = "playing";
@@ -384,9 +388,10 @@ function showResults() {
   } catch (e) {}
 
   const total = S.judgmentCounts.perfect + S.judgmentCounts.great + S.judgmentCounts.good + S.judgmentCounts.bad + S.judgmentCounts.miss;
-  const acc = total > 0
-    ? (S.judgmentCounts.perfect * ACC_WEIGHT.perfect + S.judgmentCounts.great * ACC_WEIGHT.great + S.judgmentCounts.good * ACC_WEIGHT.good + S.judgmentCounts.bad * ACC_WEIGHT.bad) / total * 100
-    : 0;
+  const acc =
+    total > 0
+      ? ((S.judgmentCounts.perfect * ACC_WEIGHT.perfect + S.judgmentCounts.great * ACC_WEIGHT.great + S.judgmentCounts.good * ACC_WEIGHT.good + S.judgmentCounts.bad * ACC_WEIGHT.bad) / total) * 100
+      : 0;
   let rank = "D";
   if (acc >= 95) rank = "S";
   else if (acc >= 90) rank = "A";
@@ -407,3 +412,5 @@ function showResults() {
   hud.classList.add("hidden");
   touchLanes.classList.add("hidden");
 }
+
+

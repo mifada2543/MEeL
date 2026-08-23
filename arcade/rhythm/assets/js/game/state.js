@@ -54,13 +54,28 @@ export const NOTE_RADIUS = 0;
 export const APPROACH_TIME_BASE = 1800;
 export const APPROACH_TIME = APPROACH_TIME_BASE / speedMult;
 
+/* ─── Timing windows (ms) ─── */
 export const TIMING = { perfect: 24, great: 52, good: 85, bad: 115 };
+
+/* ─── Hold note specific ─── */
+// How early (ms) before the note reaches hit zone a player can start pressing
+// and still register the hold. Prevents frustrating "just barely missed" situations.
+export const HOLD_BUFFER = 180;
+// Hold start input window = TIMING.bad * HOLD_RELEASE_SCALE (more generous than click notes)
+export const HOLD_RELEASE_SCALE = 1.4;
+// Sustain penalty: when player loses a hold mid-way, the judgment degrades
+// instead of immediate miss. List: [judgment after 0ms lost, 200ms lost, 500ms lost]
+export const HOLD_SUSTAIN_PENALTY = { after200ms: "bad", after500ms: "miss" };
+
 export const SCORE_VALUES = { perfect: 320, great: 200, good: 100, bad: 50, miss: 0 };
 export const GOLD_MULTIPLIER = 3;
 export const ACC_WEIGHT = { perfect: 1.0, great: 0.75, good: 0.5, bad: 0.25, miss: 0 };
 export const JUDGE_COLORS = {
-  perfect: "#fbbf24", great: "#34d399", good: "#60a5fa",
-  bad: "#f87171", miss: "#6b7280",
+  perfect: "#fbbf24",
+  great: "#34d399",
+  good: "#60a5fa",
+  bad: "#f87171",
+  miss: "#6b7280",
 };
 export const GOLD_GLOW = "rgba(251,191,36,0.4)";
 
@@ -80,6 +95,8 @@ export const S = {
   laneFlashes: [0, 0, 0, 0],
   lanePressed: [false, false, false, false],
   holdNotes: {},
+  // Hold buffer: key pressed early, waiting for note to arrive
+  holdPending: {},
   judgmentCounts: { perfect: 0, great: 0, good: 0, bad: 0, miss: 0 },
   totalNotes: 0,
   lastTime: 0,
@@ -88,7 +105,11 @@ export const S = {
   songDuration: 0,
   highScore: 0,
   gameOptions: {
-    speed: 10, dim: 70, volume: 80,
-    blurBg: false, fps: false, lowGfx: false,
+    speed: 10,
+    dim: 70,
+    volume: 80,
+    blurBg: false,
+    fps: false,
+    lowGfx: false,
   },
 };

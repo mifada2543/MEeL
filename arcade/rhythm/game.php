@@ -111,8 +111,11 @@ $beatmap_json = json_encode($beatmap_data, JSON_UNESCAPED_UNICODE);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="MEeL!Mania — <?= htmlspecialchars($song_data['title']) ?>" />
+  <meta property="og:title" content="MEeL!Mania — <?= htmlspecialchars($song_data['title']) ?>" />
+  <meta property="og:image" content="/MEeL/assets/MEeL.png" />
   <title>MEeL!Mania — <?= htmlspecialchars($song_data['title']) ?></title>
-  <link rel="icon" type="image/png" href="../assets/MEeL.png" />
+  <link rel="icon" type="image/png" href="/MEeL/assets/MEeL.png" />
   <link href="../assets/css/font.css" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/game.css?v=<?= filemtime(__DIR__ . '/assets/css/game.css') ?>" />
 </head>

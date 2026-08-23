@@ -100,11 +100,11 @@ $songs_json = json_encode($all_songs, JSON_UNESCAPED_UNICODE);
   <meta name="description" content="MEeL!Mania — Rhythm game 4-lane. Pilih lagu, atur kecepatan, dan mainkan!" />
   <meta property="og:title" content="MEeL!Mania — Rhythm Arcade" />
   <meta property="og:description" content="Rhythm game 4-lane terinspirasi osu!mania. Tangkap note, raih skor tertinggi!" />
-  <meta property="og:image" content="https://meel.local/assets/MEeL.png" />
+  <meta property="og:image" content="/MEeL/assets/MEeL.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="manifest" href="../assets/manifest.json" />
   <title>MEeL!Mania</title>
-  <link rel="icon" type="image/png" href="../assets/MEeL.png" />
+  <link rel="icon" type="image/png" href="/MEeL/assets/MEeL.png" />
   <link href="../assets/css/font.css" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/lobby.css?v=<?= filemtime(__DIR__ . '/assets/css/lobby.css') ?>" />
 </head>
