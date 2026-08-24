@@ -217,6 +217,9 @@ function setupMeelPlayerEvents() {
           title: videoTitle,
           uploader: videoUploader,
         }),
+        (videoSrc = s),
+        (isHls = c),
+        (vttSrc = p),
         isMiniPlayerActive && updateMiniPlayerInfo(videoTitle, videoUploader),
         updateSearchExcludeId(videoId),
         ["watch-details-wrapper", "recommendation-column"].forEach((e) => {
