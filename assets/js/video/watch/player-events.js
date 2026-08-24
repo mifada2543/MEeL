@@ -360,14 +360,40 @@ function setupMeelPlayerEvents() {
       }
       setTimeout(ensureCustomControls, 200);
       const i = localStorage.getItem(storageKeyVideo);
-      if (isAutoRecovering && i)
-        return (
-          (isAutoRecovering = !1),
-          (player.currentTime = parseFloat(i)),
-          player.play().catch(() => {}),
-          startStuckDetector(),
-          void startPlaybackStartTimeout()
-        );
+      if (isAutoRecovering && i) {
+        const savedPos = parseFloat(i);
+        isAutoRecovering = !1;
+        /* Untuk HLS: tunggu data ter-buffer dulu sebelum seek.
+           Langsung set currentTime sebelum data ada akan menyebabkan
+           HLS diam-diam reset ke 0. */
+        function doRestore() {
+          player.currentTime = savedPos;
+          player.play().catch(() => {});
+          startStuckDetector();
+          startPlaybackStartTimeout();
+        }
+        if (isHls && hls) {
+          let restored = !1;
+          const restoreTimeout = setTimeout(() => {
+            restored || ((restored = !0), doRestore());
+          }, 1e4);
+          hls.on(Hls.Events.FRAG_BUFFERED, function onBuf() {
+            if (restored) { hls.off(Hls.Events.FRAG_BUFFERED, onBuf); return; }
+            try {
+              const buf = videoElement.buffered;
+              if (buf.length > 0 && buf.end(0) - (videoElement.currentTime || 0) >= 5) {
+                clearTimeout(restoreTimeout);
+                restored = !0;
+                hls.off(Hls.Events.FRAG_BUFFERED, onBuf);
+                doRestore();
+              }
+            } catch (_) {}
+          });
+          return;
+        }
+        doRestore();
+        return;
+      }
       function s() {
         7;
         if (
