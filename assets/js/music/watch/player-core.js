@@ -22,6 +22,13 @@
 (function () {
   "use strict";
 
+  // True hanya untuk landing PERTAMA dalam dokumen ini (full page load /
+  // Ctrl+R / F5). Setelah itu semua pemanggilan meelInitWatchPlayer berasal
+  // dari transisi AJAX view-router di dokumen yang sama (expand mini->full,
+  // auto-next). Dipakai untuk membedakan "kunjungan dingin" (resume-modal
+  // harus tampil) dari transisi gapless (modal tidak boleh interupsi).
+  var isWatchDocFreshLoad = true;
+
   function updateVisualizerUI(on) {
     const btn = document.getElementById("btn-vis"),
       label = document.getElementById("vis-text"),
@@ -435,6 +442,20 @@
     // Marker sesi mini-player in-memory — jangan interupsi lagu berikutnya
     // di sesi yang sama; dibersihkan saat pause/close eksplisit.
     if (skipFromIndex) window.__meelResumeSessionActive = true;
+
+    // Landing dokumen BARU (refresh/full page load) = kunjungan dingin:
+    // engine kosong & marker sesi in-memory sudah reset. State AUDIO_STATE
+    // peninggalan sesi AJAX sebelumnya (mini-player index) TIDAK boleh
+    // menekan resume-modal di sini — kalau tidak, refresh pertama diam-diam
+    // resume dan modal hanya muncul di refresh kedua (state sudah habis
+    // dikonsumsi). Transisi AJAX di dokumen sama tidak terkena override ini,
+    // jadi tetap gapless & bebas modal.
+    if (isWatchDocFreshLoad) {
+      isWatchDocFreshLoad = false;
+      savedActive = false;
+      savedTime = 0;
+      savedPlaying = false;
+    }
 
     // KUNCI GAPLESS: track ID sama → loadTrack() no-op total.
     const isFreshTrack = engine.loadTrack(
