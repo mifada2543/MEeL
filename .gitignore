@@ -149,6 +149,8 @@ tests/*.result
 .phpunit.result.cache
 logs/tests/
 !logs/tests/.htaccess
+*.html
+!index.html
 
 # ─── DEPLOYMENT FILES ─────────────────────────────────
 deploy.sh
