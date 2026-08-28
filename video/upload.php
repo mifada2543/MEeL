@@ -176,9 +176,17 @@ $__v = function($f) {
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                     <?php endif; ?>
-                    <!-- Judul -->
+                    <!-- Judul + Auto-fill -->
                     <div class="field-group">
-                        <label class="field-label" for="f-title">Judul Video</label>
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <label class="field-label" for="f-title">Judul Video</label>
+                            <button type="button" id="btn-auto-meta" class="btn-auto"
+                                onclick="autoFillMetadata()"
+                                title="Isi otomatis dari metadata file video (ffprobe)">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2"/><path d="M15 16V8"/><path d="M9 10V2"/><path d="M9 22V16"/><path d="M12 10h.01"/><path d="M12 16h.01"/></svg>
+                                Auto
+                            </button>
+                        </div>
                         <input type="text" id="f-title" name="title" required
                             placeholder="Masukkan judul video..."
                             class="field-input">
@@ -240,7 +248,7 @@ $__v = function($f) {
                         </div>
 
                         <!-- Bahasa subtitle — custom dropdown ala books/read.php -->
-                        <div class="field-group">
+                        <div class="field-group" id="subtitle-lang-wrap" style="display:none;">
                             <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
                             <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
                                 <button type="button" class="lang-trigger" id="f-subtitle-lang-trigger"
