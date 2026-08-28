@@ -26,6 +26,9 @@
       sub.textContent =
         ext === "srt" ? "SRT · akan dikonversi otomatis" : "VTT";
     if (zone) zone.classList.add("has-file");
+    // Tampilkan dropdown bahasa subtitle
+    var langWrap = document.getElementById("subtitle-lang-wrap");
+    if (langWrap) langWrap.style.display = "";
   };
   // Subtitle drop zone
   function setupSubtitleDragDrop() {

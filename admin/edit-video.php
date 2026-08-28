@@ -406,7 +406,7 @@ include __DIR__ . '/../partials/link.php';
                         </div>
 
                         <!-- Bahasa subtitle — custom dropdown ala books/read.php -->
-                        <div class="field-group">
+                        <div class="field-group" id="subtitle-lang-wrap" style="display:none;">
                             <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
                             <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
                                 <button type="button" class="lang-trigger" id="f-subtitle-lang-trigger"
