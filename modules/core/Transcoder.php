@@ -953,12 +953,12 @@ class Transcoder
 
             $final_fname = $clean . ".ogg";
             $counter     = 1;
-            while (file_exists("{$this->base_path}/music/upload/file/$final_fname")) {
+            while (file_exists($music_dir . "/$final_fname")) {
                 $final_fname = $clean . "-" . $counter . ".ogg";
                 $counter++;
             }
 
-            $final_path = "{$this->base_path}/music/upload/file/$final_fname";
+            $final_path = $music_dir . "/$final_fname";
             $thumb_name = str_replace('.ogg', '.webp', $final_fname);
 
             // -vbr on: Variable Bitrate, lebih efisien dari CBR
