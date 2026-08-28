@@ -377,9 +377,9 @@ function testSessionSecurity(): void {
     print_header('TEST 8: Session & Authentication Security');
 
     $checks = [
-        'Session name unik (meel)'        => ['auth/config.php', '/session_name.*meel/'],
-        'Session timeout (gc_maxlifetime)' => ['auth/config.php', '/session\.gc_maxlifetime/'],
-        'HTTP-only cookie params'          => ['auth/config.php', '/session_set_cookie_params/'],
+        'Session name unik (meel)'        => ['modules/auth/helpers/session.php', '/session_name.*meel/'],
+        'Session timeout (gc_maxlifetime)' => ['modules/auth/helpers/session.php', '/session\.gc_maxlifetime/'],
+        'HTTP-only cookie params'          => ['modules/auth/helpers/session.php', '/session_set_cookie_params/'],
         'CSRF token generation'            => ['auth/config.php', '/random_bytes.*32/'],
         'Activity timeout check'           => ['auth/config.php', '/LAST_ACTIVITY/'],
         'Session hijack protection'        => ['auth/auth.php', '/last_session_id/'],

@@ -25,8 +25,7 @@ $user_role = get_user_role($conn, $user_id);
 $is_admin = ($user_role === 'admin');
 
 // ─── CSRF Check ──────────────────────────────────────
-if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token'])
-    || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+if (!verify_csrf_token()) {
     api_error('CSRF token tidak valid.');
 }
 

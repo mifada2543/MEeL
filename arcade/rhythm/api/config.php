@@ -19,6 +19,7 @@ $conn->set_charset('utf8mb4');
 // Auth helpers
 require_once __DIR__ . '/../../../modules/auth/helpers/user.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/authz.php';
+require_once __DIR__ . '/../../../modules/auth/helpers/csrf.php';
 
 // FFmpeg paths
 $FFMPEG_BIN  = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : 'ffmpeg';

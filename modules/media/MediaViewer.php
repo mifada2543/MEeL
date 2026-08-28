@@ -14,7 +14,11 @@ class MediaViewer
         $this->user_id = $session_user_id;
         $this->media_type = $media_type;
         $this->media_id = (int)$media_id;
+        $allowed_tables = ['video', 'music'];
         $this->table = ($media_type === 'video') ? 'video' : 'music';
+        if (!in_array($this->table, $allowed_tables, true)) {
+            throw new InvalidArgumentException('Invalid media type');
+        }
 
         // Tarik data user SATU KALI SAJA saat class dipanggil
         if ($this->user_id) {

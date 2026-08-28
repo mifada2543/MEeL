@@ -210,11 +210,16 @@ function testConfigCheck(): void {
         'Activity logger include'        => '/activity_logger/',
     ];
 
+    // Session config delegated to modules/auth/helpers/session.php — check there too
+    $sessionFile = PROJECT_ROOT . '/modules/auth/helpers/session.php';
+    $sessionContent = file_exists($sessionFile) ? file_get_contents($sessionFile) : '';
+
     foreach ($checks as $name => $pattern) {
-        if (preg_match($pattern, $content)) {
+        // Check main config OR session.php (session config delegated)
+        if (preg_match($pattern, $content) || preg_match($pattern, $sessionContent)) {
             record("{$name} ✓", true);
         } else {
-            record("{$name} — tidak ditemukan ⚠", true, true, "Lihat config.example.php untuk referensi");
+            record("{$name} — tidak ditemukan ⚠", true, true, "Lihat config.example.php atau modules/auth/helpers/session.php");
         }
     }
 
