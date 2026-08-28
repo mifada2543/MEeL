@@ -67,7 +67,10 @@ if (!$song) {
 }
 
 // Increment play count
-$conn->query("UPDATE arcade_song SET play_count = play_count + 1 WHERE id = $id");
+$stmt_play = $conn->prepare("UPDATE arcade_song SET play_count = play_count + 1 WHERE id = ?");
+$stmt_play->bind_param("i", $id);
+$stmt_play->execute();
+$stmt_play->close();
 
 // Read beatmap.json from filesystem
 $beatmap = null;
