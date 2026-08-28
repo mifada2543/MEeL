@@ -1,8 +1,6 @@
 # Security defaults for controllers
-# Catatan: akses langsung ke controllers/*.php kini di-301 oleh .htaccess root
-# ke rute bersih (api/*, admin/actions, dll.) — rule [F] lama dihapus karena
-# mengganggu redirect parent (per-dir processing). File include-only (kelas)
-# yang diakses langsung akan 301 → 404 oleh router, tetap tidak terekspos.
+# Direct access blocked — controllers are include-only (routed via .htaccess root)
+Deny from all
 Options -Indexes
 
 <IfModule mod_headers.c>
