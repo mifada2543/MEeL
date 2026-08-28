@@ -60,6 +60,7 @@ session/*
 # ─── DATABASE FILES ───────────────────────────────────
 /mysql/
 *.sql
+!migration.sql
 !install.sql
 !schema.sql
 *.db
@@ -148,6 +149,8 @@ tests/*.result
 .phpunit.result.cache
 logs/tests/
 !logs/tests/.htaccess
+*.html
+!index.html
 
 # ─── DEPLOYMENT FILES ─────────────────────────────────
 deploy.sh
@@ -176,3 +179,6 @@ __pycache__/
 *.pem
 *.key
 *.pub
+
+# ---Another----
+arcade/rhythm/*

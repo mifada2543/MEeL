@@ -22,6 +22,13 @@
 (function () {
   "use strict";
 
+  // True hanya untuk landing PERTAMA dalam dokumen ini (full page load /
+  // Ctrl+R / F5). Setelah itu semua pemanggilan meelInitWatchPlayer berasal
+  // dari transisi AJAX view-router di dokumen yang sama (expand mini->full,
+  // auto-next). Dipakai untuk membedakan "kunjungan dingin" (resume-modal
+  // harus tampil) dari transisi gapless (modal tidak boleh interupsi).
+  var isWatchDocFreshLoad = true;
+
   function updateVisualizerUI(on) {
     const btn = document.getElementById("btn-vis"),
       label = document.getElementById("vis-text"),
@@ -305,9 +312,13 @@
         return;
       }
       applyPlayingVisualState(true);
+      // Sync sessionStorage — kalau tidak, AUDIO_STATE bisa berisi lagu
+      // lama & mini-player index memutar lagu stale setelah pindah view.
+      saveAudioState();
     });
     player.on("pause", function () {
       applyPlayingVisualState(false);
+      saveAudioState();
     });
     let lastSecond = -1;
     player.on("timeupdate", function () {
@@ -316,6 +327,9 @@
         if (sec !== lastSecond) {
           lastSecond = sec;
           localStorage.setItem(storageKeyMusic, player.currentTime);
+          // Throttle ~5 detik: posisi tersimpan tetap segar untuk restore
+          // mini-player index / kunjungan ulang watch tanpa menulis tiap tick.
+          if (sec % 5 === 0) saveAudioState();
         }
       }
       window.updateMiniPlayerUI && window.updateMiniPlayerUI();
@@ -429,6 +443,20 @@
     // di sesi yang sama; dibersihkan saat pause/close eksplisit.
     if (skipFromIndex) window.__meelResumeSessionActive = true;
 
+    // Landing dokumen BARU (refresh/full page load) = kunjungan dingin:
+    // engine kosong & marker sesi in-memory sudah reset. State AUDIO_STATE
+    // peninggalan sesi AJAX sebelumnya (mini-player index) TIDAK boleh
+    // menekan resume-modal di sini — kalau tidak, refresh pertama diam-diam
+    // resume dan modal hanya muncul di refresh kedua (state sudah habis
+    // dikonsumsi). Transisi AJAX di dokumen sama tidak terkena override ini,
+    // jadi tetap gapless & bebas modal.
+    if (isWatchDocFreshLoad) {
+      isWatchDocFreshLoad = false;
+      savedActive = false;
+      savedTime = 0;
+      savedPlaying = false;
+    }
+
     // KUNCI GAPLESS: track ID sama → loadTrack() no-op total.
     const isFreshTrack = engine.loadTrack(
       {
@@ -494,7 +522,11 @@
     // setLoop menyinkronkan media.loop + Plyr config + localStorage secara atomik.
     engine.setLoop(savedLoop);
     updateLoopUI();
-    if (savedActive) sessionStorage.removeItem(MEEL_KEYS.AUDIO_STATE);
+    // JANGAN cuma removeItem — state lama (lagu sebelumnya) bisa tertinggal
+    // di sessionStorage dan membuat index/mini-player memutar lagu STALE
+    // setelah auto-next (mis. masih stream?id=145 padahal sedang 49).
+    // Tulis ulang state agar selalu mencerminkan track yang baru dimuat.
+    saveAudioState();
     if (engine.__armLoadingTimeout) engine.__armLoadingTimeout();
 
     const modalEl = document.getElementById("resume-modal"),

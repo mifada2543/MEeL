@@ -344,6 +344,60 @@ body::before {
   display: none;
   border: 1px solid var(--border-strong);
 }
+/* Auto-fill metadata button */
+.btn-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.12) 0%,
+    rgba(168, 85, 247, 0.12) 100%
+  );
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s,
+    border-color 0.2s;
+  font-family: "Syne", sans-serif;
+}
+.btn-auto:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.2) 0%,
+    rgba(168, 85, 247, 0.2) 100%
+  );
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+.btn-auto:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  transform: none;
+}
+.auto-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(239, 68, 68, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: autoSpin 0.7s linear infinite;
+}
+@keyframes autoSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 /* Upload overlay */
 #upload-overlay {
   display: none;

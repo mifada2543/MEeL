@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a3e635;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#22d3ee;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="28" fill="url(#bg)"/>
+  <rect width="200" height="200" rx="28" fill="rgba(0,0,0,0.25)"/>
+  <line x1="50" y1="30" x2="50" y2="155" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <line x1="83" y1="30" x2="83" y2="155" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <line x1="117" y1="30" x2="117" y2="155" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <line x1="150" y1="30" x2="150" y2="155" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <line x1="32" y1="148" x2="168" y2="148" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/>
+  <rect x="35" y="50" width="28" height="10" rx="4" fill="#a3e635" opacity="0.9"/>
+  <rect x="68" y="75" width="28" height="10" rx="4" fill="#22d3ee" opacity="0.9"/>
+  <rect x="102" y="60" width="28" height="10" rx="4" fill="#a3e635" opacity="0.9"/>
+  <rect x="135" y="90" width="28" height="10" rx="4" fill="#22d3ee" opacity="0.9"/>
+  <rect x="52" y="110" width="28" height="10" rx="4" fill="#a3e635" opacity="0.9"/>
+  <rect x="118" y="120" width="28" height="10" rx="4" fill="#22d3ee" opacity="0.9"/>
+  <text x="100" y="185" font-size="28" text-anchor="middle" dominant-baseline="middle">🌙</text>
+</svg>
