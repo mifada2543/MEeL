@@ -384,7 +384,8 @@ $__vdir = function($dir) {
                         title="Buka / tutup komentar">
                         <i data-lucide="message-square" class="w-3.5 h-3.5 text-orange-500"></i>
                         <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-500">Komentar</span>
-                        <i data-lucide="chevron-down" id="comment-chevron" class="w-3.5 h-3.5 ml-auto text-gray-500 transition-transform duration-300"></i>
+                        <i data-lucide="chevron-up" id="comment-chevron-open" class="w-3.5 h-3.5 ml-auto text-gray-500 hidden"></i>
+                        <i data-lucide="chevron-down" id="comment-chevron-closed" class="w-3.5 h-3.5 ml-auto text-gray-500"></i>
                     </button>
                     <div id="comment-preview" class="px-4 sm:px-6 py-3">
                         <?php
@@ -393,11 +394,11 @@ $__vdir = function($dir) {
                         $preview       = comment_preview($comments_grouped ?? []);
                         $preview_items = $preview['items'];
                         ?>
-                        <div id="comment-preview-text" class="space-y-1 <?= empty($preview_items) ? 'italic' : '' ?>">
+                        <div id="comment-preview-text" class="space-y-1 text-sm text-gray-400 <?= empty($preview_items) ? 'italic' : '' ?>">
                             <?php if (empty($preview_items)): ?>
-                                <span class="text-[10px] text-gray-500">Jadilah komentar pertama</span>
+                                <span>Jadilah komentar pertama</span>
                             <?php else: foreach ($preview_items as $_pc): ?>
-                                <div class="text-[10px] text-gray-500 line-clamp-1"
+                                <div class="line-clamp-1"
                                     title="<?= htmlspecialchars('@' . ($_pc['username'] ?? 'Guest') . ': ' . preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? '')), ENT_QUOTES) ?>">
                                     <span class="font-bold text-orange-400">@<?= htmlspecialchars($_pc['username'] ?? 'Guest') ?></span>: <?= htmlspecialchars(preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? ''))) ?>
                                 </div>

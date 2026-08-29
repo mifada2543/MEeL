@@ -88,6 +88,7 @@
   // dengan urutan <script> di music/watch.php & music/index.php.
   var DIRECT_SCRIPTS = {
     watch: [
+      "../assets/js/shared/state-keys.js",
       "../assets/js/compatibilitas/plyr.min.js",
       "../assets/js/shared/keyboard.js",
       "../assets/js/shared/temp-index.js",
@@ -97,6 +98,7 @@
       "../assets/js/shared/mini-player-popstate.js",
       "../assets/js/shared/audio-engine.js",
       "../assets/js/shared/view-router.js",
+      "../assets/js/shared/comment.js",
     ],
     index: [
       "../assets/js/shared/format-time.js",
@@ -306,6 +308,14 @@
 
       // Kembalikan node persisten ke body (caller akan mount() lewat onAfterSwap).
       document.body.appendChild(holder);
+
+      // Eksekusi inline <script> — importNode() tidak menjalankan script
+      // secara otomatis. Tanpa ini, fungsi seperti checkDescriptionLengthMusic()
+      // tidak terdefinisi dan tombol "Selengkapnya" tidak muncul.
+      var inlineScripts = document.body.querySelectorAll("script:not([src])");
+      for (var k = 0; k < inlineScripts.length; k++) {
+        runInlineScript(inlineScripts[k].textContent);
+      }
 
       document.title = doc.title;
       applyInlineConfig(doc, viewType);
