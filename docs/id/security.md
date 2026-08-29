@@ -1073,6 +1073,17 @@ $reg_time_window = 3600; // 1 jam
 - [ ] IP banning system aktif
 - [ ] File upload validation (tipe, ukuran, magic bytes)
 - [ ] Role checking sebelum aksi sensitif
+- [ ] Theme preference tidak menyimpan data sensitif
+
+### Theme System Security
+
+Theme preference disimpan dengan aman:
+
+1. **Client-side:** `localStorage` — tidak ada data sensitif, hanya string 'light'/'dark'
+2. **Server-side:** `users.custom_theme` — varchar(50), hanya menerima 'light' atau 'dark'
+3. **API validation:** `in_array($theme, ['light', 'dark'], true)` — reject invalid values
+4. **CSRF protection:** POST memerlukan valid CSRF token
+5. **No XSS risk:** Theme value tidak di-escape ke HTML, hanya digunakan untuk `data-theme` attribute
 
 ---
 

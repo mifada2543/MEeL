@@ -433,6 +433,35 @@ Service worker **dibangkitkan dinamis oleh PHP** — panduan lengkap di
 Menambah folder modul baru (`assets/css/<folder>/manifest.php`) otomatis
 menambahkan CSS-nya ke precache — **tanpa perubahan SW manual**.
 
+### 23. Theme System (`assets/css/shared/theme-tokens.css` + `light-theme.css` + `assets/js/shared/theme.js`)
+
+Sistem light/dark mode dengan CSS variables dan JavaScript toggle.
+
+| Komponen | Peran |
+|---|---|
+| `assets/css/shared/theme-tokens.css` | CSS variables untuk dark mode (default) — `--meel-bg`, `--meel-surface`, `--meel-text`, dll. |
+| `assets/css/shared/light-theme.css` | Override Tailwind utilities saat `html[data-theme="light"]` — 500+ baris overrides |
+| `assets/js/shared/theme.js` | `MEELTheme` — toggle manager, localStorage + DB sync, smooth transition |
+| `controllers/api/theme.php` | REST API (GET/POST) untuk theme preference |
+| `database/schema.sql` | Kolom `custom_theme` di tabel `users` |
+
+**Arsitektur:**
+```
+theme-tokens.css (variables)
+       ↓
+light-theme.css (overrides saat data-theme="light")
+       ↓
+theme.js (toggle + persist)
+       ↓
+localStorage (source of truth, anti-flash)
++ DB custom_theme (sync untuk logged-in user)
+```
+
+**Adding Light Mode ke Halaman Baru:**
+1. Gunakan CSS variables (`var(--meel-bg)`, `var(--meel-surface)`) alih-alih hardcoded colors
+2. Jika pakai Tailwind hardcoded (`bg-[#0d1017]`), tambah override di `light-theme.css`
+3. Logo/icon harus di-exclude dari color changes
+
 ---
 
 ## Media Pipeline

@@ -775,6 +775,47 @@ Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects
 
 ---
 
+## Theme Endpoints
+
+### Theme Preference
+
+**Endpoint:** `api/theme.php`
+**Method:** GET / POST
+**Auth:** User (login required)
+
+#### GET — Read Preference
+
+**Response:**
+```json
+{
+  "theme": "dark"
+}
+```
+
+#### POST — Update Preference
+
+**Request Body:**
+```json
+{
+  "theme": "light",
+  "csrf_token": "..."
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "theme": "light"
+}
+```
+
+**Storage:**
+- Client: `localStorage` (source of truth, anti-flash)
+- Server: `users.custom_theme` column (sync for logged-in users)
+
+---
+
 ## Error Response Codes
 
 | Code | Description | Cause |
@@ -782,6 +823,7 @@ Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects
 | 401 | Unauthorized | User not logged in |
 | 403 | Forbidden | Inactive/guest user, IP banned |
 | 404 | Not Found | Media/comment not found |
+| 405 | Method Not Allowed | HTTP method not supported |
 | 429 | Too Many Requests | Rate limit exceeded (like: 30/min, comment: 10/min) |
 | 500 | Server Error | Database error, FFmpeg failure |
 | 503 | Service Unavailable | HDD offline, server busy |

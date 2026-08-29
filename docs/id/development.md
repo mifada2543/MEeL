@@ -400,6 +400,37 @@ body { ... }
 @media (max-width: 768px) { ... }
 ```
 
+### Theme System (Light/Dark Mode)
+
+MEeL mendukung light dan dark mode dengan arsitektur CSS variables:
+
+```
+assets/css/shared/
+├── theme-tokens.css    # CSS variables (meel-bg, meel-surface, meel-text, dll.)
+├── light-theme.css     # Light mode overrides untuk Tailwind utilities
+└── design-tokens.php   # Shared tokens untuk upload forms
+```
+
+**Cara Kerja:**
+1. `theme-tokens.css` mendefinisikan CSS variables untuk dark mode (default)
+2. `light-theme.css` override variables saat `html[data-theme="light"]`
+3. `theme.js` manage toggle, localStorage, dan DB sync
+4. Toggle hanya tersedia di halaman Profile
+
+**Adding Light Mode Support:**
+- Gunakan CSS variables (`var(--meel-bg)`, `var(--meel-surface)`, dll.)
+- Hindari hardcoded colors seperti `bg-[#0d1017]` atau `text-gray-300`
+- Jika harus menggunakan Tailwind hardcoded, tambah override di `light-theme.css`
+- Logo/icon harus di-exclude dari color overrides (gunakan `:not(.nav-logo-text)`)
+
+**Theme Toggle Flow:**
+```
+User klik toggle → MEELTheme.toggle()
+→ applyTheme('light'/'dark')
+→ Save ke localStorage + DB (jika login)
+→ Update CSS variables + icon + label
+```
+
 ---
 
 ## Testing
