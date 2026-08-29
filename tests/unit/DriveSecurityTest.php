@@ -142,12 +142,14 @@ class DriveSecurityTest extends TestCase
         $this->assertStringNotContainsString('/x.mp4', str_replace('stream?file=', '', $files[0]['path']));
     }
 
-    public function testPublicListingUsesDirectWebPath(): void
+    public function testPublicListingUsesStreamEndpoint(): void
     {
         file_put_contents($this->baseDir . '/public/video/p.mp4', 'data');
         $files = $this->storage('alice')->listFilesByType('video', 'public');
         $this->assertCount(1, $files);
-        $this->assertStringContainsString('data_drive/public/video/p.mp4', $files[0]['path']);
+        $this->assertStringContainsString('stream?file=', $files[0]['path']);
+        $this->assertStringContainsString('scope=public', $files[0]['path']);
+        $this->assertStringContainsString('csrf_token=', $files[0]['path']);
     }
 
     // Quota enforcement (atomic, rejects over-limit)
