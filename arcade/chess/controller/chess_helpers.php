@@ -69,11 +69,9 @@ function chess_record_game_over(\mysqli $conn, string $room, string $loserColor,
     if (!in_array($loserColor, ['w', 'b'], true)) {
         return ["success" => false, "message" => "Warna tidak valid."];
     }
-    // Dedup: game sudah berakhir (termasuk game_over sebelumnya).
     if (chess_has_terminal_event($conn, $room)) {
         return ["success" => false, "message" => "Permainan sudah berakhir."];
     }
-    // Validasi pecundang vs langkah terakhir.
     $lastMoveColor = chess_last_move_color($conn, $room);
     if ($lastMoveColor === null) {
         return ["success" => false, "message" => "Belum ada langkah — game over tidak valid."];
@@ -172,7 +170,6 @@ function chess_rematch(\mysqli $conn, string $room, string $color, string $actio
         ];
     }
 
-    // Tawaran pending = event terakhir bertipe rematch_offer.
     $lastEvent = chess_last_event($conn, $room);
     $pending   = $lastEvent !== null && $lastEvent['type'] === 'rematch_offer';
     $pendingBy = $pending ? $lastEvent['color'] : null;
@@ -201,7 +198,6 @@ function chess_rematch(\mysqli $conn, string $room, string $color, string $actio
         if (!$pending) {
             return ["success" => false, "message" => "Tidak ada tawaran tanding ulang yang menunggu."];
         }
-        // Boleh dari lawan (menolak) ATAU dari pengirim (membatalkan).
         insertGameEvent($conn, $room, $color, 'rematch_decline');
         return ["success" => true, "id" => $conn->insert_id];
     }

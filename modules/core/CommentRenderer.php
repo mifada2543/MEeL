@@ -15,7 +15,6 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
     $uploader_id = (int)($uploader_id ?? 0);
     if (!isset($grouped[$parent_id])) return;
 
-    // Theme color mapping
     $is_video = ($theme === 'video');
 
     $c_avatar_from    = $is_video ? 'from-red-600' : 'from-orange-500';
@@ -31,8 +30,6 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
     $c_reply_btn_text   = $is_video ? 'text-white' : 'text-black';
     $reply_prefix       = $is_video ? 'vid-' : 'mus-';
     $author_time_color  = $is_video ? 'text-gray-300' : 'text-gray-500';
-    // Clean URL tanpa .php untuk action form komentar (fallback no-JS),
-    // dipakai bersama hx-post. Query string dipertahankan.
     $form_action_url   = base_url(($is_video ? '/video/watch' : '/music/watch') . '?id=' . (int)$id . (!$is_video && $playlist_context > 0 ? '&playlist_id=' . (int)$playlist_context : ''));
 
     foreach ($grouped[$parent_id] as $c):
@@ -49,7 +46,6 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-[11px] font-bold <?= $c_author ?> truncate">@<?= htmlspecialchars($author) ?></span>
                         <?php
-                        // Badge role: admin (merah) / member (biru)
                         $_c_role = $c['role'] ?? '';
                         if ($_c_role === 'admin' || $_c_role === 'member'):
                             $_badge_color = ($_c_role === 'admin')
@@ -64,14 +60,12 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                         <span class="text-[10px] <?= $author_time_color ?> flex-shrink-0"><?= time_ago($c['created_at']) ?></span>
                     </div>
                     <?php
-                        // Hak hapus: pemilik komentar ATAU uploader media ATAU admin
                         $is_owner   = (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)$c['user_id']);
                         $is_uploader = ($uploader_id > 0 && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $uploader_id);
                         $is_admin    = (isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'admin');
                         $can_delete = $is_owner || $is_uploader || $is_admin;
 
                         if ($can_delete):
-                        // Teks konfirmasi dinamis: sertakan isi komentar (di-truncate agar rapi)
                         $_c_snippet = trim(preg_replace('/\s+/', ' ', (string)($c['comment'] ?? '')));
                         if (function_exists('mb_strlen') && mb_strlen($_c_snippet) > 60) {
                             $_c_snippet = mb_substr($_c_snippet, 0, 60) . '…';
@@ -79,8 +73,6 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
                             $_c_snippet = substr($_c_snippet, 0, 60) . '…';
                         }
 
-                        // Hapus komentar sendiri → cukup isi komentar;
-                        // hapus komentar orang lain (uploader) → sertakan @author.
                         if ($_c_snippet === '') {
                             $delete_text = $is_owner
                                 ? 'Yakin ingin menghapus komentar ini?'

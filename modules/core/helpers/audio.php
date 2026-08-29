@@ -1,5 +1,4 @@
 <?php
-// helpers/audio.php — Audio MIME & Format Helpers
 if (!function_exists('get_audio_mime_type')) {
 /* @param string $ext Ekstensi file (mp3, ogg, flac, dll); @return string MIME type yang sesuai */
 function get_audio_mime_type(string $ext): string

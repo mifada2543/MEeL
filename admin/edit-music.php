@@ -4,7 +4,6 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 require_once '../modules/core/japanese.php';
 
-// Proteksi: harus login
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -14,13 +13,11 @@ $user_id = $_SESSION['user_id'];
 $curr_role = get_user_role($conn, (int)$user_id);
 $is_admin   = is_admin($conn);
 
-// Tolak guest
 if ($curr_role === 'guest') {
     header("Location: ../");
     exit();
 }
 
-// Back URL (smart referer)
 $back_url = $is_admin ? 'analys' : '../music/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -69,7 +66,6 @@ if (isset($_POST['update'])) {
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file cover maksimal 5MB.';
             }
-            // Validasi MIME type — finfo() cek magic bytes
             if (empty($error_message)) {
                 $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);

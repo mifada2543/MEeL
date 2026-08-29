@@ -24,7 +24,6 @@ function music_thumbnail_url(?string $thumbnail): string
     $thumbnail = trim((string)$thumbnail);
     $thumb_dir = meel_media_base_path('music') . '/thumbnail/';
     $fallback  = '../assets/img/music0.webp';
-    // Cache default path untuk menghindari is_file() berulang
     static $default_thumb = null;
     if ($thumbnail === '') {
         if ($default_thumb === null) {
@@ -89,7 +88,6 @@ function meel_drive_base_path(?string $hddDriveOverride = null): string
     if ($hddDrive !== '') {
         return rtrim($hddDrive, '/\\');
     }
-    // File ini berada di modules/core/helpers/, jadi dirname(__DIR__, 3) = root proyek.
     return dirname(__DIR__, 3) . '/data_drive';
 }
 }
@@ -105,7 +103,6 @@ function check_disk_space(int $required_bytes, string $path): array
 
     if (!is_dir($path)) {
         $path = dirname($path);
-        // Traverse up jika parent tidak ditemukan
         $parent = dirname($path);
         while ($parent !== '/' && $parent !== '.' && !is_dir($parent)) {
             $parent = dirname($parent);
@@ -177,7 +174,6 @@ function dir_size(string $path, int $cache_ttl = 300): float
 
     if (!is_dir($path)) return 0.0;
 
-    // Metode 1: du -sb (cepat)
     $output = shell_exec("du -sb " . escapeshellarg($path) . " 2>/dev/null");
     if ($output && preg_match('/^(\d+)/', $output, $m)) {
         $size = (float)$m[1];
@@ -185,7 +181,6 @@ function dir_size(string $path, int $cache_ttl = 300): float
         return $size;
     }
 
-    // Metode 2: RecursiveIterator (fallback)
     $size = 0.0;
     try {
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
@@ -295,7 +290,6 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
         exit('Storage tidak tersedia.');
     }
 
-    // Normalisasi & cegah traversal
     $relPath = str_replace('\\', '/', (string) $relPath);
     $relPath = ltrim($relPath, '/');
     if ($relPath === '' || str_contains($relPath, '..') || str_contains($relPath, "\0")) {
@@ -314,7 +308,6 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
         exit('File tidak ditemukan.');
     }
 
-    // Whitelist ekstensi
     $ext = strtolower(pathinfo($realFull, PATHINFO_EXTENSION));
     $allowed = [
         'm3u8', 'ts', 'vtt', 'mp4', 'webm', 'mkv',
@@ -338,8 +331,6 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
     $mime = $mimeMap[$ext] ?? 'application/octet-stream';
 
     // Referer gate untuk HLS video (anti hotlink / anti unduh langsung)
-    // Pola sama dengan .htaccess storage HDD lama: hanya path di bawah
-    // <base>/video/ yang diproteksi; thumbnail tetap bebas.
     // (path HLS diawali `video/...`, tanpa slash depan)
     if (!empty($opts['hls_gate']) && (str_starts_with($relPath, 'video/') || str_contains($relPath, '/video/'))) {
         $referer = $_SERVER['HTTP_REFERER'] ?? '';
@@ -350,22 +341,12 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
             $hostNorm = strtolower(parse_url('http://' . $host, PHP_URL_HOST) ?: $host);
             if ($parts && isset($parts['host']) && strtolower($parts['host']) === $hostNorm) {
                 $refPath = $parts['path'] ?? '';
-                // Terima pola lama (/video/watch.php, /video/index.php) DAN
-                // clean URL baru (/video/watch?id=X — path /video/watch,
-                // /video/beranda). Mini-player mem-push URL ke 'beranda' saat
-                // mode mini aktif — tanpa 'beranda', segment HLS yang diminta
-                // dengan referer /video/beranda ditolak → video loading terus.
-                // Tetap tolak halaman lain seperti /video/upload (tidak pernah
-                // menjadi referer pemuat HLS).
                 if (preg_match('#/video(?:/(?:watch(?:\.php)?|index(?:\.php)?|beranda))?(?:[?\#]|/?$)#i', $refPath)) {
                     $refOk = true;
                 }
             }
         }
         if (!$refOk) {
-            // Portabel: redirect ke halaman denied di root proyek. Endpoint
-            // berada di <root>/{video,music,books}/{stream,file}.php, jadi
-            // base URL proyek = dirname(SCRIPT_NAME, 2).
             $script = $_SERVER['SCRIPT_NAME'] ?? '';
             $basePath = rtrim(dirname(dirname($script)), '/');
             header('Location: ' . $basePath . '/err/?code=denied');
@@ -394,7 +375,6 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
             }
             $isPartial = true;
         } elseif ($rEnd !== null) {
-            // suffix range: bytes=-N → N byte terakhir
             $start = max(0, $size - $rEnd);
             $end   = $size - 1;
             $isPartial = true;

@@ -2,11 +2,9 @@
 /**
  * MEeL!Mania — API Config & Helpers
  */
-// Boot session with MEeL session name
 require_once __DIR__ . '/../../../modules/auth/helpers/session.php';
 meel_boot_session();
 
-// Database connection
 require_once __DIR__ . '/../../../auth/settings.php';
 $conn = new mysqli($server, $username, $password, $db);
 if ($conn->connect_error) {
@@ -16,7 +14,6 @@ if ($conn->connect_error) {
 }
 $conn->set_charset('utf8mb4');
 
-// Auth helpers
 require_once __DIR__ . '/../../../modules/auth/helpers/user.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/authz.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/csrf.php';
@@ -25,12 +22,11 @@ require_once __DIR__ . '/../../../modules/auth/helpers/csrf.php';
 $FFMPEG_BIN  = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : 'ffmpeg';
 $FFPROBE_BIN = defined('MEEL_FFPROBE_PATH') && MEEL_FFPROBE_PATH !== '' ? MEEL_FFPROBE_PATH : 'ffprobe';
 
-// Upload directories
 $UPLOAD_DIR   = __DIR__ . '/../uploads/';
 $AUDIO_DIR    = $UPLOAD_DIR . 'audio/';
 $COVER_DIR    = $UPLOAD_DIR . 'cover/';
-$MAX_DURATION = 300; // 5 minutes in seconds
-$MAX_AUDIO_SIZE = 20 * 1024 * 1024; // 20MB
+$MAX_DURATION = 300;
+$MAX_AUDIO_SIZE = 20 * 1024 * 1024;
 $ALLOWED_AUDIO_MIME = [
     'audio/mpeg', 'audio/mp3',
     'audio/ogg', 'audio/opus', 'audio/vorbis',
@@ -39,7 +35,6 @@ $ALLOWED_AUDIO_MIME = [
 ];
 $ALLOWED_AUDIO_EXT = ['mp3', 'ogg', 'opus', 'flac', 'wav'];
 
-// JSON response helper
 function api_respond($data, int $code = 200) {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');

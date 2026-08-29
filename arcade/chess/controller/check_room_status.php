@@ -24,7 +24,6 @@ $result = $stmt->get_result()->fetch_assoc();
 if (!$result) {
     die(json_encode(["success" => false, "message" => "Room tidak ditemukan"]));
 }
-// Otorisasi: hanya pembuat room (putih) atau yang sudah join (hitam)
 if ((int)$result['white_user_id'] !== $user_id && (int)$result['black_user_id'] !== $user_id) {
     http_response_code(403);
     die(json_encode(["success" => false, "message" => "Anda bukan pemain di room ini."]));

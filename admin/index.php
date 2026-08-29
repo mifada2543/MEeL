@@ -209,13 +209,9 @@ include __DIR__ . '/../partials/scripts.php';
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <?php
-                // CPU
                 $cpu_color = $server_stats['cpu']['usage_perc'] > 80 ? 'red' : ($server_stats['cpu']['usage_perc'] > 50 ? 'yellow' : 'green');
-                // RAM
                 $ram_color = $server_stats['ram']['usage_perc'] > 80 ? 'red' : ($server_stats['ram']['usage_perc'] > 50 ? 'yellow' : 'cyan');
-                // SWAP
                 $swap_color = $server_stats['swap']['usage_perc'] > 50 ? 'red' : 'gray';
-                // Network
                 $net_rx = $server_stats['network']['rx'];
                 $net_tx = $server_stats['network']['tx'];
                 $net_fmt = function ($bytes) {

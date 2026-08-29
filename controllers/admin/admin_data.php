@@ -5,16 +5,12 @@ if (!defined('MEEL_ADMIN_CONTEXT')) {
     die(include __DIR__ . '/../../err/index.php');
 }
 
-// BANNED IPS
 $banned_ips = $conn->query("SELECT * FROM ip_ban ORDER BY banned_at DESC");
 
-// ALL NON-GUEST USERS
 $all_users = $conn->query(
     "SELECT id, username, role, is_active, created_at FROM users WHERE role != 'guest' ORDER BY role ASC, username ASC"
 );
 
-// STATISTICS
-// 1 query gabungan — menggantikan 7 query COUNT/SUM terpisah per load.
 $stats_row = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM video)                                   AS video,
@@ -37,19 +33,16 @@ $stats = [
     'pending'       => (int)($stats_row['pending'] ?? 0),
 ];
 
-// TOP MEDIA
 $top_media = $conn->query("
     (SELECT id, title, views, 'video' AS type FROM video ORDER BY views DESC LIMIT 1)
     UNION ALL
     (SELECT id, title, views, 'music' AS type FROM music ORDER BY views DESC LIMIT 1)
 ");
 
-// STORAGE USAGE
 require_once __DIR__ . '/../../modules/core/System.php';
 $sys           = new System($conn);
 $storage_usage = $sys->getStorageUsage();
 
-// SERVER STATS
 $server_stats = $sys->getServerStats();
 
 $ssd_free  = $storage_usage['ssd']['free'];
@@ -72,16 +65,11 @@ $p_mus   = $storage_usage['percentages']['music'];
 $p_book  = $storage_usage['percentages']['books'];
 $p_drive = $storage_usage['percentages']['drive'];
 
-// ORPHAN CHECK (Database Sync)
 // Scan seluruh pohon media (10rb+ file HLS .ts di folder video) sangat mahal
-// bila dijalankan di SETIAP buka halaman — apalagi storage di HDD eksternal.
-// Hasilnya di-cache 10 menit; admin bisa memaksa cek ulang via tombol.
 $orphans           = [];
 $orphan_checked_at = null;
 
-$ORPHAN_CACHE_TTL  = 600; // detik (10 menit)
-// Path bisa di-override konstanta (dipakai test suite — lihat phpunit.xml)
-// agar test tidak bergantung izin tulis temp/cache milik web server.
+$ORPHAN_CACHE_TTL  = 600;
 $orphan_cache_file = defined('MEEL_ADMIN_ORPHANS_CACHE')
     ? MEEL_ADMIN_ORPHANS_CACHE
     : dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json';
@@ -147,10 +135,6 @@ if (!function_exists('__admin_scan_files')) {
 
 $ignored_files = ['.htaccess', 'default_video.png', 'music_default.png', 'default_cover.jpg'];
 
-// Set pencocokan cepat (hash lookup O(1)) — menggantikan in_array() O(N).
-// Gabungan semua nama file DB jadi satu string → str_contains() native
-// setara dengan "ada nama file DB yang mengandung segmen ini" tanpa nested
-// loop file × filename DB (O(N×M) → O(1) per segmen).
 $__video_files_flip   = array_flip($db_data['video_files']);
 $__video_thumbs_flip  = array_flip($db_data['video_thumbs']);
 $__music_files_flip   = array_flip($db_data['music_files']);
@@ -218,7 +202,6 @@ foreach ($check_map as $rel_path => $table) {
     }
 }
 
-    // Scan selesai — simpan hasil ke cache agar load berikutnya instan.
     $orphan_checked_at = time();
     if (function_exists('meel_write_cache_file')) {
         meel_write_cache_file($orphan_cache_file, json_encode([
@@ -228,25 +211,20 @@ foreach ($check_map as $rel_path => $table) {
     }
 }
 
-// PENDING USERS
 $pending_users = $conn->query("SELECT id, username, created_at FROM users WHERE is_active = 2");
 
-// ACTIVITY MONITOR
 $result_monitor = $conn->query(
     "SELECT username, role, last_activity, last_page, user_agent, access_via, ip_address
      FROM users ORDER BY last_activity DESC LIMIT 10"
 );
 
-// CHART DATA: 7-Day Activity
-// Dulu 28 query per load (7 hari × 4 metrik, pakai DATE(col) = ... yang tidak
-// bisa memakai index). Sekarang 6 query GROUP BY — isi hari tanpa data = 0.
 $chart_from = date('Y-m-d', strtotime('-6 days'));
 
 $chart_views = [];
 $res = $conn->query("SELECT DATE(upload_date) AS d, COALESCE(SUM(views), 0) AS v FROM video WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
 while ($row = $res->fetch_assoc()) $chart_views[$row['d']] = (int) $row['v'];
 $res = $conn->query("SELECT DATE(upload_date) AS d, COALESCE(SUM(views), 0) AS v FROM music WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
-while ($row = $res->fetch_assoc()) $chart_views[$row['d']] += (int) $row['v'];
+while ($row = $res->fetch_assoc()) $chart_views[$row['d']] = ($chart_views[$row['d']] ?? 0) + (int) $row['v'];
 
 $chart_uploads = [];
 $res = $conn->query("SELECT DATE(upload_date) AS d, COUNT(*) AS c FROM (

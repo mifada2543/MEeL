@@ -1,30 +1,19 @@
 <?php
 // SSRF-safe URL validation — the single source of truth for every outbound
-// request the application makes on behalf of a user (currently the Advanced
 // Upload / yt-dlp pipeline in Transcoder.php).
 
 // SECURITY BOUNDARY:
-// * Only http/https are allowed. Nothing else may ever reach a subprocess.
-// * Hostnames are resolved up front and EVERY returned A/AAAA record is
-// checked against explicit private/reserved IPv4 & IPv6 ranges. A single
-// non-public record rejects the URL (blocks mixed-answer DNS tricks).
 // * IP literals (v4 & v6) are validated directly, with no DNS involvement.
 // * filter_var(FILTER_VALIDATE_URL) is NOT used for the security decision —
-// parsing is manual so unusual-but-valid representations behave predictably.
-// * A hostname denylist is kept as defense-in-depth only; the authoritative
 // check is always the resolved-address validation.
-// * Resolution fails closed: unresolvable hosts are rejected.
 
-// The caller (Transcoder) additionally pins plain-HTTP connections to the
 // validated public IP and forces the original Host header, which closes the
 // DNS-rebinding window between validation and the real outbound request.
 final class SsrfGuard
 {
     private const ALLOWED_SCHEMES = ['http', 'https'];
 
-    // Defense-in-depth hostname patterns. These are NOT the primary control
     // (DNS validation is), but they catch obvious special names even when the
-    // system resolver behaves unexpectedly.
     private const BLOCKED_EXACT_HOSTS = [
         'localhost',
         'localhost.localdomain',
@@ -58,8 +47,6 @@ final class SsrfGuard
             throw new \RuntimeException('URL terlalu panjang.');
         }
 
-        // Strict, manual scheme allowlist. This also rejects scheme-less
-        // inputs and protocol-relative URLs ("//host/path").
         if (!preg_match('#^https?://#i', $url)) {
             throw new \RuntimeException('Protokol URL tidak didukung.');
         }
@@ -74,8 +61,6 @@ final class SsrfGuard
             throw new \RuntimeException('Protokol URL tidak didukung.');
         }
 
-        // Reject embedded credentials — they add no legitimate value here and
-        // are commonly used to obscure the real destination host.
         if (isset($parts['user']) || isset($parts['pass'])) {
             throw new \RuntimeException('URL tidak valid.');
         }
@@ -90,8 +75,6 @@ final class SsrfGuard
         }
 
         // Validating here performs the DNS resolution once and checks every
-        // address. The caller may reuse resolvePublicAddresses() for the same
-        // host in the same request to pin the connection (no second, unrelated
         // lookup is used for a security decision).
         $this->resolvePublicAddresses($host);
     }
@@ -117,8 +100,6 @@ final class SsrfGuard
             return [$literal];
         }
 
-        // Non-ASCII (IDN) hostnames are rejected: punycode handling would need
-        // a second representation and hides the resolved address from review.
         if (!$this->isAsciiHost($host)) {
             throw new \RuntimeException('URL tidak valid.');
         }
@@ -128,7 +109,6 @@ final class SsrfGuard
         }
 
         if (!function_exists('dns_get_record')) {
-            // Fail closed: without a resolver we cannot guarantee safety.
             throw new \RuntimeException('Resolusi alamat tidak tersedia.');
         }
 
@@ -152,8 +132,6 @@ final class SsrfGuard
         $addresses = array_values(array_unique($addresses));
         foreach ($addresses as $address) {
             if ($this->isPrivateIp($address)) {
-                // One bad record poisons the whole answer (DNS rebinding
-                // defenses rely on rejecting mixed public/private answers).
                 throw new \RuntimeException('Alamat tujuan tidak diizinkan.');
             }
         }
@@ -171,7 +149,6 @@ final class SsrfGuard
     {
         $binary = @inet_pton($ip);
         if ($binary === false) {
-            // Unparsable → treat as unsafe (fail closed).
             return true;
         }
 
@@ -187,7 +164,7 @@ final class SsrfGuard
     }
 
     /**
-     * Rewrite a validated http:// URL so the connection is pinned to the
+     * Rewrite a validated http:
      * resolved public IP while preserving the original Host header.
      *
      * Used by the download pipeline to prevent a second (attacker-influenced)
@@ -226,9 +203,6 @@ final class SsrfGuard
 
         $pinnedUrl = $scheme . '://' . $ipHost . $port . $path . $query;
 
-        // Keep the original hostname for the Host header. Brackets are ONLY
-        // legal for IPv6 literals (RFC 7230) — never wrap a DNS hostname even
-        // when it happened to resolve to an IPv6 address.
         $headerHost = $host;
         if ($this->extractIpLiteral($host) !== null
             && strpos($host, ':') !== false
@@ -239,44 +213,28 @@ final class SsrfGuard
 
         // LIMITATION (documented): https URLs are returned untouched — TLS
         // SNI/certificate validation requires the hostname. yt-dlp will follow
-        // redirects; a redirect target is re-resolved by the client WITHOUT
         // passing through this guard. HTTP downloads are protected because the
-        // forced Host header breaks cross-host redirects to private targets.
         // Full redirect-pinning for https would require a validating proxy and
-        // is out of scope for this deployment.
         $extra = '--add-header ' . escapeshellarg('Host: ' . $headerHost . $port);
         return [$pinnedUrl, $extra];
     }
 
     private function isPrivateIpv4(string $binary): bool
     {
-        $n = unpack('N', $binary)[1]; // unsigned 32-bit
+        $n = unpack('N', $binary)[1];
 
-        // 0.0.0.0/8
         if (($n >> 24) === 0) return true;
-        // 10.0.0.0/8
         if (($n >> 24) === 10) return true;
-        // 100.64.0.0/10 (CGNAT)
         if (($n & 0xFFC00000) === 0x64400000) return true;
-        // 127.0.0.0/8
         if (($n >> 24) === 127) return true;
-        // 169.254.0.0/16 (link-local)
         if (($n >> 16) === 0xA9FE) return true;
-        // 172.16.0.0/12
         if (($n >> 20) === 0xAC1) return true;
-        // 192.0.0.0/24 (IETF protocol assignments)
         if (($n >> 8) === 0xC00000) return true;
-        // 192.0.2.0/24 (TEST-NET-1)
         if (($n >> 8) === 0xC00002) return true;
-        // 192.168.0.0/16
         if (($n >> 16) === 0xC0A8) return true;
-        // 198.18.0.0/15 (benchmarking)
         if (($n & 0xFFFE0000) === 0xC6120000) return true;
-        // 198.51.100.0/24 (TEST-NET-2)
         if (($n >> 8) === 0xC63364) return true;
-        // 203.0.113.0/24 (TEST-NET-3)
         if (($n >> 8) === 0xCB0071) return true;
-        // 224.0.0.0/4 multicast + 240.0.0.0/4 reserved + broadcast
         if (($n >> 28) >= 0xE) return true;
 
         return false;
@@ -286,34 +244,21 @@ final class SsrfGuard
     {
         $bytes = array_values(unpack('C16', $binary));
 
-        // ::/128 (unspecified)
         if ($binary === str_repeat("\0", 16)) return true;
-        // ::1/128 (loopback)
         if (substr($binary, 0, 15) === str_repeat("\0", 15) && $bytes[15] === 1) return true;
         // ::ffff:0:0/96 — IPv4-mapped: validate the embedded IPv4 explicitly
-        // so ::ffff:127.0.0.1 etc. are caught by the IPv4 range logic.
         if (substr($binary, 0, 12) === "\0\0\0\0\0\0\0\0\0\0\xff\xff") {
             return $this->isPrivateIpv4(substr($binary, 12, 4));
         }
-        // 64:ff9b::/96 (NAT64 well-known prefix)
         if (substr($binary, 0, 8) === "\x00\x64\xff\x9b\x00\x00\x00\x00") return true;
-        // 100::/64 (discard-only)
         if (substr($binary, 0, 8) === "\x01\x00\x00\x00\x00\x00\x00\x00") return true;
-        // 2001:db8::/32 (documentation)
         if (substr($binary, 0, 4) === "\x20\x01\x0d\xb8") return true;
-        // 2001:10::/28 (ORCHID) — 2001:0010:xxxx::/28, i.e. byte3 in 0x10–0x1F
         if ($bytes[0] === 0x20 && $bytes[1] === 0x01 && $bytes[2] === 0x00 && ($bytes[3] & 0xF0) === 0x10) return true;
-        // 2002::/16 (6to4)
         if (substr($binary, 0, 2) === "\x20\x02") return true;
-        // 3fff::/20 (documentation)
         if ($bytes[0] === 0x3f && ($bytes[1] & 0xF0) === 0xF0) return true;
-        // fc00::/7 (unique-local)
         if (($bytes[0] & 0xFE) === 0xFC) return true;
-        // fe80::/10 (link-local)
         if ($bytes[0] === 0xFE && ($bytes[1] & 0xC0) === 0x80) return true;
-        // fec0::/10 (site-local, deprecated)
         if ($bytes[0] === 0xFE && ($bytes[1] & 0xC0) === 0xC0) return true;
-        // ff00::/8 (multicast)
         if ($bytes[0] === 0xFF) return true;
 
         return false;

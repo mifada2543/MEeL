@@ -9,7 +9,6 @@ header('Content-Type: application/json');
 
 require_admin($conn);
 
-// Lepas kunci session — getServerStats() menjalankan shell commands.
 session_write_close();
 
 require_once '../../modules/core/System.php';

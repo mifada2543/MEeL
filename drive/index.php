@@ -317,6 +317,16 @@ if ($user->isMember()) {
     <script src="../assets/js/drive/preview.js?v=<?= filemtime('../assets/js/drive/preview.js') ?>"></script>
     <script src="../assets/js/drive/search.js?v=<?= filemtime('../assets/js/drive/search.js') ?>"></script>
     <script src="../assets/js/drive/upload.js?v=<?= filemtime('../assets/js/drive/upload.js') ?>"></script>
+    <script>
+    (function(){
+        if (typeof MEELTheme !== 'undefined') {
+            MEELTheme.init({
+                isLoggedIn: true,
+                csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+            });
+        }
+    })();
+    </script>
     <?php include '../partials/footer.php'; ?>
 </body>
 

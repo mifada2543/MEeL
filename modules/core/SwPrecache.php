@@ -23,9 +23,12 @@ class SwPrecache
             // CSS shared (tanpa manifest.php)
             'assets/css/shared/design-tokens.css',
             'assets/css/shared/upload-form.css',
+            'assets/css/shared/theme-tokens.css',
+            'assets/css/shared/light-theme.css',
             // JS
             'assets/js/compatibilitas/lucide.js',
             'assets/js/compatibilitas/hls.js',
+            'assets/js/shared/theme.js',
             // Font
             'assets/css/font/latin.woff2',
             // Assets

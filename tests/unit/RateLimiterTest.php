@@ -34,7 +34,7 @@ class RateLimiterTest extends TestCase
         $prop->setAccessible(true);
         $prop->setValue($this->origStorageDir);
 
-        // Cleanup test files
+        
         $testDir = MEEL_ROOT . '/temp/ratelimit-test/';
         if (is_dir($testDir)) {
             array_map('unlink', glob($testDir . '/*'));
@@ -99,7 +99,7 @@ class RateLimiterTest extends TestCase
             RateLimiter::check($key, $endpoint, 'user');
         }
 
-        // Check remaining (read-only, no increment)
+        
         $remaining = RateLimiter::getRemaining($key, $endpoint);
         $this->assertSame(57, $remaining); // 60 - 3 = 57
     }
@@ -118,7 +118,7 @@ class RateLimiterTest extends TestCase
 
     public function testCleanupRemovesExpiredFiles(): void
     {
-        // Create an expired rate limit file directly
+        
         $testDir = MEEL_ROOT . '/temp/ratelimit-test/';
         $expiredFile = $testDir . 'expired_test.cache';
         $expiredData = json_encode([

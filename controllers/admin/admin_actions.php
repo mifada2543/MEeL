@@ -5,7 +5,6 @@ if (!defined('MEEL_ADMIN_CONTEXT')) {
     die(include __DIR__ . '/../../err/index.php');
 }
 
-// Verifikasi Role Admin
 if (!is_admin($conn)) {
     $_GET['code'] = 'denied';
     die(include __DIR__ . '/../../err/index.php');
@@ -17,7 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_tok
     exit();
 }
 
-// BAN IP
 if (isset($_POST['ban_ip'])) {
     $ip   = $_POST['ip_target'];
     $reason = !empty($_POST['ban_reason']) ? $_POST['ban_reason'] : "Manual Ban by Admin";
@@ -30,7 +28,6 @@ if (isset($_POST['ban_ip'])) {
     exit();
 }
 
-// UNBAN IP
 if (isset($_POST['unban_ip'])) {
     $stmt = $conn->prepare("DELETE FROM ip_ban WHERE ip_address = ?");
     $stmt->bind_param("s", $_POST['unban_ip']);
@@ -40,7 +37,6 @@ if (isset($_POST['unban_ip'])) {
     exit();
 }
 
-// CLEAR INACTIVE GUESTS
 if (isset($_POST['clear_all_guests'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE role = 'guest' AND is_active = 0");
     if ($stmt->execute()) {
@@ -56,7 +52,6 @@ if (isset($_POST['clear_all_guests'])) {
     exit();
 }
 
-// CLEAN STUCK QUEUES
 if (isset($_POST['clean_stuck_queues'])) {
     require_once __DIR__ . '/../../modules/core/System.php';
     $sys     = new System($conn);
@@ -71,7 +66,6 @@ if (isset($_POST['clean_stuck_queues'])) {
     exit();
 }
 
-// FORCE STOP QUEUE
 if (isset($_POST['force_stop_queue'])) {
     require_once __DIR__ . '/../../modules/core/System.php';
     $sys = new System($conn);
@@ -86,7 +80,6 @@ if (isset($_POST['force_stop_queue'])) {
     exit();
 }
 
-// APPROVE USER
 if (isset($_POST['approve_id'])) {
     $stmt = $conn->prepare("UPDATE users SET is_active = 1 WHERE id = ?");
     $stmt->bind_param("i", $_POST['approve_id']);
@@ -100,7 +93,6 @@ if (isset($_POST['approve_id'])) {
     exit();
 }
 
-// REJECT USER
 if (isset($_POST['reject_id'])) {
     $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND is_active = 2");
     $stmt->bind_param("i", $_POST['reject_id']);
@@ -110,7 +102,6 @@ if (isset($_POST['reject_id'])) {
     exit();
 }
 
-// DELETE USER
 if (isset($_POST['delete_user_id'])) {
     $id = (int)$_POST['delete_user_id'];
 
@@ -132,25 +123,22 @@ if (isset($_POST['delete_user_id'])) {
     exit();
 }
 
-// CLEAN ORPHAN FILES
 if (isset($_POST['clean_orphans'])) {
     $files = json_decode($_POST['files_to_delete'], true);
     foreach ((array)$files as $f) {
         if (file_exists($f)) @unlink($f);
     }
-    @unlink(dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json'); // hasil scan tak lagi valid
+    @unlink(dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json');
     header("Location: .?status=cleaned#system_check");
     exit();
 }
 
-// RECHECK ORPHAN FILES (paksa scan ulang, buang cache)
 if (isset($_POST['recheck_orphans'])) {
     @unlink(dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json');
     header("Location: .?msg=Orphan_Rechecked#system_check");
     exit();
 }
 
-// KICK USER
 if (isset($_POST['kick_user'])) {
     $stmt = $conn->prepare("UPDATE users SET
         last_session_id = 'KICKED',
@@ -164,7 +152,6 @@ if (isset($_POST['kick_user'])) {
     exit();
 }
 
-// RESET MFA USER
 if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
     // CSRF guard
     if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {

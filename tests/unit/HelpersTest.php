@@ -117,7 +117,7 @@ class HelpersTest extends TestCase
 
     public function testDetectProtocolDefaultHttp(): void
     {
-        // Save and clear HTTPS-related server vars
+        
         $origHttps = $_SERVER['HTTPS'] ?? null;
         $origForwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null;
 
@@ -216,7 +216,7 @@ class HelpersTest extends TestCase
 
     public function testDirSizeOnExistingDirectory(): void
     {
-        // Create a temp test directory with a file
+        
         $testDir = MEEL_ROOT . '/temp/dirsize_test';
         if (!is_dir($testDir)) {
             @mkdir($testDir, 0755, true);

@@ -32,7 +32,6 @@ final class MeelRouter
 {
     /** @var array<string, array{handler: string, script: string}> */
     private const ROUTES = [
-        // Root pages
         ''                => ['handler' => 'index.php',           'script' => '/index.php'],
         'introduction'    => ['handler' => 'introduction.php',    'script' => '/introduction.php'],
         'update'          => ['handler' => 'update.php',          'script' => '/update.php'],
@@ -41,7 +40,6 @@ final class MeelRouter
         'err'             => ['handler' => 'err/index.php',       'script' => '/err/index.php'],
         'err/offline'     => ['handler' => 'err/offline.php',     'script' => '/err/offline.php'],
 
-        // Video
         'video'           => ['handler' => 'video/index.php',       'script' => '/video/index.php'],
         'video/beranda'   => ['handler' => 'video/index.php',       'script' => '/video/index.php'],
         'video/watch'     => ['handler' => 'video/watch.php',       'script' => '/video/watch.php'],
@@ -50,7 +48,6 @@ final class MeelRouter
         'video/upload'    => ['handler' => 'video/upload.php',      'script' => '/video/upload.php'],
         'video/stream'    => ['handler' => 'video/stream.php',      'script' => '/video/stream.php'],
 
-        // Music
         'music'                 => ['handler' => 'music/index.php',          'script' => '/music/index.php'],
         'music/beranda'         => ['handler' => 'music/index.php',          'script' => '/music/index.php'],
         'music/watch'           => ['handler' => 'music/watch.php',          'script' => '/music/watch.php'],
@@ -62,7 +59,6 @@ final class MeelRouter
         'music/stream'          => ['handler' => 'music/stream.php',          'script' => '/music/stream.php'],
         'music/file'            => ['handler' => 'music/file.php',            'script' => '/music/file.php'],
 
-        // Books
         'books'        => ['handler' => 'books/index.php',     'script' => '/books/index.php'],
         'books/beranda'=> ['handler' => 'books/index.php',     'script' => '/books/index.php'],
         'books/read'   => ['handler' => 'books/read.php',      'script' => '/books/read.php'],
@@ -71,7 +67,6 @@ final class MeelRouter
         'books/upload' => ['handler' => 'books/upload.php',    'script' => '/books/upload.php'],
         'books/file'   => ['handler' => 'books/file.php',      'script' => '/books/file.php'],
 
-        // Drive
         'drive'          => ['handler' => 'drive/index.php',   'script' => '/drive/index.php'],
         'drive/beranda'  => ['handler' => 'drive/index.php',   'script' => '/drive/index.php'],
         'drive/upload'   => ['handler' => 'drive/upload.php',  'script' => '/drive/upload.php'],
@@ -79,13 +74,11 @@ final class MeelRouter
         'drive/download' => ['handler' => 'drive/download.php','script' => '/drive/download.php'],
         'drive/stream'   => ['handler' => 'drive/stream.php',  'script' => '/drive/stream.php'],
 
-        // Profile
         'profile'            => ['handler' => 'profile/index.php',              'script' => '/profile/index.php'],
         'profile/manage'     => ['handler' => 'profile/manage.php',             'script' => '/profile/manage.php'],
         'profile/edit'       => ['handler' => 'controllers/profile/profile_edit.php', 'script' => '/controllers/profile/profile_edit.php'],
         'profile/manage-action' => ['handler' => 'controllers/profile/fun-manage.php', 'script' => '/controllers/profile/fun-manage.php'],
 
-        // Admin
         'admin'             => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
         'admin/beranda'     => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
         'admin/edit-video'  => ['handler' => 'admin/edit-video.php',          'script' => '/admin/edit-video.php'],
@@ -97,14 +90,12 @@ final class MeelRouter
         'admin/actions'     => ['handler' => 'controllers/admin/admin_actions.php', 'script' => '/controllers/admin/admin_actions.php'],
         'admin/data'        => ['handler' => 'controllers/admin/admin_data.php',    'script' => '/controllers/admin/admin_data.php'],
 
-        // Auth
         'auth/login'    => ['handler' => 'auth/login.php',    'script' => '/auth/login.php'],
         'auth/register' => ['handler' => 'auth/register.php', 'script' => '/auth/register.php'],
         'auth/logout'   => ['handler' => 'auth/logout.php',   'script' => '/auth/logout.php'],
         'auth/mfa-setup'=> ['handler' => 'auth/mfa_setup.php','script' => '/auth/mfa_setup.php'],
         'auth/mfa-verify' => ['handler' => 'auth/mfa_verify.php','script' => '/auth/mfa_verify.php'],
 
-        // Arcade (halaman; sub-app chess + aset tetap file nyata)
         'arcade'           => ['handler' => 'arcade/index.php',          'script' => '/arcade/index.php'],
         'arcade/beranda'   => ['handler' => 'arcade/index.php',          'script' => '/arcade/index.php'],
         'arcade/chess'     => ['handler' => 'arcade/chess/index.php',    'script' => '/arcade/chess/index.php'],
@@ -119,7 +110,6 @@ final class MeelRouter
         'arcade/rhythm/api/songs'    => ['handler' => 'arcade/rhythm/api/songs.php',    'script' => '/arcade/rhythm/api/songs.php'],
         'arcade/rhythm/api/beatmap'  => ['handler' => 'arcade/rhythm/api/beatmap.php',  'script' => '/arcade/rhythm/api/beatmap.php'],
 
-        // API (controllers/)
         'api/like'               => ['handler' => 'controllers/api/like.php',              'script' => '/controllers/api/like.php'],
         'api/comment'            => ['handler' => 'controllers/api/comment.php',           'script' => '/controllers/api/comment.php'],
         'api/delete-comment'     => ['handler' => 'controllers/api/delete_comment.php',    'script' => '/controllers/api/delete_comment.php'],
@@ -127,6 +117,7 @@ final class MeelRouter
         'api/pdf'                => ['handler' => 'controllers/api/pdf.php',               'script' => '/controllers/api/pdf.php'],
         'api/download-transcode' => ['handler' => 'controllers/api/download_transcode.php','script' => '/controllers/api/download_transcode.php'],
         'api/post-encode'        => ['handler' => 'controllers/api/post_encode.php',       'script' => '/controllers/api/post_encode.php'],
+        'api/theme'              => ['handler' => 'controllers/api/theme.php',              'script' => '/controllers/api/theme.php'],
         'api/ajax-refresh'       => ['handler' => 'controllers/api/ajax_refresh.php',      'script' => '/controllers/api/ajax_refresh.php'],
         'api/server-stats'       => ['handler' => 'controllers/api/server_stats.php',      'script' => '/controllers/api/server_stats.php'],
         'api/server-stats-sse'   => ['handler' => 'controllers/api/server_stats_sse.php',  'script' => '/controllers/api/server_stats_sse.php'],
@@ -166,7 +157,6 @@ final class MeelRouter
         }
         $path = ltrim($path, '/');
         $path = rtrim($path, '/');
-        // Decode persen-encoding (mis. %20) tapi jaga slash.
         $path = rawurldecode($path);
         return $path;
     }
@@ -181,11 +171,6 @@ final class MeelRouter
         if (isset(self::ROUTES[$path])) {
             return self::ROUTES[$path];
         }
-        // Rute playlist berbasis slug: music/<nama-playlist> — depth SAMA dengan
-        // halaman lain (music/watch, music/beranda) sehingga path relatif aset
-        // (../assets/...) tetap resolve ke base proyek. Rute eksak di atas selalu
-        // menang; path music/ satu-segmen lain dianggap slug playlist.
-        // (path sudah di-rawurldecode oleh resolvePath).
         if (preg_match('#^music/([^/]+)$#', $path, $m)) {
             $_GET['slug'] = $m[1];
             return self::ROUTES['music/playlist'];
@@ -213,7 +198,6 @@ final class MeelRouter
         $route = self::routeFor($path);
 
         if ($route === null) {
-            // 404 — tampilkan halaman error terpadu.
             http_response_code(404);
             $_GET['code'] = 'not_found';
             require dirname(__DIR__, 2) . '/err/index.php';
@@ -225,13 +209,10 @@ final class MeelRouter
         $base     = self::basePath();
         $script   = $base . $route['script'];
 
-        // Simulasi lokasi handler asli — SCRIPT_NAME & PHP_SELF dipakai untuk
-        // deteksi modul/halaman (partials/nav.php, activity_logger.php).
         $_SERVER['SCRIPT_NAME'] = $script;
         $_SERVER['PHP_SELF']    = $script;
         unset($_SERVER['PATH_INFO']);
 
-        // cwd = direktori handler (meniru akses langsung) → path relatif aman.
         if (!@chdir(dirname($handler))) {
             http_response_code(500);
             exit('Gagal mengubah working directory.');

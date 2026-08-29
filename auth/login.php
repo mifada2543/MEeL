@@ -5,19 +5,17 @@ include 'config.php';
 $back_url = auth_back_url(['login.php', 'register.php', 'revoked.php', 'banned.php']);
 $error_msg = "";
 $max_login_attempts = 5;
-$lockout_time = 300; // 5 menit
+$lockout_time = 300;
 $is_locked = false;
 $remaining = 0;
 // LOOPBACK (localhost) — bebas rate-limit untuk pengembangan
 $is_loopback = auth_is_loopback();
-// SESSION-BASED LOCKOUT (expired cleanup) — khusus login
 if (isset($_SESSION['login_locked_until'])) {
     if (time() >= $_SESSION['login_locked_until']) {
         unset($_SESSION['login_locked_until']);
         $_SESSION['login_fail_count'] = 0;
     }
 }
-// IP-BASED LOCKOUT CHECK (shared helper)
 $ip_address  = auth_get_ip();
 $ip_lock     = $is_loopback ? ['locked' => false, 'remaining' => 0] : auth_ip_lockout_status($conn, $ip_address);
 $ip_locked   = $ip_lock['locked'];
@@ -26,13 +24,11 @@ if (!$is_loopback && ($ip_locked || (isset($_SESSION['login_locked_until']) && t
     $is_locked = true;
     $remaining = max($ip_remaining, ($_SESSION['login_locked_until'] ?? 0) - time());
 }
-// HELPER: catat percobaan gagal (session-based + IP via helper)
 function record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout_time)
 {
     if (auth_is_loopback()) {
         return;
     }
-    // Session-based counter (khusus login)
     $_SESSION['login_fail_count'] = ($_SESSION['login_fail_count'] ?? 0) + 1;
     if ($_SESSION['login_fail_count'] >= $max_login_attempts) {
         $_SESSION['login_locked_until'] = time() + $lockout_time;
@@ -40,7 +36,6 @@ function record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout
     }
     auth_record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout_time);
 }
-// FORM PROCESSING
 if (isset($_POST['login']) && !$is_locked) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_msg = "Sesi keamanan kadaluarsa. Silakan refresh halaman dan coba lagi.";
@@ -60,14 +55,12 @@ if (isset($_POST['login']) && !$is_locked) {
                                 ? "Akun Anda sedang menunggu verifikasi admin."
                                 : "Akses ditolak untuk akun Guest.";
                         } else {
-                            // LOGIN BERHASIL
                             unset($_SESSION['login_fail_count']);
                             unset($_SESSION['login_locked_until']);
                             $stmt_del = $conn->prepare("DELETE FROM login_attempts WHERE ip_address = ?");
                             $stmt_del->bind_param("s", $ip_address);
                             $stmt_del->execute();
                             $stmt_del->close();
-                            // CEK MFA
                             if (!empty($u['mfa_secret']) && $u['mfa_enabled'] == 1) {
                                 $_SESSION['mfa_temp_uid']      = (int)$u['id'];
                                 $_SESSION['mfa_temp_username'] = $u['username'];
@@ -80,7 +73,6 @@ if (isset($_POST['login']) && !$is_locked) {
                                 header("Location: mfa-verify");
                                 exit;
                             }
-                            // LOGIN LENGKAP (tanpa MFA)
                             session_regenerate_id(true);
                             $current_sid = session_id();
                             $_SESSION['user_id']  = $u['id'];
@@ -103,7 +95,6 @@ if (isset($_POST['login']) && !$is_locked) {
                 } else {
                     $login_failed = true;
                 }
-                // TANGANI LOGIN GAGAL
                 if ($login_failed) {
                     $error_msg = "Username atau password salah!";
                     record_failed_attempt($conn, $ip_address, $max_login_attempts, $lockout_time);
@@ -127,7 +118,6 @@ if (!$is_loopback && !$is_locked) {
         $remaining = $recheck['remaining'];
     }
 }
-// HTML (shell bersama via partials)
 $auth_title       = "MEeL | Login";
 $auth_description = "MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.";
 $auth_og_title    = "MEeL | Login";

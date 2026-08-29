@@ -9,18 +9,16 @@ if (isset($_SESSION['user_id']) && isset($conn)) {
     $_nav_pfp  = $_nav_user['profile_picture'] ?? null;
 }
 
-// Deteksi halaman aktif
 $_nav_is_books  = str_contains($_SERVER['PHP_SELF'], '/books/');
 $_nav_is_video  = str_contains($_SERVER['PHP_SELF'], '/video/');
 $_nav_is_music  = str_contains($_SERVER['PHP_SELF'], '/music/');
 $_nav_is_drive  = str_contains($_SERVER['PHP_SELF'], '/drive/');
 $_nav_in_subdir = $_nav_is_books || $_nav_is_video || $_nav_is_music || $_nav_is_drive;
 
-// Tentukan prefix path relatif (root vs subfolder)
 $_nav_pfp_base = $_nav_in_subdir ? '../profile/upload/' : 'profile/upload/';
 $_nav_root     = $_nav_in_subdir ? '../' : '';
 ?>
-<style>    /* Mengunci paksa agar web tidak pernah bisa digeser ke samping */
+<style>
     html,
     body {
         overflow-x: hidden !important;
@@ -61,7 +59,10 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     <div class="relative hidden sm:block" id="nav-dropdown-wrap">
         <button id="nav-avatar-btn"
             onclick="toggleNavDropdown()"
-            class="flex items-center gap-2 p-1 rounded-xl hover:bg-white/[.05] transition-all group"
+            class="flex items-center gap-2 p-1 rounded-xl transition-all group"
+            style="color:var(--meel-text-secondary)"
+            onmouseover="this.style.background='var(--meel-surface-hover)'"
+            onmouseout="this.style.background='transparent'"
             title="Menu Akun">
 
             <!-- Avatar -->
@@ -85,10 +86,11 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
         <!-- Dropdown panel -->
         <div id="nav-dropdown"
-            class="hidden absolute right-0 top-full mt-2 w-52 bg-[#0f1319] border border-white/[.07] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden z-[200]">
+            class="hidden absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-[200]"
+            style="background:var(--meel-surface-elevated); border:1px solid var(--meel-border-strong); box-shadow:var(--meel-shadow-xl)">
 
             <!-- User info header -->
-            <div class="px-4 py-3 border-b border-white/[.05] flex items-center gap-3">
+            <div class="px-4 py-3 flex items-center gap-3" style="border-bottom:1px solid var(--meel-border)">
                 <div class="w-9 h-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
                     <?php if (!empty($_nav_pfp)): ?>
                         <img src="<?= $_nav_pfp_base . htmlspecialchars($_nav_pfp) ?>"
@@ -104,7 +106,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                     <?php endif; ?>
                 </div>
                 <div class="min-w-0">
-                    <div class="text-xs font-bold text-white truncate" title="@<?= htmlspecialchars($_SESSION['username']) ?>">
+                    <div class="text-xs font-bold truncate" style="color:var(--meel-text-heading)" title="@<?= htmlspecialchars($_SESSION['username']) ?>">
                         @<?= htmlspecialchars($_SESSION['username']) ?>
                     </div>
                     <?php if (isset($_SESSION['role'])): ?>
@@ -134,7 +136,10 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             <!-- Menu items -->
             <div class="py-1.5">
                 <a href="<?= $_nav_root ?>profile/?u=<?= urlencode($_SESSION['username']) ?>" title="Lihat profil Anda"
-                    class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
+                    class="flex items-center gap-3 px-4 py-2.5 text-[11px] transition-all no-underline"
+                    style="color:var(--meel-text-secondary)"
+                    onmouseover="this.style.color='var(--meel-text-heading)'; this.style.background='var(--meel-surface-hover)'"
+                    onmouseout="this.style.color='var(--meel-text-secondary)'; this.style.background='transparent'">
                     <i data-lucide="user" class="w-3.5 h-3.5 flex-shrink-0"></i>
                     <span>Profil</span>
                 </a>
@@ -452,7 +457,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </div>
 <?php endif; ?>
 <?php $scripts_root = $_nav_root; include __DIR__ . '/scripts.php'; ?>
-<script>    // Dropdown desktop
+<script>
     function toggleNavDropdown() {
         const dd = document.getElementById('nav-dropdown');
         const ch = document.getElementById('nav-chevron');
@@ -484,6 +489,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
+            document.body.classList.remove('nav-drawer-open');
 
             if (mainContent) {
                 mainContent.classList.remove('blur-md');
@@ -510,6 +516,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
+            document.body.classList.add('nav-drawer-open');
 
             if (mainContent) {
                 mainContent.classList.add('blur-md', 'transition-all', 'duration-300');
@@ -524,7 +531,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         toggleNavDrawer();
     }
 
-    // Guest Drawer (mobile, belum login)
     function toggleNavDrawerGuest() {
         const drawer = document.getElementById('nav-drawer-guest');
         const overlay = document.getElementById('nav-drawer-guest-overlay');
@@ -577,4 +583,13 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         e.stopPropagation();
         toggleNavDrawerGuest();
     }
+
+    (function(){
+        if (typeof MEELTheme !== 'undefined') {
+            MEELTheme.init({
+                isLoggedIn: <?= json_encode(isset($_SESSION['username'])) ?>,
+                csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+            });
+        }
+    })();
 </script>

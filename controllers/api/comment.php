@@ -56,7 +56,6 @@ if (!$viewer->addComment($_POST)) {
     exit;
 }
 
-// Komentar sudah di-group & diurutkan ASC created_at oleh getComments().
 $comments_data = $viewer->getComments();
 $grouped       = $comments_data['grouped'];
 $user_map      = $comments_data['user_map'];

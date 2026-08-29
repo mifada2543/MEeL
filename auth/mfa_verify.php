@@ -6,7 +6,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 // Rate limit
 $max_mfa_attempts = 10;
-$mfa_lockout_time = 300; // 5 menit
+$mfa_lockout_time = 300;
 $is_loopback = auth_is_loopback(); // localhost bebas rate-limit saat pengembangan
 $mfa_locked = false;
 $mfa_remaining = 0;
@@ -18,7 +18,6 @@ if (!$is_loopback && isset($_SESSION['mfa_locked_until'])) {
         $mfa_remaining = $_SESSION['mfa_locked_until'] - time();
     }
 }
-// Cek pending MFA
 if (!isset($_SESSION['mfa_temp_uid'])) {
     if (isset($_SESSION['user_id'])) {
         header("Location: ../");
@@ -29,7 +28,6 @@ if (!isset($_SESSION['mfa_temp_uid'])) {
 }
 $error = '';
 $temp_username = $_SESSION['mfa_temp_username'] ?? 'User';
-// HANDLE FORM
 if (isset($_POST['verify']) || isset($_POST['code'])) {
     if ($mfa_locked) {
         $error = 'Terlalu banyak percobaan. Silakan coba lagi dalam ' . $mfa_remaining . ' detik.';
@@ -67,7 +65,6 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
                 }
             }
             if ($valid) {
-                // LOGIN LENGKAP — set session
                 session_regenerate_id(true);
                 $_SESSION['user_id']  = $temp_id;
                 $_SESSION['username'] = $_SESSION['mfa_temp_username'];
@@ -108,7 +105,6 @@ if (isset($_POST['verify']) || isset($_POST['code'])) {
     }
 }
 
-// HTML (shell bersama via partials)
 $auth_title       = "Verifikasi MFA | MEeL";
 $auth_description = "MEeL — Verifikasi autentikasi dua faktor.";
 $auth_og_title    = "MEeL | Verifikasi MFA";

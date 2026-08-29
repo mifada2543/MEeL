@@ -59,8 +59,6 @@ if (!$limit['allowed']) {
 }
 
 try {
-    // Kuota ditegakkan ATOMIK di dalam DriveStorage::upload() (flock per-user)
-    // sehingga upload berbarengan tidak bisa melewati kuota 20GB secara kolektif.
     $result = $storage->upload(
         $_FILES['file_drive'],
         $_POST['scope'] ?? DriveStorage::SCOPE_PRIVATE,
@@ -78,7 +76,6 @@ try {
     );
 
     if ($isAjax) {
-        // Hitung storage usage terkini untuk update bar
         $storageUsage = 0;
         $storagePct = 0;
         if ($user->isMember()) {

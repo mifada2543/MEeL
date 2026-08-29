@@ -5,14 +5,12 @@ require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
-// Validasi ID
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id < 1) {
     header("Location: ..");
     exit();
 }
 
-// Ambil data buku dari database
 $repo  = new BookRepository($conn);
 $book  = $repo->getBookById($id);
 
@@ -39,7 +37,6 @@ if (isset($_GET['raw']) && $_GET['raw'] === '1') {
     exit;
 }
 
-// Ambil ukuran file
 $pdf_size   = is_file($pdf_path) ? filesize($pdf_path) : 0;
 $pdf_size_f = $pdf_size > 1048576
     ? number_format($pdf_size / 1048576, 1) . ' MB'

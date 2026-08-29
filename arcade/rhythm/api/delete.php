@@ -26,7 +26,6 @@ if ($song_id <= 0) {
     api_error('Song ID tidak valid.');
 }
 
-// Fetch song
 $stmt = $conn->prepare("SELECT id, user_id, audio_file, cover_file, beatmap_path FROM arcade_song WHERE id = ?");
 $stmt->bind_param("i", $song_id);
 $stmt->execute();
@@ -37,20 +36,17 @@ if (!$song) {
     api_error('Beatmap tidak ditemukan.', 404);
 }
 
-// Authorization: only owner or admin
 if (!$is_admin && (int)$song['user_id'] !== $user_id) {
     api_error('Tidak punya izin menghapus beatmap ini.', 403);
 }
 
 $conn->begin_transaction();
 try {
-    // Delete from DB
     $stmt = $conn->prepare("DELETE FROM arcade_song WHERE id = ?");
     $stmt->bind_param("i", $song_id);
     if (!$stmt->execute()) throw new RuntimeException('Gagal hapus dari database.');
     $stmt->close();
 
-    // Delete files
     if (!empty($song['audio_file'])) {
         @unlink($AUDIO_DIR . $song['audio_file']);
     }

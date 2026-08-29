@@ -17,7 +17,6 @@ authorize_stream($id);
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
 
-// Semua variabel template diekstrak dari controller
 extract($ctrl->getViewData(), EXTR_SKIP);
 
 session_write_close();
@@ -84,8 +83,8 @@ $__vdir = function($dir) {
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
             <a href="beranda" class="flex items-center gap-2 flex-shrink-0" title="MEeL Music">
-                <div class="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="music" class="w-3.5 h-3.5 text-white fill-current"></i>
+                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style="background:var(--meel-orange)">
+                    <i data-lucide="music" class="nav-logo-icon w-3.5 h-3.5"></i>
                 </div>
                 <span class="text-sm font-bold tracking-tight text-white uppercase">
                     MEeL<span class="text-orange-500">Music</span>

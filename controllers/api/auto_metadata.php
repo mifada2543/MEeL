@@ -17,7 +17,6 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     exit;
 }
 
-// Deteksi mode: audio atau video
 $is_video = !empty($_FILES['video']['tmp_name']);
 $file_key = $is_video ? 'video' : 'audio';
 
@@ -57,7 +56,6 @@ if ((int)($_FILES[$file_key]['size'] ?? 0) > $max_size) {
     exit;
 }
 
-// Resolve binary — pastikan benar-benar executable (bukan fallback path palsu)
 $ffprobe = resolve_binary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 $ffmpeg  = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
 
@@ -67,7 +65,6 @@ if (!is_executable($ffprobe)) {
     exit;
 }
 
-// Simpan ke temp
 $temp_dir  = sys_get_temp_dir() . '/meel_auto_meta';
 if (!is_dir($temp_dir)) @mkdir($temp_dir, 0755, true);
 
@@ -85,7 +82,6 @@ $cover_b64   = '';
 $duration    = 0;
 
 if ($is_video) {
-    // === Video metadata ===
     $meta_cmd = 'export LD_LIBRARY_PATH=\'\'; '
         . escapeshellarg($ffprobe)
         . ' -v error -show_entries format_tags=title,comment,description:stream_tags=title,comment,description:format=duration'
@@ -125,7 +121,6 @@ if ($is_video) {
         }
     }
 } else {
-    // === Audio metadata ===
     $meta_cmd = 'export LD_LIBRARY_PATH=\'\'; '
         . escapeshellarg($ffprobe)
         . ' -v error -show_entries format_tags=title,artist,album,comment,description:stream_tags=title,artist,album,comment,description'
@@ -136,16 +131,12 @@ if ($is_video) {
     if ($meta_json) {
         $parsed = json_decode($meta_json, true);
 
-        // Vorbis comment (FLAC/OGG) sering memakai key HURUF BESAR
-        // (TITLE/ARTIST/ALBUM), sedangkan ID3 (MP3) umumnya lowercase.
-        // Normalisasi ke lowercase agar keduanya terbaca dengan benar.
         $tags = array_change_key_case($parsed['format']['tags'] ?? [], CASE_LOWER);
         $title  = trim($tags['title']  ?? '');
         $artist = trim($tags['artist'] ?? '');
         $album  = trim($tags['album']  ?? '');
         $description = trim($tags['comment'] ?? ($tags['description'] ?? ''));
 
-        // menaruh sebagian tag di stream, sebagian di format).
         foreach (($parsed['streams'] ?? []) as $stream) {
             if (($stream['codec_type'] ?? '') !== 'audio') continue;
             $st = array_change_key_case($stream['tags'] ?? [], CASE_LOWER);
@@ -175,12 +166,10 @@ if ($is_video) {
     }
 }
 
-// Cleanup
 @unlink($temp_file);
 if (!empty($cover_path) && file_exists($cover_path)) @unlink($cover_path);
 @rmdir($temp_dir);
 
-// Response
 echo json_encode([
     'status'      => 'success',
     'title'       => $title,

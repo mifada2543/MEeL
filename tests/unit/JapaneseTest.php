@@ -8,7 +8,7 @@ class JapaneseTest extends TestCase
     {
         parent::setUp();
 
-        // Load japanese.php (guarded by function_exists)
+        
         require_once MEEL_ROOT . '/modules/core/japanese.php';
     }
 
@@ -69,7 +69,7 @@ class JapaneseTest extends TestCase
         $this->assertStringContainsString('Colorful Stage', $result['english']);
     }
 
-    // Alias baru (japanese_aliases.php)
+    
 
     public function testAnalyzeJapaneseTextWithTouhouAlias(): void
     {

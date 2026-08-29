@@ -20,11 +20,15 @@ $counts  = $library->getCounts();
 ?>
     <link rel="stylesheet" href="assets/css/index(hub).css">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/shared/theme-tokens.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/theme-tokens.css') ?>">
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
     <script src="assets/js/compatibilitas/lucide.js"></script>
     <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="assets/js/compatibilitas/script.min.js"></script>
     <script src="assets/js/shared/state-keys.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/state-keys.js') ?>"></script>
     <script src="assets/js/shared/health-reminder.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/health-reminder.js') ?>"></script>
+    <script src="assets/js/shared/theme.js?v=<?= @filemtime(__DIR__ . '/assets/js/shared/theme.js') ?>"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen" style="background:#05070c">
@@ -176,6 +180,14 @@ $counts  = $library->getCounts();
 
     <script>
         lucide.createIcons();
+
+        // Theme init
+        if (typeof MEELTheme !== 'undefined') {
+            MEELTheme.init({
+                isLoggedIn: <?= json_encode($is_logged_in) ?>,
+                csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+            });
+        }
 
         // BANNER LOGIC
         (function() {

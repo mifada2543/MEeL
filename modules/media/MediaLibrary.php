@@ -9,11 +9,10 @@ class MediaLibrary
         $this->conn = $db_connection;
     }
 
-    // HUB
     public function getCounts(): array
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
-        $cache_ttl  = 30; // detik — refresh maksimal tiap 30 detik
+        $cache_ttl  = 30;
 
         if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
             $cached = json_decode(file_get_contents($cache_file), true);
@@ -23,7 +22,6 @@ class MediaLibrary
         }
 
         $counts = ['music' => 0, 'video' => 0, 'books' => 0];
-        // Query ini aman karena tidak ada variabel input dari user
         $sql = "SELECT 'music' AS type, COUNT(*) AS total FROM music
                 UNION ALL
                 SELECT 'video', COUNT(*) FROM video
@@ -53,7 +51,6 @@ class MediaLibrary
         }
     }
 
-    // PAGINATION HELPER
     /**
      * @param mysqli_result|false $result Result set dari query data
      * @param int $total Total record
@@ -90,7 +87,6 @@ class MediaLibrary
         return $this->paginateResult($data, $total, $page, $perPage);
     }
 
-    // VIDEO
     public function getVideos(int $limit = 15, int $offset = 0)
     {
         $stmt = $this->conn->prepare("SELECT * FROM video ORDER BY upload_date DESC LIMIT ? OFFSET ?");
@@ -101,14 +97,13 @@ class MediaLibrary
 
     public function countVideos(): int
     {
-        // Aman karena query statis
         $res = $this->conn->query("SELECT COUNT(*) AS total FROM video");
         return (int)$res->fetch_assoc()['total'];
     }
 
     public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
     {
-        $limit = $fetchLimit; // Fetch limit+1 untuk efficiently check hasMore
+        $limit = $fetchLimit; 
 
         if (empty($q)) {
             if ($sidebar) {
@@ -137,9 +132,6 @@ class MediaLibrary
                 $stmt->bind_param("iii", $exclude, $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking.
-            // `exclude` (item yang sedang diputar) tetap diterapkan supaya
-            // file yang sedang diputar tidak muncul duplikat di hasil search.
             $stmt = $this->conn->prepare(
                 "SELECT v.*, u.username AS uploader_name,
                  MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AS rank
@@ -151,7 +143,6 @@ class MediaLibrary
 
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        // Query FULLTEXT malformed bisa crash endpoint — fallback ke hasil kosong.
         try {
             $stmt->execute();
         } catch (\mysqli_sql_exception $e) {
@@ -161,9 +152,6 @@ class MediaLibrary
         return $result ?: null;
     }
 
-    /* Total hasil pencarian video (non-sidebar) — dipakai SearchEngine untuk
-     * progress 'Muat Lebih Banyak · x/y'. WHERE harus identik dengan
-     * searchVideo() (termasuk INNER JOIN users) supaya total konsisten. */
     public function countSearchVideo(string $q, int $exclude = 0): int
     {
         if (empty($q)) {
@@ -174,8 +162,6 @@ class MediaLibrary
             );
             $stmt->bind_param("i", $exclude);
         } else {
-            // Sinkron dengan searchVideo(): `exclude` ikut diterapkan supaya
-            // total konsisten dengan hasil.
             $stmt = $this->conn->prepare(
                 "SELECT COUNT(*) AS total FROM video v
                  JOIN users u ON v.user_id = u.id
@@ -193,8 +179,6 @@ class MediaLibrary
         $res = $stmt->get_result();
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
-
-    // MUSIC
 
     /**
      * @param string $format Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
@@ -313,7 +297,7 @@ class MediaLibrary
 
     public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
     {
-        $limit = $fetchLimit; // Fetch limit+1 untuk efficiently check hasMore
+        $limit = $fetchLimit; 
 
         if (empty($q)) {
             if ($sidebar) {
@@ -342,9 +326,6 @@ class MediaLibrary
                 $stmt->bind_param("ii", $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking.
-            // `exclude` (item yang sedang diputar) tetap diterapkan supaya
-            // file yang sedang diputar tidak muncul duplikat di hasil search.
             $stmt = $this->conn->prepare(
                 "SELECT m.*, u.username AS uploader,
                  (MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)) AS rank
@@ -355,7 +336,6 @@ class MediaLibrary
             );
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        // Query FULLTEXT malformed bisa crash endpoint — fallback ke hasil kosong.
         try {
             $stmt->execute();
         } catch (\mysqli_sql_exception $e) {
@@ -365,9 +345,6 @@ class MediaLibrary
         return $result ?: null;
     }
 
-    /* Total hasil pencarian musik (non-sidebar) — dipakai SearchEngine untuk
-     * progress 'Load More · x/y'. WHERE harus identik dengan searchMusic()
-     * (termasuk INNER JOIN users) supaya total konsisten dengan hasil. */
     public function countSearchMusic(string $q, int $exclude = 0): int
     {
         if (empty($q)) {
@@ -378,8 +355,6 @@ class MediaLibrary
             );
             $stmt->bind_param("i", $exclude);
         } else {
-            // Sinkron dengan searchMusic(): `exclude` ikut diterapkan supaya
-            // total konsisten dengan hasil.
             $stmt = $this->conn->prepare(
                 "SELECT COUNT(*) AS total FROM music m
                  JOIN users u ON m.user_id = u.id
@@ -397,8 +372,6 @@ class MediaLibrary
         $res = $stmt->get_result();
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
-
-    // PRIVATE HELPER
 
     private function buildMusicWhere(string $format, string $artist): array
     {
@@ -427,7 +400,6 @@ class MediaLibrary
     }
 }
 
-// BookRepository — Query layer untuk tabel `books`
 class BookRepository
 {
     private $conn;
@@ -453,7 +425,6 @@ class BookRepository
                 $stmt->bind_param("s", $filter);
             }
         } else {
-            // 'all' — query statis, tidak ada input user
             $stmt = $this->conn->prepare(
                 "SELECT * FROM books ORDER BY upload_date DESC{$limitSql}"
             );
@@ -563,8 +534,6 @@ class BookRepository
 
     public function getUserRole(int $user_id): ?string
     {
-        // Delegasi ke helper terpusat (cache + session). Fallback 'user' untuk
-        // user tak dikenal — pemanggil hanya membandingkan terhadap 'admin'.
         return get_user_role($this->conn, $user_id);
     }
 }
@@ -572,16 +541,14 @@ class BookRepository
 class BookUploader
 {
     private $conn;
-    private $base_path; // Absolute / relative base path ke direktori upload books
+    private $base_path;
 
-    // $base_path: path ke folder books/ (misal: __DIR__ . '/../books')
     public function __construct($db_connection, string $base_path)
     {
         $this->conn = $db_connection;
         $this->base_path = rtrim($base_path, '/');
     }
 
-    /* Entry point upload buku. Return array ['success' => bool, 'message' => string] */
     public function handleUpload(array $post, array $files): array
     {
         $title    = trim($post['title'] ?? '');
@@ -601,7 +568,7 @@ class BookUploader
             : $this->handleManga($files['book_file'] ?? [], $title);
 
         if (!$content['success']) {
-            return $content; // Kembalikan pesan error dari handler
+            return $content;
         }
 
         if (isset($content['existing']) && $content['existing'] === true) {
@@ -611,15 +578,12 @@ class BookUploader
         return $this->insertBook($title, $author, $type, $content['has_chapters'], $category, $content['path_result'], $thumb_name, $user_id);
     }
 
-    // PRIVATE HELPERS
-
     private function handleThumbnail(array $file): string
     {
         if (!empty($file['name'])) {
             $name = time() . '_' . bin2hex(random_bytes(4)) . '.webp';
             $target_path = $this->base_path . '/upload/thumbnail/' . $name;
             $ffmpeg_bin = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-            // Konversi ke WebP — lebih kecil dari JPG/PNG asli
             $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($file['tmp_name'])
                 . " -vf \"scale='min(500,iw)':-1\" -c:v libwebp -q:v 78 "
                 . escapeshellarg($target_path) . " 2>&1";

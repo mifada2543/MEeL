@@ -42,14 +42,14 @@ $__v = function($f) {
 <body class="text-gray-400 min-h-screen">
 
     <!-- NAVBAR -->
-    <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
+    <nav class="meel-nav sticky top-0 z-50" style="border-bottom:1px solid var(--meel-nav-border)">
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="Kembali ke MEeL HUB">
-                <div class="w-6 h-6 sm:w-7 sm:h-7 bg-red-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
+                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style="background:var(--meel-red)">
+                    <i data-lucide="play" class="nav-logo-icon w-3.5 h-3.5"></i>
                 </div>
-                <span class="text-xs sm:text-sm font-bold tracking-tight text-white uppercase hidden sm:block">
-                    MEeL<span class="text-red-500">Video</span>
+                <span class="nav-logo-text text-xs sm:text-sm font-bold tracking-tight uppercase hidden sm:block">
+                    MEeL<span style="color:var(--meel-red)">Video</span>
                 </span>
             </a>
 
@@ -60,27 +60,30 @@ $__v = function($f) {
                     hx-indicator="#search-indicator"
                     class="flex-1 max-w-sm flex items-center gap-1.5 sm:gap-2">
                 <div class="relative flex-1 group" title="Cari">
-                    <i data-lucide="search" class="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 group-focus-within:text-red-500 transition-colors"></i>
+                    <i data-lucide="search" class="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors" style="color:var(--meel-text-secondary)"></i>
                     <input type="text"
                         id="v-search"
                         name="search"
                         placeholder="Cari video..."
                         title="Cari Video"
                         aria-label="Cari video"
-                        class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs focus:outline-none focus:border-red-500/40 transition-all text-gray-300"
+                        class="meel-input w-full rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs transition-all"
                         autocomplete="off">
                 </div>
 
                 <button type="submit"
                     title="Cari"
                     aria-label="Cari video"
-                    class="px-2.5 sm:px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:text-red-500 hover:border-red-500/30 transition-all flex-shrink-0">
+                    class="meel-input px-2.5 sm:px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex-shrink-0"
+                    style="color:var(--meel-text-secondary)"
+                    onmouseover="this.style.color='var(--meel-red)'"
+                    onmouseout="this.style.color='var(--meel-text-secondary)'">
                     <span class="hidden sm:inline">Cari</span>
                     <i data-lucide="search" class="w-3.5 h-3.5 sm:hidden"></i>
                 </button>
 
                 <div id="search-indicator" class="htmx-indicator ml-1 sm:ml-2">
-                    <div class="animate-spin h-3 w-3 border-2 border-red-500 border-t-transparent rounded-full"></div>
+                    <div class="animate-spin h-3 w-3 border-2 border-t-transparent rounded-full" style="border-color:var(--meel-red); border-top-color:transparent"></div>
                 </div>
             </form>
 

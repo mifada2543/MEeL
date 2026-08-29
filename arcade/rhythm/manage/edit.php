@@ -12,14 +12,11 @@ $username = $_SESSION['username'] ?? null;
 $is_logged_in = $user_id !== null;
 $is_admin = $is_logged_in && is_admin($conn);
 
-// Generate CSRF token
+
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-
-
-// Load existing beatmap if editing
 $edit_song = null;
 $edit_beatmap = null;
 $edit_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
@@ -32,7 +29,6 @@ if ($edit_id > 0 && $is_logged_in) {
     $edit_song = $result->fetch_assoc();
     $stmt->close();
     if ($edit_song) {
-        // Load beatmap from file
         if (!empty($edit_song['beatmap_path']) && file_exists(__DIR__ . '/../' . $edit_song['beatmap_path'])) {
             $edit_beatmap = json_decode(file_get_contents(__DIR__ . '/../' . $edit_song['beatmap_path']), true);
         }
@@ -235,8 +231,6 @@ if ($edit_id > 0 && $is_logged_in) {
         </div>
       </div>
     </section>
-
-
 
   </main>
 

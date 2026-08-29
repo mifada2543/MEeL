@@ -9,14 +9,12 @@ $playlist_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id     = $_SESSION['user_id'] ?? 0;
 $format_filter = $_GET['format'] ?? 'all';
 
-// URL slug: music/playlist/<nama-playlist> → id playlist milik user
 $library   = new MediaLibrary($conn);
 $pl_routes = $library->getUserPlaylistRoutes($user_id);
 if ($playlist_id === 0 && isset($_GET['slug']) && $_GET['slug'] !== '') {
     $playlist_id = $library->resolvePlaylistSlug((string) $_GET['slug'], $user_id);
 }
 
-// Validasi playlist milik user + ambil lagunya lewat repository (tanpa duplikasi)
 $playlistsRepo = new PlaylistRepository($conn);
 $playlist      = $playlistsRepo->getOwnedPlaylist($playlist_id, $user_id);
 
@@ -37,7 +35,6 @@ if ($total_songs > 0) {
 $artists       = $library->getArtists();
 $is_logged_in  = isset($_SESSION['user_id']);
 
-// Fungsi render konten utama
 function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, $include_script = true)
 {
 ?>
@@ -117,7 +114,6 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             $idx = 0;
             while ($s = $songs_query->fetch_assoc()):
                 $idx++;
-                // Otorisasi stream: tandai id lagu ini boleh di-stream
                 authorize_stream((int)$s['id']);
                 $s_ext   = strtolower(pathinfo($s['filename'], PATHINFO_EXTENSION));
                 $s_lbl   = $s_ext === 'ogg' ? 'opus' : $s_ext;
@@ -217,7 +213,6 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
 <?php
 }
 
-// Mode content_only untuk HTMX swap
 if (isset($_GET['content_only'])) {
     renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, false);
     exit;

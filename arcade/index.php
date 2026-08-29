@@ -259,7 +259,7 @@ sort($categories);
       modal.dataset.activeId = id;
       mb.banner.src = g.image;
       mb.banner.onerror = function() {
-        this.src = "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80";
+        this.src = "https:
       };
       mb.category.textContent = g.category;
       mb.year.textContent = g.year;

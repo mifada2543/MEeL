@@ -1,5 +1,4 @@
 <?php
-// helpers/session.php — Inisialisasi Session Terpusat (Secure Cookie)
 if (!function_exists('meel_boot_session')) {
     function meel_boot_session(): void
     {

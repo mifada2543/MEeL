@@ -7,17 +7,14 @@ class SearchEngine
 {
     private MediaLibrary $library;
     private static array $cache = [];
-    private static int $cacheSize = 50; // Max cached queries
+    private static int $cacheSize = 50;
 
     // Limit default, harus sinkron dengan @ MediaLibrary
     const VIDEO_LIMIT = 15;
     const MUSIC_LIMIT = 10;
     // Sidebar rekomendasi selalu 15 item (sinkron dengan LIMIT 15 di query
-    // sidebar MediaLibrary::searchVideo()/searchMusic()) — terpisah dari
     // MUSIC_LIMIT supaya ubah ukuran halaman library tidak memangkas
-    // rekomendasi sidebar.
     const SIDEBAR_LIMIT = 15;
-    // Query terlalu pendek mengembalikan 0 hasil, jadi ditolak sejak awal.
     const MIN_SEARCH_QUERY = 3;
     const MAX_SEARCH_QUERY = 255;
 
@@ -26,17 +23,12 @@ class SearchEngine
         $this->library = new MediaLibrary($db_connection);
     }
 
-    // PARAMETER PARSING
-
     public function parseParams(): array
     {
         $query = self::sanitizeQuery($_GET['search'] ?? '');
 
         return [
             'query'   => $query,
-            // `exclude` (item yang sedang diputar) diterapkan pada SEMUA
-            // pencarian (kosong maupun eksplisit) supaya file yang sedang
-            // diputar tidak muncul duplikat di hasil search.
             'exclude' => isset($_GET['exclude']) ? max(0, (int)$_GET['exclude']) : 0,
             'offset'  => isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0,
             'sidebar' => $this->detectSidebar(),
@@ -50,7 +42,6 @@ class SearchEngine
         $q = trim($q);
         $q = mb_substr($q, 0, self::MAX_SEARCH_QUERY);
 
-        // Buang karakter yang bisa cause issues / tidak pernah berguna
         $q = preg_replace('/[<>()~@]+/', '', $q);
 
         $tokens = preg_split('/\s+/', $q);
@@ -63,7 +54,6 @@ class SearchEngine
             $q = str_replace('"', '', $q);
         }
 
-        // Truncation "*kata" di awal token tidak valid di boolean mode
         $q = preg_replace('/(^|\s)\*(?=\S)/', '$1', $q);
 
         return trim($q);
@@ -72,19 +62,16 @@ class SearchEngine
     private function isValidSearchQuery(string $q): bool
     {
         if (empty($q)) {
-            return true; // Empty query is valid (returns random or latest)
+            return true;
         }
         return mb_strlen($q) >= self::MIN_SEARCH_QUERY;
     }
 
-    /* Deteksi apakah request berasal dari sidebar HTMX (recommendation). */
     private function detectSidebar(): bool
     {
         $target = $_SERVER['HTTP_HX_TARGET'] ?? '';
         return in_array($target, ['recommendation-column', 'music-recommendation-column'], true);
     }
-
-    // SEARCH RESULT BUILDER
 
     private function buildResult(?mysqli_result $data, array $params, int $limit, int $total = 0): array
     {
@@ -110,7 +97,7 @@ class SearchEngine
 
         while ($row = $data->fetch_assoc()) {
             if ($idx >= $limit) {
-                break; // Jangan store row ekstra, tapi set hasMore = true
+                break;
             }
             $rows[] = $row;
             $idx++;
@@ -121,7 +108,7 @@ class SearchEngine
             'count'       => count($rows),
             'limit'       => $limit,
             'offset'      => $params['offset'],
-            'hasMore'     => ($data->num_rows > $limit), // True jika ada row ekstra
+            'hasMore'     => ($data->num_rows > $limit),
             'sidebar'     => $params['sidebar'],
             'query'       => $params['query'],
             'exclude'     => $params['exclude'],
@@ -129,8 +116,6 @@ class SearchEngine
             'total_pages' => $totalPages,
         ];
     }
-
-    // CACHING HELPERS
 
     private static function getCacheKey(string $type, array $params): string
     {
@@ -144,24 +129,20 @@ class SearchEngine
         return $key;
     }
 
-    /* Get cached result jika ada. */
     private static function getFromCache(string $type, array $params): ?array
     {
         $key = self::getCacheKey($type, $params);
         return self::$cache[$key] ?? null;
     }
 
-    /* Store result ke cache (simple in-memory caching untuk request lifecycle). */
     private static function setCache(string $type, array $params, array $result): void
     {
         if (count(self::$cache) >= self::$cacheSize) {
-            array_shift(self::$cache); // Simple FIFO eviction
+            array_shift(self::$cache);
         }
         $key = self::getCacheKey($type, $params);
         self::$cache[$key] = $result;
     }
-
-    // VIDEO SEARCH
 
     public function searchVideo(array $params): array
     {
@@ -170,7 +151,6 @@ class SearchEngine
             return $cached;
         }
 
-        // Skip search jika query terlalu pendek
         if (!$params['valid'] && !empty($params['query'])) {
             return $this->buildResult(null, $params, self::VIDEO_LIMIT);
         }
@@ -182,10 +162,9 @@ class SearchEngine
             $params['exclude'],
             $params['sidebar'],
             $params['offset'],
-            $limit + 1 // Fetch 1 extra untuk check hasMore
+            $limit + 1
         );
 
-        // Total hasil (untuk progress 'Muat Lebih Banyak · x/y') — hanya non-sidebar
         $total = 0;
         if (!$params['sidebar']) {
             $total = $this->library->countSearchVideo($params['query'], $params['exclude']);
@@ -196,8 +175,6 @@ class SearchEngine
         return $result;
     }
 
-    // MUSIC SEARCH
-
     public function searchMusic(array $params): array
     {
         $cached = self::getFromCache('music', $params);
@@ -205,7 +182,6 @@ class SearchEngine
             return $cached;
         }
 
-        // Skip search jika query terlalu pendek
         if (!$params['valid'] && !empty($params['query'])) {
             return $this->buildResult(null, $params, self::MUSIC_LIMIT);
         }
@@ -217,10 +193,9 @@ class SearchEngine
             $params['exclude'],
             $params['sidebar'],
             $params['offset'],
-            $limit + 1 // Fetch 1 extra untuk check hasMore
+            $limit + 1
         );
 
-        // Total hasil (untuk progress 'Load More · x/y') — hanya non-sidebar
         $total = 0;
         if (!$params['sidebar']) {
             $total = $this->library->countSearchMusic($params['query'], $params['exclude']);

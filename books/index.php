@@ -5,7 +5,6 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// Bootstrap
 $repo  = new BookRepository($conn);
 $u_id  = (int)$_SESSION['user_id'];
 $role  = $repo->getUserRole($u_id);
@@ -207,7 +206,6 @@ $totalPagesBooks = $meta_books['total_pages'];
     <?php include '../partials/footer.php'; ?>
     <script>        lucide.createIcons();
 
-        // CONTINUE READING (localStorage)
         (function() {
             var banner = document.getElementById('continueBanner');
             var titleEl = document.getElementById('continueTitle');
@@ -222,7 +220,6 @@ $totalPagesBooks = $meta_books['total_pages'];
                 var data = JSON.parse(raw);
                 if (!data || !data.id || !data.title) return;
 
-                // Cek apakah masih relevan (max 7 hari)
                 var age = Date.now() - (data.timestamp || 0);
                 if (age > 7 * 24 * 60 * 60 * 1000) {
                     localStorage.removeItem('meel_book_progress');
@@ -239,7 +236,6 @@ $totalPagesBooks = $meta_books['total_pages'];
                 banner.classList.add('visible');
 
             } catch(e) {
-                // localStorage corrupt atau tidak tersedia
                 console.warn('[Continue] Gagal baca progress:', e);
             }
 

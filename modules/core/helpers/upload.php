@@ -21,7 +21,6 @@ function get_hourly_upload_count(\mysqli $conn, int $user_id, string $table): in
 }
 }
 
-/* Total seluruh upload user pada tabel tertentu. */
 if (!function_exists('get_total_upload_count')) {
 function get_total_upload_count(\mysqli $conn, int $user_id, string $table): int
 {

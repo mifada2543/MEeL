@@ -43,7 +43,6 @@ class AdminActivityRepository
             $this->types .= 'ss';
         }
 
-        // Batasi default ke N hari terakhir
         $this->where_conditions[] = 'al.created_at >= NOW() - INTERVAL ? DAY';
         $this->params[] = $days;
         $this->types .= 'i';
@@ -60,7 +59,6 @@ class AdminActivityRepository
         $deleted = $stmt->affected_rows;
         $stmt->close();
 
-        // Reset auto-increment ke id terakhir + 1
         $next_id = 1;
         $max_res = $this->conn->query('SELECT MAX(id) AS max_id FROM activity_log');
         if ($max_res) {

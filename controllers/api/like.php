@@ -1,6 +1,5 @@
 <?php
 require_once '../../modules/core/helpers.php';
-// Session terpusat dengan cookie flags aman (HttpOnly, SameSite=Lax)
 meel_boot_session();
 
 include '../../auth/config.php';
@@ -9,7 +8,6 @@ include '../../auth/config.php';
 // "Cannot declare class RateLimiter" (regresi pemindahan ke modules/auth).
 include '../../modules/media/MediaInteraction.php';
 
-// Verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     exit;
@@ -49,7 +47,6 @@ if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - POST: " . json_en
 
 $user_id = $_SESSION['user_id'] ?? null;
 
-// Validasi is_active == 1 dan role bukan 'guest'
 if ($user_id) {
     $stmt_user = $conn->prepare("SELECT is_active, role FROM users WHERE id = ? LIMIT 1");
     $stmt_user->bind_param("i", $user_id);
@@ -58,12 +55,11 @@ if ($user_id) {
 
     if (!$user || $user['is_active'] != 1 || $user['role'] === 'guest') {
         if (defined('APP_DEBUG') && APP_DEBUG) { error_log("LIKE.PHP - BLOCKED: User ID $user_id is inactive or guest."); }
-        http_response_code(403); // HTTP 403 Forbidden
+        http_response_code(403);
         exit;
     }
 } else {
-    // Jika tidak ada user_id di session (belum login)
-    http_response_code(401); // HTTP 401 Unauthorized
+    http_response_code(401);
     exit;
 }
 

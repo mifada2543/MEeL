@@ -12,13 +12,11 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 $csrf = $_SESSION['csrf_token'];
 
-// Auth info
 $is_logged_in = isset($_SESSION['user_id']);
 $username = $_SESSION['username'] ?? null;
 $user_role = $is_logged_in ? get_user_role($conn, (int)$_SESSION['user_id']) : null;
 $is_admin = ($user_role === 'admin');
 
-// Load built-in songs from _index.json
 $builtin_songs = [];
 $index_path = __DIR__ . '/songs/_index.json';
 if (file_exists($index_path)) {
@@ -49,7 +47,6 @@ if (file_exists($index_path)) {
     }
 }
 
-// Load custom songs from DB
 $custom_songs = [];
 if ($conn && $conn->connect_errno === 0) {
     $result = $conn->query(

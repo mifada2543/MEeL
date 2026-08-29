@@ -14,7 +14,7 @@ class MediaLibraryTest extends TestCase
     {
         parent::setUp();
 
-        // Create a mock mysqli connection
+        
         $this->mockConn = $this->createMock(mysqli::class);
         $this->library = new MediaLibrary($this->mockConn);
     }

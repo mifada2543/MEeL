@@ -1,0 +1,1136 @@
+/* ============================================================
+ * shared/light-theme.css — Light Mode Overrides (Simplified)
+ *
+ * CSS variables (theme-tokens.css) handle 90% of theming.
+ * This file only overrides hardcoded Tailwind utilities
+ * that can't use CSS variables.
+ * ============================================================ */
+
+/* ─── THEME TRANSITION ─── */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, fill 0.35s ease !important;
+}
+
+/* ─── BODY ─── */
+html[data-theme="light"] body {
+  background-color: var(--meel-bg) !important;
+  color: var(--meel-text) !important;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+html[data-theme="light"] body[style*="background:#05070c"],
+html[data-theme="light"] body[style*="background: #05070c"] {
+  background-color: var(--meel-bg) !important;
+}
+
+/* ─── TAILWIND TEXT OVERRIDES ─── */
+html[data-theme="light"] .text-white:not(.nav-logo-text) { color: var(--meel-text-heading) !important; }
+html[data-theme="light"] .text-gray-200 { color: var(--meel-text) !important; }
+html[data-theme="light"] .text-gray-300 { color: var(--meel-text) !important; }
+html[data-theme="light"] .text-gray-400 { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .text-gray-500 { color: var(--meel-text-muted) !important; }
+html[data-theme="light"] .text-gray-600 { color: var(--meel-text-muted) !important; }
+html[data-theme="light"] .text-gray-700 { color: var(--meel-text-muted) !important; }
+html[data-theme="light"] .text-gray-800 { color: var(--meel-text-heading) !important; }
+
+/* ─── TAILWIND BG OVERRIDES ─── */
+html[data-theme="light"] .bg-white\/\[\.04\] { background: var(--meel-surface-hover) !important; }
+html[data-theme="light"] .bg-white\/\[\.05\] { background: var(--meel-surface-hover) !important; }
+html[data-theme="light"] .bg-white\/\[\.08\] { background: var(--meel-surface-active) !important; }
+html[data-theme="light"] .bg-black\/60 { background: rgba(0, 0, 0, 0.25) !important; }
+html[data-theme="light"] .bg-black\/90 { background: rgba(0, 0, 0, 0.35) !important; }
+html[data-theme="light"] .bg-black\/20 { background: rgba(0, 0, 0, 0.02) !important; }
+html[data-theme="light"] .bg-black\/40 { background: rgba(0, 0, 0, 0.04) !important; }
+html[data-theme="light"] .bg-gray-900\/40 { background: var(--meel-surface-hover) !important; }
+html[data-theme="light"] .bg-gray-800\/60 { background: var(--meel-surface-active) !important; }
+
+/* ─── TAILWIND BORDER OVERRIDES ─── */
+html[data-theme="light"] .border-white\/\[\.04\] { border-color: var(--meel-border) !important; }
+html[data-theme="light"] .border-white\/\[\.05\] { border-color: var(--meel-border) !important; }
+html[data-theme="light"] .border-white\/\[\.06\] { border-color: var(--meel-border) !important; }
+html[data-theme="light"] .border-white\/\[\.07\] { border-color: var(--meel-border) !important; }
+html[data-theme="light"] .border-white\/\[\.08\] { border-color: var(--meel-border-strong) !important; }
+html[data-theme="light"] .border-white\/\[\.10\] { border-color: var(--meel-border-strong) !important; }
+html[data-theme="light"] .border-white\/10 { border-color: var(--meel-border-strong) !important; }
+html[data-theme="light"] .border-white\/5 { border-color: var(--meel-border) !important; }
+html[data-theme="light"] .border-gray-800 { border-color: var(--meel-border) !important; }
+html[data-theme="light"] .border-gray-700 { border-color: var(--meel-border-strong) !important; }
+
+/* ─── TAILWIND HOVER OVERRIDES ─── */
+html[data-theme="light"] .hover\:bg-white\/\[\.05\]:hover { background: var(--meel-surface-hover) !important; }
+html[data-theme="light"] .hover\:bg-white\/\[\.08\]:hover { background: var(--meel-surface-active) !important; }
+html[data-theme="light"] .hover\:bg-gray-800\/60:hover { background: var(--meel-surface-active) !important; }
+html[data-theme="light"] .hover\:bg-gray-800:hover { background: var(--meel-surface-active) !important; }
+html[data-theme="light"] .hover\:text-white:hover { color: var(--meel-text-heading) !important; }
+
+/* ─── NAVBAR ─── */
+html[data-theme="light"] nav {
+  transition: background-color 0.35s ease, border-color 0.35s ease;
+}
+html[data-theme="light"] nav::before {
+  background: radial-gradient(
+    ellipse 70% 50% at 50% calc(100% - 10px),
+    rgba(0, 0, 0, 0.08) 0%,
+    rgba(0, 0, 0, 0.03) 40%,
+    transparent 70%
+  ) !important;
+  filter: blur(20px);
+}
+
+
+
+/* ─── CARDS ─── */
+html[data-theme="light"] .media-card,
+html[data-theme="light"] .video-card {
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* ─── MINI PLAYER ─── */
+html[data-theme="light"] #mini-player,
+html[data-theme="light"] #mini-player-index,
+html[data-theme="light"] #mini-player-shell {
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* ─── GLASS ─── */
+html[data-theme="light"] .glass,
+html[data-theme="light"] .glass-card {
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* ─── DROPDOWN ─── */
+html[data-theme="light"] #nav-dropdown,
+html[data-theme="light"] #nav-drawer,
+html[data-theme="light"] #nav-drawer-guest {
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+
+/* ─── TAILWIND SHADOW OVERRIDES ─── */
+html[data-theme="light"] .shadow-2xl { box-shadow: var(--meel-shadow-xl) !important; }
+html[data-theme="light"] .shadow-xl { box-shadow: var(--meel-shadow-lg) !important; }
+html[data-theme="light"] .shadow-lg { box-shadow: var(--meel-shadow-md) !important; }
+html[data-theme="light"] .shadow-black\/60 { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12) !important; }
+
+/* ─── TAILWIND DIVIDE ─── */
+html[data-theme="light"] .divide-gray-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .divide-gray-700 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--meel-border-strong) !important;
+}
+
+/* ─── VIDEO CARDS ─── */
+html[data-theme="light"] .video-card {
+  box-shadow: var(--meel-shadow-sm) !important;
+}
+html[data-theme="light"] .video-card:hover {
+  box-shadow: var(--meel-shadow-lg) !important;
+}
+html[data-theme="light"] .rec-title-text {
+  text-shadow: none !important;
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .comment-row:hover,
+html[data-theme="light"] .music-item:hover,
+html[data-theme="light"] .rekomendasi-item:hover {
+  background: var(--meel-surface-hover) !important;
+}
+
+/* ─── MINI PLAYER ─── */
+html[data-theme="light"] #mini-player,
+html[data-theme="light"] #mini-player-index {
+  background: var(--meel-player-bg) !important;
+  border-top-color: var(--meel-player-border) !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .mp-title { color: var(--meel-text-heading) !important; }
+html[data-theme="light"] .mp-artist { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .mp-btn { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .mp-btn-ghost:hover { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
+html[data-theme="light"] .mp-time { color: var(--meel-text-muted) !important; }
+html[data-theme="light"] .mp-seekbar { background: rgba(0, 0, 0, 0.06) !important; }
+html[data-theme="light"] .mp-art { border-color: var(--meel-border) !important; box-shadow: var(--meel-shadow-sm) !important; }
+
+html[data-theme="light"] #mini-player-shell {
+  background: var(--meel-surface) !important;
+  box-shadow: var(--meel-shadow-lg), 0 0 0 1px var(--meel-border) !important;
+}
+html[data-theme="light"] #mini-info-title { color: var(--meel-text-heading) !important; }
+html[data-theme="light"] #mini-info-uploader { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] #mini-mute-btn { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
+html[data-theme="light"] #mini-mute-btn:hover { background: var(--meel-surface-active) !important; color: var(--meel-red) !important; }
+
+/* ─── THEME TOGGLE ─── */
+#theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  flex-shrink: 0;
+}
+#theme-toggle:hover {
+  transform: scale(1.08);
+}
+#theme-toggle:active {
+  transform: scale(0.95);
+}
+#theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--meel-orange);
+  border-color: rgba(234, 88, 12, 0.15);
+}
+html[data-theme="light"] #theme-toggle {
+  border-color: var(--meel-border);
+  background: var(--meel-surface);
+  color: var(--meel-text-secondary);
+  box-shadow: var(--meel-shadow-sm);
+}
+html[data-theme="light"] #theme-toggle:hover {
+  background: #fff7ed;
+  color: var(--meel-orange);
+  border-color: rgba(234, 88, 12, 0.15);
+}
+
+/* Theme toggle icon inside knob */
+#theme-icon.mfa-knob {
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* ─── GLASS ─── */
+html[data-theme="light"] .glass,
+html[data-theme="light"] .glass-card {
+  background: var(--meel-glass) !important;
+  border-color: var(--meel-glass-border) !important;
+  box-shadow: var(--meel-shadow-sm) !important;
+}
+
+/* ─── SWAL ─── */
+html[data-theme="light"] .swal2-popup {
+  background: var(--meel-surface) !important;
+  color: var(--meel-text) !important;
+  box-shadow: var(--meel-shadow-xl) !important;
+}
+html[data-theme="light"] .swal2-title { color: var(--meel-text-heading) !important; }
+html[data-theme="light"] .swal2-html-container { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .swal2-container.swal2-backdrop-show {
+  backdrop-filter: blur(8px) !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ─── TABLES ─── */
+html[data-theme="light"] thead th { color: var(--meel-text-secondary) !important; border-bottom-color: var(--meel-border-strong) !important; }
+html[data-theme="light"] tbody td { border-bottom-color: var(--meel-border) !important; }
+html[data-theme="light"] tbody tr:hover { background: var(--meel-surface-hover) !important; }
+
+/* ─── SCROLLBAR ─── */
+html[data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--meel-scrollbar); }
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: var(--meel-scrollbar-hover); }
+
+/* ─── MFA ─── */
+html[data-theme="light"] .mfa-track--off { background: #d4d4d8 !important; }
+
+/* ─── DRIVE ─── */
+html[data-theme="light"] aside.glass { background: rgba(255, 255, 255, 0.92) !important; border-right-color: var(--meel-border) !important; }
+html[data-theme="light"] .nav-item { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .nav-item:hover { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
+html[data-theme="light"] .nav-item.active { background: rgba(37, 99, 235, 0.06) !important; color: var(--meel-blue) !important; }
+html[data-theme="light"] .scope-pill-inactive { background: var(--meel-surface-hover) !important; color: var(--meel-text-secondary) !important; border-color: var(--meel-border) !important; }
+
+/* ─── PROFILE ─── */
+html[data-theme="light"] .glass { background: var(--meel-glass) !important; }
+
+/* ─── NAV DROPDOWN ─── */
+html[data-theme="light"] #nav-dropdown a {
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] #nav-dropdown a:hover {
+  color: var(--meel-text-heading) !important;
+  background: var(--meel-surface-hover) !important;
+}
+html[data-theme="light"] #nav-dropdown .border-b,
+html[data-theme="light"] #nav-dropdown [style*="border-bottom"] {
+  border-color: var(--meel-border) !important;
+}
+
+/* ─── NAV AVATAR ─── */
+html[data-theme="light"] #nav-avatar-btn {
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] #nav-avatar-btn:hover {
+  background: var(--meel-surface-hover) !important;
+}
+html[data-theme="light"] #nav-chevron {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ─── MOBILE DRAWER ─── */
+html[data-theme="light"] #nav-drawer,
+html[data-theme="light"] #nav-drawer-guest {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #nav-drawer a,
+html[data-theme="light"] #nav-drawer-guest a {
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] #nav-drawer a:hover,
+html[data-theme="light"] #nav-drawer-guest a:hover {
+  color: var(--meel-text-heading) !important;
+  background: var(--meel-surface-hover) !important;
+}
+
+/* ─── VIDEO WATCH PAGE — description & comments ─── */
+html[data-theme="light"] .desc-container,
+html[data-theme="light"] #desc-wrapper,
+html[data-theme="light"] #comment-section {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* ─── VIDEO LOAD MORE BUTTON ─── */
+html[data-theme="light"] #load-more-area {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+  box-shadow: var(--meel-shadow-sm) !important;
+}
+html[data-theme="light"] #load-more-area:hover {
+  border-color: var(--meel-red) !important;
+  box-shadow: var(--meel-shadow-md) !important;
+}
+
+/* ─── MUSIC WATCH PAGE — player, EQ, description ─── */
+html[data-theme="light"] #player-container {
+  background: var(--meel-surface) !important;
+}
+html[data-theme="light"] #eq-preset-options {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #eq-preset-options button {
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #eq-preset-options button:hover {
+  background: var(--meel-surface-hover) !important;
+}
+
+/* ─── RESUME MODAL ─── */
+html[data-theme="light"] .bg-\[\#141820\] {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* ─── LIKE/DISLIKE BUTTONS ─── */
+html[data-theme="light"] .bg-gray-800\/50 {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .hover\:bg-gray-700:hover {
+  background: var(--meel-surface-active) !important;
+}
+
+/* ─── TEXTAREA / COMMENT INPUT ─── */
+html[data-theme="light"] textarea {
+  background: var(--meel-input-bg) !important;
+  border-color: var(--meel-input-border) !important;
+  color: var(--meel-text) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   UPLOAD PAGES (up.css variables)
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body {
+  --bg: #fafafa !important;
+  --surface: #ffffff !important;
+  --border: rgba(0, 0, 0, 0.08) !important;
+  --text: #27272a !important;
+  --muted: #71717a !important;
+  --white: #18181b !important;
+}
+html[data-theme="light"] body::before {
+  background-image: none !important;
+  opacity: 0 !important;
+}
+html[data-theme="light"] body::after {
+  opacity: 0 !important;
+}
+html[data-theme="light"] .wrap {
+  color: var(--meel-text);
+}
+html[data-theme="light"] .masthead-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .masthead-sub {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .entry {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .entry:hover {
+  border-color: rgba(234, 88, 12, 0.25) !important;
+}
+html[data-theme="light"] .entry-header {
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .entry-label {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .entry-body {
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .sidebar-card {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .tab-btn {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .tab-btn.active-orange,
+html[data-theme="light"] .tab-btn.active-blue {
+  background: rgba(234, 88, 12, 0.04) !important;
+}
+html[data-theme="light"] .f-input,
+html[data-theme="light"] .f-textarea {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .f-input:focus,
+html[data-theme="light"] .f-textarea:focus {
+  border-color: var(--meel-orange) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+html[data-theme="light"] .f-label {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .btn-ghost {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .btn-ghost:hover {
+  background: rgba(234, 88, 12, 0.06) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .admin-bar {
+  background: rgba(234, 88, 12, 0.04) !important;
+  border-color: rgba(234, 88, 12, 0.15) !important;
+}
+html[data-theme="light"] .admin-badge {
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .admin-btn {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .admin-btn:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+html[data-theme="light"] .modal-box {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .modal-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .check-btn {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .check-btn:hover {
+  background: rgba(234, 88, 12, 0.06) !important;
+  border-color: rgba(234, 88, 12, 0.2) !important;
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .tab-pane {
+  color: var(--meel-text);
+}
+
+/* ════════════════════════════════════════════════════════════
+   UPLOAD FORM SHARED (design-tokens.css)
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] {
+  --bg-base: #fafafa !important;
+  --bg-card: #ffffff !important;
+  --bg-panel: #f4f4f5 !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VIDEO WATCH PAGE — ALL SECTIONS
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] #video-glow-container {
+  background: var(--meel-bg) !important;
+}
+html[data-theme="light"] .bg-\[\#141820\] {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .bg-\[\#0d1017\] {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MUSIC WATCH PAGE — ALL SECTIONS
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .bg-\[\#080a0f\]\/95 {
+  background: rgba(250, 250, 250, 0.92) !important;
+}
+html[data-theme="light"] .bg-\[\#080a0f\] {
+  background: var(--meel-bg) !important;
+}
+html[data-theme="light"] .bg-\[\#0d1017\]\/95 {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+html[data-theme="light"] .bg-\[\#0d1017\] {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* ─── MUSIC WATCH — Additional overrides ─── */
+
+/* Player header/footer section backgrounds */
+html[data-theme="light"] .bg-black\/10 {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Comment textarea bg */
+html[data-theme="light"] .bg-black\/25 {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+
+/* EQ bands, cava container */
+html[data-theme="light"] .bg-black\/20 {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* Loop, Vis, EQ buttons */
+html[data-theme="light"] .bg-gray-800 {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] .bg-gray-800:hover,
+html[data-theme="light"] .bg-gray-800\/50 {
+  background: var(--meel-surface-active) !important;
+  border-color: var(--meel-border-strong) !important;
+}
+
+/* Like/Dislike/Simpan buttons */
+html[data-theme="light"] .bg-gray-800\/50 {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] .hover\:bg-gray-700:hover {
+  background: var(--meel-surface-active) !important;
+  color: var(--meel-text) !important;
+}
+
+/* Description text */
+html[data-theme="light"] #desc-text-music {
+  color: var(--meel-text) !important;
+}
+
+/* Comment preview text */
+html[data-theme="light"] #comment-preview-text {
+  color: var(--meel-text-secondary) !important;
+}
+
+/* Comment toggle button */
+html[data-theme="light"] #comment-toggle:hover {
+  background: var(--meel-surface-hover) !important;
+}
+
+/* Sidebar Discover header */
+html[data-theme="light"] .rekomendasi-sidebar .bg-\[\#0d1017\] {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* Sidebar Discover items */
+html[data-theme="light"] .rekomendasi-item {
+  background: transparent !important;
+}
+html[data-theme="light"] .rekomendasi-item:hover {
+  background: var(--meel-surface-hover) !important;
+}
+html[data-theme="light"] .rec-title-text {
+  color: var(--meel-text) !important;
+  text-shadow: none !important;
+}
+
+/* Playlist queue items */
+html[data-theme="light"] .bg-orange-500\/8 {
+  background: rgba(234, 88, 12, 0.06) !important;
+  border-color: rgba(234, 88, 12, 0.15) !important;
+}
+
+/* EQ panel */
+html[data-theme="light"] #eq-container {
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #eq-preset-button {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #eq-preset-options {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #eq-preset-options button {
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #eq-preset-options button:hover {
+  background: var(--meel-surface-hover) !important;
+  color: var(--meel-text-heading) !important;
+}
+
+/* Playlist modal */
+html[data-theme="light"] #playlist-modal .bg-\[\#141820\] {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #playlist-modal .bg-white\/\[\.04\] {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #playlist-modal .bg-white\/\[\.04\]:hover {
+  background: rgba(234, 88, 12, 0.06) !important;
+  border-color: rgba(234, 88, 12, 0.2) !important;
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] #playlist-modal .bg-black\/30 {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+
+/* Search input */
+html[data-theme="light"] .bg-white\/\[\.04\].rounded-xl {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: var(--meel-text) !important;
+}
+
+/* Vinyl disc shadow in light mode */
+html[data-theme="light"] .vinyl-disc {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Plyr audio controls — black icons in light mode (music/watch only) */
+html[data-theme="light"] #player-container .plyr__controls {
+  color: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control {
+  color: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control svg {
+  fill: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control:hover {
+  color: #ea580c !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control:hover svg {
+  fill: #ea580c !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__time {
+  color: #52525b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__volume {
+  color: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-webkit-slider-thumb {
+  background: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-moz-range-thumb {
+  background: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-webkit-slider-runnable-track {
+  background-image: linear-gradient(to right, #ea580c var(--value, 0), rgba(0,0,0,0.08) var(--value, 0)) !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-moz-range-track {
+  background: rgba(0,0,0,0.08) !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-moz-range-progress {
+  background: #ea580c !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MUSIC INDEX — MOBILE FILTERS & DROPDOWNS
+   ════════════════════════════════════════════════════════════ */
+
+/* Dropdown trigger buttons */
+html[data-theme="light"] #custom-artist-dropdown > button,
+html[data-theme="light"] #custom-playlist-dropdown > button {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] #custom-artist-dropdown > button:hover,
+html[data-theme="light"] #custom-playlist-dropdown > button:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] #custom-artist-dropdown > button .text-gray-500,
+html[data-theme="light"] #custom-playlist-dropdown > button .text-gray-500 {
+  color: #71717a !important;
+}
+
+/* Dropdown menus */
+html[data-theme="light"] #artist-options,
+html[data-theme="light"] #playlist-options {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] #artist-options button,
+html[data-theme="light"] #playlist-options button {
+  color: #3f3f46 !important;
+}
+html[data-theme="light"] #artist-options button:hover,
+html[data-theme="light"] #playlist-options button:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] #artist-options button.text-orange-500,
+html[data-theme="light"] #playlist-options button.text-orange-500 {
+  color: #ea580c !important;
+}
+
+/* Dropdown filter labels */
+html[data-theme="light"] .text-gray-700.uppercase {
+  color: #52525b !important;
+}
+
+/* Mobile filters container */
+html[data-theme="light"] .bg-\[\#0d1017\]\/95 {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme="light"] .bg-\[\#0d1017\]\/95 .text-gray-300 {
+  color: #3f3f46 !important;
+}
+html[data-theme="light"] .bg-\[\#0d1017\]\/95 .text-gray-500 {
+  color: #71717a !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SECTION TITLES — fix pudar di light mode
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .section-title,
+html[data-theme="light"] .track-title,
+html[data-theme="light"] .video-title {
+  color: var(--meel-text-heading) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   HUB PAGE (index(hub).css variables)
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body {
+  --bg: #fafafa !important;
+  --surface: #ffffff !important;
+  --border: rgba(0, 0, 0, 0.08) !important;
+  --blue: #2563eb !important;
+  --text: #71717a !important;
+  --white: #18181b !important;
+}
+html[data-theme="light"] body::before {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px) !important;
+  opacity: 0.4 !important;
+}
+html[data-theme="light"] .hero-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .hero-title .accent {
+  color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .station-id {
+  color: var(--meel-text-muted) !important;
+  border-left-color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .glass {
+  background: var(--meel-glass) !important;
+  border-color: var(--meel-glass-border) !important;
+}
+
+/* HUB MEDIA CARDS */
+html[data-theme="light"] .media-card {
+  background: var(--meel-surface) !important;
+  border-top: 2px solid rgba(0, 0, 0, 0.04) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: var(--meel-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+html[data-theme="light"] .media-card:hover {
+  box-shadow: var(--meel-shadow-lg), 0 0 0 1px var(--accent) !important;
+}
+html[data-theme="light"] .media-card::before {
+  opacity: 0.04 !important;
+}
+html[data-theme="light"] .media-card:hover::before {
+  opacity: 0.1 !important;
+}
+html[data-theme="light"] .media-card .card-count {
+  color: inherit !important;
+}
+html[data-theme="light"] .media-card .card-label {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .media-card .card-name {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .media-card .card-desc {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .media-card .card-icon-wrap {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .media-card:hover .card-icon-wrap {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html[data-theme="light"] .media-card .card-arrow {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+html[data-theme="light"] .media-card:hover .card-arrow {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+/* HUB BOTTOM LINKS */
+html[data-theme="light"] .bottom-link {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .bottom-link:hover {
+  color: var(--meel-text-heading) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  html[data-theme="light"] nav { background-color: var(--meel-nav-bg) !important; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   UPLOAD PAGES — light mode (video + music)
+   Uses: design-tokens.css + upload-form.css + module main.css
+   ════════════════════════════════════════════════════════════ */
+
+/* --- Body & noise overlay --- */
+html[data-theme="light"] body {
+  color: #3f3f46 !important;
+}
+html[data-theme="light"] body::before {
+  background-image: none !important;
+}
+
+/* --- Top nav --- */
+html[data-theme="light"] .top-nav {
+  background: var(--meel-glass) !important;
+  border-bottom-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .nav-brand {
+  color: #ffffff !important;
+}
+html[data-theme="light"] .nav-brand span {
+  color: var(--meel-red) !important;
+}
+
+/* Nav logo icon — selalu putih */
+html[data-theme="light"] .nav-logo-icon {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+/* Nav logo text — berubah sesuai theme */
+html[data-theme="light"] .nav-logo-text {
+  color: #18181b !important;
+}
+html[data-theme="light"] .nav-logo-text span {
+  color: var(--meel-red) !important;
+}
+
+/* Lucide icons di navbar — tetap putih */
+html[data-theme="light"] nav .text-white,
+html[data-theme="light"] nav .text-white i,
+html[data-theme="light"] nav .text-white svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+html[data-theme="light"] nav i.fill-current {
+  fill: currentColor !important;
+}
+html[data-theme="light"] nav svg.fill-current {
+  fill: currentColor !important;
+}
+
+html[data-theme="light"] .nav-crumb {
+  color: #52525b !important;
+}
+html[data-theme="light"] .nav-crumb:hover {
+  color: var(--accent) !important;
+}
+html[data-theme="light"] .nav-crumb-current {
+  color: #18181b !important;
+}
+html[data-theme="light"] .nav-chevron {
+  color: #a1a1aa !important;
+}
+html[data-theme="light"] .nav-sep {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* --- Sidebar panel --- */
+html[data-theme="light"] .sidebar-panel {
+  background: #f5f5f5 !important;
+  border-right-color: var(--meel-border) !important;
+}
+
+/* --- Form panel --- */
+html[data-theme="light"] .form-panel {
+  background: #ffffff !important;
+}
+
+/* --- Hero visual --- */
+html[data-theme="light"] .hero-icon,
+html[data-theme="light"] .hero-waveform {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0) 70%) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .hero-icon::before {
+  background-image: none !important;
+}
+html[data-theme="light"] .hero-icon-ring {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* --- Stats strip --- */
+html[data-theme="light"] .stat-chip {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .stat-number {
+  color: var(--accent) !important;
+}
+html[data-theme="light"] .stat-label {
+  color: #71717a !important;
+}
+
+/* --- Guide list --- */
+html[data-theme="light"] .guide-item {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .guide-icon {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .guide-title {
+  color: #18181b !important;
+}
+html[data-theme="light"] .guide-desc {
+  color: #52525b !important;
+}
+
+/* --- Form header --- */
+html[data-theme="light"] .form-header {
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .form-title {
+  color: #18181b !important;
+}
+html[data-theme="light"] .form-subtitle {
+  color: #71717a !important;
+}
+
+/* --- Field labels --- */
+html[data-theme="light"] .field-label {
+  color: #52525b !important;
+}
+
+/* --- Field inputs & textareas --- */
+html[data-theme="light"] .field-input {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] .field-input::placeholder {
+  color: #a1a1aa !important;
+}
+html[data-theme="light"] .field-input:focus {
+  border-color: var(--accent) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+}
+
+/* --- Drop zones --- */
+html[data-theme="light"] .drop-zone {
+  border-color: rgba(0, 0, 0, 0.10) !important;
+  background: rgba(0, 0, 0, 0.01) !important;
+}
+html[data-theme="light"] .drop-zone:hover,
+html[data-theme="light"] .drop-zone.drag-over {
+  background: rgba(239, 68, 68, 0.04) !important;
+  border-color: var(--accent) !important;
+}
+html[data-theme="light"] .drop-zone-icon {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .drop-zone-label {
+  color: #52525b !important;
+}
+html[data-theme="light"] .drop-zone-sub {
+  color: #71717a !important;
+}
+
+/* --- Alert --- */
+html[data-theme="light"] .alert-success {
+  background: rgba(34, 197, 94, 0.06) !important;
+  border-color: rgba(34, 197, 94, 0.15) !important;
+  color: #15803d !important;
+}
+
+/* --- Primary button --- */
+html[data-theme="light"] .btn-primary {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme="light"] .btn-primary:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* --- Auto button --- */
+html[data-theme="light"] .btn-auto {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(168, 85, 247, 0.06) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.12) !important;
+  color: var(--accent) !important;
+}
+
+/* --- Divider --- */
+html[data-theme="light"] .divider {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* --- Footer links --- */
+html[data-theme="light"] .footer-links {
+  border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .footer-link {
+  color: #52525b !important;
+}
+html[data-theme="light"] .footer-link:hover {
+  color: #18181b !important;
+}
+html[data-theme="light"] .footer-link.accent {
+  color: var(--accent) !important;
+}
+
+/* --- Upload overlay --- */
+html[data-theme="light"] #upload-overlay {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+html[data-theme="light"] .overlay-card {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] .overlay-title {
+  color: #18181b !important;
+}
+html[data-theme="light"] .overlay-filename {
+  color: #52525b !important;
+}
+html[data-theme="light"] .overlay-status {
+  color: var(--accent) !important;
+}
+html[data-theme="light"] #overlay-pct {
+  color: #18181b !important;
+}
+html[data-theme="light"] .overlay-note {
+  color: #71717a !important;
+}
+html[data-theme="light"] .progress-track {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* --- Admin badge --- */
+html[data-theme="light"] .admin-badge {
+  background: rgba(239, 68, 68, 0.06) !important;
+  border-color: rgba(239, 68, 68, 0.15) !important;
+  color: var(--accent) !important;
+}
+
+/* --- Lang dropdown (subtitle language) --- */
+html[data-theme="light"] .lang-trigger {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] .lang-options {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1) !important;
+}
+html[data-theme="light"] .lang-option {
+  color: #52525b !important;
+}
+html[data-theme="light"] .lang-option:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] .lang-option.active {
+  color: var(--accent) !important;
+  background: rgba(239, 68, 68, 0.04) !important;
+}
+
+/* --- Toggle (anti-transcode, music upload) --- */
+html[data-theme="light"] .toggle-card {
+  background: rgba(249, 115, 22, 0.04) !important;
+  border-color: rgba(249, 115, 22, 0.12) !important;
+}
+html[data-theme="light"] .toggle-track {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* --- Thumbnail preview --- */
+html[data-theme="light"] .thumb-mini {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}

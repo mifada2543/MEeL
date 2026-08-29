@@ -1,9 +1,7 @@
 <?php
-// Bootstrap Terpusat MEeL-HUB
 // HTTP security headers di-set di auth/config.php, bukan di sini.
 
 if (!defined('MEEL_ENV')) {
-    // Auto-detect: jika file ada di folder htdocs dan bukan localhost, anggap production
     $is_local = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1', 'localhost'], true)
              || (isset($_SERVER['SERVER_NAME']) && in_array($_SERVER['SERVER_NAME'], ['localhost', '127.0.0.1'], true));
     define('MEEL_ENV', $is_local ? 'development' : 'production');
@@ -13,7 +11,6 @@ if (!defined('APP_DEBUG')) {
     define('APP_DEBUG', MEEL_ENV === 'development');
 }
 
-// Error Reporting
 error_reporting(E_ALL);
 
 switch (MEEL_ENV) {
@@ -46,7 +43,6 @@ if (!defined('MEEL_BASE_URL') && isset($_SERVER['SCRIPT_NAME'])) {
     define('MEEL_BASE_URL', meel_base_url_path());
 }
 
-// Timezone
 if (!ini_get('date.timezone')) {
     date_default_timezone_set('Asia/Jakarta');
 }

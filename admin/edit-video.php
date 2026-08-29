@@ -4,7 +4,6 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 require_once '../modules/core/japanese.php';
 
-// Proteksi: harus login
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -12,12 +11,10 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $curr_role = get_user_role($conn, (int)$user_id);
 $is_admin  = is_admin($conn);
-// Tolak guest
 if ($curr_role === 'guest') {
     header("Location: ../");
     exit();
 }
-// Back URL (smart referer)
 $back_url = $is_admin ? 'analys' : '../video/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -64,7 +61,6 @@ if (isset($_POST['update'])) {
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file thumbnail maksimal 5MB.';
             }
-            // Validasi MIME type — finfo() cek magic bytes
             if (empty($error_message)) {
                 $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -105,7 +101,6 @@ if (isset($_POST['update'])) {
                 }
             }
         }
-        // SUBTITLE (OPSIONAL): Upload / timpa file subtitle   Konvensi nama...
         if (empty($error_message) && isset($_FILES['subtitle']) && $_FILES['subtitle']['error'] === UPLOAD_ERR_OK) {
             $sub_ext     = strtolower(pathinfo($_FILES['subtitle']['name'], PATHINFO_EXTENSION));
             $sub_lang    = sanitize_subtitle_lang($_POST['subtitle_lang'] ?? 'id');
@@ -117,7 +112,7 @@ if (isset($_POST['update'])) {
                     if ($sub_ext === 'srt') {
                         $sub_content = convert_srt_to_vtt($sub_content);
                     }
-                    $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
+                    $sub_content = strip_utf8_bom($sub_content);
 
                     $hls_folder = basename(dirname($video['filename']));
                     $sub_dir    = meel_media_base_path('video') . '/video/' . $hls_folder . '/';
@@ -152,7 +147,6 @@ if (isset($_POST['update'])) {
                 $error_message = "Gagal menyimpan perubahan ke database.";
             }
         }
-        // ROLLBACK THUMBNAIL
         if ($error_message !== '' && $thumbnail_url !== $video['thumbnail']) {
             $orphan_thumb = meel_media_base_path('video') . '/thumbnail/' . basename($thumbnail_url);
             if (is_file($orphan_thumb)) {
@@ -161,7 +155,6 @@ if (isset($_POST['update'])) {
         }
     }
 }
-// SUBTITLE: Hapus file subtitle berdasarkan bahasa (handler terpisah)
 if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== '') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
@@ -181,14 +174,13 @@ if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== 
     }
 }
 
-// DAFTAR SUBTITLE EXISTING format {folder}.{lang}.vtt.
 $existing_subtitles = [];
 $hls_folder_dir    = basename(dirname($video['filename']));
 $sub_scan_dir      = meel_media_base_path('video') . '/video/' . $hls_folder_dir . '/';
 if (is_dir($sub_scan_dir)) {
     foreach (glob($sub_scan_dir . '*.vtt') ?: [] as $sf) {
         $sbase = basename($sf);
-        if ($sbase === 'thumbnails.vtt') continue; // preview thumbnail, bukan subtitle
+        if ($sbase === 'thumbnails.vtt') continue;
         if (preg_match('/\.([a-z]{2,3}(?:-[a-z]{2,8})?)\.vtt$/i', $sbase, $m)) {
             $existing_subtitles[] = ['lang' => strtolower($m[1]), 'file' => $sbase];
         }

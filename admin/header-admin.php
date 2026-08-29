@@ -6,7 +6,7 @@ if (!isset($is_admin)) {
 
 if (!isset($back_url)) {
     if ($is_admin) {
-        $back_url = 'index.php'; // Dashboard admin
+        $back_url = 'index.php';
     } else {
         $back_url = '../index.php';
     }

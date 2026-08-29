@@ -5,7 +5,6 @@ require_once __DIR__ . '/../../modules/core/helpers.php';
 require_once __DIR__ . '/../../modules/auth/RateLimiter.php';
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 
-// ABSTRACT BASE: WATCH CONTROLLER
 abstract class AbstractWatchController
 {
     protected \mysqli $conn;
@@ -25,7 +24,6 @@ abstract class AbstractWatchController
         $this->viewer  = new MediaViewer($conn, $user_id, $media_type, $id);
     }
 
-    /* Catat view + handle comment POST. Panggil sebelum output apapun. */
     public function handleRequest(): void
     {
         $this->viewer->recordView();
@@ -94,7 +92,6 @@ class VideoWatchController extends AbstractWatchController
         parent::__construct($conn, $user_id, $id, 'video');
     }
 
-    /* Ambil media data, redirect jika tidak ditemukan. */
     public function requireMedia(): void
     {
         $v = $this->viewer->getMediaData();
@@ -118,7 +115,6 @@ class VideoWatchController extends AbstractWatchController
             ? $video_dir . '/thumbnails.vtt'
             : '';
 
-        // Subtitle: deteksi semua file .vtt di folder video
         $subtitles = [];
         foreach (glob($fs_dir . '/*.vtt') ?: [] as $sub_file) {
             $sub_base = basename($sub_file);
@@ -211,13 +207,10 @@ class MusicWatchController extends AbstractWatchController
             $rekom->data_seek(0);
         }
 
-        // Konversi next_url relatif (watch.php?id=X[&playlist_id=P]) dari
-        // MediaViewer ke clean URL /music/watch?id=X[&playlist_id=P]
         if ($next_song_url !== '' && preg_match('#^watch\.php\?id=(\d+)(?:&playlist_id=(\d+))?$#', $next_song_url, $m)) {
             $next_song_url = base_url('/music/watch?id=' . (int)$m[1] . (!empty($m[2]) ? '&playlist_id=' . (int)$m[2] : ''));
         }
 
-        // Format detection (via centralized helpers)
         $ext       = strtolower(pathinfo($v['filename'], PATHINFO_EXTENSION));
         $fmt_label = get_audio_format_label($ext);
         $deskripsi = get_audio_format_description($ext);

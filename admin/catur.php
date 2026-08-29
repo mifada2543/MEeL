@@ -5,7 +5,6 @@ include '../auth/auth.php';
 // Guard terpusat: harus login + role admin
 require_admin($conn);
 
-// Action handler
 $message = null;
 $message_type = 'success';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -54,7 +53,6 @@ if (isset($_GET['auto_cleanup'])) {
     exit;
 }
 
-// Helpers
 function purgeInactiveRooms(mysqli $conn): array
 {
     $sql = "
@@ -96,7 +94,6 @@ function logCleanup(mysqli $conn, array $result): void
     @file_put_contents(__DIR__ . '/../logs/chess_cleanup.log', $logLine, FILE_APPEND | LOCK_EX);
 }
 
-// Fetch data untuk tampilan
 $rooms_result = $conn->query("
     SELECT
         r.room_code,

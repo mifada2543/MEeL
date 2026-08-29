@@ -11,7 +11,6 @@ trait FfmpegUtils
         return "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
     }
 
-    // DURATION PROBE
     /* @param string $file_path Path ke file media; @return float Durasi dalam detik */
     protected function probeDuration(string $file_path): float
     {
@@ -22,7 +21,6 @@ trait FfmpegUtils
         return (float)trim((string)shell_exec($cmd));
     }
 
-    // FILE SYSTEM HELPERS
     /**
      * @param string $dir Path direktori yang akan dibuat
      * @param int $perms Permission (default 0755)
@@ -88,7 +86,6 @@ trait FfmpegUtils
             && ($src_stat['dev'] ?? 0) !== ($dst_stat['dev'] ?? 0);
 
         if (!$crossDevice) {
-            // Coba rename dulu (cepat, jika sama filesystem)
             error_clear_last();
             if (rename($src, $dst)) return true;
 
@@ -98,7 +95,6 @@ trait FfmpegUtils
             $rename_msg = 'skipped (cross-device: src/dst berbeda filesystem) — langsung copy';
         }
 
-        // Fallback: copy + unlink (untuk USB/cross-device)
         error_clear_last();
         if (copy($src, $dst)) {
             if (!unlink($src)) {
@@ -134,11 +130,8 @@ trait FfmpegUtils
             $name = 'untitled-media';
         }
 
-        // Hapus karakter yang tidak aman untuk filesystem
         $name = preg_replace('/[\\\\/:*?"<>|\s]+/u', '-', $name);
-        // Path traversal
         $name = str_replace(['..', './'], '', $name);
-        // Batasi panjang
         $name = mb_substr($name, 0, 120);
         // Hindari nama file yang hanya terdiri dari delimiter
         $name = trim($name, "- \t\n\r\0\x0B");
@@ -146,28 +139,26 @@ trait FfmpegUtils
         return $name ?: 'untitled-media';
     }
 
-    // SPRITE & VTT GENERATOR
     /* @param string $video_path Path ke file video sumber; @param string $target_folder Folder tujuan untuk sprite .webp dan .vtt */
     protected function generateSpriteAndVTT(string $video_path, string $target_folder): void
     {
-        $w    = 160;  // Lebar per thumbnail
-        $h    = 90;   // Tinggi per thumbnail (16:9)
-        $cols = 5;    // Jumlah kolom dalam sprite
+        $w    = 160;
+        $h    = 90;
+        $cols = 5;
 
         $duration = $this->probeDuration($video_path);
         if ($duration <= 0) return;
 
-        // Tentukan interval dinamis berdasarkan durasi
         if ($duration > 3600) {
-            $interval = 300;   // > 1 jam → tiap 5 menit
+            $interval = 300;
         } elseif ($duration > 1800) {
-            $interval = 180;   // > 30 menit → tiap 3 menit
+            $interval = 180;
         } elseif ($duration > 300) {
-            $interval = 60;    // > 5 menit → tiap 1 menit
+            $interval = 60;
         } elseif ($duration > 0) {
-            $interval = 10;    // ≤ 5 menit → tiap 10 detik
+            $interval = 10;
         } else {
-            $interval = 10;    // fallback jika durasi 0
+            $interval = 10;
         }
 
         $total_frames = (int)ceil($duration / $interval);

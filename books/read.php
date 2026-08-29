@@ -5,7 +5,6 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// Validasi ID
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     header("Location: ..");
     exit();
@@ -21,7 +20,6 @@ if (!$book) {
     exit;
 }
 
-// Sanitasi chapter — cegah path traversal
 $raw_chapter     = $_GET['ch'] ?? '';
 $current_chapter = basename($raw_chapter);
 
@@ -49,7 +47,6 @@ if ($book['type'] !== 'pdf') {
     }
 }
 
-// Helper: scan direktori untuk file gambar
 function _scanImages(string $dir): array {
     if (!is_dir($dir)) return [];
     $extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'JPG', 'PNG'];
@@ -199,11 +196,9 @@ function _scanSubdirs(string $dir): array {
             </div>
 
             <script>
-            // Desktop fallback: jika iframe gagal, alihkan ke read_pdf.php
             (function() {
                 var frame = document.getElementById('pdfFrame');
                 if (!frame) return;
-                // Jika lewat 10 detik iframe masih kosong, redirect ke read_pdf.php
                 var timeout = setTimeout(function() {
                     window.location.href = '<?= base_url('/books/read-pdf?id=' . (int)$book['id']) ?>';
                 }, 10000);
@@ -283,12 +278,10 @@ function _scanSubdirs(string $dir): array {
                     </div>
                 <?php endif; ?>
                 <?php
-                // Tentukan path gambar (filesystem di storage terpusat)
                 $target_path = $ch_fs;
 
                 if ($book['has_chapters'] == 1) {
                     if (empty($current_chapter)) {
-                        // Belum pilih chapter — tampilkan prompt dengan cover
                         echo '<div class="max-w-4xl mx-auto px-4 py-16">
                                 <div class="glass rounded-3xl p-12 sm:p-16 text-center border border-dashed border-white/[.06]">
                                     <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-white/[.03] border border-white/[.06] flex items-center justify-center">
@@ -308,19 +301,15 @@ function _scanSubdirs(string $dir): array {
                     }
                 }
 
-                // Render gambar dengan Intersection Observer
                 if ($target_path !== null && is_dir($target_path)):
                     $images = _scanImages($target_path);
                     natsort($images);
 
                     if ($images && count($images) > 0):
-                        // Chapter navigation buttons sudah di-render di ATAS dropdown
-                        // (tidak perlu diulang di sini)
 
                         $page_num = 0;
                         foreach ($images as $img):
                             $page_num++;
-                            // Konversi path filesystem → URL publik (upload/...)
                             $url_img  = 'upload' . substr($img, strlen($fs_base));
                             $safe_src = htmlspecialchars($url_img);
                             $is_first = ($img === reset($images));
@@ -333,7 +322,7 @@ function _scanSubdirs(string $dir): array {
                                     decoding="async">
                             <?php else: ?>
                                 <img data-src="<?= $safe_src ?>"
-                                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP
                                     class="manga-img lazy"
                                     alt="Halaman <?= $page_num ?>"
                                     data-page="<?= $page_num ?>"
@@ -440,7 +429,6 @@ function _scanSubdirs(string $dir): array {
     <script>
         lucide.createIcons();
 
-        // Intersection Observer — lazy load gambar manga
         (function() {
             const lazyImages = document.querySelectorAll('img.manga-img.lazy');
             if (!lazyImages.length) return;
@@ -474,7 +462,6 @@ function _scanSubdirs(string $dir): array {
             });
         })();
 
-        // Track scroll position for page counter & nav indicators
         (function() {
             const pageDisplay = document.getElementById('current-page-display');
             const navPage = document.getElementById('nav-current-page');
@@ -484,16 +471,13 @@ function _scanSubdirs(string $dir): array {
             const images = document.querySelectorAll('img.manga-img');
             let ticking = false;
 
-            // Deteksi elemen mana yang benar-benar di-scroll
             function getScrollState() {
                 if (scrollEl && scrollEl.scrollHeight > scrollEl.clientHeight) {
-                    // Scroll terjadi di dalam scroll-container
                     return {
                         scrollTop: scrollEl.scrollTop,
                         clientHeight: scrollEl.clientHeight
                     };
                 }
-                // Scroll terjadi di body/window
                 return {
                     scrollTop: window.scrollY || document.documentElement.scrollTop,
                     clientHeight: window.innerHeight
@@ -510,17 +494,14 @@ function _scanSubdirs(string $dir): array {
             function updateScrollState() {
                 const { scrollTop, clientHeight } = getScrollState();
 
-                // Navbar scroll state
                 if (navbar) {
                     navbar.classList.toggle('scrolled', scrollTop > 10);
                 }
 
-                // Scroll to top button
                 if (scrollTopBtn) {
                     scrollTopBtn.classList.toggle('visible', scrollTop > clientHeight * 0.5);
                 }
 
-                // Page counter — cari gambar dengan top terdekat dari navbar
                 if (images.length > 0 && pageDisplay) {
                     let currentPage = 1;
                     let minDist = Infinity;
@@ -536,7 +517,6 @@ function _scanSubdirs(string $dir): array {
                         }
                     });
 
-                    // Trigger animasi pop kalau angkanya berubah
                     if (pageDisplay.textContent !== String(currentPage)) {
                         pageDisplay.textContent = currentPage;
                         animatePop(pageDisplay);
@@ -557,13 +537,11 @@ function _scanSubdirs(string $dir): array {
                 }
             }
 
-            // Listen scroll di BOTH — karena scroll bisa di container atau body
             if (scrollEl) {
                 scrollEl.addEventListener('scroll', onScroll, { passive: true });
             }
             window.addEventListener('scroll', onScroll, { passive: true });
 
-            // Update ulang setelah gambar lazy selesai dimuat (ukuran elemen berubah)
             images.forEach(function(img) {
                 img.addEventListener('load', function() {
                     if (!ticking) {
@@ -576,7 +554,6 @@ function _scanSubdirs(string $dir): array {
             setTimeout(updateScrollState, 300);
         })();
 
-        // Scroll to top function
         function scrollToTop() {
             const el = document.getElementById('scroll-container');
             if (el && el.scrollHeight > el.clientHeight) {
@@ -586,7 +563,6 @@ function _scanSubdirs(string $dir): array {
             }
         }
 
-        // Chapter Custom Dropdown
         (function() {
             var activeDropdown = null;
 
@@ -634,7 +610,6 @@ function _scanSubdirs(string $dir): array {
             });
         })();
 
-        // Smooth chapter transition
         (function() {
             var isTransitioning = false;
 
@@ -648,13 +623,11 @@ function _scanSubdirs(string $dir): array {
                     container.classList.add('chapter-exit');
                 }
 
-                // Navigasi setelah animasi exit selesai
                 setTimeout(function() {
                     window.location.href = url;
                 }, 250);
             };
 
-            // Page-load enter animation
             var mangaContainer = document.getElementById('manga-container');
             if (mangaContainer) {
                 requestAnimationFrame(function() {
@@ -662,7 +635,6 @@ function _scanSubdirs(string $dir): array {
                 });
             }
 
-            // Intercept clicks on prev/next chapter links
             document.addEventListener('click', function(e) {
                 var link = e.target.closest('a');
                 if (!link) return;
@@ -676,7 +648,6 @@ function _scanSubdirs(string $dir): array {
             });
         })();
 
-        // Fungsi simpan progress ke localStorage (throttled)
         var _saveTimer = null;
         function saveProgress(extra) {
             if (_saveTimer) clearTimeout(_saveTimer);
@@ -695,10 +666,9 @@ function _scanSubdirs(string $dir): array {
                     if (extra) Object.assign(data, extra);
                     localStorage.setItem('meel_book_progress', JSON.stringify(data));
                 } catch(e) {}
-            }, 3000); // throttle 3 detik
+            }, 3000);
         }
         saveProgress();
-        // Juga simpan saat user meninggalkan halaman
         window.addEventListener('beforeunload', function() {
             if (_saveTimer) clearTimeout(_saveTimer);
             try {
@@ -716,18 +686,13 @@ function _scanSubdirs(string $dir): array {
             } catch(e) {}
         });
 
-        // Auto-scroll ke halaman terakhir (dari localStorage)
         (function() {
             try {
                 var raw = localStorage.getItem('meel_book_progress');
                 if (!raw) return;
                 var saved = JSON.parse(raw);
-                // Cuma untuk buku yang sama
                 if (!saved || saved.id != <?= json_encode((int)$book['id']) ?>) return;
-                // Cuma untuk manga, bukan PDF
                 if (!saved.page || saved.page < 2) return;
-                // Cek kesamaan chapter — kalau beda (misal klik Selanjutnya),
-                // jangan auto-scroll, biarkan mulai dari atas
                 var currentCh = <?= json_encode($current_chapter ?: '', JSON_HEX_TAG) ?>;
                 if (saved.ch !== currentCh) return;
 
@@ -741,13 +706,12 @@ function _scanSubdirs(string $dir): array {
 
                     var img = document.querySelector('img.manga-img[data-page="' + targetPage + '"]');
                     if (!img) {
-                        // Gambar belum di-render, coba lagi nanti
                         setTimeout(tryScroll, 500);
                         return;
                     }
 
                     var scrollEl = document.getElementById('scroll-container');
-                    var top = img.offsetTop - 56; // offset navbar
+                    var top = img.offsetTop - 56;
                     if (scrollEl && scrollEl.scrollHeight > scrollEl.clientHeight) {
                         scrollEl.scrollTo({ top: top, behavior: 'smooth' });
                     } else {
@@ -755,12 +719,10 @@ function _scanSubdirs(string $dir): array {
                     }
                 }
 
-                // Mulai coba setelah render awal
                 setTimeout(tryScroll, 600);
             } catch(e) {}
         })();
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -788,7 +750,6 @@ function _scanSubdirs(string $dir): array {
             }
         });
 
-        // Re-init after HTMX
         document.body.addEventListener('htmx:afterOnLoad', function() {
             lucide.createIcons();
         });

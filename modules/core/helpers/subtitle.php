@@ -10,14 +10,10 @@ function convert_srt_to_vtt(string $srt): string
     foreach ($lines as $line) {
         $trimmed = trim($line);
 
-        // Skip baris nomor indeks SRT (angka murni di baris sendiri)
         if ($trimmed !== '' && ctype_digit($trimmed)) {
             continue;
         }
 
-        // Konversi timestamp SRT -> VTT (koma jadi titik).
-        // Di-anchor ke pola timestamp (MM:SS / HH:MM:SS) agar teks cue
-        // yang kebetulan mengandung ",ddd" tidak ikut terubah.
         if (strpos($line, '-->') !== false) {
             $line = preg_replace('/(\d{1,2}:\d{2}(?::\d{2})?),(\d{3})/', '$1.$2', $line);
         }
@@ -113,7 +109,6 @@ function validate_subtitle_file(string $tmp_path): bool
     $content = @file_get_contents($tmp_path);
     if ($content === false) return false;
 
-    // Tolak binary (null byte) dan skrip PHP
     if (strpos($content, "\x00") !== false) return false;
     if (preg_match('/<\?php|<\?=/i', $content)) return false;
 

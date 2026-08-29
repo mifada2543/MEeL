@@ -5,7 +5,6 @@ require_once '../modules/media/ProfileRepository.php';
 // activity_logger loaded via auth/config.php
 $back_url = '../';
 
-// Validasi Referer (Back URL) menggunakan MEEL_HOST constant
 $allowed_hosts = [
     defined('MEEL_HOST') && !empty(MEEL_HOST) ? MEEL_HOST : ($_SERVER['HTTP_HOST'] ?? ''),
     'localhost',
@@ -17,7 +16,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref = $_SERVER['HTTP_REFERER'];
     $ref_host = parse_url($ref, PHP_URL_HOST);
 
-    // Validasi host referer terhadap whitelist
     $host_valid = false;
     foreach ($allowed_hosts as $allowed) {
         if ($allowed !== '' && $ref_host === $allowed) {
@@ -29,9 +27,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     if ($host_valid) {
 
         $ref_path = parse_url($ref, PHP_URL_PATH);
-        // Nama file lama (profile_edit.php) DAN varian route bersih
         // (/profile/edit, /profile/manage, /auth/mfa-setup — referer kini
-        // memakai URL bersih tanpa .php)
         $excluded_pages = ['profile_edit.php', 'edit', 'index.php', 'manage.php', 'manage', 'mfa_setup.php', 'mfa-setup', 'mfa_backup.php', 'edit-music.php', 'edit-video.php'];
 
         $should_exclude = false;
@@ -95,7 +91,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* MFA TOGGLE SWITCH */
         .mfa-switch {
             position: relative;
             display: inline-flex;
@@ -161,6 +156,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             margin-top: -1px;
         }
 </style>
+    <link rel="stylesheet" href="../assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/../assets/css/shared/light-theme.css') ?>">
 </head>
 
 <body class="text-gray-300">
@@ -188,7 +184,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                     </div>
 
                     <?php if ($_SESSION['username'] === $u['username']):
-                        // Cek status MFA
                         $stmt_mfa_p = $conn->prepare("SELECT mfa_enabled FROM users WHERE id = ?");
                         $stmt_mfa_p->bind_param("i", $profile_id);
                         $stmt_mfa_p->execute();
@@ -208,7 +203,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Kelola Konten
                             </a>
 
-                            <!-- Baris 2: MFA + Backup Codes (jika aktif) -->
+                            <!-- Baris 2: MFA + Theme Toggle -->
                             <a href="../auth/mfa-setup"
                                class="mfa-switch justify-center"
                                role="link"
@@ -223,6 +218,19 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 </span>
                             </a>
 
+                            <button type="button" id="theme-toggle" onclick="MEELTheme.toggle()"
+                               class="mfa-switch justify-center cursor-pointer ml-auto"
+                               style="background:none;border:none;padding:0;margin-left:auto;outline:none"
+                               title="Ganti tema tampilan">
+                                <span class="mfa-track mfa-track--off" id="theme-track">
+                                    <span id="theme-icon" class="mfa-knob" style="font-size:14px;display:flex;align-items:center;justify-content:center;width:20px;height:20px;line-height:1">🌙</span>
+                                </span>
+                                <span class="mfa-label mfa-label--off" id="theme-text">
+                                    Tema
+                                    <span class="mfa-label-sub" id="theme-label">Gelap</span>
+                                </span>
+                            </button>
+
                             <?php if ($_mfa_on): ?>
                             <button type="button" onclick="showBackupModal()"
                                     class="bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 border border-yellow-600/20 hover:border-yellow-500/40 px-4 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
@@ -230,9 +238,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 <i data-lucide="key-round" class="w-4 h-4"></i>
                                 Backup Codes
                             </button>
-                            <?php endif; ?>
-                            <?php if (!$_mfa_on): ?>
-                            <div></div>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
@@ -286,7 +291,15 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
     <script>
         lucide.createIcons();
 
-        // Modal Backup Codes (dengan verifikasi password)
+        (function(){
+            if (typeof MEELTheme !== 'undefined') {
+                MEELTheme.init({
+                    isLoggedIn: <?= json_encode(isset($_SESSION['username'])) ?>,
+                    csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+                });
+            }
+        })();
+
         function showBackupModal() {
             Swal.fire({
                 title: 'Kode Cadangan MFA',
@@ -383,7 +396,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             });
         }
 
-        // Download Backup Codes sebagai TXT (fungsi shared)
         window._meelBackupUser = '<?= htmlspecialchars($_SESSION['username'] ?? 'user') ?>';
     </script>
 </body>

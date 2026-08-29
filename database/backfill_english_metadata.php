@@ -5,7 +5,7 @@ if (PHP_SAPI !== 'cli') {
     die('Access denied. Jalankan dari terminal: php database/backfill_english_metadata.php');
 }
 
-// Parse argumen CLI
+
 $dryRun = false;
 $limit  = null;
 foreach (array_slice($argv, 1) as $arg) {
@@ -16,7 +16,7 @@ foreach (array_slice($argv, 1) as $arg) {
     }
 }
 
-// Bootstrap (pola sama dengan database/migrate.php)
+
 require_once __DIR__ . '/../auth/config.php';
 require_once __DIR__ . '/../modules/core/helpers.php';
 require_once __DIR__ . '/../modules/core/japanese.php';

@@ -22,7 +22,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $this->dbHelper = new DbTestHelper();
         $this->conn = $this->dbHelper->getConnection();
 
-        // Create interactions for different user roles
+        
         $this->interaction = new MediaInteraction($this->conn, DbTestHelper::REGULAR_USER_ID);
         $this->memberInteraction = new MediaInteraction($this->conn, DbTestHelper::MEMBER_USER_ID);
         $this->adminInteraction = new MediaInteraction($this->conn, DbTestHelper::ADMIN_USER_ID);
@@ -153,7 +153,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testVideoLikeDislikeCountSync(): void
     {
-        // Get initial counts
+        
         $initial = $this->dbHelper->getVideoLikesCount(DbTestHelper::VIDEO_ID_1);
 
         // User A likes
@@ -191,7 +191,7 @@ class MediaInteractionIntegrationTest extends TestCase
     // COMMENT DELETION
     public function testDeleteOwnComment(): void
     {
-        // Create a comment as regular user
+        
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::REGULAR_USER_ID,
             DbTestHelper::MUSIC_ID_1,
@@ -203,7 +203,7 @@ class MediaInteractionIntegrationTest extends TestCase
         $ownerId = $this->dbHelper->getCommentOwner($commentId);
         $this->assertSame(DbTestHelper::REGULAR_USER_ID, $ownerId);
 
-        // Delete the comment
+        
         $result = $this->interaction->deleteComment($commentId);
         $this->assertTrue($result['success']);
         $this->assertSame(200, $result['http_code']);
@@ -212,7 +212,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testDeleteOtherUsersCommentFails(): void
     {
-        // Create a comment as member user
+        
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::MEMBER_USER_ID,
             DbTestHelper::MUSIC_ID_1,
@@ -237,7 +237,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testDeleteCommentAsDifferentUser(): void
     {
-        // Create comment as admin
+        
         $commentId = $this->dbHelper->createTestComment(
             DbTestHelper::ADMIN_USER_ID,
             DbTestHelper::MUSIC_ID_1,
@@ -361,7 +361,7 @@ class MediaInteractionIntegrationTest extends TestCase
 
     public function testLikeDislikeCountsAreAccurate(): void
     {
-        // Get initial counts
+        
         $initial = $this->dbHelper->getMusicLikesCount(DbTestHelper::MUSIC_ID_1);
 
         // User A likes

@@ -35,8 +35,6 @@ if ($result['count'] > 0) {
         }
     }
 
-    // Load More — gaya, label progress, dan penanda akhir diseragamkan dengan
-    // library (video/index.php & video/load_more.php).
     if (!$result['sidebar']) {
         $curPage    = (int)((int)$result['offset'] / max((int)$result['limit'], 1)) + 1;
         $totalPages = max(1, (int)$result['total_pages']);
@@ -54,7 +52,6 @@ if ($result['count'] > 0) {
             </div>
             <?php
         } elseif ((int)$result['offset'] > 0) {
-            // Batch terakhir sudah dimuat — penanda akhir identik dengan library
             ?>
             <div class="aspect-video flex items-center justify-center border border-dashed border-white/[.04] rounded-2xl">
                 <span class="text-[9px] text-gray-800 uppercase tracking-widest">End of Results · <?= $curPage ?>/<?= $totalPages ?></span>

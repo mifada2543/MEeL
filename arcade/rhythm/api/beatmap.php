@@ -12,12 +12,10 @@ if ($id <= 0) {
     api_error('Song ID tidak valid.');
 }
 
-// Check if it's a built-in song (string ID like "starlight")
 $builtin_id = $_GET['id'] ?? '';
 $builtin_path = __DIR__ . '/../songs/' . $builtin_id . '/beatmap.json';
 
 if (file_exists($builtin_path) && !is_numeric($builtin_id)) {
-    // Built-in song
     $beatmap = json_decode(file_get_contents($builtin_path), true);
     $index_path = __DIR__ . '/../songs/_index.json';
     $index = json_decode(file_get_contents($index_path), true);
@@ -50,7 +48,6 @@ if (file_exists($builtin_path) && !is_numeric($builtin_id)) {
     exit;
 }
 
-// Custom song from DB
 $stmt = $conn->prepare(
     "SELECT s.*, u.username
      FROM arcade_song s
@@ -66,13 +63,11 @@ if (!$song) {
     api_error('Beatmap tidak ditemukan.', 404);
 }
 
-// Increment play count
 $stmt_play = $conn->prepare("UPDATE arcade_song SET play_count = play_count + 1 WHERE id = ?");
 $stmt_play->bind_param("i", $id);
 $stmt_play->execute();
 $stmt_play->close();
 
-// Read beatmap.json from filesystem
 $beatmap = null;
 $beatmap_file = __DIR__ . '/../' . $song['beatmap_path'];
 if (!empty($song['beatmap_path']) && file_exists($beatmap_file)) {
