@@ -87,21 +87,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
 
-                // Download selesai → navigasi ke post_encode.php dilakukan lewat
-                // DOKUMEN AKHIR yang bersih, BUKAN script window.location yang
-                // di-stream di tengah dokumen (rentan navigasi duplikat/race).
-                if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
-                    $target = substr($message, strlen('REDIRECT:'));
+                // Download selesai → encode musik langsung di halaman ini
+                // (tanpa navigasi ke post_encode.php yang diblokir .htaccess).
+                if (is_string($message) && str_starts_with($message, 'ENCODE_MUSIC:')) {
+                    $temp_file = substr($message, strlen('ENCODE_MUSIC:'));
 
-                    // Buang sisa buffer output (overlay & progress sudah ter-stream
-                    // langsung ke browser, tidak ada konten penting yang tertahan).
                     while (ob_get_level()) {
                         ob_end_clean();
                     }
 
-                    // Penutup dokumen: meta refresh sebagai fallback tanpa JS, dan
-                    // meelRedirect() (guard anti-duplikat + location.replace agar
-                    // halaman POST tidak masuk history → back tidak me-resubmit).
+                    echo '<script>if(typeof meelPhase==="function"){meelPhase("encode");}</script>';
+                    echo str_repeat(' ', 1024);
+                    flush();
+
+                    $meta_key = pathinfo($temp_file, PATHINFO_FILENAME);
+                    $pending  = is_array($_SESSION['meel_pending_music'] ?? null)
+                        ? ($_SESSION['meel_pending_music'][$meta_key] ?? null)
+                        : null;
+
+                    $enc_title    = (string)($pending['title']       ?? 'Unknown');
+                    $enc_artist   = (string)($pending['artist']      ?? 'Unknown Artist');
+                    $enc_album    = (string)($pending['album']       ?? 'Single');
+                    $enc_duration = (int)($pending['duration']       ?? 0);
+                    $enc_desc     = (string)($pending['description'] ?? 'Upload by MEeL Engine');
+
+                    try {
+                        $result = $transcoder->encodeMusic(
+                            $temp_file, $enc_title, $enc_artist, $enc_album, $enc_duration, $enc_desc
+                        );
+                    } catch (\Throwable $e) {
+                        error_log('[MEeL-Upload] encodeMusic exception: ' . $e->getMessage());
+                        $result = ['status' => 'error', 'msg' => 'Gagal mengonversi audio: ' . $e->getMessage()];
+                    }
+
+                    if ($result['status'] === 'success') {
+                        MediaLibrary::clearCountsCache();
+                        log_activity($conn, (int)$_SESSION['user_id'], 'upload_music', 'music');
+                        $done_title = json_encode($enc_title);
+                        echo '<script>'
+                           . 'if(typeof meelDone==="function"){meelDone(' . $done_title . ',"music/index.php");}'
+                           . 'else{window.location.href="upload?success=1&file="+encodeURIComponent(' . json_encode($result['filename']) . ');}'
+                           . '</script>';
+                    } else {
+                        $err_msg = json_encode($result['msg'] ?? 'Gagal mengonversi audio.');
+                        echo '<script>'
+                           . 'if(typeof meelError==="function"){meelError(' . $err_msg . ');}'
+                           . 'else{document.open();document.write("<pre style=\\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\\">"+"<b style=\\"color:#f44\\">⚠ Encode Gagal</b><br><br>"+document.createTextNode(' . $err_msg . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}'
+                           . '</script>';
+                    }
+
+                    echo str_repeat(' ', 1024);
+                    flush();
+                    exit;
+                }
+
+                // Fallback: redirect ke post_encode.php via meta refresh
+                if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
+                    $target = substr($message, strlen('REDIRECT:'));
+                    while (ob_get_level()) {
+                        ob_end_clean();
+                    }
                     $target_attr = htmlspecialchars($target, ENT_QUOTES);
                     $target_js   = json_encode($target, JSON_UNESCAPED_SLASHES);
                     echo '<meta http-equiv="refresh" content="0;url=' . $target_attr . '">'

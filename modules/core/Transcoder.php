@@ -634,10 +634,7 @@ class Transcoder
                 'duration'    => $duration,
                 'description' => $description,
             ];
-            session_write_close();
-            $redirect_url = 'controllers/api/post_encode.php?temp_file=' . rawurlencode($raw_file);
-            $this->emit('redirect', ['url' => $redirect_url]);
-            return 'REDIRECT:' . $redirect_url;
+            return 'ENCODE_MUSIC:' . $raw_file;
         }
 
         return "File audio tidak ditemukan setelah download.";
