@@ -221,6 +221,28 @@ e.g. `video/beranda` → `video/index.php`, `music/watch?id=X` → `music/watch.
 </div>
 ```
 
+### Theme System (Light/Dark Mode)
+
+MEeL supports light and dark mode with CSS variables architecture:
+
+```
+assets/css/shared/
+├── theme-tokens.css    # CSS variables (meel-bg, meel-surface, meel-text, etc.)
+├── light-theme.css     # Light mode overrides for Tailwind utilities
+└── design-tokens.php   # Shared tokens for upload forms
+```
+
+**How it works:**
+1. `theme-tokens.css` defines CSS variables for dark mode (default)
+2. `light-theme.css` overrides variables when `html[data-theme="light"]`
+3. `theme.js` manages toggle, localStorage, and DB sync
+4. Toggle is only available on the Profile page
+
+**Adding Light Mode Support:**
+- Use CSS variables (`var(--meel-bg)`, `var(--meel-surface)`, etc.) instead of hardcoded colors
+- If you must use Tailwind hardcoded (`bg-[#0d1017]`), add override in `light-theme.css`
+- Logo/icons must be excluded from color overrides (use `:not(.nav-logo-text)`)
+
 ---
 
 ## Testing

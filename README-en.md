@@ -127,7 +127,7 @@
 | **Backend** | PHP 8.0+ | Core logic & API endpoints |
 | **Database** | MySQL 5.7+ / MariaDB 10.2+ | Relational storage & metadata |
 | **Web Server** | Apache 2.4+ | `mod_rewrite` engine |
-| **Styling** | TailwindCSS (Self-hosted, Purged) + Vanilla CSS | Dark-mode monospace theme |
+| **Styling** | TailwindCSS (Self-hosted, Purged) + Vanilla CSS | Dark & Light mode (toggle in Profile) |
 | **Interactivity** | HTMX + Vanilla JavaScript | AJAX SPA-like without page reload |
 | **Media Player** | Plyr.js + HLS.js | HLS video & audio playback |
 | **Icons** | Lucide Icons | SVG icon library |

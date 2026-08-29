@@ -518,6 +518,30 @@ The service worker is **generated dynamically by PHP** — see the full guide in
 Adding a new module folder (`assets/css/<folder>/manifest.php`) automatically
 adds its CSS to the precache — **no manual SW changes needed**.
 
+### 23. Theme System (`assets/css/shared/theme-tokens.css` + `light-theme.css` + `assets/js/shared/theme.js`)
+
+Light/dark mode system with CSS variables and JavaScript toggle.
+
+| Component | Role |
+|---|---|
+| `assets/css/shared/theme-tokens.css` | CSS variables for dark mode (default) — `--meel-bg`, `--meel-surface`, `--meel-text`, etc. |
+| `assets/css/shared/light-theme.css` | Override Tailwind utilities when `html[data-theme="light"]` — 500+ lines of overrides |
+| `assets/js/shared/theme.js` | `MEELTheme` — toggle manager, localStorage + DB sync, smooth transition |
+| `controllers/api/theme.php` | REST API (GET/POST) for theme preference |
+| `database/schema.sql` | `custom_theme` column in `users` table |
+
+**Architecture:**
+```
+theme-tokens.css (variables)
+       ↓
+light-theme.css (overrides when data-theme="light")
+       ↓
+theme.js (toggle + persist)
+       ↓
+localStorage (source of truth, anti-flash)
++ DB custom_theme (sync for logged-in users)
+```
+
 ---
 
 ## ProgressObserver Architecture

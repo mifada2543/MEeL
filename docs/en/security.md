@@ -788,6 +788,16 @@ $max_login_attempts = 5;
 $lockout_time = 300; // 5 minutes
 ```
 
+### Theme System Security
+
+Theme preference is stored securely:
+
+1. **Client-side:** `localStorage` — no sensitive data, only string 'light' or 'dark'
+2. **Server-side:** `users.custom_theme` — varchar(50), only accepts 'light' or 'dark'
+3. **API validation:** `in_array($theme, ['light', 'dark'], true)` — rejects invalid values
+4. **CSRF protection:** POST requires valid CSRF token
+5. **No XSS risk:** Theme value is not escaped to HTML, only used for `data-theme` attribute
+
 ---
 
 <div align="center">

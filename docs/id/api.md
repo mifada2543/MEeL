@@ -912,6 +912,47 @@ Helper client di `arcade/chess/assets/js/api.js` — saat `401` redirect ke logi
 
 ---
 
+## Theme Endpoints
+
+### Theme Preference
+
+**Endpoint:** `api/theme.php`
+**Method:** GET / POST
+**Auth:** User (login required)
+
+#### GET — Baca Preferensi
+
+**Response:**
+```json
+{
+  "theme": "dark"
+}
+```
+
+#### POST — Update Preferensi
+
+**Request Body:**
+```json
+{
+  "theme": "light",
+  "csrf_token": "..."
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "theme": "light"
+}
+```
+
+**Storage:**
+- Client: `localStorage` (source of truth, anti-flash)
+- Server: `users.custom_theme` column (sync untuk logged-in user)
+
+---
+
 ## Error Response Codes
 
 | Kode | Deskripsi | Penyebab |
@@ -919,6 +960,7 @@ Helper client di `arcade/chess/assets/js/api.js` — saat `401` redirect ke logi
 | 401 | Unauthorized | User belum login |
 | 403 | Forbidden | User inactive/guest, IP banned |
 | 404 | Not Found | Media/komentar tidak ditemukan |
+| 405 | Method Not Allowed | HTTP method tidak didukung |
 | 429 | Too Many Requests | Rate limit exceeded (like: 30/menit, comment: 10/menit) |
 | 500 | Server Error | Database error, FFmpeg failure |
 | 503 | Service Unavailable | HDD offline, server busy |
