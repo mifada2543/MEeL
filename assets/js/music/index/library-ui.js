@@ -107,11 +107,20 @@ window.togglePlaylistDropdown = function () {
       var artistDrop = document.getElementById("artist-options");
       if (artistDrop && !artistDrop.classList.contains("hidden")) {
         artistDrop.classList.add("hidden");
+        // Reset z-index artist container
+        var artistContainer = document.getElementById("custom-artist-dropdown");
+        if (artistContainer) artistContainer.style.zIndex = '';
       }
       dropdown.classList.remove("hidden");
+      // Tinggikan z-index container playlist
+      var plContainer = document.getElementById("custom-playlist-dropdown");
+      if (plContainer) plContainer.style.zIndex = '110';
       document.body.classList.add("artist-dropdown-active");
     } else {
       dropdown.classList.add("hidden");
+      // Reset z-index
+      var plContainer = document.getElementById("custom-playlist-dropdown");
+      if (plContainer) plContainer.style.zIndex = '';
       setTimeout(function () {
         document.body.classList.remove("artist-dropdown-active");
       }, 350);
@@ -121,6 +130,9 @@ window.togglePlaylistDropdown = function () {
 window.closePlaylistDropdown = function () {
   const dropdown = document.getElementById("playlist-options");
   if (dropdown) dropdown.classList.add("hidden");
+  // Reset z-index
+  var plContainer = document.getElementById("custom-playlist-dropdown");
+  if (plContainer) plContainer.style.zIndex = '';
   setTimeout(function () {
     const artistStillOpen =
       document.getElementById("artist-options") &&
@@ -171,8 +183,14 @@ window.toggleArtistDropdown = function () {
       var playlistDrop = document.getElementById("playlist-options");
       if (playlistDrop && !playlistDrop.classList.contains("hidden")) {
         playlistDrop.classList.add("hidden");
+        // Reset z-index playlist container
+        var plContainer = document.getElementById("custom-playlist-dropdown");
+        if (plContainer) plContainer.style.zIndex = '';
       }
       dropdown.classList.remove("hidden");
+      // Tinggikan z-index container artist
+      var artistContainer = document.getElementById("custom-artist-dropdown");
+      if (artistContainer) artistContainer.style.zIndex = '110';
       document.body.classList.add("artist-dropdown-active");
       var activeItem = dropdown.querySelector(".text-orange-500");
       if (activeItem) {
@@ -180,6 +198,9 @@ window.toggleArtistDropdown = function () {
       }
     } else {
       dropdown.classList.add("hidden");
+      // Reset z-index
+      var artistContainer = document.getElementById("custom-artist-dropdown");
+      if (artistContainer) artistContainer.style.zIndex = '';
       setTimeout(function () {
         document.body.classList.remove("artist-dropdown-active");
       }, 350);
@@ -189,6 +210,9 @@ window.toggleArtistDropdown = function () {
 window.closeArtistDropdown = function () {
   const dropdown = document.getElementById("artist-options");
   if (dropdown) dropdown.classList.add("hidden");
+  // Reset z-index
+  var artistContainer = document.getElementById("custom-artist-dropdown");
+  if (artistContainer) artistContainer.style.zIndex = '';
   setTimeout(() => {
     const artistStillOpen =
       document.getElementById("artist-options") &&

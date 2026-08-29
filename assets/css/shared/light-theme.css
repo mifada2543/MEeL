@@ -489,20 +489,48 @@ html[data-theme="light"] .bg-\[\#0d1017\] {
 /* ════════════════════════════════════════════════════════════
    MUSIC INDEX — MOBILE FILTERS & DROPDOWNS
    ════════════════════════════════════════════════════════════ */
+
+/* Dropdown trigger buttons */
+html[data-theme="light"] #custom-artist-dropdown > button,
+html[data-theme="light"] #custom-playlist-dropdown > button {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] #custom-artist-dropdown > button:hover,
+html[data-theme="light"] #custom-playlist-dropdown > button:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] #custom-artist-dropdown > button .text-gray-500,
+html[data-theme="light"] #custom-playlist-dropdown > button .text-gray-500 {
+  color: #71717a !important;
+}
+
+/* Dropdown menus */
 html[data-theme="light"] #artist-options,
 html[data-theme="light"] #playlist-options {
-  background: var(--meel-surface-elevated) !important;
-  border-color: var(--meel-border) !important;
-  box-shadow: var(--meel-shadow-lg) !important;
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12) !important;
 }
 html[data-theme="light"] #artist-options button,
 html[data-theme="light"] #playlist-options button {
-  color: var(--meel-text) !important;
+  color: #3f3f46 !important;
 }
 html[data-theme="light"] #artist-options button:hover,
 html[data-theme="light"] #playlist-options button:hover {
-  background: var(--meel-surface-hover) !important;
-  color: var(--meel-text-heading) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] #artist-options button.text-orange-500,
+html[data-theme="light"] #playlist-options button.text-orange-500 {
+  color: #ea580c !important;
+}
+
+/* Dropdown filter labels */
+html[data-theme="light"] .text-gray-700.uppercase {
+  color: #52525b !important;
 }
 
 /* ════════════════════════════════════════════════════════════
