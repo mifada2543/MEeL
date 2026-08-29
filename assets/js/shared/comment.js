@@ -76,13 +76,15 @@ window.toggleCommentSection = (function () {
   let focusTimer = null;
   return function () {
     const body = document.getElementById("comment-body"),
-      chevron = document.getElementById("comment-chevron"),
+      chevronOpen = document.getElementById("comment-chevron-open"),
+      chevronClosed = document.getElementById("comment-chevron-closed"),
       preview = document.getElementById("comment-preview"),
       toggle = document.getElementById("comment-toggle");
     if (!body) return;
     const closed = body.classList.toggle("collapsed");
     if (closed) clearTimeout(focusTimer);
-    if (chevron) chevron.classList.toggle("rotate-180", !closed);
+    if (chevronOpen) chevronOpen.classList.toggle("hidden", closed);
+    if (chevronClosed) chevronClosed.classList.toggle("hidden", !closed);
     if (toggle) toggle.setAttribute("aria-expanded", closed ? "false" : "true");
     if (preview) preview.classList.toggle("preview-closed", !closed);
     if (closed) {
@@ -116,8 +118,8 @@ window.toggleCommentSection = (function () {
               if (badge) badge.remove();
               body = clone.textContent.trim().replace(/\s+/g, " ");
             }
-            const line = document.createElement("div");
-            line.className = "text-[10px] text-gray-500 line-clamp-1";
+          const line = document.createElement("div");
+          line.className = "line-clamp-1";
             const nm = document.createElement("span");
             nm.className = "font-bold " + nameColor;
             nm.textContent = name + ": ";
@@ -132,6 +134,7 @@ window.toggleCommentSection = (function () {
           const empty = document.createElement("span");
           empty.textContent = "Jadilah komentar pertama";
           txt.appendChild(empty);
+          // Sinkronkan style dengan server-side (text-sm text-gray-400)
         }
       }
     } else {
