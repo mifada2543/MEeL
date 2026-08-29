@@ -152,14 +152,12 @@ final class DriveStorage
                 continue;
             }
 
-            if ($scope === self::SCOPE_PRIVATE) {
-                $path = 'stream?file=' . rawurlencode($fileInfo->getFilename())
-                    . '&type=' . rawurlencode($type)
-                    . '&scope=private'
-                    . '&csrf_token=' . rawurlencode(get_csrf_token());
-            } else {
-                $path = $webDirectory . '/' . rawurlencode($fileInfo->getFilename());
-            }
+            // Gunakan stream.php endpoint untuk semua scope (publik & privat)
+            // agar preview berfungsi baik local maupun external drive.
+            $path = 'stream?file=' . rawurlencode($fileInfo->getFilename())
+                . '&type=' . rawurlencode($type)
+                . '&scope=' . rawurlencode($scope)
+                . '&csrf_token=' . rawurlencode(get_csrf_token());
 
             $files[] = [
                 'name' => $fileInfo->getFilename(),
