@@ -166,13 +166,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 
 <body class="text-gray-300">
 
-    <!-- Theme Toggle (fixed position) -->
-    <button id="theme-toggle" onclick="MEELTheme.toggle()"
-        class="fixed top-4 right-4 z-50 flex items-center justify-center w-10 h-10 rounded-xl bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-orange-500 hover:border-orange-500/20 transition-all backdrop-blur-sm"
-        title="Switch to Light Mode">
-        <i data-lucide="sun" data-theme-icon="sun" class="w-4 h-4 hidden"></i>
-        <i data-lucide="moon" data-theme-icon="moon" class="w-4 h-4"></i>
-    </button>
 
     <div class="max-w-2xl mx-auto mt-10 p-4">
         <div class="glass rounded-[2.5rem] overflow-hidden shadow-2xl">
@@ -217,7 +210,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Kelola Konten
                             </a>
 
-                            <!-- Baris 2: MFA + Backup Codes (jika aktif) -->
+                            <!-- Baris 2: MFA + Theme Toggle -->
                             <a href="../auth/mfa-setup"
                                class="mfa-switch justify-center"
                                role="link"
@@ -232,6 +225,19 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 </span>
                             </a>
 
+                            <button type="button" id="theme-toggle" onclick="MEELTheme.toggle()"
+                               class="mfa-switch justify-center cursor-pointer ml-auto"
+                               style="background:none;border:none;padding:0;margin-left:auto;outline:none"
+                               title="Ganti tema tampilan">
+                                <span class="mfa-track mfa-track--off" id="theme-track">
+                                    <span class="mfa-knob" id="theme-knob"></span>
+                                </span>
+                                <span class="mfa-label mfa-label--off" id="theme-text">
+                                    Tema
+                                    <span class="mfa-label-sub" id="theme-label">Gelap</span>
+                                </span>
+                            </button>
+
                             <?php if ($_mfa_on): ?>
                             <button type="button" onclick="showBackupModal()"
                                     class="bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 border border-yellow-600/20 hover:border-yellow-500/40 px-4 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
@@ -239,9 +245,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 <i data-lucide="key-round" class="w-4 h-4"></i>
                                 Backup Codes
                             </button>
-                            <?php endif; ?>
-                            <?php if (!$_mfa_on): ?>
-                            <div></div>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>

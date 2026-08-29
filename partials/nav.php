@@ -57,14 +57,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </a>
 <?php endif; ?>
 <?php if (isset($_SESSION['username'])): ?>
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" onclick="MEELTheme.toggle()"
-        class="flex items-center justify-center w-9 h-9 rounded-xl transition-all flex-shrink-0"
-        style="background:var(--meel-surface-hover); border:1px solid var(--meel-border); color:var(--meel-text-secondary)"
-        title="Switch to Light Mode">
-        <i data-lucide="sun" data-theme-icon="sun" class="w-4 h-4 hidden"></i>
-        <i data-lucide="moon" data-theme-icon="moon" class="w-4 h-4"></i>
-    </button>
     <!-- AVATAR DROPDOWN (desktop) -->
     <div class="relative hidden sm:block" id="nav-dropdown-wrap">
         <button id="nav-avatar-btn"
@@ -387,13 +379,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         </a>
     </div>
 
-    <!-- Theme Toggle (guest) -->
-    <button id="theme-toggle" onclick="MEELTheme.toggle()"
-        class="flex items-center justify-center w-9 h-9 rounded-xl bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-orange-500 hover:border-orange-500/20 transition-all flex-shrink-0"
-        title="Switch to Light Mode">
-        <i data-lucide="sun" data-theme-icon="sun" class="w-4 h-4 hidden"></i>
-        <i data-lucide="moon" data-theme-icon="moon" class="w-4 h-4"></i>
-    </button>
     <!-- Hamburger MOBILE (guest) -->
     <button id="nav-hamburger-guest"
         onclick="toggleNavDrawerGuest()"

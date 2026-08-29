@@ -47,6 +47,32 @@ window.MEELTheme = (function () {
       btn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
     }
 
+    // Update profile page theme toggle
+    var track = document.getElementById('theme-track');
+    var text = document.getElementById('theme-text');
+    var label = document.getElementById('theme-label');
+    if (track) {
+      if (theme === 'light') {
+        track.classList.remove('mfa-track--off');
+        track.classList.add('mfa-track--on');
+      } else {
+        track.classList.remove('mfa-track--on');
+        track.classList.add('mfa-track--off');
+      }
+    }
+    if (text) {
+      if (theme === 'light') {
+        text.classList.remove('mfa-label--off');
+        text.classList.add('mfa-label--on');
+      } else {
+        text.classList.remove('mfa-label--on');
+        text.classList.add('mfa-label--off');
+      }
+    }
+    if (label) {
+      label.textContent = theme === 'dark' ? 'Gelap' : 'Terang';
+    }
+
     // Update meta theme-color
     var metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {

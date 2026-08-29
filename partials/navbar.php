@@ -32,13 +32,6 @@ if (!isset($is_logged_in)) {
             Daftar
         </a>
     <?php endif; ?>
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" onclick="MEELTheme.toggle()"
-        class="transition-all"
-        title="Switch to Light Mode">
-        <i data-lucide="sun" data-theme-icon="sun" class="w-4 h-4 hidden"></i>
-        <i data-lucide="moon" data-theme-icon="moon" class="w-4 h-4"></i>
-    </button>
     <a href="introduction"
        class="text-gray-600 hover:text-white transition-all p-2 rounded-lg hover:bg-white/5"
        title="Panduan">
