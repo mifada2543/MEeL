@@ -177,6 +177,21 @@ html.theme-transition *::after {
   outline: none;
 }
 
+/* ─── NAV LOGO ─── */
+/* Ikon logo — selalu putih, tidak terpengaruh theme */
+.nav-logo-icon {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+/* Teks "MEeL" — berubah sesuai theme */
+.nav-logo-text {
+  color: var(--meel-text-heading);
+}
+/* Nama modul (Video/Music) — tetap accent color */
+.nav-logo-text span {
+  color: var(--meel-red);
+}
+
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar-thumb {
   background: var(--meel-scrollbar);

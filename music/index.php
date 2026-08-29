@@ -121,9 +121,9 @@ $__vdir = function($dir) {
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
                 <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style="background:var(--meel-orange)">
-                    <i data-lucide="music" class="w-3.5 h-3.5 text-white fill-current"></i>
+                    <i data-lucide="music" class="nav-logo-icon w-3.5 h-3.5"></i>
                 </div>
-                <span class="text-xs sm:text-sm font-bold tracking-tight uppercase hidden sm:block" style="color:var(--meel-text-heading)">
+                <span class="nav-logo-text text-xs sm:text-sm font-bold tracking-tight uppercase hidden sm:block">
                     MEeL<span style="color:var(--meel-orange)">Music</span>
                 </span>
             </a>
@@ -263,7 +263,7 @@ $__vdir = function($dir) {
                     </div>
                 <?php endif; ?>
                 <!-- MOBILE FILTERS & MENUS (Select/Dropdowns) -->
-                <div class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
+                <div id="mobile-filters" class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
                     <!-- Format Pills (Mobile) -->
                     <div class="flex flex-wrap gap-2">
                         <a href="beranda?format=all&artist=<?= urlencode($artist_filter) ?>"

@@ -491,6 +491,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
+            document.body.classList.remove('nav-drawer-open');
 
             if (mainContent) {
                 mainContent.classList.remove('blur-md');
@@ -517,6 +518,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
+            document.body.classList.add('nav-drawer-open');
 
             if (mainContent) {
                 mainContent.classList.add('blur-md', 'transition-all', 'duration-300');

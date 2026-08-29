@@ -16,6 +16,16 @@ main {
   position: relative;
   z-index: 50;
 }
+
+/* Blur dropdowns when hamburger nav drawer is open */
+.nav-drawer-open #mobile-filters,
+.nav-drawer-open #custom-artist-dropdown,
+.nav-drawer-open #custom-playlist-dropdown {
+  filter: blur(4px);
+  opacity: 0.45;
+  pointer-events: none;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
 /* Pastikan area kosong di mini-player tidak memicu pointer tangan */
 #mini-player-index {
   cursor: default !important;

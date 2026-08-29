@@ -46,9 +46,9 @@ $__v = function($f) {
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="Kembali ke MEeL HUB">
                 <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style="background:var(--meel-red)">
-                    <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
+                    <i data-lucide="play" class="nav-logo-icon w-3.5 h-3.5"></i>
                 </div>
-                <span class="text-xs sm:text-sm font-bold tracking-tight uppercase hidden sm:block" style="color:var(--meel-text-heading)">
+                <span class="nav-logo-text text-xs sm:text-sm font-bold tracking-tight uppercase hidden sm:block">
                     MEeL<span style="color:var(--meel-red)">Video</span>
                 </span>
             </a>
