@@ -161,9 +161,18 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             margin-top: -1px;
         }
 </style>
+    <link rel="stylesheet" href="../assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/../assets/css/shared/light-theme.css') ?>">
 </head>
 
 <body class="text-gray-300">
+
+    <!-- Theme Toggle (fixed position) -->
+    <button id="theme-toggle" onclick="MEELTheme.toggle()"
+        class="fixed top-4 right-4 z-50 flex items-center justify-center w-10 h-10 rounded-xl bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-orange-500 hover:border-orange-500/20 transition-all backdrop-blur-sm"
+        title="Switch to Light Mode">
+        <i data-lucide="sun" data-theme-icon="sun" class="w-4 h-4 hidden"></i>
+        <i data-lucide="moon" data-theme-icon="moon" class="w-4 h-4"></i>
+    </button>
 
     <div class="max-w-2xl mx-auto mt-10 p-4">
         <div class="glass rounded-[2.5rem] overflow-hidden shadow-2xl">
@@ -285,6 +294,16 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
     <script src="../assets/js/shared/download-backup-codes.js"></script>
     <script>
         lucide.createIcons();
+
+        // Theme init
+        (function(){
+            if (typeof MEELTheme !== 'undefined') {
+                MEELTheme.init({
+                    isLoggedIn: <?= json_encode(isset($_SESSION['username'])) ?>,
+                    csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+                });
+            }
+        })();
 
         // Modal Backup Codes (dengan verifikasi password)
         function showBackupModal() {

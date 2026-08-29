@@ -82,6 +82,13 @@ if ($user->isMember()) {
 
             <div class="mt-auto p-4 border-t border-gray-800 bg-black/20">
                 <div class="flex items-center gap-3">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" onclick="MEELTheme.toggle()"
+                        class="flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-gray-500 hover:text-orange-500 hover:border-orange-500/20 transition-all cursor-pointer flex-shrink-0"
+                        title="Switch to Light Mode">
+                        <i data-lucide="sun" data-theme-icon="sun" class="w-3.5 h-3.5 hidden"></i>
+                        <i data-lucide="moon" data-theme-icon="moon" class="w-3.5 h-3.5"></i>
+                    </button>
                     <?php if (!empty($user->profile_picture) && is_file(__DIR__ . '/../profile/upload/' . $user->profile_picture)): ?>
                         <img src="../profile/upload/<?= htmlspecialchars($user->profile_picture, ENT_QUOTES, 'UTF-8') ?>"
                             alt="<?= htmlspecialchars($user->username, ENT_QUOTES, 'UTF-8') ?>"
@@ -317,6 +324,16 @@ if ($user->isMember()) {
     <script src="../assets/js/drive/preview.js?v=<?= filemtime('../assets/js/drive/preview.js') ?>"></script>
     <script src="../assets/js/drive/search.js?v=<?= filemtime('../assets/js/drive/search.js') ?>"></script>
     <script src="../assets/js/drive/upload.js?v=<?= filemtime('../assets/js/drive/upload.js') ?>"></script>
+    <script>
+    (function(){
+        if (typeof MEELTheme !== 'undefined') {
+            MEELTheme.init({
+                isLoggedIn: true,
+                csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+            });
+        }
+    })();
+    </script>
     <?php include '../partials/footer.php'; ?>
 </body>
 

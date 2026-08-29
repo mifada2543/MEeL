@@ -1,0 +1,206 @@
+/* ============================================================
+ * shared/theme-tokens.css — Universal Theme Tokens
+ *
+ * Satu-satunya tempat mendefinisikan warna tema.
+ * Semua module dan HTML harus pakai variabel ini, bukan hardcoded.
+ *
+ * Dark mode = default (tidak perlu attribute)
+ * Light mode = html[data-theme="light"] override
+ * ============================================================ */
+
+/* ─── DARK MODE (DEFAULT) ─── */
+:root {
+  /* Backgrounds */
+  --meel-bg: #080a0f;
+  --meel-surface: #0d1017;
+  --meel-surface-elevated: #141820;
+  --meel-surface-hover: rgba(255, 255, 255, 0.025);
+  --meel-surface-active: rgba(255, 255, 255, 0.05);
+
+  /* Borders */
+  --meel-border: rgba(255, 255, 255, 0.06);
+  --meel-border-strong: rgba(255, 255, 255, 0.10);
+
+  /* Text */
+  --meel-text: #c9cdd5;
+  --meel-text-secondary: #6b7280;
+  --meel-text-muted: #4b5563;
+  --meel-text-heading: #f0f2f7;
+
+  /* Accent */
+  --meel-red: #dc2626;
+  --meel-orange: #f97316;
+  --meel-blue: #3b82f6;
+  --meel-green: #22c55e;
+
+  /* Shadows */
+  --meel-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --meel-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --meel-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --meel-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6);
+
+  /* Glass */
+  --meel-glass: rgba(13, 16, 23, 0.8);
+  --meel-glass-border: rgba(255, 255, 255, 0.05);
+
+  /* Navbar */
+  --meel-nav-bg: rgba(8, 10, 15, 0.95);
+  --meel-nav-border: rgba(255, 255, 255, 0.04);
+
+  /* Card */
+  --meel-card-bg: #0d1017;
+  --meel-card-border: rgba(255, 255, 255, 0.05);
+  --meel-card-hover-border: rgba(220, 38, 38, 0.3);
+
+  /* Input */
+  --meel-input-bg: rgba(255, 255, 255, 0.04);
+  --meel-input-border: rgba(255, 255, 255, 0.06);
+  --meel-input-focus: #3b82f6;
+
+  /* Mini player */
+  --meel-player-bg: rgba(14, 17, 24, 0.97);
+  --meel-player-border: rgba(255, 255, 255, 0.07);
+
+  /* Scrollbar */
+  --meel-scrollbar: rgba(255, 255, 255, 0.1);
+  --meel-scrollbar-hover: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── LIGHT MODE ─── */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  /* Backgrounds */
+  --meel-bg: #fafafa;
+  --meel-surface: #ffffff;
+  --meel-surface-elevated: #ffffff;
+  --meel-surface-hover: rgba(0, 0, 0, 0.03);
+  --meel-surface-active: rgba(0, 0, 0, 0.06);
+
+  /* Borders */
+  --meel-border: rgba(0, 0, 0, 0.06);
+  --meel-border-strong: rgba(0, 0, 0, 0.10);
+
+  /* Text */
+  --meel-text: #27272a;
+  --meel-text-secondary: #52525b;
+  --meel-text-muted: #71717a;
+  --meel-text-heading: #18181b;
+
+  /* Accent */
+  --meel-red: #dc2626;
+  --meel-orange: #ea580c;
+  --meel-blue: #2563eb;
+  --meel-green: #16a34a;
+
+  /* Shadows */
+  --meel-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --meel-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --meel-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --meel-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+  /* Glass */
+  --meel-glass: rgba(255, 255, 255, 0.80);
+  --meel-glass-border: rgba(0, 0, 0, 0.06);
+
+  /* Navbar */
+  --meel-nav-bg: rgba(250, 250, 250, 0.88);
+  --meel-nav-border: rgba(0, 0, 0, 0.06);
+
+  /* Card */
+  --meel-card-bg: #ffffff;
+  --meel-card-border: rgba(0, 0, 0, 0.06);
+  --meel-card-hover-border: rgba(234, 88, 12, 0.3);
+
+  /* Input */
+  --meel-input-bg: #ffffff;
+  --meel-input-border: rgba(0, 0, 0, 0.10);
+  --meel-input-focus: #2563eb;
+
+  /* Mini player */
+  --meel-player-bg: rgba(255, 255, 255, 0.96);
+  --meel-player-border: rgba(0, 0, 0, 0.06);
+
+  /* Scrollbar */
+  --meel-scrollbar: rgba(0, 0, 0, 0.12);
+  --meel-scrollbar-hover: rgba(0, 0, 0, 0.20);
+}
+
+/* ─── THEME TRANSITION (smooth switch) ─── */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease !important;
+}
+
+/* ─── UTILITY CLASSES (pakai variables + transition) ─── */
+.meel-bg { background-color: var(--meel-bg); transition: background-color 0.3s ease; }
+.meel-surface { background-color: var(--meel-surface); transition: background-color 0.3s ease; }
+.meel-surface-elevated { background-color: var(--meel-surface-elevated); transition: background-color 0.3s ease; }
+.meel-border { border-color: var(--meel-border); transition: border-color 0.3s ease; }
+.meel-text { color: var(--meel-text); transition: color 0.3s ease; }
+.meel-text-secondary { color: var(--meel-text-secondary); transition: color 0.3s ease; }
+.meel-text-heading { color: var(--meel-text-heading); transition: color 0.3s ease; }
+.meel-card {
+  background: var(--meel-card-bg);
+  border: 1px solid var(--meel-card-border);
+  box-shadow: var(--meel-shadow-sm);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.meel-card:hover {
+  box-shadow: var(--meel-shadow-md);
+  border-color: var(--meel-card-hover-border);
+}
+.meel-glass {
+  background: var(--meel-glass);
+  border: 1px solid var(--meel-glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.meel-nav {
+  background: var(--meel-nav-bg);
+  border-color: var(--meel-nav-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.meel-input {
+  background: var(--meel-input-bg);
+  border: 1px solid var(--meel-input-border);
+  color: var(--meel-text);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+.meel-input:focus {
+  border-color: var(--meel-input-focus);
+  outline: none;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar-thumb {
+  background: var(--meel-scrollbar);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--meel-scrollbar-hover);
+}
+
+/* ─── SELECTION ─── */
+::selection {
+  background: rgba(37, 99, 235, 0.2);
+  color: var(--meel-text-heading);
+}
+
+/* ─── FOCUS ─── */
+:focus-visible {
+  outline: 2px solid var(--meel-blue);
+  outline-offset: 2px;
+}
+
+/* ─── REDUCED MOTION ─── */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -246,7 +246,7 @@ $chart_views = [];
 $res = $conn->query("SELECT DATE(upload_date) AS d, COALESCE(SUM(views), 0) AS v FROM video WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
 while ($row = $res->fetch_assoc()) $chart_views[$row['d']] = (int) $row['v'];
 $res = $conn->query("SELECT DATE(upload_date) AS d, COALESCE(SUM(views), 0) AS v FROM music WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
-while ($row = $res->fetch_assoc()) $chart_views[$row['d']] += (int) $row['v'];
+while ($row = $res->fetch_assoc()) $chart_views[$row['d']] = ($chart_views[$row['d']] ?? 0) + (int) $row['v'];
 
 $chart_uploads = [];
 $res = $conn->query("SELECT DATE(upload_date) AS d, COUNT(*) AS c FROM (

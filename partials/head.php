@@ -50,6 +50,26 @@ $_e_robots   = htmlspecialchars($_META_ROBOTS, ENT_QUOTES, 'UTF-8');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Theme: apply segera untuk mencegah flash-of-wrong-theme -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('meel_theme');
+    if (t === 'light' || t === 'dark') {
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.add('dark');
+    }
+  } catch(e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.classList.add('dark');
+  }
+})();
+</script>
+
 <title><?= $_e_title ?></title>
 <meta name="description" content="<?= $_e_desc ?>">
 <meta name="robots" content="<?= $_e_robots ?>">
@@ -157,6 +177,9 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
+
+<!-- Base URL untuk JS (API calls, dll) -->
+<script>window.MEEL_BASE = <?= json_encode(rtrim($_head_root_rel, '/')) ?>;</script>
 
 <!-- Extra head content (if any) -->
 <?= $_META_EXTRA ?>

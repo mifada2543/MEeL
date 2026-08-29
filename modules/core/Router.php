@@ -127,6 +127,7 @@ final class MeelRouter
         'api/pdf'                => ['handler' => 'controllers/api/pdf.php',               'script' => '/controllers/api/pdf.php'],
         'api/download-transcode' => ['handler' => 'controllers/api/download_transcode.php','script' => '/controllers/api/download_transcode.php'],
         'api/post-encode'        => ['handler' => 'controllers/api/post_encode.php',       'script' => '/controllers/api/post_encode.php'],
+        'api/theme'              => ['handler' => 'controllers/api/theme.php',              'script' => '/controllers/api/theme.php'],
         'api/ajax-refresh'       => ['handler' => 'controllers/api/ajax_refresh.php',      'script' => '/controllers/api/ajax_refresh.php'],
         'api/server-stats'       => ['handler' => 'controllers/api/server_stats.php',      'script' => '/controllers/api/server_stats.php'],
         'api/server-stats-sse'   => ['handler' => 'controllers/api/server_stats_sse.php',  'script' => '/controllers/api/server_stats_sse.php'],

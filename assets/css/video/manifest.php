@@ -13,4 +13,6 @@ return [
     'seek.css',
     'toast.css',
     'utility.css',
+    // Light theme — harus terakhir untuk override :root variables
+    '../shared/light-theme.css',
 ];

@@ -103,6 +103,11 @@ window.togglePlaylistDropdown = function () {
   if (dropdown) {
     const isHidden = dropdown.classList.contains("hidden");
     if (isHidden) {
+      // Tutup dropdown artist jika sedang terbuka
+      var artistDrop = document.getElementById("artist-options");
+      if (artistDrop && !artistDrop.classList.contains("hidden")) {
+        artistDrop.classList.add("hidden");
+      }
       dropdown.classList.remove("hidden");
       document.body.classList.add("artist-dropdown-active");
     } else {
@@ -162,6 +167,11 @@ window.toggleArtistDropdown = function () {
   if (dropdown) {
     const isHidden = dropdown.classList.contains("hidden");
     if (isHidden) {
+      // Tutup dropdown playlist jika sedang terbuka
+      var playlistDrop = document.getElementById("playlist-options");
+      if (playlistDrop && !playlistDrop.classList.contains("hidden")) {
+        playlistDrop.classList.add("hidden");
+      }
       dropdown.classList.remove("hidden");
       document.body.classList.add("artist-dropdown-active");
       var activeItem = dropdown.querySelector(".text-orange-500");
