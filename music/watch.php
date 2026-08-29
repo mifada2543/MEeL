@@ -17,7 +17,6 @@ authorize_stream($id);
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
 
-// Semua variabel template diekstrak dari controller
 extract($ctrl->getViewData(), EXTR_SKIP);
 
 session_write_close();

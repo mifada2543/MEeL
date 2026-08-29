@@ -50,7 +50,7 @@ $is_admin  = ($user_role === 'admin');
 $transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver($is_admin));
 register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 
-// Queue stats
+
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 

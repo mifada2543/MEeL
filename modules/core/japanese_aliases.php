@@ -1,18 +1,15 @@
 <?php
 return [
-    // Project Sekai — Franchise & Nickname
     'プロジェクトセカイ'   => 'Project Sekai',
     'カラフルステージ'     => 'Colorful Stage',
     'プロセカ'            => 'Project Sekai',
 
-    // Project Sekai — Unit
     'ワンダーランズ×ショウタイム' => 'Wonderlands x Showtime',
     'ワンダーランズ'       => 'Wonderlands',
     'ワンオポ'            => 'Wonderlands x Showtime',
     '25時、ナイトコードで'  => 'Nightcord at 25:00',
     'ナイトコード'         => 'Nightcord',
 
-    // Project Sekai — Karakter (grup pertama: menonjol di katalog)
     '初音ミク'            => 'Hatsune Miku',
     '鏡音リン'            => 'Kagamine Rin',
     '鏡音レン'            => 'Kagamine Len',
@@ -39,25 +36,20 @@ return [
     '東雲彰人'            => 'Shinonome Akito',
     '青柳冬弥'            => 'Aoyagi Toya',
 
-    // Franchise / Game / Platform lain di katalog
     '東方'                => 'Touhou',
     'あんさんぶるスターズ'  => 'Ensemble Stars',
     'ミルグラム'           => 'MILGRAM',
     'ニコニコ動画'         => 'Niconico',
     'ニコニコ'            => 'Niconico',
 
-    // Voicebank / Synthesizer (CeVIO, VOICEROID, dsb.)
     '可不'                => 'Kafu',
 
-    // Pola gramatikal umum (dicek sebelum gloss per-token)
     'のならば'            => 'in case',
     'ならば'              => 'if',
     'けど'                => 'but',
     'だから'              => 'so',
     'ために'              => 'for the sake of',
 
-    // Judul lagu: frasa penuh (full-cover → dipakai sebagai terjemahan final)
     '君が飛び降りるのならば' => "In case you're gonna jump",
 
-    // Tambahkan entri lain di sini sesuai kebutuhan katalog.
 ];

@@ -67,7 +67,7 @@ if (!function_exists('meel_mecab_available')) {
     }
 }
 
-// Create temp directories for file-based tests
+
 $tempDirs = [
     MEEL_ROOT . '/temp',
     MEEL_ROOT . '/temp/ratelimit',

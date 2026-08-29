@@ -12,7 +12,6 @@ $username = $_SESSION['username'] ?? null;
 $is_logged_in = $user_id !== null;
 $is_admin = $is_logged_in && is_admin($conn);
 
-// Get user's songs
 $user_songs = [];
 if ($is_logged_in) {
     $stmt = $conn->prepare("SELECT id, title, artist, bpm, difficulty, difficulty_label, duration, note_count, audio_file, cover_file, play_count, created_at, updated_at FROM arcade_song WHERE user_id = ? ORDER BY created_at DESC");
@@ -25,7 +24,6 @@ if ($is_logged_in) {
     $stmt->close();
 }
 
-// Admin: get all songs
 $all_songs = [];
 if ($is_admin) {
     $result = $conn->query("SELECT s.*, u.username FROM arcade_song s LEFT JOIN users u ON s.user_id = u.id ORDER BY s.created_at DESC LIMIT 500");

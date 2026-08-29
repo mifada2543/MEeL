@@ -1,18 +1,15 @@
 <?php
-// HELPER: Resolve MeCab binary (static cache per request)
 if (!function_exists('getMecabPath')) {
     function getMecabPath(): string
     {
         static $path = null;
         if ($path !== null) return $path;
 
-        // Coba gunakan resolve_binary() dari helpers.php jika tersedia
         if (function_exists('resolve_binary')) {
             $path = resolve_binary(['/usr/bin/mecab', '/usr/local/bin/mecab', 'mecab']);
             return $path;
         }
 
-        // Fallback: cek path absolut langsung
         $candidates = ['/usr/bin/mecab', '/usr/local/bin/mecab', 'mecab'];
         foreach ($candidates as $candidate) {
             if (strpos($candidate, '/') !== false) {
@@ -27,7 +24,6 @@ if (!function_exists('getMecabPath')) {
     }
 }
 
-// ROMAJI CONVERTER
 if (!function_exists('getRomajiName')) {
     function getRomajiName(string $text): string
     {
@@ -35,7 +31,6 @@ if (!function_exists('getRomajiName')) {
         $text = Normalizer::normalize($text, Normalizer::FORM_C) ?: $text;
         $original_text = $text;
 
-        // Kamus koreksi karakter spesifik & simbol
         $search = [
             '×',
             'x',
@@ -117,7 +112,6 @@ if (!function_exists('getRomajiName')) {
     }
 }
 
-// ANALISIS GABUNGAN (romaji + english)
 if (!function_exists('analyzeJapaneseText')) {
     function analyzeJapaneseText(string $text): array
     {
@@ -127,7 +121,7 @@ if (!function_exists('analyzeJapaneseText')) {
 
         $search  = ['×', 'x', 'X', '*', '&', '/', '【', '】', '「', '」', '(', ')', '鏡音', '巡音', '初音'];
         $replace = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'かがみね', 'めぐりね', 'hatsune'];
-        $original_text = $text; // Simpan asli untuk fallback
+        $original_text = $text;
         $clean_text = str_replace($search, $replace, $text);
 
         static $aliases = null;
@@ -139,7 +133,7 @@ if (!function_exists('analyzeJapaneseText')) {
         }
 
         $alias_glosses = [];
-        $full_cover    = null; // alias yang menutupi seluruh teks → dipakai sebagai terjemahan final
+        $full_cover    = null;
         foreach ($aliases as $phrase => $translation) {
             if ($phrase !== '' && mb_strpos($original_text, $phrase) !== false) {
                 $alias_glosses[$phrase] = $translation;
@@ -148,8 +142,6 @@ if (!function_exists('analyzeJapaneseText')) {
                 }
             }
         }
-        // Buang alias yang merupakan substring dari alias lain yang lebih panjang
-        // (mis. 'ならば' ⊆ 'のならば') — hindari duplikasi makna seperti "in case if".
         foreach (array_keys($alias_glosses) as $p1) {
             foreach (array_keys($alias_glosses) as $p2) {
                 if ($p1 !== $p2 && mb_strlen($p2) > mb_strlen($p1) && mb_strpos($p2, $p1) !== false) {
@@ -161,7 +153,6 @@ if (!function_exists('analyzeJapaneseText')) {
         $matched_phrases = array_keys($alias_glosses);
         $alias_glosses = array_values($alias_glosses);
 
-        // MeCab — 1x panggil untuk kedua kebutuhan (path absolut)
         $mecab_bin = getMecabPath();
         $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"]];
         $mecab_cmd = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($mecab_bin);
@@ -178,7 +169,6 @@ if (!function_exists('analyzeJapaneseText')) {
         fclose($pipes[1]);
         proc_close($process);
 
-        // Koneksi kamus offline (static — sekali per request)
         static $pdo = null, $dict_ready = null, $dict_stmt = null;
         if ($dict_ready === null) {
 
@@ -214,9 +204,6 @@ if (!function_exists('analyzeJapaneseText')) {
             elseif (isset($features[8]) && $features[8] !== '*') $yomi = $features[8];
             $parsed_romaji .= ' ' . (($yomi !== '*' && !preg_match('/[a-zA-Z]/', $yomi)) ? $yomi : $surface);
 
-            // FILTER KATA FUNGSIONAL
-            // Partikel & kata fungsional tidak diterjemahkan per-token:
-            // lookup JMdict berbasis reading rentan homofon tanpa konteks frasa.
             $pos = $features[0] ?? '';
             $sub = $features[1] ?? '';
             $is_functional = in_array($pos, ['助詞', '助動詞', '接続詞', '感動詞', '連体詞', '記号', '補助記号'], true)
@@ -243,7 +230,6 @@ if (!function_exists('analyzeJapaneseText')) {
             }
         }
 
-        // Finalisasi romaji
         $romaji_text = trim($parsed_romaji);
         $rule = "Katakana-Latin; Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; Latin-ASCII; Any-Lower;";
         $transliterator = Transliterator::create($rule);
@@ -259,7 +245,6 @@ if (!function_exists('analyzeJapaneseText')) {
             $result['romaji'] = $clean;
         }
 
-        // Alias frasa penuh didahulukan; gloss per-token merusak makna frasa.
         if ($full_cover !== null) {
             $result['english'] = $full_cover;
         } else {

@@ -8,7 +8,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_id   = (int)$_SESSION['user_id'];
 $username  = $_SESSION['username'] ?? '';
-// Cek apakah MFA sudah di-set sebelumnya
 $stmt = $conn->prepare("SELECT mfa_enabled FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -32,7 +31,6 @@ if (isset($_POST['disable_mfa']) && $mfa_enabled) {
         $step = 'setup';
     }
 }
-// STEP 1: GENERATE SECRET
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_secret']) && !$mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -44,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_secret']) &&
         $step = 'verify';
     }
 }
-// STEP 2: VERIFY WITH CODE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_code']) && !$mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';
@@ -79,13 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_code']) && !$m
         }
     }
 }
-// STEP 3: BACKUP CODES (once)
 $backup_codes = $_SESSION['mfa_backup_codes_show'] ?? [];
 if ($step === 'backup' && isset($_POST['backup_done'])) {
     unset($_SESSION['mfa_backup_codes_show']);
     $step = 'done';
 }
-// QR CODE
 if ($mfa_enabled && $step === 'setup') {
     $stmt = $conn->prepare("SELECT mfa_secret FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
@@ -96,7 +91,6 @@ if ($mfa_enabled && $step === 'setup') {
         $otpauth = generate_otpauth_url($existing_secret, $username);
     }
 }
-// HTML
 $auth_title       = "Keamanan Akun | MEeL";
 $auth_description = "MEeL - Kelola autentikasi dua faktor (MFA) akun Anda.";
 $auth_og_title    = "Keamanan Akun | MEeL";
@@ -373,7 +367,6 @@ include __DIR__ . '/partials/auth_head.php';
     <script src="../assets/js/shared/download-backup-codes.js"></script>
     <script>
         var _backupCodes = <?= json_encode($backup_codes) ?>;
-        // Generate QR Code menggunakan library lokal (offline)
         document.addEventListener('DOMContentLoaded', function() {
             var qrContainer = document.getElementById('mfa-qr-canvas');
             if (qrContainer && typeof QRCode !== 'undefined') {
@@ -385,7 +378,6 @@ include __DIR__ . '/partials/auth_head.php';
                 });
             }
         });
-        // Download QR Code sebagai PNG
         function downloadQR() {
             var qrContainer = document.getElementById('mfa-qr-canvas');
             if (!qrContainer) return;
@@ -397,7 +389,7 @@ include __DIR__ . '/partials/auth_head.php';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        } // Download Backup Codes sebagai TXT (fungsi shared)
+        }
         window._meelBackupCodes = window._backupCodes || [];
         window._meelBackupUser = '<?= htmlspecialchars($username) ?>';
         function copySecret() {

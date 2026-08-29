@@ -25,8 +25,6 @@ class Uploader
         $this->user_role = get_user_role($this->conn, $this->user_id);
     }
 
-    // PRIVATE HELPERS
-
     private function checkRateLimit(string $table): array
     {
         require_once __DIR__ . '/System.php';
@@ -51,12 +49,10 @@ class Uploader
             return false;
         }
 
-        // MP4/MOV: dimulai dengan 'ftyp' di offset 4
         if (strlen($header) >= 8 && substr($header, 4, 4) === 'ftyp') {
             return true;
         }
 
-        // WebM/MKV: dimulai dengan \x1A\x45\xDF\xA3 (EBML header)
         if (str_starts_with($header, "\x1A\x45\xDF\xA3")) {
             return true;
         }
@@ -70,7 +66,7 @@ class Uploader
         $counter_file = sys_get_temp_dir() . '/meel_upload_count.dat';
 
         $fp = fopen($lock_file, 'c');
-        if (!$fp) return true; // fallback: allow jika gagal lock
+        if (!$fp) return true;
         flock($fp, LOCK_EX);
 
         if (file_exists($counter_file) && (time() - filemtime($counter_file)) > 300) {
@@ -88,7 +84,6 @@ class Uploader
         flock($fp, LOCK_UN);
         fclose($fp);
 
-        // Register shutdown function untuk decrement
         register_shutdown_function(function () use ($lock_file, $counter_file) {
             $fp2 = fopen($lock_file, 'c');
             if ($fp2) {
@@ -116,8 +111,6 @@ class Uploader
         return $file_name;
     }
 
-    // MUSIC
-
     public function processMusic(array $post, array $files, string $base_dir): array
     {
         GarbageCollector::run();
@@ -126,12 +119,10 @@ class Uploader
             return ['status' => 'error', 'msg' => "Batas upload tercapai! Tunggu {$limit['minutes']} menit lagi.", 'alert' => true];
         }
 
-        // Batasi proses upload simultan
         if (!$this->checkActiveUploadLimit()) {
             return ['status' => 'error', 'msg' => "Terlalu banyak proses upload bersamaan. Coba lagi nanti.", 'alert' => true];
         }
 
-        // PRE-FLIGHT: Cek ruang disk HDD untuk music storage
         try {
             require_disk_space(500 * 1024 * 1024, $base_dir . 'upload/file/', 'storage musik HDD');
         } catch (\RuntimeException $e) {
@@ -178,7 +169,6 @@ class Uploader
 
         $duration = $this->probeDuration($target_file);
 
-        // Jika ffprobe gagal (duration 0 atau negatif), reject file
         if ($duration <= 0) {
             unlink($target_file);
             return ['status' => 'error', 'msg' => "Gagal memverifikasi durasi file. File mungkin korup atau tidak valid.", 'alert' => true];
@@ -195,7 +185,6 @@ class Uploader
         $thumb_dir     = $base_dir . "upload/thumbnail/";
 
         if (!empty($files['thumbnail']['name']) && !empty($files['thumbnail']['tmp_name'])) {
-            // PRIORITAS 1: Cover art manual dari form upload
             $t_clean         = getRomajiName(pathinfo($files['thumbnail']['name'], PATHINFO_FILENAME));
             $thumb_candidate = $this->getUniqueFilename($t_clean, "thumb.webp", $thumb_dir);
             $abs_out         = $thumb_dir . $thumb_candidate;
@@ -208,7 +197,6 @@ class Uploader
         }
 
         if ($thumb_name === "music_default.png") {
-            // PRIORITAS 2: Embedded thumbnail di dalam file audio (ID3/FLAC)
             $thumb_candidate = $this->getUniqueFilename($thumb_base, "thumb.webp", $thumb_dir);
             $abs_out         = $thumb_dir . $thumb_candidate;
 
@@ -243,7 +231,6 @@ class Uploader
 
         $meta = generate_search_metadata($title, $artist, $album);
 
-        // TRANSACTION: Atomic DB insert — rollback jika gagal
         $this->conn->begin_transaction();
         try {
             $sql  = "INSERT INTO music (title, artist, description, search_metadata, album, filename, thumbnail, user_id, upload_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
@@ -260,10 +247,8 @@ class Uploader
             return ['status' => 'success'];
         } catch (\Throwable $e) {
             $this->conn->rollback();
-            // Bersihkan file yang sudah terlanjur dipindahkan
             $target_file = $base_dir . "upload/file/" . $file_name;
             $this->removeFile($target_file);
-            // Hapus thumbnail juga jika bukan default
             if ($thumb_name !== 'music_default.png') {
                 $thumb_path = $base_dir . "upload/thumbnail/" . $thumb_name;
                 $this->removeFile($thumb_path);
@@ -272,7 +257,6 @@ class Uploader
         }
     }
 
-    // VIDEO
     public function processVideo(array $post, array $files, string $upload_dir = ""): array
     {
         GarbageCollector::run();
@@ -281,13 +265,11 @@ class Uploader
             return ['status' => 'error', 'msg' => "Batas upload tercapai! Tunggu {$limit['minutes']} menit lagi.", 'alert' => true];
         }
 
-        // Batasi proses upload simultan
         if (!$this->checkActiveUploadLimit()) {
             return ['status' => 'error', 'msg' => "Terlalu banyak proses upload bersamaan. Coba lagi nanti.", 'alert' => true];
         }
 
         try {
-            // Minimal 1GB free di HDD video storage
             require_disk_space(1024 * 1024 * 1024, $this->base_dir . 'video/', 'storage video HDD');
             // Minimal 512MB free di RAM disk untuk staging HLS
             $shm_path = '/dev/shm';
@@ -311,16 +293,15 @@ class Uploader
             return ['status' => 'error', 'msg' => "Format video tidak didukung! Gunakan MP4, WebM, atau MKV.", 'alert' => true];
         }
 
-        // Validasi magic bytes — cegah file non-video lolos
         if (!$this->validateVideoMagicBytes($temp_video)) {
             return ['status' => 'error', 'msg' => "File tidak valid sebagai video (magic bytes mismatch).", 'alert' => true];
         }
 
         $raw_clean_name = pathinfo($video_name_orig, PATHINFO_FILENAME);
         $clean_name     = getRomajiName($raw_clean_name);
-        $clean_name     = substr($clean_name, 0, 60);     // batasi panjang biar aman utk kolom DB
+        $clean_name     = substr($clean_name, 0, 60);
         $clean_name     = trim($clean_name, '-');
-        if ($clean_name === '') $clean_name = 'video-' . time(); // fallback kalau nama jadi kosong
+        if ($clean_name === '') $clean_name = 'video-' . time();
 
         $lock_file = sys_get_temp_dir() . '/meel_upload_video.lock';
         $lock_fp   = fopen($lock_file, 'c');
@@ -339,7 +320,6 @@ class Uploader
                 $counter++;
             }
 
-            // DIREKTORI KERJA — PRIORITAS RAM DISK (/dev/shm)
             $shm_path  = '/dev/shm';
             $use_shm   = false;
             if (is_dir($shm_path) && is_writable($shm_path)) {
@@ -364,7 +344,6 @@ class Uploader
             return ['status' => 'error', 'msg' => 'Gagal menyalin file upload ke staging area.', 'alert' => true];
         }
 
-        // THUMBNAIL
         $thumb_name    = "default_thumb.webp";
         $thumb_dir     = $this->base_dir . "thumbnail/";
         $thumb_from_user = false;
@@ -373,7 +352,6 @@ class Uploader
             !empty($files['thumbnail']['tmp_name']) && is_uploaded_file($files['thumbnail']['tmp_name'])
             && $files['thumbnail']['error'] === UPLOAD_ERR_OK
         ) {
-            // PRIORITAS 1: User upload thumbnail
             $t_name = $clean_name . "_thumb.webp";
             $t_dst  = $thumb_dir . $t_name;
 
@@ -394,7 +372,6 @@ class Uploader
         }
 
         if (!$thumb_from_user) {
-            // PRIORITAS 2: Auto-generate dari frame video
             $thumb_name  = $clean_name . "_thumb.webp";
             $work_thumb  = $work_folder . $thumb_name;
 
@@ -404,7 +381,6 @@ class Uploader
                 . escapeshellarg($work_thumb) . " 2>&1";
             exec($cmd_thumb);
 
-            // Fallback: ambil frame ke-1 kalau video < 5 detik
             if (!file_exists($work_thumb) || filesize($work_thumb) === 0) {
                 $cmd_thumb_fallback = "export LD_LIBRARY_PATH=; " . escapeshellarg($this->ffmpeg_bin) . " -y -i "
                     . escapeshellarg($staged_video)
@@ -435,7 +411,6 @@ class Uploader
             $this->generateSpriteAndVTT($staged_video, $work_folder);
         }
 
-        // SUBTITLE (OPSIONAL)
         if (
             $result === 0
             && !empty($files['subtitle']['tmp_name'])
@@ -452,14 +427,13 @@ class Uploader
                     if ($sub_ext === 'srt') {
                         $sub_content = convert_srt_to_vtt($sub_content);
                     }
-                    $sub_content = strip_utf8_bom($sub_content); // WEBVTT harus jadi byte pertama
+                    $sub_content = strip_utf8_bom($sub_content);
                     $sub_target  = $work_folder . $folder_name . '.' . $sub_lang . '.vtt';
                     if (file_put_contents($sub_target, $sub_content, LOCK_EX) === false) {
                         error_log("[MEeL] Gagal menulis subtitle ke work_folder: " . $sub_target);
                     }
                 }
             } else {
-                // Subtitle tidak valid — jangan gagalkan upload, hanya catat
                 error_log("[MEeL] Subtitle ditolak (format/validasi): " . ($files['subtitle']['name'] ?? 'unknown'));
             }
         }
@@ -472,11 +446,9 @@ class Uploader
             return ['status' => 'error', 'msg' => 'FFmpeg Error: ' . implode("\n", $output)];
         }
 
-        // PINDAHKAN KE HDD
         $hdd_target_folder = $hdd_video_dir . $folder_name . "/";
         $hdd_thumb_dir     = $this->base_dir . "thumbnail/";
 
-        // Lock saat memindahkan file ke HDD — cegah race condition
         $lock_move = fopen(sys_get_temp_dir() . '/meel_move_hdd.lock', 'c');
         $move_locked = $lock_move && flock($lock_move, LOCK_EX);
 
@@ -512,14 +484,11 @@ class Uploader
         $this->removeDir($work_folder);
 
         if ($move_failed) {
-            // Rollback: hapus file yang sudah terlanjur dipindahkan
             $this->removeDir($hdd_target_folder);
-            // Hapus thumbnail (baik dari user maupun auto-generated)
             $this->removeFile($hdd_thumb_dir . $thumb_name);
             return ['status' => 'error', 'msg' => 'Gagal memindahkan file ke storage. Cek permission HDD.', 'alert' => true];
         }
 
-        // INSERT DATABASE (WITH TRANSACTION)
         $title       = trim($post['title'] ?? 'Untitled Video');
         $description = trim($post['description'] ?? '');
         $meta        = generate_search_metadata($title);
@@ -548,7 +517,6 @@ class Uploader
 
             $hdd_target_folder = $hdd_video_dir . $folder_name . "/";
             $this->removeDir($hdd_target_folder);
-            // Hapus thumbnail (auto-generated atau dari user)
             $hdd_thumb_dir = $this->base_dir . "thumbnail/";
             $this->removeFile($hdd_thumb_dir . $thumb_name);
 

@@ -1,5 +1,4 @@
 <?php
-/* MEeL — Admin MFA Reset Page */
 
 include '../auth/config.php';
 include '../auth/auth.php';

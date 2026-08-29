@@ -19,7 +19,7 @@ class GarbageCollectorTest extends TestCase
     {
         parent::setUp();
 
-        // Create a test temp directory
+        
         $this->testTempDir = MEEL_ROOT . '/temp/gc_test_' . uniqid();
         @mkdir($this->testTempDir, 0755, true);
 

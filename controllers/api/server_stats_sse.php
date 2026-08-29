@@ -1,5 +1,4 @@
 <?php
-// SSE endpoint: push getServerStats() setiap interval. Client fallback ke polling jika stream gagal.
 require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
@@ -8,7 +7,6 @@ include '../../auth/auth.php';
 
 require_admin($conn);
 
-// Lepas kunci session — koneksi ini bertahan lama.
 session_write_close();
 
 $allowed   = [1000, 3000, 5000, 10000];

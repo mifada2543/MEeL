@@ -21,7 +21,6 @@ if (!function_exists('resolve_binary')) {
         }
     }
 
-    // Level 2: Cek executable path absolut
     foreach ($candidates as $candidate) {
         if (strpos($candidate, '/') !== false) {
             if (is_executable($candidate)) return $candidate;
@@ -40,7 +39,6 @@ function base_url(string $path = ''): string
 {
     static $base = null;
     if ($base === null) {
-        // subdirektori (admin/, video/, dll).
         if (defined('MEEL_BASE_URL')) {
             $base = rtrim(MEEL_BASE_URL, '/');
         } else {

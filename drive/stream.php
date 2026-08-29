@@ -1,7 +1,6 @@
 <?php
 // SECURITY BOUNDARY: Private storage di-deny .htaccess — SATU-SATUNYA jalur
 // akses via endpoint ini + download.php (session + CSRF + ownership check).
-// Range request didukung untuk seeking; audit log sengaja tidak per-request.
 error_reporting(0);
 
 require '../auth/auth.php';
@@ -18,7 +17,6 @@ if (!isset($_GET['csrf_token']) || !verify_csrf_token($_GET['csrf_token'])) {
     exit;
 }
 
-// Jangan kunci session selama streaming file besar
 if (session_status() === PHP_SESSION_ACTIVE) {
     session_write_close();
 }
@@ -115,7 +113,7 @@ if (!$fp) {
     exit;
 }
 
-const DRIVE_STREAM_CHUNK_SIZE = 262144; // 256KB per chunk
+const DRIVE_STREAM_CHUNK_SIZE = 262144;
 @fseek($fp, $start);
 while (!@feof($fp) && ($p = @ftell($fp)) <= $end && $p !== false) {
     if (connection_aborted()) break;

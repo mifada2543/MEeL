@@ -22,9 +22,7 @@ if (!file_exists($meel_settings)) {
         . "  cp auth/settings.example.php auth/settings.php");
 }
 require_once $meel_settings;
-// BOOTSTRAP (Error Handling)
 require_once __DIR__ . '/../modules/core/bootstrap.php';
-// DATABASE CONNECTION
 // Hanya connect jika $conn belum ada — aman di-include berkali-kali
 // Credentials diambil dari settings.php ($server, $username, dll.)
 /** @var string $server   Host DB (dari settings.php) */
@@ -36,11 +34,8 @@ if (!isset($conn) || $conn === null) {
     if ($conn->connect_error) {
         die("[MEeL SYSTEM ERROR]\nKoneksi ke database gagal: " . $conn->connect_error);
     }
-    // Charset koneksi harus utf8mb4 agar cocok dengan schema (emoji, aksara
-    // Jepang, dll. tersimpan/terbaca dengan benar).
     $conn->set_charset('utf8mb4');
 }
-// BASE URL (PATH PORTABILITY)
 if (!defined('MEEL_BASE_URL')) {
     require_once __DIR__ . '/../modules/core/base_url.php';
     define('MEEL_BASE_URL', meel_base_url_path());
@@ -48,7 +43,6 @@ if (!defined('MEEL_BASE_URL')) {
 // SESSION CONFIGURATION (terpusat di modules/auth/helpers/session.php — satu sumber kebenaran)
 require_once __DIR__ . '/../modules/auth/helpers/session.php';
 meel_boot_session();
-// AUTOLOADER & HELPERS
 require_once __DIR__ . '/../modules/autoload.php';
 // Helper functions (verify_csrf_token, get_csrf_token, base_url, dll.)
 require_once __DIR__ . '/../modules/core/helpers.php';
@@ -73,20 +67,16 @@ if (!headers_sent()) {
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-// Session Timeout Check (12 jam)
 if (isset($_SESSION['LAST_ACTIVITY'])) {
     $elapsed_time = time() - $_SESSION['LAST_ACTIVITY'];
     if ($elapsed_time > 43200) {
         session_unset();
         session_destroy();
-        // base_url() mutlak — handler bisa disajikan di kedalaman URL mana pun
-        // (hub di "/", modul di "/video/", dst.), jadi ../ relatif tidak aman.
         header("Location: " . base_url('/auth/login?reason=expired'));
         exit;
     }
 }
 $_SESSION['LAST_ACTIVITY'] = time();
-// Activity Logger (skip di CLI — tidak ada HTTP request)
 if (PHP_SAPI !== 'cli') {
     include_once __DIR__ . '/../modules/core/activity_logger.php';
 }

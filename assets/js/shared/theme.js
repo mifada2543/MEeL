@@ -29,22 +29,15 @@ window.MEELTheme = (function () {
       html.classList.remove('dark');
     }
 
-    // Update ALL toggle icons di seluruh halaman
+    // Update theme icon (emoji-based for reliability)
+    var themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) {
+      themeIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
+    }
+    // Update ALL toggle buttons
     var buttons = document.querySelectorAll('#theme-toggle, .meel-theme-toggle');
     for (var i = 0; i < buttons.length; i++) {
-      var btn = buttons[i];
-      var sunIcon = btn.querySelector('[data-theme-icon="sun"]');
-      var moonIcon = btn.querySelector('[data-theme-icon="moon"]');
-      if (sunIcon && moonIcon) {
-        if (theme === 'dark') {
-          sunIcon.classList.remove('hidden');
-          moonIcon.classList.add('hidden');
-        } else {
-          sunIcon.classList.add('hidden');
-          moonIcon.classList.remove('hidden');
-        }
-      }
-      btn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+      buttons[i].setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
     }
 
     // Update profile page theme toggle

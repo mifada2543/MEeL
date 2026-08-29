@@ -13,10 +13,8 @@ $user_id = $_SESSION['user_id'] ?? null;
 $ctrl = new VideoWatchController($conn, $user_id, $id);
 $ctrl->handleRequest();
 
-// Semua variabel template diekstrak dari controller
 extract($ctrl->getViewData(), EXTR_SKIP);
 
-// Lepas session lock sesegera mungkin
 session_write_close();
 
 $__v = function($f) {

@@ -1,6 +1,4 @@
 <?php
-// helpers/stream_auth.php — Otorisasi Akses Streaming Audio
-// Akses tanpa konteks halaman ditolak konsisten; pemutaran normal tetap berjalan.
 if (!function_exists('authorize_stream')) {
     /* @param int $id ID media (tabel music) */
     function authorize_stream(int $id): void
@@ -13,9 +11,6 @@ if (!function_exists('authorize_stream')) {
 
         $_SESSION['stream_ok'][$id] = time();
 
-        // Batasi ukuran marker (FIFO) agar session tidak membengkak —
-        // buang entri dengan timestamp tertua saat melebihi kapasitas.
-        // (0,1,2,...) sehingga mapping id → timestamp menjadi rusak.
         if (count($_SESSION['stream_ok']) > 100) {
             $oldest = array_search(min($_SESSION['stream_ok']), $_SESSION['stream_ok'], true);
             if ($oldest !== false) {

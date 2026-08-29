@@ -3,7 +3,7 @@ class MediaViewer
 {
     private $conn;
     private $user_id;
-    private $user_data; // Menyimpan data user agar tidak perlu query berulang
+    private $user_data;
     private $media_type;
     private $media_id;
     private $table;
@@ -20,7 +20,6 @@ class MediaViewer
             throw new InvalidArgumentException('Invalid media type');
         }
 
-        // Tarik data user SATU KALI SAJA saat class dipanggil
         if ($this->user_id) {
             $stmt_user = $this->conn->prepare("SELECT is_active, role FROM users WHERE id = ? LIMIT 1");
             $stmt_user->bind_param("i", $this->user_id);
@@ -78,7 +77,6 @@ class MediaViewer
     {
         if (!$this->user_id || empty(trim($post_data['comments']))) return false;
 
-        // Gunakan data yang sudah ditarik di construct (Lebih ringan!)
         if (!$this->user_data || $this->user_data['is_active'] != 1 || $this->user_data['role'] === 'guest') {
             return false;
         }
@@ -115,9 +113,8 @@ class MediaViewer
     {
 
         $limit = (int)$limit;
-        $table = $this->table; // sudah tervalidasi di constructor: 'video' | 'music'
+        $table = $this->table;
 
-        // Ambil MAX(id) — murah, pakai indeks PRIMARY
         $max_res = $this->conn->query("SELECT MAX(id) AS max_id FROM {$table}");
         $max_id  = (int)($max_res ? $max_res->fetch_assoc()['max_id'] : 0);
 
@@ -148,8 +145,6 @@ class MediaViewer
         if ($this->media_type !== 'music' || !$playlist_id) return null;
         $playlist_id = (int)$playlist_id;
 
-        // Tie-breaker pt.id dipakai agar urutan deterministik & identik
-        // dengan music/view_playlist.php (ORDER BY sama persis).
         $stmt_q = $this->conn->prepare("SELECT m.*, pt.added_at FROM music m JOIN playlist_tracks pt ON m.id = pt.music_id WHERE pt.playlist_id = ? ORDER BY pt.added_at DESC, pt.id DESC");
         $stmt_q->bind_param("i", $playlist_id);
         $stmt_q->execute();
@@ -162,8 +157,6 @@ class MediaViewer
 
         $next_url = "";
         if ($current) {
-            // Row-value comparison (added_at, id) < (?, ?) agar track
-            // dengan added_at sama persis tidak terlewat.
             $stmt_next = $this->conn->prepare("SELECT music_id FROM playlist_tracks WHERE playlist_id = ? AND (added_at, id) < (?, ?) ORDER BY added_at DESC, id DESC LIMIT 1");
             $stmt_next->bind_param("isi", $playlist_id, $current['added_at'], $current['id']);
             $stmt_next->execute();

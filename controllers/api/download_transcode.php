@@ -23,7 +23,6 @@ if ($safe_filename !== $filename) {
     die('Nama file tidak valid.');
 }
 
-// Pastikan ada ekstensi (minimal 'x.y')
 if (!preg_match('/\.[a-zA-Z0-9]+$/u', $safe_filename)) {
     http_response_code(400);
     die('Ekstensi file tidak valid.');
@@ -56,7 +55,6 @@ header('Content-Disposition: attachment; filename*=UTF-8\'\'' . rawurlencode($fi
 header('X-Accel-Buffering: no');
 header('Cache-Control: no-cache, must-revalidate');
 
-// Bersihkan output buffer
 while (ob_get_level()) ob_end_clean();
 
 readfile($file_path);

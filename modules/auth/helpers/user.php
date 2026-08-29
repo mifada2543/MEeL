@@ -1,11 +1,7 @@
 <?php
-// helpers/user.php — User Role & Usage Helpers
 if (!function_exists('get_user_usage')) {
 function get_user_usage(string $username): int|float
 {
-    // Base path storage Drive di-resolve terpusat lewat meel_drive_base_path()
-    // (MEEL_HDD_DRIVE bila didefinisikan, fallback <root>/data_drive) supaya
-    // konsisten dengan DriveStorage — lihat modules/core/helpers/storage.php.
     $path = meel_drive_base_path() . '/private_admins/' . $username;
     if (!is_dir($path)) return 0;
 
@@ -17,7 +13,6 @@ function get_user_usage(string $username): int|float
 if (!function_exists('get_user_role')) {
 function get_user_role(mysqli $conn, int $user_id): string
 {
-    // Level 1: Static cache per-request (paling cepat)
     static $cache = [];
     if (isset($cache[$user_id])) {
         return $cache[$user_id];
@@ -29,7 +24,6 @@ function get_user_role(mysqli $conn, int $user_id): string
         return $role;
     }
 
-    // Level 2: Query database
     $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -38,7 +32,6 @@ function get_user_role(mysqli $conn, int $user_id): string
 
     $cache[$user_id] = $role;
 
-    // Simpan ke session jika ini user yang sedang login
     if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $user_id) {
         $_SESSION['role'] = $role;
     }
@@ -67,7 +60,7 @@ function purge_guest_users(mysqli $conn): ?int
         return null;
     }
     $ok      = $stmt->execute();
-    $deleted = $stmt->affected_rows; // baca sebelum close
+    $deleted = $stmt->affected_rows;
     $stmt->close();
     if (!$ok) {
         return null;

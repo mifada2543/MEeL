@@ -15,7 +15,7 @@ if (!defined('CLR_RESET'))  { define('CLR_RESET',  "\033[0m"); }
 if (!defined('CLR_GRAY'))   { define('CLR_GRAY',   "\033[90m"); }
 
 if (!function_exists('p')) {
-/* Print a colored test message. */
+
 function p(string $msg = '', string $color = ''): void {
     $prefix = match($color) {
         CLR_GREEN  => '  ✓ ',
@@ -28,7 +28,7 @@ function p(string $msg = '', string $color = ''): void {
 }
 
 if (!function_exists('print_header')) {
-/* Print a section header with box drawing. */
+
 function print_header(string $title): void {
     echo "\n" . CLR_CYAN . CLR_BOLD . "╔══ " . str_repeat('═', 60) . "╗\n";
     echo "║   " . str_pad($title, 56) . "║\n";
@@ -55,7 +55,7 @@ function record(string $name, bool $pass, bool $isWarning = false, string $detai
 }
 
 if (!function_exists('getPhpFiles')) {
-/* Get all PHP files in project excluding defined directories. */
+
 function getPhpFiles(): array {
     static $exclude_dirs = null;
     if ($exclude_dirs === null) {

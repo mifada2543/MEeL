@@ -1,5 +1,4 @@
 <?php
-// Chess game - PHP wrapper
 require_once __DIR__ . '/../../auth/config.php';
 require_once __DIR__ . '/../../modules/core/helpers.php';
 $title = "Arena Catur Pintar";
@@ -259,7 +258,6 @@ include __DIR__ . '/../../partials/scripts.php';
   <script type="module" src="assets/js/main.js?v=<?= @filemtime(__DIR__ . '/assets/js/main.js') ?>"></script>
   <script>
     // Bridge PHP → JS: token CSRF untuk endpoint multiplayer
-    // (status login ditangani api.js: respon 401 dari controller → redirect ke login)
     window.MEEL_CSRF = <?= json_encode($chess_csrf, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
   </script>
 </body>

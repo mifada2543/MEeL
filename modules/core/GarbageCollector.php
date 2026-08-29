@@ -2,21 +2,17 @@
 class GarbageCollector
 {
 
-    private const STALE_SECONDS = 300; // 5 menit
+    private const STALE_SECONDS = 300;
 
-    // Berapa jam tanpa aktivitas sebelum guest dianggap stale
     private const GUEST_STALE_HOURS = 2;
 
-    // Minimal interval antar auto-cleanup guest (dalam detik)
-    private const GUEST_CLEANUP_INTERVAL = 3600; // 1 jam
+    private const GUEST_CLEANUP_INTERVAL = 3600;
 
-    // Room dibuat > 24 jam lalu tanpa lawan join → lobby basi
     private const ROOM_LOBBY_STALE_HOURS = 24;
 
-    private const ROOM_GAME_STALE_HOURS = 168; // 7 hari
+    private const ROOM_GAME_STALE_HOURS = 168;
 
-    // Minimal interval antar auto-cleanup chess room (dalam detik)
-    private const CHESS_CLEANUP_INTERVAL = 3600; // 1 jam
+    private const CHESS_CLEANUP_INTERVAL = 3600;
 
     private static bool $hasRun = false;
 
@@ -25,11 +21,10 @@ class GarbageCollector
     {
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_guest_last_run.txt';
 
-        // Throttle: cek apakah sudah jalan dalam < interval
         if (is_readable($throttleFile)) {
             $lastRun = (int) file_get_contents($throttleFile);
             if ($lastRun > 0 && (time() - $lastRun) < self::GUEST_CLEANUP_INTERVAL) {
-                return 0; // Masih dalam cooldown
+                return 0;
             }
         }
 
@@ -74,17 +69,15 @@ class GarbageCollector
     {
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_chess_last_run.txt';
 
-        // Throttle: cek apakah sudah jalan dalam < interval
         if (is_readable($throttleFile)) {
             $lastRun = (int) file_get_contents($throttleFile);
             if ($lastRun > 0 && (time() - $lastRun) < self::CHESS_CLEANUP_INTERVAL) {
-                return 0; // Masih dalam cooldown
+                return 0;
             }
         }
 
         $totalCleaned = 0;
 
-        // Step 1: Lobby basi (lawan tak pernah join)
         $lobbyHours = self::ROOM_LOBBY_STALE_HOURS;
         $stmt = $conn->prepare(
             "DELETE FROM moves WHERE room_code IN (
@@ -108,7 +101,6 @@ class GarbageCollector
             $stmt->close();
         }
 
-        // Step 2: Game ditinggalkan DI TENGAH (belum selesai)
         $gameHours = self::ROOM_GAME_STALE_HOURS;
         $staleRooms = "SELECT room_code FROM (
                 SELECT r.room_code
@@ -154,7 +146,6 @@ class GarbageCollector
             return;
         }
 
-        // throttle tetap berfungsi di kedua konteks tanpa warning PHP.
         if (is_file($throttleFile) && !is_writable($throttleFile)) {
             if (!@unlink($throttleFile)) {
                 error_log("[MEeL] GarbageCollector: throttle file tidak writable & gagal dihapus: {$throttleFile}");
@@ -187,7 +178,6 @@ class GarbageCollector
         }
     }
 
-    /* Kumpulkan semua direktori temp yang ada saat runtime. */
     private static function getTargetDirectories(): array
     {
         $dirs = [];
@@ -212,7 +202,6 @@ class GarbageCollector
         return $dirs;
     }
 
-    /* Hapus semua file/folder stale di dalam direktori (non-rekursif level-1). */
     private static function cleanDirectory(string $dir): void
     {
         $cutoff = time() - self::STALE_SECONDS;

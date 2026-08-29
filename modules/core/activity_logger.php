@@ -34,7 +34,6 @@ function validate_and_format_ip($ip)
         return ['ip' => 'LOCAL', 'display' => 'Local Access (IPv6)', 'is_local' => true, 'version' => 'ipv6'];
     }
 
-    // Handle IPv4-mapped IPv6 addresses (::ffff:192.168.1.1)
     if (strpos($ip, '::ffff:') === 0) {
         $ipv4 = substr($ip, 7);
         if (filter_var($ipv4, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
@@ -151,7 +150,6 @@ if (isset($conn)) {
     $current_dir  = basename(dirname($_SERVER['PHP_SELF']));
     if ($current_dir !== 'err') {
         if ($ban_res->num_rows > 0) {
-            // Jika bukan admin, baru di-redirect
             if ($session_role !== 'admin') {
                 $row = $ban_res->fetch_assoc();
                 $root_dir = str_replace('\\', '/', realpath(__DIR__ . '/../..'));
@@ -205,7 +203,6 @@ if (isset($conn)) {
                 }
             }
         } elseif ($current_page == 'stream.php' && $dir_name == 'music') {
-            // Throttle: hindari query berulang untuk lagu yang sama.
             $last_stream_id = $_SESSION['_last_stream_id'] ?? null;
             if ($last_stream_id !== $id_get) {
                 $_SESSION['_last_stream_id'] = $id_get;
@@ -221,7 +218,6 @@ if (isset($conn)) {
                     }
                 }
             } elseif (isset($_SESSION['_last_stream_page'])) {
-                // Sudah di-cache di session — tidak perlu query ulang ke DB.
                 $current_page = $_SESSION['_last_stream_page'];
             }
         } elseif ($current_page == 'index.php' && $dir_name == 'profile') {
@@ -256,7 +252,7 @@ if (isset($conn)) {
     }
     $ua_raw = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
     $host = $_SERVER['HTTP_HOST'] ?? 'Local';
-    $access_via = $access_method; // Gunakan metode akses, bukan hanya hostname
+    $access_via = $access_method;
 
     $device = "Unknown";
     if (strpos($ua_raw, 'Android') !== false) $device = "Smartphone";

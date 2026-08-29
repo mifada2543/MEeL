@@ -25,7 +25,6 @@ final class DriveUserContext
         );
     }
 
-    // Load dari DB (bukan session) agar selalu akurat setelah user update foto.
     public function loadProfilePicture(mysqli $conn): void
     {
         if ($this->userId === null) {
@@ -193,7 +192,6 @@ final class DriveStorage
             throw new RuntimeException('Berkas gagal diterima dari browser.');
         }
 
-        // PRE-FLIGHT: Cek ruang disk drive — minimal 100MB free
         $scope = $this->resolveUploadScope($requestedScope);
         $cleanName = $this->sanitizeFileName((string) ($file['name'] ?? ''));
         $type = $this->detectTypeFromFilename($cleanName);
@@ -201,14 +199,13 @@ final class DriveStorage
         $this->ensureDirectoryExists($directory);
 
         $fileSize = (int) ($file['size'] ?? 0);
-        $requiredBytes = max(100 * 1024 * 1024, $fileSize * 2); // minimal 100MB atau 2x ukuran file
+        $requiredBytes = max(100 * 1024 * 1024, $fileSize * 2);
         try {
             require_disk_space($requiredBytes, $directory, 'Drive storage');
         } catch (\RuntimeException $e) {
             throw new RuntimeException($e->getMessage());
         }
 
-        // Kuota ATOMIK
         $lockFp = null;
         if ($quotaLimitBytes > 0 && $this->user->isMember()) {
             $lockFp = @fopen($this->quotaLockPath(), 'c');
@@ -228,15 +225,11 @@ final class DriveStorage
             }
         }
 
-        // Reservasi nama ATOMIK
-        // fopen('x') = O_CREAT|O_EXCL mengklaim nama file secara atomik, jadi
-        // dua upload berbarengan dengan nama sama tidak bisa sama-sama menang
-        // (menutup TOCTOU antara cek file_exists dan move_uploaded_file).
         $finalName = $this->reserveUniqueFilename($directory, $cleanName);
         $destination = $directory . '/' . $finalName;
 
         if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
-            @unlink($destination); // buang reservasi kosong
+            @unlink($destination);
             if (is_resource($lockFp)) {
                 @flock($lockFp, LOCK_UN);
                 @fclose($lockFp);
@@ -244,7 +237,6 @@ final class DriveStorage
             throw new RuntimeException('Gagal mengunggah file. Cek izin folder penyimpanan.');
         }
 
-        // Validasi file type menggunakan magic bytes
         if (!$this->validateFileByMagicBytes($destination, $type)) {
             @unlink($destination);
             if (is_resource($lockFp)) {
@@ -278,7 +270,6 @@ final class DriveStorage
             throw new RuntimeException('File fisik tidak ditemukan di server.');
         }
 
-        // Validasi access control untuk private files
         if ($safeScope === self::SCOPE_PRIVATE && !$this->verifyPrivateFileAccess($filePath)) {
             throw new RuntimeException('Anda tidak memiliki akses ke file ini.');
         }
@@ -305,7 +296,6 @@ final class DriveStorage
             throw new RuntimeException('Hanya Admin yang dapat menghapus file di Public Space.');
         }
 
-        // Validasi access control untuk private files - HANYA OWNER
         if ($safeScope === self::SCOPE_PRIVATE && !$this->verifyPrivateFileAccess($filePath)) {
             throw new RuntimeException('Anda tidak memiliki akses ke file ini.');
         }
@@ -315,12 +305,10 @@ final class DriveStorage
         }
     }
 
-    /* Verifikasi user dapat mengakses private file */
     private function verifyPrivateFileAccess(string $filePath): bool
     {
         $userPath = $this->privateRootForUser($this->user->username);
 
-        // Normalize paths untuk comparison
         $realPath = realpath($filePath);
         $realUserPath = realpath($userPath);
 
@@ -328,7 +316,6 @@ final class DriveStorage
             return false;
         }
 
-        // Ensure file is within user's private directory
         return $realPath === $realUserPath
             || str_starts_with($realPath, $realUserPath . DIRECTORY_SEPARATOR);
     }
@@ -391,7 +378,6 @@ final class DriveStorage
         }
     }
 
-    /* Validasi file type menggunakan magic bytes */
     private function validateFileByMagicBytes(string $filePath, string $detectedType): bool
     {
         if (!is_file($filePath)) {
@@ -409,18 +395,17 @@ final class DriveStorage
         fclose($handle);
 
         if ($detectedType === self::TYPE_VIDEO) {
-            if (str_starts_with($header, "\x1A\x45\xDF\xA3")) { // WebM / MKV
+            if (str_starts_with($header, "\x1A\x45\xDF\xA3")) {
                 return true;
             }
-            if (substr($header, 4, 4) === 'ftyp') { // MP4 / MOV
+            if (substr($header, 4, 4) === 'ftyp') {
                 return true;
             }
             return false;
         }
 
-        // Validasi Audio
         if ($detectedType === self::TYPE_AUDIO) {
-            $audioSignatures = [0xFFFB, 0xFFA, 0x664C6143, 0x4F676753]; // MP3, FLAC, OGG
+            $audioSignatures = [0xFFFB, 0xFFA, 0x664C6143, 0x4F676753];
             $fileSignature = unpack('N', substr($header, 0, 4))[1] ?? 0;
             return in_array($fileSignature, $audioSignatures);
         }
@@ -481,8 +466,6 @@ final class DriveStorage
                 return $candidate;
             }
             if ($counter > 1000) {
-                // Gagal berulang bukan karena nama bentrok (mis. direktori
-                // tidak writable) — berhenti agar tidak loop tanpa batas.
                 throw new RuntimeException('Gagal membuat nama file unik. Cek izin folder penyimpanan.');
             }
             $suffix = '_(' . $counter . ')';
@@ -495,7 +478,6 @@ final class DriveStorage
 
     private function quotaLockPath(): string
     {
-        // File ini berada di <root>/drive/, jadi dirname(__DIR__) = root proyek.
         return dirname(__DIR__) . '/temp/drive_quota_' . md5($this->user->username) . '.lock';
     }
 }

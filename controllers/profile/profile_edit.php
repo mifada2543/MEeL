@@ -2,7 +2,6 @@
 require_once '../../auth/auth.php';
 require_once '../../auth/config.php';
 
-// Pastikan hanya user yang login bisa akses
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -74,7 +73,6 @@ if (isset($_POST['update_profile'])) {
             $new_name = "user_" . $user_id . ".webp";
             $upload_dir = __DIR__ . '/../../profile/upload/';
 
-            // Pastikan direktori upload ada & writable sebelum menulis
             if (!is_dir($upload_dir)) {
                 if (!@mkdir($upload_dir, 0755, true) && !is_dir($upload_dir)) {
                     throw new \RuntimeException('Direktori upload tidak ditemukan.');
@@ -91,7 +89,6 @@ if (isset($_POST['update_profile'])) {
                 : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
             $ffmpeg_ok = $ffmpeg_bin !== '' && is_executable($ffmpeg_bin);
 
-            // INPUT WEBP: langsung crop/resize ke 400x400, TANPA transcode format
             if ($real_mime === 'image/webp') {
                 if (!$ffmpeg_ok) {
                     throw new \RuntimeException('Format WebP membutuhkan ffmpeg untuk diproses.');
@@ -115,7 +112,6 @@ if (isset($_POST['update_profile'])) {
                     throw new \RuntimeException('Gagal menyimpan foto profil.');
                 }
             } else {
-                // INPUT JPG/PNG: GD center-crop 400x400 lalu transcode ke WebP
                 $source = null;
                 $tmp_img = null;
                 $tmp_png = null;
@@ -126,8 +122,8 @@ if (isset($_POST['update_profile'])) {
                     }
 
                     $target = 400;
-                    $crop   = $crop_size;  // sisi persegi terbesar
-                    $src_x  = $crop_x;     // posisi crop dari drag user
+                    $crop   = $crop_size;
+                    $src_x  = $crop_x;
                     $src_y  = $crop_y;
 
                     $tmp_img = imagecreatetruecolor($target, $target);
@@ -151,7 +147,6 @@ if (isset($_POST['update_profile'])) {
                             $cmd_out = [];
                             exec($cmd, $cmd_out, $ret);
                             if (($ret === 0) && is_file($tmp_out) && filesize($tmp_out) > 0) {
-                                // rename atomik — aman menimpa file milik user lain
                                 $webp_ok = @rename($tmp_out, $upload_path);
                             }
                             @unlink($tmp_out);
@@ -219,7 +214,7 @@ $data = $stmt_data->get_result()->fetch_assoc();
 $_META_TITLE = 'Edit Profile | MEeL';
 $_META_DESC  = 'Edit profil Anda di MEeL. Ubah bio dan foto profil.';
 include __DIR__ . '/../../partials/link.php';
-$scripts_root = '../'; // halaman disajikan di /MEeL/profile/edit (depth 3)
+$scripts_root = '../';
 include __DIR__ . '/../../partials/scripts.php';
 ?>
     <style>        body {
@@ -291,7 +286,6 @@ include __DIR__ . '/../../partials/scripts.php';
     </div>
     <script>        lucide.createIcons();
 
-        // Modal preview foto profil + atur posisi crop
         var avatarInput        = document.getElementById('avatarInput');
         var avatarPreview      = document.getElementById('avatarPreview');
         var avatarModal        = document.getElementById('avatarModal');
@@ -304,7 +298,6 @@ include __DIR__ . '/../../partials/scripts.php';
         var cropYInput         = document.getElementById('cropY');
         var pendingAvatarUrl   = null;
 
-        // State crop: dimensi natural + offset tampilan saat ini
         var cropState = { W: 0, H: 0, D: 0, scale: 1, ox: 0, oy: 0 };
 
         function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -312,18 +305,16 @@ include __DIR__ . '/../../partials/scripts.php';
         function initCrop(img) {
             var W = img.naturalWidth, H = img.naturalHeight;
             if (!W || !H) {
-                // Gambar tidak valid — tutup modal agar tidak macet
                 avatarModal.classList.add('hidden');
                 return;
             }
-            var D = Math.min(W, H);                 // sisi persegi terbesar
-            var frameSize = cropFrame.clientWidth;  // ukuran bingkai (px)
-            var scale = frameSize / D;              // cover: sisi pendek memenuhi bingkai
+            var D = Math.min(W, H);
+            var frameSize = cropFrame.clientWidth;
+            var scale = frameSize / D;
             cropState = { W: W, H: H, D: D, scale: scale, ox: 0, oy: 0 };
             modalAvatarPreview.style.width  = Math.round(W * scale) + 'px';
             modalAvatarPreview.style.height = Math.round(H * scale) + 'px';
             modalAvatarPreview.src = pendingAvatarUrl;
-            // Mulai dari tengah (center crop)
             setCropOffset((frameSize - W * scale) / 2, (frameSize - H * scale) / 2);
         }
 
@@ -331,12 +322,10 @@ include __DIR__ . '/../../partials/scripts.php';
             var s = cropState.scale;
             var frameSize = cropFrame.clientWidth;
             var dispW = cropState.W * s, dispH = cropState.H * s;
-            // Clamp: bingkai selalu menampilkan area gambar yang valid
             ox = clamp(ox, frameSize - dispW, 0);
             oy = clamp(oy, frameSize - dispH, 0);
             cropState.ox = ox; cropState.oy = oy;
             modalAvatarPreview.style.transform = 'translate3d(' + ox + 'px,' + oy + 'px,0)';
-            // Simpan koordinat crop dalam pixel natural (persegi D x D)
             var cx = clamp(Math.round(-ox / s), 0, cropState.W - cropState.D);
             var cy = clamp(Math.round(-oy / s), 0, cropState.H - cropState.D);
             if (cropXInput) cropXInput.value = cx;
@@ -372,7 +361,6 @@ include __DIR__ . '/../../partials/scripts.php';
                 if (cropXInput) cropXInput.value = '';
                 if (cropYInput) cropYInput.value = '';
 
-                // Baca file lokal, ukur dimensi natural, siapkan bingkai crop
                 var reader = new FileReader();
                 reader.onload = function (e) {
                     pendingAvatarUrl = e.target.result;
@@ -387,7 +375,6 @@ include __DIR__ . '/../../partials/scripts.php';
                 reader.readAsDataURL(file);
             });
 
-            // Drag untuk memilih posisi crop (pointer events)
             var dragging = null;
             if (cropFrame) {
                 cropFrame.addEventListener('pointerdown', function (e) {
@@ -426,7 +413,6 @@ include __DIR__ . '/../../partials/scripts.php';
                 });
             }
 
-            // Batal → tutup modal & reset file input
             if (avatarCancelBtn) {
                 avatarCancelBtn.addEventListener('click', batalPreview);
             }

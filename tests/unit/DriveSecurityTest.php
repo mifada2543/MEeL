@@ -98,7 +98,7 @@ class DriveSecurityTest extends TestCase
         $this->assertSame('p.mp4', $file['name']);
     }
 
-    // Path traversal & prefix confusion
+    
 
     public function testPathTraversalIsBlocked(): void
     {

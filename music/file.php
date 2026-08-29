@@ -6,7 +6,6 @@ if (is_file(__DIR__ . '/../auth/settings.php')) {
 }
 require_once __DIR__ . '/../modules/core/helpers.php';
 
-// Serve file publik (thumbnail, dll) via internal rewrite. Audio via stream.php.
 // Security: path traversal blocked (realpath) + extension whitelist.
 $f = isset($_GET['f']) ? (string) $_GET['f'] : '';
 if ($f === '') {

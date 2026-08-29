@@ -10,7 +10,6 @@ $result = $engine->searchMusic($params);
 if ($result['count'] > 0) {
     foreach ($result['results'] as $v) {
         if ($result['sidebar']) {
-            // Tampilan rekomendasi di watch.php
             $v_ext = strtolower(pathinfo($v['filename'], PATHINFO_EXTENSION));
             $v_lbl = $v_ext === 'ogg' ? 'opus' : $v_ext;
             ?>
@@ -41,9 +40,6 @@ if ($result['count'] > 0) {
         }
     }
 
-    // Load More — gaya & label seragam dengan library (music/index.php):
-    // tombol penuh w-full, 'Load More · x/y', dan penanda akhir 'End of
-    // Collection' saat batch terakhir sudah dimuat (offset > 0).
     if (!$result['sidebar'] && $result['hasMore']) {
         $curPage    = (int)((int)$result['offset'] / max((int)$result['limit'], 1)) + 1;
         $totalPages = max(1, (int)$result['total_pages']);
@@ -58,7 +54,6 @@ if ($result['count'] > 0) {
         </button>
         <?php
     } elseif (!$result['sidebar'] && (int)$result['offset'] > 0) {
-        // Batch terakhir sudah dimuat — penanda akhir identik dengan load-more.js
         ?>
         <div class="py-10 text-center text-[9px] text-gray-800 uppercase tracking-[.4em]">End of Collection</div>
         <?php

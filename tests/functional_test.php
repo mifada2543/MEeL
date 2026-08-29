@@ -215,7 +215,7 @@ function testConfigCheck(): void {
     $sessionContent = file_exists($sessionFile) ? file_get_contents($sessionFile) : '';
 
     foreach ($checks as $name => $pattern) {
-        // Check main config OR session.php (session config delegated)
+        
         if (preg_match($pattern, $content) || preg_match($pattern, $sessionContent)) {
             record("{$name} ✓", true);
         } else {
@@ -330,7 +330,7 @@ function testIndexPages(): void {
         }
 
         if ($hasInclusions) {
-            // Check basic HTML structure
+            
             $hasHtml5   = (strpos($content, '<!DOCTYPE html') !== false);
             $hasClosing = (strpos($content, '</html>') !== false);
 

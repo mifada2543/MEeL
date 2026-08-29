@@ -12,7 +12,7 @@ $GLOBALS['warnings']     = 0;
 $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 
-// Check if file has a function call pattern
+
 // TEST 1: SQL INJECTION SCAN
 function testSqlInjection(): void {
     print_header('TEST 1: SQL Injection ' . chr(8212) . ' Prepared Statement Analysis');
@@ -50,7 +50,7 @@ function testSqlInjection(): void {
             continue;
         }
 
-        // Filter out static-only queries
+        
         $risky = [];
         foreach ($rawWithVars as $qry) {
             $isStatic = false;
@@ -185,7 +185,7 @@ function testXssProtection(): void {
         $rel     = str_replace(PROJECT_ROOT . '/', '', $path);
         $content = file_get_contents($path);
 
-        // Count all PHP output constructs with variables
+        
         $outPatterns = [
             '/\<\?\=\s*\$/',           // <?= $var
             '/echo\s+\$/',             // echo $var
@@ -200,7 +200,7 @@ function testXssProtection(): void {
             $rawOut += count($m[0]);
         }
 
-        // Count htmlspecialchars usage
+        
         $hsCount = countInFile($path, '/htmlspecialchars\s*\(/');
 
         $totalOut += $rawOut;
@@ -297,7 +297,7 @@ function testHtaccessSecurity(): void {
         'partials', 'drive/templates', 'docs/partials',
         // Auth & config
         'auth', 'database',
-        // Error & temp
+        
         'err', 'temp',
         // Logs & tests
         'logs', 'tests',

@@ -76,7 +76,7 @@ class SearchEngineTest extends TestCase
         // Prefix search (kata*) tetap valid
         $this->assertSame('foo*', SearchEngine::sanitizeQuery('foo*'));
 
-        // Query normal tidak berubah
+        
         $this->assertSame('test query', SearchEngine::sanitizeQuery('test query'));
     }
 }

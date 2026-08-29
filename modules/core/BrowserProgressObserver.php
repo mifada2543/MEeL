@@ -19,13 +19,11 @@ class BrowserProgressObserver implements ProgressObserver
     {
         switch ($stage) {
             case 'download_start':
-                // Overlay + fase download + info URL sumber
                 $this->injectOverlay('download');
                 $this->emitJs('meelDlInfo(' . json_encode($data['url'] ?? '') . ');');
                 break;
 
             case 'transcode_start':
-                // Overlay + fase transcode (dipakai halaman transcode.php)
                 $this->injectOverlay('transcode');
                 break;
 
@@ -62,25 +60,16 @@ class BrowserProgressObserver implements ProgressObserver
                 break;
 
             case 'redirect':
-                // Navigasi ke post_encode.php TIDAK lagi dilakukan dari sini.
-                // Sebelumnya: script window.location.href di-stream di TENGAH
-                // dokumen yang masih dibuka → rawan navigasi duplikat/race oleh
                 // browser (dokumen di-abort saat navigasi terjadi di tengah
-                // parse, lalu request bisa terlepas dua kali).
-                // Sekarang upload_advanced.php yang menangani return 'REDIRECT:'
-                // dengan merender DOKUMEN AKHIR yang bersih (meta refresh +
-                // meelRedirect/location.replace) setelah seluruh streaming selesai.
                 break;
 
             case 'error':
                 if ($this->isAdmin) {
-                    // Admin: tampilkan detail error di overlay
                     if (!$this->overlayInjected) {
                         $this->injectOverlay('error');
                     }
                     $this->emitJs('meelError(' . json_encode($data['message'] ?? '') . ');');
                 } else {
-                    // Non-admin: redirect ke halaman error generik
                     $this->emitJs('window.location.href="err/index.php?code=server_error";');
                 }
                 break;
@@ -114,7 +103,6 @@ class BrowserProgressObserver implements ProgressObserver
         header('X-Accel-Buffering: no');
         header('Content-Encoding: none');
 
-        // (file_exists = false) dan overlay tidak pernah ter-inject.
         $ui_file = dirname(__DIR__, 2) . '/partials/ui.php';
         if (file_exists($ui_file)) {
             include $ui_file;
@@ -147,7 +135,6 @@ class BrowserProgressObserver implements ProgressObserver
             return;
         }
 
-        // Fallback: hanya persentase
         if (isset($data['pct'])) {
             $this->emitJs('meelDlPct(' . json_encode($data['pct']) . ');');
         }

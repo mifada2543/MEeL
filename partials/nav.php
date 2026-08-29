@@ -9,18 +9,16 @@ if (isset($_SESSION['user_id']) && isset($conn)) {
     $_nav_pfp  = $_nav_user['profile_picture'] ?? null;
 }
 
-// Deteksi halaman aktif
 $_nav_is_books  = str_contains($_SERVER['PHP_SELF'], '/books/');
 $_nav_is_video  = str_contains($_SERVER['PHP_SELF'], '/video/');
 $_nav_is_music  = str_contains($_SERVER['PHP_SELF'], '/music/');
 $_nav_is_drive  = str_contains($_SERVER['PHP_SELF'], '/drive/');
 $_nav_in_subdir = $_nav_is_books || $_nav_is_video || $_nav_is_music || $_nav_is_drive;
 
-// Tentukan prefix path relatif (root vs subfolder)
 $_nav_pfp_base = $_nav_in_subdir ? '../profile/upload/' : 'profile/upload/';
 $_nav_root     = $_nav_in_subdir ? '../' : '';
 ?>
-<style>    /* Mengunci paksa agar web tidak pernah bisa digeser ke samping */
+<style>
     html,
     body {
         overflow-x: hidden !important;
@@ -459,7 +457,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </div>
 <?php endif; ?>
 <?php $scripts_root = $_nav_root; include __DIR__ . '/scripts.php'; ?>
-<script>    // Dropdown desktop
+<script>
     function toggleNavDropdown() {
         const dd = document.getElementById('nav-dropdown');
         const ch = document.getElementById('nav-chevron');
@@ -533,7 +531,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         toggleNavDrawer();
     }
 
-    // Guest Drawer (mobile, belum login)
     function toggleNavDrawerGuest() {
         const drawer = document.getElementById('nav-drawer-guest');
         const overlay = document.getElementById('nav-drawer-guest-overlay');
@@ -587,7 +584,6 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         toggleNavDrawerGuest();
     }
 
-    // Theme init
     (function(){
         if (typeof MEELTheme !== 'undefined') {
             MEELTheme.init({

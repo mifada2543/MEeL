@@ -11,14 +11,14 @@ require_once __DIR__ . '/../modules/media/AdminActivityRepository.php';
 
 $logRepo = new AdminActivityRepository($conn);
 
-// Filter & Pagination
+
 $action_filter = $_GET['action'] ?? '';
 $search_q     = trim($_GET['q'] ?? '');
 $days         = max(1, min(365, (int)($_GET['days'] ?? 7)));
 $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 50;
 
-// Clear Old Logs (POST)
+
 $clear_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_older_than'])) 
     }
 }
 
-// Clear All Logs (POST)
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $clear_msg = 'CSRF Token tidak valid.';
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_all_logs'])) {
     }
 }
 
-// Query via repository (filter, count, rows, actions, stats)
+
 $logRepo->buildFilter($action_filter, $search_q, $days);
 
 $total_rows = $logRepo->countFiltered();

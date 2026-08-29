@@ -200,6 +200,15 @@ html[data-theme="light"] #theme-toggle:hover {
   border-color: rgba(234, 88, 12, 0.15);
 }
 
+/* Theme toggle icon inside knob */
+#theme-icon.mfa-knob {
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
 /* ─── GLASS ─── */
 html[data-theme="light"] .glass,
 html[data-theme="light"] .glass-card {
@@ -495,6 +504,182 @@ html[data-theme="light"] .bg-\[\#0d1017\]\/95 {
 html[data-theme="light"] .bg-\[\#0d1017\] {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
+}
+
+/* ─── MUSIC WATCH — Additional overrides ─── */
+
+/* Player header/footer section backgrounds */
+html[data-theme="light"] .bg-black\/10 {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Comment textarea bg */
+html[data-theme="light"] .bg-black\/25 {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+
+/* EQ bands, cava container */
+html[data-theme="light"] .bg-black\/20 {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* Loop, Vis, EQ buttons */
+html[data-theme="light"] .bg-gray-800 {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] .bg-gray-800:hover,
+html[data-theme="light"] .bg-gray-800\/50 {
+  background: var(--meel-surface-active) !important;
+  border-color: var(--meel-border-strong) !important;
+}
+
+/* Like/Dislike/Simpan buttons */
+html[data-theme="light"] .bg-gray-800\/50 {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] .hover\:bg-gray-700:hover {
+  background: var(--meel-surface-active) !important;
+  color: var(--meel-text) !important;
+}
+
+/* Description text */
+html[data-theme="light"] #desc-text-music {
+  color: var(--meel-text) !important;
+}
+
+/* Comment preview text */
+html[data-theme="light"] #comment-preview-text {
+  color: var(--meel-text-secondary) !important;
+}
+
+/* Comment toggle button */
+html[data-theme="light"] #comment-toggle:hover {
+  background: var(--meel-surface-hover) !important;
+}
+
+/* Sidebar Discover header */
+html[data-theme="light"] .rekomendasi-sidebar .bg-\[\#0d1017\] {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+
+/* Sidebar Discover items */
+html[data-theme="light"] .rekomendasi-item {
+  background: transparent !important;
+}
+html[data-theme="light"] .rekomendasi-item:hover {
+  background: var(--meel-surface-hover) !important;
+}
+html[data-theme="light"] .rec-title-text {
+  color: var(--meel-text) !important;
+  text-shadow: none !important;
+}
+
+/* Playlist queue items */
+html[data-theme="light"] .bg-orange-500\/8 {
+  background: rgba(234, 88, 12, 0.06) !important;
+  border-color: rgba(234, 88, 12, 0.15) !important;
+}
+
+/* EQ panel */
+html[data-theme="light"] #eq-container {
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #eq-preset-button {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #eq-preset-options {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #eq-preset-options button {
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #eq-preset-options button:hover {
+  background: var(--meel-surface-hover) !important;
+  color: var(--meel-text-heading) !important;
+}
+
+/* Playlist modal */
+html[data-theme="light"] #playlist-modal .bg-\[\#141820\] {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] #playlist-modal .bg-white\/\[\.04\] {
+  background: var(--meel-surface-hover) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] #playlist-modal .bg-white\/\[\.04\]:hover {
+  background: rgba(234, 88, 12, 0.06) !important;
+  border-color: rgba(234, 88, 12, 0.2) !important;
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] #playlist-modal .bg-black\/30 {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+
+/* Search input */
+html[data-theme="light"] .bg-white\/\[\.04\].rounded-xl {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: var(--meel-text) !important;
+}
+
+/* Vinyl disc shadow in light mode */
+html[data-theme="light"] .vinyl-disc {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Plyr audio controls — black icons in light mode (music/watch only) */
+html[data-theme="light"] #player-container .plyr__controls {
+  color: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control {
+  color: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control svg {
+  fill: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control:hover {
+  color: #ea580c !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__control:hover svg {
+  fill: #ea580c !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__time {
+  color: #52525b !important;
+}
+html[data-theme="light"] #player-container .plyr__controls .plyr__volume {
+  color: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-webkit-slider-thumb {
+  background: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-moz-range-thumb {
+  background: #18181b !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-webkit-slider-runnable-track {
+  background-image: linear-gradient(to right, #ea580c var(--value, 0), rgba(0,0,0,0.08) var(--value, 0)) !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-moz-range-track {
+  background: rgba(0,0,0,0.08) !important;
+}
+html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-moz-range-progress {
+  background: #ea580c !important;
 }
 
 /* ════════════════════════════════════════════════════════════

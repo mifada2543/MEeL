@@ -1,6 +1,4 @@
 <?php
-// Konsisten dengan stream.php: warning PHP tidak boleh mengotori header
-// download (mis. log_drive_operation saat log dir tidak writable).
 error_reporting(0);
 
 require '../auth/auth.php';

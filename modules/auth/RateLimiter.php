@@ -7,16 +7,13 @@ class RateLimiter
     private static string $storageDir = '';
 
     private static array $limits = [
-        // Endpoint spesifik
-        'like'        => ['requests' => 30, 'window' => 60],  // 30 likes/menit
-        'comment'     => ['requests' => 10, 'window' => 60],  // 10 comments/menit
-        'upload'      => ['requests' => 3,  'window' => 3600], // 3 upload/jam
-        'transcode'   => ['requests' => 5,  'window' => 3600], // 5 transcode/jam
-        // Generic
-        'api'         => ['requests' => 60, 'window' => 60],   // 60 request/menit
+        'like'        => ['requests' => 30, 'window' => 60],
+        'comment'     => ['requests' => 10, 'window' => 60],
+        'upload'      => ['requests' => 3,  'window' => 3600],
+        'transcode'   => ['requests' => 5,  'window' => 3600],
+        'api'         => ['requests' => 60, 'window' => 60],
     ];
 
-    /* Inisialisasi storage directory. */
     private static function init(): void
     {
         if (self::$storageDir === '') {
@@ -30,16 +27,13 @@ class RateLimiter
         }
     }
 
-    /* Dapatkan path file untuk key + endpoint tertentu. */
     private static function filePath(string $key, string $endpoint): string
     {
         self::init();
-        // Hash key untuk keamanan nama file
         $hash = md5($key . '_' . $endpoint);
         return self::$storageDir . $hash . '.cache';
     }
 
-    /* Parse file cache menjadi array data. */
     private static function readFile(string $path): array
     {
 
@@ -61,7 +55,6 @@ class RateLimiter
      */
     public static function getRoleLimit(int $baseLimit, string $role = 'user'): int
     {
-        // Member mendapat 2x lipat dari user biasa
         if ($role === 'member') {
             return $baseLimit * 2;
         }
@@ -96,8 +89,6 @@ class RateLimiter
         $window      = $limitConfig['window'];
         $filePath    = self::filePath($key, $endpoint);
 
-        // Lock file untuk race condition safety
-        // fopen() pada path yang tidak valid / file milik user lain.
         $fp = null;
         if (is_dir(self::$storageDir) && is_writable(self::$storageDir)) {
             if (!is_file($filePath) || is_writable($filePath)) {
@@ -105,7 +96,6 @@ class RateLimiter
             }
         }
         if (!$fp) {
-            // Fallback: jika file tak bisa dibuka, izinkan request
             return ['allowed' => true, 'remaining' => $maxRequests, 'reset' => time() + $window, 'limit' => $maxRequests];
         }
 
@@ -142,7 +132,6 @@ class RateLimiter
         ];
     }
 
-    /* Dapatkan sisa request tanpa increment counter (read-only). */
     public static function getRemaining(string $key, string $endpoint = 'api'): int
     {
         $filePath = self::filePath($key, $endpoint);
@@ -178,7 +167,7 @@ class RateLimiter
             if (!is_file($path)) continue;
 
             $data = self::readFile($path);
-            $maxWindow = 3600; // 1 jam max window
+            $maxWindow = 3600;
             if ((time() - $data['window_start']) > $maxWindow) {
                 if (!unlink($path)) {
                     error_log("[MEeL] RateLimiter: gagal menghapus file rate limit: {$path}");
@@ -212,8 +201,6 @@ class RateLimiter
             $data = self::readFile($path);
             $now  = time();
 
-            // Ekstrak endpoint dari key — sebenarnya endpoint tidak bisa
-            // diekstrak dari hash. Kita baca data dan hitung active count.
             $windowStart = $data['window_start'] ?? 0;
             if (($now - $windowStart) < 3600 && $data['count'] > 0) {
                 $stats[] = [

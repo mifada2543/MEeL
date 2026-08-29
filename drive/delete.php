@@ -20,8 +20,6 @@ $filename = isset($_POST['file']) ? basename($_POST['file']) : null;
 $type = isset($_POST['type']) ? basename($_POST['type']) : null;
 $scope = $_POST['scope'] ?? DriveStorage::SCOPE_PUBLIC;
 
-// Member tidak berhak menghapus file di Public Space — redirect ke halaman
-// Access Denied yang informatif, bukan pesan error mentah.
 $normalizedScope = $storage->normalizeScope($scope);
 if ($normalizedScope === DriveStorage::SCOPE_PUBLIC && !$user->isAdmin()) {
     log_drive_operation(
@@ -50,7 +48,6 @@ try {
         'success'
     );
 
-    // Hapus cache dir_size() biar storage bar update
     if ($user->isMember()) {
         invalidate_dir_size_cache($user->username);
     }

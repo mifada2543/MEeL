@@ -11,8 +11,6 @@ class System
         $this->conn = $db_connection;
     }
 
-    // MONITORING
-
     public function getActiveQueues(): array
     {
         $active_queues = [];
@@ -43,7 +41,6 @@ class System
             }
         }
 
-        // Sort by created_at
         usort($active_queues, function ($a, $b) {
             return strtotime($a['created_at']) - strtotime($b['created_at']);
         });
@@ -72,10 +69,6 @@ class System
         $ssd_used  = $ssd_total - $ssd_free;
         $ssd_perc  = ($ssd_total > 0) ? ($ssd_used / $ssd_total) * 100 : 0;
 
-        // Semua base path storage di-resolve terpusat (MEEL_HDD_*_UPLOAD /
-        // MEEL_HDD_DRIVE, fallback folder lokal) supaya konsisten dengan
-        // meel_media_base_path() / meel_drive_base_path() — bukan folder
-        // webroot yang kosong.
         $video_base = meel_media_base_path('video');
         $music_base = meel_media_base_path('music');
         $books_base = meel_media_base_path('books');
@@ -129,23 +122,20 @@ class System
 
     public function isServerBusy(): bool
     {
-        // Jika total proses transcode + download >= 2, anggap sibuk
         $active = count($this->getActiveQueues());
         return $active >= 2;
     }
 
     public function checkRateLimit(int $user_id, string $type, string $user_role): array
     {
-        // Admin tanpa batas
         if ($user_role === 'admin') return ['allowed' => true];
 
-        // Validasi tabel
         $allowed_tables = ['music', 'video', 'drive_files'];
         if (!in_array($type, $allowed_tables)) return ['allowed' => false, 'minutes' => 99];
 
-        $max_upload = 2; // Default 2 upload per jam
+        $max_upload = 2;
         if ($type === 'drive_files') {
-            $max_upload = 10; // Drive biasanya lebih banyak file kecil
+            $max_upload = 10;
         }
 
         $max_upload = RateLimiter::getRoleLimit($max_upload, $user_role);
@@ -167,16 +157,10 @@ class System
         return ['allowed' => true];
     }
 
-    // SERVER STATS
-
     public function getServerStats(): array
     {
-        // Identitas server (hostname, OS, kernel, cores) — jarang berubah,
-        // di-cache agar polling realtime tidak menjalankan perintah shell
-        // (hostname, os-release, uname, nproc) setiap 3 detik.
         $info = $this->getCachedServerInfo();
 
-        // CPU Load Average (1, 5, 15 menit) — native PHP, tanpa shell
         $load = sys_getloadavg();
         $cpu_load_1m  = $load[0] ?? 0;
         $cpu_load_5m  = $load[1] ?? 0;
@@ -186,7 +170,6 @@ class System
         $cpu_perc  = ($cpu_cores > 0) ? round(($cpu_load_1m / $cpu_cores) * 100, 1) : 0;
         $cpu_perc  = min($cpu_perc, 100);
 
-        // RAM & Swap — baca /proc/meminfo SEKALI, parse native (tanpa grep|awk)
         $meminfo    = self::readProcMeminfo();
         $mem_total  = $meminfo['MemTotal'] ?? 0;
         $mem_avail  = $meminfo['MemAvailable'] ?? 0;
@@ -198,22 +181,17 @@ class System
         $swap_used  = $swap_total - $swap_free;
         $swap_perc  = ($swap_total > 0) ? round(($swap_used / $swap_total) * 100, 1) : 0;
 
-        // Uptime — baca /proc/uptime native (file read, tanpa subprocess)
         $uptime_raw = @file_get_contents('/proc/uptime');
         $uptime_sec = (float) explode(' ', (string) $uptime_raw)[0];
         $days  = floor($uptime_sec / 86400);
         $hours = floor(($uptime_sec % 86400) / 3600);
         $mins  = floor(($uptime_sec % 3600) / 60);
 
-        // Network (total bytes in/out) — native file read
         $net_rx = 0;
         $net_tx = 0;
         $net_lines = @file('/proc/net/dev');
         if ($net_lines) {
             foreach ($net_lines as $line) {
-                // Regex lama (eth|ens|enp|wlan) hanya cocok interface tanpa
-                // suffix angka (eth0/enp3s0/wlan0 dst.) — selalu menghasilkan 0.
-                // Sekarang cocokkan nama interface apa pun, kecuali loopback (lo).
                 if (preg_match('/^\s*([a-zA-Z0-9_.-]+):\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/', $line, $m)) {
                     if ($m[1] !== 'lo') {
                         $net_rx += (int)$m[2];
@@ -223,7 +201,6 @@ class System
             }
         }
 
-        // Process count — native glob /proc/<pid>, tanpa ls|grep
         $proc_list  = @glob('/proc/[0-9]*');
         $proc_count = is_array($proc_list) ? count($proc_list) : 0;
 
@@ -299,13 +276,10 @@ class System
      */
     private function getCachedServerInfo(): array
     {
-        // Path bisa di-override konstanta (dipakai test suite — lihat
-        // phpunit.xml) agar test tidak bergantung izin tulis temp/cache
-        // milik web server.
         $cache_file = defined('MEEL_SERVER_STATS_CACHE')
             ? MEEL_SERVER_STATS_CACHE
             : __DIR__ . '/../../temp/cache/server_stats_info.json';
-        $cache_ttl  = 300; // detik
+        $cache_ttl  = 300;
 
         if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
             $cached = json_decode((string) file_get_contents($cache_file), true);
@@ -331,8 +305,6 @@ class System
 
         return $info;
     }
-
-    // MANAGEMENT
 
     public function cleanStuckQueues(): int
     {
@@ -361,7 +333,6 @@ class System
             return false;
         }
 
-        // Eksekusi penghapusan spesifik berdasarkan ID
         if ($stmt) {
             $stmt->bind_param("i", $id);
             return $stmt->execute();

@@ -15,7 +15,6 @@ $sort = $_GET['sort'] ?? 'default';
 $filter_user = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
 $search = trim($_GET['search'] ?? '');
 
-// ─── Load Built-in Songs ─────────────────────────────
 $builtin_path = __DIR__ . '/../songs/_index.json';
 $builtin_songs = [];
 if (file_exists($builtin_path)) {
@@ -45,7 +44,6 @@ if (file_exists($builtin_path)) {
     }
 }
 
-// ─── Load Custom Songs from DB ───────────────────────
 $sql = "SELECT s.id, s.title, s.artist, s.bpm, s.difficulty, s.difficulty_label,
                s.duration, s.note_count, s.audio_file, s.cover_file,
                s.color_primary, s.color_secondary, s.play_count, s.created_at,
@@ -71,7 +69,6 @@ if ($search !== '') {
     $types .= 'ss';
 }
 
-// Sort
 switch ($sort) {
     case 'bpm': $sql .= " ORDER BY s.bpm DESC"; break;
     case 'difficulty': $sql .= " ORDER BY s.difficulty DESC"; break;
@@ -118,7 +115,6 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// ─── Combine & Sort ──────────────────────────────────
 $all_songs = array_merge($builtin_songs, $custom_songs);
 
 switch ($sort) {
@@ -129,7 +125,6 @@ switch ($sort) {
         usort($all_songs, fn($a, $b) => $b['difficulty'] - $a['difficulty']);
         break;
     case 'newest':
-        // custom first (has created_at), then builtin
         usort($all_songs, function($a, $b) {
             $ta = $a['created_at'] ?? '2000-01-01';
             $tb = $b['created_at'] ?? '2000-01-01';

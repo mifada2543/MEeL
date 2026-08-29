@@ -10,14 +10,11 @@ class UpdateManager
         $this->db = $db;
     }
 
-    /* Entry point   */
-
     public function handle(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
         if (($_SESSION['role'] ?? '') !== 'admin')  return;
 
-        // Verifikasi token
         if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
             $this->setFlash('error', 'CSRF Token tidak valid.');
             $this->redirect();
@@ -29,13 +26,11 @@ class UpdateManager
         match ($action) {
             'sidebar'       => $this->saveSidebar(),
             'update'        => $this->saveUpdate(),
-            'edit_update'   => $this->saveEditUpdate(),   // Aksi Edit Baru
-            'delete_update' => $this->deleteUpdate(),     // Aksi Hapus Baru
+            'edit_update'   => $this->saveEditUpdate(),
+            'delete_update' => $this->deleteUpdate(),
             default         => null,
         };
     }
-
-    /* Aksi: sidebar   */
 
     private function saveSidebar(): void
     {
@@ -57,8 +52,6 @@ class UpdateManager
 
         $this->redirect();
     }
-
-    /* Aksi: tambah update entry (Create)   */
 
     private function saveUpdate(): void
     {
@@ -93,8 +86,6 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* Aksi: edit update entry (Update)   */
-
     private function saveEditUpdate(): void
     {
         $id      = (int)($_POST['id'] ?? 0);
@@ -112,7 +103,6 @@ class UpdateManager
             $date = date('Y-m-d');
         }
 
-        // PREPARED STATEMENT untuk Update Data
         $stmt = $this->db->prepare(
             "UPDATE updates SET version = ?, content = ?, created_at = ? WHERE id = ?"
         );
@@ -129,8 +119,6 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* Aksi: hapus update entry (Delete)   */
-
     private function deleteUpdate(): void
     {
         $id = (int)($_POST['id'] ?? 0);
@@ -141,7 +129,6 @@ class UpdateManager
             return;
         }
 
-        // PREPARED STATEMENT untuk Delete Data secara aman
         $stmt = $this->db->prepare("DELETE FROM updates WHERE id = ?");
         $stmt->bind_param('i', $id);
         $ok = $stmt->execute();
@@ -155,8 +142,6 @@ class UpdateManager
 
         $this->redirect();
     }
-
-    /* Query helpers   */
 
     public function getSidebarData(): array
     {
@@ -172,8 +157,6 @@ class UpdateManager
         while ($row = $result->fetch_assoc()) $rows[] = $row;
         return $rows;
     }
-
-    /* Flash message   */
 
     public function getFlash(): array
     {
@@ -193,8 +176,6 @@ class UpdateManager
         $this->flash               = ['type' => $type, 'msg' => $msg];
         $_SESSION['flash']         = $this->flash;
     }
-
-    /* Utilities   */
 
     private function clean(string $val): string
     {

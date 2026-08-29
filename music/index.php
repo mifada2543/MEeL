@@ -63,7 +63,6 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
 
 $playlist_id_from_url = isset($_GET['playlist_id']) ? (int)$_GET['playlist_id'] : 0;
 
-// Check audio state dari sessionStorage (via hidden input)
 $audio_state = null;
 if (isset($_GET['audio_state'])) {
     $audio_state = json_decode($_GET['audio_state'], true);

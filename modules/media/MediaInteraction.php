@@ -9,7 +9,6 @@ class MediaInteraction {
         $this->user_id = (int)$session_user_id;
     }
 
-    // LIKE / DISLIKE FUNCTIONALITY
     /**
      * @param int $media_id ID dari music atau video
      * @param string $media_type 'music' atau 'video'
@@ -62,7 +61,6 @@ class MediaInteraction {
         ];
     }
 
-    // COMMENT FUNCTIONALITY
     /* @param int $comment_id; @return array Status response */
     public function deleteComment(int $comment_id): array {
         if (!$this->validateUser()) {
@@ -74,7 +72,6 @@ class MediaInteraction {
         }
 
         try {
-            // Ambil kepemilikan komentar + media tempat komentar berada
             $stmt = $this->conn->prepare("SELECT user_id, video_id, music_id FROM comments WHERE id = ?");
             if (!$stmt) {
                 throw new RuntimeException($this->conn->error);
@@ -89,7 +86,6 @@ class MediaInteraction {
                 return $this->getResponse(false, 'Komentar tidak ditemukan', 404);
             }
 
-            // Otorisasi: pemilik komentar ATAU uploader media ATAU admin
             $is_owner    = ((int)$comment['user_id'] === $this->user_id);
             $is_uploader = false;
             $is_admin    = false;
@@ -109,7 +105,6 @@ class MediaInteraction {
                 return $this->getResponse(false, 'Komentar tidak ditemukan atau Anda tidak berwenang', 404);
             }
 
-            // Hapus komentar (reply ikut terhapus via ON DELETE CASCADE)
             $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ?");
             if (!$stmt) {
                 throw new RuntimeException($this->conn->error);
@@ -135,7 +130,6 @@ class MediaInteraction {
         }
     }
 
-    // PRIVATE HELPER FUNCTIONS
     /**
      * @param int|null $video_id ID video tempat komentar (0/null = tidak ada)
      * @param int|null $music_id ID music tempat komentar (0/null = tidak ada)
@@ -214,16 +208,13 @@ class MediaInteraction {
     private function performInteractionOperation(?array $existing, string $col, int $media_id, string $like_type): void {
         if ($existing) {
             if ($existing['TYPE'] === $like_type) {
-                // Delete: toggle OFF (same type)
                 $op = $this->conn->prepare("DELETE FROM interactions WHERE user_id = ? AND $col = ?");
                 $op->bind_param("ii", $this->user_id, $media_id);
             } else {
-                // Update: change type
                 $op = $this->conn->prepare("UPDATE interactions SET `TYPE` = ? WHERE user_id = ? AND $col = ?");
                 $op->bind_param("sii", $like_type, $this->user_id, $media_id);
             }
         } else {
-            // Insert: new interaction
             $op = $this->conn->prepare("INSERT INTO interactions (user_id, $col, `TYPE`) VALUES (?, ?, ?)");
             $op->bind_param("iis", $this->user_id, $media_id, $like_type);
         }

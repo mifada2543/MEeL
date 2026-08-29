@@ -4,7 +4,6 @@ require_once '../auth/config.php';
 // activity_logger loaded via auth/config.php
 require_once '../modules/media/MediaLibrary.php';
 
-// Proteksi role admin
 $repo    = new BookRepository($conn);
 $user_id = (int)$_SESSION['user_id'];
 $role    = $repo->getUserRole($user_id);
@@ -14,7 +13,6 @@ if ($role !== 'admin') {
     exit();
 }
 
-// Handle POST upload
 $message  = '';
 $val_title = htmlspecialchars($_GET['reup'] ?? '');
 

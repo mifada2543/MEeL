@@ -115,7 +115,7 @@ class DbTestHelper
                 );
             }
             $this->conn->set_charset('utf8mb4');
-            // Start transaction for isolation
+            
             $this->conn->begin_transaction();
             $this->inTransaction = true;
             // Siapkan data fixture di dalam transaksi (rollback di tearDown).
@@ -200,7 +200,7 @@ class DbTestHelper
         }
     }
 
-    /* Close the connection. */
+    
     public function close(): void
     {
         if ($this->conn !== null) {
@@ -210,7 +210,7 @@ class DbTestHelper
         }
     }
 
-    /* Get the original likes/dislikes counts for a music item. */
+    
     public function getMusicLikesCount(int $musicId): array
     {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM music WHERE id = ?");
@@ -224,7 +224,7 @@ class DbTestHelper
         ];
     }
 
-    /* Get the original likes/dislikes counts for a video item. */
+    
     public function getVideoLikesCount(int $videoId): array
     {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM video WHERE id = ?");

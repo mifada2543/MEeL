@@ -14,7 +14,6 @@ $song_data = null;
 $beatmap_data = null;
 
 if ($song_type === 'custom' && is_numeric($song_id)) {
-    // Custom song from DB
     $stmt = $conn->prepare(
         "SELECT s.*, u.username
          FROM arcade_song s
@@ -27,10 +26,8 @@ if ($song_type === 'custom' && is_numeric($song_id)) {
     $stmt->close();
 
     if ($row) {
-        // Increment play count
         $conn->query("UPDATE arcade_song SET play_count = play_count + 1 WHERE id = " . (int)$song_id);
 
-        // Read beatmap from filesystem
         $beatmap_file = __DIR__ . '/' . $row['beatmap_path'];
         if (!empty($row['beatmap_path']) && file_exists($beatmap_file)) {
             $beatmap_data = json_decode(file_get_contents($beatmap_file), true);
@@ -53,7 +50,6 @@ if ($song_type === 'custom' && is_numeric($song_id)) {
         ];
     }
 } else {
-    // Built-in song from filesystem
     $index_path = __DIR__ . '/songs/_index.json';
     if (file_exists($index_path)) {
         $index = json_decode(file_get_contents($index_path), true);
@@ -81,14 +77,12 @@ if ($song_type === 'custom' && is_numeric($song_id)) {
         }
     }
 
-    // Load beatmap from filesystem
     $beatmap_file = __DIR__ . '/songs/' . $song_id . '/beatmap.json';
     if (file_exists($beatmap_file)) {
         $beatmap_data = json_decode(file_get_contents($beatmap_file), true);
     }
 }
 
-// Fallback
 if (!$song_data) {
     $song_data = [
         'id' => $song_id, 'title' => $song_id, 'artist' => 'Unknown',

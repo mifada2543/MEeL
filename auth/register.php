@@ -6,12 +6,11 @@ $back_url = auth_back_url(['login.php', 'register.php']);
 $message = "";
 $msg_type = "";
 $max_reg_attempts = 3;
-$reg_time_window = 3600; // 1 jam
+$reg_time_window = 3600;
 $max_ip_attempts = 10;
-$ip_lockout_time = 300; // 5 menit
+$ip_lockout_time = 300;
 $is_locked = false;
 $remaining = 0;
-// IP-BASED LOCKOUT CHECK (shared helper)
 $ip_address  = auth_get_ip();
 $is_loopback = auth_is_loopback();
 $ip_lock     = $is_loopback ? ['locked' => false, 'remaining' => 0] : auth_ip_lockout_status($conn, $ip_address);
@@ -25,7 +24,6 @@ $_SESSION['reg_attempts'] = array_filter($_SESSION['reg_attempts'], function ($t
     return $timestamp > (time() - $reg_time_window);
 });
 $session_blocked = !$is_loopback && count($_SESSION['reg_attempts']) >= $max_reg_attempts;
-// FORM PROCESSING
 if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = "Sesi keamanan kadaluarsa. Silakan refresh halaman.";
@@ -35,7 +33,6 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
         $user = trim($_POST['username']);
         $pass_raw = $_POST['password'];
         $validation_error = false;
-        // Validasi (shared helper)
         $val_error = auth_validate_credentials($user, $pass_raw);
         if ($val_error !== null) {
             $message = $val_error;
@@ -70,7 +67,6 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
                 }
             }
         }
-        // CATAT PERCOBAAN GAGAL KE IP (shared helper)
         if ($validation_error) {
             $just_locked = auth_record_failed_attempt($conn, $ip_address, $max_ip_attempts, $ip_lockout_time);
             if ($just_locked) {
@@ -80,7 +76,6 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
         }
     }
 }
-// Re-check lockout setelah POST
 if (!$is_loopback && !$is_locked && !$session_blocked) {
     $recheck = auth_recheck_lockout($conn, $ip_address);
     if ($recheck['locked']) {
@@ -88,7 +83,6 @@ if (!$is_loopback && !$is_locked && !$session_blocked) {
         $remaining = $recheck['remaining'];
     }
 }
-// HTML (shell bersama via partials)
 $auth_title       = "MEeL | Register";
 $auth_description = "MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.";
 $auth_og_title    = "MEeL | Register";
