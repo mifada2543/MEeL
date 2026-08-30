@@ -211,9 +211,9 @@ echo "<input type='hidden' name='csrf_token' value='$token'>";
 
 ### Admin Actions — POST Forms (not GET links)
 
-Admin state-changing actions (approve/reject/delete user, kick user, unban IP)
-were migrated from GET links to **POST forms with CSRF token** — a GET link can
-be triggered by a `<img>` tag (CSRF), a POST form cannot:
+Admin state-changing actions (approve/reject/delete user, kick user, unban IP, force-stop queue)
+use **POST forms with CSRF token** — a GET link can be triggered by a `<img>` tag (CSRF),
+a POST form cannot:
 
 ```html
 <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, {...})">
@@ -226,6 +226,11 @@ be triggered by a `<img>` tag (CSRF), a POST form cannot:
 Handlers in `controllers/admin/admin_actions.php` now read `$_POST` and the
 chess admin `catur.php?auto_cleanup=1` endpoint requires a `csrf_token` too
 (`window.MEEL_ADMIN_CSRF` bridge).
+
+> ⚠️ **Form action must NOT use `action="."`** — when the page URL is `/admin/beranda`,
+> `action="."` resolves to `/admin/`, which gets 301-redirected to `/admin/beranda` by
+> the `.htaccess` canonical rule. The 301 converts POST to GET, losing all form data.
+> Use no `action` attribute (defaults to current page URL) or `action=""`.
 
 ### Chess Multiplayer — Login + CSRF Guards
 

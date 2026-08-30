@@ -410,8 +410,8 @@ echo "<input type='hidden' name='csrf_token' value='$token'>";
 
 ### Admin Actions — Form POST (bukan link GET)
 
-Aksi admin yang mengubah state (approve/reject/delete user, kick user, unban IP)
-telah dipindah dari link GET ke **form POST dengan token CSRF** — link GET bisa
+Aksi admin yang mengubah state (approve/reject/delete user, kick user, unban IP, force-stop queue)
+menggunakan **form POST dengan token CSRF** — link GET bisa
 dipicu oleh tag `<img>` (CSRF), form POST tidak:
 
 ```html
@@ -425,6 +425,11 @@ dipicu oleh tag `<img>` (CSRF), form POST tidak:
 Handler di `controllers/admin/admin_actions.php` kini membaca `$_POST`, dan
 endpoint catur admin `catur.php?auto_cleanup=1` juga wajib `csrf_token`
 (bridge `window.MEEL_ADMIN_CSRF`).
+
+> ⚠️ **Form action tidak boleh menggunakan `action="."`** — ketika URL halaman adalah `/admin/beranda`,
+> `action="."` resolve ke `/admin/`, yang mendapat 301 redirect ke `/admin/beranda` oleh
+> rule canonical `.htaccess`. 301 mengubah POST menjadi GET, menghilangkan semua data form.
+> Gunakan tanpa atribut `action` (default = URL halaman saat ini) atau `action=""`.
 
 ### Chess Multiplayer — Guard Login + CSRF
 

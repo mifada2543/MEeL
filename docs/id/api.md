@@ -581,13 +581,35 @@ readfile($filePath);
 ### Download Transcode
 
 **Endpoint:** `api/download-transcode` (handler: `controllers/api/download_transcode.php`)
-**Method:** POST
-**Auth:** User/Admin
+**Method:** GET
+**Auth:** User (login required)
 
-Download file hasil transcoding video → audio:
-```
-POST → cek file → kirim sebagai download attachment
-```
+Download file hasil transcoding video → audio dengan header Content-Disposition yang benar.
+
+**Parameter:**
+| Parameter | Tipe | Deskripsi |
+|---|---|---|
+| `file` | string | Nama file transcode (mis. `song-title.mp3`) |
+| `title` | string | Judul media asli (untuk nama file download) |
+
+**Validasi file:**
+- Whitelist ekstensi: `mp3`, `ogg`, `m4a`, `opus`
+- Ukuran minimum: 10KB (menolak file corrupt/stub)
+- `basename()` proteksi path traversal
+
+**Response headers:**
+- `Content-Type`: MIME type yang benar untuk format
+- `Content-Disposition`: `attachment` dengan nama file UTF-8 (RFC 5987)
+- `X-Accel-Buffering: no` (nonaktifkan buffering proxy)
+
+**Kode error:**
+| Kode | Arti |
+|---|---|
+| `400` | Parameter tidak valid/tidak ada |
+| `401` | Belum login |
+| `404` | File tidak ditemukan atau expired |
+| `410` | File tidak valid/terlalu kecil (cache corrupt — transcode ulang) |
+| `500` | Error database |
 
 ---
 

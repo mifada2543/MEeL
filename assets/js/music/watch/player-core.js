@@ -97,6 +97,174 @@
       errorHandled = false,
       audioEndedNaturally = false;
 
+    // ════════════════════════════════════════════════════════════
+    // STREAM RECOVERY — detect & auto-recover when stream drops
+    // after idle / network interruption.
+    // ════════════════════════════════════════════════════════════
+    const RECOVERY_MAX_RETRIES = 15;
+    const STUCK_CHECK_INTERVAL_MS = 3000;
+    const STUCK_THRESHOLD_S = 6;
+    const RECOVERY_COOLDOWN_MS = 8000;
+    let recoveryRetryCount = 0;
+    let isRecovering = false;
+    let lastRecoveryTime = 0;
+    let stuckCheckInterval = null;
+    let lastPlayTime = -1;
+    let lastTimeUpdateTs = 0;
+    let hasEverPlayed = false;
+    let waitingTimeout = null;
+
+    function showReconnectIndicator() {
+      var container = document.getElementById('player-container');
+      if (!container) return;
+      var existing = document.getElementById('meel-music-reconnect');
+      if (existing) return;
+      var el = document.createElement('div');
+      el.id = 'meel-music-reconnect';
+      el.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,15,.88);z-index:60;gap:10px;padding:20px;text-align:center;';
+      el.innerHTML = '<div class="animate-spin h-7 w-7 border-2 border-orange-500 border-t-transparent rounded-full"></div>' +
+        '<div style="color:#f97316;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;">Sambungan Terputus</div>' +
+        '<div style="color:#6b7280;font-size:10px;">Menghubungkan kembali secara otomatis...</div>';
+      container.appendChild(el);
+    }
+
+    function hideReconnectIndicator() {
+      var el = document.getElementById('meel-music-reconnect');
+      if (el) el.remove();
+    }
+
+    function showReconnectFailed() {
+      var container = document.getElementById('player-container');
+      if (!container) return;
+      var existing = document.getElementById('meel-music-reconnect');
+      if (existing) existing.remove();
+      var el = document.createElement('div');
+      el.id = 'meel-music-reconnect';
+      el.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,15,.88);z-index:60;gap:12px;padding:20px;text-align:center;';
+      el.innerHTML = '<div style="color:#6b7280;font-size:11px;">Tidak dapat terhubung ke media.</div>' +
+        '<button onclick="window.location.reload()" style="background:#ea580c;color:#000;border:none;padding:8px 20px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;">Muat Ulang</button>';
+      container.appendChild(el);
+    }
+
+    function triggerStreamRecovery() {
+      if (isRecovering || !hasEverPlayed || player.paused) return;
+      var now = Date.now();
+      if (now - lastRecoveryTime < RECOVERY_COOLDOWN_MS) return;
+      if (recoveryRetryCount >= RECOVERY_MAX_RETRIES) {
+        console.warn('⚠️ Music recovery: max retries reached');
+        showReconnectFailed();
+        return;
+      }
+      isRecovering = true;
+      lastRecoveryTime = now;
+      recoveryRetryCount++;
+      stopStuckDetector();
+      showReconnectIndicator();
+      console.log('🔄 Music stream recovery #' + recoveryRetryCount + '...');
+
+      var savedTime = player.currentTime || 0;
+      var streamUrl = (window.MEEL_MUSIC_CONFIG && window.MEEL_MUSIC_CONFIG.streamUrl) || '';
+      if (!streamUrl) { isRecovering = false; return; }
+
+      // Cache-buster supaya browser tidak pakai response lama
+      var sep = streamUrl.indexOf('?') >= 0 ? '&' : '?';
+      var freshUrl = streamUrl + sep + '_r=' + Date.now();
+
+      audio.pause();
+      audio.src = freshUrl;
+      audio.load();
+
+      function onReady() {
+        if (savedTime > 5) audio.currentTime = savedTime;
+        audio.play().then(function () {
+          isRecovering = false;
+          recoveryRetryCount = 0;
+          hideReconnectIndicator();
+          startStuckDetector();
+          console.log('✅ Music stream recovered at ' + Math.floor(savedTime) + 's');
+        }).catch(function (err) {
+          console.warn('⚠️ Music recovery play() failed:', err);
+          isRecovering = false;
+          // Coba lagi setelah cooldown
+          setTimeout(triggerStreamRecovery, RECOVERY_COOLDOWN_MS);
+        });
+      }
+
+      if (audio.readyState >= 1) onReady();
+      else audio.addEventListener('loadedmetadata', onReady, { once: true });
+    }
+
+    function startStuckDetector() {
+      stopStuckDetector();
+      lastPlayTime = -1;
+      lastTimeUpdateTs = Date.now();
+      stuckCheckInterval = setInterval(function () {
+        if (!player || player.paused || isRecovering || isNavigating) return;
+        if (document.hidden) return;
+        var ct = player.currentTime;
+        var now = Date.now();
+        if (ct === lastPlayTime) {
+          if ((now - lastTimeUpdateTs) / 1000 >= STUCK_THRESHOLD_S) {
+            console.warn('⚠️ Music stream stalled (no progress for ' + STUCK_THRESHOLD_S + 's)');
+            triggerStreamRecovery();
+          }
+        } else {
+          lastPlayTime = ct;
+          lastTimeUpdateTs = now;
+        }
+      }, STUCK_CHECK_INTERVAL_MS);
+    }
+
+    function stopStuckDetector() {
+      if (stuckCheckInterval) {
+        clearInterval(stuckCheckInterval);
+        stuckCheckInterval = null;
+      }
+    }
+
+    function startWaitingTimeout() {
+      stopWaitingTimeout();
+      waitingTimeout = setTimeout(function () {
+        console.warn('⚠️ Music audio waiting >10s, trigger recovery');
+        triggerStreamRecovery();
+      }, 10000);
+    }
+
+    function stopWaitingTimeout() {
+      if (waitingTimeout) { clearTimeout(waitingTimeout); waitingTimeout = null; }
+    }
+
+    // Detect network errors (code 2 = MEDIA_ERR_NETWORK, 3 = DECODE, 4 = SRC_NOT_SUPPORTED)
+    audio.addEventListener('error', function () {
+      var code = audio.error ? audio.error.code : 0;
+      if (code === 2 && hasEverPlayed && !isRecovering) {
+        console.warn('⚠️ Audio network error, attempting recovery...');
+        triggerStreamRecovery();
+      }
+    });
+
+    // Detect stall — browser cannot get data
+    audio.addEventListener('stalled', function () {
+      if (!player.paused && hasEverPlayed && !isRecovering) {
+        console.warn('⚠️ Audio stalled event, starting waiting timeout...');
+        startWaitingTimeout();
+      }
+    });
+
+    audio.addEventListener('playing', function () {
+      stopWaitingTimeout();
+    });
+
+    audio.addEventListener('canplay', function () {
+      stopWaitingTimeout();
+      if (isRecovering) {
+        isRecovering = false;
+        recoveryRetryCount = 0;
+        hideReconnectIndicator();
+        startStuckDetector();
+      }
+    });
+
     function isFlacNow() {
       const fn = (window.MEEL_MUSIC_CONFIG && window.MEEL_MUSIC_CONFIG.filename) || "";
       return fn.toLowerCase().endsWith(".flac");
@@ -107,6 +275,7 @@
       loadingTimeout = secondaryTimeout = null;
     }
     function showLoadingOverlay(msg) {
+      hideReconnectIndicator();
       const container = document.getElementById("player-container");
       if (!container) return;
       let overlay = document.getElementById("flac-loading-overlay");
@@ -163,11 +332,13 @@
 
     audio.addEventListener("error", function () {
       if (errorHandled) return;
+      const errCode = audio.error ? audio.error.code : 0;
+      // Network error (code 2) saat playback aktif → serahkan ke recovery system
+      if (errCode === 2 && hasEverPlayed) return;
       errorHandled = true;
       audioEndedNaturally = false;
       clearAllTimeouts();
       hideLoadingOverlay();
-      const errCode = audio.error ? audio.error.code : "?";
       console.error("❌ Audio error [" + errCode + "]:", audio.error ? audio.error.message : "Gagal memuat audio");
       if (isFlacNow()) {
         showLoadingOverlay("⚠️ FLAC tidak dapat dimuat. Coba refresh halaman atau gunakan format lain.");
@@ -181,6 +352,8 @@
     window.addEventListener("beforeunload", function () {
       clearAllTimeouts();
       hideLoadingOverlay();
+      stopStuckDetector();
+      stopWaitingTimeout();
     });
 
     // Visualizer / bitrate — pakai analyser dari engine
@@ -311,13 +484,15 @@
         player.pause();
         return;
       }
+      hasEverPlayed = true;
       applyPlayingVisualState(true);
-      // Sync sessionStorage — kalau tidak, AUDIO_STATE bisa berisi lagu
-      // lama & mini-player index memutar lagu stale setelah pindah view.
+      startStuckDetector();
       saveAudioState();
     });
     player.on("pause", function () {
       applyPlayingVisualState(false);
+      stopStuckDetector();
+      stopWaitingTimeout();
       saveAudioState();
     });
     let lastSecond = -1;
@@ -342,6 +517,11 @@
     });
     player.on("ended", function () {
       if (window.meelHealthAlertActive) return;
+      stopStuckDetector();
+      stopWaitingTimeout();
+      hasEverPlayed = false;
+      isRecovering = false;
+      hideReconnectIndicator();
       const isGenuineEnd =
         audioEndedNaturally ||
         (player.duration > 0 && Math.abs(player.currentTime - player.duration) < 1.5) ||

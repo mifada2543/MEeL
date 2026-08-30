@@ -130,7 +130,7 @@ trait FfmpegUtils
             $name = 'untitled-media';
         }
 
-        $name = preg_replace('/[\\\\/:*?"<>|\s]+/u', '-', $name);
+        $name = preg_replace("/[^a-zA-Z0-9_\x{3000}-\x{9fff}\x{30a0}-\x{30ff}\x{3040}-\x{309f}\x{ff00}-\x{ffef}]+/u", "-", $name);
         $name = str_replace(['..', './'], '', $name);
         $name = mb_substr($name, 0, 120);
         // Hindari nama file yang hanya terdiri dari delimiter

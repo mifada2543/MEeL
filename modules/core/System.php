@@ -325,6 +325,29 @@ class System
     }
     public function forceStopQueue(int $id, string $task_type): bool
     {
+        // 1) Kill proses via PID file — standalone, tanpa load Transcoder.php
+        //    (avoid heavy require chain that can cause output-before-headers)
+        $pid_dir = '/tmp/meel_pids';
+        $pid_file = $pid_dir . "/{$task_type}_{$id}.pid";
+        if (is_file($pid_file)) {
+            $pid = (int)@file_get_contents($pid_file);
+            @unlink($pid_file);
+            if ($pid > 0) {
+                if (function_exists('posix_kill')) {
+                    @posix_kill($pid, SIGTERM);
+                } else {
+                    @shell_exec('kill -TERM ' . $pid . ' 2>/dev/null');
+                }
+                usleep(300000);
+                if (function_exists('posix_kill')) {
+                    @posix_kill($pid, SIGKILL);
+                } else {
+                    @shell_exec('kill -KILL ' . $pid . ' 2>/dev/null');
+                }
+            }
+        }
+
+        // 2) Hapus record dari database
         if ($task_type === 'download') {
             $stmt = $this->conn->prepare("DELETE FROM upload_queue WHERE id = ?");
         } elseif ($task_type === 'transcode') {
