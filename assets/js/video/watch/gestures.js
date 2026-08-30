@@ -1,5 +1,5 @@
-/* gestures.js — Gestur mobile: tap, swipe-to-seek, double-tap ripple,
-   long-press 2x speed, swipe-down mini-player close. */
+/* gestures.js — Gestur mobile: tap, swipe-to-seek, stacking double-tap
+   (10→20→30 like YouTube), long-press 2x speed, swipe-down mini-player. */
 function setupMobileGestures() {
   if (!isTouchDevice) return;
   var plyr = document.querySelector(".plyr");
@@ -13,15 +13,20 @@ function setupMobileGestures() {
     tapTimer = null,
     tapZone = null;
 
-  /* Swipe-to-seek state */
-  var swipeState = null; // { startX, startY, startTime, seeking, locked }
-  var SWIPE_THRESHOLD = 30;   // px sebelum dianggap swipe
-  var SWIPE_SEEK_PX = 200;    // px = ~10 detik
+  /* Double-tap stacking state */
+  var ddStreak = 0,
+    ddSide = null,
+    ddResetTimer = null,
+    ddLastTapTime = 0,
+    DD_WINDOW = 600,
+    DD_SEEK_STEP = 10;
 
-  /* Long-press state */
-  var longPressTimer = null,
-    longPressActive = false,
-    originalPlaybackRate = 1;
+  /* Swipe-to-seek state */
+  var swipeState = null;
+  var SWIPE_THRESHOLD = 30;
+  var SWIPE_SEEK_PX = 200;
+
+
 
   /* ── Controls visibility ── */
   function showControls() {
@@ -55,41 +60,39 @@ function setupMobileGestures() {
     }, 3000);
   }
 
-  /* ── Double-tap ripple animation ── */
-  function createTapRipple(x, y, type) {
-    var container = plyr;
-    var ripple = document.createElement("div");
-    ripple.className = "meel-tap-ripple meel-tap-ripple-" + type;
+  /* ══════════════════════════════════════════════════════════════
+     DOUBLE-TAP STACKING (10→20→30)
+     ══════════════════════════════════════════════════════════════ */
+  function handleDoubleTap(x, y, side) {
+    var now = Date.now();
 
-    /* Icon */
-    var icon =
-      type === "rewind"
-        ? '<svg viewBox="0 0 24 24" width="32" height="32"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z" fill="currentColor"/></svg>'
-        : '<svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" fill="currentColor"/></svg>';
+    if (ddSide !== side || now - ddLastTapTime > DD_WINDOW) {
+      ddStreak = 0;
+    }
 
-    ripple.innerHTML =
-      '<div class="meel-tap-ripple-circle"></div>' +
-      '<div class="meel-tap-ripple-icon">' +
-      icon +
-      "</div>";
+    ddStreak++;
+    ddSide = side;
+    ddLastTapTime = now;
 
-    /* Position */
-    var rect = container.getBoundingClientRect();
-    ripple.style.left = x - rect.left + "px";
-    ripple.style.top = y - rect.top + "px";
+    var seekAmount = ddStreak * DD_SEEK_STEP;
+    var seekLabel = (side === "rewind" ? "-" : "+") + seekAmount + "s";
 
-    container.appendChild(ripple);
+    if (player) {
+      if (side === "rewind") player.rewind(seekAmount);
+      else player.forward(seekAmount);
+    }
 
-    /* Trigger animation */
-    requestAnimationFrame(function () {
-      ripple.classList.add("meel-tap-ripple-active");
-    });
+    /* Use original indicator — label updates otomatis */
+    tampilkanSisiIndikator(side, seekLabel);
 
-    /* Remove after animation */
-    setTimeout(function () {
-      if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
-    }, 700);
+    clearTimeout(ddResetTimer);
+    ddResetTimer = setTimeout(function () {
+      ddStreak = 0;
+      ddSide = null;
+    }, DD_WINDOW);
   }
+
+
 
   /* ── Swipe-to-seek ── */
   function createSeekOverlay() {
@@ -132,59 +135,17 @@ function setupMobileGestures() {
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
 
-  /* ── Long-press 2x speed ── */
-  function startLongPress() {
-    clearTimeout(longPressTimer);
-    longPressTimer = setTimeout(function () {
-      if (player && !player.paused) {
-        longPressActive = true;
-        originalPlaybackRate = player.playbackRate || 1;
-        player.playbackRate = 2;
-        showSpeedIndicator();
-      }
-    }, 500);
-  }
 
-  function endLongPress() {
-    clearTimeout(longPressTimer);
-    if (longPressActive) {
-      longPressActive = false;
-      if (player) player.playbackRate = originalPlaybackRate;
-      hideSpeedIndicator();
-    }
-  }
 
-  function showSpeedIndicator() {
-    var existing = document.getElementById("meel-speed-indicator");
-    if (existing) return;
-    var el = document.createElement("div");
-    el.id = "meel-speed-indicator";
-    el.className = "meel-speed-indicator";
-    el.textContent = "2x";
-    plyr.appendChild(el);
-    requestAnimationFrame(function () {
-      el.classList.add("meel-speed-indicator-active");
-    });
-  }
-
-  function hideSpeedIndicator() {
-    var el = document.getElementById("meel-speed-indicator");
-    if (el) {
-      el.classList.remove("meel-speed-indicator-active");
-      setTimeout(function () {
-        if (el.parentNode) el.parentNode.removeChild(el);
-      }, 300);
-    }
-  }
-
-  /* ── Main touch handler ── */
+  /* ══════════════════════════════════════════════════════════════
+     MAIN TOUCH HANDLER
+     ══════════════════════════════════════════════════════════════ */
   plyr.addEventListener(
     "touchstart",
     function (ev) {
       var now = Date.now();
       var target = ev.target;
 
-      /* Ignore touches on controls/menu/volume/progress */
       if (
         target.closest(".plyr__controls") ||
         target.closest(".plyr__control--overlaid") ||
@@ -205,28 +166,20 @@ function setupMobileGestures() {
       var relX = x - rect.left;
       var zone = relX < 0.4 * rect.width ? "left" : relX > 0.6 * rect.width ? "right" : "center";
 
-      /* ── Double-tap detection ── */
+      /* Double-tap detection */
       if (now - lastTapTime < 300 && tapPending) {
-        /* Double tap! */
         clearTimeout(tapTimer);
         tapPending = false;
         ev.preventDefault();
         ev.stopPropagation();
 
-        if (zone === "left") {
-          player && player.rewind(10);
-          tampilkanSisiIndikator("rewind", "-10s");
-          createTapRipple(x, y, "rewind");
-        } else if (zone === "right") {
-          player && player.forward(10);
-          tampilkanSisiIndikator("forward", "+10s");
-          createTapRipple(x, y, "forward");
-        }
+        if (zone === "left") handleDoubleTap(x, y, "rewind");
+        else if (zone === "right") handleDoubleTap(x, y, "forward");
         lastTapTime = 0;
         return;
       }
 
-      /* ── Start swipe tracking ── */
+      /* Start swipe tracking */
       swipeState = {
         startX: x,
         startY: y,
@@ -235,12 +188,9 @@ function setupMobileGestures() {
         locked: false,
       };
 
-      /* ── Long-press detection (center zone only) ── */
-      if (zone === "center") {
-        startLongPress();
-      }
 
-      /* ── First tap — wait for potential double-tap ── */
+
+      /* First tap */
       lastTapTime = now;
       tapPending = true;
       tapZone = zone;
@@ -249,11 +199,9 @@ function setupMobileGestures() {
         if (!tapPending) return;
         tapPending = false;
 
-        /* Single tap action */
         if (tapZone === "left" || tapZone === "right") {
           controlsVisible ? hideControls() : showControls();
         } else {
-          /* center */
           if (controlsVisible) {
             if (player) {
               player.paused ? player.play() : player.pause();
@@ -279,7 +227,6 @@ function setupMobileGestures() {
       var dx = touch.clientX - swipeState.startX;
       var dy = touch.clientY - swipeState.startY;
 
-      /* Lock direction on first significant move */
       if (!swipeState.locked) {
         if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(dy) > SWIPE_THRESHOLD) {
           swipeState.locked = true;
@@ -290,14 +237,11 @@ function setupMobileGestures() {
 
       if (!swipeState.seeking) return;
 
-      /* Cancel long-press if swiping */
-      endLongPress();
       clearTimeout(tapTimer);
       tapPending = false;
 
       ev.preventDefault();
 
-      /* Calculate seek delta */
       var seekDelta = (dx / SWIPE_SEEK_PX) * 10;
       var currentTime = player ? player.currentTime || 0 : 0;
       updateSeekOverlay(seekDelta, currentTime);
@@ -309,10 +253,8 @@ function setupMobileGestures() {
   plyr.addEventListener(
     "touchend",
     function (ev) {
-      /* End long-press */
-      endLongPress();
 
-      /* End swipe-to-seek */
+
       if (swipeState && swipeState.seeking) {
         var touch = ev.changedTouches[0];
         if (touch) {
@@ -333,12 +275,10 @@ function setupMobileGestures() {
   );
 
   plyr.addEventListener("touchcancel", function () {
-    endLongPress();
     hideSeekOverlay();
     swipeState = null;
   });
 
-  /* ── Prevent native dblclick ── */
   plyr.addEventListener(
     "dblclick",
     function (ev) {
@@ -350,7 +290,7 @@ function setupMobileGestures() {
     true,
   );
 
-  /* ── Volume slider swipe (keep existing) ── */
+  /* ── Volume slider swipe ── */
   (function () {
     var startY = null,
       startVal = null,
@@ -416,7 +356,6 @@ function setupMobileGestures() {
       var shell = document.getElementById("mini-player-shell");
       if (!shell || shell.style.display === "none") return;
       var target = ev.target;
-      /* Ignore if touching buttons/controls */
       if (
         target.closest("button") ||
         target.closest(".plyr__controls") ||
@@ -443,7 +382,6 @@ function setupMobileGestures() {
       }
       var dy = touch.clientY - miniState.startY;
       var dx = Math.abs(touch.clientX - miniState.startX);
-      /* Swipe down > 80px, mostly vertical */
       if (dy > 80 && dx < 60) {
         miniState.shell.style.transition = "transform 0.25s ease-in, opacity 0.25s ease-in";
         miniState.shell.style.transform = "translateY(120px)";
