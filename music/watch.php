@@ -99,7 +99,8 @@ $__vdir = function($dir) {
                         name="search"
                         placeholder="Cari lagu atau artis..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-orange-500/40 transition-all text-gray-300"
-                        autocomplete="off">
+                        autocomplete="off"
+                        enterkeyhint="search">
                     <div id="music-search-indicator" class="htmx-indicator absolute right-3.5 top-1/2 -translate-y-1/2">
                         <div class="animate-spin h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></div>
                     </div>

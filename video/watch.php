@@ -94,6 +94,7 @@ $__vdir = function($dir) {
                         placeholder="Cari video lain..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-red-500/40 transition-all text-gray-300"
                         autocomplete="off"
+                        enterkeyhint="search"
                         title="Cari Video">
                     <div id="search-indicator" class="htmx-indicator absolute right-3.5 top-1/2 -translate-y-1/2">
                         <div class="animate-spin h-3 w-3 border-2 border-red-500 border-t-transparent rounded-full"></div>
@@ -138,7 +139,8 @@ $__vdir = function($dir) {
                 hx-get="search?exclude=<?= $id ?>"
                 hx-trigger="keyup[key=='Enter']"
                 hx-target="#recommendation-column"
-                autocomplete="off">
+                autocomplete="off"
+                enterkeyhint="search">
         </div>
     </div>
 

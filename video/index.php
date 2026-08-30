@@ -68,7 +68,8 @@ $__v = function($f) {
                         title="Cari Video"
                         aria-label="Cari video"
                         class="meel-input w-full rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs transition-all"
-                        autocomplete="off">
+                        autocomplete="off"
+                        enterkeyhint="search">
                 </div>
 
                 <button type="submit"

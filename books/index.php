@@ -71,7 +71,8 @@ $totalPagesBooks = $meta_books['total_pages'];
                         title="Cari buku"
                         aria-label="Cari buku"
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs focus:outline-none focus:border-green-500/40 transition-all text-gray-300"
-                        autocomplete="off">
+                        autocomplete="off"
+                        enterkeyhint="search">
                 </div>
                 <button type="submit"
                     title="Cari"
