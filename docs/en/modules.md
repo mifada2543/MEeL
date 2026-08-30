@@ -186,6 +186,8 @@ class Transcoder {
     public function processDownload(string $url, string $type): string;
     public function encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
     public function transcodeVideo(int $video_id, string $format): array;
+    public static function killByPidFile(string $taskType, int $queueId): bool;  // Admin kill
+    public static function cleanupStalePidFiles(): int;                          // PID cleanup
 }
 ```
 
@@ -202,12 +204,23 @@ Features:
   via `proc_open()` and tracked by PID/process-group; timeout aborts use
   `posix_kill()` (SIGTERM → grace period → SIGKILL) instead of `pkill -f` string
   matching. Callers register `terminateAllProcesses()` as a shutdown function
+- **PID file management** — each spawned process writes its PID to `/tmp/meel_pids/{type}_{id}.pid`, enabling the admin panel to kill processes across requests via `killByPidFile()`
+- **FFmpeg library path** — `proc_open()` env sets `LD_LIBRARY_PATH` explicitly to prevent FFmpeg hangs when the parent process env differs from the child
+- **Transcode timeout** — audio transcode has a 600-second max (`TRANSCODE_AUDIO_TIMEOUT`); HLS remux has a 120-second max; stream reads use `stream_set_timeout(30)` to detect pipe stalls
+- **Cache validation** — transcoded files are validated by both `filesize > 10KB` and `duration ≥ 50%` of source duration to reject corrupt/stub files
+- **FFmpeg exit code check** — `proc_close()` exit code is verified; non-zero exits are logged with the last 15 lines of stderr and the queue status is set to `failed`
+- **Filename sanitization** — whitelist regex (`[^a-zA-Z0-9_\x{3000}-\x{9fff}...]`) preserves CJK characters while preventing path traversal
 - Cached directory size via `dir_size()`
 - Thumbnail sprite + VTT generation
 
 ### 6. `modules/core/System.php`
 
 **Class:** `System` — queue management, monitoring, rate limiting.
+
+Key method — `forceStopQueue(int $id, string $task_type): bool`:
+- **Inline PID kill** — reads PID file from `/tmp/meel_pids/` and sends `SIGTERM` → `SIGKILL` directly (no `Transcoder.php` dependency, avoiding output-before-headers issues in the admin panel)
+- Deletes the queue record from `upload_queue` or `transcode_queue`
+- Returns `true` on success, `false` on failure
 
 ### 7. `modules/core/activity_logger.php`
 

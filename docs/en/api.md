@@ -559,10 +559,35 @@ Streams PDF for book viewer with access protection.
 ### Download Transcode
 
 **Endpoint:** `api/download-transcode` (handler: `controllers/api/download_transcode.php`)
-**Method:** POST
-**Auth:** User/Admin
+**Method:** GET
+**Auth:** User (login required)
 
-Downloads transcoded video→audio files.
+Downloads transcoded video→audio files with proper Content-Disposition headers.
+
+**Parameters:**
+| Parameter | Type | Description |
+|---|---|---|
+| `file` | string | Transcoded filename (e.g. `song-title.mp3`) |
+| `title` | string | Original media title (used for download filename) |
+
+**File validation:**
+- Extension whitelist: `mp3`, `ogg`, `m4a`, `opus`
+- Minimum file size: 10KB (rejects corrupt/stub files)
+- `basename()` path traversal protection
+
+**Response headers:**
+- `Content-Type`: correct MIME type for the format
+- `Content-Disposition`: `attachment` with UTF-8 filename (RFC 5987)
+- `X-Accel-Buffering: no` (disable proxy buffering)
+
+**Error codes:**
+| Code | Meaning |
+|---|---|
+| `400` | Missing/invalid parameters |
+| `401` | Not logged in |
+| `404` | File not found or expired |
+| `410` | File invalid/too small (corrupt cache — re-transcode) |
+| `500` | Database error |
 
 ---
 

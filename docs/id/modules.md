@@ -141,6 +141,8 @@ class Transcoder {
     public function processDownload(string $url, string $type): string;
     public function encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
     public function transcodeVideo(int $video_id, string $format): array;
+    public static function killByPidFile(string $taskType, int $queueId): bool;  // Kill oleh admin
+    public static function cleanupStalePidFiles(): int;                          // Cleanup PID
 }
 ```
 
@@ -157,12 +159,23 @@ Fitur:
   `proc_open()` dan dilacak dengan PID/process-group; timeout dihentikan dengan
   `posix_kill()` (SIGTERM → grace period → SIGKILL) menggantikan pencocokan string
   `pkill -f`. Caller mendaftarkan `terminateAllProcesses()` sebagai shutdown function
+- **Manajemen PID file** — setiap proses yang di-spawn menulis PID ke `/tmp/meel_pids/{type}_{id}.pid`, memungkinkan panel admin membunuh proses lintas-request via `killByPidFile()`
+- **Path library FFmpeg** — `proc_open()` env mengatur `LD_LIBRARY_PATH` secara eksplisit untuk mencegah FFmpeg hang ketika env parent process berbeda dari child
+- **Timeout transcode** — audio transcode memiliki batas 600 detik (`TRANSCODE_AUDIO_TIMEOUT`); HLS remux memiliki batas 120 detik; stream read menggunakan `stream_set_timeout(30)` untuk mendeteksi pipe stall
+- **Validasi cache** — file transcode divalidasi berdasarkan `filesize > 10KB` DAN `duration ≥ 50%` dari durasi sumber untuk menolak file corrupt/stub
+- **Cek exit code FFmpeg** — `proc_close()` exit code diverifikasi; exit code non-zero di-log dengan 15 baris terakhir stderr dan status queue diatur ke `failed`
+- **Sanitasi nama file** — regex whitelist (`[^a-zA-Z0-9_\x{3000}-\x{9fff}...]`) mempertahankan karakter CJK sambil mencegah path traversal
 - Cached directory size via `dir_size()`
 - Thumbnail sprite + VTT
 
 ### 6. `modules/core/System.php`
 
 **Class:** `System` — queue management, storage monitoring, rate limiting.
+
+Metode kunci — `forceStopQueue(int $id, string $task_type): bool`:
+- **Kill PID inline** — membaca PID file dari `/tmp/meel_pids/` dan mengirim `SIGTERM` → `SIGKILL` secara langsung (tanpa dependency `Transcoder.php`, menghindari masalah output-before-headers di panel admin)
+- Menghapus record queue dari `upload_queue` atau `transcode_queue`
+- Mengembalikan `true` jika berhasil, `false` jika gagal
 
 ### 7. `modules/core/activity_logger.php`
 

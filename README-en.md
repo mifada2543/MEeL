@@ -434,7 +434,7 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 268 | 268 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
 | **Security Test** | 135 | 129 pass, 6 warn | 0 | **0** | **✅ 98/100** |
