@@ -398,7 +398,8 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         <div class="flex items-center justify-between px-5 py-4 border-b border-white/[.05]">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                    <span class="text-white text-sm font-bold">?</span>
+                    <img src="<?= $_nav_pfp_base ?>default_avatar.png" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <span class="hidden w-full h-full items-center justify-center text-white text-sm font-bold">?</span>
                 </div>
                 <div>
                     <div class="text-sm font-bold text-white">Guest</div>
