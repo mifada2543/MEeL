@@ -58,7 +58,7 @@ sort($categories);
       <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div class="relative w-full md:max-w-md">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i data-lucide="search" class="h-5 w-5 text-slate-500"></i></span>
-          <input type="text" id="search-input" placeholder="Cari judul game atau developer..." class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all duration-200" />
+          <input type="text" id="search-input" placeholder="Cari judul game atau developer..." enterkeyhint="search" class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all duration-200" />
         </div>
         <div class="flex flex-wrap gap-3 w-full md:w-auto justify-start md:justify-end">
           <select id="category-filter" class="px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer">
@@ -312,7 +312,12 @@ sort($categories);
     search = $("search-input");
     filter = $("category-filter");
     sort = $("sort-filter");
-    search.addEventListener("input", render);
+    search.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        render();
+      }
+    });
     filter.addEventListener("change", render);
     sort.addEventListener("change", render);
     favBtn.addEventListener("click", () => {
