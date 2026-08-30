@@ -57,8 +57,16 @@ class Transcoder
     // 1 = hentikan segera begitu pola retry fragment terdeteksi.
     private const FRAGMENT_RETRY_LIMIT  = 1;
 
+    // PID file directory untuk cross-process kill (admin panel)
+    private const PID_DIR = '/tmp/meel_pids';
+    // Transcode audio timeout (detik) — mencegah loop tak berujung
+    private const TRANSCODE_AUDIO_TIMEOUT = 600;
+
+    // Shared library path untuk ffmpeg/ffprobe (diperlukan oleh proc_open)
+    private const FFMPEG_LIB_PATH = '/usr/lib/x86_64-linux-gnu:/usr/local/lib';
+
     // ENV PREFIX
-    private const ENV_PREFIX = "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
+    private const ENV_PREFIX = "export LD_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu:/usr/local/lib'; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
 
     public function __construct(
         \mysqli $db_connection,
@@ -204,6 +212,87 @@ class Transcoder
         $this->childProcesses = [];
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // PID FILE MANAGEMENT — cross-process kill (admin panel)
+    // ═══════════════════════════════════════════════════════════════
+
+    /** Tulis PID ke file agar bisa di-kill dari proses lain (admin panel). */
+    private function writePidFile(string $taskType, int $queueId, int $pid): void
+    {
+        $dir = self::PID_DIR;
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        $path = "$dir/{$taskType}_{$queueId}.pid";
+        @file_put_contents($path, (string)$pid);
+    }
+
+    /** Hapus PID file setelah proses selesai. */
+    private function removePidFile(string $taskType, int $queueId): void
+    {
+        $path = self::PID_DIR . "/{$taskType}_{$queueId}.pid";
+        if (file_exists($path)) {
+            @unlink($path);
+        }
+    }
+
+    /**
+     * Kill proses berdasarkan PID file (dipanggil dari admin panel / System.php).
+     * @return bool true jika proses ditemukan dan di-kill
+     */
+    public static function killByPidFile(string $taskType, int $queueId): bool
+    {
+        $path = self::PID_DIR . "/{$taskType}_{$queueId}.pid";
+        if (!file_exists($path)) {
+            return false;
+        }
+        $pid = (int)@file_get_contents($path);
+        @unlink($path);
+
+        if ($pid <= 0) {
+            return false;
+        }
+
+        $killed = false;
+        if (function_exists('posix_kill')) {
+            $killed = posix_kill($pid, SIGTERM);
+        }
+        if (!$killed) {
+            @shell_exec('kill -TERM ' . $pid . ' 2>/dev/null');
+        }
+
+        usleep(500000); // 500ms grace period
+
+        if (function_exists('posix_kill')) {
+            @posix_kill($pid, SIGKILL);
+        } else {
+            @shell_exec('kill -KILL ' . $pid . ' 2>/dev/null');
+        }
+
+        error_log("[MEeL] killByPidFile: killed {$taskType}#{$queueId} (PID {$pid})");
+        return true;
+    }
+
+    /**
+     * Bersihkan semua PID file stale (> 30 menit).
+     * Dipanggil dari GarbageCollector atau periodic cleanup.
+     */
+    public static function cleanupStalePidFiles(): int
+    {
+        $dir = self::PID_DIR;
+        if (!is_dir($dir)) {
+            return 0;
+        }
+        $cleaned = 0;
+        foreach (glob("$dir/*.pid") ?: [] as $file) {
+            if (time() - @filemtime($file) > 1800) {
+                @unlink($file);
+                $cleaned++;
+            }
+        }
+        return $cleaned;
+    }
+
     /* @param string $subdir Subdirektori (misal: 'temp', 'upload', 'transcode') */
     private function resolveShmPath(string $subdir): string
     {
@@ -224,7 +313,7 @@ class Transcoder
 
             $resolved[$subdir] = $use_shm
                 ? "$shm_path/meel/$subdir"
-                : dirname(__DIR__, 2) . '/temp';
+                : dirname(__DIR__, 2) . '/temp/' . $subdir;
 
             if (!is_dir($resolved[$subdir])) {
                 $this->ensureDir($resolved[$subdir]);
@@ -487,6 +576,7 @@ class Transcoder
         $dl_pgid   = (int)($dl_status['pid'] ?? 0);
         $dl_label  = ($type === 'music') ? ($temp_id ?? 'music') : ($basename ?? 'video');
         $this->trackChildProcess($dl_pgid, true, 'yt-dlp download (' . $dl_label . ')');
+        $this->writePidFile('download', $queue_id, $dl_pgid);
 
         $frag_retry_abort  = false;
         $php_timeout_abort = false;
@@ -554,6 +644,7 @@ class Transcoder
         fclose($dl_out);
         proc_close($dl_proc);
         $this->untrackChildProcess($dl_pgid);
+        $this->removePidFile('download', $queue_id);
 
         $is_success = false;
 
@@ -719,7 +810,8 @@ class Transcoder
         // Transcode ke HLS
         $work_m3u8  = $work_folder . $folder_name . ".m3u8";
 
-        $hls_env = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
+        $lib_path = '/usr/lib/x86_64-linux-gnu:/usr/local/lib';
+        $hls_env = ['LD_LIBRARY_PATH' => $lib_path, 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $hls_cmd = [
             $this->ffmpeg_bin,
             '-threads', (string)self::FFMPEG_THREADS,
@@ -747,9 +839,19 @@ class Transcoder
         $hls_status = proc_get_status($hls_proc);
         $hls_pid    = (int)($hls_status['pid'] ?? 0);
         $this->trackChildProcess($hls_pid, false, 'ffmpeg HLS (' . $folder_name . ')');
+        $this->writePidFile('transcode', 0, $hls_pid);
 
+        stream_set_timeout($hls_out, 30);
+        $hls_start = time();
+        $hls_timeout = max(120, (int)($file_dur * 2)); // min 2min atau 2x durasi (codec copy = cepat)
         while (!feof($hls_out)) {
+            if (time() - $hls_start > $hls_timeout) {
+                error_log("[MEeL] finalizeVideo: HLS timeout setelah {$hls_timeout}s");
+                $this->terminateChildProcess($hls_pid, 'ffmpeg HLS timeout', false);
+                break;
+            }
             $line = fgets($hls_out);
+            if ($line === false) break;
             if (preg_match('/time=((\d+):(\d+):(\d+)\.(\d+))/', $line, $m) && $file_dur > 0) {
                 $cur = ($m[2] * 3600) + ($m[3] * 60) + $m[4];
                 $pct = min(99, round(($cur / $file_dur) * 100));
@@ -759,6 +861,7 @@ class Transcoder
         fclose($hls_pipes[2]);
         proc_close($hls_proc);
         $this->untrackChildProcess($hls_pid);
+        $this->removePidFile('transcode', 0);
 
         if (!file_exists($work_m3u8) || filesize($work_m3u8) === 0) {
             $this->removeDir($work_folder);
@@ -1147,7 +1250,10 @@ class Transcoder
         $stmt_clean->close();
 
         $stmt = $this->conn->prepare(
-            "SELECT title, filename, thumbnail FROM video WHERE id = ? LIMIT 1"
+            "SELECT v.title, v.filename, v.thumbnail, v.description, v.upload_date, u.username
+             FROM video v
+             LEFT JOIN users u ON v.user_id = u.id
+             WHERE v.id = ? LIMIT 1"
         );
         $stmt->bind_param("i", $video_id);
         $stmt->execute();
@@ -1206,13 +1312,34 @@ class Transcoder
         $mtx_fp    = fopen($mtx_path, 'c');
         $mtx_locked = $mtx_fp !== false && flock($mtx_fp, LOCK_EX);
 
-        if (file_exists($output_path) && filesize($output_path) > 0) {
+        // Cache hit: file sudah ada DAN valid (> 10KB + durasi valid)
+        $cache_valid = false;
+        if (file_exists($output_path)) {
+            $cache_size = filesize($output_path);
+            if ($cache_size > 10240) {
+                // Validasi durasi output mendekati durasi sumber (toleransi 50%)
+                $cache_dur = $this->probeDuration($output_path);
+                if ($cache_dur > 0 && $file_dur > 0 && $cache_dur >= $file_dur * 0.5) {
+                    $cache_valid = true;
+                } elseif ($cache_dur <= 0 && $cache_size > 50000) {
+                    // Jika ffprobe gagal tapi file cukup besar, anggap valid
+                    $cache_valid = true;
+                }
+            }
+        }
+        if ($cache_valid) {
             if ($mtx_locked) { flock($mtx_fp, LOCK_UN); fclose($mtx_fp); }
-            $download_link = "controllers/api/download_transcode.php?file=" . rawurlencode($output_filename);
-            // meelDoneTranscode tanpa overlay, meel* JS belum terdefinisi.
+            $download_link = "api/download-transcode?file=" . rawurlencode($output_filename) . "&title=" . rawurlencode($v_data['title']);
             $this->emit('transcode_start');
             $this->emit('done_transcode', ['title' => $v_data['title'], 'download_link' => $download_link]);
-            return ['status' => 'success', 'download_link' => $download_link];
+            return ['status' => 'success', 'download_link' => $download_link, 'output_filename' => $output_filename, 'title' => $v_data['title']];
+        }
+
+        // Hapus file cache tidak valid agar bisa re-transcode
+        if (file_exists($output_path)) {
+            $reason = filesize($output_path) <= 10240 ? 'too small (' . filesize($output_path) . ' bytes)' : 'duration mismatch';
+            error_log("[MEeL] transcodeVideo: hapus cache invalid ($output_path, $reason)");
+            $this->removeFile($output_path);
         }
 
         if (file_exists($marker_file)) {
@@ -1287,12 +1414,23 @@ class Transcoder
             $cmd .= " -map 1:v -c:v copy -disposition:v:0 attached_pic";
             if ($format === 'mp3') $cmd .= " -id3v2_version 3";
         }
+        // Metadata untuk output audio
+        $meta_title  = $v_data['title'] ?? 'Untitled';
+        $meta_artist = $v_data['username'] ?? 'MEeL Transcoder';
+        $meta_album  = 'MEeL';
+        $meta_date   = !empty($v_data['upload_date']) ? date('Y-m-d', strtotime($v_data['upload_date'])) : date('Y-m-d');
+        $meta_comment = !empty($v_data['description']) ? mb_substr($v_data['description'], 0, 256) : 'Transcoded by MEeL';
+
         $cmd .= " -c:a $codec $bitrate"
-            . " -metadata title="  . escapeshellarg($v_data['title'])
-            . " -metadata artist='MEeL Transcoder'"
+            . " -metadata title="  . escapeshellarg($meta_title)
+            . " -metadata artist=" . escapeshellarg($meta_artist)
+            . " -metadata album="  . escapeshellarg($meta_album)
+            . " -metadata date="   . escapeshellarg($meta_date)
+            . " -metadata comment=" . escapeshellarg($meta_comment)
+            . " -metadata album_artist=" . escapeshellarg('MEeL')
             . " " . escapeshellarg($output_path) . " 2>&1";
 
-        $tc_env  = ['LD_LIBRARY_PATH' => '', 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
+        $tc_env  = ['LD_LIBRARY_PATH' => self::FFMPEG_LIB_PATH, 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $tc_cmd  = [$this->ffmpeg_bin,
             '-y', '-threads', (string)self::FFMPEG_THREADS,
             '-f', 'concat', '-safe', '0', '-i', $concat_list_path,
@@ -1312,8 +1450,12 @@ class Transcoder
             $parts = explode(' ', $bitrate);
             foreach ($parts as $p) $tc_cmd[] = $p;
         }
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "title=" . $v_data['title'];
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "artist=MEeL Transcoder";
+        $tc_cmd[] = '-metadata'; $tc_cmd[] = "title=" . $meta_title;
+        $tc_cmd[] = '-metadata'; $tc_cmd[] = "artist=" . $meta_artist;
+        $tc_cmd[] = '-metadata'; $tc_cmd[] = "album=" . $meta_album;
+        $tc_cmd[] = '-metadata'; $tc_cmd[] = "date=" . $meta_date;
+        $tc_cmd[] = '-metadata'; $tc_cmd[] = "comment=" . $meta_comment;
+        $tc_cmd[] = '-metadata'; $tc_cmd[] = "album_artist=MEeL";
         $tc_cmd[] = $output_path;
 
         $this->emit('transcode_start');
@@ -1328,9 +1470,20 @@ class Transcoder
             $tc_status = proc_get_status($tc_proc);
             $tc_pid    = (int)($tc_status['pid'] ?? 0);
             $this->trackChildProcess($tc_pid, false, 'ffmpeg transcode audio (' . $output_filename . ')');
+            $this->writePidFile('transcode', $queue_id, $tc_pid);
 
+            stream_set_timeout($tc_out, 30); // 30s timeout per fgets
+            $ffmpeg_stderr = [];
+            $tc_start = time();
             while (!feof($tc_out)) {
+                if (time() - $tc_start > self::TRANSCODE_AUDIO_TIMEOUT) {
+                    error_log("[MEeL] transcodeVideo: timeout setelah " . self::TRANSCODE_AUDIO_TIMEOUT . "s");
+                    $this->terminateChildProcess($tc_pid, 'ffmpeg transcode audio timeout', false);
+                    break;
+                }
                 $line = fgets($tc_out);
+                if ($line === false) break;
+                $ffmpeg_stderr[] = $line;
                 if (preg_match('/time=((\d+):(\d+):(\d+)\.(\d+))/', $line, $m) && $file_dur > 0) {
                     $cur   = ($m[2] * 3600) + ($m[3] * 60) + $m[4];
                     $pct   = min(100, round(($cur / $file_dur) * 100));
@@ -1340,8 +1493,24 @@ class Transcoder
                 }
             }
             fclose($tc_pipes[2]);
-            proc_close($tc_proc);
+
+            // Cek exit code FFmpeg
+            $tc_exit = proc_close($tc_proc);
             $this->untrackChildProcess($tc_pid);
+            $this->removePidFile('transcode', $queue_id);
+
+            if ($tc_exit !== 0) {
+                $tail = implode('', array_slice($ffmpeg_stderr, -15));
+                error_log("[MEeL] transcodeVideo: ffmpeg exit=$tc_exit | $output_filename | stderr: $tail");
+                $this->removeFile($output_path);
+                $this->removeFile($concat_list_path);
+                $this->removeFile($marker_file);
+                $stmt_upd = $this->conn->prepare("UPDATE transcode_queue SET status = 'failed' WHERE id = ?");
+                $stmt_upd->bind_param("i", $queue_id);
+                $stmt_upd->execute();
+                $stmt_upd->close();
+                return ['status' => 'error', 'msg' => 'FFmpeg gagal memproses audio (exit code: ' . $tc_exit . ').'];
+            }
         }
 
         $this->removeFile($concat_list_path);
@@ -1361,13 +1530,14 @@ class Transcoder
             return ['status' => 'error', 'msg' => 'FFmpeg gagal menghasilkan file.'];
         }
 
-        $download_link = "controllers/api/download_transcode.php?file=" . rawurlencode($output_filename);
+        $download_link = "api/download-transcode?file=" . rawurlencode($output_filename) . "&title=" . rawurlencode($v_data['title']);
         $this->emit('done_transcode', ['title' => $v_data['title'], 'download_link' => $download_link]);
 
         return [
             'status'          => 'success',
             'download_link'   => $download_link,
             'output_filename' => $output_filename,
+            'title'           => $v_data['title'],
         ];
     }
 }

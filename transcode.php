@@ -63,6 +63,7 @@ $scripts_root = '';
 include __DIR__ . '/partials/scripts.php';
 ?>
     <link href="assets/css/font.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
     <style>        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
         body::before {
             content: '';
@@ -84,6 +85,12 @@ include __DIR__ . '/partials/scripts.php';
             z-index: 100;
             animation: glow 3s ease-in-out infinite;
         }
+
+        /* Green selected state — not in Tailwind build */
+        .has-\[\:checked\]\:border-green-500\/40:has(:checked) { border-color: rgba(34, 197, 94, 0.4); }
+        .has-\[\:checked\]\:bg-green-500\/10:has(:checked) { background-color: rgba(34, 197, 94, 0.1); }
+        .group:has(:checked) .group-has-\[\:checked\]\:bg-green-500\/15 { background-color: rgba(34, 197, 94, 0.15); }
+        .group:has(:checked) .group-has-\[\:checked\]\:text-green-500 { color: rgb(34 197 94); }
 </style>
 </head>
 
@@ -132,7 +139,7 @@ include __DIR__ . '/partials/scripts.php';
                         </div>
                     </div>
 
-                    <a href="<?= htmlspecialchars($download_link) ?>" download="<?= htmlspecialchars($output_filename) ?>" class="w-full flex items-center justify-center gap-2.5 p-4 bg-green-500 text-black font-syne text-[12px] font-extrabold tracking-[.12em] uppercase rounded-xl transition-all shadow-[0_4px_20px_rgba(34,197,94,.22)] hover:bg-green-400 hover:-translate-y-[1px] hover:shadow-[0_8px_28px_rgba(34,197,94,.32)]">
+                    <a href="<?= htmlspecialchars($download_link) ?>" download="<?= htmlspecialchars(($video_title ?: pathinfo($output_filename, PATHINFO_FILENAME)) . '.' . pathinfo($output_filename, PATHINFO_EXTENSION)) ?>" class="w-full flex items-center justify-center gap-2.5 p-4 bg-green-500 text-black font-syne text-[12px] font-extrabold tracking-[.12em] uppercase rounded-xl transition-all shadow-[0_4px_20px_rgba(34,197,94,.22)] hover:bg-green-400 hover:-translate-y-[1px] hover:shadow-[0_8px_28px_rgba(34,197,94,.32)]">
                         <i data-lucide="download" class="w-[15px] h-[15px]"></i>
                         Unduh Sekarang
                     </a>
@@ -176,30 +183,30 @@ include __DIR__ . '/partials/scripts.php';
                                         'icon' => 'music',
                                         'name' => 'MP3',
                                         'desc' => "128kbps\nMPEG",
-                                        'activeBorder' => 'has-[:checked]:border-red-500/40',
-                                        'activeBg' => 'has-[:checked]:bg-red-500/10',
-                                        'iconBg' => 'group-has-[:checked]:bg-red-500/15',
-                                        'textActive' => 'group-has-[:checked]:text-red-500',
+                                        'activeBorder' => 'has-[:checked]:border-green-500/40',
+                                        'activeBg' => 'has-[:checked]:bg-green-500/10',
+                                        'iconBg' => 'group-has-[:checked]:bg-green-500/15',
+                                        'textActive' => 'group-has-[:checked]:text-green-500',
                                         'color' => 'text-red-500'
                                     ],
                                     'ogg' => [
                                         'icon' => 'radio',
                                         'name' => 'OGG',
                                         'desc' => "Opus\nModern",
-                                        'activeBorder' => 'has-[:checked]:border-orange-500/40',
-                                        'activeBg' => 'has-[:checked]:bg-orange-500/10',
-                                        'iconBg' => 'group-has-[:checked]:bg-orange-500/15',
-                                        'textActive' => 'group-has-[:checked]:text-orange-500',
+                                        'activeBorder' => 'has-[:checked]:border-green-500/40',
+                                        'activeBg' => 'has-[:checked]:bg-green-500/10',
+                                        'iconBg' => 'group-has-[:checked]:bg-green-500/15',
+                                        'textActive' => 'group-has-[:checked]:text-green-500',
                                         'color' => 'text-orange-500'
                                     ],
                                     'm4a' => [
                                         'icon' => 'headphones',
                                         'name' => 'M4A',
                                         'desc' => "AAC\nApple",
-                                        'activeBorder' => 'has-[:checked]:border-purple-400/40',
-                                        'activeBg' => 'has-[:checked]:bg-purple-400/10',
-                                        'iconBg' => 'group-has-[:checked]:bg-purple-400/15',
-                                        'textActive' => 'group-has-[:checked]:text-purple-400',
+                                        'activeBorder' => 'has-[:checked]:border-green-500/40',
+                                        'activeBg' => 'has-[:checked]:bg-green-500/10',
+                                        'iconBg' => 'group-has-[:checked]:bg-green-500/15',
+                                        'textActive' => 'group-has-[:checked]:text-green-500',
                                         'color' => 'text-purple-400'
                                     ],
                                 ];
