@@ -322,7 +322,7 @@ function _scanSubdirs(string $dir): array {
                                     decoding="async">
                             <?php else: ?>
                                 <img data-src="<?= $safe_src ?>"
-                                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP
+                                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                                     class="manga-img lazy"
                                     alt="Halaman <?= $page_num ?>"
                                     data-page="<?= $page_num ?>"
