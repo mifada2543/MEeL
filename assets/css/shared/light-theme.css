@@ -480,6 +480,18 @@ html[data-theme="light"] {
 html[data-theme="light"] #video-glow-container {
   background: var(--meel-bg) !important;
 }
+html[data-theme="light"] #video-glow-canvas,
+html[data-theme="light"] #video-glow-canvas-fs {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  display: none !important;
+}
+html[data-theme="light"] nav::before {
+  opacity: 0 !important;
+}
+html[data-theme="light"] #plyr-setting-glow {
+  display: none !important;
+}
 html[data-theme="light"] .bg-\[\#141820\] {
   background: var(--meel-surface-elevated) !important;
   border-color: var(--meel-border) !important;
@@ -839,6 +851,121 @@ html[data-theme="light"] .bottom-link:hover {
   color: var(--meel-text-heading) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
   background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TRANSCODE PAGE — light mode
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body {
+  color: #3f3f46 !important;
+}
+html[data-theme="light"] body::before {
+  background-image: none !important;
+  opacity: 0 !important;
+}
+html[data-theme="light"] body::after {
+  opacity: 0 !important;
+}
+/* Navbar */
+html[data-theme="light"] nav.bg-\[\#080b11\]\/90 {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] nav .font-syne.text-\[\#f0f2f7\] {
+  color: #18181b !important;
+}
+html[data-theme="light"] nav .text-red-500 {
+  color: #dc2626 !important;
+}
+html[data-theme="light"] nav .text-muted {
+  color: #71717a !important;
+}
+html[data-theme="light"] nav .bg-white\/10 {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+/* Card */
+html[data-theme="light"] .bg-card {
+  background: #ffffff !important;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme="light"] .border-white\/\[\.06\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+/* Headings */
+html[data-theme="light"] .font-syne.text-\[\#f0f2f7\] {
+  color: #18181b !important;
+}
+html[data-theme="light"] .text-\[\#f0f2f7\] {
+  color: #18181b !important;
+}
+/* Body text */
+html[data-theme="light"] .text-\[\#c9cdd6\] {
+  color: #3f3f46 !important;
+}
+/* Muted text */
+html[data-theme="light"] .text-muted {
+  color: #71717a !important;
+}
+/* Format description text */
+html[data-theme="light"] .text-\[\#2c3440\] {
+  color: #71717a !important;
+}
+/* Input field */
+html[data-theme="light"] .bg-white\/\[\.035\] {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+html[data-theme="light"] .border-white\/\[\.08\] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme="light"] input::placeholder {
+  color: #a1a1aa !important;
+}
+/* Format selection cards */
+html[data-theme="light"] .bg-white\/\[\.02\] {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+html[data-theme="light"] .border-white\/\[\.07\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .hover\:border-white\/\[\.14\]:hover {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] .hover\:bg-white\/\[\.04\]:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+/* Progress bar */
+html[data-theme="light"] .bg-white\/5 {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+/* Divider */
+html[data-theme="light"] .bg-white\/\[\.06\] {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+/* Footer links */
+html[data-theme="light"] a.text-muted:hover {
+  color: #18181b !important;
+}
+html[data-theme="light"] a.text-red-500 {
+  color: #dc2626 !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOKS INDEX — overlay text + continue banner
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .book-overlay .text-white {
+  color: #ffffff !important;
+}
+html[data-theme="light"] .book-overlay .text-gray-300 {
+  color: #d1d5db !important;
+}
+html[data-theme="light"] .book-overlay .text-green-400\/70 {
+  color: rgba(74, 222, 128, 0.7) !important;
+}
+html[data-theme="light"] .continue-banner-text {
+  color: #52525b !important;
+}
+html[data-theme="light"] .continue-banner-text strong {
+  color: #18181b !important;
 }
 
 /* ════════════════════════════════════════════════════════════

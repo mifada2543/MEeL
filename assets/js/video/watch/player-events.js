@@ -604,6 +604,7 @@ function setupMeelPlayerEvents() {
           },
           m = () => {
             if (!glowEnabled || c) return;
+            if (document.documentElement.getAttribute("data-theme") === "light") return;
             o.style.opacity = "0.6";
             p();
             d = 0;
@@ -713,6 +714,10 @@ function setupMeelPlayerEvents() {
       },
       a = (timestamp) => {
         if (!glowRAF) return;
+        if (document.documentElement.getAttribute("data-theme") === "light") {
+          s();
+          return;
+        }
         if (r.offsetParent === null) {
           glowRAF = requestAnimationFrame(a);
           return;
@@ -749,6 +754,7 @@ function setupMeelPlayerEvents() {
       i = () => {
         if (!glowEnabled || glowRAF) return;
         if (player && player.fullscreen && player.fullscreen.active) return;
+        if (document.documentElement.getAttribute("data-theme") === "light") return;
         r.classList.add("glow-active");
         o();
         glowLastSampleTime = 0;
