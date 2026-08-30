@@ -1,4 +1,9 @@
 <?php
+set_time_limit(0);
+ignore_user_abort(false);
+@ini_set('zlib.output_compression', 'Off');
+@ob_implicit_flush(true);
+
 require_once 'modules/core/helpers.php';
 require_once 'auth/auth.php';
 require_once 'auth/config.php';
@@ -18,27 +23,27 @@ if (isset($_POST['start_transcode'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF Token tidak valid.';
     } else {
-    $video_id = (int)($_POST['video_id'] ?? 0);
-    $format   = $_POST['format'] ?? 'mp3';
+        $video_id = (int)($_POST['video_id'] ?? 0);
+        $format   = $_POST['format'] ?? 'mp3';
 
-    if ($video_id <= 0) {
-        $alert_message = 'ID Video harus berupa angka valid!';
-    } else {
-        $stmt_title = $conn->prepare("SELECT title FROM video WHERE id = ? LIMIT 1");
-        $stmt_title->bind_param("i", $video_id);
-        $stmt_title->execute();
-        $title_row  = $stmt_title->get_result()->fetch_assoc();
-        $video_title = $title_row['title'] ?? "Video #$video_id";
-
-        $result = $transcoder->transcodeVideo($video_id, $format);
-
-        if ($result['status'] === 'success') {
-            $download_link   = $result['download_link'];
-            $output_filename = $result['output_filename'];
+        if ($video_id <= 0) {
+            $alert_message = 'ID Video harus berupa angka valid!';
         } else {
-            $alert_message = $result['msg'];
+            $stmt_title = $conn->prepare("SELECT title FROM video WHERE id = ? LIMIT 1");
+            $stmt_title->bind_param("i", $video_id);
+            $stmt_title->execute();
+            $title_row  = $stmt_title->get_result()->fetch_assoc();
+            $video_title = $title_row['title'] ?? "Video #$video_id";
+
+            $result = $transcoder->transcodeVideo($video_id, $format);
+
+            if ($result['status'] === 'success') {
+                $download_link   = $result['download_link'];
+                $output_filename = $result['output_filename'];
+            } else {
+                $alert_message = $result['msg'];
+            }
         }
-    }
     } // tutup else verify_csrf
 }
 
@@ -55,16 +60,17 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
 <html lang="id">
 
 <head>
-<?php
-$_META_TITLE = 'MEeL Transcoder';
-$_META_DESC  = 'MEeL Transcoder - Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.';
-include __DIR__ . '/partials/link.php';
-$scripts_root = '';
-include __DIR__ . '/partials/scripts.php';
-?>
+    <?php
+    $_META_TITLE = 'MEeL Transcoder';
+    $_META_DESC  = 'MEeL Transcoder - Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.';
+    include __DIR__ . '/partials/link.php';
+    $scripts_root = '';
+    include __DIR__ . '/partials/scripts.php';
+    ?>
     <link href="assets/css/font.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
-    <style>        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
+    <style>
+        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
         body::before {
             content: '';
             position: fixed;
@@ -87,11 +93,22 @@ include __DIR__ . '/partials/scripts.php';
         }
 
         /* Green selected state — not in Tailwind build */
-        .has-\[\:checked\]\:border-green-500\/40:has(:checked) { border-color: rgba(34, 197, 94, 0.4); }
-        .has-\[\:checked\]\:bg-green-500\/10:has(:checked) { background-color: rgba(34, 197, 94, 0.1); }
-        .group:has(:checked) .group-has-\[\:checked\]\:bg-green-500\/15 { background-color: rgba(34, 197, 94, 0.15); }
-        .group:has(:checked) .group-has-\[\:checked\]\:text-green-500 { color: rgb(34 197 94); }
-</style>
+        .has-\[\:checked\]\:border-green-500\/40:has(:checked) {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .has-\[\:checked\]\:bg-green-500\/10:has(:checked) {
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+
+        .group:has(:checked) .group-has-\[\:checked\]\:bg-green-500\/15 {
+            background-color: rgba(34, 197, 94, 0.15);
+        }
+
+        .group:has(:checked) .group-has-\[\:checked\]\:text-green-500 {
+            color: rgb(34 197 94);
+        }
+    </style>
 </head>
 
 <body class="bg-bg text-[#c9cdd6] font-sans min-h-screen flex flex-col relative">

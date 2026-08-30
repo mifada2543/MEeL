@@ -814,14 +814,22 @@ class Transcoder
         $hls_env = ['LD_LIBRARY_PATH' => $lib_path, 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
         $hls_cmd = [
             $this->ffmpeg_bin,
-            '-threads', (string)self::FFMPEG_THREADS,
-            '-i', $staging_mp4,
-            '-codec', 'copy',
-            '-start_number', '0',
-            '-hls_time', (string)self::HLS_SEGMENT_DURATION,
-            '-hls_list_size', '0',
-            '-hls_segment_filename', $work_folder . $folder_name . '_%03d.ts',
-            '-f', 'hls',
+            '-threads',
+            (string)self::FFMPEG_THREADS,
+            '-i',
+            $staging_mp4,
+            '-codec',
+            'copy',
+            '-start_number',
+            '0',
+            '-hls_time',
+            (string)self::HLS_SEGMENT_DURATION,
+            '-hls_list_size',
+            '0',
+            '-hls_segment_filename',
+            $work_folder . $folder_name . '_%03d.ts',
+            '-f',
+            'hls',
             $work_m3u8,
         ];
 
@@ -1289,7 +1297,7 @@ class Transcoder
             if ($total_size > 200 * 1024 * 1024 || $file_dur > 600) {
                 $reasons = [];
                 if ($total_size > 200 * 1024 * 1024) {
-                    $reasons[] = 'ukuran ' . round($total_size / (1024*1024), 1) . 'MB (maks 200MB)';
+                    $reasons[] = 'ukuran ' . round($total_size / (1024 * 1024), 1) . 'MB (maks 200MB)';
                 }
                 if ($file_dur > 600) {
                     $reasons[] = 'durasi ' . round($file_dur / 60, 1) . ' menit (maks 10 menit)';
@@ -1328,7 +1336,10 @@ class Transcoder
             }
         }
         if ($cache_valid) {
-            if ($mtx_locked) { flock($mtx_fp, LOCK_UN); fclose($mtx_fp); }
+            if ($mtx_locked) {
+                flock($mtx_fp, LOCK_UN);
+                fclose($mtx_fp);
+            }
             $download_link = "api/download-transcode?file=" . rawurlencode($output_filename) . "&title=" . rawurlencode($v_data['title']);
             $this->emit('transcode_start');
             $this->emit('done_transcode', ['title' => $v_data['title'], 'download_link' => $download_link]);
@@ -1345,7 +1356,10 @@ class Transcoder
         if (file_exists($marker_file)) {
             $marker_age = time() - filemtime($marker_file);
             if ($marker_age < 600) { // < 10 menit — masih wajar
-                if ($mtx_locked) { flock($mtx_fp, LOCK_UN); fclose($mtx_fp); }
+                if ($mtx_locked) {
+                    flock($mtx_fp, LOCK_UN);
+                    fclose($mtx_fp);
+                }
                 return ['status' => 'error', 'msg' => 'Output sedang diproses oleh antrean lain. Tunggu beberapa saat.'];
             }
             // Marker > 10 menit (stale) — lanjutkan
@@ -1431,31 +1445,61 @@ class Transcoder
             . " " . escapeshellarg($output_path) . " 2>&1";
 
         $tc_env  = ['LD_LIBRARY_PATH' => self::FFMPEG_LIB_PATH, 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LC_ALL' => 'en_US.UTF-8'];
-        $tc_cmd  = [$this->ffmpeg_bin,
-            '-y', '-threads', (string)self::FFMPEG_THREADS,
-            '-f', 'concat', '-safe', '0', '-i', $concat_list_path,
+        $tc_cmd  = [
+            $this->ffmpeg_bin,
+            '-y',
+            '-threads',
+            (string)self::FFMPEG_THREADS,
+            '-f',
+            'concat',
+            '-safe',
+            '0',
+            '-i',
+            $concat_list_path,
         ];
         if ($use_thumb) {
-            $tc_cmd[] = '-i'; $tc_cmd[] = $thumb_path;
+            $tc_cmd[] = '-i';
+            $tc_cmd[] = $thumb_path;
         }
-        $tc_cmd[] = '-map'; $tc_cmd[] = '0:a';
+        $tc_cmd[] = '-map';
+        $tc_cmd[] = '0:a';
         if ($use_thumb) {
-            $tc_cmd[] = '-map'; $tc_cmd[] = '1:v';
-            $tc_cmd[] = '-c:v'; $tc_cmd[] = 'copy';
-            $tc_cmd[] = '-disposition:v:0'; $tc_cmd[] = 'attached_pic';
-            if ($format === 'mp3') { $tc_cmd[] = '-id3v2_version'; $tc_cmd[] = '3'; }
+            $tc_cmd[] = '-map';
+            $tc_cmd[] = '1:v';
+            // PENTING: JANGAN stream-copy ('copy') gambar cover di sini.
+            // Thumbnail disimpan sebagai WebP (lihat finalizeVideo()), dan
+            // muxer MP3/M4A tidak tahu mimetype untuk codec WebP saat
+            // dipakai sebagai attached_pic ("No mimetype is known for
+            // stream 1, cannot write an attached picture." -> ffmpeg exit
+            // 234, Conversion failed). Re-encode ke MJPEG (image/jpeg)
+            // yang dikenali semua muxer ID3/MP4.
+            $tc_cmd[] = '-c:v';
+            $tc_cmd[] = 'mjpeg';
+            $tc_cmd[] = '-disposition:v:0';
+            $tc_cmd[] = 'attached_pic';
+            if ($format === 'mp3') {
+                $tc_cmd[] = '-id3v2_version';
+                $tc_cmd[] = '3';
+            }
         }
-        $tc_cmd[] = '-c:a'; $tc_cmd[] = $codec;
+        $tc_cmd[] = '-c:a';
+        $tc_cmd[] = $codec;
         if (!empty($bitrate)) {
             $parts = explode(' ', $bitrate);
             foreach ($parts as $p) $tc_cmd[] = $p;
         }
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "title=" . $meta_title;
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "artist=" . $meta_artist;
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "album=" . $meta_album;
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "date=" . $meta_date;
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "comment=" . $meta_comment;
-        $tc_cmd[] = '-metadata'; $tc_cmd[] = "album_artist=MEeL";
+        $tc_cmd[] = '-metadata';
+        $tc_cmd[] = "title=" . $meta_title;
+        $tc_cmd[] = '-metadata';
+        $tc_cmd[] = "artist=" . $meta_artist;
+        $tc_cmd[] = '-metadata';
+        $tc_cmd[] = "album=" . $meta_album;
+        $tc_cmd[] = '-metadata';
+        $tc_cmd[] = "date=" . $meta_date;
+        $tc_cmd[] = '-metadata';
+        $tc_cmd[] = "comment=" . $meta_comment;
+        $tc_cmd[] = '-metadata';
+        $tc_cmd[] = "album_artist=MEeL";
         $tc_cmd[] = $output_path;
 
         $this->emit('transcode_start');
@@ -1484,12 +1528,24 @@ class Transcoder
                 $line = fgets($tc_out);
                 if ($line === false) break;
                 $ffmpeg_stderr[] = $line;
-                if (preg_match('/time=((\d+):(\d+):(\d+)\.(\d+))/', $line, $m) && $file_dur > 0) {
-                    $cur   = ($m[2] * 3600) + ($m[3] * 60) + $m[4];
-                    $pct   = min(100, round(($cur / $file_dur) * 100));
-                    $fmt   = strtoupper($format);
-                    $label = "$pct% — CONVERTING TO $fmt";
-                    $this->emit('transcode_progress', ['pct' => $pct, 'label' => $label]);
+                $fmt = strtoupper($format);
+                if (preg_match('/time=((\d+):(\d+):(\d+)\.(\d+))/', $line, $m)) {
+                    if ($file_dur > 0) {
+                        $cur   = ($m[2] * 3600) + ($m[3] * 60) + $m[4];
+                        $pct   = min(100, round(($cur / $file_dur) * 100));
+                        $label = "$pct% — CONVERTING TO $fmt";
+                        $this->emit('transcode_progress', ['pct' => $pct, 'label' => $label]);
+                    } else {
+                        // Fallback: ffprobe gagal membaca durasi ($file_dur = 0).
+                        // Tanpa ini progress tidak pernah terkirim dan UI terlihat
+                        // freeze di 0% sampai TRANSCODE_AUDIO_TIMEOUT (600s), padahal
+                        // ffmpeg berjalan normal. Pakai rasio elapsed/timeout sebagai
+                        // estimasi kasar agar user tetap melihat pergerakan.
+                        $elapsed = time() - $tc_start;
+                        $pct     = min(95, (int)round(($elapsed / self::TRANSCODE_AUDIO_TIMEOUT) * 100));
+                        $label   = "$pct% — CONVERTING TO $fmt (estimasi)";
+                        $this->emit('transcode_progress', ['pct' => $pct, 'label' => $label]);
+                    }
                 }
             }
             fclose($tc_pipes[2]);
@@ -1502,6 +1558,8 @@ class Transcoder
             if ($tc_exit !== 0) {
                 $tail = implode('', array_slice($ffmpeg_stderr, -15));
                 error_log("[MEeL] transcodeVideo: ffmpeg exit=$tc_exit | $output_filename | stderr: $tail");
+                $friendly_msg = 'FFmpeg gagal memproses audio (exit code: ' . $tc_exit . ').';
+                $this->emit('error', ['message' => $friendly_msg]);
                 $this->removeFile($output_path);
                 $this->removeFile($concat_list_path);
                 $this->removeFile($marker_file);

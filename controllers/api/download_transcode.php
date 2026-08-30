@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Download endpoint untuk file transcode.
  * Diakses melalui router: api/download-transcode?file=...&title=...
@@ -91,8 +92,13 @@ $download_title = $_GET['title'] ?? pathinfo($filename, PATHINFO_FILENAME);
 if (empty($download_title)) {
     $download_title = 'untitled-media';
 }
-// Replace semua karakter non-aman dengan hyphen
-$download_title_safe = preg_replace('/[^a-zA-Z0-9_\-]+/u', '-', trim($download_title));
+$download_title_safe = preg_replace(
+    "/[^a-zA-Z0-9_\x{3000}-\x{9fff}\x{30a0}-\x{30ff}\x{3040}-\x{309f}\x{ff00}-\x{ffef}]+/u",
+    '-',
+    trim($download_title)
+);
+$download_title_safe = trim($download_title_safe, "- \t\n\r\0\x0B");
+$download_title_safe = mb_substr($download_title_safe, 0, 120);
 $download_title_safe = trim($download_title_safe, "- \t\n\r\0\x0B");
 if (empty($download_title_safe)) {
     $download_title_safe = 'untitled-media';
