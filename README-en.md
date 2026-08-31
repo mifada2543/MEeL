@@ -18,7 +18,7 @@
 
 ## 📖 Overview
 
-**MEeL** is a personal media hub platform built with PHP & MySQL running on Apache (XAMPP/LAMPP). The platform combines **Video**, **Music**, **Books**, and **Cloud Drive** modules into a modern dark-themed monospace web interface. Key features include:
+**MEeL** is a personal media hub platform built with PHP & MySQL running on Apache (XAMPP/LAMPP). The platform combines **Video**, **Music**, **Books**, and **Cloud Drive** modules into a modern monospace web interface (dark & light mode). Key features include:
 
 - **HLS Adaptive Streaming** (HTTP Live Streaming)
 - **Automatic Transcoding** using FFmpeg
@@ -91,7 +91,8 @@
 | **URL Downloader** | yt-dlp + FFmpeg for downloads from YouTube and others |
 | **Comments** | Nested comments on video & music |
 | **Like/Dislike** | Social interaction on media content |
-| **User Profiles** | Avatar, bio, upload statistics |
+| **User Profiles** | Avatar, bio, upload statistics, **Preference page** (theme toggle) |
+| **Light/Dark Mode** | Theme toggle via Profile page — localStorage (guest) + DB sync (logged-in) |
 | **20-20-20 Eye Care** | Eye rest notifications every 20 minutes |
 | **PSR-4 Autoloader** | Auto-loading core classes (`MediaLibrary`, `Uploader`, etc.) without manual require |
 | **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, composite indexes, schema sync) |
@@ -459,7 +460,7 @@ Migrations are **idempotent** — safe to run repeatedly.
 | **Admin** | Full control: all modules, admin panel, advanced upload, transcode, user management, IP banning, activity log viewer |
 | **Member** | All media, comments, like/dislike, books, personal Cloud Drive (20GB quota) |
 | **User** | All media, comments, like/dislike, books (no Cloud Drive) |
-| **Guest** | Limited: only watch/listen without interaction |
+| **Guest** | Limited: watch/listen without interaction, default profile, **theme toggle via Preference** |
 
 ---
 

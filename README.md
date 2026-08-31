@@ -20,7 +20,7 @@
 
 ## 📖 Ikhtisar
 
-**MEeL** adalah platform media hub pribadi berbasis PHP & MySQL yang berjalan di atas Apache (XAMPP/LAMPP). Platform ini menggabungkan modul **Video**, **Music**, **Books**, dan **Cloud Drive** ke dalam antarmuka web gelap bertema monospace yang modern. Sistem ini dilengkapi dengan:
+**MEeL** adalah platform media hub pribadi berbasis PHP & MySQL yang berjalan di atas Apache (XAMPP/LAMPP). Platform ini menggabungkan modul **Video**, **Music**, **Books**, dan **Cloud Drive** ke dalam antarmuka web bertema monospace yang modern (dark & light mode). Sistem ini dilengkapi dengan:
 
 - **Streaming HLS** (HTTP Live Streaming) adaptif
 - **Transcoding otomatis** menggunakan FFmpeg
@@ -93,7 +93,8 @@
 | **Download URL** | yt-dlp + FFmpeg untuk download dari YouTube dll |
 | **Komentar** | Nested comments pada video & musik |
 | **Like/Dislike** | Interaksi sosial pada konten media |
-| **Profil User** | Avatar, bio, statistik upload |
+| **Profil User** | Avatar, bio, statistik upload, **Preference page** (theme toggle) |
+| **Light/Dark Mode** | Toggle tema via Profile page — localStorage (guest) + DB sync (login) |
 | **Mode Sehat 20-20-20** | Notifikasi istirahat mata tiap 20 menit |
 | **Autoloader PSR-4** | Auto-loading class core (`MediaLibrary`, `Uploader`, dll.) tanpa require manual |
 | **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, index komposit, schema sync) |
@@ -453,7 +454,7 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 | **Admin** | Kontrol penuh: semua modul, admin panel, upload advanced, transcode, manajemen user, IP banning, activity log viewer |
 | **Member** | Semua media, komentar, like/dislike, books, Cloud Drive pribadi (quota 20GB) |
 | **User** | Semua media, komentar, like/dislike, books (tanpa Cloud Drive) |
-| **Guest** | Terbatas: hanya nonton/dengar tanpa interaksi |
+| **Guest** | Terbatas: nonton/dengar tanpa interaksi, profil default, **theme toggle via Preference** |
 
 ---
 

@@ -365,6 +365,16 @@ Halaman `profile/index.php` menampilkan status MFA dengan toggle switch visual:
 - Abu-abu "Nonaktif" → link ke `auth/mfa-setup` untuk setup
 - Jika aktif, backup codes juga ditampilkan di profil
 
+### Akses Profil Guest
+
+Guest (pengguna tanpa autentikasi) bisa melihat halaman profil pengguna lain tanpa login. Halaman profil menggunakan `meel_boot_session()` (bukan `session_start()` mentah) untuk memastikan nama cookie session cocok dengan seluruh aplikasi (`meel`).
+
+- **Guest melihat profil sendiri:** Profil sintetis dengan `id=0`, `role='guest'`, bio="Akun Guest" — theme toggle tersedia
+- **Guest melihat profil lain:** Profil nyata dari DB — bio, statistik, badge ditampilkan dengan benar; tidak ada tombol Edit/Manage/MFA; tidak ada theme toggle
+- **User login melihat profil sendiri:** Akses penuh — Edit Profile, Kelola Konten, MFA, Backup Codes, Theme Toggle
+
+Inisialisasi session menggunakan `meel_boot_session()` untuk mengatur `session_name('meel')` dan cookie flags yang di-hardened. Menggunakan `session_start()` mentah akan mencari cookie `PHPSESSID` bukan `meel`, menyebabkan session terlihat kosong.
+
 ---
 
 ## CSRF Protection

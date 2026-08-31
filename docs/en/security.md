@@ -459,6 +459,16 @@ Page `profile/index.php` displays MFA status with visual toggle switch:
 - Gray "Inactive" → link to `auth/mfa-setup` for setup
 - If active, backup codes also displayed in profile
 
+### Guest Profile Access
+
+Guests (unauthenticated users) can view any user's profile page without login. The profile page uses `meel_boot_session()` (not raw `session_start()`) to ensure the session cookie name matches the rest of the application (`meel`).
+
+- **Guest viewing own profile:** Synthetic profile with `id=0`, `role='guest'`, bio="Akun Guest" — theme toggle available
+- **Guest viewing other users:** Real profile from DB — bio, stats, badge shown correctly; no Edit/Manage/MFA buttons; no theme toggle
+- **Logged-in user viewing own profile:** Full access — Edit Profile, Kelola Konten, MFA, Backup Codes, Theme Toggle
+
+Session initialization uses `meel_boot_session()` to set `session_name('meel')` and hardened cookie flags. Using raw `session_start()` would look for a `PHPSESSID` cookie instead of `meel`, causing the session to appear empty.
+
 ---
 
 ## File Upload Security
