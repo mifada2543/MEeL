@@ -43,6 +43,17 @@
 #mini-player-shell .plyr__video-wrapper video {
   touch-action: none;
 }
+/* Video fills entire mini-player — no black rounded corners */
+#mini-player-shell #main-video-wrapper,
+#mini-player-shell #main-video-wrapper .plyr,
+#mini-player-shell #main-video-wrapper .plyr__video-wrapper {
+  border-radius: 0 !important;
+}
+#mini-player-shell #main-video-wrapper .plyr__video-wrapper video {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
 #mini-player-shell.mini-dragging * {
   cursor: grabbing !important;
 }
