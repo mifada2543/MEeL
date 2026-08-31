@@ -107,15 +107,15 @@ function _scanSubdirs(string $dir): array {
                 <h1 class="text-sm font-bold truncate max-w-[180px] sm:max-w-md text-white/90" title="<?= htmlspecialchars($book['title']) ?>">
                     <?= htmlspecialchars($book['title']) ?>
                 </h1>
-                <div class="flex items-center gap-2 mt-0.5">
+                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span class="text-[9px] text-gray-600 uppercase font-black tracking-widest">
                         <?= htmlspecialchars($book['type']) ?>
                     </span>
                     <?php if ($book['has_chapters'] == 1 && !empty($current_chapter)): ?>
                         <span class="text-[9px] text-gray-700">•</span>
-                        <span class="text-[9px] text-green-500/60 uppercase font-bold tracking-wider">
+                        <div class="text-[9px] text-green-500/60 uppercase font-bold tracking-wider line-clamp-2 overflow-hidden">
                             <?= htmlspecialchars($current_chapter) ?>
-                        </span>
+                        </div>
                     <?php endif; ?>
                     <?php if ($total_pages > 0): ?>
                         <span class="text-[9px] text-gray-700">•</span>
@@ -447,7 +447,7 @@ function _scanSubdirs(string $dir): array {
                     img.onerror = function() {
                         img.classList.add('loaded');
                         img.classList.remove('lazy');
-                        img.style.background = '#0f1318';
+                        img.style.background = document.documentElement.getAttribute('data-theme') === 'light' ? '#f4f4f5' : '#0f1318';
                         img.style.minHeight = '100px';
                     };
                     observer.unobserve(img);
