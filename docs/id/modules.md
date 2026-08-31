@@ -466,9 +466,45 @@ light-theme.css (overrides saat data-theme="light")
        ↓
 theme.js (toggle + persist)
        ↓
-localStorage (source of truth, anti-flash)
+localStorage (source of truth, anti-flash, hanya guest)
 + DB custom_theme (sync untuk logged-in user)
 ```
+
+**Behavior guest:** Theme preference hanya disimpan di `localStorage` (tanpa tulis DB). `MEELTheme.init({ isLoggedIn: false })` → `toggle()` hanya simpan ke localStorage tanpa panggil API.
+
+**Behavior logged-in:** Theme disimpan ke `localStorage` DAN `users.custom_theme` (DB). Saat halaman dimuat, localStorage diterapkan dulu (anti-flash), lalu disinkronkan dengan DB jika berbeda.
+
+### 24. Profile Module (`profile/index.php` + `controllers/profile/`)
+
+Halaman profil pengguna dengan visibilitas berbasis role dan theme toggle.
+
+| Komponen | Peran |
+|---|---|
+| `profile/index.php` | Halaman profil — menampilkan avatar, bio, statistik, tombol aksi |
+| `controllers/profile/profile_edit.php` | Handler edit profil |
+| `controllers/profile/manage.php` | Manajemen konten (video/music) |
+| `modules/media/ProfileRepository.php` | Query data profil (count video, music) |
+
+**Variabel kunci:**
+- `$is_logged_in` — apakah pengunjung punya session aktif
+- `$is_guest_profile` — apakah profil yang dilihat adalah profil "Guest" sintetis
+- `$is_owner` — apakah pengunjung melihat profil diri sendiri
+
+**Aturan visibilitas:**
+
+| Elemen | Owner | Visitor (login) | Guest |
+|---|:---:|:---:|:---:|
+| Edit Profile, Kelola Konten, MFA | ✅ | ❌ | ❌ |
+| Theme Toggle | ✅ | ❌ | ✅ (profil sendiri saja) |
+| Upload Stats | ✅ | ✅ | ❌ |
+| Bio | dari DB | dari DB | "Akun Guest" |
+| Badge | Staff/Member | Staff/Member | Guest |
+
+**Akses profil guest:** Guest bisa melihat profil pengguna lain (termasuk profil Guest sintetis mereka sendiri). Profil Guest dibangun di-memory (tanpa query DB) dengan `id=0`, `role='guest'`.
+
+**Inisialisasi session:** Menggunakan `meel_boot_session()` (bukan `session_start()` mentah) untuk memastikan nama cookie session cocok dengan seluruh aplikasi (`meel`).
+
+---
 
 **Adding Light Mode ke Halaman Baru:**
 1. Gunakan CSS variables (`var(--meel-bg)`, `var(--meel-surface)`) alih-alih hardcoded colors

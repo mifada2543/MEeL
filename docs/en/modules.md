@@ -551,9 +551,43 @@ light-theme.css (overrides when data-theme="light")
        ↓
 theme.js (toggle + persist)
        ↓
-localStorage (source of truth, anti-flash)
+localStorage (source of truth, anti-flash, guest-only)
 + DB custom_theme (sync for logged-in users)
 ```
+
+**Guest behavior:** Theme preference is stored in `localStorage` only (no DB write). `MEELTheme.init({ isLoggedIn: false })` → `toggle()` saves to localStorage without calling the API.
+
+**Logged-in behavior:** Theme is saved to both `localStorage` and `users.custom_theme` (DB). On page load, localStorage is applied first (anti-flash), then synced with DB if different.
+
+### 24. Profile Module (`profile/index.php` + `controllers/profile/`)
+
+User profile page with role-based visibility and theme toggle.
+
+| Component | Role |
+|---|---|
+| `profile/index.php` | Profile page — displays avatar, bio, stats, action buttons |
+| `controllers/profile/profile_edit.php` | Profile edit handler |
+| `controllers/profile/manage.php` | Content management (video/music) |
+| `modules/media/ProfileRepository.php` | Profile data queries (count video, music) |
+
+**Key variables:**
+- `$is_logged_in` — whether the visitor has an active session
+- `$is_guest_profile` — whether the profile being viewed is the synthetic "Guest" profile
+- `$is_owner` — whether the visitor is viewing their own profile
+
+**Visibility rules:**
+
+| Element | Owner | Visitor (logged-in) | Guest |
+|---|:---:|:---:|:---:|
+| Edit Profile, Kelola Konten, MFA | ✅ | ❌ | ❌ |
+| Theme Toggle | ✅ | ❌ | ✅ (own profile only) |
+| Upload Stats | ✅ | ✅ | ❌ |
+| Bio | from DB | from DB | "Akun Guest" |
+| Badge | Staff/Member | Staff/Member | Guest |
+
+**Guest profile access:** Guests can view any user's profile (including their own synthetic Guest profile). The Guest profile is constructed in-memory (no DB query) with `id=0`, `role='guest'`.
+
+**Session initialization:** Uses `meel_boot_session()` (not raw `session_start()`) to ensure the session cookie name matches the rest of the application (`meel`).
 
 ---
 
