@@ -26,7 +26,7 @@ html[data-theme="light"] body[style*="background: #05070c"] {
 }
 
 /* ─── TAILWIND TEXT OVERRIDES ─── */
-html[data-theme="light"] .text-white:not(.nav-logo-text),
+html[data-theme="light"] .text-white:not(.nav-logo-text):not(.bg-blue-600):not(.bg-gray-600),
 html[data-theme="light"] .text-white\/90:not(.nav-logo-text),
 html[data-theme="light"] .text-white\/80:not(.nav-logo-text) { color: var(--meel-text-heading) !important; }
 html[data-theme="light"] .text-gray-200 { color: var(--meel-text) !important; }
