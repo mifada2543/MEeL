@@ -61,7 +61,6 @@ $rows       = $logRepo->fetchPage($per_page, $offset);
 $all_actions = $logRepo->getDistinctActions();
 $stats      = $logRepo->getWeeklyStats();
 
-// Multi-Format Export
 $export_format = $_GET['export'] ?? '';
 if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $timestamp = date('Y-m-d_H-i-s');
@@ -69,7 +68,6 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     $rows = $logRepo->fetchAll();
 
     switch ($export_format) {
-        // CSV
         case 'csv':
             header('Content-Type: text/csv; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.csv\"");

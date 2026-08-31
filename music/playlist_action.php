@@ -3,7 +3,6 @@ require_once '../modules/core/helpers.php';
 meel_boot_session();
 include '../auth/config.php';
 
-// Kembali ke halaman asal jika referer valid (host sama), fallback ke index
 function playlist_back_url(): string
 {
     $back = 'beranda';
@@ -21,7 +20,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Verifikasi token untuk semua aksi playlist
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     header('Location: ' . playlist_back_url());
     exit;
@@ -32,14 +30,8 @@ $action  = $_POST['action'] ?? '';
 
 function redirect(string $url): never
 {
-    // Validasi redirect — izinkan URL relatif lama ATAU clean URL internal
-    // (root-relative dari base_url, mis. /MEeL/music/watch?id=5). Cegah open
-    // redirect: tolak URL absolut eksternal (memuat skema, host, atau
-    // protocol-relative //host — yang terakhir lolos dari cek '://').
     $allowed_prefixes = [
-        // Bentuk lama (.php) — kompatibilitas
         'watch.php', 'view_playlist.php', 'index.php',
-        // Route bersih relatif — dipakai caller tanpa base_url()
         'watch', 'playlist', 'beranda', 'music/',
     ];
     $safe = false;
@@ -49,7 +41,6 @@ function redirect(string $url): never
             break;
         }
     }
-    // Root-relative internal (/MEeL/...) — TAPI tolak //host (protocol-relative).
     if (!$safe
         && str_starts_with($url, '/')
         && !str_starts_with($url, '//')
@@ -68,7 +59,6 @@ if ($action === 'create_playlist') {
     $music_id = (int) ($_POST['music_id'] ?? 0);
 
     if ($name !== '') {
-        // TRANSACTION: Atomic playlist + track creation
         $conn->begin_transaction();
         try {
             $stmt = $conn->prepare('INSERT INTO playlists (user_id, name) VALUES (?, ?)');
@@ -142,7 +132,6 @@ if ($action === 'remove_from_playlist') {
 if ($action === 'delete_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
 
-    // TRANSACTION: Hapus playlist beserta semua track di dalamnya
     $conn->begin_transaction();
     try {
         $stmt_tracks = $conn->prepare('DELETE FROM playlist_tracks WHERE playlist_id = ?');

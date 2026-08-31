@@ -3,7 +3,6 @@ if (!function_exists('auth_boot_session')) {
 
     function auth_boot_session(): void
     {
-        // Inisialisasi session terpusat (cookie flags aman) — lihat modules/auth/helpers/session.php
         require_once __DIR__ . '/../modules/auth/helpers/session.php';
         meel_boot_session();
         if (isset($_SESSION['user_id'])) {
@@ -44,7 +43,6 @@ if (!function_exists('auth_back_url')) {
                 $refPath    = parse_url($ref, PHP_URL_PATH) ?? '';
                 $isExcluded = false;
                 foreach ($exclude as $file) {
-                    // Cocokkan nama file lama (login.php) maupun clean URL (/auth/login)
                     if (strpos($refPath, $file) !== false
                         || strpos($refPath, pathinfo($file, PATHINFO_FILENAME)) !== false) {
                         $isExcluded = true;
@@ -80,7 +78,6 @@ if (!function_exists('auth_ip_lockout_status')) {
                         $locked    = true;
                         $remaining = $lock_ts - time();
                     } else {
-                        // Lockout expired — reset
                         $stmt_del = $conn->prepare("DELETE FROM login_attempts WHERE ip_address = ?");
                         $stmt_del->bind_param("s", $ip);
                         $stmt_del->execute();
@@ -171,7 +168,6 @@ if (!function_exists('auth_validate_credentials')) {
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $user)) {
             return "Username hanya boleh berisi huruf, angka, dan underscore (_)!";
         }
-        // Username 'Guest' dicadangkan sistem
         if (stripos($user, 'guest') !== false) {
             return "Username 'Guest' tidak dapat didaftarkan karena dicadangkan untuk sistem!";
         }

@@ -7,10 +7,8 @@
  * Bootstrap minimal — TIDAK include auth/config.php (yang punya redirect).
  */
 
-// Bersihkan SEMUA output buffer SEBELUM apa pun
 while (ob_get_level()) ob_end_clean();
 
-// Suppress warnings/notices yang bisa bocor ke output
 error_reporting(E_ERROR | E_PARSE);
 
 require_once __DIR__ . '/../../modules/core/helpers.php';
@@ -18,7 +16,6 @@ require_once __DIR__ . '/../../auth/settings.php';
 require_once __DIR__ . '/../../modules/core/bootstrap.php';
 meel_boot_session();
 
-// Koneksi DB — gunakan variabel dari settings.php ($db, bukan $database)
 $conn = new mysqli($server, $username, $password, $db);
 if ($conn->connect_error) {
     http_response_code(500);
@@ -28,7 +25,6 @@ if ($conn->connect_error) {
 
 require_once __DIR__ . '/../../modules/core/Transcoder.php';
 
-// Auth check — kembalikan JSON jika unauthorized
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     header('Content-Type: application/json');
@@ -51,7 +47,6 @@ if ($safe_filename !== $filename) {
     die('Nama file tidak valid.');
 }
 
-// Validasi ekstensi — whitelist aman
 $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 $allowed = ['mp3', 'ogg', 'm4a', 'opus'];
 if (!in_array($ext, $allowed, true)) {
@@ -71,7 +66,6 @@ if ($file_path === null) {
     die('File not found or expired.');
 }
 
-// Validasi file tidak kosong/corrupt
 $file_size = filesize($file_path);
 if ($file_size === false || $file_size < 10240) {
     http_response_code(410);
@@ -87,7 +81,6 @@ $mime_types = [
 ];
 $mime = $mime_types[$ext] ?? 'application/octet-stream';
 
-// Bangun nama file download dari judul asli
 $download_title = $_GET['title'] ?? pathinfo($filename, PATHINFO_FILENAME);
 if (empty($download_title)) {
     $download_title = 'untitled-media';
@@ -105,7 +98,6 @@ if (empty($download_title_safe)) {
 }
 $download_name = $download_title_safe . '.' . $ext;
 
-// Bersihkan output buffer LAGI sebelum kirim headers
 while (ob_get_level()) ob_end_clean();
 
 header('Content-Type: ' . $mime);
@@ -115,7 +107,6 @@ header('X-Accel-Buffering: no');
 header('Cache-Control: no-cache, must-revalidate');
 header('Accept-Ranges: none');
 
-// Disable compression untuk binary download
 if (function_exists('apache_setenv')) {
     @apache_setenv('no-gzip', '1');
 }

@@ -8,7 +8,6 @@ $max_login_attempts = 5;
 $lockout_time = 300;
 $is_locked = false;
 $remaining = 0;
-// LOOPBACK (localhost) — bebas rate-limit untuk pengembangan
 $is_loopback = auth_is_loopback();
 if (isset($_SESSION['login_locked_until'])) {
     if (time() >= $_SESSION['login_locked_until']) {

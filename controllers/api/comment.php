@@ -4,13 +4,9 @@ require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
 include '../../auth/config.php';
-// RateLimiter sudah dimuat oleh modules/core/helpers.php → modules/auth/
-// loader.php (require_once). include ulang di sini = fatal
-// "Cannot declare class RateLimiter" (regresi pemindahan ke modules/auth).
 require_once __DIR__ . '/../../modules/media/MediaViewer.php';
 require_once __DIR__ . '/../../modules/core/CommentRenderer.php';
 
-// CSRF: verifikasi token untuk AJAX POST
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     http_response_code(403);
     header('HX-Retarget: #comment-alert');
@@ -35,7 +31,6 @@ if ($media_id <= 0) {
     exit;
 }
 
-// RATE LIMIT: 10 komentar per menit per user
 $rateKey   = 'user_' . $user_id;
 $rateRole  = get_user_role($conn, $user_id);
 $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
