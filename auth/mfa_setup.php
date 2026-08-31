@@ -17,7 +17,6 @@ $step = 'setup'; // setup | verify | backup | done
 $error = '';
 $secret = '';
 $otpauth = '';
-// HANDLE DISABLE MFA
 if (isset($_POST['disable_mfa']) && $mfa_enabled) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error = 'Sesi keamanan kadaluarsa. Silakan refresh halaman.';

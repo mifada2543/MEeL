@@ -16,7 +16,6 @@ require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
-// GLOBAL ERROR HANDLER
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";

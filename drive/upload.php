@@ -18,14 +18,12 @@ if ($isAjax) {
         exit();
     }
 } else {
-    // Non-AJAX: Form submit klik tombol — submit_upload WAJIB ada
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_upload'], $_FILES['file_drive'])) {
         header('Location: .');
         exit();
     }
 }
 
-// CSRF Token Validation
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     if ($isAjax) {
         http_response_code(403);

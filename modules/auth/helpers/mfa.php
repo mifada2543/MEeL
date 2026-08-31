@@ -1,5 +1,4 @@
 <?php
-// helpers/mfa.php — MFA / TOTP Helpers
 if (!function_exists('base32_decode')) {
 /* @param string $input Base32-encoded string; @return string Decoded binary string */
 function base32_decode(string $input): string

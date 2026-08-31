@@ -16,7 +16,6 @@ $is_loopback = auth_is_loopback();
 $ip_lock     = $is_loopback ? ['locked' => false, 'remaining' => 0] : auth_ip_lockout_status($conn, $ip_address);
 $is_locked   = $ip_lock['locked'];
 $remaining   = $ip_lock['remaining'];
-// SESSION-BASED RATE LIMIT (registrasi berhasil) — khusus register
 if (!isset($_SESSION['reg_attempts'])) {
     $_SESSION['reg_attempts'] = [];
 }

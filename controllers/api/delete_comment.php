@@ -5,9 +5,6 @@ require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
 include '../../auth/config.php';
-// RateLimiter sudah dimuat oleh modules/core/helpers.php → modules/auth/
-// loader.php (require_once). include ulang di sini = fatal
-// "Cannot declare class RateLimiter" (regresi pemindahan ke modules/auth).
 include '../../modules/media/MediaInteraction.php';
 
 $is_ajax = !empty($_SERVER['HTTP_HX_REQUEST']);
@@ -45,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// RATE LIMIT: 10 comments per menit per user
 $rateKey  = 'user_' . ($_SESSION['user_id'] ?? 0);
 $rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
 $rateCheck = RateLimiter::check($rateKey, 'comment', $rateRole);
@@ -85,7 +81,6 @@ if (!$result['success']) {
     exit;
 }
 
-// Mode AJAX: render ulang daftar komentar
 if ($is_ajax) {
     require_once __DIR__ . '/../../modules/media/MediaViewer.php';
     require_once __DIR__ . '/../../modules/core/CommentRenderer.php';
@@ -121,7 +116,6 @@ if ($is_ajax) {
     exit;
 }
 
-// Fallback non-JS: flash message + redirect balik (dengan validasi host)
 $_SESSION['success'] = $result['message'];
 header('Location: ' . safe_comment_back_url());
 exit;

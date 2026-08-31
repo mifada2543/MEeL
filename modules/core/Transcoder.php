@@ -1,5 +1,4 @@
 <?php
-// Pastikan konstanta path terdefinisi (dari auth/config.php)
 if (!defined('MEEL_HDD_BASE')) {
     define('MEEL_HDD_BASE', '/path/to/your/media');
     define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
@@ -44,7 +43,6 @@ class Transcoder
     /* @var array<int, array{pid:int, group:bool, label:string, started:int}> */
     private array $childProcesses = [];
 
-    // KONSTANTA HARDWARE
     private const FFMPEG_THREADS        = 8;
 
     // HLS: durasi tiap segment (detik)
@@ -65,7 +63,6 @@ class Transcoder
     // Shared library path untuk ffmpeg/ffprobe (diperlukan oleh proc_open)
     private const FFMPEG_LIB_PATH = '/usr/lib/x86_64-linux-gnu:/usr/local/lib';
 
-    // ENV PREFIX
     private const ENV_PREFIX = "export LD_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu:/usr/local/lib'; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
 
     public function __construct(
@@ -212,9 +209,7 @@ class Transcoder
         $this->childProcesses = [];
     }
 
-    // ═══════════════════════════════════════════════════════════════
     // PID FILE MANAGEMENT — cross-process kill (admin panel)
-    // ═══════════════════════════════════════════════════════════════
 
     /** Tulis PID ke file agar bisa di-kill dari proses lain (admin panel). */
     private function writePidFile(string $taskType, int $queueId, int $pid): void
@@ -296,7 +291,6 @@ class Transcoder
     /* @param string $subdir Subdirektori (misal: 'temp', 'upload', 'transcode') */
     private function resolveShmPath(string $subdir): string
     {
-        // Bersihkan file sampah stale sebelum pakai temp directory
         GarbageCollector::run();
 
         static $resolved = [];
@@ -338,8 +332,6 @@ class Transcoder
         return file_exists($path) ? $path : null;
     }
 
-    // QUEUE MANAGEMENT
-
     private function lockQueue(string $url, string $type): int
     {
         $stmt = $this->conn->prepare(
@@ -361,8 +353,6 @@ class Transcoder
         $stmt->execute();
         $stmt->close();
     }
-
-    // METADATA
 
     /**
      * Pastikan validating forward proxy aktif dan kembalikan argumen yt-dlp
@@ -400,8 +390,7 @@ class Transcoder
         exec($cmd, $output_array, $return_var);
         $output = implode("\n", $output_array);
 
-        // Coba parse JSON DULU — yt-dlp kadang return exit 1 padahal
-        // JSON-nya valid (misalnya ada WARNING yang di-promote ke error).
+        // yt-dlp kadang return exit 1 padahal JSON-nya valid (WARNING di-promote ke error).
         $start = strpos($output, '{');
         $end   = strrpos($output, '}');
 
@@ -413,7 +402,6 @@ class Transcoder
             }
         }
 
-        // JSON tidak valid / tidak ada — baru throw error dengan detail
         $detail = trim($output);
         $detail = preg_replace('/\s+/', ' ', $detail);
         $detail = mb_substr($detail, 0, 500);
@@ -424,8 +412,6 @@ class Transcoder
             $output
         );
     }
-
-    // FORMAT RESOLVER
 
     private function resolveVideoFormat(string $url): string
     {
@@ -445,7 +431,6 @@ class Transcoder
         return "bestvideo[height<=1080]+bestaudio/best";
     }
 
-    // BAGIAN 1: DOWNLOAD & FINALISASI (processDownload)
     public function processDownload(string $url, string $type): string
     {
         $url = trim($url);
@@ -537,7 +522,6 @@ class Transcoder
             $staging_dir = $this->getShmTempPath() . '/';
             $basename    = $clean;
 
-            // Hindari konflik nama file di staging
             if (file_exists($staging_dir . $basename . ".mp4")) {
                 $basename .= "-" . substr(md5(uniqid('', true)), -4);
             }
@@ -617,7 +601,6 @@ class Transcoder
                     'frag'  => $frag,
                 ]);
             } elseif (preg_match('/\[download\]\s+(\d+(?:\.\d+)?)%/', $line, $m)) {
-                // Fallback: hanya persentase
                 $this->emit('download_progress', ['pct' => (int)$m[1]]);
             }
         }
@@ -667,7 +650,6 @@ class Transcoder
             } else {
                 // Tampilkan SEMUA baris error dari yt-dlp (ERROR, WARNING, trace)
                 $lines = array_filter(explode("\n", $error_log), fn($l) => $l !== '');
-                // Ambil max 10 baris terakhir agar tidak terlalu panjang
                 $lines = array_slice($lines, -10);
                 $detail = trim(implode("\n", $lines));
                 $error_msg = $detail !== ''
@@ -687,8 +669,6 @@ class Transcoder
         return $this->finalizeVideo($basename, $basename . ".webp", $title, $duration, $description);
     }
 
-    // FINALIZE MUSIC
-
     private function finalizeMusic(
         string $temp_id,
         string $title,
@@ -701,7 +681,6 @@ class Transcoder
         $raw_file = "";
         foreach ($found as $f) {
             $ext = pathinfo($f, PATHINFO_EXTENSION);
-            // Skip file gambar (thumbnail), cari file audio
             if (!in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
                 $raw_file = basename($f);
                 break;
@@ -713,7 +692,6 @@ class Transcoder
             if (!isset($_SESSION['meel_pending_music']) || !is_array($_SESSION['meel_pending_music'])) {
                 $_SESSION['meel_pending_music'] = [];
             }
-            // Buang entri basi (> 1 jam) agar session tidak menumpuk
             foreach ($_SESSION['meel_pending_music'] as $k => $v) {
                 if (($v['ts'] ?? 0) < time() - 3600) unset($_SESSION['meel_pending_music'][$k]);
             }
@@ -759,7 +737,6 @@ class Transcoder
 
         $this->emit('phase', ['phase' => 'transcode']);
 
-        // Tentukan nama folder unik di HDD
         $flock_path = sys_get_temp_dir() . '/meel_transcode_folder.lock';
         $lock_fp    = fopen($flock_path, 'c');
         $locked     = $lock_fp !== false && flock($lock_fp, LOCK_EX);
@@ -784,7 +761,6 @@ class Transcoder
             fclose($lock_fp);
         }
 
-        // Kompres thumbnail ke WebP
         $work_thumb = $work_folder . $db_thumb;
         if ($dl_thumb_src && file_exists($dl_thumb_src)) {
             // WebP rata-rata 30-50% lebih kecil dari JPG setara
@@ -804,7 +780,6 @@ class Transcoder
         $thumb_generated = file_exists($work_thumb) && filesize($work_thumb) > 0;
         if (!$thumb_generated) $db_thumb = "default_thumb.webp";
 
-        // Dapatkan durasi video
         $file_dur = $this->probeDuration($staging_mp4);
 
         // Transcode ke HLS
@@ -878,11 +853,9 @@ class Transcoder
             return "";
         }
 
-        // Sprite & VTT (DIOPTIMALKAN KE RAM DISK)
         $this->emit('phase', ['phase' => 'sprite']);
         $this->emit('sprite_progress', ['pct' => 0, 'label' => 'Membuat thumbnail.vtt...']);
 
-        // Buat folder kerja sementara di RAM Disk Linux (/dev/shm)
         $shm_base   = (is_writable('/dev/shm') ? '/dev/shm' : sys_get_temp_dir());
         $ram_folder = $shm_base . '/meel_sprite_' . uniqid() . '/';
         if (!is_dir($ram_folder)) {
@@ -916,7 +889,6 @@ class Transcoder
 
         $this->removeFile($staging_mp4);
 
-        // TRANSACTION: Pindahkan ke HDD + INSERT DB (atomik)
         $hdd_target_folder = MEEL_HDD_VIDEO_DIR . $folder_name . "/";
 
         $this->conn->begin_transaction();
@@ -946,7 +918,6 @@ class Transcoder
 
             $this->removeDir($work_folder);
 
-            // Simpan ke database
             $hdd_m3u8_full  = MEEL_HDD_VIDEO_UPLOAD . $db_filename;
             $hdd_thumb_full = MEEL_HDD_THUMB_DIR . $db_thumb;
 
@@ -957,7 +928,6 @@ class Transcoder
                 throw new \RuntimeException("Thumbnail tidak ditemukan di HDD setelah dipindahkan: $hdd_thumb_full");
             }
 
-            // konsisten dengan Uploader, backfill & admin/edit-*.php
             $metadata = generate_search_metadata($title);
             $views    = 0;
 
@@ -1010,7 +980,6 @@ class Transcoder
         }
     }
 
-    // BAGIAN 2: POST ENCODE (post_encode.php)
     public function encodeMusic(
         string $temp_file,
         string $title,
@@ -1069,7 +1038,6 @@ class Transcoder
             $final_path = $music_dir . "/$final_fname";
             $thumb_name = str_replace('.ogg', '.webp', $final_fname);
 
-            // -vbr on: Variable Bitrate, lebih efisien dari CBR
             $cmd = escapeshellarg($this->ffmpeg_bin)
                 . " -y -threads " . self::FFMPEG_THREADS
                 . " -i "                 . escapeshellarg($input_path)
@@ -1131,8 +1099,6 @@ class Transcoder
         }
     }
 
-    // THUMBNAIL HELPERS
-
     private function extractMusicThumbnail(
         string $audio_file,
         string $temp_dir,
@@ -1144,7 +1110,6 @@ class Transcoder
             $this->ensureDir($thumb_dir);
         }
 
-        // Strategi 1: Cari thumbnail dari yt-dlp
         foreach (['.jpg', '.webp', '.png', '.jpeg'] as $ext) {
             $pattern = "$temp_dir/$temp_base$ext";
             if (file_exists($pattern) && filesize($pattern) > 0) {
@@ -1152,11 +1117,9 @@ class Transcoder
             }
         }
 
-        // Strategi 2: Ekstrak dari ID3/VORBIS metadata audio
         $extracted = $this->extractThumbnailFromAudio($audio_file, $thumb_dir, $target_name);
         if ($extracted !== 'music_default.png') return $extracted;
 
-        // Strategi 3: Gunakan default
         return 'music_default.png';
     }
 
@@ -1168,7 +1131,6 @@ class Transcoder
         $target_path = "$target_dir/$target_name";
         $src_ext     = strtolower(pathinfo($source_image, PATHINFO_EXTENSION));
 
-        // Kalau sudah WebP, langsung copy (tidak perlu re-encode)
         if ($src_ext === 'webp') {
             if (copy($source_image, $target_path)) {
                 $this->removeFile($source_image);
@@ -1188,7 +1150,6 @@ class Transcoder
             return $target_name;
         }
 
-        // Fallback: copy original
         if (copy($source_image, $target_path)) {
             $this->removeFile($source_image);
             return $target_name;
@@ -1209,7 +1170,6 @@ class Transcoder
 
         $temp_extracted = "$target_dir/.temp_thumb_" . time() . "_" . random_int(1000, 9999) . ".webp";
 
-        // Ekstrak cover art dari metadata audio, simpan sebagai WebP
         $cmd = self::ENV_PREFIX . escapeshellarg($this->ffmpeg_bin)
             . " -y -threads 1"
             . " -i " . escapeshellarg($audio_file)
@@ -1230,7 +1190,6 @@ class Transcoder
         return 'music_default.png';
     }
 
-    // BAGIAN 3: TRANSCODE VIDEO → AUDIO (transcode.php)
     public function transcodeVideo(int $video_id, string $format = 'mp3'): array
     {
 
@@ -1244,7 +1203,6 @@ class Transcoder
             return ['status' => 'error', 'msg' => 'RAM disk tidak mencukupi untuk transcode. Hanya tersedia ' . sprintf('%.1f', $shm_free / (1024 ** 3)) . ' GB.'];
         }
 
-        // Bersihkan file lama (> 2 jam)
         foreach (glob($output_dir . "*") as $file) {
             if (is_file($file) && time() - filemtime($file) >= 7200) {
                 $this->removeFile($file);
@@ -1309,8 +1267,6 @@ class Transcoder
             }
         }
 
-        // Cache / reuse output
-        // Pakai judul asli dari database, disanitasi untuk filesystem
         $output_filename = $this->sanitizeFilename($v_data['title']) . '.' . $format;
         $output_path     = $output_dir . $output_filename;
 
@@ -1320,7 +1276,6 @@ class Transcoder
         $mtx_fp    = fopen($mtx_path, 'c');
         $mtx_locked = $mtx_fp !== false && flock($mtx_fp, LOCK_EX);
 
-        // Cache hit: file sudah ada DAN valid (> 10KB + durasi valid)
         $cache_valid = false;
         if (file_exists($output_path)) {
             $cache_size = filesize($output_path);
@@ -1346,7 +1301,6 @@ class Transcoder
             return ['status' => 'success', 'download_link' => $download_link, 'output_filename' => $output_filename, 'title' => $v_data['title']];
         }
 
-        // Hapus file cache tidak valid agar bisa re-transcode
         if (file_exists($output_path)) {
             $reason = filesize($output_path) <= 10240 ? 'too small (' . filesize($output_path) . ' bytes)' : 'duration mismatch';
             error_log("[MEeL] transcodeVideo: hapus cache invalid ($output_path, $reason)");
@@ -1362,8 +1316,7 @@ class Transcoder
                 }
                 return ['status' => 'error', 'msg' => 'Output sedang diproses oleh antrean lain. Tunggu beberapa saat.'];
             }
-            // Marker > 10 menit (stale) — lanjutkan
-        }
+            }
 
         if (!touch($marker_file)) {
             error_log("[MEeL] Gagal membuat marker file: {$marker_file}");
@@ -1380,7 +1333,6 @@ class Transcoder
             return ['status' => 'error', 'msg' => 'Silahkan Menunggu. Server sedang sibuk memproses antrean lain.'];
         }
 
-        // Catat ke queue dengan prepared statement
         $stmt_q = $this->conn->prepare(
             "INSERT INTO transcode_queue (user_id, status, created_at) VALUES (?, 'processing', NOW())"
         );
@@ -1403,7 +1355,6 @@ class Transcoder
 
         switch ($format) {
             case 'ogg':
-                // tapi tetap set untuk ffmpeg I/O
                 $codec     = "libopus";
                 $bitrate   = "-b:a 128k -vbr on";
                 $use_thumb = false; // OGG/Opus tidak support embedded picture
@@ -1413,7 +1364,6 @@ class Transcoder
                 $bitrate = "";
                 break;
             default: // mp3
-                // libmp3lame mendukung multi-thread via -threads
                 $codec   = "libmp3lame";
                 $bitrate = "-q:a 2";
                 break;
@@ -1428,7 +1378,6 @@ class Transcoder
             $cmd .= " -map 1:v -c:v copy -disposition:v:0 attached_pic";
             if ($format === 'mp3') $cmd .= " -id3v2_version 3";
         }
-        // Metadata untuk output audio
         $meta_title  = $v_data['title'] ?? 'Untitled';
         $meta_artist = $v_data['username'] ?? 'MEeL Transcoder';
         $meta_album  = 'MEeL';
@@ -1573,7 +1522,6 @@ class Transcoder
 
         $this->removeFile($concat_list_path);
 
-        // Update queue status via prepared statement (bukan raw query)
         $stmt_upd = $this->conn->prepare(
             "UPDATE transcode_queue SET status = 'completed' WHERE id = ?"
         );

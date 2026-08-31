@@ -3,9 +3,6 @@ require_once '../../modules/core/helpers.php';
 meel_boot_session();
 
 include '../../auth/config.php';
-// RateLimiter sudah dimuat oleh modules/core/helpers.php → modules/auth/
-// loader.php (require_once). include ulang di sini = fatal
-// "Cannot declare class RateLimiter" (regresi pemindahan ke modules/auth).
 include '../../modules/media/MediaInteraction.php';
 
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
@@ -13,7 +10,6 @@ if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     exit;
 }
 
-// RATE LIMIT: 30 likes per menit per user
 $rateKey = 'user_' . ($_SESSION['user_id'] ?? 0);
 $rateRole = get_user_role($conn, (int)($_SESSION['user_id'] ?? 0));
 $rateCheck = RateLimiter::check($rateKey, 'like', $rateRole);

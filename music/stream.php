@@ -4,10 +4,8 @@ error_reporting(0);
 require_once __DIR__ . '/../modules/core/helpers.php';
 meel_boot_session();
 
-// File besar seperti FLAC 34MB+ butuh waktu streaming lama
 session_write_close();
 
-// Referer Gate (ketat): stream HANYA boleh diminta DARI halaman musik MEeL
 $referer = $_SERVER['HTTP_REFERER'] ?? '';
 $currentHost = $_SERVER['HTTP_HOST'] ?? '';
 $refererOk = false;
@@ -20,11 +18,6 @@ if ($referer !== '' && $currentHost !== '') {
         if (strtolower($refParts['host']) === $currentHostNorm) {
 
             $refPath = $refParts['path'] ?? '';
-            // Gate: referer harus halaman dalam modul /music — tanpa batasan
-            // basename, karena semua rute bersih (/music/beranda, /music/watch,
-            // /music/playlist, /music/<slug-playlist>) adalah halaman musik sah
-            // yang memutar lewat mini-player. Allowlist basename lama melewatkan
-            // 'beranda' & slug → stream dari mini-player di halaman itu ditolak.
             if (preg_match('#/music(?:/|$)#i', $refPath)) {
                 $refererOk = true;
             }
@@ -36,7 +29,6 @@ if (!$refererOk) {
     exit;
 }
 
-// Fail-fast: otorisasi session SEBELUM include config.php / koneksi DB
 require_once __DIR__ . '/../modules/core/helpers.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -62,7 +54,6 @@ if (!$v || empty($v['filename'])) {
     exit("Data audio tidak ditemukan.");
 }
 
-// Resolve file di storage terpusat (MEEL_HDD_MUSIC_UPLOAD / folder fallback)
 $filePath = meel_media_base_path('music') . '/file/' . basename($v['filename']);
 
 if (!file_exists($filePath) || !is_readable($filePath)) {

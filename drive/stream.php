@@ -1,6 +1,4 @@
 <?php
-// SECURITY BOUNDARY: Private storage di-deny .htaccess — SATU-SATUNYA jalur
-// akses via endpoint ini + download.php (session + CSRF + ownership check).
 error_reporting(0);
 
 require '../auth/auth.php';
@@ -11,7 +9,6 @@ require __DIR__ . '/DriveService.php';
 $user = DriveUserContext::fromSession($_SESSION);
 $user->authorize();
 
-// CSRF Token Validation untuk GET parameter (konsisten dengan download.php)
 if (!isset($_GET['csrf_token']) || !verify_csrf_token($_GET['csrf_token'])) {
     http_response_code(403);
     exit;
