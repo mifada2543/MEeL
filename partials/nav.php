@@ -375,6 +375,11 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             title="Cara Bernavigasi">
             <i data-lucide="compass" class="w-4 h-4"></i>
         </a>
+        <a href="<?= $_nav_root ?>profile/?u=guest"
+            class="text-gray-500 hover:text-white transition-all p-2 rounded-lg hover:bg-white/5"
+            title="Preference">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+        </a>
     </div>
 
     <!-- Hamburger MOBILE (guest) -->
