@@ -263,7 +263,7 @@ $__vdir = function($dir) {
                     </div>
                 <?php endif; ?>
                 <!-- MOBILE FILTERS & MENUS (Select/Dropdowns) -->
-                <div id="mobile-filters" class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
+                <div id="mobile-filters" class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/70 backdrop-blur-xl p-4 rounded-xl border border-white/[.04] shadow-lg" style="backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);">
                     <!-- Format Pills (Mobile) -->
                     <div class="flex flex-wrap gap-2">
                         <a href="beranda?format=all&artist=<?= urlencode($artist_filter) ?>"
