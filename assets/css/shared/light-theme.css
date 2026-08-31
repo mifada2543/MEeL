@@ -26,7 +26,9 @@ html[data-theme="light"] body[style*="background: #05070c"] {
 }
 
 /* ─── TAILWIND TEXT OVERRIDES ─── */
-html[data-theme="light"] .text-white:not(.nav-logo-text) { color: var(--meel-text-heading) !important; }
+html[data-theme="light"] .text-white:not(.nav-logo-text),
+html[data-theme="light"] .text-white\/90:not(.nav-logo-text),
+html[data-theme="light"] .text-white\/80:not(.nav-logo-text) { color: var(--meel-text-heading) !important; }
 html[data-theme="light"] .text-gray-200 { color: var(--meel-text) !important; }
 html[data-theme="light"] .text-gray-300 { color: var(--meel-text) !important; }
 html[data-theme="light"] .text-gray-400 { color: var(--meel-text-secondary) !important; }
@@ -746,12 +748,19 @@ html[data-theme="light"] .bg-\[\#0d1017\]\/95 {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(24px) !important;
 }
 html[data-theme="light"] .bg-\[\#0d1017\]\/95 .text-gray-300 {
   color: #3f3f46 !important;
 }
 html[data-theme="light"] .bg-\[\#0d1017\]\/95 .text-gray-500 {
   color: #71717a !important;
+}
+html[data-theme="light"] #mobile-filters {
+  background: rgba(255, 255, 255, 0.70) !important;
+  border-color: var(--meel-border) !important;
+  backdrop-filter: blur(24px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.5) !important;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -1260,4 +1269,405 @@ html[data-theme="light"] .toggle-track {
 /* --- Thumbnail preview --- */
 html[data-theme="light"] .thumb-mini {
   border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOKS/UPLOAD — Upload form (light mode)
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body {
+  background-color: var(--meel-bg) !important;
+  color: var(--meel-text) !important;
+}
+/* Card container */
+html[data-theme="light"] .bg-\[\#0b0e14\] {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+  box-shadow: var(--meel-shadow-xl) !important;
+}
+/* Input fields */
+html[data-theme="light"] .bg-\[\#05070a\] {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .bg-\[\#05070a\]:focus {
+  border-color: var(--meel-blue) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+/* File input buttons */
+html[data-theme="light"] .file\:bg-gray-800 {
+  background: var(--meel-surface-hover) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .file\:text-gray-300 {
+  color: var(--meel-text) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   UPLOAD ADVANCED — full light mode (up.css variables + classes)
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── CSS Variables override for up.css ─── */
+html[data-theme="light"] {
+  --bg: #fafafa !important;
+  --surface: #ffffff !important;
+  --border: rgba(0, 0, 0, 0.08) !important;
+  --text: #3f3f46 !important;
+  --muted: #71717a !important;
+  --white: #18181b !important;
+}
+html[data-theme="light"] body {
+  background: var(--meel-bg) !important;
+  color: var(--meel-text) !important;
+}
+
+/* ─── Body decorations (noise + scanline) ─── */
+html[data-theme="light"] body::before {
+  opacity: 0 !important;
+  background-image: none !important;
+}
+html[data-theme="light"] body::after {
+  background: linear-gradient(90deg, transparent, var(--meel-blue), transparent) !important;
+}
+
+/* ─── Masthead ─── */
+html[data-theme="light"] .masthead-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .masthead-title span {
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .masthead-logo {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .masthead-sub {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .masthead-meta {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ─── Admin bar ─── */
+html[data-theme="light"] .admin-bar {
+  background: rgba(234, 88, 12, 0.04) !important;
+  border-color: rgba(234, 88, 12, 0.15) !important;
+}
+html[data-theme="light"] .admin-badge {
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .admin-btn {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .admin-btn:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: var(--meel-text-heading) !important;
+}
+
+/* ─── Form card ─── */
+html[data-theme="light"] .form-card {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .form-card-header {
+  border-color: var(--meel-border) !important;
+}
+
+/* ─── URL input ─── */
+html[data-theme="light"] .url-input {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .url-input:focus {
+  border-color: var(--meel-blue) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+html[data-theme="light"] .url-input::placeholder {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ─── Type selector ─── */
+html[data-theme="light"] .type-label {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .type-label-text {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .type-ext {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ─── Submit button ─── */
+html[data-theme="light"] .submit-btn {
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* ─── Alert banners ─── */
+html[data-theme="light"] .alert-success {
+  background: rgba(34, 197, 94, 0.06) !important;
+  border-color: rgba(34, 197, 94, 0.2) !important;
+  color: #16a34a !important;
+}
+html[data-theme="light"] .alert-busy {
+  background: rgba(249, 115, 22, 0.06) !important;
+  border-color: rgba(249, 115, 22, 0.2) !important;
+  color: #ea580c !important;
+}
+html[data-theme="light"] .alert-error {
+  background: rgba(239, 68, 68, 0.06) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  color: #dc2626 !important;
+}
+
+/* ─── Sidebar cards ─── */
+html[data-theme="light"] .side-card {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .side-card-header {
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .support-row {
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+
+/* ─── Entry / Tips card ─── */
+html[data-theme="light"] .entry {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .entry:hover {
+  border-color: rgba(234, 88, 12, 0.25) !important;
+}
+html[data-theme="light"] .entry-label {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .entry-body {
+  color: var(--meel-text) !important;
+}
+
+/* ─── Check / Nav buttons ─── */
+html[data-theme="light"] .check-btn {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .check-btn:hover {
+  background: rgba(234, 88, 12, 0.06) !important;
+  border-color: rgba(234, 88, 12, 0.25) !important;
+  color: var(--meel-orange) !important;
+}
+
+/* ─── Modal ─── */
+html[data-theme="light"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+html[data-theme="light"] .modal-box {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .modal-title {
+  color: var(--meel-text-heading) !important;
+}
+
+/* ─── Tabs ─── */
+html[data-theme="light"] .tab-btn {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .tab-btn.active-orange {
+  background: rgba(234, 88, 12, 0.04) !important;
+}
+html[data-theme="light"] .tab-btn.active-blue {
+  background: rgba(96, 165, 250, 0.04) !important;
+}
+html[data-theme="light"] .tab-pane {
+  color: var(--meel-text) !important;
+}
+
+/* ─── Queue chip / Status dot ─── */
+html[data-theme="light"] .dot-green {
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4) !important;
+}
+html[data-theme="light"] .dot-orange {
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4) !important;
+}
+
+/* ─── Form inputs (generic) ─── */
+html[data-theme="light"] .f-input,
+html[data-theme="light"] .f-textarea {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .f-input:focus,
+html[data-theme="light"] .f-textarea:focus {
+  border-color: var(--meel-orange) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+html[data-theme="light"] .f-label {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOKS/READ — Manga Reader & PDF Viewer (light mode)
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Reader Navbar ─── */
+html[data-theme="light"] .reader-nav {
+  background: rgba(250, 250, 250, 0.92) !important;
+  border-bottom-color: var(--meel-border) !important;
+  backdrop-filter: blur(12px);
+}
+html[data-theme="light"] .reader-nav.scrolled {
+  background: rgba(250, 250, 250, 0.97) !important;
+}
+
+/* ─── Chapter Dropdown ─── */
+html[data-theme="light"] .ch-overlay {
+  background: rgba(0, 0, 0, 0.18) !important;
+}
+html[data-theme="light"] .ch-trigger {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .ch-trigger:hover {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: var(--meel-border-strong) !important;
+}
+html[data-theme="light"] .ch-dropdown-open .ch-trigger {
+  border-color: rgba(34, 197, 94, 0.5) !important;
+}
+html[data-theme="light"] .ch-options {
+  background: #ffffff !important;
+  border-color: var(--meel-border) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1) !important;
+}
+html[data-theme="light"] .ch-option {
+  color: var(--meel-text-secondary) !important;
+}
+html[data-theme="light"] .ch-option:hover {
+  background: var(--meel-surface-hover) !important;
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .ch-option.active {
+  color: #16a34a !important;
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+
+/* ─── Page Counter Pill ─── */
+html[data-theme="light"] .page-counter {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .page-counter .current {
+  color: var(--meel-text-heading) !important;
+}
+@keyframes counter-pop-light {
+  0% { transform: scale(1); color: var(--meel-text-heading); }
+  35% { transform: scale(1.35); color: #16a34a; }
+  70% { transform: scale(0.95); color: #16a34a; }
+  100% { transform: scale(1); color: var(--meel-text-heading); }
+}
+html[data-theme="light"] .page-counter .current.pop {
+  animation: counter-pop-light 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* ─── Scroll to Top Button ─── */
+html[data-theme="light"] #scroll-top-btn {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] #scroll-top-btn:hover {
+  background: rgba(34, 197, 94, 0.1) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  color: #16a34a !important;
+}
+
+/* ─── Chapter Navigation Buttons ─── */
+html[data-theme="light"] .bg-white\/\[\.03\] {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ─── Sticky Chapter Selector Gradient ─── */
+html[data-theme="light"] .bg-gradient-to-b.from-\[\#080a0f\] {
+  background: linear-gradient(to bottom, rgba(250, 250, 250, 1), transparent) !important;
+}
+
+/* ─── Manga Images ─── */
+html[data-theme="light"] .manga-img {
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .manga-img.lazy {
+  background: linear-gradient(110deg, #f4f4f5 30%, #e4e4e7 50%, #f4f4f5 70%) !important;
+  background-size: 200% 100% !important;
+  animation: shimmer-light 1.5s ease-in-out infinite !important;
+}
+@keyframes shimmer-light {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Glass / Empty State ─── */
+html[data-theme="light"] .glass {
+  background: var(--meel-glass) !important;
+  border-color: var(--meel-glass-border) !important;
+}
+
+/* ─── PDF Viewer ─── */
+html[data-theme="light"] .pdf-view {
+  background: #f4f4f5 !important;
+}
+html[data-theme="light"] .pdf-card-icon {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .pdf-card-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .pdf-card-meta {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .pdf-card-hint {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .pdf-mobile-card {
+  background: #f4f4f5 !important;
+}
+html[data-theme="light"] .pdf-info-bar {
+  background: rgba(250, 250, 250, 0.92) !important;
+  border-top-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .pdf-info-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .pdf-info-meta {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PROFILE PAGE — inline style overrides
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="light"] [style*="background-color:#111827"],
+html[data-theme="light"] [style*="background-color: #111827"] {
+  background-color: var(--meel-surface) !important;
+}
+html[data-theme="light"] [style*="#0b0e14"] {
+  background: var(--meel-bg) !important;
+}
+html[data-theme="light"] [style*="border:4px solid #0b0e14"],
+html[data-theme="light"] [style*="border: 4px solid #0b0e14"] {
+  border-color: var(--meel-bg) !important;
+}
+html[data-theme="light"] .bg-gray-800 {
+  background-color: var(--meel-surface-hover) !important;
 }

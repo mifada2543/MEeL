@@ -209,6 +209,7 @@ include __DIR__ . '/partials/scripts.php';
     <?php foreach (require __DIR__ . '/assets/css/up/manifest.php' as $__f): ?>
     <link rel="stylesheet" href="assets/css/up/<?= $__f ?><?= $__v('assets/css/up/' . $__f) ?>">
     <?php endforeach; ?>
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
 </head>
 
 <body class="min-h-screen flex flex-col">

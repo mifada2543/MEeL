@@ -1,9 +1,11 @@
 <?php
-require_once '../auth/auth.php';
+require_once '../modules/auth/helpers/session.php';
+meel_boot_session();
 require_once '../auth/config.php';
 require_once '../modules/media/ProfileRepository.php';
-// activity_logger loaded via auth/config.php
 $back_url = '../';
+$is_logged_in = isset($_SESSION['user_id']);
+$is_guest_profile = false;
 
 $allowed_hosts = [
     defined('MEEL_HOST') && !empty(MEEL_HOST) ? MEEL_HOST : ($_SERVER['HTTP_HOST'] ?? ''),
@@ -46,29 +48,60 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 $target_user = $_GET['u'] ?? '';
 
 if (empty($target_user)) {
-    header("Location: ../");
-    exit();
+    if ($is_logged_in) {
+        header("Location: ?u=" . urlencode($_SESSION['username']));
+        exit;
+    }
+    $is_guest_profile = true;
+    $u = [
+        'id' => 0,
+        'username' => 'Guest',
+        'bio' => 'Akun Guest',
+        'role' => 'guest',
+        'profile_picture' => 'default_avatar.png',
+        'last_activity' => date('Y-m-d H:i:s'),
+    ];
+    $profile_id = 0;
+    $total_video = 0;
+    $total_music = 0;
+    $total_uploads = 0;
+    $is_online = false;
+} elseif ($target_user === 'guest') {
+    $is_guest_profile = true;
+    $u = [
+        'id' => 0,
+        'username' => 'Guest',
+        'bio' => 'Akun Guest',
+        'role' => 'guest',
+        'profile_picture' => 'default_avatar.png',
+        'last_activity' => date('Y-m-d H:i:s'),
+    ];
+    $profile_id = 0;
+    $total_video = 0;
+    $total_music = 0;
+    $total_uploads = 0;
+    $is_online = false;
+} else {
+    $stmt = $conn->prepare("SELECT id, username, bio, role, profile_picture, last_activity FROM users WHERE username = ?");
+    $stmt->bind_param("s", $target_user);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $u = $res->fetch_assoc();
+
+    if (!$u) {
+        header("Location: ../err/?code=not_found");
+        exit;
+    }
+
+    $profile_id = $u['id'];
+
+    $profileRepo  = new ProfileRepository($conn);
+    $total_video  = $profileRepo->countVideo($profile_id);
+    $total_music  = $profileRepo->countMusic($profile_id);
+
+    $total_uploads = $total_video + $total_music;
+    $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 }
-
-$stmt = $conn->prepare("SELECT id, username, bio, role, profile_picture, last_activity FROM users WHERE username = ?");
-$stmt->bind_param("s", $target_user);
-$stmt->execute();
-$res = $stmt->get_result();
-$u = $res->fetch_assoc();
-
-if (!$u) {
-    header("Location: ../err/?code=not_found");
-    exit;
-}
-
-$profile_id = $u['id'];
-
-$profileRepo  = new ProfileRepository($conn);
-$total_video  = $profileRepo->countVideo($profile_id);
-$total_music  = $profileRepo->countMusic($profile_id);
-
-$total_uploads = $total_video + $total_music;
-$is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -82,13 +115,25 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
     <title>MEeL Profile | <?= htmlspecialchars($u['username']) ?></title>
     <?php include '../partials/link.php'; ?>
     <style>        body {
-            background-color: #0b0e14;
+            background-color: var(--meel-bg, #0b0e14);
         }
 
         .glass {
-            background: rgba(22, 27, 34, 0.7);
+            background: var(--meel-surface, rgba(22, 27, 34, 0.7));
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--meel-border, rgba(255, 255, 255, 0.05));
+        }
+
+        html[data-theme="light"] .glass {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .profile-banner-gradient {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.3) 50%, var(--meel-bg, #0b0e14));
+        }
+        html[data-theme="light"] .profile-banner-gradient {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.08) 50%, var(--meel-bg, #fafafa));
         }
 
         .mfa-switch {
@@ -168,22 +213,24 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
             $banner_path = __DIR__ . '/upload/' . $banner_pic;
             $banner_v = is_file($banner_path) ? (int)@filemtime($banner_path) : time();
             ?>
-            <div class="relative h-32 w-full overflow-hidden" style="background-color:#111827">
+            <div class="relative h-32 w-full overflow-hidden bg-gray-800">
                 <img src="upload/<?= htmlspecialchars($banner_pic, ENT_QUOTES, 'UTF-8') ?>?v=<?= $banner_v ?>" alt="Foto sampul <?= htmlspecialchars($u['username']) ?>" class="block h-full w-full scale-110" style="object-fit:cover;object-position:center;filter:blur(2px)" loading="eager" decoding="async" onerror="this.onerror=null;this.src='upload/default_avatar.png'">
-                <div class="absolute inset-0" style="background:linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.3) 50%, #0b0e14)"></div>
+                <div class="absolute inset-0 profile-banner-gradient"></div>
             </div>
 
             <div class="px-8 pb-8">
                 <div class="relative flex justify-between items-end -mt-12">
                     <div class="relative">
                         <img src="upload/<?= $u['profile_picture'] ?: 'default_avatar.png' ?>"
-                            class="w-32 h-32 rounded-3xl border-4 border-[#0b0e14] object-cover bg-gray-800 shadow-xl" title="Foto profil <?= htmlspecialchars($u['username']) ?>">
+                            class="w-32 h-32 rounded-3xl border-4 border-[var(--meel-bg,#0b0e14)] object-cover bg-gray-800 shadow-xl" title="Foto profil <?= htmlspecialchars($u['username']) ?>">
                         <?php if ($is_online): ?>
-                            <div class="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-4 border-[#0b0e14] rounded-full"></div>
+                            <div class="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-4 border-[var(--meel-bg,#0b0e14)] rounded-full"></div>
                         <?php endif; ?>
                     </div>
 
-                    <?php if ($_SESSION['username'] === $u['username']):
+                    <?php
+                    $is_owner = $is_logged_in && !empty($u['id']) && ($_SESSION['username'] === $u['username']);
+                    if ($is_owner):
                         $stmt_mfa_p = $conn->prepare("SELECT mfa_enabled FROM users WHERE id = ?");
                         $stmt_mfa_p->bind_param("i", $profile_id);
                         $stmt_mfa_p->execute();
@@ -191,7 +238,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                         $stmt_mfa_p->close();
                     ?>
                         <div class="grid grid-cols-2 gap-3 mb-2">
-                            <!-- Baris 1: Edit Profile + Kelola Konten -->
                             <a href="../profile/edit"
                                class="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                                title="Edit profil dan bio Anda">
@@ -203,7 +249,6 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Kelola Konten
                             </a>
 
-                            <!-- Baris 2: MFA + Theme Toggle -->
                             <a href="../auth/mfa-setup"
                                class="mfa-switch justify-center"
                                role="link"
@@ -240,6 +285,21 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                             </button>
                             <?php endif; ?>
                         </div>
+                    <?php elseif ($is_guest_profile && !$is_logged_in): ?>
+                        <div class="flex justify-end mb-2">
+                            <button type="button" id="theme-toggle" onclick="MEELTheme.toggle()"
+                               class="mfa-switch justify-center cursor-pointer"
+                               style="background:none;border:none;padding:0;outline:none"
+                               title="Ganti tema tampilan">
+                                <span class="mfa-track mfa-track--off" id="theme-track">
+                                    <span id="theme-icon" class="mfa-knob" style="font-size:14px;display:flex;align-items:center;justify-content:center;width:20px;height:20px;line-height:1">🌙</span>
+                                </span>
+                                <span class="mfa-label mfa-label--off" id="theme-text">
+                                    Tema
+                                    <span class="mfa-label-sub" id="theme-label">Gelap</span>
+                                </span>
+                            </button>
+                        </div>
                     <?php endif; ?>
                 </div>
 
@@ -248,19 +308,21 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                         <?= htmlspecialchars($u['username']) ?>
                         <?php if ($u['role'] === 'admin'): ?>
                             <span class="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded-lg uppercase tracking-widest border border-blue-500/30">Staff</span>
-                        <?php endif; ?>
-                        <?php if ($u['role'] === 'member'): ?>
+                        <?php elseif ($u['role'] === 'member'): ?>
                             <span class="ml-2 text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded-lg uppercase tracking-widest border border-green-500/30" title="Jadilah member untuk mendapatkan benefit berupa akses Drive">Berlangganan</span>
+                        <?php elseif ($is_guest_profile): ?>
+                            <span class="ml-2 text-[10px] bg-gray-500/20 text-gray-400 px-2 py-1 rounded-lg uppercase tracking-widest border border-gray-500/30">Guest</span>
                         <?php endif; ?>
                     </h1>
                     <p class="text-gray-500 text-sm mt-1">@<?= strtolower($u['username']) ?> • Profile</p>
 
                     <div class="mt-6 p-4 bg-white/5 rounded-2xl border border-white/5">
                         <p class="text-gray-400 text-sm italic leading-relaxed">
-                            <?= $u['bio'] ?: "Pengguna ini belum menulis bio." ?>
+                            <?= $is_guest_profile ? 'Akun Guest' : ($u['bio'] ?: "Pengguna ini belum menulis bio.") ?>
                         </p>
                     </div>
 
+                    <?php if (!$is_guest_profile): ?>
                     <div class="flex gap-4 mt-8">
                         <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-blue-500/50 transition-all">
                             <span class="block text-xl font-bold text-white"><?= $total_uploads ?></span>
@@ -275,6 +337,7 @@ $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
                             <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-purple-400 transition">Music</span>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
