@@ -378,7 +378,7 @@ $__vdir = function($dir) {
 </script>
             <?php endif; ?>
             <?php if ($is_logged_in): ?>
-                <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section" style="content-visibility:auto;contain-intrinsic-size:200px">
+                <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section">
                     <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
                         class="w-full px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2 cursor-pointer hover:bg-white/[.08] transition-colors text-left"
                         title="Buka / tutup komentar">

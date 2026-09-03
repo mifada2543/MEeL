@@ -31,7 +31,10 @@ function setupMusicItemClicks() {
           ? e.target.closest("a").getAttribute("href")
           : `watch?id=${this.dataset.id}`,
         nextSongUrl: nextSongUrl,
-        currentTime: 0,
+        currentTime:
+          typeof resumeTimeForClicked === "function"
+            ? resumeTimeForClicked(this.dataset.id)
+            : 0,
         isPlaying: true,
       };
       loadAudio(state, true);

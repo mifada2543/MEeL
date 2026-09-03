@@ -297,6 +297,15 @@
         holder.appendChild(n);
       });
 
+      // <noscript> di-parse oleh DOMParser dengan scripting disabled →
+      // <style> di dalamnya jadi elemen NYATA dan AKTIF saat di-import
+      // (mis. `#comment-preview{display:none}` menyembunyikan preview
+      // komentar). Hapus SEMUA noscript dari hasil fetch sebelum di-import
+      // — SPA selalu ber-JS, noscript tidak pernah dibutuhkan.
+      var noscripts = doc.body.querySelectorAll("noscript");
+      for (var ns = 0; ns < noscripts.length; ns++) {
+        if (noscripts[ns].parentNode) noscripts[ns].parentNode.removeChild(noscripts[ns]);
+      }
       // Ganti seluruh isi <body> dengan markup halaman baru.
       document.body.innerHTML = "";
       Array.prototype.forEach.call(doc.body.children, function (node) {

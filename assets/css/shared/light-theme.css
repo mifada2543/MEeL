@@ -150,6 +150,7 @@ html[data-theme="light"] #mini-player-index {
 html[data-theme="light"] .mp-title { color: var(--meel-text-heading) !important; }
 html[data-theme="light"] .mp-artist { color: var(--meel-text-secondary) !important; }
 html[data-theme="light"] .mp-btn { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .mp-btn.mp-loop-active { color: var(--meel-orange) !important; opacity: 1 !important; }
 html[data-theme="light"] .mp-btn-ghost:hover { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
 html[data-theme="light"] .mp-time { color: var(--meel-text-muted) !important; }
 html[data-theme="light"] .mp-seekbar { background: rgba(0, 0, 0, 0.06) !important; }

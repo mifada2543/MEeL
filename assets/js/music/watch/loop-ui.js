@@ -13,9 +13,10 @@ function _applyLoopUI(e) {
   const t = document.getElementById("loop-text"),
     n = document.getElementById("mini-loop-btn");
   (t && (t.innerText = e ? "Loop On" : "Loop Off"),
-    n &&
-      ((n.style.color = e ? "#f97316" : ""),
-      (n.style.opacity = e ? "1" : "0.5")));
+  n &&
+    (n.classList.toggle("mp-loop-active", e),
+    (n.style.color = e ? "#f97316" : ""),
+    (n.style.opacity = e ? "1" : "0.5")));
 }
 function updateLoopUI() {
   _applyLoopUI(

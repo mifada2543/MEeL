@@ -61,10 +61,21 @@ function loadAudio(state, autoplay) {
   engine.setLoop(loopVal);
 
   // KUNCI GAPLESS: trackId sama → loadTrack() no-op total.
-  engine.loadTrack(
+  const didLoad = engine.loadTrack(
     { id: trackId, streamUrl: `stream?id=${trackId}`, isLooping: loopVal },
     { autoplay: !!autoplay, startTime: state.currentTime || 0 },
   );
+  // loadTrack() no-op kalau track sama (gapless mini<->full) — tapi kalau
+  // user meng-klik kartu untuk memutar dan audio sedang pause, play() ulang
+  // eksplisit. Tanpa ini, klik lagu yang sama tidak memulai apa-apa dan
+  // pengguna harus menekan play sekali lagi.
+  if (!didLoad && autoplay) {
+    const want = state.currentTime || 0;
+    if (Math.abs(audioPlayer.currentTime - want) > 1.5) {
+      audioPlayer.currentTime = want;
+    }
+    if (audioPlayer.paused) audioPlayer.play().catch(function () {});
+  }
 
   currentState = state;
   updateMiniLoopUIIndex();
@@ -444,9 +455,13 @@ function updateMiniLoopUIIndex() {
   const btn = document.getElementById("mini-loop-btn-index");
   if (!btn) return;
   if (isMiniLoopIndexActive) {
+    // Class mp-loop-active → light-theme.css bisa memulihkan warna oranye
+    // (override .mp-btn !important di light mode menang atas style inline).
+    btn.classList.add("mp-loop-active");
     btn.style.color = "#f97316";
     btn.style.opacity = "1";
   } else {
+    btn.classList.remove("mp-loop-active");
     btn.style.color = "";
     btn.style.opacity = "0.5";
   }
@@ -464,6 +479,16 @@ window.closeMiniPlayerIndex = function () {
   isMiniPlayerIndexActive = false;
   currentState = null;
 };
+// Posisi awal saat meng-klik kartu lagu. Kalau lagu yang sama sedang
+// dimuat, LANJUTKAN dari posisi live (resume durasi tersisa) — bukan
+// restart dari 0. Lagu lain tetap mulai dari awal.
+function resumeTimeForClicked(id) {
+  const engine = window.meelGetAudioEngine ? window.meelGetAudioEngine() : null;
+  if (engine && String(engine.getCurrentTrackId()) === String(id)) {
+    return engine.audio.currentTime || 0;
+  }
+  return 0;
+}
 // Setup playlist items (dipakai index & view_playlist)
 function setupPlaylistItemClicks() {
   document.querySelectorAll(".music-pl-item").forEach(function (item) {
@@ -494,7 +519,7 @@ function setupPlaylistItemClicks() {
           `watch?id=${this.dataset.id}&playlist_id=${this.dataset.playlistId}`,
         nextSongUrl: nextSongUrl,
         playlistId: this.dataset.playlistId,
-        currentTime: 0,
+        currentTime: resumeTimeForClicked(this.dataset.id),
         isPlaying: true,
       };
       loadAudio(state, true);

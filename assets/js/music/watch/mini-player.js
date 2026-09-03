@@ -57,6 +57,10 @@ window.toggleMiniPlayer = async function () {
         )),
       n?.classList.add("lg:col-span-2", "space-y-5"),
       a && (a.style.display = "block"),
+      // Keluar dari mini-mode: pastikan preview komentar tidak raib
+      // (empty-state "Jadilah komentar pertama" dibangun ulang dari list).
+      typeof window.meelRebuildCommentPreview === "function" &&
+        window.meelRebuildCommentPreview(),
       window.history.pushState({}, "", watchUrl));
   else {
     ((isMiniPlayerActive = !0),

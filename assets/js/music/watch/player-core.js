@@ -557,6 +557,15 @@
 
   window.meelInitWatchPlayer = function () {
     window.__meelCurrentView = "watch";
+    // Self-heal: pastikan preview komentar tidak pernah kosong setelah
+    // swap AJAX (mini->full / auto-next / expand dari index) — kalau
+    // kosong (mis. empty-state raib), bangun ulang dari #comment-list.
+    if (typeof window.meelRebuildCommentPreview === "function") {
+      const _ptxt = document.getElementById("comment-preview-text");
+      if (_ptxt && !_ptxt.textContent.trim()) {
+        window.meelRebuildCommentPreview();
+      }
+    }
     // Reset mode mini-player — interval saveAudioState() (5s) dari sesi
     // mini-mode sebelumnya tidak boleh terus menulis state.
     isMiniPlayerActive = false;
