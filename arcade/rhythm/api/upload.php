@@ -1,19 +1,6 @@
 <?php
-/**
- * MEeL!Mania — Upload Beatmap API
- * POST /arcade/rhythm/api/upload.php
- *
- * Fields:
- *   - title (required)
- *   - artist (optional)
- *   - bpm (required, 60-300)
- *   - difficulty (required, 1-5)
- *   - audio (file, required)
- *   - cover (file, optional)
- *   - beatmap_json (required, JSON string)
- *   - color_primary (optional, hex)
- *   - color_secondary (optional, hex)
- */
+
+
 require_once __DIR__ . '/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -24,12 +11,12 @@ $user_id = require_auth();
 $user_role = get_user_role($conn, $user_id);
 $is_admin = ($user_role === 'admin');
 
-// ─── CSRF Check ──────────────────────────────────────
+
 if (!verify_csrf_token()) {
     api_error('CSRF token tidak valid.');
 }
 
-// ─── Rate Limit (simple: max 10 per hour for users) ──
+
 if (!$is_admin) {
     $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM arcade_song WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)");
     $stmt->bind_param("i", $user_id);
@@ -41,7 +28,7 @@ if (!$is_admin) {
     }
 }
 
-// ─── Validate Fields ─────────────────────────────────
+
 $title = trim($_POST['title'] ?? '');
 $artist = trim($_POST['artist'] ?? 'Unknown Artist');
 $bpm = (int) ($_POST['bpm'] ?? 0);
@@ -67,7 +54,7 @@ if (count($beatmap['notes']) > 5000) {
     api_error('Maksimal 5000 notes dalam beatmap.');
 }
 
-// Validate each note (tap: {t, l} or hold: {t, e, l}, optional gold: {g: true})
+
 foreach ($beatmap['notes'] as $i => $note) {
     if (!isset($note['t']) || !isset($note['l'])) {
         api_error("Note ke-" . ($i + 1) . " format tidak valid (butuh 't' dan 'l').");
@@ -76,7 +63,7 @@ foreach ($beatmap['notes'] as $i => $note) {
     $l = (int) $note['l'];
     if ($t < 0) api_error("Note ke-" . ($i + 1) . " waktu negatif.");
     if ($l < 0 || $l > 3) api_error("Note ke-" . ($i + 1) . " lane harus 0-3.");
-    // Hold note validation
+    
     if (isset($note['e'])) {
         $e = (int) $note['e'];
         if ($e <= $t) api_error("Note ke-" . ($i + 1) . " hold end time harus lebih besar dari start time.");
@@ -98,7 +85,7 @@ $beatmap_duration = ceil($last_time / 1000) + 2;
 if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color_primary)) $color_primary = '#ec4899';
 if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color_secondary)) $color_secondary = '#a855f7';
 
-// ─── Validate Audio File ─────────────────────────────
+
 if (!isset($_FILES['audio']) || $_FILES['audio']['error'] !== UPLOAD_ERR_OK) {
     $err_code = $_FILES['audio']['error'] ?? -1;
     api_error('File audio tidak diterima. Error code: ' . $err_code);

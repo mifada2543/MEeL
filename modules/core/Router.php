@@ -1,36 +1,9 @@
 <?php
-/**
- * MEeL — Front Controller Router
- *
- * Satu-satunya titik masuk untuk semua halaman web & API (kecuali aset statis,
- * media storage upload/, dan sub-app arcade/chess yang tetap dilayani langsung
- * oleh Apache sebagai file nyata).
- *
- * URL bersih query-style:
- * /video/watch?id=5            → video/watch.php
- * /music/watch?id=5&playlist_id=3 → music/watch.php
- * /admin/edit-video?id=5       → admin/edit-video.php
- * /api/like                    → controllers/api/like.php
- *
- * Mengapa query-style (bukan /video/watch/5):
- * Kedalaman URL tidak berubah dari file aslinya, sehingga semua link relatif,
- * form POST, dan JS tetap bekerja TANPA <base>.
- *
- * Mekanisme dispatch:
- * 1. router.php (root) memanggil MeelRouter::resolvePath() → path bersih.
- * 2. MeelRouter::dispatch() mencocokkan path ke routing table.
- * 3. Handler (file .php lama) di-include — require relatif di dalamnya
- * tetap di-resolve PHP terhadap direktori file sumber, jadi tidak ada
- * perubahan pada handler.
- * 4. $_SERVER['SCRIPT_NAME'] & PHP_SELF disimulasikan ke handler asli
- * sehingga deteksi halaman (partials/nav.php, activity_logger.php)
- * tetap bekerja tanpa perubahan.
- *
- * @license GPL v3
- */
+
+
 final class MeelRouter
 {
-    /** @var array<string, array{handler: string, script: string}> */
+    
     private const ROUTES = [
         ''                => ['handler' => 'index.php',           'script' => '/index.php'],
         'introduction'    => ['handler' => 'introduction.php',    'script' => '/introduction.php'],
@@ -124,12 +97,11 @@ final class MeelRouter
         'system/mfa'             => ['handler' => 'controllers/system/mfa.php',            'script' => '/controllers/system/mfa.php'],
     ];
 
-    /** @var string|null Base path proyek (mis. "/MEeL") — di-cache. */
+    
     private static ?string $base = null;
 
-    /**
-     * Path base URL proyek relatif terhadap DOCUMENT_ROOT (tanpa trailing slash).
-     */
+    
+
     public static function basePath(): string
     {
         if (self::$base === null) {
@@ -143,10 +115,8 @@ final class MeelRouter
         return self::$base;
     }
 
-    /**
-     * Resolve path rute bersih dari REQUEST_URI.
-     * Contoh: "/MEeL/video/watch?id=5" → "video/watch"
-     */
+    
+
     public static function resolvePath(): string
     {
         $uri    = $_SERVER['REQUEST_URI'] ?? '/';
@@ -161,11 +131,8 @@ final class MeelRouter
         return $path;
     }
 
-    /**
-     * Cari entri rute untuk path bersih. Mengembalikan null jika tidak cocok.
-     *
-     * @return array{handler: string, script: string}|null
-     */
+    
+
     public static function routeFor(string $path): ?array
     {
         if (isset(self::ROUTES[$path])) {
@@ -178,21 +145,8 @@ final class MeelRouter
         return null;
     }
 
-    /**
-     * Dispatch path bersih ke handler. Handler meng-include file .php lama —
-     * require relatif di dalamnya di-resolve terhadap direktori file sumber,
-     * jadi perilaku identik dengan akses langsung.
-     *
-     * Menyimulasikan $_SERVER['SCRIPT_NAME']/PHP_SELF agar deteksi halaman
-     * (nav.php, activity_logger.php) tetap bekerja tanpa perubahan handler.
-     *
-     * PENTING (resolve relatif): require/include relatif di dalam handler
-     * di-resolve PHP terhadap cwd — BUKAN terhadap direktori file sumber.
-     * Saat handler diakses langsung, Apache mengeksekusi dengan cwd = direktori
-     * file .php tersebut. Maka sebelum include, router melakukan chdir() ke
-     * direktori handler agar SEMUA path relatif (require, fopen, dll.)
-     * berperilaku identik dengan akses langsung.
-     */
+    
+
     public static function dispatch(string $path): void
     {
         $route = self::routeFor($path);
@@ -222,12 +176,8 @@ final class MeelRouter
         exit;
     }
 
-    /**
-     * Bangun URL bersih untuk sebuah rute (relatif terhadap base proyek).
-     *
-     * @param string       $route Rute bersih (mis. "video/watch")
-     * @param array|string $query Query string atau array param (?id=5 atau ['id' => 5])
-     */
+    
+
     public static function url(string $route, array|string $query = []): string
     {
         $base  = self::basePath();

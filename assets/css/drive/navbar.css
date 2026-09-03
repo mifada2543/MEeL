@@ -1,5 +1,5 @@
-/* navbar.css — Navigasi sidebar & kategori */
-/* Nav Item */
+
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -31,13 +31,13 @@
   color: #fff;
   border-color: rgba(139, 92, 246, 0.3);
 }
-/* Nav Active (dari index.php inline) */
+
 .nav-active {
   background: rgba(59, 130, 246, 0.1);
   border-left: 4px solid var(--accent-blue, #3b82f6);
   color: var(--accent-blue, #3b82f6);
 }
-/* Desktop Nav Section Buttons */
+
 .nav-btn-desktop {
   display: flex;
   align-items: center;
@@ -60,7 +60,7 @@
   color: #e5e7eb;
   border-color: var(--border);
 }
-/* Mobile Nav Category Buttons */
+
 .nav-btn-mobile {
   display: flex;
   align-items: center;
@@ -74,7 +74,7 @@
   cursor: pointer;
   transition: all 0.2s;
 }
-/* Logo / Brand */
+
 .drive-logo {
   display: flex;
   align-items: center;
@@ -96,7 +96,7 @@
   text-transform: uppercase;
   margin-top: 2px;
 }
-/* Scope Pills */
+
 .scope-pill {
   display: inline-flex;
   align-items: center;

@@ -1,11 +1,6 @@
 <?php
-/**
- * MEeL!Mania — Delete Beatmap API
- * POST /arcade/rhythm/api/delete.php
- *
- * Fields:
- *   - song_id (required)
- */
+
+
 require_once __DIR__ . '/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -16,7 +11,7 @@ $user_id = require_auth();
 $user_role = get_user_role($conn, $user_id);
 $is_admin = ($user_role === 'admin');
 
-// CSRF check
+
 if (!verify_csrf_token()) {
     api_error('CSRF token tidak valid.');
 }

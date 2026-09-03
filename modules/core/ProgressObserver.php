@@ -7,7 +7,7 @@ interface ProgressObserver
 
 final class CallableProgressObserver implements ProgressObserver
 {
-    /** @var callable(string, array): void */
+    
     private $handler;
 
     public function __construct(callable $handler)

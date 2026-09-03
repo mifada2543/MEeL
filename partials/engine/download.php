@@ -1,6 +1,6 @@
 <?php
 ?>
-<!-- FASE: DOWNLOAD -->
+
 <div class="meel-phase" id="meel-phase-download">
   <div class="dl-icon-wrap">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round">

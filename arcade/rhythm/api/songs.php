@@ -1,14 +1,6 @@
 <?php
-/**
- * MEeL!Mania — List Songs API
- * GET /arcade/rhythm/api/songs.php
- *
- * Returns all songs: built-in (from _index.json) + custom (from DB)
- * Optional query params:
- *   - sort: default|bpm|difficulty|newest|plays
- *   - user_id: filter by uploader
- *   - search: search title/artist
- */
+
+
 require_once __DIR__ . '/config.php';
 
 $sort = $_GET['sort'] ?? 'default';

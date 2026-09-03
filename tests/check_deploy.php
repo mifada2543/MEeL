@@ -7,9 +7,9 @@ if (PHP_SAPI !== 'cli') {
 
 define('MEEL_ROOT', rtrim(realpath(__DIR__ . '/..') ?: (__DIR__ . '/..'), '/'));
 
-// Argumen sederhana
-$url         = null;   // URL basis project untuk probe HTTP (opsional)
-$hddOverride = null;   // override MEEL_HDD_BASE untuk testing/CI (opsional)
+
+$url         = null;   
+$hddOverride = null;   
 $color       = true;
 foreach (array_slice($argv, 1) as $a) {
     if (str_starts_with($a, '--url=')) {
@@ -43,7 +43,7 @@ HELP);
     }
 }
 
-// State & helper output
+
 $passed = 0;
 $warned = 0;
 $failed = 0;
@@ -87,14 +87,14 @@ function cmd_output(string $cmd): ?string
     return $out;
 }
 
-// 1. MEEL_HDD_BASE
+
 section('1. MEEL_HDD_BASE (Media Storage)');
 
 $settingsFile = MEEL_ROOT . '/auth/settings.php';
 if (!is_file($settingsFile)) {
     report('FAIL', 'auth/settings.php tidak ditemukan',
         'cp auth/settings.example.php auth/settings.php lalu atur MEEL_HDD_BASE');
-    $settingsFile = MEEL_ROOT . '/auth/settings.example.php'; // deteksi placeholder
+    $settingsFile = MEEL_ROOT . '/auth/settings.example.php'; 
 } else {
     try {
         require_once $settingsFile;
@@ -108,7 +108,7 @@ $hdd = $hddOverride !== null
     ? $hddOverride
     : (defined('MEEL_HDD_BASE') ? (string) MEEL_HDD_BASE : '');
 
-// dibaca aplikasi (aplikasi tidak tahu apa-apa tentang --hdd).
+
 if ($hddOverride !== null && defined('MEEL_HDD_BASE') && (string) MEEL_HDD_BASE !== '') {
     $realHdd = (string) MEEL_HDD_BASE;
     if (str_contains($realHdd, 'CHANGE_ME') || str_contains($realHdd, '/path/to/your')) {
@@ -134,7 +134,7 @@ if ($hdd === '') {
 } else {
     report('PASS', "MEEL_HDD_BASE OK: {$hdd}" . ($hddOverride !== null ? ' (override --hdd)' : ''));
 
-    // Direktori turunan
+    
     $derived = [
         'MEEL_HDD_VIDEO_UPLOAD' => ['video/upload',           'auto'],
         'MEEL_HDD_VIDEO_DIR'    => ['video/upload/video',     'auto'],
@@ -178,7 +178,7 @@ if ($hdd === '') {
     }
 }
 
-// 2. Upload dirs (books / music / video)
+
 section('2. Upload dirs (books / music / video)');
 
 foreach (['books', 'music', 'video'] as $m) {
@@ -238,9 +238,9 @@ foreach (['books/upload', 'music/upload', 'video/upload'] as $u) {
     }
 }
 
-// 3b. Private Drive storage — wajib hard-deny (bukan sekadar Options -Indexes)
-// primary: aturan ter-track di data_drive/.htaccess (berlaku untuk semua
-// deployment, termasuk saat private_admins/ adalah symlink ke storage eksternal).
+
+
+
 $parentHt    = MEEL_ROOT . '/data_drive/.htaccess';
 $parentLabel = 'data_drive/.htaccess (deny private_admins)';
 if (!is_file($parentHt)) {
@@ -254,7 +254,7 @@ if (!is_file($parentHt)) {
     }
 }
 
-// lapisan kedua (deploy-time, di target storage symlink):
+
 $driveHt    = MEEL_ROOT . '/data_drive/private_admins/.htaccess';
 $driveLabel = 'data_drive/private_admins/.htaccess';
 if (!is_file($driveHt)) {
@@ -290,7 +290,7 @@ foreach (['public', 'private_admins'] as $driveSub) {
     }
 }
 
-// 3c. Validating forward proxy — wajib tersedia untuk download URL (SSRF per hop)
+
 $vpClass = MEEL_ROOT . '/modules/auth/ValidatingProxy.php';
 $vpScript = MEEL_ROOT . '/modules/auth/validating_proxy_server.php';
 if (!is_file($vpClass) || !is_file($vpScript)) {
@@ -319,10 +319,10 @@ if (!is_file($vpClass) || !is_file($vpScript)) {
     }
 }
 
-// 4. mod_rewrite & PWA (sw.js → sw.js.php)
+
 section('4. mod_rewrite & PWA (sw.js → sw.js.php)');
 
-// 4a. Aturan rewrite di .htaccess root
+
 $rootHt = MEEL_ROOT . '/.htaccess';
 if (!is_file($rootHt)) {
     report('FAIL', '.htaccess root tidak ada', 'pastikan AllowOverride All + mod_rewrite aktif di Apache');
@@ -340,14 +340,14 @@ if (!is_file($rootHt)) {
     }
 }
 
-// 4b. Generator service worker ada
+
 if (is_file(MEEL_ROOT . '/sw.js.php')) {
     report('PASS', 'sw.js.php (generator service worker) ada');
 } else {
     report('FAIL', 'sw.js.php tidak ada', 'service worker dinamis hilang — restore dari repo');
 }
 
-// 4c. Modul Apache (jika bisa diverifikasi dari CLI)
+
 $apacheBins = ['/opt/lampp/bin/apachectl', '/opt/lampp/bin/httpd', 'apache2ctl', 'apachectl', 'httpd'];
 $modOut = null;
 foreach ($apacheBins as $bin) {
@@ -364,7 +364,7 @@ if ($modOut === null) {
         'aktifkan: LoadModule rewrite_module modules/mod_rewrite.so');
 }
 
-// 4d. Probe HTTP nyata — bukti rewrite + AllowOverride bekerja
+
 $probeBase  = $url !== null ? $url : 'http://localhost/' . basename(MEEL_ROOT);
 $probeUrl   = $probeBase . '/sw.js';
 $ctx = stream_context_create(['http' => [
@@ -402,7 +402,7 @@ if ($body === false) {
         : 'kode 404/403 — coba --url yang tepat untuk konfirmasi');
 }
 
-// Ringkasan
+
 section('Ringkasan');
 echo '  PASS: ' . c('1;32', (string) $passed)
    . '  WARN: ' . c('1;33', (string) $warned)

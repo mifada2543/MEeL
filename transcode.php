@@ -10,7 +10,7 @@ require_once 'auth/config.php';
 require_once 'modules/core/Transcoder.php';
 require_once 'modules/core/BrowserProgressObserver.php';
 
-// Hentikan proses ffmpeg yang masih berjalan bila request berakhir abnormal.
+
 $transcoder      = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
 register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 $download_link   = null;
@@ -44,7 +44,7 @@ if (isset($_POST['start_transcode'])) {
                 $alert_message = $result['msg'];
             }
         }
-    } // tutup else verify_csrf
+    } 
 }
 
 $video_id_value = isset($_GET['id']) ? (int)$_GET['id'] : "";
@@ -70,7 +70,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
     <link href="assets/css/font.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
     <style>
-        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
+        
         body::before {
             content: '';
             position: fixed;
@@ -92,7 +92,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
             animation: glow 3s ease-in-out infinite;
         }
 
-        /* Green selected state — not in Tailwind build */
+        
         .has-\[\:checked\]\:border-green-500\/40:has(:checked) {
             border-color: rgba(34, 197, 94, 0.4);
         }
@@ -274,7 +274,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                 redirectUrl: 'transcode.php<?= $video_id_value ? "?id=$video_id_value" : "" ?>'
             });
         <?php endif; ?>
-        // Submit animation
+        
         function startProcess() {
             const btn = document.getElementById('btn-submit');
             const progress = document.getElementById('progress-strip');

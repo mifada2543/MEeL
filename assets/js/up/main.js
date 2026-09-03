@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* up/main.js — Entry point folder up/ (halaman upload_advanced.php). */
+
+
+
+
 (function () {
   "use strict";
   if (document.readyState !== "loading") return;

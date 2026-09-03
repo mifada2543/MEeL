@@ -1,9 +1,7 @@
 <?php
 ini_set('display_errors', 0);ini_set('display_startup_errors', 0);error_reporting(E_ALL);
-/**
- * MEeL!Mania — Beatmap Editor
- * Visual editor for creating beatmaps
- */
+
+
 require_once __DIR__ . '/../../../auth/auth.php';
 require_once __DIR__ . '/../api/config.php';
 
@@ -60,7 +58,7 @@ if ($edit_id > 0 && $is_logged_in) {
   </div>
   <?php else: ?>
 
-  <!-- ─── Navigation ─── -->
+  
   <nav class="nav-bar">
     <a href="./" class="nav-back">← Kembali</a>
     <div class="nav-brand">
@@ -77,7 +75,7 @@ if ($edit_id > 0 && $is_logged_in) {
 
   <main class="editor-layout">
 
-    <!-- ─── Left: Form ─── -->
+    
     <aside class="editor-sidebar">
       <div class="sidebar-section">
         <h3>Metadata</h3>
@@ -207,13 +205,13 @@ if ($edit_id > 0 && $is_logged_in) {
       </div>
     </aside>
 
-    <!-- ─── Center: Canvas Editor ─── -->
+    
     <section class="editor-main">
       <div class="editor-canvas-wrap" id="canvasWrap">
         <canvas id="editorCanvas"></canvas>
-        <!-- Audio element for playback -->
+        
         <audio id="audioPlayer" preload="auto"></audio>
-        <!-- Prompt overlay: upload audio first -->
+        
         <div id="audioPromptOverlay" class="audio-prompt-overlay">
           <div class="audio-prompt-card">
             <div class="audio-prompt-icon">🎵</div>
@@ -234,7 +232,7 @@ if ($edit_id > 0 && $is_logged_in) {
 
   </main>
 
-  <!-- Upload Progress Overlay -->
+  
   <div id="uploadOverlay" class="overlay hidden">
     <div class="overlay-card">
       <div class="spinner"></div>
@@ -254,11 +252,11 @@ if ($edit_id > 0 && $is_logged_in) {
     const EDIT_SONG = <?= $edit_song ? json_encode($edit_song) : 'null' ?>;
     const EDIT_BEATMAP = <?= $edit_beatmap ? json_encode($edit_beatmap) : 'null' ?>;
 
-    // Global notes reference — module updates this, upload reads from it
+    
     window.__editorNotes = [];
   </script>
 
-  <!-- Upload/Delete as regular scripts (not module) — guaranteed to load -->
+  
   <script>
     function uploadBeatmap() {
       var form = document.getElementById('beatmapForm');
@@ -341,7 +339,7 @@ if ($edit_id > 0 && $is_logged_in) {
     }
   </script>
 
-  <!-- Editor module (canvas, draw, input, etc.) -->
+  
   <script type="module" src="/MEeL/arcade/rhythm/assets/js/editor/main.js"></script>
   <?php endif; ?>
 </body>

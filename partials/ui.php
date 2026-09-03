@@ -19,7 +19,7 @@ $__meel_css_bundle = function (string $dir, string $baseUrl) use ($__meel_engine
 };
 $__meel_css_bundle('assets/css/engine', 'assets/css/engine/');
 
-// Hitung base URL untuk favicon & manifest (head.php sudah di-buang oleh ob_end_clean)
+
 $__ui_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $__ui_host  = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $__ui_base  = $__ui_proto . '://' . $__ui_host . rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
@@ -31,7 +31,7 @@ $__ui_base  = $__ui_proto . '://' . $__ui_host . rtrim(str_replace('\\', '/', di
 <div id="meel-overlay">
   <div id="meel-card">
 
-    <!-- LOGO / WORDMARK -->
+    
     <div style="font-size:11px;letter-spacing:.35em;color:rgba(255,255,255,.18);text-transform:uppercase;margin-bottom:28px">MEeL Engine</div>
 
     <?php include __DIR__ . '/engine/download.php'; ?>

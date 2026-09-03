@@ -1,7 +1,7 @@
 <?php
 spl_autoload_register(function (string $class) {
     $map = [
-        // Core modules
+        
         'System'             => __DIR__ . '/core/System.php',
         'Uploader'           => __DIR__ . '/core/Uploader.php',
         'Transcoder'         => __DIR__ . '/core/Transcoder.php',
@@ -15,13 +15,13 @@ spl_autoload_register(function (string $class) {
         'SsrfGuard'           => __DIR__ . '/auth/SsrfGuard.php',
         'ValidatingProxy'     => __DIR__ . '/auth/ValidatingProxy.php',
 
-        // Media
+        
         'SearchEngine'        => __DIR__ . '/media/SearchEngine.php',
 
-        // Drive service
+        
         'DriveService'       => __DIR__ . '/../drive/DriveService.php',
 
-        // PWA service worker
+        
         'SwPrecache'         => __DIR__ . '/core/SwPrecache.php',
 
     ];

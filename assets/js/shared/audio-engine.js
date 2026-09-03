@@ -1,5 +1,5 @@
-// Audio engine — single <audio> instance per session. Persists across watch<->index AJAX transitions.
-// Plyr wrapper moves with <audio> (compact mode via meel-engine-compact class).
+
+
 (function () {
   "use strict";
 
@@ -12,8 +12,8 @@
     if (document.getElementById("meel-audio-engine-style")) return;
     var style = document.createElement("style");
     style.id = "meel-audio-engine-style";
-    // Mode compact (mini-player) menyembunyikan wrapper Plyr tanpa
-    // melepas dari DOM / menghentikan playback.
+    
+    
     style.textContent =
       "#meel-audio-engine-root.meel-engine-compact{position:absolute!important;width:0!important;height:0!important;overflow:hidden!important;opacity:0;pointer-events:none;}";
     document.head.appendChild(style);
@@ -21,12 +21,12 @@
 
   function createEngine() {
     ensureEngineStyle();
-    // Root persisten, langsung child <body>
-    // Di luar area yang akan di-innerHTML-replace oleh view-router.
+    
+    
     var root = document.createElement("div");
     root.id = "meel-audio-engine-root";
     root.setAttribute("data-meel-persist", "true");
-    // Posisi default: disembunyikan sampai ada yang mount() dia.
+    
     root.style.cssText =
       "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
 
@@ -47,7 +47,7 @@
       console.error("❌ audio-engine: Plyr init error:", e);
     }
 
-    // Gabungkan current/duration jadi format "[current / total]"
+    
     if (player) {
       var _durEl =
         player.elements &&
@@ -61,8 +61,8 @@
         return m + ":" + (s < 10 ? "0" : "") + s;
       }
 
-      // Selama drag seek, ambil "current" dari slider seek (preview ikut
-      // jari); listener dipasang langsung ke <audio> agar selalu menang.
+      
+      
       var _isSeekingNow = false;
 
       function _seekPreviewSeconds() {
@@ -97,8 +97,8 @@
           typeof window.formatTime === "function"
             ? window.formatTime
             : _formatTimeFallback;
-        // Belum ada metadata (durasi belum diketahui / masih buffering) →
-        // tampilkan placeholder alih-alih "0:00 / 0:00" yang menyesatkan.
+        
+        
         _curEl.textContent =
           _dur > 0 ? _fmt(_cur) + " / " + _fmt(_dur) : "--:-- / --:--";
       }
@@ -113,7 +113,7 @@
         _updateCombinedTime();
       });
       audio.addEventListener("loadedmetadata", function () {
-        // Reset flag seek saat ganti track — load() tidak memicu seeking/seeked.
+        
         _isSeekingNow = false;
         _updateCombinedTime();
       });
@@ -124,8 +124,8 @@
       _updateCombinedTime();
     }
 
-    // AudioContext / EQ chain
-    // createMediaElementSource() hanya boleh dipanggil sekali seumur hidup <audio>.
+    
+    
     var ctx = null,
       analyser = null,
       sourceNode = null,
@@ -181,8 +181,8 @@
     }
 
     var currentTrackId = null;
-    var handlers = {}; // di-replace via setHandlers() tiap halaman aktif —
-    // hindari dua handler sekaligus (mis. next-song watch vs index).
+    var handlers = {}; 
+    
     var freshLoadPending = false;
 
     function fire(name) {
@@ -247,9 +247,9 @@
         return analyser;
       },
 
-      // LOOP: satu-satunya titik ubah state loop
-      // Tulis semua representasi secara atomik (media.loop, player.loop,
-      // localStorage) agar tidak pernah divergen (desync index<->watch).
+      
+      
+      
       setLoop: function (active) {
         active = !!active;
         audio.loop = active;
@@ -263,7 +263,7 @@
       getCurrentTrackId: function () {
         return currentTrackId;
       },
-      // true kalau loadTrack() TERAKHIR benar-benar ganti src (bukan no-op).
+      
       wasFreshLoad: function () {
         var v = freshLoadPending;
         freshLoadPending = false;
@@ -274,7 +274,7 @@
         handlers = h || {};
       },
 
-      // Reparent wrapper Plyr ke container baru tanpa reset src — kunci gapless.
+      
       mount: function (container, opts) {
         opts = opts || {};
         if (!container) return;
@@ -286,7 +286,7 @@
         }
       },
 
-      // Ganti track HANYA kalau id beda; kalau sama, no-op total (gapless).
+      
       loadTrack: function (meta, opts) {
         opts = opts || {};
         var id = meta && (meta.id != null ? meta.id : meta.musicId);
@@ -298,7 +298,7 @@
         audio.pause();
         audio.src = meta.streamUrl || "stream?id=" + id;
         audio.loop = !!meta.isLooping;
-        // Sinkronkan Plyr config.loop.active — state loop self-consistent.
+        
         if (player) player.loop = !!meta.isLooping;
         audio.load();
         var startTime = opts.startTime || 0;
@@ -311,8 +311,8 @@
         return true;
       },
 
-      // Method eksplisit untuk keluar total dari app musik — tidak
-      // dipanggil otomatis saat transisi mini<->full.
+      
+      
       destroy: function () {
         try {
           if (player && player.destroy) player.destroy();

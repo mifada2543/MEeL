@@ -63,7 +63,7 @@ $title = htmlspecialchars($book['title']);
 
 <body>
     <div class="pdf-wrap">
-        <!-- Navigation bar -->
+        
         <div class="pdf-nav">
             <div class="pdf-nav-left">
                 <a href="<?= base_url('/books/read?id=' . (int)$id) ?>" class="pdf-nav-back" title="Kembali ke pembaca">
@@ -92,13 +92,13 @@ $title = htmlspecialchars($book['title']);
                 <h2 class="pdf-redirect-title"><?= $title ?></h2>
                 <p class="pdf-redirect-meta">Dokumen PDF &middot; <?= $pdf_size_f ?></p>
 
-                <!-- Loading spinner -->
+                
                 <div class="pdf-redirect-loader" id="redirectLoader">
                     <div class="loader-ring"></div>
                     <span class="loader-text">Membuka PDF...</span>
                 </div>
 
-                <!-- Tombol akses langsung (jika redirect tidak jalan) -->
+                
                 <a href="../api/pdf?id=<?= $id ?>"
                     target="_blank" rel="noopener"
                     class="btn" id="directBtn">
@@ -110,10 +110,10 @@ $title = htmlspecialchars($book['title']);
     </div>
 
     <script>
-        /**
-         * PDF Redirector — gateway mobile: redirect ke api/pdf.php.
-         * Top-level navigation mengirim cookie session (iframe/embed mobile tidak).
-         */
+        
+
+
+
         (function() {
             var loader = document.getElementById('redirectLoader');
             var directBtn = document.getElementById('directBtn');

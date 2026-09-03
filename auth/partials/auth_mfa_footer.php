@@ -1,6 +1,6 @@
 <?php
 ?>
-<!-- Copyright -->
+
 <p class="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
 </main>
 

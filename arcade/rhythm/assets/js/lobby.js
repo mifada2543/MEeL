@@ -1,14 +1,12 @@
-/**
- * MEeL!Mania — Lobby & Song Select
- * Loads songs from API (songs.php) — built-in + custom
- * Displays per-beatmap scores from localStorage
- */
+
+
+
+
+
 (function () {
   "use strict";
 
-  /* ═══════════════════════════════════════════════════════
-     STATE
-     ═══════════════════════════════════════════════════════ */
+  
   let allSongs = [];
   let selectedSong = null;
   let selectedSongData = null;
@@ -17,9 +15,7 @@
   let scores = loadScores();
   let previewAudio = null;
 
-  /* ═══════════════════════════════════════════════════════
-     PERSISTENCE
-     ═══════════════════════════════════════════════════════ */
+  
   function loadSettings() {
     try {
       return JSON.parse(localStorage.getItem("mania_settings")) || {
@@ -40,9 +36,7 @@
     try { localStorage.setItem("mania_scores", JSON.stringify(scores)); } catch (e) {}
   }
 
-  /* ═══════════════════════════════════════════════════════
-     BACKGROUND ANIMATION
-     ═══════════════════════════════════════════════════════ */
+  
   const bgCanvas = document.getElementById("bgCanvas");
   const bgCtx = bgCanvas.getContext("2d");
   let particles = [];
@@ -99,23 +93,19 @@
     requestAnimationFrame(drawBg);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     LOAD SONGS FROM API
-     ═══════════════════════════════════════════════════════ */
+  
   function loadSongs(sortKey) {
-    // Songs already loaded from PHP via window.MANIA_SONGS
+    
     if (window.MANIA_SONGS) {
       allSongs = window.MANIA_SONGS;
     }
-    // Sort if needed
+    
     if (sortKey === 'bpm') allSongs.sort((a, b) => b.bpm - a.bpm);
     else if (sortKey === 'difficulty') allSongs.sort((a, b) => b.difficulty - a.difficulty);
     renderSongs();
   }
 
-  /* ═══════════════════════════════════════════════════════
-     RENDER SONGS
-     ═══════════════════════════════════════════════════════ */
+  
   const songGrid = document.getElementById("songGrid");
 
   function renderSongs() {
@@ -171,7 +161,7 @@
     });
     updatePlayButton();
 
-    // Stop any preview
+    
     if (previewAudio) { previewAudio.pause(); previewAudio = null; }
   }
 
@@ -186,9 +176,7 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     SPEED SELECTOR
-     ═══════════════════════════════════════════════════════ */
+  
   document.querySelectorAll(".speed-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".speed-btn").forEach((b) => b.classList.remove("selected"));
@@ -197,9 +185,7 @@
     });
   });
 
-  /* ═══════════════════════════════════════════════════════
-     SORT
-     ═══════════════════════════════════════════════════════ */
+  
   document.querySelectorAll(".sort-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".sort-btn").forEach((b) => b.classList.remove("active"));
@@ -208,9 +194,7 @@
     });
   });
 
-  /* ═══════════════════════════════════════════════════════
-     SETTINGS PANEL
-     ═══════════════════════════════════════════════════════ */
+  
   const settingsPanel = document.getElementById("settingsPanel");
   document.getElementById("btnSettings").addEventListener("click", () => {
     settingsPanel.classList.remove("hidden");
@@ -267,9 +251,7 @@
     }
   });
 
-  /* ═══════════════════════════════════════════════════════
-     STATS PANEL
-     ═══════════════════════════════════════════════════════ */
+  
   const statsPanel = document.getElementById("statsPanel");
   document.getElementById("btnStats").addEventListener("click", () => {
     statsPanel.classList.remove("hidden");
@@ -310,9 +292,7 @@
     document.getElementById('statsBody').innerHTML = html;
   }
 
-  /* ═══════════════════════════════════════════════════════
-     PLAY → Navigate to Game
-     ═══════════════════════════════════════════════════════ */
+  
   document.getElementById("btnPlay").addEventListener("click", () => {
     if (!selectedSongData) return;
     const params = new URLSearchParams({
@@ -323,9 +303,7 @@
     window.location.href = `game?${params.toString()}`;
   });
 
-  /* ═══════════════════════════════════════════════════════
-     TOAST
-     ═══════════════════════════════════════════════════════ */
+  
   function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg;
@@ -339,9 +317,7 @@
     return active ? active.dataset.sort : "default";
   }
 
-  /* ═══════════════════════════════════════════════════════
-     INIT
-     ═══════════════════════════════════════════════════════ */
+  
   async function init() {
     resizeBg();
     initParticles();
@@ -350,7 +326,7 @@
 
     await loadSongs("default");
 
-    // Receive score back from game page
+    
     try {
       const params = new URLSearchParams(window.location.search);
       const scoreBack = params.get("score");
@@ -370,7 +346,7 @@
     } catch (e) {}
   }
 
-  // Force reload on bfcache (back/forward navigation)
+  
   window.addEventListener("pageshow", (e) => {
     if (e.persisted) {
       window.location.reload();

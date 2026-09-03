@@ -1,5 +1,5 @@
 <?php
-// HTTP security headers di-set di auth/config.php, bukan di sini.
+
 
 if (!defined('MEEL_ENV')) {
     $is_local = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1', 'localhost'], true)

@@ -23,7 +23,7 @@ class SearchEngineTest extends TestCase
 
     public function testParseParamsDefaults(): void
     {
-        // Ensure no GET params set
+        
         unset($_GET['search'], $_GET['exclude'], $_GET['offset']);
 
         $params = $this->searchEngine->parseParams();
@@ -57,14 +57,14 @@ class SearchEngineTest extends TestCase
 
     public function testSanitizeQueryNeutralizesFulltextBreakingInput(): void
     {
-        // Operator murni / kosong → hasil kosong (bukan SQL error)
+        
         $this->assertSame('', SearchEngine::sanitizeQuery('*'));
         $this->assertSame('', SearchEngine::sanitizeQuery('-'));
         $this->assertSame('', SearchEngine::sanitizeQuery('+'));
         $this->assertSame('', SearchEngine::sanitizeQuery('"'));
         $this->assertSame('', SearchEngine::sanitizeQuery('<<>>()~@'));
 
-        // Operator di akhir/awal token dinetralkan
+        
         $this->assertSame('foo', SearchEngine::sanitizeQuery('foo -'));
         $this->assertSame('foo', SearchEngine::sanitizeQuery('*foo'));
         $this->assertSame('a b', SearchEngine::sanitizeQuery('a - b'));
@@ -73,7 +73,7 @@ class SearchEngineTest extends TestCase
         $this->assertSame('hello', SearchEngine::sanitizeQuery('hello"'));
         $this->assertSame('"a b"', SearchEngine::sanitizeQuery('"a b"'));
 
-        // Prefix search (kata*) tetap valid
+        
         $this->assertSame('foo*', SearchEngine::sanitizeQuery('foo*'));
 
         

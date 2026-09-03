@@ -26,7 +26,7 @@ function convert_srt_to_vtt(string $srt): string
 }
 
 if (!function_exists('strip_utf8_bom')) {
-/* @param string $content Konten teks mentah; @return string Konten tanpa BOM */
+
 function strip_utf8_bom(string $content): string
 {
     return preg_replace('/^\xEF\xBB\xBF/', '', $content) ?? $content;
@@ -34,11 +34,8 @@ function strip_utf8_bom(string $content): string
 }
 
 if (!function_exists('sanitize_subtitle_lang')) {
-/**
- * @param string|null $lang Kode bahasa mentah dari form/nama file
- * @param string $default Nilai fallback jika tidak valid (default 'id')
- * @return string Kode bahasa yang aman untuk nama file
- */
+
+
 function sanitize_subtitle_lang(?string $lang, string $default = 'id'): string
 {
     $lang = strtolower(trim((string)$lang));
@@ -50,7 +47,7 @@ function sanitize_subtitle_lang(?string $lang, string $default = 'id'): string
 }
 
 if (!function_exists('lang_map')) {
-/* @return array<string,string> Map kode bahasa => label tampilan */
+
 function lang_map(): array
 {
     return [
@@ -74,7 +71,7 @@ function lang_map(): array
 }
 
 if (!function_exists('subtitle_lang_map')) {
-/* @return array<string,string> Map kode bahasa => label tampilan */
+
 function subtitle_lang_map(): array
 {
     return lang_map();
@@ -82,7 +79,7 @@ function subtitle_lang_map(): array
 }
 
 if (!function_exists('lang_label')) {
-/* @param string $lang Kode bahasa (id, en, ja, ...); @return string Label tampilan (Indonesia, English, 日本語, ...) */
+
 function lang_label(string $lang): string
 {
     $lang = strtolower(trim($lang));
@@ -92,7 +89,7 @@ function lang_label(string $lang): string
 }
 
 if (!function_exists('subtitle_lang_label')) {
-/* @param string $lang Kode bahasa (id, en, ja, ...); @return string Label tampilan (Indonesia, English, 日本語, ...) */
+
 function subtitle_lang_label(string $lang): string
 {
     return lang_label($lang);
@@ -100,7 +97,7 @@ function subtitle_lang_label(string $lang): string
 }
 
 if (!function_exists('validate_subtitle_file')) {
-/* @param string $tmp_path Path file upload di temp; @return bool True jika aman untuk diproses */
+
 function validate_subtitle_file(string $tmp_path): bool
 {
     if (!is_file($tmp_path) || filesize($tmp_path) > 2 * 1024 * 1024) {

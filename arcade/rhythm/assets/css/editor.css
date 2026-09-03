@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════
-   MEeL!Mania — Beatmap Editor Stylesheet
-   ═══════════════════════════════════════════════════════ */
+
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
 
@@ -35,7 +33,7 @@ body {
   overflow: hidden;
 }
 
-/* ─── Auth Required ─── */
+
 .auth-required {
   display: flex;
   align-items: center;
@@ -54,7 +52,7 @@ body {
 .auth-card h2 { font-size: 20px; margin-bottom: 8px; }
 .auth-card p { color: var(--text2); font-size: 14px; margin-bottom: 20px; }
 
-/* ─── Nav ─── */
+
 .nav-bar {
   position: sticky;
   top: 0;
@@ -100,7 +98,7 @@ body {
   color: var(--text2);
 }
 
-/* ─── Layout: FULL HEIGHT ─── */
+
 .editor-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
@@ -128,7 +126,7 @@ body {
   height: 100%;
 }
 
-/* ─── Sidebar Sections ─── */
+
 .sidebar-section {
   margin-bottom: 20px;
 }
@@ -141,7 +139,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* ─── Form ─── */
+
 .form-group {
   margin-bottom: 10px;
 }
@@ -189,7 +187,7 @@ body {
   padding: 2px;
 }
 
-/* ─── File Drop ─── */
+
 .file-drop {
   position: relative;
   border: 2px dashed var(--border);
@@ -230,7 +228,7 @@ body {
 }
 .cover-preview.visible { display: block; margin: 8px auto 0; }
 
-/* ─── Buttons ─── */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -275,7 +273,7 @@ body {
 }
 .btn-icon:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--danger); }
 
-/* ─── Editor Controls ─── */
+
 .editor-controls {
   display: flex;
   gap: 6px;
@@ -299,7 +297,7 @@ body {
   color: var(--accent);
 }
 
-/* ─── Canvas: FILL ALL AVAILABLE SPACE ─── */
+
 .editor-canvas-wrap {
   flex: 1;
   overflow-y: scroll;
@@ -320,7 +318,7 @@ body {
   pointer-events: none;
 }
 
-/* ─── Timeline ─── */
+
 .editor-timeline {
   height: 32px;
   background: var(--bg-surface);
@@ -351,7 +349,7 @@ body {
   pointer-events: none;
 }
 
-/* ─── Song List ─── */
+
 .song-list {
   display: flex;
   flex-direction: column;
@@ -390,7 +388,7 @@ body {
   padding: 16px;
 }
 
-/* ─── Overlay ─── */
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -445,7 +443,7 @@ body {
   border-radius: 4px;
 }
 
-/* ─── Note Info Panel ─── */
+
 .note-info-row {
   display: flex;
   justify-content: space-between;
@@ -475,7 +473,7 @@ body {
   padding: 5px 8px;
 }
 
-/* ─── Audio Prompt Overlay ─── */
+
 .audio-prompt-overlay {
   position: absolute;
   inset: 0;
@@ -534,7 +532,7 @@ body {
   50% { transform: translateX(-8px); }
 }
 
-/* ─── Gold Hint Badge ─── */
+
 .gold-hint {
   display: inline-flex;
   align-items: center;
@@ -549,7 +547,7 @@ body {
   margin-top: 8px;
 }
 
-/* ─── Responsive ─── */
+
 @media (max-width: 1024px) {
   .editor-layout {
     grid-template-columns: 1fr;

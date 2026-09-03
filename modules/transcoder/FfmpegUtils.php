@@ -1,5 +1,5 @@
 <?php
-/* @package MEeL\Transcoder */
+
 
 require_once __DIR__ . '/../core/helpers.php';
 
@@ -11,7 +11,7 @@ trait FfmpegUtils
         return "export LD_LIBRARY_PATH=''; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
     }
 
-    /* @param string $file_path Path ke file media; @return float Durasi dalam detik */
+    
     protected function probeDuration(string $file_path): float
     {
         $cmd = $this->getEnvPrefix() . escapeshellarg($this->ffprobe_bin)
@@ -21,11 +21,8 @@ trait FfmpegUtils
         return (float)trim((string)shell_exec($cmd));
     }
 
-    /**
-     * @param string $dir Path direktori yang akan dibuat
-     * @param int $perms Permission (default 0755)
-     * @return bool True jika direktori ada / berhasil dibuat
-     */
+    
+
     protected function ensureDir(string $dir, int $perms = 0755): bool
     {
         if (is_dir($dir)) {
@@ -38,7 +35,7 @@ trait FfmpegUtils
         return true;
     }
 
-    /* @param string $path Path file */
+    
     protected function removeFile(string $path): void
     {
         if (!is_file($path) && !is_link($path)) {
@@ -49,7 +46,7 @@ trait FfmpegUtils
         }
     }
 
-    /* @param string $dir Path direktori */
+    
     protected function removeDir(string $dir): void
     {
         if (!is_dir($dir)) {
@@ -63,7 +60,7 @@ trait FfmpegUtils
         }
     }
 
-    /* @param string $src Path sumber; @param string $dst Path tujuan; @return bool True jika sukses */
+    
     protected function moveFile(string $src, string $dst): bool
     {
         if (!is_file($src)) {
@@ -116,13 +113,13 @@ trait FfmpegUtils
         return false;
     }
 
-    /* @param string $dir Path direktori */
+    
     protected function cleanupDir(string $dir): void
     {
         $this->removeDir($dir);
     }
 
-    /* @param string $title Judul yang akan disanitasi; @return string Nama file yang aman */
+    
     protected function sanitizeFilename(string $title): string
     {
         $name = trim($title);
@@ -133,13 +130,13 @@ trait FfmpegUtils
         $name = preg_replace("/[^a-zA-Z0-9_\x{3000}-\x{9fff}\x{30a0}-\x{30ff}\x{3040}-\x{309f}\x{ff00}-\x{ffef}]+/u", "-", $name);
         $name = str_replace(['..', './'], '', $name);
         $name = mb_substr($name, 0, 120);
-        // Hindari nama file yang hanya terdiri dari delimiter
+        
         $name = trim($name, "- \t\n\r\0\x0B");
 
         return $name ?: 'untitled-media';
     }
 
-    /* @param string $video_path Path ke file video sumber; @param string $target_folder Folder tujuan untuk sprite .webp dan .vtt */
+    
     protected function generateSpriteAndVTT(string $video_path, string $target_folder): void
     {
         $w    = 160;

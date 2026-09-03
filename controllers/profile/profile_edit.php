@@ -198,7 +198,7 @@ if (isset($_POST['update_profile'])) {
         $conn->rollback();
         $msg = 'Error: ' . $e->getMessage();
     }
-    } // tutup else verify_csrf
+    } 
 }
 
 $stmt_data = $conn->prepare("SELECT * FROM users WHERE id = ?");
@@ -225,7 +225,12 @@ include __DIR__ . '/../../partials/scripts.php';
             background: rgba(22, 27, 34, 0.7);
             backdrop-filter: blur(10px);
         }
+
+        .crop-guide {
+            background-color: rgba(255, 255, 255, 0.35);
+        }
 </style>
+    <link rel="stylesheet" href="<?= meel_base_url_path() ?>/assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/../../assets/css/shared/light-theme.css') ?>">
 </head>
 
 <body class="text-gray-300 p-6">
@@ -249,7 +254,7 @@ include __DIR__ . '/../../partials/scripts.php';
                     <p id="avatarStatus" class="hidden text-[10px] text-red-400 text-center"></p>
                 </div>
 
-                <!-- Modal Preview Foto Profil -->
+                
                 <div id="avatarModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="batalPreview()"></div>
                     <div class="relative glass rounded-[2rem] border border-white/10 shadow-2xl w-full max-w-xs p-8 text-center">
@@ -259,8 +264,8 @@ include __DIR__ . '/../../partials/scripts.php';
                         <p class="text-[10px] text-gray-500 mb-4">Geser foto untuk memilih bagian yang dipakai</p>
                         <div id="cropFrame" class="relative h-56 mx-auto mb-4 rounded-2xl overflow-hidden border-2 border-blue-500/30 select-none" style="width:224px;touch-action:none;cursor:grab;background-color:#0b0e14">
                             <img id="modalAvatarPreview" class="absolute select-none" style="max-width:none;top:0;left:0" alt="Preview" draggable="false">
-                            <div class="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px" style="background-color:rgba(255,255,255,0.35);transform:translateX(-50%)"></div>
-                            <div class="pointer-events-none absolute left-0 right-0 top-1/2 h-px" style="background-color:rgba(255,255,255,0.35);transform:translateY(-50%)"></div>
+                            <div class="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px crop-guide" style="transform:translateX(-50%)"></div>
+                            <div class="pointer-events-none absolute left-0 right-0 top-1/2 h-px crop-guide" style="transform:translateY(-50%)"></div>
                         </div>
                         <input type="hidden" name="crop_x" id="cropX" value="">
                         <input type="hidden" name="crop_y" id="cropY" value="">

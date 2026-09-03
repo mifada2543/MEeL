@@ -131,7 +131,7 @@ $auth_extra_style = '
 include __DIR__ . '/partials/auth_head.php';
 ?>
 <main class="w-full max-w-sm" aria-labelledby="mfa-title">
-    <!-- Header -->
+    
     <div class="text-center mb-8 anim-fade">
         <div class="inline-flex p-4 bg-purple-600/10 rounded-3xl text-purple-500 mb-4">
             <i data-lucide="shield" class="w-10 h-10"></i>
@@ -168,20 +168,20 @@ include __DIR__ . '/partials/auth_head.php';
     <?php endif; ?>
     <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6 anim-fade" autocomplete="off">
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
-        <!-- Info user -->
+        
         <div class="text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-sm">
                 <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
                 <span class="font-bold text-white"><?= htmlspecialchars($temp_username) ?></span>
             </div>
         </div>
-        <!-- Waiting dots -->
+        
         <div class="flex justify-center gap-1.5">
             <span class="pulse-dot w-2 h-2 bg-purple-500 rounded-full"></span>
             <span class="pulse-dot w-2 h-2 bg-purple-500 rounded-full"></span>
             <span class="pulse-dot w-2 h-2 bg-purple-500 rounded-full"></span>
         </div>
-        <!-- Code input -->
+        
         <div class="space-y-2">
             <label for="code" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block text-center">
                 Kode 6 Digit
@@ -197,13 +197,13 @@ include __DIR__ . '/partials/auth_head.php';
             Verifikasi
             <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
         </button>
-        <!-- Cancel / back -->
+        
         <div class="text-center pt-2">
             <a href="login" class="text-xs text-gray-500 hover:text-gray-300 transition flex items-center justify-center gap-1">
                 <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali ke Login
             </a>
         </div>
-        <!-- Help -->
+        
         <details class="text-center cursor-pointer group">
             <summary class="text-[10px] text-gray-600 hover:text-gray-400 transition uppercase tracking-wider font-bold">
                 Tidak punya akses ke Authenticator?

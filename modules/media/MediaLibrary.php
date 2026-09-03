@@ -51,13 +51,8 @@ class MediaLibrary
         }
     }
 
-    /**
-     * @param mysqli_result|false $result Result set dari query data
-     * @param int $total Total record
-     * @param int $page Halaman saat ini (1-based)
-     * @param int $perPage Item per halaman
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
     protected function paginateResult($result, int $total, int $page, int $perPage): array
     {
         $totalPages = max(1, (int)ceil($total / max($perPage, 1)));
@@ -74,11 +69,8 @@ class MediaLibrary
         ];
     }
 
-    /**
-     * @param int $page Halaman (1-based)
-     * @param int $perPage Item per halaman (default 15)
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
     public function getVideosWithMeta(int $page = 1, int $perPage = 15): array
     {
         $offset = ($page - 1) * $perPage;
@@ -123,7 +115,7 @@ class MediaLibrary
                 );
                 $stmt->bind_param("ii", $exclude, $random_offset);
             } else {
-                // Optimized: Fetch limit+1 untuk check hasMore
+                
                 $stmt = $this->conn->prepare(
                     "SELECT v.*, u.username AS uploader_name FROM video v
                      JOIN users u ON v.user_id = u.id
@@ -180,13 +172,8 @@ class MediaLibrary
         return $res ? (int)$res->fetch_assoc()['total'] : 0;
     }
 
-    /**
-     * @param string $format Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
-     * @param string $artist Filter artist ('all' atau nama artist)
-     * @param int $page Halaman (1-based)
-     * @param int $perPage Item per halaman (default 10)
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
     public function getMusicListWithMeta(string $format = 'all', string $artist = 'all', int $page = 1, int $perPage = 10): array
     {
         $offset = ($page - 1) * $perPage;
@@ -235,10 +222,8 @@ class MediaLibrary
         return $stmt->get_result();
     }
 
-    /**
-     * Slug URL untuk nama playlist: "Leo/Need" → "leo-need".
-     * Nama tanpa karakter alfanumerik (mis. aksara non-Latin) → "playlist".
-     */
+    
+
     public static function playlistSlug(string $name): string
     {
         $slug = strtolower(trim($name));
@@ -247,23 +232,15 @@ class MediaLibrary
         return $slug !== '' ? $slug : 'playlist';
     }
 
-    /**
-     * Nama rute music/ yang dipesan — slug playlist yang bentrok diberi akhiran
-     * "-<id>" agar music/<slug> tidak menabrak halaman modul.
-     */
+    
+
     private const RESERVED_MUSIC_ROUTES = [
         'index', 'beranda', 'watch', 'upload', 'search', 'load-more', 'stream',
         'file', 'playlist', 'playlist-action',
     ];
 
-    /**
-     * Peta id playlist → slug URL (mis. "miku"), unik per user.
-     * Slug yang bentrok (nama sama / slug kosong / nama rute modul dipesan)
-     * diberi akhiran "-<id>" agar deterministik — ORDER BY id ASC sama untuk
-     * pembuatan link & resolusi.
-     *
-     * @return array<int, string> id playlist → slug
-     */
+    
+
     public function getUserPlaylistRoutes(int $user_id): array
     {
         $routes = [];
@@ -282,9 +259,8 @@ class MediaLibrary
         return $routes;
     }
 
-    /**
-     * Resolve slug URL → id playlist milik user (kebalikan getUserPlaylistRoutes).
-     */
+    
+
     public function resolvePlaylistSlug(string $slug, int $user_id): int
     {
         foreach ($this->getUserPlaylistRoutes($user_id) as $id => $route) {
@@ -409,7 +385,7 @@ class BookRepository
         $this->conn = $db_connection;
     }
 
-    /* @param string $filter Filter tipe ('manga', 'pdf', 'all'); @param int $limit Batas item (0 = no limit); @param int $offset Offset untuk pagination */
+    
     public function getBooks(string $filter = 'all', int $limit = 0, int $offset = 0)
     {
         $allowed = ['manga', 'pdf'];
@@ -437,7 +413,7 @@ class BookRepository
         return $stmt->get_result();
     }
 
-    /* @param string $filter Filter tipe ('manga', 'pdf', 'all'); @return int */
+    
     public function countBooks(string $filter = 'all'): int
     {
         $allowed = ['manga', 'pdf'];
@@ -453,13 +429,8 @@ class BookRepository
         return (int)$stmt->get_result()->fetch_assoc()['total'];
     }
 
-    /**
-     * @param string $q Kata kunci pencarian (sudah di-sanitize)
-     * @param string $type Filter tipe: 'all', 'manga', 'pdf' (dihormati dari pill filter)
-     * @param int $offset Offset pagination
-     * @param int $limit Batas baris yang diambil
-     * @return \mysqli_result|null
-     */
+    
+
     public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24)
     {
         $allowed    = ['manga', 'pdf'];
@@ -498,12 +469,8 @@ class BookRepository
         return $result ?: null;
     }
 
-    /**
-     * @param string $filter Filter tipe ('manga', 'pdf', 'all')
-     * @param int $page Halaman (1-based)
-     * @param int $perPage Item per halaman (default 24)
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
     public function getBooksPaginated(string $filter = 'all', int $page = 1, int $perPage = 24): array
     {
         $total  = $this->countBooks($filter);
@@ -591,7 +558,7 @@ class BookUploader
             if ($ret === 0 && file_exists($target_path) && filesize($target_path) > 0) {
                 return $name;
             }
-            // Fallback: simpan file asli jika ffmpeg gagal
+            
             if (move_uploaded_file($file['tmp_name'], $target_path)) {
                 return $name;
             }

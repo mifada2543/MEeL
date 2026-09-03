@@ -38,7 +38,7 @@ $is_logged_in  = isset($_SESSION['user_id']);
 function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, $include_script = true)
 {
 ?>
-    <!-- BACK TO LIBRARY (when loaded via HTMX into index.php) -->
+    
     <?php if (!$include_script): ?>
         <div class="mb-6">
             <a href="javascript:void(0)"
@@ -52,7 +52,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             </a>
         </div>
     <?php endif; ?>
-    <!-- PLAYLIST HEADER -->
+    
     <div class="flex items-start sm:items-end gap-5 mb-8 pb-6 border-b border-white/[.04]">
         <div class="relative flex-shrink-0">
             <div class="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-orange-500 via-orange-600 to-red-700
@@ -100,7 +100,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
         </div>
     </div>
 
-    <!-- TRACK LIST -->
+    
     <?php if ($total_songs > 0): ?>
         <div class="hidden sm:grid grid-cols-[2rem_1fr_auto_2rem] gap-4 px-3 mb-2">
             <span class="text-[9px] font-bold uppercase tracking-[.3em] text-gray-700 text-center">#</span>
@@ -131,7 +131,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                     data-watch-url="<?= htmlspecialchars($watch_url) ?>"
                     data-playlist-id="<?= $playlist_id ?>">
 
-                    <!-- Nomor / play icon -->
+                    
                     <div class="flex items-center justify-center w-8 flex-shrink-0">
                         <span class="group-hover:hidden block text-[10px] font-mono text-gray-600"><?= $idx ?></span>
                         <button type="button"
@@ -141,7 +141,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                         </button>
                     </div>
 
-                    <!-- Thumbnail + Info -->
+                    
                     <a href="<?= htmlspecialchars($watch_url) ?>"
                         class="flex items-center gap-3 min-w-0 no-underline">
                         <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0
@@ -169,13 +169,13 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                         </div>
                     </a>
 
-                    <!-- Format -->
+                    
                     <span class="text-[8px] px-1.5 py-0.5 rounded bg-white/[.04] border border-white/[.05]
                                  text-gray-600 uppercase font-bold tracking-wide text-right">
                         <?= $s_lbl ?>
                     </span>
 
-                    <!-- Hapus dari playlist -->
+                    
                     <form action="playlist-action" method="POST"
                         onsubmit="return meelConfirmForm(event, { title:'Hapus dari Playlist', text:'Hapus lagu ini dari playlist?', confirmButtonText:'HAPUS' })">
                         <input type="hidden" name="action" value="remove_from_playlist">
@@ -278,7 +278,7 @@ $__v = function($f) {
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR — identik dengan index.php -->
+    
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-5 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
@@ -313,15 +313,15 @@ $__v = function($f) {
         </div>
     </nav>
 
-    <!-- LAYOUT GRID — identik dengan index.php -->
+    
     <div id="library-container"
         class="w-full px-4 sm:px-6 xl:px-10 2xl:px-16 pt-8 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        <!-- SIDEBAR -->
+        
         <aside class="lg:col-span-3 xl:col-span-2">
             <div class="sticky top-20 space-y-6">
 
-                <!-- FORMAT PILLS (Desktop) -->
+                
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3">Format</div>
                     <div class="flex flex-wrap gap-2">
@@ -336,7 +336,7 @@ $__v = function($f) {
                     </div>
                 </div>
 
-                <!-- ARTISTS (Desktop) -->
+                
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3 flex items-center gap-2">
                         <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
@@ -359,7 +359,7 @@ $__v = function($f) {
                     </div>
                 </div>
 
-                <!-- PLAYLISTS (Desktop) -->
+                
                 <?php if ($is_logged_in): ?>
                     <div class="hidden lg:block">
                         <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3 flex items-center gap-2">
@@ -396,10 +396,10 @@ $__v = function($f) {
                         </div>
                     </div>
                 <?php endif; ?>
-                <!-- MOBILE FILTERS & MENUS -->
+                
                 <div class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
 
-                    <!-- Format Pills (Mobile) -->
+                    
                     <div class="flex flex-wrap gap-2">
                         <a href="beranda?format=all"
                             class="format-pill <?= $format_filter === 'all' ? 'active-orange' : '' ?>">All</a>
@@ -412,7 +412,7 @@ $__v = function($f) {
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Artists Select (Custom Dropdown) -->
+                        
                         <div>
                             <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-1.5 flex items-center gap-1.5">
                                 <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
@@ -441,7 +441,7 @@ $__v = function($f) {
                             </div>
                         </div>
 
-                        <!-- Playlists Select (Custom Dropdown) -->
+                        
                         <?php if ($is_logged_in): ?>
                             <div>
                                 <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-1.5 flex items-center gap-1.5">
@@ -479,13 +479,13 @@ $__v = function($f) {
             </div>
         </aside>
 
-        <!-- MAIN — bisa di-swap HTMX tanpa reload halaman/player -->
+        
         <main id="playlist-main" class="lg:col-span-9 xl:col-span-10">
             <?php renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song); ?>
         </main>
     </div>
 
-    <!-- MINI PLAYER — identik dengan index.php agar state audio tidak terputus -->
+    
     <div id="mini-player-index" aria-label="Mini Player">
         <div class="mp-seekbar" id="mp-seekbar-index" onclick="miniSeekIndex(event)" title="Klik untuk seek">
             <div class="mp-seekbar-fill" id="mp-seekbar-fill-index"></div>

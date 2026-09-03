@@ -29,7 +29,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     if ($host_valid) {
 
         $ref_path = parse_url($ref, PHP_URL_PATH);
-        // (/profile/edit, /profile/manage, /auth/mfa-setup — referer kini
+        
         $excluded_pages = ['profile_edit.php', 'edit', 'index.php', 'manage.php', 'manage', 'mfa_setup.php', 'mfa-setup', 'mfa_backup.php', 'edit-music.php', 'edit-video.php'];
 
         $should_exclude = false;

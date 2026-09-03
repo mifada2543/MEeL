@@ -1,4 +1,4 @@
-/* format-time.js — Util bersama format waktu mm:ss (formatTime). */
+
 
 function formatTime(e) {
   if (!e || isNaN(e)) return "0:00";

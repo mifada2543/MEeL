@@ -1,7 +1,7 @@
-/**
- * MEeL!Mania — Renderer
- * Everything that touches the 2D canvas context, plus the note-info panel.
- */
+
+
+
+
 import { S, DOM, CONST } from "./state.js";
 import { getBPM, msToY, yToMs, snapMs, formatTime } from "./canvas.js";
 
@@ -24,7 +24,7 @@ export function buildGridBuffer() {
   var beatMs = 60000 / bpm;
   var totalMs = S.audioDuration * 1000;
 
-  // Bar grid lines
+  
   for (var ms = 0; ms <= totalMs; ms += beatMs) {
     var y = msToY(ms);
     if (y > h) break;
@@ -46,7 +46,7 @@ export function buildGridBuffer() {
     }
   }
 
-  // Sub-beat grid
+  
   if (S.snapDiv > 0) {
     var snap = beatMs / S.snapDiv;
     gc.strokeStyle = "rgba(255,255,255,0.02)";
@@ -63,7 +63,7 @@ export function buildGridBuffer() {
     }
   }
 
-  // Lane backgrounds
+  
   for (var i = 0; i < CONST.LANE_COUNT; i++) {
     var x = off + i * lw;
     var alpha = i % 2 === 0 ? 0.03 : 0.01;
@@ -116,7 +116,7 @@ export function draw() {
     viewBot = viewTop + wrap.clientHeight + 200;
   }
 
-  // Hold note trails (viewport culled)
+  
   for (var ni = 0; ni < S.notes.length; ni++) {
     var note = S.notes[ni];
     if (!note.e) continue;
@@ -159,7 +159,7 @@ export function draw() {
     ctx.globalAlpha = 1;
   }
 
-  // Tap & hold head notes (viewport culled)
+  
   for (var ni2 = 0; ni2 < S.notes.length; ni2++) {
     var note2 = S.notes[ni2];
     var y3 = msToY(note2.t);
@@ -220,7 +220,7 @@ export function draw() {
     }
   }
 
-  // Drag preview
+  
   if (S.isDragging && S.dragLane >= 0 && S.dragStartMs >= 0) {
     var cx2 = offset + S.dragLane * lw + lw / 2;
     var currentMs = snapMs(yToMs(S.lastDragPos.y));
@@ -237,7 +237,7 @@ export function draw() {
     }
   }
 
-  // Playback cursor
+  
   if (audio.currentTime > 0) {
     var cursorY = msToY(audio.currentTime * 1000);
     if (cursorY >= viewTop - 20 && cursorY <= viewBot) {
@@ -263,7 +263,7 @@ export function draw() {
 
   ctx.restore();
 
-  // Throttled UI update (every 200ms during playback)
+  
   var now = performance.now();
   if (!S.isPlaying || now - S.lastUIUpdate > 200) {
     S.lastUIUpdate = now;

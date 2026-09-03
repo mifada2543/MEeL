@@ -1,10 +1,6 @@
 <?php
-/**
- * MEeL!Mania — Get Beatmap API
- * GET /arcade/rhythm/api/beatmap.php?id={song_id}
- *
- * Returns beatmap JSON, audio URL, and metadata for a specific song
- */
+
+
 require_once __DIR__ . '/config.php';
 
 $id = (int) ($_GET['id'] ?? 0);

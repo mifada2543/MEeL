@@ -1,6 +1,6 @@
-/* state-keys.js — konstanta kunci localStorage/sessionStorage terpusat.
- * Muat SEBELUM file JS lain yang membaca kunci meel_* / skip_*.
- */
+
+
+
 window.MEEL_KEYS = Object.freeze({
   AUDIO_STATE: 'meel_audio_state',
   SKIP_RESUME_ONCE: 'skip_resume_once',

@@ -1,8 +1,8 @@
-/**
- * MEeL!Mania — Canvas geometry
- * Coordinate conversions, responsive sizing, and hit-testing helpers.
- * No drawing here (see renderer.js) — just math + layout.
- */
+
+
+
+
+
 import { S, DOM, CONST } from "./state.js";
 
 export function getBPM() {
@@ -69,11 +69,11 @@ export function resizeCanvas() {
 export function getCanvasPos(e) {
   var canvas = DOM.canvas, wrap = DOM.wrap;
   var rect = canvas.getBoundingClientRect();
-  // Scale from rendered CSS px to the canvas's actual pixel-buffer space.
-  // Normally 1:1 (canvas.style.width/height are kept in sync with
-  // canvas.width/height in resizeCanvas), but this guards against any
-  // divergence — e.g. HiDPI quirks or a stale layout — the same way the
-  // Ctrl+right-click seek handler already protects itself.
+  
+  
+  
+  
+  
   var scaleX = canvas.width / rect.width;
   var scaleY = canvas.height / rect.height;
   return {
@@ -83,7 +83,7 @@ export function getCanvasPos(e) {
 }
 
 export function getLaneAndTime(pos) {
-  var offset = 50; // left padding for time labels
+  var offset = 50; 
   var lane = Math.floor((pos.x - offset) / S.laneWidth);
   if (lane < 0 || lane >= CONST.LANE_COUNT) return null;
   var ms = snapMs(yToMs(pos.y));

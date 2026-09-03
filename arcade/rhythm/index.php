@@ -1,12 +1,11 @@
 <?php
-/**
- * MEeL!Mania — Lobby & Song Select
- */
+
+
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 require_once __DIR__ . '/api/config.php';
 
-// CSRF token
+
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }

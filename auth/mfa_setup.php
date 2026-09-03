@@ -13,7 +13,7 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $mfa_enabled = (int)$stmt->get_result()->fetch_assoc()['mfa_enabled'] ?? 0;
 $stmt->close();
-$step = 'setup'; // setup | verify | backup | done
+$step = 'setup'; 
 $error = '';
 $secret = '';
 $otpauth = '';
@@ -141,7 +141,7 @@ include __DIR__ . '/partials/auth_head.php';
     <?php endif; ?>
     <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6 anim-fade">
         <?php if ($mfa_enabled && $step === 'setup'): ?>
-            <!-- MFA SUDAH AKTIF -->
+            
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
                     <i data-lucide="check-circle" class="w-10 h-10"></i>
@@ -170,7 +170,7 @@ include __DIR__ . '/partials/auth_head.php';
                         });
                     </script>
                 <?php endif; ?>
-                <!-- Reset MFA -->
+                
                 <div class="pt-4 border-t border-white/5 space-y-4">
                     <p class="text-[10px] text-gray-600 uppercase tracking-widest">Ingin mengganti / menonaktifkan MFA?</p>
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -213,7 +213,7 @@ include __DIR__ . '/partials/auth_head.php';
                 </script>
             </div>
         <?php elseif ($step === 'verify'): ?>
-            <!-- VERIFY QR CODE -->
+            
             <input type="hidden" name="verify_code" value="1">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <div class="text-center space-y-4">
@@ -222,7 +222,7 @@ include __DIR__ . '/partials/auth_head.php';
                     Buka aplikasi <strong class="text-white">Google Authenticator</strong> atau <strong class="text-white">Authy</strong>,
                     lalu scan QR Code di bawah ini.
                 </p>
-                <!-- QR Code (local canvas — 100% offline) -->
+                
                 <div class="flex justify-center">
                     <div id="mfa-qr-canvas" class="inline-flex items-center justify-center w-48 h-48 rounded-2xl bg-white p-2 shadow-lg"></div>
                 </div>
@@ -232,7 +232,7 @@ include __DIR__ . '/partials/auth_head.php';
                     <i data-lucide="download" class="w-4 h-4"></i>
                     Download QR Code
                 </button>
-                <!-- Manual entry -->
+                
                 <details class="text-left cursor-pointer group">
                     <summary class="text-[11px] text-gray-500 hover:text-gray-300 transition font-bold tracking-wider">
                         Tidak bisa scan? Masukkan manual
@@ -270,7 +270,7 @@ include __DIR__ . '/partials/auth_head.php';
             </div>
 
         <?php elseif ($step === 'backup'): ?>
-            <!-- BACKUP CODES -->
+            
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-yellow-500/10 rounded-full text-yellow-400">
                     <i data-lucide="alert-triangle" class="w-10 h-10"></i>
@@ -302,7 +302,7 @@ include __DIR__ . '/partials/auth_head.php';
                 <i data-lucide="check" class="w-4 h-4"></i>
             </button>
         <?php elseif ($step === 'done'): ?>
-            <!-- MFA BERHASIL DIAKTIFKAN -->
+            
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-green-500/10 rounded-full text-green-400">
                     <i data-lucide="shield-check" class="w-10 h-10"></i>
@@ -318,7 +318,7 @@ include __DIR__ . '/partials/auth_head.php';
                 </a>
             </div>
         <?php else: ?>
-            <!-- SETUP (PERTAMA KALI) -->
+            
             <div class="text-center space-y-4">
                 <div class="inline-flex p-3 bg-purple-500/10 rounded-full text-purple-400">
                     <i data-lucide="smartphone" class="w-10 h-10"></i>
@@ -355,14 +355,14 @@ include __DIR__ . '/partials/auth_head.php';
                 <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
             </button>
         <?php endif; ?>
-        <!-- Kembali -->
+        
         <div class="text-center pt-2">
             <a href="../index.php" class="text-xs text-gray-500 hover:text-gray-300 transition">
                 <i data-lucide="arrow-left" class="w-3 h-3 inline-block mr-1"></i> Kembali ke Beranda
             </a>
         </div>
     </form>
-    <!-- JS spesifik halaman: backup codes untuk download -->
+    
     <script src="../assets/js/shared/download-backup-codes.js"></script>
     <script>
         var _backupCodes = <?= json_encode($backup_codes) ?>;

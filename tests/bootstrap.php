@@ -6,7 +6,7 @@ require_once __DIR__ . '/DbTestHelper.php';
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
-// Override $_SERVER defaults for CLI-safe helper functions
+
 if (!isset($_SERVER['SCRIPT_NAME'])) {
     $_SERVER['SCRIPT_NAME'] = '/MEeL/index.php';
 }
@@ -17,9 +17,9 @@ if (!isset($_SERVER['REMOTE_ADDR'])) {
     $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 }
 
-// Japanese tests: helper untuk cek ketersediaan mecab
-// getMecabPath()/resolve_binary() mengembalikan kandidat pertama walau tidak
-// executable, jadi kita verifikasi dengan menjalankan mecab sungguhan.
+
+
+
 if (!function_exists('meel_mecab_available')) {
     function meel_mecab_available(): bool
     {
@@ -46,8 +46,8 @@ if (!function_exists('meel_mecab_available')) {
         }
         $out = [];
         $exit = 1;
-        // Jalankan mecab dengan satu baris teks — sukses bila exit 0 dan ada
-        // output berisi "EOS" (mecab dengan stdin kosong tidak mencetak apa pun)
+        
+        
         $proc = @proc_open(
             $bin . ' 2>/dev/null',
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
@@ -77,6 +77,6 @@ foreach ($tempDirs as $dir) {
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
-    // Ensure writable by current user
+    
     @chmod($dir, 0777);
 }

@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* engine/download.js — Progres fase download. */
+
+
+
+
 window.meelDlPct = function (pct, eta, speed, size, frag) {
   var b = document.getElementById("meel-dl-bar");
   var t = document.getElementById("meel-dl-pct");

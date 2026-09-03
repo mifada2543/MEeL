@@ -42,7 +42,7 @@ const ball = { x: 0, y: 0, vx: 0, vy: 0, r: BALL_R, stuck: true };
 let bricks = [];
 let keys = { left: false, right: false };
 let lastTime = 0;
-let particles = []; // partikel pecahan bata
+let particles = []; 
 
 function spawnParticles(x, y, color) {
   for (let i = 0; i < 10; i++) {
@@ -110,7 +110,7 @@ function launchBall() {
   if (!ball.stuck) return;
   ball.stuck = false;
   const speed = baseSpeed();
-  const angle = (Math.random() - 0.5) * (Math.PI / 3); // ±30° dari vertikal
+  const angle = (Math.random() - 0.5) * (Math.PI / 3); 
   ball.vx = Math.sin(angle) * speed;
   ball.vy = -Math.cos(angle) * speed;
 }
@@ -138,7 +138,7 @@ function hitPaddle() {
     ball.x <= paddle.x + paddle.w + 6
   ) {
     const rel = Math.max(0, Math.min(1, (ball.x - paddle.x) / paddle.w));
-    const angle = (rel - 0.5) * (Math.PI / 3); // ±60°
+    const angle = (rel - 0.5) * (Math.PI / 3); 
     const speed = Math.hypot(ball.vx, ball.vy);
     ball.vx = Math.sin(angle) * speed;
     ball.vy = -Math.cos(angle) * speed;
@@ -162,7 +162,7 @@ function hitBricks() {
     renderHUD();
     spawnParticles(b.x + b.w / 2, b.y + b.h / 2, b.color);
 
-    // Pantulkan berdasarkan sisi yang paling tertembus
+    
     const overlapX = Math.abs(ball.x - (b.x + b.w / 2));
     const overlapY = Math.abs(ball.y - (b.y + b.h / 2));
     if (overlapX / (b.w / 2 + ball.r) > overlapY / (b.h / 2 + ball.r)) {
@@ -190,7 +190,7 @@ function levelUp() {
 }
 
 function update(dt) {
-  // Paddle: keyboard
+  
   if (keys.left) paddle.x -= PADDLE_SPEED * dt;
   if (keys.right) paddle.x += PADDLE_SPEED * dt;
   paddle.x = Math.max(6, Math.min(W - paddle.w - 6, paddle.x));
@@ -208,18 +208,18 @@ function update(dt) {
   hitBricks();
   hitPaddle();
 
-  // Bola jatuh ke bawah
+  
   if (ball.y - ball.r > H) {
     loseLife();
     return;
   }
 
-  // Semua bata hancur → level berikutnya
+  
   if (bricks.every((b) => !b.alive)) {
     levelUp();
   }
 
-  // Partikel
+  
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= dt;
@@ -227,13 +227,13 @@ function update(dt) {
       particles.splice(i, 1);
       continue;
     }
-    p.vy += 380 * dt; // gravitasi
+    p.vy += 380 * dt; 
     p.x += p.vx * dt;
     p.y += p.vy * dt;
   }
 }
 
-// ---- Rendering ----
+
 function roundRect(x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -256,7 +256,7 @@ function draw() {
   ctx.fillStyle = "#0b0e14";
   ctx.fillRect(0, 0, W, H);
 
-  // Info bar: nyawa & level
+  
   for (let i = 0; i < gameState.lives; i++) drawHeart(14 + i * 26, 24, 18);
   ctx.fillStyle = "#fb923c";
   ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
@@ -264,7 +264,7 @@ function draw() {
   ctx.textBaseline = "middle";
   ctx.fillText(`LEVEL ${gameState.level}`, W - 14, 24);
 
-  // Bata
+  
   for (const b of bricks) {
     if (!b.alive) continue;
     ctx.fillStyle = b.color;
@@ -274,7 +274,7 @@ function draw() {
     ctx.fillRect(b.x + 3, b.y + 3, b.w - 6, 4);
   }
 
-  // Partikel pecahan bata
+  
   for (const p of particles) {
     ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
     ctx.fillStyle = p.color;
@@ -282,14 +282,14 @@ function draw() {
   }
   ctx.globalAlpha = 1;
 
-  // Paddle
+  
   ctx.fillStyle = "#fda4af";
   roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 7);
   ctx.fill();
   ctx.fillStyle = "rgba(255,255,255,0.25)";
   ctx.fillRect(paddle.x + 4, paddle.y + 3, paddle.w - 8, 4);
 
-  // Bola
+  
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
@@ -299,7 +299,7 @@ function draw() {
   ctx.arc(ball.x - 2.5, ball.y - 2.5, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  // Petunjuk saat bola menempel
+  
   if (ball.stuck && gameState.isPlaying) {
     ctx.fillStyle = "rgba(148,163,184,0.9)";
     ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
@@ -309,7 +309,7 @@ function draw() {
   }
 }
 
-// ---- Loop ----
+
 function gameLoop(ts) {
   const dt = Math.min(0.05, (ts - lastTime) / 1000);
   lastTime = ts;
@@ -318,7 +318,7 @@ function gameLoop(ts) {
   requestAnimationFrame(gameLoop);
 }
 
-// ---- Flow ----
+
 function startGame() {
   gameState.score = 0;
   gameState.lives = 3;
@@ -360,7 +360,7 @@ function endGame() {
   });
 }
 
-// ---- Input ----
+
 window.addEventListener("keydown", (e) => {
   if (e.key === " " || e.key === "Enter") {
     e.preventDefault();
@@ -436,6 +436,6 @@ document.getElementById("resetScoreBtn").addEventListener("click", () => {
   });
 });
 
-// ---- Init ----
+
 renderHUD();
 requestAnimationFrame(gameLoop);

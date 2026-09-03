@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
  */
 class MediaInteractionTest extends TestCase
 {
-    /* Helper to create MediaInteraction with a simple mock connector. */
+    
     private function createInteraction(int $userId = 1): MediaInteraction
     {
 

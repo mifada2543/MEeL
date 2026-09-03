@@ -121,7 +121,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             text-transform: uppercase;
             color: #6b7280;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
             text-align: center;
         }
 
@@ -147,7 +147,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 16px;
             overflow: hidden;
-            transition: all 0.25s ease;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         .content-card:hover {
@@ -210,7 +210,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             letter-spacing: 0.1em;
             text-transform: uppercase;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
             border: none;
             cursor: pointer;
         }
@@ -283,7 +283,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             font-weight: 700;
             color: #6b7280;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -347,7 +347,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR -->
+    
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-6 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="<?= $back_url ?>" class="flex items-center gap-2 flex-shrink-0" title="Kembali ke Profil">
@@ -361,7 +361,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
     <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
 
-        <!-- HEADER -->
+        
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Dashboard</div>
@@ -391,14 +391,14 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             </div>
         </div>
 
-        <!-- ALERT -->
+        
         <?php if (!empty($delete_msg)): ?>
             <div class="alert-bar <?= strpos($delete_msg, 'berhasil') !== false || strpos($delete_msg, 'dibersihkan') !== false ? 'alert-success' : 'alert-error' ?>">
                 <i data-lucide="<?= strpos($delete_msg, 'berhasil') !== false || strpos($delete_msg, 'dibersihkan') !== false ? 'check-circle' : 'alert-triangle' ?>" class="w-4 h-4 flex-shrink-0"></i>
                 <?= htmlspecialchars($delete_msg) ?>
             </div>
         <?php endif; ?>
-        <!-- TABS -->
+        
         <div class="manage-tabs mb-6 max-w-sm">
             <a href="?tab=video<?= isset($_GET['csrf_token']) ? '&csrf_token=' . urlencode($_GET['csrf_token']) : '' ?>"
                 class="manage-tab <?= $active_tab === 'video' ? 'active-video' : '' ?>" title="Kelola video Anda">
@@ -412,7 +412,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             </a>
         </div>
 
-        <!-- CONTENT GRID -->
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <?php if ($active_tab === 'video'): ?>
                 <?php if (!empty($videos)): ?>
@@ -423,7 +423,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                     ?>
                         <div class="content-card">
                             <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
-                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy">
+                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy" width="640" height="360">
                             </a>
                             <div class="card-body">
                                 <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
@@ -471,7 +471,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                     ?>
                         <div class="content-card">
                             <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
-                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($m['title']) ?>" loading="lazy">
+                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($m['title']) ?>" loading="lazy" width="640" height="360">
                             </a>
                             <div class="card-body">
                                 <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
@@ -513,7 +513,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             <?php endif; ?>
         </div>
 
-        <!-- PAGINATION -->
+        
         <?php if ($total_pages > 1): ?>
             <div class="pagination">
                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
@@ -538,9 +538,9 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
             Swal.fire({
                 title: 'Hapus ' + typeLabel + '?',
-                html: '<div style="font-size:12px;color:#9ca3af">' +
-                    '"<strong style="color:#e5e7eb">' + title + '</strong>" akan dihapus dari database.<br>' +
-                    '<span style="color:#6b7280;font-size:10px">File akan dibersihkan otomatis dalam 30 menit.</span>' +
+                html: '<div style="font-size:12px;color:var(--meel-text-secondary)">' +
+                    '"<strong style="color:var(--meel-text-heading)">' + title + '</strong>" akan dihapus dari database.<br>' +
+                    '<span style="color:var(--meel-text-muted);font-size:10px">File akan dibersihkan otomatis dalam 30 menit.</span>' +
                     '</div>',
                 icon: 'warning',
                 iconColor: '#ef4444',
@@ -548,8 +548,8 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                 confirmButtonText: 'HAPUS',
                 cancelButtonText: 'BATAL',
 
-                background: '#141820',
-                color: '#fff',
+                background: 'var(--meel-surface)',
+                color: 'var(--meel-text)',
                 reverseButtons: true,
                 customClass: {
                     popup: 'border border-red-600/25 border-t-2 border-t-red-600 rounded-2xl shadow-2xl',

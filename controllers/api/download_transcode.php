@@ -1,11 +1,7 @@
 <?php
 
-/**
- * Download endpoint untuk file transcode.
- * Diakses melalui router: api/download-transcode?file=...&title=...
- *
- * Bootstrap minimal — TIDAK include auth/config.php (yang punya redirect).
- */
+
+
 
 while (ob_get_level()) ob_end_clean();
 

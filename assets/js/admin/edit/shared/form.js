@@ -1,7 +1,7 @@
-/* MEeL Admin — Edit Shared: Form Submit Handler (Spinner) */
+
 (function () {
   "use strict";
-  /* Handles form submit — shows spinner on save button */
+  
   window.handleSubmit = function () {
     var btn = document.getElementById("btn-save");
     if (!btn) return;
@@ -10,7 +10,7 @@
     btn.style.opacity = ".6";
     btn.style.pointerEvents = "none";
   };
-  // Keyframe for spin animation
+  
   (function () {
     var style = document.createElement("style");
     style.textContent =

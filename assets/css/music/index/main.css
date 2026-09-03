@@ -1,4 +1,4 @@
-/* index/main.css — Page-specific untuk Music Library */
+
 .artist-dropdown-active .music-item {
   pointer-events: none !important;
 }
@@ -17,7 +17,7 @@ main {
   z-index: 50;
 }
 
-/* Blur dropdowns when hamburger nav drawer is open */
+
 .nav-drawer-open #mobile-filters,
 .nav-drawer-open #custom-artist-dropdown,
 .nav-drawer-open #custom-playlist-dropdown {
@@ -26,21 +26,21 @@ main {
   pointer-events: none;
   transition: filter 0.2s ease, opacity 0.2s ease;
 }
-/* Pastikan area kosong di mini-player tidak memicu pointer tangan */
+
 #mini-player-index {
   cursor: default !important;
 }
-/* Cegah browser menggunakan tombol load-more sebagai scroll anchor */
+
 #load-more-music {
   overflow-anchor: none;
 }
-/* Berikan kursor pointer KHUSUS untuk thumbnail mini player */
+
 #mini-player-index img,
 .mp-thumbnail {
   cursor: pointer !important;
   transition: transform 0.2s ease;
 }
-/* Efek sedikit membesar saat thumbnail di-hover */
+
 #mini-player-index img:hover,
 .mp-thumbnail:hover {
   transform: scale(1.05);

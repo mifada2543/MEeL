@@ -2,7 +2,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 const SIZE = 4;
-const CELL = canvas.width / SIZE; // 100
+const CELL = canvas.width / SIZE; 
 const PAD = 12;
 
 const TILE_COLORS = {
@@ -32,12 +32,12 @@ let wonNotified = false;
 let mergeFlash = [];
 let flashTimer = 0;
 
-// Animasi tile: tile lama meluncur ke posisi baru + tile baru pop-in.
-let slidePrev = null; // board sebelum move
-let slideDest = null; // { r, c } tujuan tiap tile lama (kunci "r,c")
-let slideNew = []; // [ { r, c, val } ] tile yang baru muncul
+
+let slidePrev = null; 
+let slideDest = null; 
+let slideNew = []; 
 let animTimer = 0;
-const ANIM_MS = 150; // durasi slide (ms)
+const ANIM_MS = 150; 
 
 function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
@@ -85,7 +85,7 @@ function canMove() {
   return false;
 }
 
-// Geser satu baris (sudah diurutkan searah gerakan), gabungkan nilai sama.
+
 function slideLine(line) {
   const tiles = line.filter((v) => v);
   const out = [];
@@ -114,7 +114,7 @@ function move(dir) {
     if (dir === "left") return { r, c };
     if (dir === "right") return { r, c: SIZE - 1 - c };
     if (dir === "up") return { r: c, c: r };
-    return { r: SIZE - 1 - c, c: r }; // down
+    return { r: SIZE - 1 - c, c: r }; 
   };
   for (let i = 0; i < SIZE; i++) {
     const line = [];
@@ -149,7 +149,7 @@ function doMove(dir) {
   flashTimer = 20;
   scorePop();
 
-  // Siapkan animasi slide: tentukan tujuan tiap tile lama di board baru.
+  
   const newTiles = [];
   for (let r = 0; r < SIZE; r++)
     for (let c = 0; c < SIZE; c++) if (board[r][c]) newTiles.push({ r, c, val: board[r][c] });
@@ -159,7 +159,7 @@ function doMove(dir) {
     for (let c = 0; c < SIZE; c++) {
       const v = prev[r][c];
       if (!v) continue;
-      // Tile lama bergabung (di sel merge) -> tujuan sel merge tsb.
+      
       if (flash.some((m) => m.r === r && m.c === c)) {
         dest[`${r},${c}`] = { r, c };
         continue;
@@ -169,13 +169,13 @@ function doMove(dir) {
         used.add(`${target.r},${target.c}`);
         dest[`${r},${c}`] = { r: target.r, c: target.c };
       } else {
-        dest[`${r},${c}`] = { r, c }; // tidak berpindah
+        dest[`${r},${c}`] = { r, c }; 
       }
     }
   slidePrev = prev;
   slideDest = dest;
   slideNew = [];
-  // Tile yang baru muncul = sel terisi yang tidak berasal dari tile lama mana pun.
+  
   const destSet = new Set(Object.values(dest).map((d) => `${d.r},${d.c}`));
   for (const t of newTiles) if (!destSet.has(`${t.r},${t.c}`)) slideNew.push(t);
   animTimer = ANIM_MS;
@@ -243,7 +243,7 @@ function draw() {
   ctx.fillStyle = "#0b0e14";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Grid latar
+  
   for (let r = 0; r < SIZE; r++)
     for (let c = 0; c < SIZE; c++) {
       const x = c * CELL + PAD / 2;
@@ -256,7 +256,7 @@ function draw() {
   const w = CELL - PAD;
   const glow = (flashTimer / 20) * 0.55;
 
-  // Fase animasi slide: gambar tile lama di posisi interpolasi
+  
   if (animTimer > 0 && slidePrev) {
     const t = 1 - animTimer / ANIM_MS;
     const ease = easeOutCubic(Math.min(1, t));
@@ -270,7 +270,7 @@ function draw() {
         const isMerge = mergeFlash.some((m) => m.r === d.r && m.c === d.c);
         drawTile(x, y, w, v, 1, isMerge ? glow : 0);
       }
-    // Tile baru muncul dengan pop
+    
     for (const t of slideNew) {
       const scale = easeOutCubic(Math.min(1, t * 1.6));
       drawTile(t.c * CELL + PAD / 2, t.r * CELL + PAD / 2, w, t.val, scale);
@@ -278,7 +278,7 @@ function draw() {
     return;
   }
 
-  // State akhir
+  
   for (let r = 0; r < SIZE; r++)
     for (let c = 0; c < SIZE; c++) {
       const val = board[r][c];
@@ -290,9 +290,9 @@ function draw() {
     }
 }
 
-// Defensive loop: jika frame melempar exception, rAF tetap dijadwalkan agar
-// loop tidak pernah mati permanen. 1-2 error transien dilewati (frame di-skip);
-// error beruntun (>=3) memicu self-heal: board di-reset ke keadaan valid.
+
+
+
 let consecutiveErrors = 0;
 
 let lastFrame = 0;
@@ -365,7 +365,7 @@ function endGame() {
   });
 }
 
-// ---- Input ----
+
 const KEY_DIRS = {
   ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
   a: "left", d: "right", w: "up", s: "down",
@@ -437,6 +437,6 @@ document.getElementById("resetScoreBtn").addEventListener("click", () => {
   });
 });
 
-// ---- Init ----
+
 renderHUD();
 gameLoop();

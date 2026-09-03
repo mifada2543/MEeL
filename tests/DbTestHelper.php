@@ -1,6 +1,6 @@
 <?php
-// Isolated test DB — production DB never touched. Reset on suite start, dropped on shutdown.
-// Credentials overridable via MEEL_TEST_DB_HOST/USER/PASS env vars.
+
+
 class DbTestHelper
 {
     private const TEST_DB_NAME = 'MEeL-test';
@@ -10,12 +10,12 @@ class DbTestHelper
     private ?mysqli $conn = null;
     private bool $inTransaction = false;
 
-    /* ID data fixture test — disiapkan otomatis oleh seedFixtureData() di
-     * dalam transaksi tiap test. KONVENSI: uploader musik/video = ADMIN2_USER_ID (9). */
-    const ADMIN_USER_ID = 1;     // admin
-    const ADMIN2_USER_ID = 9;    // admin (uploader semua media fixture)
-    const MEMBER_USER_ID = 10;   // member
-    const REGULAR_USER_ID = 39;  // user
+    
+
+    const ADMIN_USER_ID = 1;     
+    const ADMIN2_USER_ID = 9;    
+    const MEMBER_USER_ID = 10;   
+    const REGULAR_USER_ID = 39;  
 
     const MUSIC_ID_1 = 49;
     const MUSIC_ID_2 = 50;
@@ -25,7 +25,7 @@ class DbTestHelper
     const VIDEO_ID_2 = 5;
     const VIDEO_ID_3 = 6;
 
-    /* @return array{host: string, user: string, pass: string} */
+    
     private static function serverCreds(): array
     {
         return [
@@ -35,10 +35,8 @@ class DbTestHelper
         ];
     }
 
-    /**
-     * Buat database test sekali per proses: nama unik, import schema.sql,
-     * dan daftarkan shutdown untuk DROP database saat suite selesai.
-     */
+    
+
     private static function ensureTestDatabase(): void
     {
         if (self::$testDbName !== null) {
@@ -47,7 +45,7 @@ class DbTestHelper
 
         $creds = self::serverCreds();
 
-        // Retry singkat: di CI service MySQL butuh beberapa detik untuk siap.
+        
         $admin = null;
         for ($i = 0; $i < 10; $i++) {
             $admin = @new mysqli($creds['host'], $creds['user'], $creds['pass']);
@@ -69,14 +67,14 @@ class DbTestHelper
             throw new RuntimeException('Test DB: database/schema.sql tidak ditemukan.');
         }
 
-        // Reset DB test: hapus sisa run sebelumnya (mis. proses terkill),
-        // lalu import schema dari awal — state selalu deterministik.
+        
+        
         $admin->query('DROP DATABASE IF EXISTS `' . $name . '`');
         if ($admin->error) {
             throw new RuntimeException('Test DB: gagal drop database lama: ' . $admin->error);
         }
 
-        // Arahkan CREATE DATABASE/USE ke database test (bukan `MEeL`).
+        
         $schema = str_replace('`MEeL`', '`' . $name . '`', (string) file_get_contents($schemaPath));
 
         if (!$admin->multi_query($schema)) {
@@ -92,7 +90,7 @@ class DbTestHelper
 
         self::$testDbName = $name;
 
-        // DROP database saat proses PHP selesai — tidak ada sisa tersisa.
+        
         register_shutdown_function(static function () use ($name, $creds): void {
             $c = @new mysqli($creds['host'], $creds['user'], $creds['pass']);
             if (!$c->connect_error) {
@@ -102,7 +100,7 @@ class DbTestHelper
         });
     }
 
-    /* Get a connection to the isolated test DB and start a transaction. */
+    
     public function getConnection(): mysqli
     {
         if ($this->conn === null) {
@@ -118,7 +116,7 @@ class DbTestHelper
             
             $this->conn->begin_transaction();
             $this->inTransaction = true;
-            // Siapkan data fixture di dalam transaksi (rollback di tearDown).
+            
             $this->seedFixtureData();
         }
         return $this->conn;
@@ -132,22 +130,19 @@ class DbTestHelper
         }
     }
 
-    /*
-     * Siapkan data fixture test (users + media) di dalam transaksi berjalan.
-     * INSERT IGNORE: aman bila row sudah ada (dari schema.sql) maupun belum.
-     * ID & kepemilikan harus sinkron dengan konstanta kelas ini.
-     */
+    
+
     private function seedFixtureData(): void
     {
-        // Kolom password NOT NULL — hash acak sekali per proses (bukan per test),
-        // nilai apa pun valid karena fixture tidak pernah dipakai login.
+        
+        
         static $hash = null;
         if ($hash === null) {
             $hash = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
         }
 
-        // bind_param butuh variabel (bukan literal/konstanta) — PHP 8
-        // melempar Error "cannot be passed by reference" untuk non-variabel.
+        
+        
         $users = [
             [self::ADMIN_USER_ID,   'Admin',   'admin'],
             [self::ADMIN2_USER_ID,  'Admin2',  'admin'],
@@ -191,7 +186,7 @@ class DbTestHelper
         $stmt->close();
     }
 
-    /* Commit the transaction (use only if intentionally persisting test data). */
+    
     public function commit(): void
     {
         if ($this->conn !== null && $this->inTransaction) {
@@ -204,7 +199,7 @@ class DbTestHelper
     public function close(): void
     {
         if ($this->conn !== null) {
-            $this->rollback(); // Rollback any uncommitted changes
+            $this->rollback(); 
             $this->conn->close();
             $this->conn = null;
         }
@@ -238,7 +233,7 @@ class DbTestHelper
         ];
     }
 
-    /* Check if an interaction exists for a user on a specific media item. */
+    
     public function interactionExists(int $userId, string $col, int $mediaId): ?string
     {
         $stmt = $this->conn->prepare(
@@ -251,7 +246,7 @@ class DbTestHelper
         return $result['TYPE'] ?? null;
     }
 
-    /* Create a test comment in the database. Returns the new comment ID. */
+    
     public function createTestComment(int $userId, ?int $musicId, ?int $videoId, string $text): int
     {
         $stmt = $this->conn->prepare(
@@ -264,7 +259,7 @@ class DbTestHelper
         return $id;
     }
 
-    /* Verify a comment exists by ID and belongs to a specific user. */
+    
     public function getCommentOwner(int $commentId): ?int
     {
         $stmt = $this->conn->prepare("SELECT user_id FROM comments WHERE id = ?");

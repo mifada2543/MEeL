@@ -1,5 +1,5 @@
 <?php
-// Guard Direct Access
+
 if (!defined('MEEL_ADMIN_CONTEXT')) {
     $_GET['code'] = 'denied';
     die(include __DIR__ . '/../../err/index.php');
@@ -65,7 +65,7 @@ $p_mus   = $storage_usage['percentages']['music'];
 $p_book  = $storage_usage['percentages']['books'];
 $p_drive = $storage_usage['percentages']['drive'];
 
-// Scan seluruh pohon media (10rb+ file HLS .ts di folder video) sangat mahal
+
 $orphans           = [];
 $orphan_checked_at = null;
 

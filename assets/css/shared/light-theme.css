@@ -1,12 +1,12 @@
-/* ============================================================
- * shared/light-theme.css — Light Mode Overrides (Simplified)
- *
- * CSS variables (theme-tokens.css) handle 90% of theming.
- * This file only overrides hardcoded Tailwind utilities
- * that can't use CSS variables.
- * ============================================================ */
 
-/* ─── THEME TRANSITION ─── */
+
+
+
+
+
+
+
+
 html.theme-transition,
 html.theme-transition *,
 html.theme-transition *::before,
@@ -14,7 +14,7 @@ html.theme-transition *::after {
   transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, fill 0.35s ease !important;
 }
 
-/* ─── BODY ─── */
+
 html[data-theme="light"] body {
   background-color: var(--meel-bg) !important;
   color: var(--meel-text) !important;
@@ -25,7 +25,7 @@ html[data-theme="light"] body[style*="background: #05070c"] {
   background-color: var(--meel-bg) !important;
 }
 
-/* ─── TAILWIND TEXT OVERRIDES ─── */
+
 html[data-theme="light"] .text-white:not(.nav-logo-text):not(.bg-blue-600):not(.bg-gray-600),
 html[data-theme="light"] .text-white\/90:not(.nav-logo-text),
 html[data-theme="light"] .text-white\/80:not(.nav-logo-text) { color: var(--meel-text-heading) !important; }
@@ -37,7 +37,7 @@ html[data-theme="light"] .text-gray-600 { color: var(--meel-text-muted) !importa
 html[data-theme="light"] .text-gray-700 { color: var(--meel-text-muted) !important; }
 html[data-theme="light"] .text-gray-800 { color: var(--meel-text-heading) !important; }
 
-/* ─── TAILWIND BG OVERRIDES ─── */
+
 html[data-theme="light"] .bg-white\/\[\.04\] { background: var(--meel-surface-hover) !important; }
 html[data-theme="light"] .bg-white\/\[\.05\] { background: var(--meel-surface-hover) !important; }
 html[data-theme="light"] .bg-white\/\[\.08\] { background: var(--meel-surface-active) !important; }
@@ -48,7 +48,7 @@ html[data-theme="light"] .bg-black\/40 { background: rgba(0, 0, 0, 0.04) !import
 html[data-theme="light"] .bg-gray-900\/40 { background: var(--meel-surface-hover) !important; }
 html[data-theme="light"] .bg-gray-800\/60 { background: var(--meel-surface-active) !important; }
 
-/* ─── TAILWIND BORDER OVERRIDES ─── */
+
 html[data-theme="light"] .border-white\/\[\.04\] { border-color: var(--meel-border) !important; }
 html[data-theme="light"] .border-white\/\[\.05\] { border-color: var(--meel-border) !important; }
 html[data-theme="light"] .border-white\/\[\.06\] { border-color: var(--meel-border) !important; }
@@ -60,14 +60,14 @@ html[data-theme="light"] .border-white\/5 { border-color: var(--meel-border) !im
 html[data-theme="light"] .border-gray-800 { border-color: var(--meel-border) !important; }
 html[data-theme="light"] .border-gray-700 { border-color: var(--meel-border-strong) !important; }
 
-/* ─── TAILWIND HOVER OVERRIDES ─── */
+
 html[data-theme="light"] .hover\:bg-white\/\[\.05\]:hover { background: var(--meel-surface-hover) !important; }
 html[data-theme="light"] .hover\:bg-white\/\[\.08\]:hover { background: var(--meel-surface-active) !important; }
 html[data-theme="light"] .hover\:bg-gray-800\/60:hover { background: var(--meel-surface-active) !important; }
 html[data-theme="light"] .hover\:bg-gray-800:hover { background: var(--meel-surface-active) !important; }
 html[data-theme="light"] .hover\:text-white:hover { color: var(--meel-text-heading) !important; }
 
-/* ─── NAVBAR ─── */
+
 html[data-theme="light"] nav {
   transition: background-color 0.35s ease, border-color 0.35s ease;
 }
@@ -83,39 +83,39 @@ html[data-theme="light"] nav::before {
 
 
 
-/* ─── CARDS ─── */
+
 html[data-theme="light"] .media-card,
 html[data-theme="light"] .video-card {
   transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
-/* ─── MINI PLAYER ─── */
+
 html[data-theme="light"] #mini-player,
 html[data-theme="light"] #mini-player-index,
 html[data-theme="light"] #mini-player-shell {
   transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
-/* ─── GLASS ─── */
+
 html[data-theme="light"] .glass,
 html[data-theme="light"] .glass-card {
   transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
-/* ─── DROPDOWN ─── */
+
 html[data-theme="light"] #nav-dropdown,
 html[data-theme="light"] #nav-drawer,
 html[data-theme="light"] #nav-drawer-guest {
   transition: background 0.35s ease, border-color 0.35s ease;
 }
 
-/* ─── TAILWIND SHADOW OVERRIDES ─── */
+
 html[data-theme="light"] .shadow-2xl { box-shadow: var(--meel-shadow-xl) !important; }
 html[data-theme="light"] .shadow-xl { box-shadow: var(--meel-shadow-lg) !important; }
 html[data-theme="light"] .shadow-lg { box-shadow: var(--meel-shadow-md) !important; }
 html[data-theme="light"] .shadow-black\/60 { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12) !important; }
 
-/* ─── TAILWIND DIVIDE ─── */
+
 html[data-theme="light"] .divide-gray-800 > :not([hidden]) ~ :not([hidden]) {
   border-color: var(--meel-border) !important;
 }
@@ -123,7 +123,7 @@ html[data-theme="light"] .divide-gray-700 > :not([hidden]) ~ :not([hidden]) {
   border-color: var(--meel-border-strong) !important;
 }
 
-/* ─── VIDEO CARDS ─── */
+
 html[data-theme="light"] .video-card {
   box-shadow: var(--meel-shadow-sm) !important;
 }
@@ -140,7 +140,7 @@ html[data-theme="light"] .rekomendasi-item:hover {
   background: var(--meel-surface-hover) !important;
 }
 
-/* ─── MINI PLAYER ─── */
+
 html[data-theme="light"] #mini-player,
 html[data-theme="light"] #mini-player-index {
   background: var(--meel-player-bg) !important;
@@ -150,6 +150,7 @@ html[data-theme="light"] #mini-player-index {
 html[data-theme="light"] .mp-title { color: var(--meel-text-heading) !important; }
 html[data-theme="light"] .mp-artist { color: var(--meel-text-secondary) !important; }
 html[data-theme="light"] .mp-btn { color: var(--meel-text-secondary) !important; }
+html[data-theme="light"] .mp-btn.mp-loop-active { color: var(--meel-orange) !important; opacity: 1 !important; }
 html[data-theme="light"] .mp-btn-ghost:hover { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
 html[data-theme="light"] .mp-time { color: var(--meel-text-muted) !important; }
 html[data-theme="light"] .mp-seekbar { background: rgba(0, 0, 0, 0.06) !important; }
@@ -164,7 +165,7 @@ html[data-theme="light"] #mini-info-uploader { color: var(--meel-text-secondary)
 html[data-theme="light"] #mini-mute-btn { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
 html[data-theme="light"] #mini-mute-btn:hover { background: var(--meel-surface-active) !important; color: var(--meel-red) !important; }
 
-/* ─── THEME TOGGLE ─── */
+
 #theme-toggle {
   display: flex;
   align-items: center;
@@ -202,7 +203,7 @@ html[data-theme="light"] #theme-toggle:hover {
   border-color: rgba(234, 88, 12, 0.15);
 }
 
-/* Theme toggle icon inside knob */
+
 #theme-icon.mfa-knob {
   background: transparent !important;
   box-shadow: none !important;
@@ -211,7 +212,7 @@ html[data-theme="light"] #theme-toggle:hover {
   height: 20px !important;
 }
 
-/* ─── GLASS ─── */
+
 html[data-theme="light"] .glass,
 html[data-theme="light"] .glass-card {
   background: var(--meel-glass) !important;
@@ -219,7 +220,7 @@ html[data-theme="light"] .glass-card {
   box-shadow: var(--meel-shadow-sm) !important;
 }
 
-/* ─── SWAL ─── */
+
 html[data-theme="light"] .swal2-popup {
   background: var(--meel-surface) !important;
   color: var(--meel-text) !important;
@@ -232,29 +233,29 @@ html[data-theme="light"] .swal2-container.swal2-backdrop-show {
   background: rgba(0, 0, 0, 0.25) !important;
 }
 
-/* ─── TABLES ─── */
+
 html[data-theme="light"] thead th { color: var(--meel-text-secondary) !important; border-bottom-color: var(--meel-border-strong) !important; }
 html[data-theme="light"] tbody td { border-bottom-color: var(--meel-border) !important; }
 html[data-theme="light"] tbody tr:hover { background: var(--meel-surface-hover) !important; }
 
-/* ─── SCROLLBAR ─── */
+
 html[data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--meel-scrollbar); }
 html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: var(--meel-scrollbar-hover); }
 
-/* ─── MFA ─── */
+
 html[data-theme="light"] .mfa-track--off { background: #d4d4d8 !important; }
 
-/* ─── DRIVE ─── */
+
 html[data-theme="light"] aside.glass { background: rgba(255, 255, 255, 0.92) !important; border-right-color: var(--meel-border) !important; }
 html[data-theme="light"] .nav-item { color: var(--meel-text-secondary) !important; }
 html[data-theme="light"] .nav-item:hover { background: var(--meel-surface-hover) !important; color: var(--meel-text) !important; }
 html[data-theme="light"] .nav-item.active { background: rgba(37, 99, 235, 0.06) !important; color: var(--meel-blue) !important; }
 html[data-theme="light"] .scope-pill-inactive { background: var(--meel-surface-hover) !important; color: var(--meel-text-secondary) !important; border-color: var(--meel-border) !important; }
 
-/* ─── PROFILE ─── */
+
 html[data-theme="light"] .glass { background: var(--meel-glass) !important; }
 
-/* ─── NAV DROPDOWN ─── */
+
 html[data-theme="light"] #nav-dropdown a {
   color: var(--meel-text-secondary) !important;
 }
@@ -267,7 +268,7 @@ html[data-theme="light"] #nav-dropdown [style*="border-bottom"] {
   border-color: var(--meel-border) !important;
 }
 
-/* ─── NAV AVATAR ─── */
+
 html[data-theme="light"] #nav-avatar-btn {
   color: var(--meel-text-secondary) !important;
 }
@@ -278,7 +279,7 @@ html[data-theme="light"] #nav-chevron {
   color: var(--meel-text-muted) !important;
 }
 
-/* ─── MOBILE DRAWER ─── */
+
 html[data-theme="light"] #nav-drawer,
 html[data-theme="light"] #nav-drawer-guest {
   background: var(--meel-surface) !important;
@@ -294,7 +295,7 @@ html[data-theme="light"] #nav-drawer-guest a:hover {
   background: var(--meel-surface-hover) !important;
 }
 
-/* ─── VIDEO WATCH PAGE — description & comments ─── */
+
 html[data-theme="light"] .desc-container,
 html[data-theme="light"] #desc-wrapper,
 html[data-theme="light"] #comment-section {
@@ -302,7 +303,7 @@ html[data-theme="light"] #comment-section {
   border-color: var(--meel-border) !important;
 }
 
-/* ─── VIDEO LOAD MORE BUTTON ─── */
+
 html[data-theme="light"] #load-more-area {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
@@ -313,7 +314,7 @@ html[data-theme="light"] #load-more-area:hover {
   box-shadow: var(--meel-shadow-md) !important;
 }
 
-/* ─── MUSIC WATCH PAGE — player, EQ, description ─── */
+
 html[data-theme="light"] #player-container {
   background: var(--meel-surface) !important;
 }
@@ -328,13 +329,13 @@ html[data-theme="light"] #eq-preset-options button:hover {
   background: var(--meel-surface-hover) !important;
 }
 
-/* ─── RESUME MODAL ─── */
+
 html[data-theme="light"] .bg-\[\#141820\] {
   background: var(--meel-surface-elevated) !important;
   border-color: var(--meel-border) !important;
 }
 
-/* ─── LIKE/DISLIKE BUTTONS ─── */
+
 html[data-theme="light"] .bg-gray-800\/50 {
   background: var(--meel-surface-hover) !important;
   border-color: var(--meel-border) !important;
@@ -343,16 +344,14 @@ html[data-theme="light"] .hover\:bg-gray-700:hover {
   background: var(--meel-surface-active) !important;
 }
 
-/* ─── TEXTAREA / COMMENT INPUT ─── */
+
 html[data-theme="light"] textarea {
   background: var(--meel-input-bg) !important;
   border-color: var(--meel-input-border) !important;
   color: var(--meel-text) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   UPLOAD PAGES (up.css variables)
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] body {
   --bg: #fafafa !important;
   --surface: #ffffff !important;
@@ -467,18 +466,14 @@ html[data-theme="light"] .tab-pane {
   color: var(--meel-text);
 }
 
-/* ════════════════════════════════════════════════════════════
-   UPLOAD FORM SHARED (design-tokens.css)
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] {
   --bg-base: #fafafa !important;
   --bg-card: #ffffff !important;
   --bg-panel: #f4f4f5 !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   VIDEO WATCH PAGE — ALL SECTIONS
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] #video-glow-container {
   background: var(--meel-bg) !important;
 }
@@ -503,9 +498,7 @@ html[data-theme="light"] .bg-\[\#0d1017\] {
   border-color: var(--meel-border) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   MUSIC WATCH PAGE — ALL SECTIONS
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] .bg-\[\#080a0f\]\/95 {
   background: rgba(250, 250, 250, 0.92) !important;
 }
@@ -520,27 +513,27 @@ html[data-theme="light"] .bg-\[\#0d1017\] {
   border-color: var(--meel-border) !important;
 }
 
-/* ─── MUSIC WATCH — Additional overrides ─── */
 
-/* Player header/footer section backgrounds */
+
+
 html[data-theme="light"] .bg-black\/10 {
   background: rgba(0, 0, 0, 0.03) !important;
 }
 
-/* Comment textarea bg */
+
 html[data-theme="light"] .bg-black\/25 {
   background: rgba(0, 0, 0, 0.03) !important;
   border-color: var(--meel-border) !important;
   color: var(--meel-text) !important;
 }
 
-/* EQ bands, cava container */
+
 html[data-theme="light"] .bg-black\/20 {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: var(--meel-border) !important;
 }
 
-/* Loop, Vis, EQ buttons */
+
 html[data-theme="light"] .bg-gray-800 {
   background: var(--meel-surface-hover) !important;
   border-color: var(--meel-border) !important;
@@ -552,7 +545,7 @@ html[data-theme="light"] .bg-gray-800\/50 {
   border-color: var(--meel-border-strong) !important;
 }
 
-/* Like/Dislike/Simpan buttons */
+
 html[data-theme="light"] .bg-gray-800\/50 {
   background: var(--meel-surface-hover) !important;
   border-color: var(--meel-border) !important;
@@ -563,28 +556,28 @@ html[data-theme="light"] .hover\:bg-gray-700:hover {
   color: var(--meel-text) !important;
 }
 
-/* Description text */
+
 html[data-theme="light"] #desc-text-music {
   color: var(--meel-text) !important;
 }
 
-/* Comment preview text */
+
 html[data-theme="light"] #comment-preview-text {
   color: var(--meel-text-secondary) !important;
 }
 
-/* Comment toggle button */
+
 html[data-theme="light"] #comment-toggle:hover {
   background: var(--meel-surface-hover) !important;
 }
 
-/* Sidebar Discover header */
+
 html[data-theme="light"] .rekomendasi-sidebar .bg-\[\#0d1017\] {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
 }
 
-/* Sidebar Discover items */
+
 html[data-theme="light"] .rekomendasi-item {
   background: transparent !important;
 }
@@ -596,13 +589,13 @@ html[data-theme="light"] .rec-title-text {
   text-shadow: none !important;
 }
 
-/* Playlist queue items */
+
 html[data-theme="light"] .bg-orange-500\/8 {
   background: rgba(234, 88, 12, 0.06) !important;
   border-color: rgba(234, 88, 12, 0.15) !important;
 }
 
-/* EQ panel */
+
 html[data-theme="light"] #eq-container {
   border-color: var(--meel-border) !important;
 }
@@ -623,7 +616,7 @@ html[data-theme="light"] #eq-preset-options button:hover {
   color: var(--meel-text-heading) !important;
 }
 
-/* Playlist modal */
+
 html[data-theme="light"] #playlist-modal .bg-\[\#141820\] {
   background: var(--meel-surface-elevated) !important;
   border-color: var(--meel-border) !important;
@@ -644,21 +637,21 @@ html[data-theme="light"] #playlist-modal .bg-black\/30 {
   color: var(--meel-text) !important;
 }
 
-/* Search input */
+
 html[data-theme="light"] .bg-white\/\[\.04\].rounded-xl {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
   color: var(--meel-text) !important;
 }
 
-/* Vinyl disc shadow in light mode */
+
 html[data-theme="light"] .vinyl-disc {
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.08),
     0 8px 24px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* Plyr audio controls — black icons in light mode (music/watch only) */
+
 html[data-theme="light"] #player-container .plyr__controls {
   color: #18181b !important;
 }
@@ -696,11 +689,9 @@ html[data-theme="light"] #player-container .plyr--full-ui input[type=range]::-mo
   background: #ea580c !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   MUSIC INDEX — MOBILE FILTERS & DROPDOWNS
-   ════════════════════════════════════════════════════════════ */
 
-/* Dropdown trigger buttons */
+
+
 html[data-theme="light"] #custom-artist-dropdown > button,
 html[data-theme="light"] #custom-playlist-dropdown > button {
   background: rgba(0, 0, 0, 0.02) !important;
@@ -717,7 +708,7 @@ html[data-theme="light"] #custom-playlist-dropdown > button .text-gray-500 {
   color: #71717a !important;
 }
 
-/* Dropdown menus */
+
 html[data-theme="light"] #artist-options,
 html[data-theme="light"] #playlist-options {
   background: #ffffff !important;
@@ -738,12 +729,12 @@ html[data-theme="light"] #playlist-options button.text-orange-500 {
   color: #ea580c !important;
 }
 
-/* Dropdown filter labels */
+
 html[data-theme="light"] .text-gray-700.uppercase {
   color: #52525b !important;
 }
 
-/* Mobile filters container */
+
 html[data-theme="light"] .bg-\[\#0d1017\]\/95 {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
@@ -763,18 +754,14 @@ html[data-theme="light"] #mobile-filters {
   -webkit-backdrop-filter: blur(24px) saturate(1.5) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   SECTION TITLES — fix pudar di light mode
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] .section-title,
 html[data-theme="light"] .track-title,
 html[data-theme="light"] .video-title {
   color: var(--meel-text-heading) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   HUB PAGE (index(hub).css variables)
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] body {
   --bg: #fafafa !important;
   --surface: #ffffff !important;
@@ -804,7 +791,7 @@ html[data-theme="light"] .glass {
   border-color: var(--meel-glass-border) !important;
 }
 
-/* HUB MEDIA CARDS */
+
 html[data-theme="light"] .media-card {
   background: var(--meel-surface) !important;
   border-top: 2px solid rgba(0, 0, 0, 0.04) !important;
@@ -852,7 +839,7 @@ html[data-theme="light"] .media-card:hover .card-arrow {
   color: #ffffff !important;
 }
 
-/* HUB BOTTOM LINKS */
+
 html[data-theme="light"] .bottom-link {
   color: var(--meel-text-muted) !important;
 }
@@ -862,9 +849,7 @@ html[data-theme="light"] .bottom-link:hover {
   background: rgba(0, 0, 0, 0.03) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   TRANSCODE PAGE — light mode
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] body {
   color: #3f3f46 !important;
 }
@@ -875,7 +860,7 @@ html[data-theme="light"] body::before {
 html[data-theme="light"] body::after {
   opacity: 0 !important;
 }
-/* Navbar */
+
 html[data-theme="light"] nav.bg-\[\#080b11\]\/90 {
   background: rgba(255, 255, 255, 0.92) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
@@ -892,7 +877,7 @@ html[data-theme="light"] nav .text-muted {
 html[data-theme="light"] nav .bg-white\/10 {
   background: rgba(0, 0, 0, 0.08) !important;
 }
-/* Card */
+
 html[data-theme="light"] .bg-card {
   background: #ffffff !important;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.08) !important;
@@ -900,26 +885,26 @@ html[data-theme="light"] .bg-card {
 html[data-theme="light"] .border-white\/\[\.06\] {
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
-/* Headings */
+
 html[data-theme="light"] .font-syne.text-\[\#f0f2f7\] {
   color: #18181b !important;
 }
 html[data-theme="light"] .text-\[\#f0f2f7\] {
   color: #18181b !important;
 }
-/* Body text */
+
 html[data-theme="light"] .text-\[\#c9cdd6\] {
   color: #3f3f46 !important;
 }
-/* Muted text */
+
 html[data-theme="light"] .text-muted {
   color: #71717a !important;
 }
-/* Format description text */
+
 html[data-theme="light"] .text-\[\#2c3440\] {
   color: #71717a !important;
 }
-/* Input field */
+
 html[data-theme="light"] .bg-white\/\[\.035\] {
   background: rgba(0, 0, 0, 0.03) !important;
 }
@@ -929,7 +914,7 @@ html[data-theme="light"] .border-white\/\[\.08\] {
 html[data-theme="light"] input::placeholder {
   color: #a1a1aa !important;
 }
-/* Format selection cards */
+
 html[data-theme="light"] .bg-white\/\[\.02\] {
   background: rgba(0, 0, 0, 0.02) !important;
 }
@@ -942,15 +927,15 @@ html[data-theme="light"] .hover\:border-white\/\[\.14\]:hover {
 html[data-theme="light"] .hover\:bg-white\/\[\.04\]:hover {
   background: rgba(0, 0, 0, 0.04) !important;
 }
-/* Progress bar */
+
 html[data-theme="light"] .bg-white\/5 {
   background: rgba(0, 0, 0, 0.06) !important;
 }
-/* Divider */
+
 html[data-theme="light"] .bg-white\/\[\.06\] {
   background: rgba(0, 0, 0, 0.06) !important;
 }
-/* Footer links */
+
 html[data-theme="light"] a.text-muted:hover {
   color: #18181b !important;
 }
@@ -958,9 +943,7 @@ html[data-theme="light"] a.text-red-500 {
   color: #dc2626 !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   BOOKS INDEX — overlay text + continue banner
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] .book-overlay .text-white {
   color: #ffffff !important;
 }
@@ -977,19 +960,14 @@ html[data-theme="light"] .continue-banner-text strong {
   color: #18181b !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════════════════════════════════ */
+
 @media (max-width: 640px) {
   html[data-theme="light"] nav { background-color: var(--meel-nav-bg) !important; }
 }
 
-/* ════════════════════════════════════════════════════════════
-   UPLOAD PAGES — light mode (video + music)
-   Uses: design-tokens.css + upload-form.css + module main.css
-   ════════════════════════════════════════════════════════════ */
 
-/* --- Body & noise overlay --- */
+
+
 html[data-theme="light"] body {
   color: #3f3f46 !important;
 }
@@ -997,7 +975,7 @@ html[data-theme="light"] body::before {
   background-image: none !important;
 }
 
-/* --- Top nav --- */
+
 html[data-theme="light"] .top-nav {
   background: var(--meel-glass) !important;
   border-bottom-color: var(--meel-border) !important;
@@ -1009,12 +987,12 @@ html[data-theme="light"] .nav-brand span {
   color: var(--meel-red) !important;
 }
 
-/* Nav logo icon — selalu putih */
+
 html[data-theme="light"] .nav-logo-icon {
   color: #ffffff !important;
   fill: #ffffff !important;
 }
-/* Nav logo text — berubah sesuai theme */
+
 html[data-theme="light"] .nav-logo-text {
   color: #18181b !important;
 }
@@ -1022,7 +1000,7 @@ html[data-theme="light"] .nav-logo-text span {
   color: var(--meel-red) !important;
 }
 
-/* Lucide icons di navbar — tetap putih */
+
 html[data-theme="light"] nav .text-white,
 html[data-theme="light"] nav .text-white i,
 html[data-theme="light"] nav .text-white svg {
@@ -1052,18 +1030,18 @@ html[data-theme="light"] .nav-sep {
   background: rgba(0, 0, 0, 0.1) !important;
 }
 
-/* --- Sidebar panel --- */
+
 html[data-theme="light"] .sidebar-panel {
   background: #f5f5f5 !important;
   border-right-color: var(--meel-border) !important;
 }
 
-/* --- Form panel --- */
+
 html[data-theme="light"] .form-panel {
   background: #ffffff !important;
 }
 
-/* --- Hero visual --- */
+
 html[data-theme="light"] .hero-icon,
 html[data-theme="light"] .hero-waveform {
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0) 70%) !important;
@@ -1077,7 +1055,7 @@ html[data-theme="light"] .hero-icon-ring {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-/* --- Stats strip --- */
+
 html[data-theme="light"] .stat-chip {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
@@ -1089,7 +1067,7 @@ html[data-theme="light"] .stat-label {
   color: #71717a !important;
 }
 
-/* --- Guide list --- */
+
 html[data-theme="light"] .guide-item {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
@@ -1105,7 +1083,7 @@ html[data-theme="light"] .guide-desc {
   color: #52525b !important;
 }
 
-/* --- Form header --- */
+
 html[data-theme="light"] .form-header {
   border-bottom-color: rgba(0, 0, 0, 0.06) !important;
 }
@@ -1116,12 +1094,12 @@ html[data-theme="light"] .form-subtitle {
   color: #71717a !important;
 }
 
-/* --- Field labels --- */
+
 html[data-theme="light"] .field-label {
   color: #52525b !important;
 }
 
-/* --- Field inputs & textareas --- */
+
 html[data-theme="light"] .field-input {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
@@ -1136,7 +1114,7 @@ html[data-theme="light"] .field-input:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
 }
 
-/* --- Drop zones --- */
+
 html[data-theme="light"] .drop-zone {
   border-color: rgba(0, 0, 0, 0.10) !important;
   background: rgba(0, 0, 0, 0.01) !important;
@@ -1157,14 +1135,14 @@ html[data-theme="light"] .drop-zone-sub {
   color: #71717a !important;
 }
 
-/* --- Alert --- */
+
 html[data-theme="light"] .alert-success {
   background: rgba(34, 197, 94, 0.06) !important;
   border-color: rgba(34, 197, 94, 0.15) !important;
   color: #15803d !important;
 }
 
-/* --- Primary button --- */
+
 html[data-theme="light"] .btn-primary {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
 }
@@ -1172,19 +1150,19 @@ html[data-theme="light"] .btn-primary:hover {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
 }
 
-/* --- Auto button --- */
+
 html[data-theme="light"] .btn-auto {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(168, 85, 247, 0.06) 100%) !important;
   border-color: rgba(239, 68, 68, 0.12) !important;
   color: var(--accent) !important;
 }
 
-/* --- Divider --- */
+
 html[data-theme="light"] .divider {
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
-/* --- Footer links --- */
+
 html[data-theme="light"] .footer-links {
   border-top-color: rgba(0, 0, 0, 0.06) !important;
 }
@@ -1198,7 +1176,7 @@ html[data-theme="light"] .footer-link.accent {
   color: var(--accent) !important;
 }
 
-/* --- Upload overlay --- */
+
 html[data-theme="light"] #upload-overlay {
   background: rgba(255, 255, 255, 0.92) !important;
 }
@@ -1226,14 +1204,14 @@ html[data-theme="light"] .progress-track {
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
-/* --- Admin badge --- */
+
 html[data-theme="light"] .admin-badge {
   background: rgba(239, 68, 68, 0.06) !important;
   border-color: rgba(239, 68, 68, 0.15) !important;
   color: var(--accent) !important;
 }
 
-/* --- Lang dropdown (subtitle language) --- */
+
 html[data-theme="light"] .lang-trigger {
   background: rgba(0, 0, 0, 0.02) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
@@ -1256,7 +1234,7 @@ html[data-theme="light"] .lang-option.active {
   background: rgba(239, 68, 68, 0.04) !important;
 }
 
-/* --- Toggle (anti-transcode, music upload) --- */
+
 html[data-theme="light"] .toggle-card {
   background: rgba(249, 115, 22, 0.04) !important;
   border-color: rgba(249, 115, 22, 0.12) !important;
@@ -1266,25 +1244,23 @@ html[data-theme="light"] .toggle-track {
   border-color: rgba(0, 0, 0, 0.1) !important;
 }
 
-/* --- Thumbnail preview --- */
+
 html[data-theme="light"] .thumb-mini {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   BOOKS/UPLOAD — Upload form (light mode)
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] body {
   background-color: var(--meel-bg) !important;
   color: var(--meel-text) !important;
 }
-/* Card container */
+
 html[data-theme="light"] .bg-\[\#0b0e14\] {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
   box-shadow: var(--meel-shadow-xl) !important;
 }
-/* Input fields */
+
 html[data-theme="light"] .bg-\[\#05070a\] {
   background: rgba(0, 0, 0, 0.03) !important;
   border-color: var(--meel-border) !important;
@@ -1294,7 +1270,7 @@ html[data-theme="light"] .bg-\[\#05070a\]:focus {
   border-color: var(--meel-blue) !important;
   background: rgba(0, 0, 0, 0.02) !important;
 }
-/* File input buttons */
+
 html[data-theme="light"] .file\:bg-gray-800 {
   background: var(--meel-surface-hover) !important;
   color: var(--meel-text) !important;
@@ -1303,11 +1279,9 @@ html[data-theme="light"] .file\:text-gray-300 {
   color: var(--meel-text) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   UPLOAD ADVANCED — full light mode (up.css variables + classes)
-   ════════════════════════════════════════════════════════════ */
 
-/* ─── CSS Variables override for up.css ─── */
+
+
 html[data-theme="light"] {
   --bg: #fafafa !important;
   --surface: #ffffff !important;
@@ -1321,7 +1295,7 @@ html[data-theme="light"] body {
   color: var(--meel-text) !important;
 }
 
-/* ─── Body decorations (noise + scanline) ─── */
+
 html[data-theme="light"] body::before {
   opacity: 0 !important;
   background-image: none !important;
@@ -1330,7 +1304,7 @@ html[data-theme="light"] body::after {
   background: linear-gradient(90deg, transparent, var(--meel-blue), transparent) !important;
 }
 
-/* ─── Masthead ─── */
+
 html[data-theme="light"] .masthead-title {
   color: var(--meel-text-heading) !important;
 }
@@ -1348,7 +1322,7 @@ html[data-theme="light"] .masthead-meta {
   color: var(--meel-text-muted) !important;
 }
 
-/* ─── Admin bar ─── */
+
 html[data-theme="light"] .admin-bar {
   background: rgba(234, 88, 12, 0.04) !important;
   border-color: rgba(234, 88, 12, 0.15) !important;
@@ -1366,7 +1340,7 @@ html[data-theme="light"] .admin-btn:hover {
   color: var(--meel-text-heading) !important;
 }
 
-/* ─── Form card ─── */
+
 html[data-theme="light"] .form-card {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
@@ -1375,7 +1349,7 @@ html[data-theme="light"] .form-card-header {
   border-color: var(--meel-border) !important;
 }
 
-/* ─── URL input ─── */
+
 html[data-theme="light"] .url-input {
   background: rgba(0, 0, 0, 0.03) !important;
   border-color: var(--meel-border) !important;
@@ -1390,7 +1364,7 @@ html[data-theme="light"] .url-input::placeholder {
   color: var(--meel-text-muted) !important;
 }
 
-/* ─── Type selector ─── */
+
 html[data-theme="light"] .type-label {
   background: rgba(0, 0, 0, 0.03) !important;
   border-color: var(--meel-border) !important;
@@ -1402,12 +1376,12 @@ html[data-theme="light"] .type-ext {
   color: var(--meel-text-muted) !important;
 }
 
-/* ─── Submit button ─── */
+
 html[data-theme="light"] .submit-btn {
   box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2) !important;
 }
 
-/* ─── Alert banners ─── */
+
 html[data-theme="light"] .alert-success {
   background: rgba(34, 197, 94, 0.06) !important;
   border-color: rgba(34, 197, 94, 0.2) !important;
@@ -1424,7 +1398,7 @@ html[data-theme="light"] .alert-error {
   color: #dc2626 !important;
 }
 
-/* ─── Sidebar cards ─── */
+
 html[data-theme="light"] .side-card {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
@@ -1438,7 +1412,7 @@ html[data-theme="light"] .support-row {
   color: var(--meel-text) !important;
 }
 
-/* ─── Entry / Tips card ─── */
+
 html[data-theme="light"] .entry {
   background: var(--meel-surface) !important;
   border-color: var(--meel-border) !important;
@@ -1453,7 +1427,7 @@ html[data-theme="light"] .entry-body {
   color: var(--meel-text) !important;
 }
 
-/* ─── Check / Nav buttons ─── */
+
 html[data-theme="light"] .check-btn {
   background: rgba(0, 0, 0, 0.03) !important;
   border-color: var(--meel-border) !important;
@@ -1465,7 +1439,7 @@ html[data-theme="light"] .check-btn:hover {
   color: var(--meel-orange) !important;
 }
 
-/* ─── Modal ─── */
+
 html[data-theme="light"] .modal-backdrop {
   background: rgba(0, 0, 0, 0.3) !important;
 }
@@ -1477,7 +1451,7 @@ html[data-theme="light"] .modal-title {
   color: var(--meel-text-heading) !important;
 }
 
-/* ─── Tabs ─── */
+
 html[data-theme="light"] .tab-btn {
   color: var(--meel-text-muted) !important;
 }
@@ -1491,7 +1465,7 @@ html[data-theme="light"] .tab-pane {
   color: var(--meel-text) !important;
 }
 
-/* ─── Queue chip / Status dot ─── */
+
 html[data-theme="light"] .dot-green {
   box-shadow: 0 0 6px rgba(34, 197, 94, 0.4) !important;
 }
@@ -1499,7 +1473,7 @@ html[data-theme="light"] .dot-orange {
   box-shadow: 0 0 6px rgba(249, 115, 22, 0.4) !important;
 }
 
-/* ─── Form inputs (generic) ─── */
+
 html[data-theme="light"] .f-input,
 html[data-theme="light"] .f-textarea {
   background: rgba(0, 0, 0, 0.03) !important;
@@ -1515,11 +1489,9 @@ html[data-theme="light"] .f-label {
   color: var(--meel-text-muted) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   BOOKS/READ — Manga Reader & PDF Viewer (light mode)
-   ════════════════════════════════════════════════════════════ */
 
-/* ─── Reader Navbar ─── */
+
+
 html[data-theme="light"] .reader-nav {
   background: rgba(250, 250, 250, 0.92) !important;
   border-bottom-color: var(--meel-border) !important;
@@ -1529,7 +1501,7 @@ html[data-theme="light"] .reader-nav.scrolled {
   background: rgba(250, 250, 250, 0.97) !important;
 }
 
-/* ─── Chapter Dropdown ─── */
+
 html[data-theme="light"] .ch-overlay {
   background: rgba(0, 0, 0, 0.18) !important;
 }
@@ -1562,7 +1534,7 @@ html[data-theme="light"] .ch-option.active {
   background: rgba(34, 197, 94, 0.08) !important;
 }
 
-/* ─── Page Counter Pill ─── */
+
 html[data-theme="light"] .page-counter {
   background: rgba(255, 255, 255, 0.9) !important;
   border-color: var(--meel-border) !important;
@@ -1581,7 +1553,7 @@ html[data-theme="light"] .page-counter .current.pop {
   animation: counter-pop-light 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
-/* ─── Scroll to Top Button ─── */
+
 html[data-theme="light"] #scroll-top-btn {
   background: rgba(255, 255, 255, 0.9) !important;
   border-color: var(--meel-border) !important;
@@ -1593,17 +1565,17 @@ html[data-theme="light"] #scroll-top-btn:hover {
   color: #16a34a !important;
 }
 
-/* ─── Chapter Navigation Buttons ─── */
+
 html[data-theme="light"] .bg-white\/\[\.03\] {
   background: rgba(0, 0, 0, 0.03) !important;
 }
 
-/* ─── Sticky Chapter Selector Gradient ─── */
+
 html[data-theme="light"] .bg-gradient-to-b.from-\[\#080a0f\] {
   background: linear-gradient(to bottom, rgba(250, 250, 250, 1), transparent) !important;
 }
 
-/* ─── Manga Images ─── */
+
 html[data-theme="light"] .manga-img {
   border-bottom-color: rgba(0, 0, 0, 0.06) !important;
 }
@@ -1617,13 +1589,13 @@ html[data-theme="light"] .manga-img.lazy {
   100% { background-position: -200% 0; }
 }
 
-/* ─── Glass / Empty State ─── */
+
 html[data-theme="light"] .glass {
   background: var(--meel-glass) !important;
   border-color: var(--meel-glass-border) !important;
 }
 
-/* ─── PDF Viewer ─── */
+
 html[data-theme="light"] .pdf-view {
   background: #f4f4f5 !important;
 }
@@ -1654,9 +1626,7 @@ html[data-theme="light"] .pdf-info-meta {
   color: var(--meel-text-muted) !important;
 }
 
-/* ════════════════════════════════════════════════════════════
-   PROFILE PAGE — inline style overrides
-   ════════════════════════════════════════════════════════════ */
+
 html[data-theme="light"] [style*="background-color:#111827"],
 html[data-theme="light"] [style*="background-color: #111827"] {
   background-color: var(--meel-surface) !important;
@@ -1670,4 +1640,136 @@ html[data-theme="light"] [style*="border: 4px solid #0b0e14"] {
 }
 html[data-theme="light"] .bg-gray-800 {
   background-color: var(--meel-surface-hover) !important;
+}
+
+
+html[data-theme="light"] .crop-guide {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+}
+html[data-theme="light"] .bg-blue-500\/10 {
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+html[data-theme="light"] .border-blue-500\/50 {
+  border-color: rgba(37, 99, 235, 0.25) !important;
+}
+html[data-theme="light"] .text-blue-400 {
+  color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .text-red-400 {
+  color: var(--meel-red) !important;
+}
+
+
+
+
+html[data-theme="light"] .manage-tabs {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .manage-tab {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .manage-tab:hover {
+  color: var(--meel-text) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .manage-tab.active-tab {
+  background: rgba(249, 115, 22, 0.10) !important;
+  border-color: rgba(249, 115, 22, 0.22) !important;
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .manage-tab.active-video {
+  background: rgba(239, 68, 68, 0.10) !important;
+  border-color: rgba(239, 68, 68, 0.22) !important;
+  color: var(--meel-red) !important;
+}
+
+
+html[data-theme="light"] .content-card {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+  box-shadow: var(--meel-shadow-sm) !important;
+}
+html[data-theme="light"] .content-card:hover {
+  border-color: var(--meel-border-strong) !important;
+  box-shadow: var(--meel-shadow-lg) !important;
+}
+html[data-theme="light"] .content-card .card-thumb {
+  background: #e9e9ec !important;
+}
+html[data-theme="light"] .content-card .card-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .content-card .card-meta {
+  color: var(--meel-text-muted) !important;
+}
+
+
+html[data-theme="light"] .action-btn-edit {
+  background: rgba(37, 99, 235, 0.08) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+  color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .action-btn-edit:hover {
+  background: rgba(37, 99, 235, 0.14) !important;
+  border-color: rgba(37, 99, 235, 0.30) !important;
+}
+html[data-theme="light"] .action-btn-delete {
+  background: rgba(220, 38, 38, 0.08) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: var(--meel-red) !important;
+}
+html[data-theme="light"] .action-btn-delete:hover {
+  background: rgba(220, 38, 38, 0.14) !important;
+  border-color: rgba(220, 38, 38, 0.30) !important;
+}
+
+
+html[data-theme="light"] .stat-item {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-secondary) !important;
+}
+
+
+html[data-theme="light"] .page-link {
+  color: var(--meel-text-muted) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .page-link:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .page-link.active-page {
+  background: rgba(249, 115, 22, 0.10) !important;
+  border-color: rgba(249, 115, 22, 0.22) !important;
+  color: var(--meel-orange) !important;
+}
+
+
+html[data-theme="light"] .empty-state svg {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .empty-state p {
+  color: var(--meel-text-secondary) !important;
+}
+
+
+html[data-theme="light"] .alert-success {
+  background: rgba(22, 163, 74, 0.10) !important;
+  border-color: rgba(22, 163, 74, 0.22) !important;
+  color: var(--meel-green) !important;
+}
+html[data-theme="light"] .alert-error {
+  background: rgba(220, 38, 38, 0.10) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: var(--meel-red) !important;
+}
+
+
+html[data-theme="light"] .hover\:text-red-400:hover {
+  color: var(--meel-red) !important;
+}
+html[data-theme="light"] .hover\:text-orange-400:hover {
+  color: var(--meel-orange) !important;
 }

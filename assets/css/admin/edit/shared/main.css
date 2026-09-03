@@ -1,11 +1,11 @@
-/* edit/shared/main.css — Shared Edit Page Styles */
+
 body {
   background: var(--bg-base, #080b11);
   font-family: "DM Sans", sans-serif;
   min-height: 100vh;
   color: #c9cdd6;
 }
-/* Edit Layout (sidebar + form) */
+
 .edit-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -18,7 +18,7 @@ body {
     min-height: calc(100vh - 56px);
   }
 }
-/* Thumbnail / Cover Wrap */
+
 .thumb-wrap,
 .cover-wrap {
   position: relative;
@@ -64,7 +64,7 @@ body {
   transform: scale(1.04);
   filter: brightness(var(--brightness-hover, 0.55));
 }
-/* Overlay pada hover/drag */
+
 .thumb-overlay,
 .cover-overlay {
   position: absolute;
@@ -116,7 +116,7 @@ body {
 .cover-overlay-text {
   padding: 0 12px;
 }
-/* Badge & Label */
+
 .thumb-label,
 .cover-badge {
   position: absolute;
@@ -164,7 +164,7 @@ body {
   z-index: 4;
   display: none;
 }
-/* Uploader Card */
+
 .uploader-card {
   display: flex;
   align-items: center;
@@ -231,7 +231,7 @@ body {
   color: var(--accent, #ef4444);
   margin-bottom: 3px;
 }
-/* Meta Info */
+
 .meta-info {
   display: flex;
   flex-direction: column;
@@ -273,7 +273,7 @@ body {
   line-height: 1.3;
   word-break: break-word;
 }
-/* Edit-specific overrides */
+
 textarea.field-input {
   resize: vertical;
   min-height: 130px;
@@ -283,7 +283,7 @@ form textarea.field-input[style*="resize:none"] {
   resize: none;
   min-height: 120px;
 }
-/* ID Chip */
+
 .id-chip {
   margin-left: auto;
   background: var(--accent-dim, rgba(239, 68, 68, 0.1));
@@ -297,7 +297,7 @@ form textarea.field-input[style*="resize:none"] {
   border-radius: 20px;
   font-family: Syne, sans-serif;
 }
-/* Custom dropdown bahasa — Pasangan JS: assets/js/shared/lang-dropdown.js (baca input via data-name). */
+
 .lang-dropdown {
   position: relative;
   z-index: 60;
@@ -389,7 +389,7 @@ form textarea.field-input[style*="resize:none"] {
   font-weight: 700;
   background: var(--accent-dim, rgba(34, 197, 94, 0.06));
 }
-/* Form Actions */
+
 .form-actions {
   display: flex;
   align-items: center;

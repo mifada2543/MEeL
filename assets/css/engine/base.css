@@ -1,4 +1,4 @@
-/* engine/base.css — Shell overlay, kartu, dan sistem fase */
+
 #meel-overlay * {
   box-sizing: border-box;
   margin: 0;
@@ -24,7 +24,7 @@
   width: 420px;
   text-align: center;
 }
-/* Sistem fase */
+
 .meel-phase {
   display: none;
   flex-direction: column;

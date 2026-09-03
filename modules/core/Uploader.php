@@ -271,7 +271,7 @@ class Uploader
 
         try {
             require_disk_space(1024 * 1024 * 1024, $this->base_dir . 'video/', 'storage video HDD');
-            // Minimal 512MB free di RAM disk untuk staging HLS
+            
             $shm_path = '/dev/shm';
             if (is_dir($shm_path) && is_writable($shm_path)) {
                 require_disk_space(512 * 1024 * 1024, $shm_path, 'RAM disk (/dev/shm)');
@@ -365,7 +365,7 @@ class Uploader
                 $thumb_name      = $t_name;
                 $thumb_from_user = true;
             } elseif (move_uploaded_file($files['thumbnail']['tmp_name'], $t_dst)) {
-                // Fallback: simpan apa adanya jika FFmpeg gagal convert
+                
                 $thumb_name      = $t_name;
                 $thumb_from_user = true;
             }
@@ -395,7 +395,7 @@ class Uploader
             }
         }
 
-        // TRANSCODE KE HLS (output ke work_folder)
+        
         $work_m3u8 = $work_folder . $folder_name . ".m3u8";
         $db_filename = "video/" . $folder_name . "/" . $folder_name . ".m3u8";
 
@@ -441,7 +441,7 @@ class Uploader
         $this->removeFile($staged_video);
 
         if ($result !== 0) {
-            // Bersihkan work_folder jika FFmpeg gagal
+            
             $this->removeDir($work_folder);
             return ['status' => 'error', 'msg' => 'FFmpeg Error: ' . implode("\n", $output)];
         }
@@ -469,7 +469,7 @@ class Uploader
                 continue;
             }
 
-            // Semua file HLS (.m3u8, .ts, sprite, .vtt) ke folder video/
+            
             if (!rename($work_file, $hdd_target_folder . $filename)) {
                 $move_failed = true;
                 break;
@@ -523,5 +523,5 @@ class Uploader
             return ['status' => 'error', 'msg' => 'Database error! [' . $e->getMessage() . '] | title_len=' . strlen($title) . ' meta_len=' . strlen($meta) . ' filename=' . $db_filename];
         }
     }
-    // SPRITE & VTT disediakan oleh FfmpegUtils trait
+    
 }

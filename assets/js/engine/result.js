@@ -1,4 +1,4 @@
-// Final navigation guard — prevents double-execution. location.replace() keeps POST out of history.
+
 var _meelRedirectFired = false;
 window.meelRedirect = function (url) {
   if (_meelRedirectFired) return;

@@ -1,5 +1,5 @@
 <?php
-/* @package MEeL\Controllers */
+
 
 require_once __DIR__ . '/../../modules/core/helpers.php';
 require_once __DIR__ . '/../../modules/auth/RateLimiter.php';
@@ -61,7 +61,7 @@ abstract class AbstractWatchController
         return isset($this->user_id);
     }
 
-    /* @param mixed $rekom Result rekomendasi yang sudah di-fetch (opsional, */
+    
     protected function baseViewData(array $v, $rekom = null): array
     {
 
@@ -101,7 +101,7 @@ class VideoWatchController extends AbstractWatchController
         $this->mediaData = $v;
     }
 
-    /* @return array Semua variabel untuk template */
+    
     public function getViewData(): array
     {
         $this->requireMedia();
@@ -118,7 +118,7 @@ class VideoWatchController extends AbstractWatchController
         foreach (glob($fs_dir . '/*.vtt') ?: [] as $sub_file) {
             $sub_base = basename($sub_file);
             if ($sub_base === 'thumbnails.vtt') continue;
-            // Ekstrak kode bahasa dari pola {folder}.{lang}.vtt
+            
             $lang = 'und';
             if (preg_match('/\.([a-z]{2,3}(?:-[a-z]{2,8})?)\.vtt$/i', $sub_base, $m)) {
                 $lang = strtolower($m[1]);
@@ -145,7 +145,7 @@ class VideoWatchController extends AbstractWatchController
     }
 }
 
-// MUSIC WATCH CONTROLLER
+
 class MusicWatchController extends AbstractWatchController
 {
     private int $playlist_id;
@@ -170,7 +170,7 @@ class MusicWatchController extends AbstractWatchController
         return $url . '#comment-section';
     }
 
-    /* Ambil media data, redirect jika tidak ditemukan. */
+    
     public function requireMedia(): void
     {
         $v = $this->viewer->getMediaData();
@@ -181,7 +181,7 @@ class MusicWatchController extends AbstractWatchController
         $this->mediaData = $v;
     }
 
-    /* @return array Semua variabel untuk template */
+    
     public function getViewData(): array
     {
         $this->requireMedia();

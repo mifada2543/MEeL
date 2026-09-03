@@ -1,5 +1,5 @@
-/* form.css — Search input, type dropdown, alert banners */
-/* Search Input */
+
+
 .admin-search-input {
   padding: 8px 12px 8px 36px;
   border-radius: 11px;
@@ -22,7 +22,7 @@
 .admin-search-input::-webkit-search-cancel-button {
   -webkit-appearance: none;
 }
-/* Type Dropdown */
+
 .type-dropdown {
   position: relative;
   display: inline-flex;
@@ -94,7 +94,7 @@
 .type-option.active:hover {
   background: rgba(37, 99, 235, 0.18);
 }
-/* Alert Banners */
+
 .alert-banner {
   margin-bottom: 20px;
   padding: 14px 18px;

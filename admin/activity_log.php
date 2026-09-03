@@ -1,11 +1,11 @@
 <?php
-/* MEeL Admin — Activity Log Viewer */
+
 
 include '../auth/config.php';
 include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 
-// Guard terpusat: harus login + role admin
+
 require_admin($conn);
 require_once __DIR__ . '/../modules/media/AdminActivityRepository.php';
 
@@ -54,7 +54,7 @@ $logRepo->buildFilter($action_filter, $search_q, $days);
 
 $total_rows = $logRepo->countFiltered();
 $total_pages = max(1, (int)ceil($total_rows / $per_page));
-$page = min($page, $total_pages); // Cegah offset tak berguna
+$page = min($page, $total_pages); 
 $offset = ($page - 1) * $per_page;
 
 $rows       = $logRepo->fetchPage($per_page, $offset);
@@ -73,7 +73,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             header("Content-Disposition: attachment; filename=\"{$filename_base}.csv\"");
 
             $output = fopen('php://output', 'w');
-            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
             fputcsv($output, ['ID', 'User ID', 'Username', 'Action', 'Media Type', 'Media ID', 'IP Address', 'Waktu']);
 
             foreach ($rows as $row) {
@@ -91,7 +91,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             fclose($output);
             break;
 
-        // JSON
+        
         case 'json':
             header('Content-Type: application/json; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.json\"");
@@ -112,7 +112,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
             echo json_encode($json_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
-        // XLS (XML Spreadsheet 2003)
+        
         case 'xls':
             header('Content-Type: application/vnd.ms-excel; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"{$filename_base}.xls\"");
@@ -167,7 +167,7 @@ if (in_array($export_format, ['csv', 'json', 'xls'], true)) {
     exit;
 }
 
-// Preview Handler
+
 if (isset($_GET['preview']) && $_GET['preview'] === '1' && in_array($_GET['format'] ?? '', ['csv', 'json', 'xls'], true)) {
     $preview_format = $_GET['format'];
     $all_rows = $logRepo->fetchAll();
@@ -276,7 +276,7 @@ include __DIR__ . '/../partials/scripts.php';
     ?>
     <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 py-8">
 
-        <!-- Header -->
+        
         <div class="flex items-center gap-5 mb-10">
             <div class="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0">
                 <i data-lucide="activity" class="w-6 h-6 text-blue-500"></i>
@@ -287,7 +287,7 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
 
-        <!-- Stats Cards -->
+        
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 mb-8">
             <div class="glass p-5 rounded-2xl border-l-4 border-blue-500">
                 <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">7 Hari Terakhir</p>
@@ -310,14 +310,14 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
 
-        <!-- Clear Message -->
+        
         <?php if ($clear_msg): ?>
             <div class="mb-8 p-5 rounded-2xl text-sm flex items-center gap-3 bg-green-500/10 text-green-400 border border-green-500/20">
                 <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i>
                 <?= htmlspecialchars($clear_msg) ?>
             </div>
         <?php endif; ?>
-        <!-- Filters -->
+        
         <div class="glass p-6 md:p-8 rounded-2xl mb-8 filter-section relative z-40 overflow-visible" id="filter-section">
             <div class="flex flex-col lg:flex-row items-start justify-between gap-6 w-full min-w-0">
                 <div class="w-full lg:w-1/4 min-w-0 relative z-30">
@@ -336,7 +336,7 @@ include __DIR__ . '/../partials/scripts.php';
                             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 shrink-0"></i>
                         </button>
 
-                        <!-- Dropdown Panel (diberi z-50 dan shadow-2xl agar melayang sempurna di atas elemen lain) -->
+                        
                         <div id="action-dropdown-panel"
                             class="action-dropdown-panel hidden absolute left-0 right-0 mt-1.5 rounded-xl z-50 py-1 shadow-2xl bg-[#131720]">
                             <button type="button"
@@ -363,7 +363,7 @@ include __DIR__ . '/../partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- Search -->
+                
                 <div class="w-full lg:w-1/4 min-w-0 relative z-10">
                     <label class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-2.5 block">
                         <i data-lucide="search" class="w-3 h-3 inline mr-1.5"></i> Cari Username / IP
@@ -375,7 +375,7 @@ include __DIR__ . '/../partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- Days (Pill Buttons) -->
+                
                 <div class="w-full lg:flex-1 min-w-0 relative z-10">
                     <label class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-2.5 block">
                         <i data-lucide="calendar" class="w-3 h-3 inline mr-1.5"></i> Rentang
@@ -395,7 +395,7 @@ include __DIR__ . '/../partials/scripts.php';
 
             </div>
 
-            <!-- Action Buttons -->
+            
             <div class="flex items-center gap-4 mt-6 pt-5 border-t border-white/[.04]">
                 <button type="button" onclick="submitFilters()"
                     class="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-6 py-3 rounded-xl transition-all uppercase tracking-wider inline-flex items-center gap-2">
@@ -412,7 +412,7 @@ include __DIR__ . '/../partials/scripts.php';
 
         <script src="../assets/js/admin/activity_log.js?v=<?= filemtime('../assets/js/admin/activity_log.js') ?>"></script>
 
-        <!-- Table -->
+        
         <div class="glass rounded-2xl overflow-hidden relative z-0">
             <div class="scroll-table" style="max-height:70vh;">
                 <table class="w-full text-left text-[11px]">
@@ -494,7 +494,7 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
 
-        <!-- Pagination -->
+        
         <?php if ($total_pages > 1): ?>
             <div class="flex items-center justify-center gap-2 mt-6">
                 <?php if ($page > 1): ?>
@@ -521,7 +521,7 @@ include __DIR__ . '/../partials/scripts.php';
                 <?php endif; ?>
             </div>
         <?php endif; ?>
-        <!-- Clear Old Logs -->
+        
         <div class="glass p-6 rounded-2xl mt-8 border border-red-500/20">
             <div class="flex items-center gap-3 mb-4">
                 <div class="p-2 rounded-xl bg-red-500/10 border border-red-500/20">
@@ -554,7 +554,7 @@ include __DIR__ . '/../partials/scripts.php';
             </form>
         </div>
         <br>
-        <!-- Clear ALL Logs -->
+        
         <div class="glass p-6 rounded-2xl mt-5 border border-red-500/30">
             <div class="flex items-center gap-3 mb-4">
                 <div class="p-2 rounded-xl bg-red-600/15 border border-red-500/30">
@@ -566,7 +566,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </div>
             </div>
 
-            <!-- Backup sebelum hapus -->
+            
             <div class="flex items-center gap-3 flex-wrap mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <i data-lucide="info" class="w-4 h-4 text-amber-400 shrink-0"></i>
                 <p class="text-[10px] text-amber-300 flex-1">

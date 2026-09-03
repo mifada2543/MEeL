@@ -1,5 +1,5 @@
 <?php
-// Keamanan: hanya dari CLI
+
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     die('Access denied. Jalankan dari terminal: php database/backfill_english_metadata.php');
@@ -28,7 +28,7 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
 
 echo "[MEeL] " . ($dryRun ? 'DRY-RUN (tidak menulis DB)' : 'BACKFILL') . " dimulai...\n";
 
-// Proses satu tabel dalam batch kecil
+
 function backfill_process_table(\mysqli $conn, string $table, string $columns, int $batchSize, ?int $limit, bool $dryRun, array &$stats): void
 {
     $offset    = 0;
@@ -55,7 +55,7 @@ function backfill_process_table(\mysqli $conn, string $table, string $columns, i
             $id    = (int)$row['id'];
             $title = trim((string)($row['title'] ?? ''));
 
-            // konsisten dengan Uploader dan admin/edit-*.php
+            
             if ($table === 'video') {
                 $meta = generate_search_metadata($title);
             } else {

@@ -2,7 +2,7 @@
 require_once '../modules/core/helpers.php';
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
-// activity_logger loaded via auth/config.php
+
 require_once '../modules/media/MediaLibrary.php';
 
 $repo  = new BookRepository($conn);
@@ -40,7 +40,7 @@ $totalPagesBooks = $meta_books['total_pages'];
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR -->
+    
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
@@ -52,7 +52,7 @@ $totalPagesBooks = $meta_books['total_pages'];
                 </span>
             </a>
 
-            <!-- Search (server-side FULLTEXT via search_books.php) -->
+            
             <form
                     hx-get="search"
                     hx-trigger="submit"
@@ -60,7 +60,7 @@ $totalPagesBooks = $meta_books['total_pages'];
                     hx-swap="innerHTML"
                     hx-indicator="#b-search-indicator"
                     class="flex-1 max-w-sm flex items-center gap-1.5 sm:gap-2">
-                <!-- Hormati pill filter aktif (All/Manga/PDF) saat searching -->
+                
                 <input type="hidden" name="type" value="<?= htmlspecialchars($filter) ?>">
                 <div class="relative flex-1 group">
                     <i data-lucide="search" class="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 group-focus-within:text-green-500 transition-colors"></i>
@@ -94,7 +94,7 @@ $totalPagesBooks = $meta_books['total_pages'];
 
     <main class="w-full px-4 sm:px-6 xl:px-10 2xl:px-16 pt-8 pb-20">
 
-        <!-- CONTINUE READING BANNER (localStorage-based) -->
+        
         <div id="continueBanner" class="continue-banner" role="alert">
             <div class="continue-banner-left">
                 <span class="continue-badge">📖 Lanjutkan</span>
@@ -111,7 +111,7 @@ $totalPagesBooks = $meta_books['total_pages'];
             </button>
         </div>
 
-        <!-- HEADER -->
+        
         <div class="flex items-end justify-between mb-6 pb-4 border-b border-white/[.04]">
             <div>
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Library</div>
@@ -125,7 +125,7 @@ $totalPagesBooks = $meta_books['total_pages'];
             </span>
         </div>
 
-        <!-- FILTER PILLS -->
+        
         <div class="flex gap-2 mb-8 flex-wrap">
             <a href="?type=all"
                 class="filter-pill <?= $filter === 'all' ? 'active' : '' ?>">
@@ -148,14 +148,14 @@ $totalPagesBooks = $meta_books['total_pages'];
             <?php endif; ?>
         </div>
 
-        <!-- BOOK GRID -->
+        
         <div id="book-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
             <?php if ($total > 0): ?>
                 <?php while ($book = $books->fetch_assoc()): ?>
                     <?php include 'book_card.php'; ?>
                 <?php endwhile; ?>
             <?php else: ?>
-                <!-- EMPTY STATE -->
+                
                 <div class="col-span-full py-20 flex flex-col items-center justify-center text-center glass rounded-3xl border border-dashed border-white/[.06]">
                     <div class="w-16 h-16 rounded-2xl bg-white/[.03] border border-white/[.06] flex items-center justify-center mb-5">
                         <i data-lucide="book-open" class="w-7 h-7 text-gray-700"></i>
@@ -178,7 +178,7 @@ $totalPagesBooks = $meta_books['total_pages'];
 
     </main>
 
-    <!-- PAGINATION -->
+    
     <?php if ($totalPagesBooks > 1): ?>
         <div class="flex items-center justify-center gap-2 mt-10 mb-6">
             <?php if ($bookPage > 1): ?>

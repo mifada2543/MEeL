@@ -1,4 +1,4 @@
-/* layout.css — CLS Prevention & Layout Stability */
+
 #player-container {
   min-height: 280px;
   contain: content;
@@ -8,10 +8,6 @@
   min-height: 120px;
   contain-intrinsic-size: 120px;
   content-visibility: auto;
-}
-.comment-section {
-  content-visibility: auto;
-  contain-intrinsic-size: 200px;
 }
 .rekomendasi-sidebar {
   content-visibility: auto;

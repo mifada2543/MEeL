@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Guard terpusat: role admin (helper is_admin)
+
 if (!is_admin($conn)) {
     header("Location: ../");
     exit();
@@ -238,7 +238,7 @@ while ($rc = $r->fetch_assoc()) {
 
 <body class="text-gray-300 min-h-screen">
 
-    <!-- Top Nav -->
+    
     <nav class="top-nav">
         <a href="../" class="font-sans text-sm font-extrabold text-white no-underline tracking-wider">
             MEeL<span class="text-blue-600">Admin</span>
@@ -254,10 +254,10 @@ while ($rc = $r->fetch_assoc()) {
         </div>
     </nav>
 
-    <!-- Page body -->
+    
     <div class="max-w-6xl mx-auto px-4 md:px-6 py-8">
 
-        <!-- Header -->
+        
         <div class="flex items-center gap-4 mb-8">
             <div class="w-12 h-12 rounded-2xl bg-blue-600/15 border border-blue-600/25 flex items-center justify-center shrink-0">
                 <i data-lucide="bar-chart-2" class="text-blue-600" style="width:22px;height:22px;"></i>
@@ -274,7 +274,7 @@ while ($rc = $r->fetch_assoc()) {
                 <?= htmlspecialchars($delete_msg['text']) ?>
             </div>
         <?php endif; ?>
-        <!-- Summary chips -->
+        
         <div class="flex gap-2.5 flex-wrap mb-6">
             <?php
             $chips = [
@@ -295,10 +295,10 @@ while ($rc = $r->fetch_assoc()) {
             <?php endforeach; ?>
         </div>
 
-        <!-- Filter & Sort bar + Table -->
+        
         <div id="analytics-panel">
             <div class="flex flex-wrap gap-3 mb-5 items-center">
-                <!-- Search -->
+                
                 <div class="relative flex items-center">
                     <i data-lucide="search" class="absolute left-3 w-3.5 h-3.5 text-[#455060] pointer-events-none"></i>
                     <form method="GET" id="search-form" class="flex gap-0">
@@ -311,7 +311,7 @@ while ($rc = $r->fetch_assoc()) {
                     </form>
                 </div>
 
-                <!-- Type -->
+                
                 <?php
                 $type_labels = ['all' => 'Semua', 'video' => 'Video', 'music' => 'Musik'];
                 $current_type_label = $type_labels[$type_filter] ?? 'Semua';
@@ -331,7 +331,7 @@ while ($rc = $r->fetch_assoc()) {
                     </div>
                 </div>
 
-                <!-- Count & Clear -->
+                
                 <div class="ml-auto flex items-center gap-3">
                     <div id="sort-indicator" class="htmx-indicator">
                         <div class="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
@@ -347,7 +347,7 @@ while ($rc = $r->fetch_assoc()) {
                 </div>
             </div>
 
-            <!-- Table -->
+            
             <div class="glass rounded-[20px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,.4)]">
                 <div class="admin-table-wrap">
                     <table class="admin-table">
@@ -418,7 +418,7 @@ while ($rc = $r->fetch_assoc()) {
                                     $type_bdr   = $is_video ? 'rgba(239,68,68,.2)' : 'rgba(249,115,22,.2)';
                             ?>
                                     <tr title="<?= htmlspecialchars($row['title']) ?>">
-                                        <!-- Title -->
+                                        
                                         <td class="td-left" style="max-width:320px;">
                                             <div class="flex items-center gap-2.5">
                                                 <span class="row-num"><?= $row_i ?></span>
@@ -431,29 +431,29 @@ while ($rc = $r->fetch_assoc()) {
                                             </div>
                                         </td>
 
-                                        <!-- Views -->
+                                        
                                         <td class="td-center">
                                             <span class="stat-value stat-value-views"><?= number_format($row['views']) ?></span>
                                         </td>
 
-                                        <!-- Likes -->
+                                        
                                         <td class="td-center">
                                             <span class="stat-value stat-value-likes"><?= number_format($row['likes']) ?></span>
                                         </td>
 
-                                        <!-- Dislikes -->
+                                        
                                         <td class="td-center">
                                             <span class="stat-value stat-value-dislikes"><?= number_format($row['dislikes']) ?></span>
                                         </td>
 
-                                        <!-- Type badge -->
+                                        
                                         <td class="td-center">
                                             <span class="type-badge" style="background:<?= $type_bg ?>;color:<?= $type_color ?>;border:1px solid <?= $type_bdr ?>;">
                                                 <?= strtoupper($row['media_type']) ?>
                                             </span>
                                         </td>
 
-                                        <!-- Actions -->
+                                        
                                         <td class="th-right">
                                             <div class="row-actions inline-flex items-center gap-1.5">
                                                 <a href="<?= $edit_url ?>" title="Edit" class="action-btn action-btn-edit">
@@ -480,7 +480,7 @@ while ($rc = $r->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- Delete Confirm Modal -->
+    
     <div id="delete-modal">
         <div class="modal-box">
             <div class="modal-icon-wrap">

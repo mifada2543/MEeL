@@ -1,19 +1,19 @@
 <?php
-// err/index.php — Halaman error dinamis terpadu.
-// Tipe error ditentukan oleh ?code=, tema & tombol kembali menyesuaikan
-// modul asal (dideteksi dari HTTP_REFERER).
+
+
+
 require_once __DIR__ . '/../modules/core/base_url.php';
 $meel_base = meel_base_url_path();
 
 if (!function_exists('meel_err_alpha')) {
-    // Hex 6-digit + alpha (00-FF) → hex 8-digit untuk RGBA.
+    
     function meel_err_alpha(string $hex, int $alpha): string
     {
         return $hex . str_pad(dechex($alpha), 2, '0', STR_PAD_LEFT);
     }
 }
 
-// Tipe error: kode → status HTTP, ikon, teks, meta
+
 $types = [
     'denied' => [
         'status'   => 403,
@@ -98,7 +98,7 @@ if (!headers_sent()) {
     http_response_code($type['status']);
 }
 
-// Modul asal (dari referer) → tema warna & label
+
 $modules = [
     'video'   => ['accent' => '#ef4444', 'accent2' => '#f87171', 'label' => 'Video Library', 'back' => '../video/beranda'],
     'music'   => ['accent' => '#f97316', 'accent2' => '#fb923c', 'label' => 'Music Library', 'back' => '../music/beranda'],
@@ -123,7 +123,7 @@ if (isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER'] !== '') {
     }
 }
 
-// Tombol kembali: ?back= → referer GET → home modul → hub
+
 $action_pages = ['delete.php', 'stream.php', 'action.php', 'actions.php', 'post_encode.php', 'playlist_action.php', 'transcode.php', 'delete', 'stream', 'playlist-action', 'transcode'];
 $ref_is_action = false;
 foreach ($action_pages as $ap) {
@@ -243,24 +243,24 @@ include __DIR__ . '/../partials/scripts.php';
 
 <body class="bg-[#05070c] text-slate-300 min-h-screen flex flex-col justify-between bg-grid relative overflow-hidden">
 
-    <!-- Background Ambient Glows -->
+    
     <div class="absolute inset-0 pointer-events-none z-0">
         <div class="absolute top-1/4 left-1/3 -translate-x-1/2 w-[500px] h-[500px] rounded-full blur-[140px]" style="background: var(--acc-a10)"></div>
         <div class="absolute bottom-1/4 right-1/3 translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[120px]" style="background: var(--acc-a10)"></div>
     </div>
 
-    <!-- Scanner Lines Grid Visual -->
+    
     <div class="absolute inset-0 pointer-events-none opacity-5 z-0" style="background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 6px 100%;"></div>
 
-    <!-- Main Content Container -->
+    
     <main class="relative z-10 flex-grow flex items-center justify-center p-6">
         <div class="max-w-md w-full glass-panel rounded-3xl p-8 text-center relative overflow-hidden">
 
-            <!-- Border Glow Accent Line -->
+            
             <div class="absolute top-0 left-0 right-0 h-[2px]"
                 style="background: linear-gradient(to right, transparent, var(--acc), transparent)"></div>
 
-            <!-- Icon Section -->
+            
             <div class="relative inline-block mb-8 mt-4">
                 <div class="absolute inset-0 icon-ring rounded-full animate-pulse"></div>
                 <div class="relative w-24 h-24 bg-slate-900/80 rounded-2xl flex items-center justify-center mx-auto icon-box">
@@ -268,7 +268,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </div>
             </div>
 
-            <!-- Text Content -->
+            
             <p class="text-[10px] font-bold uppercase tracking-[0.5em] mb-3" style="color: var(--acc2)">
                 Error Protocol :: <?= $type['protocol'] ?>
             </p>
@@ -287,7 +287,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </div>
             <?php endif; ?>
 
-            <!-- Navigation Buttons -->
+            
             <div class="flex flex-col gap-3 mb-4">
                 <a href="<?= htmlspecialchars($back) ?>"
                     class="group relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 back-btn text-white font-bold uppercase tracking-widest text-xs rounded-2xl">
@@ -301,7 +301,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </a>
             </div>
 
-            <!-- Terminal Info Overlay -->
+            
             <div class="pt-4 border-t border-white/10 text-[9px] text-slate-500 font-mono tracking-wider flex justify-between items-center px-2">
                 <span><?= $module ? 'SRC: ' . htmlspecialchars($module['key']) : 'SYS_URI: ' . htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'UNKNOWN') ?></span>
                 <span class="font-semibold animate-pulse" style="color: var(--acc)">● <?= $type['dot'] ?></span>
@@ -310,12 +310,12 @@ include __DIR__ . '/../partials/scripts.php';
         </div>
     </main>
 
-    <!-- Footer Area -->
+    
     <div class="w-full text-center pb-6 relative z-20">
         <?php include __DIR__ . '/../partials/footer.php'; ?>
     </div>
 
-    <!-- Lucide Icon Initialization -->
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof lucide !== 'undefined' && lucide.createIcons) {

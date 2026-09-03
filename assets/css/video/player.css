@@ -1,4 +1,4 @@
-/* player.css — Override Plyr: kontrol, volume, wrapper */
+
 .plyr__video-wrapper {
   background: #000 !important;
   display: flex;
@@ -10,7 +10,7 @@
 .plyr__control--overlaid {
   transition: opacity 0.25s ease !important;
 }
-/* Volume slider */
+
 .plyr__volume {
   position: relative !important;
   display: flex !important;
@@ -61,7 +61,7 @@
 .plyr__volume .plyr__control .plyr__tooltip {
   display: none !important;
 }
-/* Mini-player button in controls */
+
 button[data-plyr="meel-miniplayer"] {
   position: relative;
 }
@@ -69,50 +69,3 @@ button[data-plyr="meel-miniplayer"] .plyr__tooltip {
   white-space: nowrap;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SWIPE-TO-SEEK OVERLAY
-   ═══════════════════════════════════════════════════════════ */
-#meel-seek-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.8);
-  z-index: 15;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.meel-seek-overlay-active {
-  opacity: 1 !important;
-  transform: translate(-50%, -50%) scale(1) !important;
-}
-.meel-seek-preview {
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  padding: 12px 20px;
-  text-align: center;
-  min-width: 80px;
-}
-.meel-seek-time {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.5px;
-}
-.meel-seek-delta {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  margin-top: 2px;
-  letter-spacing: 0.3px;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MINI-PLAYER SWIPE-DOWN
-   ═══════════════════════════════════════════════════════════ */
-#mini-player-shell {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
-}

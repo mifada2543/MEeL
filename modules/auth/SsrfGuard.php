@@ -1,19 +1,19 @@
 <?php
-// SSRF-safe URL validation — the single source of truth for every outbound
-// Upload / yt-dlp pipeline in Transcoder.php).
 
-// SECURITY BOUNDARY:
-// * IP literals (v4 & v6) are validated directly, with no DNS involvement.
-// * filter_var(FILTER_VALIDATE_URL) is NOT used for the security decision —
-// check is always the resolved-address validation.
 
-// validated public IP and forces the original Host header, which closes the
-// DNS-rebinding window between validation and the real outbound request.
+
+
+
+
+
+
+
+
 final class SsrfGuard
 {
     private const ALLOWED_SCHEMES = ['http', 'https'];
 
-    // (DNS validation is), but they catch obvious special names even when the
+    
     private const BLOCKED_EXACT_HOSTS = [
         'localhost',
         'localhost.localdomain',
@@ -34,13 +34,8 @@ final class SsrfGuard
         '.onion',
     ];
 
-    /**
-     * Validate a user-supplied URL for outbound use.
-     *
-     * @param string $url The raw URL (scheme, host, optional port/path/query).
-     * @throws \RuntimeException With a safe, generic message when the URL is
-     * not safe to fetch. Never includes the URL, IPs or resolver details.
-     */
+    
+
     public function validate(string $url): void
     {
         if (strlen($url) > 2048) {
@@ -74,24 +69,18 @@ final class SsrfGuard
             throw new \RuntimeException('Alamat tujuan tidak diizinkan.');
         }
 
-        // Validating here performs the DNS resolution once and checks every
-        // lookup is used for a security decision).
+        
+        
         $this->resolvePublicAddresses($host);
     }
 
-    /**
-     * Resolve a host to its public addresses, rejecting the host if ANY
-     * A/AAAA record is non-public or if no records exist (fail closed).
-     *
-     * @param string $host Hostname or IP literal (IPv6 may be in brackets).
-     * @return string[] Public IP addresses (dotted quad / canonical IPv6).
-     * @throws \RuntimeException On private/reserved addresses or resolution failure.
-     */
+    
+
     public function resolvePublicAddresses(string $host): array
     {
         $host = strtolower(rtrim($host, '.'));
 
-        // IP literal → validate directly, no DNS round-trip at all.
+        
         $literal = $this->extractIpLiteral($host);
         if ($literal !== null) {
             if ($this->isPrivateIp($literal)) {
@@ -139,12 +128,8 @@ final class SsrfGuard
         return $addresses;
     }
 
-    /**
-     * Explicit private/reserved range check for a single IP (IPv4 or IPv6).
-     *
-     * @param string $ip IP in dotted-quad or canonical IPv6 notation.
-     * @return bool True when the address must not be reached (or is unparsable).
-     */
+    
+
     public function isPrivateIp(string $ip): bool
     {
         $binary = @inet_pton($ip);
@@ -163,21 +148,8 @@ final class SsrfGuard
         return true;
     }
 
-    /**
-     * Rewrite a validated http:
-     * resolved public IP while preserving the original Host header.
-     *
-     * Used by the download pipeline to prevent a second (attacker-influenced)
-     * DNS lookup between validation and the real request, and to make
-     * cross-host redirects to private targets fail (the forced Host header no
-     * longer matches the redirect target).
-     *
-     * @param string $url Validated http(s) URL.
-     * @return array{0:string,1:string} [pinned_url, extra yt-dlp args] —
-     * https URLs are returned untouched (TLS SNI/cert validation must
-     * keep the hostname) together with an empty extra-args string.
-     * @throws \RuntimeException When the URL is unsafe or unresolved.
-     */
+    
+
     public function pinHttpUrl(string $url): array
     {
         $this->validate($url);
@@ -211,10 +183,10 @@ final class SsrfGuard
             $headerHost = '[' . $headerHost . ']';
         }
 
-        // LIMITATION (documented): https URLs are returned untouched — TLS
-        // SNI/certificate validation requires the hostname. yt-dlp will follow
-        // passing through this guard. HTTP downloads are protected because the
-        // Full redirect-pinning for https would require a validating proxy and
+        
+        
+        
+        
         $extra = '--add-header ' . escapeshellarg('Host: ' . $headerHost . $port);
         return [$pinnedUrl, $extra];
     }
@@ -246,7 +218,7 @@ final class SsrfGuard
 
         if ($binary === str_repeat("\0", 16)) return true;
         if (substr($binary, 0, 15) === str_repeat("\0", 15) && $bytes[15] === 1) return true;
-        // ::ffff:0:0/96 — IPv4-mapped: validate the embedded IPv4 explicitly
+        
         if (substr($binary, 0, 12) === "\0\0\0\0\0\0\0\0\0\0\xff\xff") {
             return $this->isPrivateIpv4(substr($binary, 12, 4));
         }
@@ -282,10 +254,8 @@ final class SsrfGuard
         return preg_match('/^[\x00-\x7F]+$/D', $host) === 1;
     }
 
-    /**
-     * @return string|null The bare IP when $host is an IPv4 or IPv6 literal
-     * (brackets stripped), otherwise null.
-     */
+    
+
     private function extractIpLiteral(string $host): ?string
     {
         if (str_starts_with($host, '[') && str_ends_with($host, ']')) {

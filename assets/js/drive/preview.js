@@ -1,4 +1,4 @@
-/* MEeL Drive — Preview Modal (Video / Audio / Dokumen) */
+
 function openPreview(path, type, name) {
   var modal = document.getElementById("previewModal");
   var content = document.getElementById("previewContent");

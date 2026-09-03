@@ -4,10 +4,10 @@ class AdminActivityRepository
 {
     private \mysqli $conn;
 
-    /** @var array<int, string> */
+    
     private array $where_conditions = ['1=1'];
 
-    /** @var array<int, mixed> */
+    
     private array $params = [];
 
     private string $types = '';
@@ -19,10 +19,8 @@ class AdminActivityRepository
         $this->conn = $conn;
     }
 
-    /**
-     * Bangun filter WHERE dari parameter halaman (action, q, days).
-     * Harus dipanggil sebelum query count/fetch/export.
-     */
+    
+
     public function buildFilter(string $action_filter, string $search_q, int $days): void
     {
         $this->where_conditions = ['1=1'];
@@ -50,7 +48,7 @@ class AdminActivityRepository
         $this->where_sql = implode(' AND ', $this->where_conditions);
     }
 
-    /** Hapus log lebih lama dari N hari; kembalikan jumlah baris yang dihapus. */
+    
     public function clearOlderThan(int $days): int
     {
         $stmt = $this->conn->prepare('DELETE FROM activity_log WHERE created_at < NOW() - INTERVAL ? DAY');
@@ -69,13 +67,13 @@ class AdminActivityRepository
         return $deleted;
     }
 
-    /** Kosongkan semua log (TRUNCATE); kembalikan true jika berhasil. */
+    
     public function clearAll(): bool
     {
         return $this->conn->query('TRUNCATE TABLE activity_log') !== false;
     }
 
-    /** Total baris yang cocok dengan filter. */
+    
     public function countFiltered(): int
     {
         $stmt = $this->conn->prepare(
@@ -90,7 +88,7 @@ class AdminActivityRepository
         return $total;
     }
 
-    /** Baris halaman tertentu (pagination). */
+    
     public function fetchPage(int $limit, int $offset)
     {
         $stmt = $this->conn->prepare(
@@ -110,7 +108,7 @@ class AdminActivityRepository
         return $result;
     }
 
-    /** Semua baris yang cocok (untuk export). */
+    
     public function fetchAll(): array
     {
         $stmt = $this->conn->prepare(
@@ -133,7 +131,7 @@ class AdminActivityRepository
         return $rows;
     }
 
-    /** Daftar action unik untuk dropdown filter. */
+    
     public function getDistinctActions(): array
     {
         $actions = [];
@@ -146,7 +144,7 @@ class AdminActivityRepository
         return $actions;
     }
 
-    /** Statistik 7 hari terakhir: total & unique users. */
+    
     public function getWeeklyStats(): array
     {
         $res = $this->conn->query(

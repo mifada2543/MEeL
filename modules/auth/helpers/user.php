@@ -9,7 +9,7 @@ function get_user_usage(string $username): int|float
 }
 }
 
-/* @param \mysqli $conn Koneksi database; @param int $user_id ID user; @return string Role user ('admin', 'member', 'user', 'guest') */
+
 if (!function_exists('get_user_role')) {
 function get_user_role(mysqli $conn, int $user_id): string
 {
@@ -40,7 +40,7 @@ function get_user_role(mysqli $conn, int $user_id): string
 }
 }
 
-/* Invalidate role cache di session — panggil saat role user berubah. */
+
 if (!function_exists('invalidate_user_role_cache')) {
 function invalidate_user_role_cache(): void
 {
@@ -48,10 +48,8 @@ function invalidate_user_role_cache(): void
 }
 }
 
-/* Hapus akun guest non-aktif lalu reset AUTO_INCREMENT users (aksi admin & GC).
- * @param \mysqli $conn Koneksi database aktif
- * @return ?int Jumlah guest dihapus, atau null jika query gagal
- */
+
+
 if (!function_exists('purge_guest_users')) {
 function purge_guest_users(mysqli $conn): ?int
 {

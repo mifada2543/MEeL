@@ -89,13 +89,8 @@ function get_connection_protocol()
 }
 
 if (!function_exists('log_activity')) {
-    /**
-     * @param mysqli $conn Koneksi database
-     * @param int $user_id ID user (0 untuk guest)
-     * @param string $action Tipe aksi (login, logout, upload_video, etc)
-     * @param string $media_type Tipe media (video, music, books, user, dll) — opsional
-     * @param int|null $media_id ID media terkait — opsional
-     */
+    
+
     function log_activity(mysqli $conn, int $user_id, string $action, string $media_type = '', ?int $media_id = null): void
     {
         $ip = '0.0.0.0';

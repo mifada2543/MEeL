@@ -4,9 +4,9 @@ include '../auth/config.php';
 include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 include_once '../modules/core/activity_logger.php';
-// Guard terpusat: harus login + role admin
+
 require_admin($conn);
-// Konteks include untuk controllers/admin/admin_actions.php
+
 define('MEEL_ADMIN_CONTEXT', true);
 include '../controllers/admin/admin_actions.php';
 $msg      = $_GET['msg'] ?? '';
@@ -46,7 +46,7 @@ include __DIR__ . '/../partials/scripts.php';
     include 'header-admin.php';
     ?>
     <div class="max-w-4xl mx-auto px-4 md:px-8 py-8">
-        <!-- Header -->
+        
         <div class="flex items-center gap-4 mb-8">
             <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center shrink-0">
                 <i data-lucide="shield" class="w-5 h-5 text-purple-500"></i>
@@ -58,7 +58,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </p>
             </div>
         </div>
-        <!-- Alert Messages -->
+        
         <?php if ($msg === 'reset_ok' && $msg_user): ?>
             <div class="mb-6 p-4 rounded-2xl text-sm flex items-center gap-3 bg-green-500/10 text-green-400 border border-green-500/20">
                 <i data-lucide="check-circle" class="w-5 h-5"></i>
@@ -85,7 +85,7 @@ include __DIR__ . '/../partials/scripts.php';
                 Gagal mereset MFA. Coba lagi atau periksa database.
             </div>
         <?php endif; ?>
-        <!-- Info Card -->
+        
         <div class="glass p-5 rounded-2xl mb-6 border border-purple-500/10 space-y-2">
             <div class="flex items-start gap-3">
                 <i data-lucide="info" class="w-4 h-4 text-purple-400 mt-0.5"></i>
@@ -96,7 +96,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </div>
             </div>
         </div>
-        <!-- Users Table -->
+        
         <div class="glass rounded-2xl overflow-hidden">
             <div class="p-5 border-b border-white/5 bg-white/[0.02] flex items-center gap-2">
                 <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
@@ -162,7 +162,7 @@ include __DIR__ . '/../partials/scripts.php';
                 </div>
             <?php endif; ?>
         </div>
-        <!-- Back link -->
+        
         <div class="text-center mt-8">                <a href="." class="text-xs text-gray-600 hover:text-blue-500 transition inline-flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali ke Dashboard Admin
             </a>

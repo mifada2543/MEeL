@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* engine/transcode.js — Progres fase transcode HLS + sprite/VTT. */
+
+
+
+
 window.meelTcPct = function (pct, label) {
   var b = document.getElementById("meel-tc-bar");
   var t = document.getElementById("meel-tc-pct");
@@ -13,7 +13,7 @@ window.meelTcPct = function (pct, label) {
     if (s) s.classList.add("done");
   }
 };
-// Tangani progress sprite asli dari PHP dengan trickle effect
+
 window.meelSpPct = function (pct, label) {
   var b = document.getElementById("meel-sp-bar");
   var t = document.getElementById("meel-sp-pct");

@@ -1,5 +1,5 @@
 <?php
-/* @package MEeL\Exceptions */
+
 
 class DownloadException extends \RuntimeException
 {

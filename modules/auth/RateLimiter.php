@@ -1,9 +1,9 @@
 <?php
-/* @package MEeL\Modules */
+
 
 class RateLimiter
 {
-    /* Direktori penyimpanan file rate limit */
+    
     private static string $storageDir = '';
 
     private static array $limits = [
@@ -48,29 +48,22 @@ class RateLimiter
         return $data;
     }
 
-    /**
-     * @param int $baseLimit Limit dasar untuk user biasa
-     * @param string $role Role user ('member', 'user', dll)
-     * @return int Limit yang sudah disesuaikan dengan role
-     */
+    
+
     public static function getRoleLimit(int $baseLimit, string $role = 'user'): int
     {
         if ($role === 'member') {
             return $baseLimit * 2;
         }
-        // User, guest, dan role lain pakai limit dasar
+        
         return $baseLimit;
     }
 
-    /**
-     * @param string $key Identifier unik (misal: 'user_5', 'ip_192.168.1.1')
-     * @param string $endpoint Nama endpoint ('like', 'comment', 'api', etc.)
-     * @param string $role Role user ('admin', 'member', 'user'). Admin bebas limit, member 2x lipat.
-     * @return array ['allowed' => bool, 'remaining' => int, 'reset' => int, 'limit' => int]
-     */
+    
+
     public static function check(string $key, string $endpoint = 'api', string $role = 'user'): array
     {
-        // Admin bebas dari rate limiter
+        
         if ($role === 'admin') {
             $limitConfig = self::$limits[$endpoint] ?? self::$limits['api'];
             $window = $limitConfig['window'];
@@ -146,7 +139,7 @@ class RateLimiter
         return max(0, $maxRequests - $data['count']);
     }
 
-    /* @return int Jumlah file yang dibersihkan */
+    
     public static function cleanup(): int
     {
         self::init();
@@ -178,7 +171,7 @@ class RateLimiter
         return $cleaned;
     }
 
-    /* @return array ['endpoint' => ['key_count' => int, 'active' => int], ...] */
+    
     public static function getStats(): array
     {
         self::init();
@@ -214,7 +207,7 @@ class RateLimiter
         return $stats;
     }
 
-    /* Dapatkan konfigurasi limits untuk display. */
+    
     public static function getLimitsConfig(): array
     {
         return self::$limits;

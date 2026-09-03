@@ -67,20 +67,8 @@ if (PHP_SAPI !== 'cli' && !defined('MEEL_HDD_CHECKED')) {
     }
 }
 
-/**
- * Resolve base path storage Drive secara terpusat.
- *
- * Prioritas: konstanta MEEL_HDD_DRIVE (dari auth/settings.php) — konsisten
- * dengan modul Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD. Bila
- * konstanta belum didefinisikan (lingkungan lama / instalasi tanpa HDD
- * eksternal), fallback ke folder lokal <root>/data_drive agar tidak ada
- * breaking change.
- *
- * @param string|null $hddDriveOverride Untuk pengujian: simulasikan nilai
- * MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
- * konstanta sungguhan; '' = paksa fallback lokal.
- * @return string Base path TANPA trailing slash
- */
+
+
 if (!function_exists('meel_drive_base_path')) {
 function meel_drive_base_path(?string $hddDriveOverride = null): string
 {
@@ -92,11 +80,8 @@ function meel_drive_base_path(?string $hddDriveOverride = null): string
 }
 }
 
-/**
- * @param int $required_bytes Jumlah byte yang dibutuhkan
- * @param string $path Path untuk diperiksa (file atau direktori)
- * @return array ['ok' => bool, 'free' => float, 'required' => float, 'path' => string]
- */
+
+
 if (!function_exists('check_disk_space')) {
 function check_disk_space(int $required_bytes, string $path): array
 {
@@ -131,12 +116,8 @@ function check_disk_space(int $required_bytes, string $path): array
 }
 }
 
-/**
- * @param int $required_bytes Jumlah byte minimum yang diperlukan
- * @param string $path Path tujuan (folder HDD, RAM disk, dll)
- * @param string $label Label deskriptif (contoh: 'video storage', 'RAM disk')
- * @throws \RuntimeException Jika disk space tidak mencukupi
- */
+
+
 if (!function_exists('require_disk_space')) {
 function require_disk_space(int $required_bytes, string $path, string $label): void
 {
@@ -152,11 +133,8 @@ function require_disk_space(int $required_bytes, string $path, string $label): v
 }
 
 if (!function_exists('dir_size')) {
-/**
- * @param string $path Path direktori
- * @param int $cache_ttl Cache TTL dalam detik (default 300 = 5 menit)
- * @return float Ukuran dalam bytes, atau 0 jika gagal
- */
+
+
 function dir_size(string $path, int $cache_ttl = 300): float
 {
     $cache_key  = 'dirsize_' . md5($path);
@@ -198,7 +176,7 @@ function dir_size(string $path, int $cache_ttl = 300): float
 }
 
 if (!function_exists('invalidate_dir_size_cache')) {
-/* @param string $username Nama user */
+
 function invalidate_dir_size_cache(string $username): void
 {
     $userPath = meel_drive_base_path() . '/private_admins/' . $username;
@@ -214,7 +192,7 @@ function invalidate_dir_size_cache(string $username): void
 }
 
 if (!function_exists('meel_write_cache_file')) {
-/* @param string $path Path file cache; @param string $content Isi file */
+
 function meel_write_cache_file(string $path, string $content): void
 {
     $dir = dirname($path);
@@ -262,24 +240,8 @@ function log_drive_operation(int $userId, string $username, string $operation, s
 }
 }
 
-/**
- * Serve file media dari storage terpusat (MEEL_HDD_*_UPLOAD / folder lokal
- * fallback) — pengganti symlink webroot. Dipakai oleh endpoint per modul
- * (video/stream.php, music/stream.php, books/file.php) lewat internal
- * rewrite di .htaccess sehingga URL publik tetap `upload/...`.
- *
- * Keamanan:
- * - Path traversal ditolak (realpath harus di dalam base dir).
- * - Whitelist ekstensi per tipe media.
- * - Range request didukung (penting untuk HLS .ts & video mp4).
- * - Opsional referer gate untuk HLS video (anti hotlink, pola sama dengan
- * .htaccess storage HDD lama: file di bawah /video/upload/video/ hanya
- * boleh diminta dari halaman watch/index video MEeL).
- *
- * @param string $module 'video' | 'music' | 'books'
- * @param string $relPath Path relatif terhadap base dir (mis. 'video/xxx/xxx.m3u8')
- * @param array  $opts    ['hls_gate' => bool] aktifkan referer gate untuk HLS
- */
+
+
 if (!function_exists('meel_serve_media_file')) {
 function meel_serve_media_file(string $module, string $relPath, array $opts = []): void
 {
@@ -330,8 +292,8 @@ function meel_serve_media_file(string $module, string $relPath, array $opts = []
     ];
     $mime = $mimeMap[$ext] ?? 'application/octet-stream';
 
-    // Referer gate untuk HLS video (anti hotlink / anti unduh langsung)
-    // (path HLS diawali `video/...`, tanpa slash depan)
+    
+    
     if (!empty($opts['hls_gate']) && (str_starts_with($relPath, 'video/') || str_contains($relPath, '/video/'))) {
         $referer = $_SERVER['HTTP_REFERER'] ?? '';
         $host    = $_SERVER['HTTP_HOST'] ?? '';

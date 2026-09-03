@@ -28,7 +28,7 @@ body {
     margin: 0 auto;
   }
 }
-/* Score pulse animation */
+
 @keyframes score-pop {
   0% { transform: scale(1); }
   50% { transform: scale(1.15); }
@@ -37,11 +37,11 @@ body {
 .score-pop {
   animation: score-pop 0.2s ease;
 }
-/* Game over overlay */
+
 #gameOverScreen {
   transition: opacity 0.3s ease;
 }
-/* Custom scrollbar */
+
 ::-webkit-scrollbar {
   width: 6px;
 }

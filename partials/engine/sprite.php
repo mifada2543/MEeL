@@ -1,6 +1,6 @@
 <?php
 ?>
-<!-- FASE: SPRITE / VTT -->
+
 <div class="meel-phase" id="meel-phase-sprite">
   <div style="display:flex;align-items:center;gap:8px">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2">

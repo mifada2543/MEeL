@@ -53,8 +53,8 @@ register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
-// Hitung sisa kuota upload per jam
-// Konsisten dengan System::checkRateLimit(): member mendapat 2x lipat (4/jam).
+
+
 $upload_max = get_upload_hourly_limit($user_role);
 $quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
 $quota_music_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'music');
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     } elseif ($is_busy) {
         $message = 'busy';
     } else {
-        // Rate limit check (sama seperti Uploader.php)
+        
         $type        = $_POST['type'] ?? '';
         $limit_table = ($type === 'music') ? 'music' : 'video';
         $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
@@ -86,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
 
-                // Download selesai → encode musik langsung di halaman ini
-                // (tanpa navigasi ke post_encode.php yang diblokir .htaccess).
+                
+                
                 if (is_string($message) && str_starts_with($message, 'ENCODE_MUSIC:')) {
                     $temp_file = substr($message, strlen('ENCODE_MUSIC:'));
 
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     exit;
                 }
 
-                // Fallback: redirect ke post_encode.php via meta refresh
+                
                 if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
                     $target = substr($message, strlen('REDIRECT:'));
                     while (ob_get_level()) {
@@ -213,14 +213,14 @@ include __DIR__ . '/partials/scripts.php';
 
 <body class="min-h-screen flex flex-col">
 
-    <!-- MEeL Engine Overlay (dari ui.php) -->
+    
     <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
         <?php include 'partials/ui.php'; ?>
     <?php endif; ?>
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
 
-            <!-- Masthead -->
+            
             <div class="masthead">
                 <a href="./" class="masthead-logo">
                     <img src="assets/MEeL.png" alt="MEeL">
@@ -238,7 +238,7 @@ include __DIR__ . '/partials/scripts.php';
                 </div>
             </div>
 
-            <!-- Admin bar -->
+            
             <?php if ($is_admin): ?>
                 <div class="admin-bar">
                     <span class="admin-badge">
@@ -261,12 +261,12 @@ include __DIR__ . '/partials/scripts.php';
                     </a>
                 </div>
             <?php endif; ?>
-            <!-- Main grid -->
+            
             <div class="page-grid">
 
-                <!-- LEFT: Form -->
+                
                 <div>
-                    <!-- Alert banners -->
+                    
                     <?php if ($message === 'success'): ?>
                         <div class="alert-banner alert-success">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px">
@@ -315,7 +315,7 @@ include __DIR__ . '/partials/scripts.php';
                         </div>
                     <?php endif; ?>
                     <div class="form-card">
-                        <!-- Card header -->
+                        
                         <div class="form-card-header">
                             <div>
                                 <div style="font-family:var(--font-mono);font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;">
@@ -325,7 +325,7 @@ include __DIR__ . '/partials/scripts.php';
                                     Download & <span style="color:#3b82f6;">Process</span>
                                 </div>
                             </div>
-                            <!-- Server status chip -->
+                            
                             <div class="queue-chip" style="<?= $is_busy
                                                                 ? 'background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);color:#f97316;'
                                                                 : 'background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#22c55e;' ?>">
@@ -334,13 +334,13 @@ include __DIR__ . '/partials/scripts.php';
                             </div>
                         </div>
 
-                        <!-- Card body / form -->
+                        
                         <div class="form-card-body">
                             <form method="POST" onsubmit="return startAdvancedUpload(this)" style="display:flex;flex-direction:column;gap:1.25rem;">
                                 <?php if (isset($_SESSION['csrf_token'])): ?>
                                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <?php endif; ?>
-                                <!-- URL input -->
+                                
                                 <div>
                                     <label class="f-label">URL Sumber</label>
                                     <div class="url-wrap">
@@ -353,7 +353,7 @@ include __DIR__ . '/partials/scripts.php';
                                     <div id="url-preview" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);font-family:var(--font-mono);font-size:.65rem;color:#60a5fa;word-break:break-all;"></div>
                                 </div>
 
-                                <!-- Type selector -->
+                                
                                 <div>
                                     <label class="f-label">Tipe Media</label>
                                     <div class="type-grid">
@@ -376,7 +376,7 @@ include __DIR__ . '/partials/scripts.php';
                                     </div>
                                 </div>
 
-                                <!-- Submit -->
+                                
                                 <button type="submit" class="submit-btn" id="submit-btn"
                                     <?= $is_busy ? 'disabled' : '' ?>>
                                     <i data-lucide="download-cloud" style="width:16px;height:16px;"></i>
@@ -386,7 +386,7 @@ include __DIR__ . '/partials/scripts.php';
                         </div>
                     </div>
 
-                    <!-- Tips card -->
+                    
                     <div class="entry" style="margin-top:1rem;padding:1.5rem 1.75rem;">
                         <div style="font-family:var(--font-mono);font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -417,9 +417,9 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- RIGHT: Sidebar -->
+                
                 <aside>
-                    <!-- Server status card -->
+                    
                     <div class="side-card">
                         <div class="side-card-header">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -450,7 +450,7 @@ include __DIR__ . '/partials/scripts.php';
                                 </span>
                             </div>
 
-                            <!-- Quota bar -->
+                            
                             <div style="height:1px;background:var(--border);"></div>
                             <div>
                                 <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">
@@ -496,7 +496,7 @@ include __DIR__ . '/partials/scripts.php';
                         </div>
                     </div>
 
-                    <!-- Supported sources card -->
+                    
                     <div class="side-card">
                         <div class="side-card-header">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -524,7 +524,7 @@ include __DIR__ . '/partials/scripts.php';
                         </div>
                     </div>
 
-                    <!-- Output format card -->
+                    
                     <div class="side-card">
                         <div class="side-card-header">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -554,7 +554,7 @@ include __DIR__ . '/partials/scripts.php';
                         </div>
                     </div>
 
-                    <!-- Nav links -->
+                    
                     <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
                         <a href="./" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

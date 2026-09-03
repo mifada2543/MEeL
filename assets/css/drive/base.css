@@ -1,5 +1,5 @@
-/* base.css — Variabel, reset, body, scrollbar, tipografi */
-/* CSS Variables */
+
+
 :root {
   --bg-base: #07090f;
   --bg-main: #0b0f1a;
@@ -19,11 +19,11 @@
   --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-head: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
 }
-/* Reset */
+
 * {
   box-sizing: border-box;
 }
-/* Body */
+
 body {
   font-family: var(--font-body);
   background: var(--bg-base);
@@ -33,7 +33,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* Heading */
+
 .syne,
 h1,
 h2,
@@ -41,7 +41,7 @@ h3,
 h4 {
   font-family: var(--font-head);
 }
-/* Scrollbar */
+
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -55,14 +55,14 @@ h4 {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
-/* Glass / Frosted */
+
 .glass {
   background: rgba(22, 27, 42, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-soft);
 }
-/* Selection */
+
 ::selection {
   background: rgba(59, 130, 246, 0.3);
   color: #fff;

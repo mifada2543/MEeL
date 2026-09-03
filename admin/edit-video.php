@@ -210,7 +210,7 @@ include __DIR__ . '/../partials/link.php';
 <body class="theme-video">
     <div class="page-wrap">
 
-        <!-- Top nav -->
+        
         <?php
         $page_title = 'Edit Video';
         $media_type = 'video';
@@ -218,11 +218,11 @@ include __DIR__ . '/../partials/link.php';
         ?>
         <div class="edit-layout">
 
-            <!-- LEFT: Sidebar -->
+            
             <aside class="sidebar-panel">
-                <!-- Thumbnail — klik atau drag untuk ganti -->
+                
                 <div class="thumb-wrap" id="thumb-wrap">
-                    <!-- File input (ID: thumb-file-hidden) -->
+                    
                     <img src="<?= $thumb_src ?>"
                         alt="Thumbnail <?= htmlspecialchars($video['title']) ?>"
                         class="thumb-img"
@@ -237,7 +237,7 @@ include __DIR__ . '/../partials/link.php';
                     <span class="thumb-changed-badge" id="thumb-changed-badge">✓ Baru</span>
                 </div>
 
-                <!-- Uploader card -->
+                
                 <div class="uploader-card">
                     <?php if (!empty($video['uploader_pfp'])): ?>
                         <img src="../profile/upload/<?= htmlspecialchars($video['uploader_pfp']) ?>"
@@ -255,7 +255,7 @@ include __DIR__ . '/../partials/link.php';
                     <div class="uploader-role-badge"><?= $is_admin && !$is_owner ? 'Admin Edit' : 'Uploader' ?></div>
                 </div>
 
-                <!-- Meta rows -->
+                
                 <div class="meta-info">
                     <div class="meta-row">
                         <div class="meta-row-icon">
@@ -277,7 +277,7 @@ include __DIR__ . '/../partials/link.php';
                     </div>
                 </div>
 
-                <!-- Stats -->
+                
                 <div class="stats-strip">
                     <div class="stat-chip">
                         <div class="stat-number"><?= number_format($video['views'] ?? 0) ?></div>
@@ -293,7 +293,7 @@ include __DIR__ . '/../partials/link.php';
                     </div>
                 </div>
 
-                <!-- Nav buttons -->
+                
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;">
                     <a href="<?= base_url('/video/watch?id=' . (int)$id) ?>" class="btn-secondary" style="justify-content:center;">
                         <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Lihat Video
@@ -310,7 +310,7 @@ include __DIR__ . '/../partials/link.php';
                 </div>
             </aside>
 
-            <!-- RIGHT: Form panel -->
+            
             <section class="form-panel">
                 <div class="form-header">
                     <div>
@@ -337,7 +337,7 @@ include __DIR__ . '/../partials/link.php';
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                         <input type="file" name="thumbnail" accept="image/*" id="thumb-file-hidden" style="display:none">
                     <?php endif; ?>
-                    <!-- Judul -->
+                    
                     <div class="field-group">
                         <label class="field-label" for="f-title">Judul Video</label>
                         <input type="text" id="f-title" name="title" placeholder="Masukkan judul video..."
@@ -346,7 +346,7 @@ include __DIR__ . '/../partials/link.php';
                             oninput="document.getElementById('sidebar-title').textContent = this.value || '—'">
                     </div>
 
-                    <!-- Deskripsi — mengisi sisa ruang -->
+                    
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description"
@@ -354,7 +354,7 @@ include __DIR__ . '/../partials/link.php';
                             class="field-input" style="flex:1;min-height:120px;resize:none;"><?= htmlspecialchars($video['description'] ?? '') ?></textarea>
                     </div>
 
-                    <!-- Subtitle existing — DI LUAR form utama agar tidak nested form -->
+                    
                     <div class="field-group" style="gap:10px;">
                         <label class="field-label">Subtitle</label>
                         <?php if (!empty($existing_subtitles)): ?>
@@ -381,10 +381,10 @@ include __DIR__ . '/../partials/link.php';
                             <div style="font-size:10px;color:#455060;">Belum ada subtitle untuk video ini.</div>
                         <?php endif; ?>
                     </div>
-                    <!-- Subtitle upload (di dalam form utama) — paling bawah setelah deskripsi -->
+                    
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <label class="field-label">Upload / Ganti Subtitle</label>
-                        <!-- Subtitle file — drop zone memanjang satu baris penuh -->
+                        
                         <div class="drop-zone-subtitle" id="subtitle-zone">
                             <input type="file" name="subtitle" accept=".vtt,.srt"
                                 id="f-subtitle" onchange="handleSubtitleFile(this)" aria-label="Pilih file subtitle (VTT atau SRT)">
@@ -397,7 +397,7 @@ include __DIR__ . '/../partials/link.php';
                             </div>
                         </div>
 
-                        <!-- Bahasa subtitle — custom dropdown ala books/read.php -->
+                        
                         <div class="field-group" id="subtitle-lang-wrap" style="display:none;">
                             <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
                             <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
@@ -419,7 +419,7 @@ include __DIR__ . '/../partials/link.php';
                         <div style="font-size:9px;color:#455060;">SRT dikonversi otomatis ke VTT</div>
                     </div>
 
-                    <!-- Actions -->
+                    
                     <div class="form-actions">
                         <button type="submit" name="update" id="btn-save" class="btn-primary">
                             <i data-lucide="save" style="width:15px;height:15px;"></i>

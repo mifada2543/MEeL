@@ -14,7 +14,7 @@
     'load-more.js',
     'index.js'
   ];
-  // Used by view-router.js to reload bundle once per session.
+  
   window.MEEL_INDEX_BUNDLE = {
     base: base,
     qs: qs,

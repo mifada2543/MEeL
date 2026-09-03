@@ -1,8 +1,8 @@
 <?php
-/** auth/partials/auth_footer.php — copyright + JS toggle password + closing tags
- * Digunakan oleh: auth/login.php, auth/register.php */
+
+
 ?>
-<!-- Copyright -->
+
 <p class="text-center text-[10px] text-gray-300 mt-8 uppercase tracking-[0.3em]">©MEeL - 2025</p>
 </main>
 

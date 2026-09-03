@@ -1,15 +1,13 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/* @coversNothing */
+/**
+ * @coversNothing
+ */
 class BootstrapTest extends TestCase
 {
-    /**
-     * @param string $remoteAddr Nilai $_SERVER['REMOTE_ADDR']
-     * @param string $serverName Nilai $_SERVER['SERVER_NAME']
-     * @param string $prelude Kode PHP yang dijalankan SEBELUM require bootstrap
-     * @return array{0: string, 1: bool} [MEEL_ENV, APP_DEBUG(bool)]
-     */
+    
+
     private function probe(string $remoteAddr, string $serverName, string $prelude = ''): array
     {
         $bootstrap = realpath(__DIR__ . '/../../modules/core/bootstrap.php');

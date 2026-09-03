@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* watch/main.js — Entry point folder watch/ (halaman music/watch.php). */
+
+
+
+
 (function () {
   "use strict";
   var src =
@@ -22,8 +22,8 @@
     "mini-player.js",
     "player-core.js",
   ];
-  // Dipakai oleh assets/js/shared/view-router.js supaya bundle ini bisa
-  // dimuat ulang (SEKALI per page-session) tanpa duplikasi daftar file.
+  
+  
   window.MEEL_WATCH_BUNDLE = {
     base: base,
     qs: qs,

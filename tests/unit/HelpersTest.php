@@ -1,12 +1,16 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/* @coversNothing */
+/**
+ * @coversNothing
+ */
 class HelpersTest extends TestCase
 {
-    // format_bytes()
+    
 
-    /** @dataProvider bytesProvider */
+    /**
+     * @dataProvider bytesProvider
+     */
     public function testFormatBytes(int|float $bytes, int $precision, string $expected): void
     {
         $this->assertSame($expected, format_bytes($bytes, $precision));
@@ -27,9 +31,11 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // time_ago()
+    
 
-    /** @dataProvider timeAgoProvider */
+    /**
+     * @dataProvider timeAgoProvider
+     */
     public function testTimeAgo(int $secondsAgo, string $expectedRegex): void
     {
         $timestamp = time() - $secondsAgo;
@@ -50,9 +56,11 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // get_audio_mime_type()
+    
 
-    /** @dataProvider mimeTypeProvider */
+    /**
+     * @dataProvider mimeTypeProvider
+     */
     public function testGetAudioMimeType(string $ext, string $expected): void
     {
         $this->assertSame($expected, get_audio_mime_type($ext));
@@ -72,9 +80,11 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // get_audio_format_label()
+    
 
-    /** @dataProvider formatLabelProvider */
+    /**
+     * @dataProvider formatLabelProvider
+     */
     public function testGetAudioFormatLabel(string $ext, string $expected): void
     {
         $this->assertSame($expected, get_audio_format_label($ext));
@@ -92,9 +102,11 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // get_audio_format_description()
+    
 
-    /** @dataProvider formatDescriptionProvider */
+    /**
+     * @dataProvider formatDescriptionProvider
+     */
     public function testGetAudioFormatDescription(string $ext, string $expectedContains): void
     {
         $result = get_audio_format_description($ext);
@@ -113,7 +125,7 @@ class HelpersTest extends TestCase
         ];
     }
 
-    // detectProtocol()
+    
 
     public function testDetectProtocolDefaultHttp(): void
     {
@@ -128,24 +140,24 @@ class HelpersTest extends TestCase
         $protocol = detectProtocol();
         $this->assertSame('http', $protocol);
 
-        // Restore
+        
         if ($origHttps !== null) $_SERVER['HTTPS'] = $origHttps;
         if ($origForwardedProto !== null) $_SERVER['HTTP_X_FORWARDED_PROTO'] = $origForwardedProto;
     }
 
-    // base_url()
+    
 
     public function testBaseUrl(): void
     {
-        // Use the constant if defined, otherwise path from SCRIPT_NAME
+        
         $result = base_url('index.php');
         $this->assertStringEndsWith('index.php', $result);
 
-        // base_url() without args always ends with /
+        
         $result2 = base_url();
         $this->assertStringEndsWith('/', $result2);
 
-        // Verify path concatenation
+        
         $result3 = base_url('css/style.css');
         $this->assertStringEndsWith('/css/style.css', $result3);
     }
@@ -173,7 +185,7 @@ class HelpersTest extends TestCase
         $this->assertSame($expected . '/auth/login.php?next=x', trim($output[0]));
     }
 
-    // check_disk_space()
+    
 
     public function testCheckDiskSpaceOnExistingPath(): void
     {
@@ -194,11 +206,11 @@ class HelpersTest extends TestCase
         $this->assertArrayHasKey('path', $result);
     }
 
-    // CSRF functions
+    
 
     public function testCsrfTokenFunctions(): void
     {
-        // Simulate session
+        
         $_SESSION['csrf_token'] = 'test_token_123';
         $this->assertSame('test_token_123', get_csrf_token());
 
@@ -206,7 +218,7 @@ class HelpersTest extends TestCase
         $this->assertFalse(verify_csrf_token('wrong_token'));
     }
 
-    // dir_size()
+    
 
     public function testDirSizeOnNonExistentPath(): void
     {
@@ -223,27 +235,27 @@ class HelpersTest extends TestCase
         }
         file_put_contents($testDir . '/test.txt', str_repeat('A', 100));
 
-        $size = dir_size($testDir, 1); // 1 second TTL to avoid cache issues
+        $size = dir_size($testDir, 1); 
         $this->assertGreaterThan(0, $size);
 
-        // Cleanup
+        
         @unlink($testDir . '/test.txt');
         @rmdir($testDir);
     }
 
-    // generate_search_metadata()
+    
     public function testGenerateSearchMetadataWithAliases(): void
     {
-        // Bagian romaji ('purojekutosekai') dihasilkan MeCab — skip bila mecab
-        // tidak tersedia (mis. CI runner); bagian alias/kamus tetap diuji.
+        
+        
         if (!function_exists('meel_mecab_available') || !meel_mecab_available()) {
             $this->markTestSkipped('mecab tidak tersedia — bagian romaji di-skip');
         }
         $result = generate_search_metadata('プロジェクトセカイ カラフルステージ!');
         $this->assertStringContainsString('project sekai', $result);
         $this->assertStringContainsString('colorful stage', $result);
-        $this->assertStringContainsString('purojekutosekai', $result); // romaji
-        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);   // lowercase
+        $this->assertStringContainsString('purojekutosekai', $result); 
+        $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);   
     }
 
     public function testGenerateSearchMetadataPlainText(): void
@@ -253,7 +265,7 @@ class HelpersTest extends TestCase
         $this->assertSame(mb_strtolower($result, 'UTF-8'), $result);
     }
 
-    // lang_map() / lang_label() + alias subtitle_lang_map()/subtitle_lang_label()
+    
 
     public function testLangMapHasAllLanguages(): void
     {
@@ -268,7 +280,7 @@ class HelpersTest extends TestCase
     public function testLangLabelKnownLanguage(): void
     {
         $this->assertSame('Indonesia', lang_label('id'));
-        $this->assertSame('English', lang_label('EN')); // case-insensitive
+        $this->assertSame('English', lang_label('EN')); 
         $this->assertSame('日本語', lang_label('ja'));
     }
 
@@ -292,5 +304,5 @@ class HelpersTest extends TestCase
         $this->assertSame(lang_label('pt-br'), subtitle_lang_label('pt-br'));
     }
 
-    // get_user_role() requires DB, skip basic test
+    
     }

@@ -1,5 +1,5 @@
 <?php
-/* @package MEeL\Exceptions */
+
 
 class ProcessException extends \RuntimeException
 {

@@ -1,9 +1,9 @@
-// Test harness — menjalankan file JS shared di lingkungan browser mock
-// (window/document/Blob/URL), lalu mencetak JSON hasil observasi untuk
-// ditegaskan oleh tests/unit/SharedJsTest.php.
 
-// Pemakaian: node tests/js/download-backup-codes.harness.js [scenario]
-// normal (default) | empty | unset | noUser | keys
+
+
+
+
+
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -63,7 +63,7 @@ sandbox.window = sandbox;
 vm.createContext(sandbox);
 
 if (scenario === 'keys') {
-  // Jalankan state-keys.js dan verifikasi nilai + freeze secara runtime.
+  
   const keysFile = path.join(root, 'assets', 'js', 'shared', 'state-keys.js');
   vm.runInContext(fs.readFileSync(keysFile, 'utf8'), sandbox, { filename: 'state-keys.js' });
 
@@ -93,10 +93,10 @@ if (scenario === 'normal') {
   sandbox.window._meelBackupUser = 'alice';
 } else if (scenario === 'noUser') {
   sandbox.window._meelBackupCodes = ['111111'];
-  // _meelBackupUser tidak di-set -> fallback 'user'
+  
 } else if (scenario === 'empty') {
   sandbox.window._meelBackupCodes = [];
-} // 'unset' -> _meelBackupCodes tidak pernah di-set
+} 
 
 sandbox.downloadBackupCodes();
 

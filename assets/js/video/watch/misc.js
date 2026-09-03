@@ -1,4 +1,4 @@
-/* misc.js — Util kecil: toggle deskripsi video, update parameter */
+
 document.addEventListener("keydown", (e) => {
   if (window.meelKeyShortcutIgnored?.(e)) return;
   const n = e.key.toLowerCase();

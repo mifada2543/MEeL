@@ -1,10 +1,10 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* mini-player.js — Mode mini-player music (Spotify-style) untuk */
-// Track state paused terakhir untuk update ikon play/pause
+
+
+
+
+
 let _mpPrevPaused = null;
-// Update UI mini-player
+
 window.updateMiniPlayerUI = function () {
   if (!isMiniPlayerActive) return;
   miniEls ||
@@ -27,7 +27,7 @@ window.updateMiniPlayerUI = function () {
     n && (n.textContent = formatTime(player.currentTime)),
     a && (a.textContent = formatTime(player.duration)));
 };
-// Toggle mini-player
+
 window.toggleMiniPlayer = async function () {
   const e = document.getElementById("player-container"),
     t = document.querySelector(
@@ -37,10 +37,10 @@ window.toggleMiniPlayer = async function () {
     a = n?.nextElementSibling;
   if (isMiniPlayerActive)
     ((isMiniPlayerActive = !1),
-      // Keluar dari mode mini-player — one-shot yang di-arm saat masuk
-      // mini-mode tidak boleh nyangkut ke navigasi AJAX berikutnya di
-      // dokumen yang sama (auto-next / pindah lagu) padahal user sudah
-      // kembali ke full-player.
+      
+      
+      
+      
       (skipResumeModalOnce = !1),
       e && ((e.style.maxHeight = ""), (e.style.overflow = "")),
       document
@@ -57,6 +57,10 @@ window.toggleMiniPlayer = async function () {
         )),
       n?.classList.add("lg:col-span-2", "space-y-5"),
       a && (a.style.display = "block"),
+      
+      
+      typeof window.meelRebuildCommentPreview === "function" &&
+        window.meelRebuildCommentPreview(),
       window.history.pushState({}, "", watchUrl));
   else {
     ((isMiniPlayerActive = !0),
@@ -78,7 +82,7 @@ window.toggleMiniPlayer = async function () {
 setInterval(() => {
   isMiniPlayerActive && saveAudioState();
 }, 5e3);
-// Kontrol mini-player
+
 window.miniPlayPause = function () {
   player &&
     (window.meelHealthAlertActive ||
@@ -99,7 +103,7 @@ window.miniNext = function () {
   else {
     const e = document.querySelector(".rekomendasi-item");
     if (e) window.location.href = e.href;
-    else isNavigating = false; // reset jika tidak ada tujuan
+    else isNavigating = false; 
   }
 };
 window.miniPrev = function () {
@@ -113,26 +117,26 @@ window.miniPrev = function () {
 };
 window.goBackToLibrary = function () {
   saveAudioState();
-  // Reset flag mode mini-player watch. Tanpa ini, interval
-  // saveAudioState() (5s) yang di-guard `isMiniPlayerActive` TETAP BERJALAN
-  // setelah pindah ke view index dan menimpa meel_audio_state dengan lagu
-  // lama setiap 5 detik — persis sumber "state audio berbeda" di HP.
+  
+  
+  
+  
   isMiniPlayerActive = false;
-  // Meninggalkan view watch — one-shot in-memory dari mode mini-player
-  // TIDAK boleh bocor ke navigasi berikutnya di dokumen yang sama
-  // (mis. balik ke index lalu expand lagi). Buang.
+  
+  
+  
   skipResumeModalOnce = false;
   var playlistId = window.MEEL_MUSIC_CONFIG?.playlistId;
-  // Route bersih: dari /music/watch, beranda = '/music/beranda' (relative
-  // '..' justru naik ke root → hub — sudah dibuktikan resolve-nya salah).
+  
+  
   var url =
     playlistId && playlistId > 0
       ? "beranda?playlist_id=" + playlistId
       : "beranda";
   if (window.meelNavigateView) {
-    // AJAX partial-swap: audio-engine (dgn <audio> yg sedang berjalan)
-    // TIDAK disentuh sama sekali di sini — cuma direparent oleh
-    // engine.mount() setelah DOM index.php siap. TIDAK ADA player.destroy().
+    
+    
+    
     window.meelNavigateView(url, "index", {
       onAfterSwap: function () {
         var engine = window.meelGetAudioEngine();
@@ -142,7 +146,7 @@ window.goBackToLibrary = function () {
       },
     });
   } else {
-    // Fallback kalau view-router.js entah kenapa gagal dimuat.
+    
     window.location.href = url;
   }
 };

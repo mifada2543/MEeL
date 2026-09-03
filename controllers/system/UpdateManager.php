@@ -1,5 +1,5 @@
 <?php
-/* UpdateManager Menangani aksi admin: simpan sidebar_settings & CRUD update entry. */
+
 class UpdateManager
 {
     private mysqli $db;
@@ -69,7 +69,7 @@ class UpdateManager
             $date = date('Y-m-d');
         }
 
-        // PREPARED STATEMENT untuk keamanan SQL Injection
+        
         $stmt = $this->db->prepare(
             "INSERT INTO updates (version, content, created_at) VALUES (?, ?, ?)"
         );

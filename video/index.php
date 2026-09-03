@@ -41,7 +41,7 @@ $__v = function($f) {
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR -->
+    
     <nav class="meel-nav sticky top-0 z-50" style="border-bottom:1px solid var(--meel-nav-border)">
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="Kembali ke MEeL HUB">
@@ -106,15 +106,15 @@ $__v = function($f) {
             </span>
         </div>
 
-        <!-- Catatan: offset load_more sesuai $limit_init (8), bukan 10 -->
+        
         <div id="video-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5" title="Muat lebih banyak">
             <?php if ($data && $data->num_rows > 0): ?>
                 <?php while ($v = $data->fetch_assoc()): ?>
                     <?php include 'video_card.php'; ?>
                 <?php endwhile; ?>
             <?php else: ?>
-                <!-- Empty state: pesan membentang penuh di grid, gaya sama
-                     dengan modul music (index.php) -->
+                
+
                 <div class="col-span-full py-16 text-center text-[10px] text-gray-700 uppercase tracking-widest">
                     Video tidak ditemukan.
                 </div>

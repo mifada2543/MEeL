@@ -9,12 +9,8 @@ class MediaAdminRepository
         $this->conn = $conn;
     }
 
-    /**
-     * Ambil record media (video atau music) + data uploader.
-     *
-     * @param string $media_type 'video' | 'music'
-     * @return array|null
-     */
+    
+
     public function getMedia(string $media_type, int $id): ?array
     {
         $table = $media_type === 'music' ? 'music' : 'video';
@@ -33,7 +29,7 @@ class MediaAdminRepository
         return $row ?: null;
     }
 
-    /** Update record video. */
+    
     public function updateVideo(int $id, string $title, string $description, string $thumbnail, string $search_metadata): bool
     {
         $stmt = $this->conn->prepare(
@@ -45,7 +41,7 @@ class MediaAdminRepository
         return $ok;
     }
 
-    /** Update record music. */
+    
     public function updateMusic(int $id, string $title, string $artist, string $album, string $description, string $thumbnail, string $search_metadata): bool
     {
         $stmt = $this->conn->prepare(

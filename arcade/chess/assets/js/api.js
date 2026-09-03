@@ -1,4 +1,4 @@
-// Helpers auth: kirim token CSRF & tangani 401
+
 function csrfToken() {
   return window.MEEL_CSRF || "";
 }
@@ -88,7 +88,7 @@ export async function sendGameActionAPI(roomCode, action, extra = {}) {
   const form = new FormData();
   form.append("room", roomCode);
   form.append("action", action);
-  // Field tambahan (mis. color + reason untuk event game_over).
+  
   for (const [key, value] of Object.entries(extra)) form.append(key, value);
   form.append("csrf_token", csrfToken());
   const res = await fetch("controller/game_action.php", {

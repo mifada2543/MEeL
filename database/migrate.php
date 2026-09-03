@@ -45,7 +45,7 @@ $migrations = [
     ],
     3 => [
         'description' => 'Catatan: db_version dibuat otomatis oleh runner',
-        'sql' => [], // runner sudah buat db_version otomatis
+        'sql' => [], 
     ],
     4 => [
         'description' => 'Tambah FK constraint untuk tabel tanpa referensi',
@@ -142,7 +142,7 @@ $migrations = [
                     AND g1.username = g2.username");
             },
             function ($conn) {
-                // Step 2: Reset AUTO_INCREMENT agar tidak ada gap besar
+                
                 $result = $conn->query("SELECT COALESCE(MAX(id), 0) + 1 AS new_ai FROM users");
                 if ($result) {
                     $row = $result->fetch_assoc();
@@ -151,7 +151,7 @@ $migrations = [
                 }
             },
             function ($conn) {
-                // Step 3: Tambah UNIQUE KEY pada kolom username
+                
                 $result = $conn->query("ALTER TABLE users ADD UNIQUE INDEX idx_username_unique (username)");
                 if (!$result) {
                     $err = $conn->error;
@@ -181,7 +181,7 @@ $migrations = [
                 }
             },
             function ($conn) {
-                // Step 3: Sync default values users table
+                
                 $conn->query("ALTER TABLE users ALTER COLUMN is_active SET DEFAULT 0");
             },
             function ($conn) {
@@ -191,7 +191,7 @@ $migrations = [
                 $conn->query("ALTER TABLE users ALTER COLUMN last_page SET DEFAULT 'Index'");
             },
             function ($conn) {
-                // Step 4: Sync default value activity_log table
+                
                 $conn->query("ALTER TABLE activity_log ALTER COLUMN ip_address SET DEFAULT 'Unknown'");
             },
         ],
@@ -243,7 +243,7 @@ $migrations = [
         'description' => 'Perbaiki unique key tabel interactions — pisah jadi (user_id, video_id) & (user_id, music_id) karena NULL di unique key gabungan tidak mencegah duplikat',
         'sql' => [
             function ($conn) {
-                // Sisakan baris dengan id terbesar.
+                
                 $conn->query("DELETE i1 FROM interactions i1
                     INNER JOIN interactions i2
                     WHERE i1.id < i2.id
@@ -262,7 +262,7 @@ $migrations = [
                     AND i2.music_id IS NOT NULL");
             },
             function ($conn) {
-                // Step 3: Drop unique key lama (jika masih ada)
+                
                 $result = $conn->query("ALTER TABLE interactions DROP INDEX unique_interaction");
                 if (!$result) {
                     $err = $conn->error;

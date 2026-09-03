@@ -1,10 +1,12 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/** @covers System */
+/**
+ * @covers System
+ */
 class SystemTest extends TestCase
 {
-    // Cache path overridden via phpunit.xml (MEEL_SERVER_STATS_CACHE).
+    
     private static function cacheFile(): string
     {
         return MEEL_ROOT . '/' . ltrim(MEEL_SERVER_STATS_CACHE, '/');
@@ -20,9 +22,9 @@ class SystemTest extends TestCase
         $this->db = new DbTestHelper();
         $this->system = new System($this->db->getConnection());
 
-        // Mulai dari cache bersih agar deterministik. clearstatcache() penting:
-        // phpunit berjalan satu proses, dan PHP me-cache hasil stat file
-        // (tanpa ini, file_exists bisa mengembalikan hasil lama).
+        
+        
+        
         clearstatcache();
         if (file_exists(self::cacheFile())) {
             @unlink(self::cacheFile());
@@ -68,9 +70,9 @@ class SystemTest extends TestCase
         $this->assertIsNumeric($stats['ram']['total']);
         $this->assertMatchesRegularExpression('/^\d+d \d+h \d+m$/', $stats['uptime']['text']);
 
-        // Bila ada interface non-loopback, total network harus terbaca
-        // (regresi regex lama hanya cocok interface bernama eth/ens/enp/wlan
-        // tanpa suffix angka → selalu 0).
+        
+        
+        
         $hasNonLo = false;
         $net_lines = @file('/proc/net/dev');
         if ($net_lines) {
@@ -96,7 +98,7 @@ class SystemTest extends TestCase
         $mtime = filemtime(self::cacheFile());
         clearstatcache();
 
-        // Panggilan kedua masih dalam TTL → harus memakai cache (mtime tidak berubah).
+        
         $this->system->getServerStats();
         clearstatcache();
         $this->assertSame($mtime, filemtime(self::cacheFile()));

@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
  */
 class CssManifestTest extends TestCase
 {
-    /* @return array<string, array{0: string}> */
+    
     public static function manifestProvider(): array
     {
         $out = [];

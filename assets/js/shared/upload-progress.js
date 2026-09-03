@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* shared/upload-progress.js — Animasi progress-bar upload manual */
+
+
+
+
 window.meelUploadProgress = function (options) {
   const status = document.getElementById("overlay-status");
   const bar = document.getElementById("progress-bar");

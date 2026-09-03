@@ -7,6 +7,6 @@ return [
     'upload.css',
     'utility.css',
     'index/main.css',
-    // Light theme — harus terakhir untuk override :root variables
+    
     '../shared/light-theme.css',
 ];

@@ -1,7 +1,7 @@
-/**
- * MEeL!Mania — Playback & transport
- * Audio play/pause/stop loop, zoom/snap controls, audio & cover file inputs.
- */
+
+
+
+
 import { S, DOM } from "./state.js";
 import { resizeCanvas, formatTime } from "./canvas.js";
 import { draw } from "./renderer.js";
@@ -46,7 +46,7 @@ function animatePlayback() {
   S.animFrame = requestAnimationFrame(animatePlayback);
 }
 
-/* ─── Zoom & snap ─── */
+
 export function setZoom(val) {
   S.zoom = parseInt(val);
   var pctEl = document.getElementById("zoomPercent");
@@ -66,7 +66,7 @@ export function setSnap(val) {
   draw();
 }
 
-// Rebuild grid when BPM changes
+
 var bpmInput = document.getElementById("f-bpm");
 if (bpmInput) {
   bpmInput.addEventListener("input", function () {
@@ -86,7 +86,7 @@ export function clearNotes() {
   saveNotesToStorage();
 }
 
-/* ─── Audio file input ─── */
+
 DOM.audioInput.addEventListener("change", function () {
   if (this.files && this.files[0]) {
     var file = this.files[0];
@@ -107,7 +107,7 @@ DOM.audioInput.addEventListener("change", function () {
   }
 });
 
-/* ─── Cover file input ─── */
+
 DOM.coverInput.addEventListener("change", function () {
   if (this.files && this.files[0]) {
     var reader = new FileReader();

@@ -3,13 +3,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers GarbageCollector
- *
- * Verifikasi perilaku pembersihan temp/cache yang nyata:
- * - cleanDirectory(): hapus file/direktori stale (> 5 menit), pertahankan yang
- * fresh, dan JANGAN sentuh cache persisten yt-dlp (ytdlp-cache).
- * - run(): end-to-end — bersihkan rate-limit file kadaluarsa lewat
- * RateLimiter::cleanup(), pertahankan yang masih dalam window, dan no-op
- * pada panggilan kedua (static $hasRun).
  */
 class GarbageCollectorTest extends TestCase
 {
@@ -32,7 +25,7 @@ class GarbageCollectorTest extends TestCase
         parent::tearDown();
     }
 
-    /* Reset static flag agar run() bisa diuji berulang antar-test. */
+    
     private static function resetHasRun(): void
     {
         $ref = new ReflectionClass(GarbageCollector::class);
@@ -41,7 +34,7 @@ class GarbageCollectorTest extends TestCase
         $prop->setValue(false);
     }
 
-    /* Buat file dengan mtime terkontrol (usia dalam detik). */
+    
     private function touchAged(string $path, int $ageSeconds): void
     {
         @mkdir(dirname($path), 0755, true);
@@ -49,7 +42,7 @@ class GarbageCollectorTest extends TestCase
         touch($path, time() - $ageSeconds);
     }
 
-    /* Panggil private GarbageCollector::cleanDirectory() via reflection. */
+    
     private function cleanDirectory(string $dir): void
     {
         $ref = new ReflectionClass(GarbageCollector::class);
@@ -71,13 +64,13 @@ class GarbageCollectorTest extends TestCase
         @rmdir($dir);
     }
 
-    // cleanDirectory(): pembersihan file/direktori temp
+    
 
     public function testCleanDirectoryRemovesStaleFilesButKeepsFresh(): void
     {
         $stale = $this->testTempDir . '/stale.tmp';
         $fresh = $this->testTempDir . '/fresh.tmp';
-        $this->touchAged($stale, 400); // > STALE_SECONDS (300)
+        $this->touchAged($stale, 400); 
         $this->touchAged($fresh, 10);
 
         $this->cleanDirectory($this->testTempDir);
@@ -121,13 +114,10 @@ class GarbageCollectorTest extends TestCase
         $this->assertFileExists($cache . '/entries.db');
     }
 
-    // run(): end-to-end (temp dir + RateLimiter::cleanup)
+    
 
-    /* Arahkan RateLimiter::$storageDir ke direktori test terisolasi.
-     * Temp/ratelimit asli milik daemon (Apache, mode 755) — menulis ke sana
-     * dari CLI test gagal (Permission denied). Konvensi sama dengan
-     * RateLimiterTest: override storageDir via reflection, restore di tearDown.
-     */
+    
+
     private string $origRateStorageDir = '';
 
     private function isolateRateLimiterDir(): string
@@ -155,7 +145,7 @@ class GarbageCollectorTest extends TestCase
     {
         $rateDir = $this->isolateRateLimiterDir();
 
-        // File rate-limit kadaluarsa: window_start 2 jam lalu (> 1 jam max)
+        
         $expired = $rateDir . '/gc_test_expired.cache';
         file_put_contents($expired, json_encode([
             'count' => 5,
@@ -168,8 +158,8 @@ class GarbageCollectorTest extends TestCase
             'window_start' => time(),
         ]));
 
-        // Pastikan dir ratelimit dianggap fresh oleh cleanDirectory(temp)
-        // (level-1 GC) sehingga hanya RateLimiter::cleanup() yang menilai file.
+        
+        
         touch($rateDir, time());
 
         GarbageCollector::run();
@@ -194,7 +184,7 @@ class GarbageCollectorTest extends TestCase
         GarbageCollector::run();
         $this->assertFileDoesNotExist($expired, 'run() pertama membersihkan file kadaluarsa');
 
-        // File kadaluarsa BARU dibuat setelah run() pertama — run() kedua no-op.
+        
         $late = $rateDir . '/gc_test_late.cache';
         file_put_contents($late, json_encode([
             'count' => 5,

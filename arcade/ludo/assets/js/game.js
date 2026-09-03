@@ -1,5 +1,5 @@
-// ================= Data Papan =================
-// Lintasan utama: 52 sel searah jarum jam, format [col, row]
+
+
 const TRACK = [
   [6, 0], [7, 0], [8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5],
   [9, 6], [10, 6], [11, 6], [12, 6], [13, 6], [14, 6], [14, 7], [14, 8],
@@ -10,11 +10,11 @@ const TRACK = [
   [6, 4], [6, 3], [6, 2], [6, 1],
 ];
 
-// Posisi awal tiap warna di lintasan (berjarak 13 sel, searah jarum jam)
+
 const START = { red: 40, green: 1, blue: 14, yellow: 27 };
 const SAFE = new Set(Object.values(START));
 
-// Kolom rumah: 5 sel dari pintu masuk menuju pusat
+
 const HOME = {
   red:    [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]],
   green:  [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]],
@@ -22,7 +22,7 @@ const HOME = {
   yellow: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]],
 };
 
-// Kandang 6x6 (col asal, row asal)
+
 const YARD = { red: [0, 0], green: [9, 0], yellow: [0, 9], blue: [9, 9] };
 const ORDER = ["red", "green", "blue", "yellow"];
 const COLORS = {
@@ -32,12 +32,12 @@ const COLORS = {
   yellow: { name: "Kuning", hex: "#eab308" },
 };
 
-const FINISH_STEPS = 56; // langkah total dari awal sampai finish
+const FINISH_STEPS = 56; 
 
-// ================= State =================
+
 let players = [];
 let turnIdx = 0;
-let phase = "idle"; // idle | roll | move
+let phase = "idle"; 
 let lastRoll = 0;
 let sixCount = 0;
 let gameOver = false;
@@ -49,7 +49,7 @@ const diceBtn = document.getElementById("diceBtn");
 const diceFace = document.getElementById("diceFace");
 const diceHint = document.getElementById("diceHint");
 
-// ================= Geometri sel =================
+
 function cellInfo(c, r) {
   for (const color of ORDER) {
     const [oc, orr] = YARD[color];
@@ -102,7 +102,7 @@ function buildBoard() {
   }
 }
 
-// ================= Logika permainan =================
+
 function newToken() {
   return { state: "yard", steps: 0 };
 }
@@ -137,10 +137,10 @@ function canMoveToken(player, token, roll) {
   if (token.state === "finished") return false;
   if (token.state === "yard") return roll === 6;
   const ns = token.steps + roll;
-  if (ns > FINISH_STEPS) return false; // butuh angka pas untuk masuk finish
+  if (ns > FINISH_STEPS) return false; 
   if (ns <= 50) {
     const idx = (START[player.color] + ns) % 52;
-    if (isOpponentBlock(player.color, idx)) return false; // blok lawan tidak bisa dilewati
+    if (isOpponentBlock(player.color, idx)) return false; 
   }
   return true;
 }
@@ -171,7 +171,7 @@ function moveToken(player, token, roll) {
     else if (token.steps >= 51) token.state = "home";
   }
 
-  // Tangkap lawan (kecuali di kotak aman / start)
+  
   if (token.state === "path") {
     const idx = (START[player.color] + token.steps) % 52;
     if (!SAFE.has(idx)) captureAt(idx, player.color);
@@ -201,7 +201,7 @@ function rollDice() {
   sixCount = lastRoll === 6 ? sixCount + 1 : 0;
   renderDice();
 
-  // Tiga kali 6 beruntun -> giliran gugur
+  
   if (sixCount >= 3) {
     setDiceEnabled(false, "Tiga kali 6 beruntun — giliran gugur!");
     botTimers.push(setTimeout(nextTurn, 900));
@@ -238,18 +238,18 @@ function nextTurn() {
   else setDiceEnabled(true, "Gulingkan dadu untuk melempar.");
 }
 
-// ================= AI Bot =================
+
 function scoreMove(player, token, roll) {
-  if (token.state === "yard") return 60; // keluarkan pion
+  if (token.state === "yard") return 60; 
   const ns = token.steps + roll;
-  if (ns === FINISH_STEPS) return 1000; // masuk finish
-  if (ns >= 51) return 400 + (FINISH_STEPS - ns); // maju di kolom rumah
+  if (ns === FINISH_STEPS) return 1000; 
+  if (ns >= 51) return 400 + (FINISH_STEPS - ns); 
   const idx = (START[player.color] + ns) % 52;
-  let s = ns; // progres
+  let s = ns; 
   for (const p of players) {
     if (p.color === player.color) continue;
     for (const t of p.tokens) {
-      if (t.state === "path" && (START[p.color] + t.steps) % 52 === idx) s += 120; // tangkap
+      if (t.state === "path" && (START[p.color] + t.steps) % 52 === idx) s += 120; 
     }
   }
   return s;
@@ -268,7 +268,7 @@ function botMove(player, roll, movable) {
   if (best) moveToken(player, best, roll);
 }
 
-// ================= UI =================
+
 function setDiceEnabled(enabled, label) {
   diceBtn.disabled = !enabled;
   diceHint.textContent = label || "";
@@ -294,9 +294,9 @@ function isInteractiveToken(p, t) {
   );
 }
 
-// FLIP animation: catat posisi layar token sebelum board di-render ulang,
-// lalu token baru meluncur dari posisi lama ke sel baru (0.3s, ease-out).
-let prevTokenPos = new Map(); // key "color,ti" -> {x, y}
+
+
+let prevTokenPos = new Map(); 
 
 function captureTokenPositions() {
   prevTokenPos = new Map();
@@ -315,7 +315,7 @@ function animateTokenSlide(el, oldPos) {
   if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
   el.style.transition = "none";
   el.style.transform = `translate(${dx}px, ${dy}px)`;
-  // paksa reflow, lalu slide ke posisi akhir
+  
   void el.offsetWidth;
   el.style.transition = "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)";
   el.style.transform = "translate(0, 0)";
@@ -363,7 +363,7 @@ function renderBoard() {
         });
       }
       cellEl.appendChild(el);
-      // Slide dari posisi lama jika token ini memang berpindah
+      
       const old = prevTokenPos.get(el.dataset.key);
       if (old) animateTokenSlide(el, old);
     });
@@ -400,7 +400,7 @@ function setHint(text) {
   diceHint.textContent = text;
 }
 
-// ================= Alur game =================
+
 function setupPlayers(count, botFlags) {
   players = ORDER.slice(0, count).map((color, i) => ({
     color,
@@ -447,7 +447,7 @@ function endGame(winner) {
   });
 }
 
-// ================= Setup UI =================
+
 let setupCount = 2;
 let setupBots = [false, true, true, true];
 
@@ -498,7 +498,7 @@ function initSetup() {
   });
 }
 
-// ================= Init =================
+
 diceBtn.addEventListener("click", rollDice);
 initSetup();
 buildBoard();

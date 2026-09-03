@@ -15,7 +15,7 @@ class System
     {
         $active_queues = [];
 
-        // Advanced Upload (yt-dlp)
+        
         $res1 = $this->conn->query("SELECT q.id, q.url, q.media_type, q.status, q.created_at, u.username, 'download' as task_type
                                     FROM upload_queue q
                                     JOIN users u ON q.user_id = u.id
@@ -27,7 +27,7 @@ class System
             }
         }
 
-        // Transcoder (ffmpeg)
+        
         $res2 = $this->conn->query("SELECT q.id, q.status, q.created_at, u.username, 'transcode' as task_type, q.user_id
                                     FROM transcode_queue q
                                     JOIN users u ON q.user_id = u.id
@@ -118,7 +118,7 @@ class System
         ];
     }
 
-    // LIMITING
+    
 
     public function isServerBusy(): bool
     {
@@ -244,13 +244,8 @@ class System
         ];
     }
 
-    /**
-     * Baca /proc/meminfo sekali dan kembalikan [KEY => bytes] (nilai kB → byte).
-     * Native file read — menggantikan 4x exec('grep ... | awk ...') agar
-     * polling realtime tidak menjalankan perintah shell berulang.
-     *
-     * @return array<string, int>
-     */
+    
+
     private static function readProcMeminfo(): array
     {
         $lines = @file('/proc/meminfo');
@@ -266,14 +261,8 @@ class System
         return $info;
     }
 
-    /**
-     * Info identitas server yang jarang berubah — di-cache ke temp/cache
-     * (konvensi sama seperti MediaLibrary::getCounts()). TTL 300 detik.
-     * Bila cache tidak ada/kadaluarsa/rusak, hitung ulang; bila gagal
-     * ditulis, tetap kembalikan nilai fresh (cache hanya optimasi).
-     *
-     * @return array{hostname: string, os: string, kernel: string, php_version: string, cores: int}
-     */
+    
+
     private function getCachedServerInfo(): array
     {
         $cache_file = defined('MEEL_SERVER_STATS_CACHE')
@@ -325,8 +314,8 @@ class System
     }
     public function forceStopQueue(int $id, string $task_type): bool
     {
-        // 1) Kill proses via PID file — standalone, tanpa load Transcoder.php
-        //    (avoid heavy require chain that can cause output-before-headers)
+        
+        
         $pid_dir = '/tmp/meel_pids';
         $pid_file = $pid_dir . "/{$task_type}_{$id}.pid";
         if (is_file($pid_file)) {
@@ -347,7 +336,7 @@ class System
             }
         }
 
-        // 2) Hapus record dari database
+        
         if ($task_type === 'download') {
             $stmt = $this->conn->prepare("DELETE FROM upload_queue WHERE id = ?");
         } elseif ($task_type === 'transcode') {

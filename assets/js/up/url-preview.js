@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* up/url-preview.js — Live preview URL sumber di halaman */
+
+
+
+
 (function () {
   "use strict";
   var urlInput = document.getElementById("url-input");

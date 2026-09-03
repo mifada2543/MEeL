@@ -1,14 +1,8 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * Regression tests for the SSRF guard (modules/auth/SsrfGuard.php).
- *
- * These tests verify actual REJECTION/ALLOWANCE behaviour of the guard, not
- * merely that a validation function exists. DNS-dependent cases degrade to
- * markTestSkipped() when no resolver/network is available (e.g. offline dev);
- * in CI (GitHub Actions) DNS is available and they run for real.
- */
+
+
 class SsrfGuardTest extends TestCase
 {
     private ?SsrfGuard $guard = null;
@@ -31,11 +25,13 @@ class SsrfGuardTest extends TestCase
 
     private function assertAllowed(string $url): void
     {
-        $this->guard->validate($url); // throws => test fails
+        $this->guard->validate($url); 
         $this->addToAssertionCount(1);
     }
 
-    /** @dataProvider privateIpv4Provider */
+    /**
+     * @dataProvider privateIpv4Provider
+     */
     public function testPrivateIpv4LiteralsAreRejected(string $ip): void
     {
         $this->assertTrue($this->guard->isPrivateIp($ip), "{$ip} harus private");
@@ -69,7 +65,9 @@ class SsrfGuardTest extends TestCase
         ];
     }
 
-    /** @dataProvider privateIpv6Provider */
+    /**
+     * @dataProvider privateIpv6Provider
+     */
     public function testPrivateIpv6LiteralsAreRejected(string $ip): void
     {
         $this->assertTrue($this->guard->isPrivateIp($ip), "{$ip} harus private");
@@ -98,7 +96,9 @@ class SsrfGuardTest extends TestCase
         ];
     }
 
-    /** @dataProvider publicIpv4Provider */
+    /**
+     * @dataProvider publicIpv4Provider
+     */
     public function testPublicIpv4LiteralsAreAllowed(string $ip): void
     {
         $this->assertFalse($this->guard->isPrivateIp($ip), "{$ip} harus publik");
@@ -122,7 +122,9 @@ class SsrfGuardTest extends TestCase
         $this->assertAllowed('https://[2606:4700::1111]/');
     }
 
-    /** @dataProvider unsupportedProtocolProvider */
+    /**
+     * @dataProvider unsupportedProtocolProvider
+     */
     public function testUnsupportedProtocolsAreRejected(string $url): void
     {
         $this->assertRejected($url);
@@ -141,7 +143,9 @@ class SsrfGuardTest extends TestCase
         ];
     }
 
-    /** @dataProvider malformedUrlProvider */
+    /**
+     * @dataProvider malformedUrlProvider
+     */
     public function testMalformedUrlsAreRejected(string $url): void
     {
         $this->assertRejected($url);
@@ -160,7 +164,9 @@ class SsrfGuardTest extends TestCase
         ];
     }
 
-    /** @dataProvider blockedHostnameProvider */
+    /**
+     * @dataProvider blockedHostnameProvider
+     */
     public function testSpecialHostnamesAreRejected(string $url): void
     {
         $this->assertRejected($url);
@@ -195,10 +201,8 @@ class SsrfGuardTest extends TestCase
         $this->assertRejected('http://127.0.0.1./x');
     }
 
-    /**
-     * Hostname that resolves (via public DNS) to a private address must be
-     * rejected — this is the core DNS-rebinding defence.
-     */
+    
+
     public function testHostnameResolvingToPrivateIpIsRejected(): void
     {
         $records = @dns_get_record('127.0.0.1.nip.io', DNS_A);
@@ -208,7 +212,7 @@ class SsrfGuardTest extends TestCase
         $this->assertRejected('http://127.0.0.1.nip.io/x', 'hostname yang resolve ke private IP');
     }
 
-    /** A real public hostname must pass validation. */
+    
     public function testPublicHostnameIsAllowed(): void
     {
         $records = @dns_get_record('example.com', DNS_A);
@@ -219,7 +223,7 @@ class SsrfGuardTest extends TestCase
         $this->assertAllowed('http://www.youtube.com/watch?v=abc123');
     }
 
-    // HTTP connection pinning
+    
 
     public function testPinHttpUrlRewritesHostToPublicIpAndForcesHostHeader(): void
     {
@@ -231,7 +235,7 @@ class SsrfGuardTest extends TestCase
         [$pinned, $extra] = $this->guard->pinHttpUrl('http://example.com/media/file.mp3');
         $this->assertStringStartsWith('http://', $pinned);
         $this->assertStringContainsString('/media/file.mp3', $pinned);
-        // Host is rewritten to a validated public IP (never the hostname).
+        
         $host = parse_url($pinned, PHP_URL_HOST);
         $this->assertNotFalse(filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4));
         $this->assertFalse($this->guard->isPrivateIp($host));
@@ -260,14 +264,14 @@ class SsrfGuardTest extends TestCase
     {
         [$pinned, $extra] = $this->guard->pinHttpUrl('http://[2606:4700::1111]/x');
         $this->assertSame('http://[2606:4700::1111]/x', $pinned);
-        // RFC 7230: brackets only for IP literals — here the literal itself.
+        
         $this->assertStringContainsString('Host: [2606:4700::1111]', $extra);
     }
 
     public function testHttpsUrlIsNotPinnedButStillValidated(): void
     {
-        // https must keep the hostname (TLS SNI/cert) — pinning returns the
-        // original URL; validation still runs and rejects private hosts.
+        
+        
         [$pinned, $extra] = $this->guard->pinHttpUrl('https://8.8.8.8/x');
         $this->assertSame('https://8.8.8.8/x', $pinned);
         $this->assertSame('', $extra);

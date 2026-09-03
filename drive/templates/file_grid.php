@@ -1,5 +1,5 @@
 <?php
-// Expected vars: $files, $accent, $icon, $type, $scope, $csrfToken
+
 
 if (empty($files)): ?>
     <div class="flex flex-col items-center justify-center py-20 opacity-20">

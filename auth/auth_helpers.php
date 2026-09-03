@@ -29,7 +29,7 @@ if (!function_exists('auth_is_loopback')) {
     }
 }
 if (!function_exists('auth_back_url')) {
-    /* @param string[] $exclude Nama file yang tidak boleh menjadi back_url */
+    
     function auth_back_url(array $exclude = ['login.php', 'register.php']): string
     {
         $back_url = '../';
@@ -60,7 +60,7 @@ if (!function_exists('auth_back_url')) {
 }
 
 if (!function_exists('auth_ip_lockout_status')) {
-    /* @return array{locked: bool, remaining: int} */
+    
     function auth_ip_lockout_status(mysqli $conn, string $ip): array
     {
         $locked    = false;
@@ -93,7 +93,7 @@ if (!function_exists('auth_ip_lockout_status')) {
 }
 
 if (!function_exists('auth_record_failed_attempt')) {
-    /* @return bool true jika lockout BARU diterapkan pada pemanggilan ini */
+    
     function auth_record_failed_attempt(mysqli $conn, string $ip, int $max_attempts, int $lockout_time): bool
     {
 
@@ -135,7 +135,7 @@ if (!function_exists('auth_record_failed_attempt')) {
 }
 
 if (!function_exists('auth_recheck_lockout')) {
-    /* @return array{locked: bool, remaining: int} */
+    
     function auth_recheck_lockout(mysqli $conn, string $ip): array
     {
         $locked    = false;
@@ -159,7 +159,7 @@ if (!function_exists('auth_recheck_lockout')) {
 }
 
 if (!function_exists('auth_validate_credentials')) {
-    /* @return string|null Pesan error, atau null jika valid */
+    
     function auth_validate_credentials(string $user, string $pass): ?string
     {
         if (strlen($user) < 8 || strlen($pass) < 8) {

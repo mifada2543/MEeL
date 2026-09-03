@@ -124,7 +124,7 @@ $auth_og_desc     = "Masuk ke akun MEeL untuk streaming video, musik, dan mengak
 include __DIR__ . '/partials/auth_head.php';
 ?>
 <main class="w-full max-w-sm" aria-labelledby="login-title">
-    <!-- Header -->
+    
     <div class="text-center mb-8">
         <div class="inline-flex p-4 bg-blue-600/10 rounded-3xl text-blue-500 mb-4 shadow-lg shadow-blue-900/10"><i data-lucide="log-in" class="w-10 h-10"></i></div>
         <h2 id="login-title" class="text-3xl font-black text-white tracking-tighter">Login</h2>
@@ -133,9 +133,9 @@ include __DIR__ . '/partials/auth_head.php';
     <?php if ($error_msg): ?>
         <div class="mb-6 p-4 rounded-2xl text-sm flex items-center gap-3 bg-red-500/10 text-red-400 border border-red-500/20 animate-shake"><i data-lucide="alert-circle" class="w-5 h-5"></i><?= $error_msg ?></div>
     <?php endif; ?>
-    <!-- Login -->
+    
     <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6">
-        <!-- Lockdown -->
+        
         <?php if ($is_locked): ?>
             <?php
             $countdown_seconds = $remaining;
@@ -144,11 +144,11 @@ include __DIR__ . '/partials/auth_head.php';
             include __DIR__ . '/partials/auth_countdown.php';
             ?>
         <?php else: ?>
-            <!-- CSRF Token -->
+            
             <?php if (isset($_SESSION['csrf_token'])): ?>
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             <?php endif; ?>
-            <!-- Form login -->
+            
             <div class="space-y-2">
                 <label for="username" class="text-[10px] font-bold text-gray-300 uppercase ml-1 tracking-widest">Username</label>
                 <div class="relative">
@@ -172,7 +172,7 @@ include __DIR__ . '/partials/auth_head.php';
                 <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
             </button>
         <?php endif; ?>
-        <!-- Opsi lain -->
+        
         <div class="flex items-center justify-between px-1">
             <a href="register" class="text-xs text-gray-300 hover:text-white transition" title="Daftar untuk mendapatkan akun">
                 Belum punya akun?

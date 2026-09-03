@@ -5,7 +5,7 @@ define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php
 
 require_once __DIR__ . '/helpers.php';
 
-// Globals
+
 $GLOBALS['total_tests']  = 0;
 $GLOBALS['passed']       = 0;
 $GLOBALS['warnings']     = 0;
@@ -13,7 +13,7 @@ $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 
 
-// TEST 1: SQL INJECTION SCAN
+
 function testSqlInjection(): void {
     print_header('TEST 1: SQL Injection ' . chr(8212) . ' Prepared Statement Analysis');
 
@@ -22,7 +22,7 @@ function testSqlInjection(): void {
     $clean    = 0;
     $examined = 0;
 
-    // Static-only SQL patterns (safe to use with query())
+    
     $staticPatterns = [
         '/COUNT\(\*\)/i',
         '/SUM\(/i',
@@ -57,7 +57,7 @@ function testSqlInjection(): void {
             foreach ($staticPatterns as $sp) {
                 if (preg_match($sp, $qry)) { $isStatic = true; break; }
             }
-            // Also filter if it only has simple int casting like (int)$var
+            
             if (preg_match('/=\s*\(int\)/', $qry)) $isStatic = true;
             if (!$isStatic) $risky[] = $qry;
         }
@@ -93,7 +93,7 @@ function testSqlInjection(): void {
     }
 }
 
-// TEST 2: display_errors SCAN
+
 function testDisplayErrors(): void {
     print_header('TEST 2: Error Handling ' . chr(8212) . ' display_errors Setting');
 
@@ -112,7 +112,7 @@ function testDisplayErrors(): void {
         }
     }
 
-    // stream.php uses error_reporting(0) which is acceptable
+    
     $enabled = array_values(array_filter($enabled, fn($f) => !in_array($f, [
         'music/stream.php',
         'modules/core/bootstrap.php',
@@ -129,7 +129,7 @@ function testDisplayErrors(): void {
     }
 }
 
-// TEST 3: CSRF PROTECTION
+
 function testCsrfProtection(): void {
     print_header('TEST 3: CSRF Protection ' . chr(8212) . ' Anti-CSRF Token');
 
@@ -153,7 +153,7 @@ function testCsrfProtection(): void {
         if ($hasVerify || $hasToken) {
             $protected++;
             if ($hasPost && !$hasVerify && !strpos($rel, 'drive/')) {
-                // Has token field but no verification call
+                
                 $unprot[] = $rel;
             }
         } else {
@@ -172,7 +172,7 @@ function testCsrfProtection(): void {
     }
 }
 
-// TEST 4: XSS PROTECTION
+
 function testXssProtection(): void {
     print_header('TEST 4: XSS Protection ' . chr(8212) . ' htmlspecialchars Usage');
 
@@ -187,15 +187,15 @@ function testXssProtection(): void {
 
         
         $outPatterns = [
-            '/\<\?\=\s*\$/',           // <?= $var
-            '/echo\s+\$/',             // echo $var
-            '/print\s+\$/',            // print $var
-            '/\<\?\=\s*htmlspecialchars/', // already escaped
+            '/\<\?\=\s*\$/',           
+            '/echo\s+\$/',             
+            '/print\s+\$/',            
+            '/\<\?\=\s*htmlspecialchars/', 
         ];
 
         $rawOut = 0;
         foreach ($outPatterns as $i => $pat) {
-            if ($i === 3) continue; // skip the escaped one for counting
+            if ($i === 3) continue; 
             preg_match_all($pat, $content, $m);
             $rawOut += count($m[0]);
         }
@@ -209,7 +209,7 @@ function testXssProtection(): void {
         if ($rawOut > 10 && $hsCount === 0) {
             $issues[] = ['file' => $rel, 'out' => $rawOut, 'hs' => $hsCount];
         }
-        // Also flag large files that have very low ratio
+        
         if ($rawOut > 30 && $hsCount < 5) {
             $issues[] = ['file' => $rel, 'out' => $rawOut, 'hs' => $hsCount];
         }
@@ -226,7 +226,7 @@ function testXssProtection(): void {
     }
 }
 
-// TEST 5: FILE UPLOAD SECURITY
+
 function testFileUploadSecurity(): void {
     print_header('TEST 5: File Upload Security');
 
@@ -256,7 +256,7 @@ function testFileUploadSecurity(): void {
     }
 }
 
-// TEST 6: PATH TRAVERSAL
+
 function testPathTraversal(): void {
     print_header('TEST 6: Path Traversal Protection');
 
@@ -283,31 +283,31 @@ function testPathTraversal(): void {
     }
 }
 
-// TEST 7: .HTACCESS SECURITY
+
 function testHtaccessSecurity(): void {
     print_header('TEST 7: .htaccess & HTTP Security Headers');
 
-    // 7a: Cek semua folder sensitif wajib punya .htaccess
+    
     $sensitiveDirs = [
-        // PHP-include only folders
+        
         'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
         'modules', 'modules/core', 'modules/core/helpers', 'modules/media', 'modules/transcoder', 'modules/exceptions',
-        // Security module (helpers + class keamanan)
+        
         'modules/auth', 'modules/auth/helpers',
         'partials', 'drive/templates', 'docs/partials',
-        // Auth & config
+        
         'auth', 'database',
         
         'err', 'temp',
-        // Logs & tests
+        
         'logs', 'tests',
-        // Upload dirs (harus disable PHP)
-        // Catatan: data_drive/private_admins kini folder nyata ter-track di repo
-        // (placeholder .gitkeep + .htaccess deny lapisan 2) — deny utama tetap
-        // di data_drive/.htaccess. Saat MEEL_HDD_DRIVE diset, storage pindah ke
-        // lokasi eksternal dan .htaccess deny dibuat ulang saat deploy.
+        
+        
+        
+        
+        
         'data_drive', 'books/upload', 'music/upload', 'video/upload',
-        // User-upload avatars (harus disable PHP)
+        
         'profile/upload',
     ];
 
@@ -327,7 +327,7 @@ function testHtaccessSecurity(): void {
         }
     }
 
-    // 7b: Verifikasi directive spesifik per folder
+    
     $checks = [
         '.htaccess'                 => ['Options -Indexes', 'X-Content-Type-Options', 'Deny from all'],
         'auth/.htaccess'            => ['Options -Indexes', 'Deny from all'],
@@ -372,7 +372,7 @@ function testHtaccessSecurity(): void {
     }
 }
 
-// TEST 8: SESSION SECURITY
+
 function testSessionSecurity(): void {
     print_header('TEST 8: Session & Authentication Security');
 
@@ -405,7 +405,7 @@ function testSessionSecurity(): void {
     }
 }
 
-// TEST 9: HTTP SECURITY HEADERS (CSP)
+
 function testCspHeaders(): void {
     print_header('TEST 9: HTTP Security Headers & CSP');
 
@@ -440,14 +440,14 @@ function testCspHeaders(): void {
     }
 }
 
-// TEST 10: COMMAND INJECTION (SHELL EXEC)
+
 function testCommandInjection(): void {
     print_header('TEST 10: Command Injection ' . chr(8212) . ' Shell Execution Safety');
 
     $risky = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers/storage.php' => ['shell_exec'], // dir_size() — dipecah dari helpers.php
+        'modules/core/helpers/storage.php' => ['shell_exec'], 
         'modules/core/System.php'       => ['shell_exec'],
         'auth/config.example.php'  => ['proc_open', 'shell_exec'],
         'modules/core/japanese.php'     => ['proc_open'],
@@ -475,7 +475,7 @@ function testCommandInjection(): void {
     }
 }
 
-// TEST 11: PASSWORD POLICY
+
 function testPasswordPolicy(): void {
     print_header('TEST 11: Password Policy & Strength');
 
@@ -500,7 +500,7 @@ function testPasswordPolicy(): void {
     }
 }
 
-// TEST 12: FILE INTEGRITY
+
 function testFileIntegrity(): void {
     print_header('TEST 12: File Integrity ' . chr(8212) . ' Critical Files');
 
@@ -533,11 +533,11 @@ function testFileIntegrity(): void {
     }
 }
 
-// TEST 13: SSRF & PRIVATE DRIVE HARDENING
+
 function testSsrfAndPrivateDrive(): void {
     print_header('TEST 13: SSRF Guard & Private Drive Hardening');
 
-    // 13a: SsrfGuard ada dan dipakai di jalur download
+    
     $guardFile = PROJECT_ROOT . '/modules/auth/SsrfGuard.php';
     if (!file_exists($guardFile)) {
         record('modules/auth/SsrfGuard.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -578,7 +578,7 @@ function testSsrfAndPrivateDrive(): void {
             record('SsrfGuard: --add-header Host TIDAK terdeteksi', false, false);
         }
 
-        // Validating forward proxy: SSRF pada SETIAP redirect hop
+        
         if (strpos($tc, 'ensureDownloadProxy') !== false && strpos($tc, '--proxy') !== false) {
             record('Transcoder: yt-dlp diarahkan lewat validating proxy (--proxy)', true);
         } else {
@@ -612,9 +612,9 @@ function testSsrfAndPrivateDrive(): void {
         record('validating_proxy_server: SsrfGuard diterapkan per hop (CONNECT + resolve)', true);
     }
 
-    // 13b: Private Drive storage di-deny web server
-    // primary: aturan deny ter-track di data_drive/.htaccess (berlaku untuk
-    // semua deployment, termasuk saat private_admins/ adalah symlink storage).
+    
+    
+    
     $parentHt = PROJECT_ROOT . '/data_drive/.htaccess';
     if (!file_exists($parentHt)) {
         record('data_drive/.htaccess — FILE TIDAK DITEMUKAN!', false, false,
@@ -629,8 +629,8 @@ function testSsrfAndPrivateDrive(): void {
         }
     }
 
-    // lapisan kedua (ter-track di repo saat folder nyata; dibuat saat deploy
-    // pada target storage eksternal):
+    
+    
     $nestedHt = PROJECT_ROOT . '/data_drive/private_admins/.htaccess';
     if (is_file($nestedHt)) {
         $nhc = (string) file_get_contents($nestedHt);
@@ -643,7 +643,7 @@ function testSsrfAndPrivateDrive(): void {
         record('data_drive/private_admins/.htaccess — tidak ada (deploy-time; parent rule aktif)', true, true);
     }
 
-    // 13c: Streaming private harus lewat endpoint ber-otorisasi
+    
     $streamFile = PROJECT_ROOT . '/drive/stream.php';
     if (!file_exists($streamFile)) {
         record('drive/stream.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -664,13 +664,13 @@ function testSsrfAndPrivateDrive(): void {
         }
     }
 
-    // 13d: URL listing private diarahkan ke stream.php (bukan path web)
+    
     $dsFile = PROJECT_ROOT . '/drive/DriveService.php';
     if (file_exists($dsFile)) {
         $ds = file_get_contents($dsFile);
-        // Rute bersih ('stream?file=') sejak migrasi routing; 'stream.php?file='
-        // adalah bentuk legacy. Keduanya menunjuk endpoint stream ber-otorisasi
-        // (drive/stream.php) — bukan path web langsung ke subtree private.
+        
+        
+        
         $usesAuthStream =
             strpos($ds, "'stream?file='") !== false ||
             strpos($ds, "'stream.php?file='") !== false;
@@ -693,19 +693,19 @@ function testSsrfAndPrivateDrive(): void {
     }
 }
 
-// TEST 14: FATAL-BUG REGRESSION GUARD
-// Guard statis untuk dua bug fatal yang pernah terjadi:
-// 1) INSERT guest ke tabel users tanpa kolom `password` (NOT NULL) →
-// Uncaught mysqli_sql_exception di MySQL/MariaDB strict mode.
-// 2) Query chart "7-Day Activity" memakai v.views/m.views yang tidak
-// eksis di subquery UNION (alias t) → SQL error, admin dashboard crash.
+
+
+
+
+
+
 function testFatalBugRegression(): void {
     print_header('TEST 14: Fatal-Bug Regression Guard');
 
-    // 14a: Guest INSERT di activity_logger.php harus mengisi kolom password
-    // schema.sql: `password varchar(255) NOT NULL` — INSERT tanpa nilai langsung
-    // fatal di strict mode. Password guest diisi nilai acak (tidak pernah dipakai
-    // login), bukan dibiarkan kosong.
+    
+    
+    
+    
     $alFile = PROJECT_ROOT . '/modules/core/activity_logger.php';
     if (!file_exists($alFile)) {
         record('modules/core/activity_logger.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -734,9 +734,9 @@ function testFatalBugRegression(): void {
         }
     }
 
-    // 14a-2: SEMUA call site INSERT INTO users wajib mengisi kolom password
-    // Pemindaian menyeluruh (termasuk tests/) — bukan hanya activity_logger.php,
-    // agar call site baru yang lupa kolom `password` (NOT NULL) langsung tertangkap.
+    
+    
+    
     $insertSites = [];
     $ri = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator(PROJECT_ROOT, RecursiveDirectoryIterator::SKIP_DOTS)
@@ -772,10 +772,10 @@ function testFatalBugRegression(): void {
         }
     }
 
-    // 14b: Query chart 7-Day Activity di admin_data.php
-    // Agregasi per hari harus pakai COALESCE(SUM(views), 0) + GROUP BY
-    // tanggal (optimasi: 28 query per load → 6 query GROUP BY) — bukan
-    // referensi v.views/m.views (kolom tidak eksis di query lama).
+    
+    
+    
+    
     $adFile = PROJECT_ROOT . '/controllers/admin/admin_data.php';
     if (!file_exists($adFile)) {
         record('controllers/admin/admin_data.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -798,13 +798,13 @@ function testFatalBugRegression(): void {
     }
 }
 
-// TEST 15: ADMIN CONTEXT GUARDS & MEDIA PIPELINE HARDENING
-// (Konsolidasi dari functional_test.php — verifikasi statis hardening yang
-// dulu ada di suite functional; sekarang jadi tanggung jawab security suite.)
+
+
+
 function testAdminContextAndPipelineHardening(): void {
     print_header('TEST 15: Admin Context Guards & Media Pipeline Hardening');
 
-    // 15a: Admin RBAC & direct-access guard
+    
     $adminFiles = [
         'admin/catur.php' => [
             'Role check admin (require_admin)' => '/require_admin\s*\(/',
@@ -840,7 +840,7 @@ function testAdminContextAndPipelineHardening(): void {
         }
     }
 
-    // 15b: Uploader — concurrency & hardening
+    
     $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
     if (!file_exists($uploaderFile)) {
         record('modules/core/Uploader.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -871,7 +871,7 @@ function testAdminContextAndPipelineHardening(): void {
         }
     }
 
-    // 15c: Transcoder — pipeline hardening
+    
     $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
     if (!file_exists($transcoderFile)) {
         record('modules/core/Transcoder.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -898,24 +898,24 @@ function testAdminContextAndPipelineHardening(): void {
     }
 }
 
-// TEST 16: OPEN-REDIRECT & REDIRECT-HARDENING REGRESSION GUARD
-// Guard statis untuk audit referer gate / redirect. Bug yang pernah terjadi:
-// 1) delete_comment.php redirect ke HTTP_REFERER mentah tanpa validasi host
-// (open redirect), plus include ganda RateLimiter.php -> fatal
-// "Cannot declare class RateLimiter" (regresi konsolidasi auth).
-// 2) playlist_action.php redirect() membiarkan //evil.com (protocol-relative
-// lolos dari cek '://') dan allowlist prefix usang (.php saja).
+
+
+
+
+
+
+
 function testOpenRedirectHardening(): void {
     print_header('TEST 16: Open-Redirect & Redirect-Hardening Guard');
 
-    // 16a: delete_comment.php — semua redirect lewat safe_comment_back_url()
+    
     $dcFile = PROJECT_ROOT . '/controllers/api/delete_comment.php';
     if (!file_exists($dcFile)) {
         record('controllers/api/delete_comment.php — FILE TIDAK DITEMUKAN!', false, false);
     } else {
         $dc = (string) file_get_contents($dcFile);
 
-        // Semua Location header harus memakai helper tervalidasi.
+        
         preg_match_all('/header\s*\(\s*["\']Location:/i', $dc, $locMs);
         $locCount = count($locMs[0]);
         preg_match_all('/header\s*\(\s*["\']Location:\s*["\']\s*\.\s*safe_comment_back_url\(\)/i', $dc, $safeMs);
@@ -927,7 +927,7 @@ function testOpenRedirectHardening(): void {
                 'Semua redirect harus lewat safe_comment_back_url() (validasi host referer)');
         }
 
-        // Tidak boleh ada redirect ke HTTP_REFERER mentah.
+        
         if (preg_match('/header\s*\(\s*["\']Location:\s*["\']\s*\.\s*\$_SERVER\[\'HTTP_REFERER\'\]/i', $dc)) {
             record('delete_comment: redirect ke HTTP_REFERER MENTAH — open redirect!', false, false,
                 'Redirect referer harus lewat safe_comment_back_url()');
@@ -935,10 +935,10 @@ function testOpenRedirectHardening(): void {
             record('delete_comment: tidak ada redirect ke HTTP_REFERER mentah', true);
         }
 
-        // 16a-2: Tidak boleh include RateLimiter ganda (regresi fatal) — semua
-        // controller yang memuat helpers.php (→ loader.php → require_once
-        // RateLimiter) TIDAK boleh include ulang RateLimiter.php. include
-        // biasa mengeksekusi file lagi → "Cannot declare class RateLimiter".
+        
+        
+        
+        
         foreach ([
             'controllers/api/delete_comment.php',
             'controllers/api/comment.php',
@@ -954,7 +954,7 @@ function testOpenRedirectHardening(): void {
         }
     }
 
-    // 16b: playlist_action.php — redirect() tolak //evil.com + clean route
+    
     $paFile = PROJECT_ROOT . '/music/playlist_action.php';
     if (!file_exists($paFile)) {
         record('music/playlist_action.php — FILE TIDAK DITEMUKAN!', false, false);
@@ -975,7 +975,7 @@ function testOpenRedirectHardening(): void {
                 'Tambah cek str_contains($url, \'://\')');
         }
 
-        // Allowlist prefix harus mencakup rute bersih (beranda/playlist/watch/music/).
+        
         $hasClean = strpos($pa, "'beranda'") !== false
             && strpos($pa, "'playlist'") !== false
             && strpos($pa, "'watch'") !== false
@@ -989,7 +989,7 @@ function testOpenRedirectHardening(): void {
     }
 }
 
-// MAIN
+
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
@@ -1016,7 +1016,7 @@ function run(): int {
     testAdminContextAndPipelineHardening();
     testOpenRedirectHardening();
 
-    // SUMMARY
+    
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
     echo chr(9553) . "                    SUMMARY REPORT" . str_repeat(' ', 23) . chr(9553) . "\n";
     echo chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . CLR_RESET . "\n\n";
