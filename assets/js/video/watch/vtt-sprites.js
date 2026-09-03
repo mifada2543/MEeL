@@ -176,6 +176,13 @@ async function _fallbackApply(vttUrl, token) {
 /* ------------------------------------------------------------------ */
 
 function _startLoad(vttUrl) {
+  // Player sudah dihancurkan (mis. mini-player ditutup) — hentikan siklus
+  // watchdog agar tidak error `player.config` dari null.
+  if (!player || !player.config) {
+    _vttState.status = "failed";
+    _vttState.attempts = MAX_ATTEMPTS;
+    return;
+  }
   const token = ++_vttState.token;
   _vttState.lastSrc = vttUrl;
   _vttState.attempts += 1;

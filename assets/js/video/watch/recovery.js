@@ -19,7 +19,12 @@ function destroyPlayer() {
     cancelAnimationFrame(glowRAF);
     glowRAF = null;
   }
-  if ((stopStuckDetector(), stopPlaybackStartTimeout(), player)) {
+  if (
+    (stopStuckDetector(),
+    stopPlaybackStartTimeout(),
+    stopWaitingTimeout(),
+    player)
+  ) {
     try {
       player.destroy();
     } catch (e) {
@@ -56,6 +61,14 @@ function showReconnectingIndicator() {
 }
 function checkMediaAndRecover() {
   if (isCheckingStatus) return;
+  // Wrapper pemutar sudah tidak ada (mis. mini-player baru saja ditutup
+  // in-place) — recovery tidak berguna & htmx.ajax ke target yang hilang
+  // bisa mengosongkan body. Hentikan permanen.
+  if (!document.getElementById("main-video-wrapper")) {
+    isCheckingStatus = !1;
+    isRecovering = !1;
+    return;
+  }
   if ((recoveryRetryCount++, recoveryRetryCount > MAX_RECOVERY_RETRIES)) {
     (console.warn("Batas percobaan pemulihan tercapai, berhenti mencoba."),
       (isCheckingStatus = !1),
@@ -116,6 +129,7 @@ function checkMediaAndRecover() {
 }
 function triggerPlayerRecovery() {
   if (isRecovering || isCheckingStatus || isTransitioningNext) return;
+  if (!document.getElementById("main-video-wrapper")) return;
   if (player && player.paused && hasEverPlayed)
     return void console.log("Video sedang di-paused, skip recovery.");
   const e = Date.now();

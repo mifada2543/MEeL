@@ -397,7 +397,7 @@ $__vdir = function($dir) {
                                     'videoSrc' => $video_src,
                                     'isHls' => (bool)$is_hls,
                                     'vttSrc' => $vtt_src ?? '',
-                                    'id' => (int)$id,
+                                                        'id' => (int)$id,
                                     'title' => $v['title'] ?? '',
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;

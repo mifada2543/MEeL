@@ -6,17 +6,13 @@
 (function () {
   "use strict";
 
-  /* ═══════════════════════════════════════════════════════
-     URL PARAMS
-     ═══════════════════════════════════════════════════════ */
+  /* URL PARAMS */
   const speedMult = window.MANIA_SPEED || 1.5;
   const phpSong = window.MANIA_SONG || null;
   const phpBeatmap = window.MANIA_BEATMAP || null;
   const songId = phpSong ? phpSong.id : 'starlight';
 
-  /* ═══════════════════════════════════════════════════════
-     DOM
-     ═══════════════════════════════════════════════════════ */
+  /* DOM */
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
   const audioElement = document.getElementById("audioPlayer") || new Audio();
@@ -35,9 +31,7 @@
   const pauseOverlay = document.getElementById("pauseOverlay");
   const resultsOverlay = document.getElementById("resultsOverlay");
 
-  /* ═══════════════════════════════════════════════════════
-     CONSTANTS
-     ═══════════════════════════════════════════════════════ */
+  /* CONSTANTS */
   const LANE_COUNT = 4;
   const KEY_MAP = { a: 0, s: 1, k: 2, l: 3 };
   // Note colors: click=blue, hold=green, gold=bonus for both
@@ -64,9 +58,7 @@
   };
   const GOLD_GLOW = "rgba(251,191,36,0.4)";
 
-  /* ═══════════════════════════════════════════════════════
-     STATE
-     ═══════════════════════════════════════════════════════ */
+  /* STATE */
   let song = null;         // metadata from _index.json
   let beatmapData = null;  // { notes: [{t, l}], duration }
   let gameState = "loading"; // loading | start | playing | paused | results
@@ -81,9 +73,7 @@
   let songTime = 0, songDuration = 0;
   let highScore = 0;
 
-  /* ═══════════════════════════════════════════════════════
-     AUDIO
-     ═══════════════════════════════════════════════════════ */
+  /* AUDIO */
   let audioCtx = null, masterGain = null, sfxGain = null, bgmGain = null;
 
   function initAudio() {
@@ -191,9 +181,7 @@
     if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     CANVAS SIZING
-     ═══════════════════════════════════════════════════════ */
+  /* CANVAS SIZING */
   function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const w = window.innerWidth;
@@ -213,9 +201,7 @@
   function playfieldX() { return (getW() - getW() * PLAYFIELD_RATIO) / 2; }
   function hitY() { return getH() * HIT_Y_RATIO; }
 
-  /* ═══════════════════════════════════════════════════════
-     HELPERS
-     ═══════════════════════════════════════════════════════ */
+  /* HELPERS */
   function roundRect(x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -237,9 +223,7 @@
     return 1.0;
   }
 
-  /* ═══════════════════════════════════════════════════════
-     LOAD SONG DATA & BEATMAP
-     ═══════════════════════════════════════════════════════ */
+  /* LOAD SONG DATA & BEATMAP */
   async function loadSongData() {
     // Data already loaded from PHP via window globals
     if (phpSong) {
@@ -326,9 +310,7 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     HIT DETECTION
-     ═══════════════════════════════════════════════════════ */
+  /* HIT DETECTION */
   const APPROACH_TIME = APPROACH_TIME_BASE / speedMult;
 
   function hitLane(lane) {
@@ -424,9 +406,7 @@
     playSFX(finalType);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     HUD
-     ═══════════════════════════════════════════════════════ */
+  /* HUD */
   function updateHUD() {
     hudScore.textContent = pad6(score);
     hudScore.classList.remove("score-pop");
@@ -467,9 +447,7 @@
     judgeTimer = setTimeout(() => judgmentWrap.classList.add("hidden"), 550);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     DRAWING
-     ═══════════════════════════════════════════════════════ */
+  /* DRAWING */
   // Determine note color based on type and gold status
   function noteColorFor(note) {
     if (note.gold) return GOLD_COLOR;
@@ -665,9 +643,7 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     GAME LOOP
-     ═══════════════════════════════════════════════════════ */
+  /* GAME LOOP */
   function gameLoop(ts) {
     if (gameState !== "playing") return;
 
@@ -741,9 +717,7 @@
     animFrame = requestAnimationFrame(gameLoop);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     GAME FLOW
-     ═══════════════════════════════════════════════════════ */
+  /* GAME FLOW */
   function startGame() {
     initAudio();
     resumeAudio();
@@ -1032,9 +1006,7 @@
     touchLanes.classList.add("hidden");
   }
 
-  /* ═══════════════════════════════════════════════════════
-     INPUT: KEYBOARD
-     ═══════════════════════════════════════════════════════ */
+  /* INPUT: KEYBOARD */
   document.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
 
@@ -1066,9 +1038,7 @@
     }
   });
 
-  /* ═══════════════════════════════════════════════════════
-     INPUT: TOUCH
-     ═══════════════════════════════════════════════════════ */
+  /* INPUT: TOUCH */
   function isMobile() {
     return "ontouchstart" in window || navigator.maxTouchPoints > 0;
   }
@@ -1131,9 +1101,7 @@
   });
   document.getElementById("btnBackLobby").addEventListener("click", quitToLobby);
 
-  /* ═══════════════════════════════════════════════════════
-     INIT
-     ═══════════════════════════════════════════════════════ */
+  /* INIT */
   async function init() {
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);

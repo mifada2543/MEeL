@@ -5,9 +5,7 @@
 (function () {
   "use strict";
 
-  /* ═══════════════════════════════════════════════════════
-     TOAST NOTIFICATION (fallback when Swal unavailable)
-     ═══════════════════════════════════════════════════════ */
+  /* TOAST NOTIFICATION (fallback when Swal unavailable) */
   function showToast(message, type) {
     type = type || "info";
     // Try SweetAlert2 first
@@ -37,9 +35,7 @@
     document.head.appendChild(st);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     DOM
-     ═══════════════════════════════════════════════════════ */
+  /* DOM */
   var canvas = document.getElementById("editorCanvas");
   if (!canvas) return;
   var ctx = canvas.getContext("2d");
@@ -49,9 +45,7 @@
   var coverInput = document.getElementById("f-cover");
   var coverPreview = document.getElementById("cover-preview");
 
-  /* ═══════════════════════════════════════════════════════
-     CONSTANTS
-     ═══════════════════════════════════════════════════════ */
+  /* CONSTANTS */
   var LANE_COUNT = 4;
   var COLOR_CLICK = "#3b82f6";    // blue for tap/click notes
   var COLOR_HOLD = "#22c55e";     // green for hold notes
@@ -62,9 +56,7 @@
   var LANE_WIDTH_MIN = 80;
   var LANE_WIDTH_MAX = 140;
 
-  /* ═══════════════════════════════════════════════════════
-     STATE
-     ═══════════════════════════════════════════════════════ */
+  /* STATE */
   var notes = []; // [{t, l}, {t, e, l}, {t, l, g}, {t, e, l, g}]
   var undoStack = [];
   var zoom = 3;
@@ -90,9 +82,7 @@
   var moveNoteOrigL = -1;
   var moveNoteOrigE = null;
 
-  /* ═══════════════════════════════════════════════════════
-     LOCALSTORAGE SAVE / LOAD
-     ═══════════════════════════════════════════════════════ */
+  /* LOCALSTORAGE SAVE / LOAD */
   function getStorageKey() {
     // Use song title + artist as key, or fall back to URL param
     var titleInput = document.getElementById("songTitle");
@@ -155,9 +145,7 @@
     return false;
   }
 
-  /* ═══════════════════════════════════════════════════════
-     AUDIO
-     ═══════════════════════════════════════════════════════ */
+  /* AUDIO */
   audioInput.addEventListener("change", function () {
     if (this.files && this.files[0]) {
       var file = this.files[0];
@@ -190,9 +178,7 @@
     }
   });
 
-  /* ═══════════════════════════════════════════════════════
-     CANVAS — RESPONSIVE LANE WIDTH
-     ═══════════════════════════════════════════════════════ */
+  /* CANVAS — RESPONSIVE LANE WIDTH */
   var virtualHeight = 600;
   var MAX_CANVAS_H = 16384;
   function resizeCanvas() {
@@ -248,9 +234,7 @@
     return Math.round(ms / snap) * snap;
   }
 
-  /* ═══════════════════════════════════════════════════════
-     OFFSCREEN GRID BUFFER
-     ═══════════════════════════════════════════════════════ */
+  /* OFFSCREEN GRID BUFFER */
   function buildGridBuffer() {
     var w = canvas.width;
     var h = Math.min(virtualHeight, MAX_CANVAS_H);
@@ -334,9 +318,7 @@
     gridDirty = false;
   }
 
-  /* ═══════════════════════════════════════════════════════
-     DRAW (optimized: grid from buffer, viewport culling)
-     ═══════════════════════════════════════════════════════ */
+  /* DRAW (optimized: grid from buffer, viewport culling) */
   function draw() {
     var w = canvas.width;
     var h = canvas.height;
@@ -537,9 +519,7 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     INPUT: CLICK TO PLACE/REMOVE NOTES
-     ═══════════════════════════════════════════════════════ */
+  /* INPUT: CLICK TO PLACE/REMOVE NOTES */
   function getCanvasPos(e) {
     var wrapRect = wrap.getBoundingClientRect();
     return {
@@ -794,9 +774,7 @@
     showToast("Seek: " + sec + "s", "info");
   });
 
-  /* ═══════════════════════════════════════════════════════
-     TIMELINE CLICK + DRAG
-     ═══════════════════════════════════════════════════════ */
+  /* TIMELINE CLICK + DRAG */
   var timelineDragging = false;
   var timelineBar = document.getElementById("timelineBar");
   function seekTimeline(e) {
@@ -815,9 +793,7 @@
   });
   document.addEventListener("mouseup", function () { timelineDragging = false; });
 
-  /* ═══════════════════════════════════════════════════════
-     KEYBOARD SHORTCUTS
-     ═══════════════════════════════════════════════════════ */
+  /* KEYBOARD SHORTCUTS */
   document.addEventListener("keydown", function (e) {
     var isInput = e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA";
 
@@ -890,9 +866,7 @@
     }
   });
 
-  /* ═══════════════════════════════════════════════════════
-     NOTE INFO PANEL
-     ═══════════════════════════════════════════════════════ */
+  /* NOTE INFO PANEL */
   function updateNoteInfo() {
     var el = document.getElementById("noteInfoPanel");
     if (!el) return;
@@ -963,9 +937,7 @@
     }
   };
 
-  /* ═══════════════════════════════════════════════════════
-     PLAYBACK
-     ═══════════════════════════════════════════════════════ */
+  /* PLAYBACK */
   window.togglePlayback = function () {
     if (!audio.src) { showToast("Pilih file audio dulu!", "warning"); return; }
     if (isPlaying) {
@@ -1002,9 +974,7 @@
     animFrame = requestAnimationFrame(animatePlayback);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     ZOOM & SNAP
-     ═══════════════════════════════════════════════════════ */
+  /* ZOOM & SNAP */
   window.setZoom = function (val) {
     zoom = parseInt(val);
     var pctEl = document.getElementById("zoomPercent");
@@ -1043,9 +1013,7 @@
     updateNoteInfo();
   };
 
-  /* ═══════════════════════════════════════════════════════
-     UPLOAD
-     ═══════════════════════════════════════════════════════ */
+  /* UPLOAD */
   window.uploadBeatmap = function () {
     var form = document.getElementById("beatmapForm");
     var formData = new FormData(form);
@@ -1111,9 +1079,7 @@
     xhr.send(formData);
   };
 
-  /* ═══════════════════════════════════════════════════════
-     DELETE SONG
-     ═══════════════════════════════════════════════════════ */
+  /* DELETE SONG */
   window.deleteSong = function (id) {
     if (!confirm("Hapus beatmap ini? Tindakan ini tidak dapat dibatalkan.")) return;
 
@@ -1136,27 +1102,21 @@
       });
   };
 
-  /* ═══════════════════════════════════════════════════════
-     HELPERS
-     ═══════════════════════════════════════════════════════ */
+  /* HELPERS */
   function formatTime(sec) {
     var m = Math.floor(sec / 60);
     var s = Math.floor(sec % 60);
     return m + ":" + String(s).padStart(2, "0");
   }
 
-  /* ═══════════════════════════════════════════════════════
-     SCROLL SYNC
-     ═══════════════════════════════════════════════════════ */
+  /* SCROLL SYNC */
   var canvasScroll = canvas.parentElement;
   canvasScroll.addEventListener("scroll", function () {
     if (isPlaying) return;
     draw();
   });
 
-  /* ═══════════════════════════════════════════════════════
-     INIT
-     ═══════════════════════════════════════════════════════ */
+  /* INIT */
   function init() {
     resizeCanvas();
     // Load saved notes from localStorage if available

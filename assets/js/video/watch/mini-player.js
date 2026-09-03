@@ -339,8 +339,43 @@ function getMiniShell() {
   return e;
 }
 function closeMiniPlayer() {
-  isMiniPlayerActive &&
-    (player && player.pause(), (window.location.href = "beranda"));
+  if (!isMiniPlayerActive) return;
+  isMiniPlayerActive = false;
+  // Blokir mekanisme recovery media: player sengaja dimatikan, jangan biarkan
+  // event error/stalled dari teardown (mis. HLS fatal saat destroy) memicu
+  // htmx.ajax ke '#main-video-wrapper' yang sudah tidak ada (bisa mengosongkan
+  // seluruh body). Timer pemantau juga dihentikan.
+  isRecovering = !0;
+  isCheckingStatus = !1;
+  stopStuckDetector();
+  stopWaitingTimeout();
+  stopPlaybackStartTimeout();
+  // Tutup benar-benar di tempat: hentikan playback & lepas player
+  // (Plyr/HLS/glow/timer) — TANPA navigasi / reload halaman index.
+  try {
+    player && player.pause();
+  } catch (e) {}
+  destroyPlayer();
+  // Hapus shell mini-player (ikut membuang #main-video-wrapper di dalamnya)
+  // beserta artefak mode mini lainnya.
+  if (miniShell) {
+    miniShell.remove();
+    miniShell = null;
+  }
+  document.body.style.paddingBottom = "";
+  document.body.classList.remove("meel-autonext-active");
+  if (typeof glowNavbar !== "undefined" && glowNavbar) {
+    glowNavbar.style.removeProperty("--navbar-glow-color");
+  }
+  // Buang sisa DOM halaman watch (detail, rekomendasi, glow canvas, resume
+  // modal, dst.) yang sudah tidak terlihat — yang tersisa adalah listing
+  // index (temp-index-content) yang memang sudah termuat di bawah player.
+  const grid = document.getElementById("app-content-grid");
+  grid && grid.remove();
+  // Pencarian navbar tetap mengarah ke grid index yang masih tampil.
+  setNavbarSearchTarget("#video-container");
+  const tempTitle = window.__meelTempIndexTitle;
+  tempTitle && (document.title = tempTitle);
 }
 function updateMiniPlayerInfo(e, t) {
   const n = document.getElementById("mini-info-title"),
@@ -602,11 +637,15 @@ function attachMiniPlayerVideoCardListeners(e) {
                   ),
                   0)) &&
                 toggleMiniPlayer()) ||
+              // 'n' butuh #main-video-wrapper: setelah close mini-player
+              // (tutup in-place) wrapper sudah tidak ada — jangan coba
+              // pindah video ke target yang sudah dihapus.
               ("n" === e.key.toLowerCase() &&
                 !e.ctrlKey &&
                 !e.altKey &&
                 !isTransitioningNext &&
                 !isRecovering &&
+                document.getElementById("main-video-wrapper") &&
                 (e.preventDefault(),
                 e.stopPropagation(),
                 window.skipToNextVideo && window.skipToNextVideo()))

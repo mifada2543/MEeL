@@ -14,9 +14,7 @@ import {
 import { playSFX } from "./audio.js";
 import { updateHUD, showJudgment } from "./renderer.js";
 
-/* ═══════════════════════════════════════════════════════
-   HIT LANE
-   ═══════════════════════════════════════════════════════ */
+/* HIT LANE */
 export function hitLane(lane) {
   if (S.gameState !== "playing") return;
   S.laneFlashes[lane] = 1.0;
@@ -106,9 +104,7 @@ export function hitLane(lane) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   ACTIVATE HOLD NOTE
-   ═══════════════════════════════════════════════════════ */
+/* ACTIVATE HOLD NOTE */
 function _activateHold(lane, note, diffMs) {
   let type;
   if (diffMs <= TIMING.perfect) type = "perfect";
@@ -134,9 +130,7 @@ function _activateHold(lane, note, diffMs) {
   playSFX(type);
 }
 
-/* ═══════════════════════════════════════════════════════
-   RELEASE LANE
-   ═══════════════════════════════════════════════════════ */
+/* RELEASE LANE */
 export function releaseLane(lane) {
   if (S.gameState !== "playing") return;
   S.lanePressed[lane] = false;
@@ -202,9 +196,7 @@ export function releaseLane(lane) {
   playSFX(finalType);
 }
 
-/* ═══════════════════════════════════════════════════════
-   HOLD SUSTAIN CHECK (called from game loop)
-   ═══════════════════════════════════════════════════════ */
+/* HOLD SUSTAIN CHECK (called from game loop) */
 export function checkHoldSustain(lane) {
   const hold = S.holdNotes[lane];
   if (!hold || !hold.holding) return;

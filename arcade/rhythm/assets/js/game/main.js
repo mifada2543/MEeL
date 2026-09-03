@@ -8,9 +8,7 @@ import { loadSongData } from "./loader.js";
 import { loadOptions } from "./gameFlow.js";
 import { initKeyboard, initTouch, initButtons } from "./input.js";
 
-/* ═══════════════════════════════════════════════════════
-   INIT
-   ═══════════════════════════════════════════════════════ */
+/* INIT */
 async function init() {
   try { resizeCanvas(); } catch (e) { console.error("[Game] resizeCanvas failed:", e); }
   window.addEventListener("resize", () => { try { resizeCanvas(); } catch (e) {} });

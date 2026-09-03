@@ -10,9 +10,7 @@ import {
 } from "./state.js";
 import { getW, getH, laneWidth, playfieldX, hitY } from "./canvas.js";
 
-/* ═══════════════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════════════ */
+/* HELPERS */
 export function pad6(n) { return String(Math.floor(n)).padStart(6, "0"); }
 
 function getNoteSize() {
@@ -29,9 +27,7 @@ function noteColorFor(note) {
   return note.endTime ? COLOR_HOLD : COLOR_CLICK;
 }
 
-/* ═══════════════════════════════════════════════════════
-   HUD UPDATES
-   ═══════════════════════════════════════════════════════ */
+/* HUD UPDATES */
 export function updateHUD() {
   const hs = document.getElementById("hudScore");
   const ha = document.getElementById("hudAcc");
@@ -79,9 +75,7 @@ export function showJudgment(type, isGold) {
   judgeTimer = setTimeout(() => jw.classList.add("hidden"), 550);
 }
 
-/* ═══════════════════════════════════════════════════════
-   MAIN DRAW
-   ═══════════════════════════════════════════════════════ */
+/* MAIN DRAW */
 export function draw() {
   const w = getW(), h = getH();
   const lw = laneWidth();

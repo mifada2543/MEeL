@@ -97,10 +97,7 @@
       errorHandled = false,
       audioEndedNaturally = false;
 
-    // ════════════════════════════════════════════════════════════
-    // STREAM RECOVERY — detect & auto-recover when stream drops
-    // after idle / network interruption.
-    // ════════════════════════════════════════════════════════════
+    // STREAM RECOVERY — detect & auto-recover when stream drops after idle / network interruption.
     const RECOVERY_MAX_RETRIES = 15;
     const STUCK_CHECK_INTERVAL_MS = 3000;
     const STUCK_THRESHOLD_S = 6;

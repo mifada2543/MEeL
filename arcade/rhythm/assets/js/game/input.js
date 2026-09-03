@@ -9,9 +9,7 @@ import { getW, laneWidth, playfieldX } from "./canvas.js";
 import { hitLane, releaseLane } from "./hitDetection.js";
 import { startGame, pauseGame } from "./gameFlow.js";
 
-/* ═══════════════════════════════════════════════════════
-   KEYBOARD INPUT
-   ═══════════════════════════════════════════════════════ */
+/* KEYBOARD INPUT */
 export function initKeyboard() {
   document.addEventListener("keydown", (e) => {
     const key = e.key.toLowerCase();
@@ -45,9 +43,7 @@ export function initKeyboard() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   TOUCH INPUT
-   ═══════════════════════════════════════════════════════ */
+/* TOUCH INPUT */
 export function initTouch() {
   document.querySelectorAll(".touch-btn").forEach((btn) => {
     const lane = parseInt(btn.dataset.lane);
@@ -100,9 +96,7 @@ export function initTouch() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   BUTTON CLICK HANDLERS
-   ═══════════════════════════════════════════════════════ */
+/* BUTTON CLICK HANDLERS */
 export function initButtons() {
   const startOverlay = document.getElementById("startOverlay");
   const resultsOverlay = document.getElementById("resultsOverlay");

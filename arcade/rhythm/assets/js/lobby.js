@@ -6,9 +6,7 @@
 (function () {
   "use strict";
 
-  /* ═══════════════════════════════════════════════════════
-     STATE
-     ═══════════════════════════════════════════════════════ */
+  /* STATE */
   let allSongs = [];
   let selectedSong = null;
   let selectedSongData = null;
@@ -17,9 +15,7 @@
   let scores = loadScores();
   let previewAudio = null;
 
-  /* ═══════════════════════════════════════════════════════
-     PERSISTENCE
-     ═══════════════════════════════════════════════════════ */
+  /* PERSISTENCE */
   function loadSettings() {
     try {
       return JSON.parse(localStorage.getItem("mania_settings")) || {
@@ -40,9 +36,7 @@
     try { localStorage.setItem("mania_scores", JSON.stringify(scores)); } catch (e) {}
   }
 
-  /* ═══════════════════════════════════════════════════════
-     BACKGROUND ANIMATION
-     ═══════════════════════════════════════════════════════ */
+  /* BACKGROUND ANIMATION */
   const bgCanvas = document.getElementById("bgCanvas");
   const bgCtx = bgCanvas.getContext("2d");
   let particles = [];
@@ -99,9 +93,7 @@
     requestAnimationFrame(drawBg);
   }
 
-  /* ═══════════════════════════════════════════════════════
-     LOAD SONGS FROM API
-     ═══════════════════════════════════════════════════════ */
+  /* LOAD SONGS FROM API */
   function loadSongs(sortKey) {
     // Songs already loaded from PHP via window.MANIA_SONGS
     if (window.MANIA_SONGS) {
@@ -113,9 +105,7 @@
     renderSongs();
   }
 
-  /* ═══════════════════════════════════════════════════════
-     RENDER SONGS
-     ═══════════════════════════════════════════════════════ */
+  /* RENDER SONGS */
   const songGrid = document.getElementById("songGrid");
 
   function renderSongs() {
@@ -186,9 +176,7 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════
-     SPEED SELECTOR
-     ═══════════════════════════════════════════════════════ */
+  /* SPEED SELECTOR */
   document.querySelectorAll(".speed-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".speed-btn").forEach((b) => b.classList.remove("selected"));
@@ -197,9 +185,7 @@
     });
   });
 
-  /* ═══════════════════════════════════════════════════════
-     SORT
-     ═══════════════════════════════════════════════════════ */
+  /* SORT */
   document.querySelectorAll(".sort-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".sort-btn").forEach((b) => b.classList.remove("active"));
@@ -208,9 +194,7 @@
     });
   });
 
-  /* ═══════════════════════════════════════════════════════
-     SETTINGS PANEL
-     ═══════════════════════════════════════════════════════ */
+  /* SETTINGS PANEL */
   const settingsPanel = document.getElementById("settingsPanel");
   document.getElementById("btnSettings").addEventListener("click", () => {
     settingsPanel.classList.remove("hidden");
@@ -267,9 +251,7 @@
     }
   });
 
-  /* ═══════════════════════════════════════════════════════
-     STATS PANEL
-     ═══════════════════════════════════════════════════════ */
+  /* STATS PANEL */
   const statsPanel = document.getElementById("statsPanel");
   document.getElementById("btnStats").addEventListener("click", () => {
     statsPanel.classList.remove("hidden");
@@ -310,9 +292,7 @@
     document.getElementById('statsBody').innerHTML = html;
   }
 
-  /* ═══════════════════════════════════════════════════════
-     PLAY → Navigate to Game
-     ═══════════════════════════════════════════════════════ */
+  /* PLAY → Navigate to Game */
   document.getElementById("btnPlay").addEventListener("click", () => {
     if (!selectedSongData) return;
     const params = new URLSearchParams({
@@ -323,9 +303,7 @@
     window.location.href = `game?${params.toString()}`;
   });
 
-  /* ═══════════════════════════════════════════════════════
-     TOAST
-     ═══════════════════════════════════════════════════════ */
+  /* TOAST */
   function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg;
@@ -339,9 +317,7 @@
     return active ? active.dataset.sort : "default";
   }
 
-  /* ═══════════════════════════════════════════════════════
-     INIT
-     ═══════════════════════════════════════════════════════ */
+  /* INIT */
   async function init() {
     resizeBg();
     initParticles();

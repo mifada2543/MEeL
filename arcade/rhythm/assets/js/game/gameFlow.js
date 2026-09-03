@@ -18,9 +18,7 @@ function isMobile() {
   return "ontouchstart" in window || navigator.maxTouchPoints > 0;
 }
 
-/* ═══════════════════════════════════════════════════════
-   GAME LOOP
-   ═══════════════════════════════════════════════════════ */
+/* GAME LOOP */
 export function gameLoop(ts) {
   if (S.gameState !== "playing") return;
 
@@ -115,9 +113,7 @@ export function gameLoop(ts) {
   S.animFrame = requestAnimationFrame(gameLoop);
 }
 
-/* ═══════════════════════════════════════════════════════
-   FPS COUNTER
-   ═══════════════════════════════════════════════════════ */
+/* FPS COUNTER */
 let fpsDisplay = null;
 let fpsFrames = 0;
 let fpsLastTime = performance.now();
@@ -133,9 +129,7 @@ function updateFPS() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   COUNTDOWN (3-2-1-GO)
-   ═══════════════════════════════════════════════════════ */
+/* COUNTDOWN (3-2-1-GO) */
 function runCountdown(callback) {
   S.gameState = "countdown";
   countdownOverlay.classList.remove("hidden");
@@ -175,9 +169,7 @@ function runCountdown(callback) {
   }, 800);
 }
 
-/* ═══════════════════════════════════════════════════════
-   START GAME
-   ═══════════════════════════════════════════════════════ */
+/* START GAME */
 export function startGame() {
   initAudio();
   resumeAudio();
@@ -235,9 +227,7 @@ export function startGame() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   PAUSE / RESUME / RESTART
-   ═══════════════════════════════════════════════════════ */
+/* PAUSE / RESUME / RESTART */
 export function pauseGame() {
   if (S.gameState !== "playing") return;
   S.gameState = "paused";
@@ -293,9 +283,7 @@ window.restartGame = function () {
   });
 };
 
-/* ═══════════════════════════════════════════════════════
-   OPTIONS / ADVANCED
-   ═══════════════════════════════════════════════════════ */
+/* OPTIONS / ADVANCED */
 export function loadOptions() {
   try {
     const saved = JSON.parse(localStorage.getItem("mania_options") || "null");
@@ -369,9 +357,7 @@ window.quitToLobby = function () {
   window.location.href = "/MEeL/arcade/rhythm/";
 };
 
-/* ═══════════════════════════════════════════════════════
-   RESULTS
-   ═══════════════════════════════════════════════════════ */
+/* RESULTS */
 function showResults() {
   S.gameState = "results";
   stopBGM();

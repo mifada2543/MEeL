@@ -30,9 +30,11 @@ window.meelLoadTempIndex = async function (options) {
     // sejak routing bersih — mini-player malah menampilkan hub).
     const res = await fetch("beranda");
     const html = await res.text();
-    const main = new DOMParser()
-      .parseFromString(html, "text/html")
-      .querySelector("main");
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    // Judul index disimpan agar saat mini-player ditutup in-place (video),
+    // document.title bisa disinkronkan tanpa navigasi/reload.
+    window.__meelTempIndexTitle = parsed.title;
+    const main = parsed.querySelector("main");
     if (main) {
       el.innerHTML = useOuterHTML ? main.outerHTML : main.innerHTML;
       window.history.pushState({ miniPlayer: true }, "", "beranda");

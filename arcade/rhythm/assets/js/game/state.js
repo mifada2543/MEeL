@@ -3,17 +3,13 @@
  * Single mutable state object that all modules can freely modify.
  */
 
-/* ═══════════════════════════════════════════════════════
-   URL PARAMS
-   ═══════════════════════════════════════════════════════ */
+/* URL PARAMS */
 export const speedMult = window.MANIA_SPEED || 1.5;
 export const phpSong = window.MANIA_SONG || null;
 export const phpBeatmap = window.MANIA_BEATMAP || null;
 export const songId = phpSong ? phpSong.id : "starlight";
 
-/* ═══════════════════════════════════════════════════════
-   DOM
-   ═══════════════════════════════════════════════════════ */
+/* DOM */
 export const canvas = document.getElementById("gameCanvas");
 export const ctx = canvas ? canvas.getContext("2d") : null;
 export const audioElement = document.getElementById("audioPlayer") || new Audio();
@@ -35,9 +31,7 @@ export const countdownOverlay = document.getElementById("countdownOverlay");
 export const countdownNum = document.getElementById("countdownNum");
 export const optionsOverlay = document.getElementById("optionsOverlay");
 
-/* ═══════════════════════════════════════════════════════
-   CONSTANTS (frozen, never change)
-   ═══════════════════════════════════════════════════════ */
+/* CONSTANTS (frozen, never change) */
 export const LANE_COUNT = 4;
 export const KEY_MAP = { a: 0, s: 1, k: 2, l: 3 };
 export const COLOR_CLICK = "#3b82f6";
@@ -79,9 +73,7 @@ export const JUDGE_COLORS = {
 };
 export const GOLD_GLOW = "rgba(251,191,36,0.4)";
 
-/* ═══════════════════════════════════════════════════════
-   MUTABLE STATE (single object — all modules can freely mutate)
-   ═══════════════════════════════════════════════════════ */
+/* MUTABLE STATE (single object — all modules can freely mutate) */
 export const S = {
   song: null,
   beatmapData: null,

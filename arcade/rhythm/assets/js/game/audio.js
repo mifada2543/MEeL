@@ -4,9 +4,7 @@
  */
 import { S } from "./state.js";
 
-/* ═══════════════════════════════════════════════════════
-   WEB AUDIO API
-   ═══════════════════════════════════════════════════════ */
+/* WEB AUDIO API */
 export let audioCtx = null;
 export let masterGain = null;
 export let sfxGain = null;
@@ -29,9 +27,7 @@ export function resumeAudio() {
   if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
 }
 
-/* ═══════════════════════════════════════════════════════
-   SFX
-   ═══════════════════════════════════════════════════════ */
+/* SFX */
 export function playSFX(type) {
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -56,9 +52,7 @@ export function playSFX(type) {
   osc.stop(now + c.dur + 0.01);
 }
 
-/* ═══════════════════════════════════════════════════════
-   BGM
-   ═══════════════════════════════════════════════════════ */
+/* BGM */
 let bgmInterval = null;
 
 export function startBGM() {
@@ -146,9 +140,7 @@ export function stopBGM() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   COUNTDOWN BEEP
-   ═══════════════════════════════════════════════════════ */
+/* COUNTDOWN BEEP */
 export function playCountdownBeep(freq, duration) {
   if (!audioCtx) return;
   try {
