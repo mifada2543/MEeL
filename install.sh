@@ -5,10 +5,11 @@
 # Menjalankan seluruh langkah di "Instalasi Cepat" README secara otomatis:
 #   1. Cek dependency (PHP + ekstensi, MariaDB/MySQL, Apache)
 #   2. Setup database + import schema.sql
-#   3. Buat auth/settings.php & auth/config.php dari template (+ opsi X-Sendfile)
+#   3. Buat auth/settings.php & auth/config.php dari template (+ MEEL_ENV/APP_DEBUG,
+#      path biner manual, trusted proxy, opsi X-Sendfile)
 #   4. Buat direktori storage runtime + symlink deploy ke MEEL_HDD_BASE
 #      (hardening .htaccess folder upload ikut disalin ke target)
-#   5. Aktifkan mod_rewrite Apache (jika terdeteksi & pakai sudo)
+#   5. Aktifkan mod_rewrite + (opsional) buat VirtualHost Apache
 #   6. Jalankan database/migrate.php
 #   7. Verifikasi akhir via tests/check_deploy.php — exit 1 jika ada FAIL
 #
@@ -26,7 +27,12 @@
 #   ./install.sh --hdd=/path     # set MEEL_HDD_BASE langsung
 #   ./install.sh --skip-apt      # lewati instalasi paket sistem (sudah ada)
 #   ./install.sh --xsendfile     # aktifkan MEEL_USE_XSENDFILE (wajib mod_xsendfile Apache)
+#   ./install.sh --env=production|development   # set MEEL_ENV + APP_DEBUG
+#   ./install.sh --trust-proxy   # aktifkan MEEL_TRUST_PROXY_HEADERS (di balik reverse proxy)
+#   ./install.sh --vhost=meel.local  # buat VirtualHost Apache untuk domain tsb
 #   ./install.sh --help
+#
+# Semua prompt ya/tidak memakai 'y' = ya, 't' = tidak.
 #
 set -euo pipefail
 
@@ -52,7 +58,10 @@ die()   { fail "$1"; exit 1; }
 ASSUME_YES=false
 SKIP_APT=false
 HDD_OVERRIDE=""
-XSENDFILE_OVERRIDE=""   # ""=tanya, "1"=aktifkan, "0"=nonaktifkan
+XSENDFILE_OVERRIDE=""      # ""=tanya, "1"=aktifkan, "0"=nonaktifkan
+ENV_OVERRIDE=""             # ""=tanya, "production"|"development"
+TRUST_PROXY_OVERRIDE=""     # ""=tanya, "1"=aktifkan, "0"=nonaktifkan
+VHOST_OVERRIDE=""           # ""=tanya/lewati, domain=buat VirtualHost
 
 for arg in "$@"; do
     case "$arg" in
@@ -61,8 +70,12 @@ for arg in "$@"; do
         --hdd=*)       HDD_OVERRIDE="${arg#--hdd=}" ;;
         --xsendfile)   XSENDFILE_OVERRIDE=1 ;;
         --no-xsendfile) XSENDFILE_OVERRIDE=0 ;;
+        --env=*)       ENV_OVERRIDE="${arg#--env=}" ;;
+        --trust-proxy) TRUST_PROXY_OVERRIDE=1 ;;
+        --no-trust-proxy) TRUST_PROXY_OVERRIDE=0 ;;
+        --vhost=*)     VHOST_OVERRIDE="${arg#--vhost=}" ;;
         --help|-h)
-            sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -72,18 +85,17 @@ for arg in "$@"; do
 done
 
 confirm() {
-    # confirm "Pertanyaan" default_jawaban(Y/n)
+    # confirm "Pertanyaan" default_jawaban(Y/N)
+    # Prompt boolean konsisten: 'y' = ya, 't' = tidak (juga menerima 'n').
     # Di mode --yes (non-interaktif): ikuti nilai default, JANGAN selalu
     # jawab ya — beberapa prompt (mis. reimport schema ke DB yang sudah
     # ada) sengaja default ke N karena berisiko/destruktif.
-    local prompt="$1" default="${2:-Y}"
+    local prompt="$1" default="${2:-Y}" reply
     if $ASSUME_YES; then
         [ "$default" = "Y" ]
         return
     fi
-    local suffix="[Y/n]"
-    [ "$default" = "N" ] && suffix="[y/N]"
-    read -r -p "  $prompt $suffix " reply || true
+    read -r -p "  $prompt (y = ya, t = tidak) " reply || true
     reply="${reply:-$default}"
     [[ "$reply" =~ ^[Yy]$ ]]
 }
@@ -298,6 +310,7 @@ else
     DEFAULT_HDD="$PROJECT_ROOT/storage/media"
     HDD_BASE="$(ask "Lokasi storage media (MEEL_HDD_BASE) — bisa HDD eksternal atau folder lokal" "$DEFAULT_HDD")"
 fi
+HDD_BASE="${HDD_BASE%/}"   # normalisasi: buang trailing slash
 
 # Patch settings.php: DB creds + MEEL_HDD_BASE (hanya replace baris default,
 # aman dijalankan ulang karena mencocokkan pola persis dari settings.example.php)
@@ -323,6 +336,105 @@ PYEOF
     sed -i "s#define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');#define('MEEL_HDD_BASE', '${HDD_BASE}');#" auth/settings.php
 }
 ok "auth/settings.php dikonfigurasi (DB: ${DB_NAME}@${DB_HOST}, storage: ${HDD_BASE})"
+
+# ─────────────────────────────────────────────────────────────────────────
+# 3b. Environment, path biner, trusted proxy (opsional — patch settings.php)
+# ─────────────────────────────────────────────────────────────────────────
+ENV_CHOICE="production"
+if [ -n "$ENV_OVERRIDE" ]; then
+    ENV_CHOICE="$ENV_OVERRIDE"
+else
+    ENV_CHOICE="$(ask "Environment aplikasi (production/development)" "production")"
+fi
+case "$ENV_CHOICE" in
+    production|development) ;;
+    *) warn "Environment '$ENV_CHOICE' tidak dikenal — pakai production."; ENV_CHOICE="production" ;;
+esac
+DEBUG_CHOICE=false
+[ "$ENV_CHOICE" = "development" ] && DEBUG_CHOICE=true
+
+# Path biner manual — kosong = auto-detect via resolveBinary() saat runtime
+FFMPEG_PATH=""; FFPROBE_PATH=""; NODE_PATH=""; YTDLP_PATH=""
+if ! $ASSUME_YES && confirm "Set path biner manual (ffmpeg/ffprobe/node/yt-dlp)? (kosongkan semua = auto-detect)" N; then
+    FFMPEG_PATH="$(ask "Path ffmpeg (kosong = auto-detect)" "")"
+    FFPROBE_PATH="$(ask "Path ffprobe (kosong = auto-detect)" "")"
+    NODE_PATH="$(ask "Path node (kosong = auto-detect)" "")"
+    YTDLP_PATH="$(ask "Path yt-dlp (kosong = auto-detect)" "")"
+fi
+
+# Trusted proxy headers — HANYA jika di balik reverse proxy (nginx/caddy/Cloudflare)
+TRUST_PROXY=false
+if [ "$TRUST_PROXY_OVERRIDE" = "1" ]; then
+    TRUST_PROXY=true
+elif [ "$TRUST_PROXY_OVERRIDE" != "0" ] && confirm "Aplikasi di balik reverse proxy (nginx/caddy/Cloudflare)? (IP asli berasal dari header proxy)" N; then
+    TRUST_PROXY=true
+fi
+
+# Terapkan ke settings.php (nilai kosong = biarkan default). Fallback sed
+# dipakai jika python3 tidak tersedia. Aman dijalankan ulang: tidak ada
+# perubahan jika settings.php sudah dimodifikasi manual (pola tidak cocok).
+patch_optional_settings() {
+    # patch_optional_settings ENV DEBUG FFMPEG FFPROBE NODE YTDLP TRUST_PROXY
+    python3 - "$@" "auth/settings.php" <<'PYEOF' 2>/dev/null || {
+import re, sys
+env, debug, ffmpeg, ffprobe, node, ytdlp, trust, path = sys.argv[1:9]
+with open(path, 'r', encoding='utf-8') as f:
+    c = f.read()
+if env == 'production':
+    # uncomment baris yang nilainya sama persis (idempotent: baris lain
+    # dibiarkan sebagai komentar, tidak pernah duplikat define aktif)
+    c = re.sub(r"^//\s*define\('MEEL_ENV', 'production'\).*$",
+               "define('MEEL_ENV', 'production');", c, count=1, flags=re.M)
+elif env == 'development':
+    c = re.sub(r"^//\s*define\('MEEL_ENV', 'development'\).*$",
+               "define('MEEL_ENV', 'development');", c, count=1, flags=re.M)
+if debug == 'true':
+    c = re.sub(r"^//\s*define\('APP_DEBUG', true\).*$",
+               "define('APP_DEBUG', true);", c, count=1, flags=re.M)
+elif debug == 'false':
+    c = re.sub(r"^//\s*define\('APP_DEBUG', false\).*$",
+               "define('APP_DEBUG', false);", c, count=1, flags=re.M)
+for name, val in (('MEEL_FFMPEG_PATH', ffmpeg), ('MEEL_FFPROBE_PATH', ffprobe),
+                  ('MEEL_NODE_PATH', node), ('MEEL_YTDLP_PATH', ytdlp)):
+    if val:
+        c = re.sub(r"define\('%s'\s*,\s*''\)" % name,
+                   "define('%s', '%s')" % (name, val), c, count=1)
+if trust == 'true':
+    c = re.sub(r"define\('MEEL_TRUST_PROXY_HEADERS'\s*,\s*false\)",
+               "define('MEEL_TRUST_PROXY_HEADERS', true)", c, count=1)
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(c)
+print("patched via python3")
+PYEOF
+    # Fallback sed jika python3 tidak tersedia
+    case "$1" in
+        production)  sed -i "s#^// define('MEEL_ENV', 'production');#define('MEEL_ENV', 'production');#" auth/settings.php ;;
+        development) sed -i "s#^// define('MEEL_ENV', 'development');#define('MEEL_ENV', 'development');#" auth/settings.php ;;
+    esac
+    if [ "$2" = "true" ]; then
+        sed -i "s#^// define('APP_DEBUG', true);.*#define('APP_DEBUG', true);#" auth/settings.php
+    elif [ "$2" = "false" ]; then
+        sed -i "s#^// define('APP_DEBUG', false);.*#define('APP_DEBUG', false);#" auth/settings.php
+    fi
+    [ -n "$3" ] && sed -i "s#define('MEEL_FFMPEG_PATH', '');#define('MEEL_FFMPEG_PATH', '$3');#" auth/settings.php
+    [ -n "$4" ] && sed -i "s#define('MEEL_FFPROBE_PATH', '');#define('MEEL_FFPROBE_PATH', '$4');#" auth/settings.php
+    [ -n "$5" ] && sed -i "s#define('MEEL_NODE_PATH', '');#define('MEEL_NODE_PATH', '$5');#" auth/settings.php
+    [ -n "$6" ] && sed -i "s#define('MEEL_YTDLP_PATH', '');#define('MEEL_YTDLP_PATH', '$6');#" auth/settings.php
+    [ "$7" = "true" ] && sed -i "s#define('MEEL_TRUST_PROXY_HEADERS', false);#define('MEEL_TRUST_PROXY_HEADERS', true);#" auth/settings.php
+    }
+}
+
+patch_optional_settings "$ENV_CHOICE" "$DEBUG_CHOICE" "$FFMPEG_PATH" "$FFPROBE_PATH" "$NODE_PATH" "$YTDLP_PATH" "$TRUST_PROXY"
+ok "MEEL_ENV=${ENV_CHOICE} (APP_DEBUG=${DEBUG_CHOICE}) ditulis ke auth/settings.php."
+[ -n "$FFMPEG_PATH" ] && ok "MEEL_FFMPEG_PATH → $FFMPEG_PATH"
+[ -n "$FFPROBE_PATH" ] && ok "MEEL_FFPROBE_PATH → $FFPROBE_PATH"
+[ -n "$NODE_PATH" ] && ok "MEEL_NODE_PATH → $NODE_PATH"
+[ -n "$YTDLP_PATH" ] && ok "MEEL_YTDLP_PATH → $YTDLP_PATH"
+if $TRUST_PROXY; then
+    ok "MEEL_TRUST_PROXY_HEADERS diaktifkan (percaya X-Forwarded-For/Proto)."
+else
+    warn "MEEL_TRUST_PROXY_HEADERS tetap nonaktif (default aman — jangan aktifkan tanpa proxy)."
+fi
 
 # ─────────────────────────────────────────────────────────────────────────
 # X-Sendfile (opsional — akselerasi streaming via Apache)
@@ -384,6 +496,10 @@ mkdir -p "$HDD_BASE/video/upload/video" \
          "$HDD_BASE/drive/public" \
          "$HDD_BASE/drive/private_admins"
 ok "Storage media dibuat di: $HDD_BASE"
+echo "    video : $HDD_BASE/video/upload/{video,thumbnail}"
+echo "    music : $HDD_BASE/music/upload/{file,thumbnail}"
+echo "    books : $HDD_BASE/books/upload/{manga,pdf,thumbnail}"
+echo "    drive : $HDD_BASE/drive/{public,private_admins}"
 
 mkdir -p data_drive/public data_drive/private_admins temp profile/upload
 ok "Folder runtime lokal (data_drive, temp, profile/upload) siap."
@@ -452,9 +568,9 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────────────
-# 5. Aktifkan mod_rewrite Apache (best-effort)
+# 5. Aktifkan mod_rewrite Apache + (opsional) VirtualHost
 # ─────────────────────────────────────────────────────────────────────────
-step "5/7 — Aktifkan mod_rewrite Apache"
+step "5/7 — Aktifkan mod_rewrite & VirtualHost Apache"
 
 if command -v a2enmod >/dev/null 2>&1 && $CAN_ELEVATE; then
     if confirm "Aktifkan mod_rewrite & restart Apache sekarang?" Y; then
@@ -467,6 +583,48 @@ else
     warn "a2enmod tidak ditemukan — jika pakai Apache, aktifkan mod_rewrite manual:"
     warn "  sudo a2enmod rewrite && sudo systemctl restart apache2"
     warn "Pastikan juga 'AllowOverride All' aktif di konfigurasi VirtualHost (lihat docs/id/installation.md)."
+fi
+
+# ─────────────────────────────────────────────────────────────────────────
+# 5b. VirtualHost Apache (opsional — domain khusus untuk MEeL)
+#     Di --yes mode: dilewati (akses via DocumentRoot/subfolder).
+# ─────────────────────────────────────────────────────────────────────────
+VHOST_DOMAIN=""
+if [ -n "$VHOST_OVERRIDE" ]; then
+    VHOST_DOMAIN="$VHOST_OVERRIDE"
+elif ! $ASSUME_YES && confirm "Buat file VirtualHost Apache untuk MEeL (DocumentRoot: ${PROJECT_ROOT})?" N; then
+    VHOST_DOMAIN="$(ask "Domain/ServerName (mis. meel.local)" "meel.local")"
+fi
+
+if [ -n "$VHOST_DOMAIN" ]; then
+    VHOST_FILE="/etc/apache2/sites-available/meel.conf"
+    VHOST_CONFIG="<VirtualHost *:80>
+    ServerName ${VHOST_DOMAIN}
+    DocumentRoot ${PROJECT_ROOT}
+    <Directory ${PROJECT_ROOT}>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \${APACHE_LOG_DIR}/meel-error.log
+    CustomLog \${APACHE_LOG_DIR}/meel-access.log combined
+</VirtualHost>"
+    if command -v a2ensite >/dev/null 2>&1 && $CAN_ELEVATE; then
+        printf '%s\n' "$VHOST_CONFIG" | $SUDO tee "$VHOST_FILE" >/dev/null
+        $SUDO a2ensite meel >/dev/null 2>&1 || true
+        $SUDO systemctl restart apache2 2>/dev/null || $SUDO service apache2 restart 2>/dev/null || \
+            warn "Gagal restart Apache otomatis — restart manual."
+        ok "VirtualHost '${VHOST_DOMAIN}' dibuat & diaktifkan (${VHOST_FILE})."
+        warn "Untuk akses lokal, tambahkan ke /etc/hosts:  127.0.0.1 ${VHOST_DOMAIN}"
+    else
+        warn "a2ensite tidak tersedia / tanpa sudo — VirtualHost TIDAK ditulis otomatis. Salin manual:"
+        echo ""
+        printf '%s\n' "$VHOST_CONFIG"
+        echo ""
+        warn "Simpan ke ${VHOST_FILE}, lalu: sudo a2ensite meel && sudo systemctl restart apache2"
+    fi
+else
+    ok "VirtualHost dilewati — akses via DocumentRoot/subfolder (mis. http://host/MEeL) memakai .htaccess langsung."
 fi
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -503,6 +661,7 @@ fi
 echo ""
 echo "  Login default   : Admin / Admin#123  (${C_YELLOW}ganti segera setelah login pertama${C_RESET})"
 echo "  Database         : ${DB_NAME}@${DB_HOST}"
+echo "  Environment      : ${ENV_CHOICE} (APP_DEBUG=${DEBUG_CHOICE})"
 echo "  Storage media     : ${HDD_BASE}"
 echo ""
 echo "  Jalankan cepat via PHP built-in server (untuk testing):"
