@@ -1672,6 +1672,23 @@ html[data-theme="light"] .bg-gray-800 {
   background-color: var(--meel-surface-hover) !important;
 }
 
+/* ─── Profile Edit (profile_edit.php) ─── */
+html[data-theme="light"] .crop-guide {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+}
+html[data-theme="light"] .bg-blue-500\/10 {
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+html[data-theme="light"] .border-blue-500\/50 {
+  border-color: rgba(37, 99, 235, 0.25) !important;
+}
+html[data-theme="light"] .text-blue-400 {
+  color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .text-red-400 {
+  color: var(--meel-red) !important;
+}
+
 /* ════════════════════════════════════════════════════════════
    PROFILE/MANAGE — Kelola Konten (light mode)
    ════════════════════════════════════════════════════════════ */
