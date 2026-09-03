@@ -208,8 +208,8 @@ Diagnosa path storage dilakukan lewat perintah filesystem (contoh `ls -la` dan `
 ffmpeg -version
 which ffmpeg
 
-# Transcoder.php sudah auto-detect via resolveBinary()
-# Jika ingin custom path, ubah array candidate di constructor
+# resolveBinary() (trait modules/transcoder/FfmpegUtils.php) sudah auto-detect
+# Jika ingin custom path, set MEEL_FFMPEG_PATH / MEEL_FFPROBE_PATH di auth/settings.php
 ```
 
 **Penyebab 3: Resource Limit**
@@ -248,8 +248,8 @@ killall -9 ffmpeg
 **Optimasi:**
 ```php
 // Sesuaikan FFMPEG_THREADS dengan CPU Anda
-// Di modules/core/Transcoder.php
-private const FFMPEG_THREADS = 8; // Ganti dengan jumlah core CPU Anda (nproc)
+// Di modules/core/TranscoderBase.php (diwarisi semua service transcoder)
+protected const FFMPEG_THREADS = 8; // Ganti dengan jumlah core CPU Anda (nproc)
 ```
 
 Cek CPU:

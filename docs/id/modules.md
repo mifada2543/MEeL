@@ -56,7 +56,8 @@ modules/
 ├── core/                   # Core business logic
 │   ├── System.php          # Queue management, storage monitoring
 │   ├── Uploader.php        # Upload file lokal (video + music)
-│   ├── Transcoder.php      # Engine download yt-dlp & transcoding
+│   ├── Transcoder.php      # Facade download yt-dlp & transcoding → delegasi ke modules/transcoder/
+│   ├── TranscoderBase.php  # Base class: konstanta bersama, manajemen proses/PID, resolusi path
 │   ├── helpers.php         # Shim backward-compat → require helpers/main.php + auth/loader.php
 │   ├── helpers/            # Utilitas per domain: main.php, storage.php, audio.php, url.php, metadata.php, subtitle.php, upload.php
 │   ├── Router.php          # MeelRouter — tabel rute front controller (routeFor/url/dispatch)
@@ -87,8 +88,11 @@ modules/
 │   ├── ProcessException.php
 │   ├── DownloadException.php
 │   └── TranscodeException.php
-├── transcoder/
-│   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT()
+├── transcoder/             # Service hasil pemecahan Transcoder (extend TranscoderBase)
+│   ├── EncodeService.php   # encodeMusic() — download → encode Opus → thumbnail → INSERT music
+│   ├── DownloadService.php # processDownload() — unduh URL (yt-dlp) + finalisasi video HLS
+│   ├── TranscodeService.php# transcodeVideo() + ownsTranscodeFile() — transcode audio/video
+│   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT(), helper filesystem
 └── autoload.php            # PSR-4-like autoloader
 
 # ── Di ROOT PROJECT (bukan di modules/) ────────────────────────────────
@@ -130,13 +134,45 @@ query boolean-mode yang malformed jatuh ke hasil kosong, bukan error 500.
 - RAM disk staging (`/dev/shm`) untuk HLS
 - Atomic DB transaction dengan rollback + file cleanup
 
-### 5. `modules/core/Transcoder.php`
+**Delegasi ke helper bersama (`helpers/upload.php`)** — untuk menghindari duplikasi,
+Uploader, `EncodeService`, `DownloadService`, dan admin editor memakai fungsi global yang sama:
+- `meel_reserve_unique_filename()` — alokasi nama atomik `fopen(..., 'x')` (anti race condition)
+- `meel_allocate_unique_dir()` — alokasi direktori unik tanpa menimpa
+- `meel_sanitize_clean_name()` / `meel_sanitize_upload_filename()` — sanitasi nama
+- `meel_ffmpeg_thumbnail_webp()` — satu-satunya jalur konversi gambar → WebP (`libwebp`)
+- `meel_ffmpeg_encode_opus()` — satu-satunya jalur encode audio → Ogg/Opus
+- `meel_insert_music_row()` — satu-satunya jalur INSERT baris tabel `music`
+- `meel_magic_extension_ok()` — validasi magic bytes + ekstensi per jenis media
 
-**Class:** `Transcoder` (menggunakan `FfmpegUtils` trait) — engine download URL & transcoding.
-**Business logic murni — tanpa output HTML/JS:** progress dilaporkan lewat
-`ProgressObserver` (lihat [Arsitektur ProgressObserver](#arsitektur-progressobserver)),
-sehingga engine yang sama berjalan bersih di browser, script CLI, cron, maupun endpoint API.
+### 5. `modules/core/Transcoder.php` — facade + layanan terpecah
 
+**Class:** `Transcoder` — **facade** yang mempertahankan kontrak publik lama
+(konstruktor, `processDownload`, `encodeMusic`, `transcodeVideo`) sambil
+mendelegasikan implementasi ke service-service di `modules/transcoder/`
+(yang semuanya `extends TranscoderBase`):
+
+```
+Caller existing
+    ↓
+Transcoder (facade, modules/core/Transcoder.php)
+    ↓
+├── EncodeService    (modules/transcoder/EncodeService.php)    encodeMusic()
+├── DownloadService  (modules/transcoder/DownloadService.php)  processDownload() + finalisasi video
+└── TranscodeService (modules/transcoder/TranscodeService.php) transcodeVideo() + ownsTranscodeFile()
+    ↓
+TranscoderBase (modules/core/TranscoderBase.php) — konstanta bersama, proses/PID, resolusi path
+```
+
+**`TranscoderBase`** menampung tanggung jawab bersama: konstanta konfigurasi
+(`FFMPEG_THREADS=8`, `HLS_SEGMENT_DURATION=10`, `DOWNLOAD_TIMEOUT=900`,
+`TRANSCODE_AUDIO_TIMEOUT=600`, `PID_DIR`, `FFMPEG_LIB_PATH`, `ENV_PREFIX` —
+semuanya `protected` agar terlihat oleh service anak), konstruktor dengan
+`ProgressObserver`, manajemen proses (`terminateAllProcesses()`, static
+`killByPidFile()`, `cleanupStalePidFiles()`), serta resolusi path aman
+(`getTranscodeFilePath()`, `resolveMusicInputPath()` — path server-side,
+bukan dari input client).
+
+Kontrak publik facade:
 ```php
 class Transcoder {
     public function __construct(\mysqli $db_connection, int $session_user_id,
@@ -146,17 +182,15 @@ class Transcoder {
     public function processDownload(string $url, string $type): string;
     public function encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
     public function transcodeVideo(int $video_id, string $format): array;
-    public static function killByPidFile(string $taskType, int $queueId): bool;  // Kill oleh admin
-    public static function cleanupStalePidFiles(): int;                          // Cleanup PID
 }
 ```
 
-Fitur:
+Fitur (diwarisi bersama dari `TranscoderBase` + `FfmpegUtils`):
 - RAM disk priority (`/dev/shm/meel/`) dengan fallback otomatis
 - Per-platform format resolution (YouTube H.264+AAC, NicoNico, TikTok)
 - Real-time progress via event `ProgressObserver` — overlay browser
   (`partials/ui.php` + JS `meel*`) dirender oleh `BrowserProgressObserver`, bukan class ini
-- **Finalisasi transaksional** — `finalizeVideo()` memindahkan file HLS ke USB HDD
+- **Finalisasi transaksional** — finalisasi video memindahkan file HLS ke USB HDD
   *dan* memasukkan record database di dalam satu transaksi MySQL. Kegagalan apa pun
   di-rollback dan otomatis menghapus folder HLS/thumbnail yang sudah tersalin ke
   HDD (tidak ada file yatim di storage)
@@ -257,7 +291,7 @@ Tiga class exception yang extends `\RuntimeException`:
 
 ### 13. `modules/transcoder/FfmpegUtils.php` (Trait)
 
-Digunakan oleh `Uploader` dan `Transcoder`:
+Digunakan oleh `Uploader`, `TranscoderBase`, dan service-service `modules/transcoder/`:
 ```php
 trait FfmpegUtils {
     protected function resolveBinary(array $candidates): string;
@@ -269,9 +303,11 @@ trait FfmpegUtils {
     protected function removeFile(string $path): void;
     protected function removeDir(string $dir): void;
     protected function moveFile(string $src, string $dst): bool;  // Aman lintas device (RAM → HDD)
-    protected function cleanupDir(string $dir): void;             // Alias removeDir() (backward compat)
 }
 ```
+
+> Catatan: `cleanupDir()` (alias `removeDir()`) telah dihapus — tidak ada pemanggilnya
+> di seluruh project; gunakan `removeDir()` langsung.
 
 Helper `moveFile()` membandingkan device ID `stat()` sebelum mencoba
 `rename()`: pemindahan dari RAM disk (`/dev/shm`) ke USB HDD adalah kasus
@@ -745,7 +781,6 @@ Setiap akses filesystem mengikuti tiga aturan:
 | `removeFile()` | trait `FfmpegUtils` | unlink ber-guard (keberadaan + parent writable) |
 | `removeDir()` | trait `FfmpegUtils` | Pembersihan dir datar (glob → removeFile → rmdir) |
 | `moveFile()` | trait `FfmpegUtils` | Pindah lintas-device dengan cek device `stat()` |
-| `cleanupDir()` | trait `FfmpegUtils` | Alias `removeDir()` (backward compat) |
 | `GarbageCollector::removeFile()` | `GarbageCollector.php` | unlink statis ber-guard |
 | `GarbageCollector::removeDirectory()` | `GarbageCollector.php` | Pembersihan rekursif ber-guard (melewati subtree non-writable, `rmdir` hanya saat kosong) |
 | `meel_write_cache_file()` | `helpers/storage.php` | Tulis cache ber-guard dengan `LOCK_EX` |

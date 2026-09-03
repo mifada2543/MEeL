@@ -55,7 +55,7 @@ MEeL/
 - **Monolith PHP** — Semua logic dalam satu codebase, tanpa microservices
 - **OOP Modular** — Core business logic dipisah ke class-class di `modules/core/`, `modules/media/`, `modules/transcoder/`, `modules/exceptions/`:
   - `modules/core/Uploader.php` — Upload dan validasi file (dengan magic bytes, pre-flight disk space, RAM disk)
-  - `modules/core/Transcoder.php` — Transcoding HLS, ekstraksi audio, download yt-dlp
+  - `modules/core/Transcoder.php` — Facade transcoding (delegasi ke `modules/transcoder/`: `DownloadService`, `EncodeService`, `TranscodeService` — HLS, ekstraksi audio, download yt-dlp)
   - `modules/core/System.php` — Queue management, storage monitoring, rate limit
   - `modules/core/GarbageCollector.php` — Pembersihan temporary files + guest + chess rooms + expired rate limit cache
   - `modules/auth/RateLimiter.php` — File-based API rate limiter (30 likes/min, 10 comments/min)
@@ -136,7 +136,7 @@ MEeL/
 
 ## 🔒 Assessment Keamanan
 
-### Security Test: ✅ 99/100 — Score: 99/100 (A) (4 warning non-kritis, 0 fail)
+### Security Test: ✅ 99/100 — Score: 99/100 (A) (3 warning non-kritis, 0 fail)
 
 | Kategori | Status | Detail |
 |---|---|---|
@@ -200,7 +200,7 @@ MEeL/
 | Static cache `get_user_role()` | 1 query per request (instead of per upload page) | `modules/core/helpers.php` |
 | File-based cache `getCounts()` | Cache count query 60 detik, tanpa DB hit | `modules/media/MediaLibrary.php` |
 | `dir_size()` dengan cache file | 5 menit cache, tanpa `du -sb` berulang | `modules/core/helpers.php` |
-| RAM disk `/dev/shm` priority | I/O 10-100× lebih cepat untuk staging HLS | `modules/core/Uploader.php`, `modules/core/Transcoder.php` |
+| RAM disk `/dev/shm` priority | I/O 10-100× lebih cepat untuk staging HLS | `modules/core/Uploader.php`, `modules/transcoder/DownloadService.php` |
 
 ---
 
@@ -439,11 +439,11 @@ Tidak ada masalah medium yang tersisa.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |---|---|---|---|---|---|
-| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 288 | 288 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 53 | 2 warn | **0** | **✅ 98/100** |
-| **Security Test** | 137 | 133 | 4 warn | **0** | **✅ 99/100** |
-| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
+| **Security Test** | 152 | 149 | 3 warn | **0** | **✅ 99/100** |
+| **PHP Syntax** | 207 files | 207 | 0 | **0** | **✅ ALL PASS** |
 
 ---
 
@@ -464,7 +464,7 @@ Tidak ada masalah medium yang tersisa.
 ### Prioritas Rendah
 
 7. **Docker support** — environment yang konsisten untuk deployment
-8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (266 unit + 81 integration = 347 tests)
+8. ~~**Unit tests** — tambah PHPUnit untuk test class-class core~~ ✅ **Sudah diimplementasi** (288 unit + 81 integration = 369 tests)
 
 ---
 
@@ -483,6 +483,6 @@ Tidak ada masalah medium yang tersisa.
 | **UI/UX improvement** | 25+ (light mode, theme toggle, responsive fixes, smooth transitions) |
 | **Documentation updated** | 10+ file docs + README.md |
 | **Functional test score** | 98/100 (A) |
-| **Security test score** | 99/100 (133 pass, 4 warning non-kritis) |
+| **Security test score** | 99/100 (149 pass, 3 warning non-kritis) |
 
 > **Status:** ✅ **Production-ready dengan 0 critical, 0 high, 0 medium, dan 0 low issue.** Semua issue yang teridentifikasi telah diperbaiki termasuk light mode system baru.

@@ -724,6 +724,81 @@ if ($detectedType === 'audio') {
 $max_dur = ($this->user_role === 'admin') ? 3600 : 300;
 ```
 
+### Validasi Magic Bytes Terpusat (`meel_magic_extension_ok`)
+
+Satu-satunya sumber kebenaran validasi signature file (server-side) — semua
+jalur upload (Uploader video/music, thumbnail, BookUploader, DriveStorage)
+memakainya, menggantikan cek inline yang diduplikasi:
+
+```php
+// modules/core/helpers/upload.php
+meel_magic_extension_ok(string $path, string $ext, string $mediaKind): string
+// mediaKind: 'audio' | 'video' | 'image' | 'pdf' | 'archive'
+// return '' jika cocok, pesan error jika tidak
+```
+
+Jenis yang dikenali: Ogg/Opus, FLAC, WAV/RIFF, MP3 (ID3/frame sync), MP4/M4A
+(ftyp), Matroska/WebM, JPEG/PNG/WebP/GIF, PDF, dan arsip ZIP. Validasi tidak
+pernah mengandalkan `$_FILES['type']` atau ekstensi saja.
+
+### Alokasi Nama File Atomik (anti race condition)
+
+Nama file fisik tidak lagi dialokasikan dengan pola check-then-move
+(`while (file_exists(...))`). Semua nama media di-reserve **atomik** via
+`meel_reserve_unique_filename()` (placeholder `fopen(..., 'x')` / O_EXCL):
+
+```php
+// modules/core/helpers/upload.php — dipakai Uploader, EncodeService,
+// admin editors, dan arcade rhythm
+meel_reserve_unique_filename(string $dir, string $clean_name, string $ext): ?string
+```
+
+Dua request bersamaan tidak mungkin menerima nama yang sama; pemanggil menimpa
+placeholder dengan `move_uploaded_file()` / ffmpeg `-y`. Nama folder kerja video
+dialokasikan lewat helper serupa (`meel_allocate_unique_dir()`).
+
+### Proteksi Arsip ZIP/CBZ (`ArchiveGuard`)
+
+Ekstraksi manga/book **tidak pernah** memakai `ZipArchive::extractTo()`
+langsung ke folder final. `modules/media/ArchiveGuard.php` menjalankan pipeline
+validasi → staging → move:
+
+```
+buka arsip
+  → inspeksi tiap entry (traversal, null byte, count, ukuran, rasio,
+    kedalaman, symlink, ekstensi)
+  → ekstrak satu-per-satu ke staging server-generated (nama acak)
+  → validasi hasil
+  → pindahkan ke folder final (rename; file yang sudah ada TIDAK ditimpa;
+    symlink tidak pernah dipindahkan)
+```
+
+Limit dikonfigurasi via konstanta (default):
+
+| Konstanta | Default | Arti |
+|---|---|---|
+| `MAX_ARCHIVE_ENTRIES` | 5000 | Jumlah entry maksimum |
+| `MAX_ARCHIVE_UNCOMPRESSED_BYTES` | 2 GiB | Total ukuran setelah ekstraksi |
+| `MAX_ARCHIVE_ENTRY_BYTES` | 200 MiB | Ukuran satu file |
+| `MAX_ARCHIVE_COMPRESSION_RATIO` | 300 | Rasio kompresi per-entry (zip bomb) |
+| `MAX_ARCHIVE_PATH_DEPTH` | 16 | Kedalaman direktori maksimum |
+
+Ditolak: absolute path, `../`, `..\`, null byte, symlink, kedalaman berlebihan,
+entri non-gambar (hanya `jpg/jpeg/png/webp/gif/bmp/avif` untuk CBZ/manga), dan
+count/ukuran/rasio melebihi batas. Kejadian ditolak dicatat ke error log tanpa
+menyimpan isi arsip.
+
+### Quota & Resource Limits
+
+- **Disk pre-flight** — `require_disk_space()` menolak upload sebelum menulis
+  byte pertama (music 500MB, video 1GB + `/dev/shm` 512MB).
+- **Upload simultan** — maksimal 3 upload bersamaan (counter file ber-`flock` +
+  TTL 5 menit + auto-decrement di shutdown).
+- **Rate limit** — upload dibatasi per jam berbasis role (admin unlimited).
+- **Arsip** — limit entri/ukuran/rasio di atas (anti zip bomb).
+- **Transcode** — timeout audio 600s (`TRANSCODE_AUDIO_TIMEOUT`), HLS remux
+  120s, `stream_set_timeout(30)`, durasi hasil divalidasi ≥ 50% sumber.
+
 ---
 
 ## Apache .htaccess Protection
@@ -874,8 +949,31 @@ Keterbatasan `https://` dengan demikian teratasi: meskipun URL HTTPS asli tidak 
 | `modules/auth/SsrfGuard.php` | Validasi sentral: allowlist protokol, cek range IPv4/IPv6 eksplisit, validasi semua record DNS, HTTP pinning |
 | `modules/auth/ValidatingProxy.php` | Spawn/terminate proses proxy, expose URL `--proxy` (loopback-only) |
 | `modules/auth/validating_proxy_server.php` | CLI forward proxy: SsrfGuard di setiap hop (HTTP absolute-URI + CONNECT tunnel) |
-| `modules/core/Transcoder.php` | `processDownload()` / `fetchMetadata()` memanggil guard dan mengarahkan yt-dlp lewat `--proxy`; fail closed jika proxy tidak bisa start |
+| `modules/core/Transcoder.php` (facade → `modules/transcoder/DownloadService.php`) | `processDownload()` / `fetchMetadata()` memanggil guard dan mengarahkan yt-dlp lewat `--proxy`; fail closed jika proxy tidak bisa start |
 | `modules/autoload.php` | Mengautoload kelas `SsrfGuard` |
+
+### Keamanan `temp_file` & `post_encode`
+
+`temp_file` tidak pernah menerima path filesystem dari client. Alur
+download-music:
+
+```
+yt-dlp download → staging di RAM disk (`/dev/shm/meel/`) dengan nama token
+  opaque (uniqid server-side)
+  → nama + metadata disimpan di sesi (`meel_pending_music`, expiry 1 jam)
+  → browser POST ke `controllers/api/post_encode.php` hanya membawa token
+```
+
+`post_encode.php`:
+- **Method POST** + verifikasi CSRF (endpoint state-changing)
+- Validasi token: regex `[A-Za-z0-9._-]+`, tolak `..`, path absolut, dan null byte
+- `pathinfo()` + pencocokan sesi → **ownership** (user A tidak bisa memakai
+  token milik user B) + cek eksistensi + expiry 1 jam
+- Input encode dikunci ke direktori temp server (`getShmTempPath()`)
+
+Download hasil transcode (`download_transcode.php`) memakai
+`Transcoder::ownsTranscodeFile()` — binding ke sesi — plus allowlist regex
+nama file, sehingga file transcode milik user lain tidak bisa ditebak/unduh.
 
 ---
 
@@ -1037,6 +1135,19 @@ Output selalu di-escape dengan `htmlspecialchars()`:
 ```php
 echo htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8');
 ```
+
+**Stored XSS (hardening):** database menyimpan data mentah (canonical);
+escaping dilakukan **saat output**, sesuai konteks:
+
+- Plain text HTML → `htmlspecialchars($v, ENT_QUOTES, 'UTF-8')`
+- Attribute/URL → escaping konteks attribute + `urlencode`/whitelist
+- JSON/JS → `json_encode(..., JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)`
+
+Audit mencakup seluruh nilai user-controlled yang dirender: bio profil,
+judul/deskripsi media, komentar, nama file, playlist, hasil pencarian, dan
+data yang tampil di panel admin. Regression test (`tests/security_test.php`)
+memverifikasi payload `<script>alert(1)</script>`,
+`<img src=x onerror=alert(1)>`, dll. tidak pernah dieksekusi sebagai HTML.
 
 ### CSRF in All Forms
 

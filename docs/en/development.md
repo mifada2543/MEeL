@@ -478,7 +478,7 @@ main (stable)
 | `auth/config.php` | Configuration entry point |
 | `auth/auth.php` | Authentication middleware |
 | `modules/core/helpers.php` | Global utility functions |
-| `modules/core/Transcoder.php` | Main engine (most complex) |
+| `modules/core/Transcoder.php` + `modules/transcoder/` | Facade + split services: `EncodeService`, `DownloadService`, `TranscodeService` (extend `TranscoderBase`) |
 | `modules/core/Uploader.php` | File upload process |
 | `modules/core/System.php` | Queue & monitoring |
 | `modules/auth/RateLimiter.php` | API Rate Limiter |

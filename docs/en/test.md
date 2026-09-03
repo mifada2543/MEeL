@@ -20,7 +20,7 @@ MEeL uses a multi-layered testing approach:
 
 ---
 
-## 🧪 PHPUnit Test Suite (266 Unit + 81 Integration = 347 Tests)
+## 🧪 PHPUnit Test Suite (288 Unit + 81 Integration = 369 Tests)
 
 ### Installation
 
@@ -78,6 +78,9 @@ logs/tests/
 | `DriveSecurityTest.php` | 13 | **Private Drive** — cross-user access, path traversal, symlink escape, realpath boundary, quota, atomic filename reservation (see below) |
 | `DriveStorageBasePathTest.php` | 8 | Drive storage base-path resolution — `MEEL_HDD_DRIVE` constant, fallback, priority |
 | `ValidatingProxyTest.php` | 20 | **Validating forward proxy** — real CONNECT/GET probes: private targets refused (502), public targets tunneled, loopback-only bind (see below) |
+| `ArchiveGuardTest.php` | 11 | **Archive guard** — `../` traversal, absolute paths, null bytes, symlinks, nesting, compression ratio, ZIP bomb, entry count (see below) |
+| `UploadValidationTest.php` | 9 | **Upload validation** — fake magic bytes, double extensions, null bytes, oversized, executable (see below) |
+| `TranscoderConstantsTest.php` | 2 | Regression guard for shared-constant visibility (`TranscoderBase` → child services) |
 
 #### Integration Tests (`tests/integration/`)
 
@@ -131,6 +134,8 @@ vendor/bin/phpunit --no-coverage tests/unit/ValidatingProxyTest.php
 |---|---|
 | `SsrfGuardTest.php` | Private IPv4/IPv6 ranges rejected, public IPs allowed, hostname denylist, unsupported protocols, malformed URLs, credentials rejection, hostname→private-IP DNS rejection, HTTP pinning (`pinHttpUrl`) |
 | `DriveSecurityTest.php` | Cross-user download blocked, path traversal blocked, symlink escape blocked, realpath prefix boundary, quota enforcement (atomic), atomic filename reservation |
+| `ArchiveGuardTest.php` | `../` / `../../` / absolute / `..\..\` / null-byte entries rejected, symlinks rejected, excessive nesting rejected, extreme compression ratio (zip bomb) rejected, entry count & total size bounded, valid CBZ accepted, corrupt archive rejected |
+| `UploadValidationTest.php` | Fake MIME (`$_FILES['type']` untrusted), double extensions, null bytes, oversized files, executable extensions rejected, magic-byte mismatch rejected |
 | `ValidatingProxyTest.php` | **Spawns a real proxy process** and sends real CONNECT/absolute-URI requests: private targets refused with 502, public targets tunneled/relayed, loopback-only bind, process lifecycle |
 
 ### One-command verification (`scripts/verify_security.sh`)
@@ -396,13 +401,13 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 
 | Suite | Tests | Pass | Fail | Score |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 347 | 347 | 0 | ✅ 100% |
+| **PHPUnit (unit + integration)** | 369 | 369 | 0 | ✅ 100% |
 | **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 109 | 109 | 0 | ✅ 100% |
 | **Functional Test** | 55 | 53 pass, 2 warn | 0 | ✅ 98/100 |
-| **Security Test** | 137 | 133 pass, 4 warn | 0 | ✅ 99/100 |
+| **Security Test** | 152 | 149 pass, 3 warn | 0 | ✅ 99/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
-> Numbers are from the hardening pass (August 2026). Run the suites yourself
+> Numbers are from the hardening + dedupe pass (September 2026). Run the suites yourself
 > to get the current state — the security checks may additionally produce
 > warnings when HDD storage (`MEEL_HDD_BASE` / storage not mounted) is not
 > set up in a development environment. Media folders (`books/upload`,

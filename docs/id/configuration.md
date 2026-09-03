@@ -26,7 +26,7 @@ Panduan referensi untuk semua file konfigurasi dan parameter di MEeL-HUB.
 | `auth/config.example.php` | Template entry point (copy ke config.php) | Sama dengan config.php |
 | `auth/settings.example.php` | Template data konfigurasi (copy ke settings.php) | Sama dengan settings.php |
 | `database/schema.sql` | Skema database standalone | — |
-| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
+| `modules/core/TranscoderBase.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS`, `DOWNLOAD_TIMEOUT`, `TRANSCODE_AUDIO_TIMEOUT` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
 | `modules/core/helpers.php` | **Shim** — me-require `helpers/main.php` + `modules/auth/loader.php` (backward-compat) | — |
 | `modules/core/helpers/*.php` | Utilitas per domain (main, storage, audio, url) | `dir_size()`, `check_disk_space()`, `get_audio_mime_type()`, `resolve_binary()`, `log_drive_operation()` |
@@ -273,19 +273,25 @@ Jika `MEEL_HDD_BASE` tidak sesuai dengan mount point, halaman maintenance `err/?
 
 ## Transcoder Configuration
 
-### File: `modules/core/Transcoder.php`
+### File: `modules/core/TranscoderBase.php`
 
 > ⚠️ **Perubahan:** Konstanta `HDD_BASE`, `HDD_VIDEO_DIR`, `HDD_THUMB_DIR` telah **dipindahkan** ke `auth/settings.php` menjadi `MEEL_HDD_*`.
+> Konstanta konfigurasi transcoder kini berada di `TranscoderBase` (`protected const`,
+> diwarisi oleh `EncodeService`, `DownloadService`, `TranscodeService` — bukan lagi `private`
+> di `Transcoder.php`, karena service anak harus dapat mengaksesnya).
 
 ```php
-// ─── KONSTANTA HARDWARE ───────────────────────────────────
-private const FFMPEG_THREADS        = 8;
+// ─── KONSTANTA HARDWARE (modules/core/TranscoderBase.php) ──
+protected const FFMPEG_THREADS        = 8;
 
 // HLS segment duration (detik)
-private const HLS_SEGMENT_DURATION  = 10;
+protected const HLS_SEGMENT_DURATION  = 10;
 
 // Download timeout (detik)
-private const DOWNLOAD_TIMEOUT      = 900;
+protected const DOWNLOAD_TIMEOUT      = 900;
+
+// Audio transcode timeout (detik)
+protected const TRANSCODE_AUDIO_TIMEOUT = 600;
 
 // PATH STORAGE — sekarang lihat auth/settings.php (MEEL_HDD_*)
 // private const HDD_BASE = "..."; // DIPINDAHKAN
@@ -298,7 +304,7 @@ private const DOWNLOAD_TIMEOUT      = 900;
 ### Binary Path Resolution
 
 ```php
-// Transcoder.php - Auto-detect FFmpeg path
+// Trait modules/transcoder/FfmpegUtils.php - Auto-detect FFmpeg path (resolveBinary)
 $this->ffmpeg_bin  = $this->resolveBinary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
 $this->ffprobe_bin = $this->resolveBinary(['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', 'ffprobe']);
 
@@ -457,8 +463,8 @@ putenv("PATH=/usr/local/bin:/usr/bin:/bin");
 ```
 
 ```php
-// Di Transcoder.php
-private const ENV_PREFIX = "export LD_LIBRARY_PATH=''; "
+// Di modules/core/TranscoderBase.php (dipakai service anak EncodeService/DownloadService/TranscodeService)
+protected const ENV_PREFIX = "export LD_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu:/usr/local/lib'; "
     . "export PATH=/usr/local/bin:/usr/bin:/bin; "
     . "export LC_ALL=en_US.UTF-8; ";
 ```
