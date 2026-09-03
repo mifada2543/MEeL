@@ -1,0 +1,37 @@
+# =================================================================
+# MEeL Profile Upload — Hardening (profile/upload)
+# Avatar & file profil user-upload. Matikan eksekusi kode agar file
+# berbahaya (PHP/script) yang ter-upload tidak bisa dieksekusi.
+# =================================================================
+
+# 1. Matikan mesin eksekusi PHP untuk semua versi (mod_php)
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# 2. Amankan penanganan handler CGI / FastCGI jika LAMPP menggunakan PHP-FPM
+<FilesMatch "\.(php|php3|php4|php5|phtml|phps|pl|py|jsp|asp|sh|cgi|bat|cmd)$">
+SetHandler default-handler
+RemoveHandler .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .sh .cgi
+RemoveType .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .sh .cgi
+</FilesMatch>
+
+# 3. Proteksi MIME-Type: file bukan gambar dipaksa plain text (tidak dieksekusi)
+ForceType application/octet-stream
+<FilesMatch "(?i)\.(php|phtml|pl|py|sh|cgi|exe|bat|cmd|html|htm|js)$">
+ForceType text/plain
+</FilesMatch>
+
+# 4. Kembalikan format gambar standar agar bisa ditampilkan normal
+<FilesMatch "(?i)\.(jpg|jpeg|png|gif|webp|avif|svg|ico)$">
+ForceType inherit
+</FilesMatch>
+
+# 5. Matikan Directory Listing
+Options -Indexes

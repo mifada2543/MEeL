@@ -27,6 +27,7 @@ git clone https://github.com/mifada2543/MEeL.git
 cd MEeL
 
 # Copy config
+cp auth/settings.example.php auth/settings.php
 cp auth/config.example.php auth/config.php
 
 # Setup database (lihat installation.md)
@@ -46,11 +47,11 @@ ini_set('display_errors', 1);
 ```
 
 4. **Path konfigurasi terpusat:**
-   Semua path penyimpanan dikelola dari **satu tempat** (`auth/config.php`):
+   Semua path penyimpanan dikelola dari **satu tempat** (`auth/settings.php`):
    ```php
    define('MEEL_HDD_BASE', '/media/username/MEeL/media');
    ```
-   Tidak perlu lagi mencari-cari path di banyak file.
+   Tidak perlu lagi mencari-cari path di banyak file. (`auth/config.php` hanya entry point — tidak berisi konstanta storage.)
 
 4. **Tools yang disarankan:**
 - Editor: VS Code dengan PHP Intelephense
@@ -110,7 +111,7 @@ $result = $stmt->get_result();
 #### 3. Parameter Binding Types
 
 | Type | PHP Type | SQL Type |
-|------|----------|----------|
+|---|---|---|
 | `i` | int | INTEGER |
 | `d` | float | DOUBLE/FLOAT |
 | `s` | string | VARCHAR/TEXT |
@@ -162,7 +163,7 @@ private const FFMPEG_THREADS = 8;
 private const HLS_SEGMENT_DURATION = 10;
 private const DOWNLOAD_TIMEOUT = 900;
 
-// Global constants: MEEL_HDD_* untuk path terpusat (di auth/config.php)
+// Global constants: MEEL_HDD_* untuk path terpusat (di auth/settings.php)
 define('MEEL_HDD_BASE', '/media/username/MEeL/media');
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
 ```
@@ -310,7 +311,7 @@ music ──1:N── playlist_tracks
 ### Key Relationships
 
 | Table | Foreign Key | References | Type |
-|-------|-------------|-----------|------|
+|---|---|---|---|
 | `video` | `user_id` | `users.id` | CASCADE |
 | `music` | `user_id` | `users.id` | CASCADE |
 | `books` | `user_id` | `users.id` | SET NULL |
@@ -332,18 +333,28 @@ music ──1:N── playlist_tracks
 3. **CSRF Token** — Setiap form POST wajib
 4. **Role Check** — Sebelum aksi sensitif
 5. **Input Validation** — Tipe, ukuran, ekstensi file
+6. **Tanpa `@` (error suppression) pada operasi filesystem** — gunakan guard proaktif
+   `is_file()`/`is_dir()`/`is_readable()`/`is_writable()`, cek nilai balik, dan pakai
+   helper bersama (trait `FfmpegUtils`, `GarbageCollector::removeFile()`/`removeDirectory()`,
+   `meel_write_cache_file()`). Lihat [Konvensi Keamanan Filesystem](modules.md#konvensi-keamanan-filesystem-tanpa-).
+7. **Session Boot Terpusat** — Setiap entry point wajib memanggil `meel_boot_session()`
+   (dari `modules/auth/helpers/session.php`) — jangan `session_name()` + `session_start()`
+   manual. Fungsi ini yang menjamin cookie sesi memakai flag `HttpOnly`/`SameSite=Lax`/
+   `Secure` (auto-detect HTTPS) dan timeout 12 jam secara konsisten.
 
 ### File Structure per Modul
 
-Setiap modul (video, music, books, drive) mengikuti pola:
+Setiap modul (video, music, books, drive) mengikuti pola. Halaman diakses via
+**URL bersih** (front controller `router.php` → `modules/core/Router.php`),
+contoh `video/beranda` → `video/index.php`, `music/watch?id=X` → `music/watch.php`:
 
 ```
 [module]/
-├── index.php          # Katalog / daftar
-├── watch.php          # Player / detail
-├── upload.php         # Form upload
-├── search_[module].php  # Pencarian (HTMX)
-├── load_more.php      # Pagination (HTMX)
+├── index.php          # Katalog / daftar (URL: [module]/beranda)
+├── watch.php          # Player / detail (URL: [module]/watch?id=X)
+├── upload.php         # Form upload (URL: [module]/upload)
+├── search_[module].php  # Pencarian (HTMX) (URL: [module]/search)
+├── load_more.php      # Pagination (HTMX) (URL: [module]/load-more)
 └── [module]_item.php  # Komponen kartu
 ```
 
@@ -352,7 +363,7 @@ Setiap modul (video, music, books, drive) mengikuti pola:
 ```php
 <!-- Trigger -->
 <input type="text" name="search"
-    hx-get="search_video.php"
+    hx-get="video/search"
     hx-trigger="keyup[key=='Enter']"
     hx-target="#video-container"
     hx-indicator="#search-indicator">
@@ -387,6 +398,37 @@ body { ... }
 
 /* 4. Utility overrides */
 @media (max-width: 768px) { ... }
+```
+
+### Theme System (Light/Dark Mode)
+
+MEeL mendukung light dan dark mode dengan arsitektur CSS variables:
+
+```
+assets/css/shared/
+├── theme-tokens.css    # CSS variables (meel-bg, meel-surface, meel-text, dll.)
+├── light-theme.css     # Light mode overrides untuk Tailwind utilities
+└── design-tokens.php   # Shared tokens untuk upload forms
+```
+
+**Cara Kerja:**
+1. `theme-tokens.css` mendefinisikan CSS variables untuk dark mode (default)
+2. `light-theme.css` override variables saat `html[data-theme="light"]`
+3. `theme.js` manage toggle, localStorage, dan DB sync
+4. Toggle hanya tersedia di halaman Profile
+
+**Adding Light Mode Support:**
+- Gunakan CSS variables (`var(--meel-bg)`, `var(--meel-surface)`, dll.)
+- Hindari hardcoded colors seperti `bg-[#0d1017]` atau `text-gray-300`
+- Jika harus menggunakan Tailwind hardcoded, tambah override di `light-theme.css`
+- Logo/icon harus di-exclude dari color overrides (gunakan `:not(.nav-logo-text)`)
+
+**Theme Toggle Flow:**
+```
+User klik toggle → MEELTheme.toggle()
+→ applyTheme('light'/'dark')
+→ Save ke localStorage + DB (jika login)
+→ Update CSS variables + icon + label
 ```
 
 ---
@@ -429,6 +471,150 @@ $stmt = $conn->prepare("SELECT ...");
 // Pastikan prepared statement tidak error
 if (!$stmt) error_log("SQL Error: " . $conn->error);
 ```
+
+---
+
+## MFA / TOTP Development
+
+### TOTP Implementation (Time-based One-Time Password)
+
+MEeL mengimplementasikan TOTP sesuai [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238):
+
+| Parameter | Nilai |
+|---|---|
+| Algoritma | HMAC-SHA1 |
+| Digit | 6 digit |
+| Time Step | 30 detik |
+| Window | ±1 (90 detik toleransi) |
+| Encoding | Base32 |
+
+### Helper Functions (di `modules/auth/helpers/mfa.php`)
+
+```php
+// ─── GENERATE SECRET ───────────────────────────────────────
+function generate_mfa_secret(): string {
+    $random = random_bytes(20);  // 160-bit
+    // Base32 encode (A-Z, 2-7)
+    $base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $secret = '';
+    $bits = 0; $buffer = 0;
+    foreach (str_split($random) as $byte) {
+        $buffer = ($buffer << 8) | ord($byte);
+        $bits += 8;
+        while ($bits >= 5) {
+            $bits -= 5;
+            $secret .= $base32[($buffer >> $bits) & 31];
+        }
+    }
+    return $secret;
+}
+
+// ─── GENERATE TOTP ─────────────────────────────────────────
+function generate_totp(string $secret): string {
+    $decoded = base32_decode($secret);  // Base32 → raw bytes
+    $counter = pack('N*', 0) . pack('N*', intdiv(time(), 30));
+    $hash = hash_hmac('sha1', $counter, $decoded, true);
+    $offset = ord($hash[19]) & 0xf;
+    $code = (
+        ((ord($hash[$offset]) & 0x7f) << 24) |
+        ((ord($hash[$offset+1]) & 0xff) << 16) |
+        ((ord($hash[$offset+2]) & 0xff) << 8) |
+        (ord($hash[$offset+3]) & 0xff)
+    ) % 1000000;
+    return str_pad((string)$code, 6, '0', STR_PAD_LEFT);
+}
+
+// ─── VERIFY TOTP (dengan window ±1) ────────────────────────
+function verify_totp(string $secret, string $code): bool {
+    for ($i = -1; $i <= 1; $i++) {
+        // Generate TOTP dengan offset waktu $i step
+        $expected = generate_totp_at($secret, time() + ($i * 30));
+        if (hash_equals($expected, $code)) return true;
+    }
+    return false;
+}
+```
+
+### Backup Codes System
+
+```php
+// ─── GENERATE 8 BACKUP CODES ───────────────────────────────
+function generate_backup_codes(): array {
+    $plain = [];
+    $hashed = [];
+    for ($i = 0; $i < 8; $i++) {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);  // 6 digit
+        $plain[] = $code;
+        $hashed[] = password_hash($code, PASSWORD_DEFAULT);  // bcrypt
+    }
+    return ['plain' => $plain, 'hashed' => $hashed];
+}
+
+// ─── VERIFY BACKUP CODE (single-use) ───────────────────────
+function verify_backup_code(string $hashedJson, string $code): array {
+    $codes = json_decode($hashedJson, true) ?? [];
+    foreach ($codes as $i => $hash) {
+        if (password_verify($code, $hash)) {
+            array_splice($codes, $i, 1);  // Hapus yang sudah dipakai
+            return ['valid' => true, 'remaining' => $codes];
+        }
+    }
+    return ['valid' => false, 'remaining' => $codes];
+}
+```
+
+### Database Schema
+
+3 kolom baru di tabel `users` (Migration v9):
+
+```sql
+ALTER TABLE users
+    ADD COLUMN mfa_secret      VARCHAR(64)  DEFAULT NULL AFTER last_session_id,
+    ADD COLUMN mfa_backup_codes TEXT        DEFAULT NULL AFTER mfa_secret,
+    ADD COLUMN mfa_enabled     TINYINT(1)   DEFAULT 0     AFTER mfa_backup_codes;
+```
+
+### MFA Session Flow
+
+```
+1. Login password benar → Cek mfa_enabled == 1
+2. Ya → Simpan $_SESSION['mfa_temp_uid'] = user_id
+          Simpan $_SESSION['mfa_temp_username']
+          Simpan $_SESSION['mfa_temp_role']
+3. Redirect ke auth/mfa-verify
+4. User input kode 6-digit
+5. Valid → Set $_SESSION['user_id'], 'username', 'role']
+          Set $_SESSION['mfa_verified'] = true
+          Hapus mfa_temp_* dari session
+6. Invalid → Increment $_SESSION['mfa_fail_count']
+             Jika >= 10 → $_SESSION['mfa_locked_until'] = time() + 300
+```
+
+### Rate Limiting
+
+| Endpoint | Limit | Mekanisme |
+|---|:---:|---|
+| MFA Verify | 10 gagal → lock 5 menit | Session-based `mfa_fail_count` + `mfa_locked_until` |
+| Backup Password | 5 gagal → lock 5 menit | Session-based `backup_pwd_attempts` + `backup_pwd_lock_until` |
+
+### Security Considerations
+
+1. **Secret TOTP** — Disimpan plaintext di DB (TOTP secret harus bisa dibaca)
+2. **Backup Codes** — Disimpan sebagai hash password_hash()/bcrypt (one-way, tidak bisa dibaca balik)
+3. **Session Temp** — `mfa_temp_uid` hanya ada di session, tidak di cookie
+4. **Brute Force** — 10 percobaan MFA gagal → lock 5 menit
+5. **QR Code** — 100% offline (library qrcode.min.js lokal, tidak ada data dikirim ke server eksternal)
+6. **Admin Reset** — Admin tidak bisa reset MFA admin lain
+7. **Activity Log** — Semua event MFA (setup, verify, gagal, reset) dicatat di `activity_log`
+
+### Testing MFA Locally
+
+1. **Aktifkan MFA:** Buka `profile/index.php` → klik toggle MFA → ikuti setup
+2. **Dapatkan TOTP:** Buka `auth/mfa_setup.php`, scan QR dengan Google Authenticator
+3. **Simulate TOTP:** Gunakan `generate_totp($secret)` via script test untuk verifikasi
+4. **Test rate limit:** Input kode salah 10× → cek lockout
+5. **Test backup code:** Coba salah satu backup code untuk login
+6. **Test admin reset:** Login sebagai admin → `admin/mfa_reset.php` → reset user
 
 ---
 
@@ -485,7 +671,7 @@ GPL v3 mewajibkan (Pasal 5a):
 
 **Type:**
 | Type | Penggunaan |
-|------|------------|
+|---|---|
 | `feat` | Fitur baru |
 | `fix` | Bug fix |
 | `security` | Perbaikan keamanan |
@@ -519,7 +705,7 @@ main (stable)
 ### ❌ HTMX tidak bekerja
 
 **Cek:**
-1. File `assets/js/htmx.js` ter-load (cek Network tab)
+1. File `assets/js/compatibilitas/htmx.min.js` ter-load (cek Network tab)
 2. Element target (`hx-target`) ada di DOM
 3. Tidak ada JavaScript error di console
 4. Response dari server valid HTML
@@ -556,8 +742,8 @@ if (!headers_sent()) {
 ### ❌ SweetAlert2 tidak muncul
 
 **Cek:**
-1. File `assets/js/sweetalert2.all.min.js` ter-load
-2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/script.js`
+1. File `assets/js/compatibilitas/sweetalert2.all.min.js` ter-load
+2. Fungsi `meelAlertRedirect()` didefinisikan di `assets/js/compatibilitas/script.min.js`
 3. Tidak ada CSS conflict
 
 ---
@@ -567,21 +753,79 @@ if (!headers_sent()) {
 ### File Penting untuk Dipahami
 
 | File | Alasan |
-|------|--------|
+|---|---|
 | `auth/config.php` | Entry point configurasi |
 | `auth/auth.php` | Authentication middleware |
-| `modules/core/helpers.php` | Fungsi utilitas global |
+| `modules/core/helpers/` | Utilitas global (helpers.php = shim) |
 | `modules/core/Transcoder.php` | Engine utama (paling kompleks) |
 | `modules/core/Uploader.php` | Proses upload file |
 | `modules/core/System.php` | Queue & monitoring |
-| `modules/core/RateLimiter.php` | API Rate Limiter |
+| `modules/auth/RateLimiter.php` | API Rate Limiter |
+| `modules/core/ProgressObserver.php` | Kontrak event progress (interface + adapter callable) — lihat `modules.md` |
+| `modules/core/BrowserProgressObserver.php` | Presenter browser — memetakan event engine ke overlay/JS `meel*` |
 | `modules/core/GarbageCollector.php` | Auto-cleanup |
 | `modules/media/SearchEngine.php` | FULLTEXT Search engine |
 | `modules/core/japanese.php` | Japanese text processing |
 | `modules/core/bootstrap.php` | Bootstrap & environment |
 | `modules/exceptions/*.php` | Exception classes |
 | `modules/transcoder/FfmpegUtils.php` | FFmpeg utilities trait |
+| `auth/mfa_setup.php` | MFA Setup (multi-step: secret → QR → verify → backup) |
+| `auth/mfa_verify.php` | MFA TOTP verification page (rate limited) |
+| `controllers/system/mfa.php` | MFA backend controller (generate/download backup codes) |
+| `admin/mfa_reset.php` | Admin MFA reset panel |
 | `partials/ui.php` | Overlay UI system (JS heavy) |
+| `assets/js/shared/keyboard.js` | Guard shortcut keyboard bersama (meelKeyShortcutIgnored) — dipakai misc/mini-player video & music |
+| `assets/js/shared/temp-index.js` | Loader bersama index.php ke #temp-index-content tanpa reload (meelLoadTempIndex) — dipakai mini-player video & music |
+| `assets/js/shared/plyr-config.js` | Konfigurasi dasar Plyr bersama (MEEL_PLYR_COMMON: iconUrl, speed, keyboard, tooltips) — dipakai player video & music |
+| `assets/js/shared/upload-progress.js` | Animasi progress-bar upload bersama (meelUploadProgress) — dipakai halaman upload music & video |
+| `assets/js/shared/resume-modal.js` | Modal resume bersama (meelResumeModal) — dipakai player-events video & player-core music |
+| `assets/js/shared/format-time.js` | Formatter waktu mm:ss bersama (formatTime) — dipindah dari music/shared/utils.js, dipakai mini-player music & resume-modal |
+| `assets/js/shared/mini-player-popstate.js` | Handler popstate bersama untuk keluar dari mode mini-player (meelMiniPlayerPopstate) — dipakai mini-player watch video & music |
+| `assets/js/video/watch/main.js` | Entry point folder watch/ — memuat sibling secara sinkron (document.write) |
+| `assets/js/video/watch/state.js` | Video player state management |
+| `assets/js/video/watch/player-init.js` | Plyr + HLS.js initialization |
+| `assets/js/video/watch/player-events.js` | Event orchestration (auto-next, glow, resume) |
+| `assets/js/video/watch/mini-player.js` | Mini-player floating mode |
+| `assets/js/video/watch/recovery.js` | Player auto-recovery system |
+| `assets/js/video/watch/gestures.js` | Mobile touch gestures |
+| `assets/js/music/watch/main.js` | Entry point folder watch/ — memuat sibling secara sinkron (document.write) |
+| `assets/js/music/watch/mini-player.js` | Mode mini-player music (Spotify-style) — dipisah dari player-core.js |
+| `assets/js/music/watch/player-core.js` | Inti player music (visualizer, EQ, bitrate, logika resume-modal & sesi) |
+| `assets/js/music/watch/state.js` | Music player state, preset equalizer & marker sesi resume (`window.__meelResumeSessionActive`) |
+
+### Musik — Perilaku Resume Modal
+
+Player musik menampilkan modal **"Lanjut Musik?"** ketika sebuah lagu punya
+posisi putar tersimpan (`music_pos_<id>` di `localStorage`) dan user **tidak**
+datang dari sesi mini-player yang aktif.
+
+| Konteks | Perilaku |
+|---|---|
+| **Sesi mini-player** — user men-tap kartu / item playlist atau expand mini-player di `index.php`, dan masih mendengarkan | 🎧 **Auto-continue** — tanpa modal; semua lagu berikutnya di sesi itu langsung diputar otomatis |
+| **Kunjungan dingin** — buka `watch.php` langsung, reload halaman, atau setelah pause/close eksplisit mini-player | ❓ **Modal muncul** — "Lanjut Musik?" menanyakan apakah lanjut dari posisi tersimpan |
+
+**Mekanisme:**
+
+- **Flag one-shot `skip_resume_once`** (`sessionStorage`) — dipasang sisi index
+  saat tap kartu/playlist dan di `expandPlayerFromMiniPlayer()`. Dibaca dan
+  dibuang di **setiap** pemanggilan `meelInitWatchPlayer()` (termasuk transisi
+  gapless), jadi tidak pernah nyangkut di storage.
+- **Marker sesi `window.__meelResumeSessionActive`** (in-memory, dideklarasikan
+  di `assets/js/music/watch/state.js`) — diaktifkan saat flag one-shot
+  dikonsumsi. Bertahan selama dokumen SPA, jadi **semua** perpindahan lagu
+  berikutnya di watch (auto-next, ganti lagu) melewati modal.
+- **Akhir sesi eksplisit** — `miniPlayPauseIndex()` (pause) dan
+  `closeMiniPlayerIndex()` di `index.php` membersihkan flag one-shot dan marker
+  sesi (`assets/js/music/shared/mini-player.js`). Setelah itu, membuka lagu
+  dari link menampilkan modal lagi.
+- **Kunjungan dingin** — full page load membuat dokumen baru di mana marker
+  in-memory hilang, jadi modal bisa muncul (`skipOnce` di `player-core.js`
+  mengecek `skipResumeModalOnce || window.__meelResumeSessionActive`).
+- **Guard stuck-paused** — jika modal ditekan tapi lagu punya posisi tersimpan,
+  `onFreshTrackReady()` auto putar dari awal, bukan membiarkan lagu diam.
+
+> **Keputusan desain (2026-08):** sesi mendengarkan aktif auto-continue tanpa
+> interupsi; hanya kunjungan dingin yang menanyakan resume.
 
 ### Proses yang Perlu Dipahami
 
@@ -589,6 +833,8 @@ if (!headers_sent()) {
 2. **Download Pipeline** — URL → yt-dlp → FFmpeg → HDD → DB
 3. **Auth Flow** — Login → Session → RBAC → Activity Log
 4. **HTMX Flow** — Event → Request → Server → Response → DOM swap
+5. **MFA Flow** — Login password valid → Cek mfa_enabled → Redirect auth/mfa-verify → Verify TOTP → Set session penuh
+6. **Sesi Music Player & Resume** — Tap kartu/playlist → mini-player (set `skip_resume_once`) → expand → watch (konsumsi flag, aktifkan marker sesi) → auto-continue; kunjungan dingin menampilkan resume-modal
 
 ---
 

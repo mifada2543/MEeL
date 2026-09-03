@@ -23,7 +23,7 @@ Panduan pemecahan masalah umum di MEeL-HUB.
 
 **Penyebab:**
 - MySQL/MariaDB tidak berjalan
-- Kredensial di `auth/config.php` salah
+- Kredensial di `auth/settings.php` salah
 - Database `MEeL` belum dibuat
 
 **Solusi:**
@@ -43,6 +43,26 @@ mysql -u root -p -e "SHOW DATABASES;"
 mysql -u root -p -e "CREATE DATABASE MEeL DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 ```
 
+**Khusus MariaDB: `root` memakai plugin `unix_socket`**
+
+Pada instalasi MariaDB default, `root` ter-autentikasi lewat plugin
+`unix_socket` — koneksi hanya sah dari proses yang berjalan sebagai user OS
+`root` (via socket). Akibatnya `mysql -u root` sukses di CLI, tapi koneksi dari
+proses web server (`www-data`) gagal **"Access denied"** meskipun password
+kosong. Solusi yang disarankan: buat user database khusus untuk aplikasi:
+
+```sql
+CREATE USER 'meel'@'localhost' IDENTIFIED BY 'password_kuat';
+GRANT ALL PRIVILEGES ON MEeL.* TO 'meel'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Lalu pakai kredensial itu di `auth/settings.php` (`$username`/`$password`).
+Alternatif (kurang disarankan): ubah `root` ke `mysql_native_password`:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('password_baru');
+```
+
 ### ❌ "Tabel tidak ditemukan"
 
 **Penyebab:** SQL belum di-import
@@ -51,7 +71,7 @@ mysql -u root -p -e "CREATE DATABASE MEeL DEFAULT CHARACTER SET utf8mb4 COLLATE 
 ```bash
 mysql -u root -p MEeL < database/schema.sql
 ```
-File `database/schema.sql` berisi seluruh skema (16 tabel + admin default) — import langsung!
+File `database/schema.sql` berisi seluruh skema (20 tabel + admin default) — import langsung!
 
 ### ❌ "Column 'description' cannot be null" (atau error kolom lain)
 
@@ -74,9 +94,9 @@ ALTER TABLE comments ADD COLUMN comment text NOT NULL;
 
 ## Masalah Storage & HDD
 
-### ❌ Redirect ke `err/maintance.php`
+### ❌ Halaman maintenance muncul (`err/?code=maintance`)
 
-**Penyebab:** `MEEL_HDD_BASE` di `auth/config.php` tidak cocok dengan mount point.
+**Penyebab:** `MEEL_HDD_BASE` di `auth/settings.php` tidak cocok dengan mount point.
 
 **Solusi:**
 
@@ -86,7 +106,7 @@ ALTER TABLE comments ADD COLUMN comment text NOT NULL;
    lsblk
    ```
 
-2. Sesuaikan path di `auth/config.php` — **hanya satu baris**:
+2. Sesuaikan path di `auth/settings.php` — **hanya satu baris**:
    ```php
    define('MEEL_HDD_BASE', '/path/yang/benar');
    ```
@@ -122,11 +142,55 @@ sudo chmod -R 777 /opt/lampp/htdocs/MEeL/temp/
 
 ### Debug Mode untuk Admin
 
-Buka `err/maintance.php` sebagai admin untuk melihat diagnosa lengkap path storage, termasuk:
-- Status exists/is_dir/readable/executable per path
-- Permission (numeric + ACL)
-- Owner:Group
-- Rekomendasi perbaikan otomatis
+Halaman maintenance kini terpadu di `err/?code=maintance` (HTTP 503) dan hanya menampilkan status perawatan.
+Diagnosa path storage dilakukan lewat perintah filesystem (contoh `ls -la` dan `df -h` di atas).
+
+### ❌ Modul Drive crash: "Folder penyimpanan gagal dibuat" (RuntimeException)
+
+**Gejala:**
+- Membuka `drive/index.php`, upload, download, atau streaming melempar
+  `RuntimeException: Folder penyimpanan gagal dibuat` dari `drive/DriveService.php`
+  (`ensureDirectoryExists()`)
+- Terjadi pada clone baru atau mesin yang symlink lama repo-nya broken
+
+**Penyebab & Solusi:**
+
+1. **Symlink lama ter-commit ke path absolut yang tidak ada** (checkout lama):
+   repo dulu men-track `data_drive/public` & `data_drive/private_admins` sebagai
+   **symlink** menunjuk ke `/media/<devuser>/MEeL/media/drive/...` — broken di
+   mesin lain. Update repo (symlink sudah dihapus, folder kini ter-track sebagai
+   folder nyata), atau perbaiki manual:
+   ```bash
+   rm -f data_drive/public data_drive/private_admins   # hapus symlink lama
+   mkdir -p data_drive/public data_drive/private_admins
+   ```
+
+2. **`MEEL_HDD_DRIVE` menunjuk ke path yang tidak ada / tidak writable:** saat
+   terdefinisi, modul Drive membaca storage langsung dari `MEEL_HDD_DRIVE`
+   (turunan `MEEL_HDD_BASE` di `auth/settings.php`) — **tanpa symlink**. Cek di
+   mana aplikasi benar-benar me-resolve storage:
+   ```bash
+   php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_DRIVE') ? MEEL_HDD_DRIVE : 'NOT SET';"
+   php -r "require 'modules/core/helpers.php'; echo meel_drive_base_path();"
+   ```
+   Jika path hasil resolve tidak ada atau tidak writable, perbaiki `MEEL_HDD_BASE`
+   di `auth/settings.php` (atau biarkan tidak di-set agar memakai fallback
+   `data_drive/`).
+
+3. **Folder fallback tidak writable** (saat `MEEL_HDD_DRIVE` tidak terdefinisi):
+   ```bash
+   sudo chown -R www-data:www-data data_drive
+   sudo chmod -R 775 data_drive
+   ```
+   `data_drive/public` & `data_drive/private_admins` dibuat otomatis oleh
+   `DriveStorage::ensureDirectoryExists()`.
+
+> ⚠️ **Jangan pernah commit symlink di dalam `data_drive/`** — `.gitignore`
+> memblokirnya. `tests/check_deploy.php` hanya memperingatkan symlink yang
+> menunjuk ke LUAR `MEEL_HDD_DRIVE` (mis. `/media/<user>/...`); symlink deploy
+> ke dalam `MEEL_HDD_DRIVE` dinilai PASS. Lihat
+> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--endpoint-php--rewrite-tanpa-symlink)
+> untuk layout storage Drive (`MEEL_HDD_DRIVE` vs fallback `data_drive/`).
 
 ---
 
@@ -285,17 +349,17 @@ Saat metadata gagal di-parsing, Transcoder akan menampilkan debug overlay:
    sudo chmod 777 /tmp
    ```
 
-### ❌ Terus menerus dialihkan ke `/err/revoked.php` (Session Revoked)
+### ❌ Terus menerus dialihkan ke `/err/?code=revoked` (Session Revoked)
 
 **Penyebab:** Session ID di browser Anda tidak cocok dengan yang terdaftar di database (misalnya karena ter-kick oleh Admin, masuk dari perangkat lain, atau cookie sesi terhapus/tidak persisten).
 
 **Solusi:**
-1. Klik tombol **Kembali Ke Login** pada layar error dan lakukan login ulang.
+1. Klik tombol **Kembali** pada layar error, lalu lakukan login ulang (atau buka `auth/login.php`).
 2. Bersihkan cache dan cookie browser Anda khusus untuk domain platform ini.
 3. Jika menggunakan Cloudflare Tunnel, pastikan pengaturan kuki sesi diatur agar tetap persisten.
 4. Coba akses menggunakan Mode Incognito / Private Window di browser Anda.
 
-### ❌ Dialihkan ke `/err/banned.php` (Access Blocked)
+### ❌ Dialihkan ke `/err/?code=banned` (Access Blocked)
 
 **Penyebab:** Alamat IP Anda terdaftar pada tabel pemblokiran firewall internal (`ip_ban`).
 
@@ -410,7 +474,7 @@ Tunggu hingga kuota ter-reset, atau minta admin untuk meng-upload-kan.
 ### HTTP Status Codes
 
 | Kode | Arti | Penyebab Umum |
-|------|------|---------------|
+|---|---|---|
 | **401** | Unauthorized | User belum login |
 | **403** | Forbidden | IP banned, user inactive, role insufficient |
 | **404** | Not Found | Media tidak ada, file hilang |
@@ -420,7 +484,7 @@ Tunggu hingga kuota ter-reset, atau minta admin untuk meng-upload-kan.
 ### System Error Messages
 
 | Pesan | Arti | Solusi |
-|-------|------|--------|
+|---|---|---|
 | "Penyimpanan Offline" | HDD external tidak ter-mount | Cek `df -h` dan path di `helpers.php` |
 | "Server sedang sibuk" | Queue penuh (max 2) | Tunggu atau bersihkan queue stuck |
 | "Batas upload tercapai!" | Rate limit aktif | Tunggu 1 jam atau minta admin |
@@ -433,9 +497,11 @@ Tunggu hingga kuota ter-reset, atau minta admin untuk meng-upload-kan.
 ## FAQ
 
 ### Q: Apakah MEeL bisa diakses dari internet?
+
 **A:** Bisa, tapi disarankan menggunakan Cloudflare Tunnel atau VPN. Jangan expose langsung tanpa HTTPS.
 
 ### Q: Bagaimana cara backup data?
+
 **A:** Backup database + folder media:
 ```bash
 mysqldump -u root -p MEeL > backup_meel.sql
@@ -443,21 +509,26 @@ tar -czf media_backup.tar.gz /media/[user]/MEeL/
 ```
 
 ### Q: Kenapa video tidak muncul thumbnail?
+
 **A:** Thumbnail digenerate otomatis dari frame ke-5 video. Pastikan FFmpeg terinstall.
 
 ### Q: Format musik apa yang didukung?
+
 **A:** MP3, OGG/Opus, M4A/AAC, FLAC, WAV. Semua akan di-transcode ke Opus/OGG.
 
 ### Q: Bagaimana cara menambahkan admin baru?
+
 **A:** Register user biasa, lalu ubah role di database:
 ```sql
 UPDATE users SET role = 'admin', is_active = 1 WHERE id = [user_id];
 ```
 
 ### Q: Apakah bisa streaming video 4K?
+
 **A:** Secara teknis bisa, tapi kendala di bandwidth dan storage. Disarankan maksimal 1080p.
 
 ### Q: Kenapa session guest tidak valid?
+
 **A:** Guest otomatis dibuat saat pertama kali akses. Jika ada masalah, hapus guest tidak aktif via Admin Panel.
 
 ---

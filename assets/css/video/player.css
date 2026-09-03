@@ -1,0 +1,71 @@
+
+.plyr__video-wrapper {
+  background: #000 !important;
+  display: flex;
+  align-items: center;
+}
+.plyr__controls {
+  transition: opacity 0.25s ease !important;
+}
+.plyr__control--overlaid {
+  transition: opacity 0.25s ease !important;
+}
+
+.plyr__volume {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.plyr__volume::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 60px !important;
+  height: 130px !important;
+  background: 0 0 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+.plyr__volume:hover::after {
+  pointer-events: auto !important;
+}
+.plyr__volume input[type="range"] {
+  position: absolute !important;
+  bottom: 50% !important;
+  left: 50% !important;
+  width: 100px !important;
+  height: 32px !important;
+  margin: 0 !important;
+  background: 0 0 !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, -50px) rotate(-90deg) !important;
+  transition:
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 10 !important;
+}
+.plyr__volume input[type="range"]:active,
+.plyr__volume input[type="range"]:focus-visible,
+.plyr__volume:hover input[type="range"] {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translate(-50%, -70px) rotate(-90deg) !important;
+}
+.plyr__volume .plyr__control .plyr__tooltip {
+  display: none !important;
+}
+
+button[data-plyr="meel-miniplayer"] {
+  position: relative;
+}
+button[data-plyr="meel-miniplayer"] .plyr__tooltip {
+  white-space: nowrap;
+}
+

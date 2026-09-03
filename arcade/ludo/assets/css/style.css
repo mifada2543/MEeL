@@ -1,0 +1,236 @@
+:root {
+  --ludo-primary: #f59e0b;
+  --ludo-glow: rgba(245, 158, 11, 0.15);
+  --ludo-glow-heavy: rgba(245, 158, 11, 0.4);
+  --red: #ef4444;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --blue: #3b82f6;
+}
+html {
+  touch-action: manipulation;
+}
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  background-color: #080b11;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+.pixel-font {
+  font-family: "Press Start 2P", monospace;
+}
+
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  background: #0b0e14;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.board-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cell-track {
+  background: #141a26;
+  border: 1px solid rgba(255, 255, 255, 0.045);
+}
+.cell-yard {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.cell-yard.c-red { background: rgba(239, 68, 68, 0.16); }
+.cell-yard.c-green { background: rgba(34, 197, 94, 0.16); }
+.cell-yard.c-yellow { background: rgba(234, 179, 8, 0.16); }
+.cell-yard.c-blue { background: rgba(59, 130, 246, 0.16); }
+.cell-home {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cell-home.c-red { background: rgba(239, 68, 68, 0.55); }
+.cell-home.c-green { background: rgba(34, 197, 94, 0.55); }
+.cell-home.c-yellow { background: rgba(234, 179, 8, 0.55); }
+.cell-home.c-blue { background: rgba(59, 130, 246, 0.55); }
+.cell-center {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cell-start {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+.cell-start.c-red { background: rgba(239, 68, 68, 0.55); }
+.cell-start.c-green { background: rgba(34, 197, 94, 0.55); }
+.cell-start.c-yellow { background: rgba(234, 179, 8, 0.55); }
+.cell-start.c-blue { background: rgba(59, 130, 246, 0.55); }
+
+
+.finish-tri {
+  position: absolute;
+  inset: 4%;
+  border-radius: 6px;
+}
+.finish-tri.c-red { background: rgba(239, 68, 68, 0.5); clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+.finish-tri.c-green { background: rgba(34, 197, 94, 0.5); clip-path: polygon(50% 0, 0 100%, 100% 100%); }
+.finish-tri.c-yellow { background: rgba(234, 179, 8, 0.5); clip-path: polygon(50% 100%, 0 0, 100% 0); }
+.finish-tri.c-blue { background: rgba(59, 130, 246, 0.5); clip-path: polygon(100% 50%, 0 0, 0 100%); }
+.finish-dot {
+  position: absolute;
+  inset: 22%;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #fbbf24, #b45309);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
+
+.token {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.6),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.3),
+    inset 0 2px 3px rgba(255, 255, 255, 0.45);
+  transition: transform 0.15s ease;
+  z-index: 5;
+}
+.token.c-red { background: radial-gradient(circle at 35% 30%, #f87171, #b91c1c); }
+.token.c-green { background: radial-gradient(circle at 35% 30%, #4ade80, #15803d); }
+.token.c-yellow { background: radial-gradient(circle at 35% 30%, #fde047, #a16207); }
+.token.c-blue { background: radial-gradient(circle at 35% 30%, #60a5fa, #1d4ed8); }
+.token.movable {
+  cursor: pointer;
+  animation: token-pulse 0.9s ease-in-out infinite;
+}
+.token.movable:hover {
+  transform: scale(1.25);
+  z-index: 20;
+}
+@keyframes token-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55), 0 2px 6px rgba(0, 0, 0, 0.6); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.6); }
+}
+.token.dim { opacity: 0.45; }
+
+
+.dice-box:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.dice-box.rolling {
+  animation: dice-roll 0.5s ease;
+}
+@keyframes dice-roll {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-12deg) scale(0.9); }
+  50% { transform: rotate(12deg) scale(1.1); }
+  75% { transform: rotate(-8deg) scale(0.95); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.dice-face.dice-show {
+  animation: dice-pop 0.25s ease;
+}
+@keyframes dice-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
+.player-count-btn {
+  background: #0f131c;
+  border-color: #1e293b;
+  color: #94a3b8;
+}
+.player-count-btn:hover {
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+.player-count-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+.setup-player-row {
+  background: #0f131c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.setup-player-row .p-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+.type-btn {
+  padding: 5px 12px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+.type-btn:hover { border-color: #f59e0b; color: #fbbf24; }
+.type-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+
+#winOverlay {
+  transition: opacity 0.3s ease;
+}
+
+
+.player-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #1e293b;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+.player-badge .p-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+}
+.player-badge.current {
+  border-color: #f59e0b;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+}
+.player-badge.finished-badge { opacity: 0.5; }
+
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ludo-glow);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ludo-glow-heavy);
+}

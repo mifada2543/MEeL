@@ -1,43 +1,18 @@
 <?php
-/**
- * MEeL Security Test Suite v1.1
- * ==============================
- * Automated security scanning untuk verifikasi:
- *  - SQL Injection (raw queries tanpa prepared statement)
- *  - display_errors (ekspos error ke user)
- *  - CSRF Token (form protection)
- *  - XSS Protection (htmlspecialchars)
- *  - Path Traversal (file download validation)
- *  - File Upload (extension & type validation)
- *  - .htaccess Security (headers, directory listing)
- *  - Session Security (cookie params, timeout)
- *
- * Cara pakai:
- *   /opt/lampp/bin/php tests/security_test.php
- *
- * Exit codes:
- *   0 = Semua test PASS
- *   1 = Ada WARNING (lulus dengan catatan)
- *   2 = Ada FAIL (gagal, perlu perbaikan)
- */
-
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'tests', 'temp', 'assets/dict', 'data_drive']);
-define('EXCLUDE_FILES', ['config.example.php', 'test.php', '.gitkeep']);
+define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
 
 require_once __DIR__ . '/helpers.php';
 
-// Globals
+
 $GLOBALS['total_tests']  = 0;
 $GLOBALS['passed']       = 0;
 $GLOBALS['warnings']     = 0;
 $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 
-// Check if file has a function call pattern
-// ============================================================================
-// TEST 1: SQL INJECTION SCAN
-// ============================================================================
+
 
 function testSqlInjection(): void {
     print_header('TEST 1: SQL Injection ' . chr(8212) . ' Prepared Statement Analysis');
@@ -47,7 +22,7 @@ function testSqlInjection(): void {
     $clean    = 0;
     $examined = 0;
 
-    // Static-only SQL patterns (safe to use with query())
+    
     $staticPatterns = [
         '/COUNT\(\*\)/i',
         '/SUM\(/i',
@@ -66,8 +41,6 @@ function testSqlInjection(): void {
 
         $examined++;
 
-        // Find ->query( calls that contain variable interpolation ($var or {$var})
-        // This regex finds query() calls where the SQL string contains a $ sign
         preg_match_all('/\->query\s*\(\s*((["\'])(?:(?!\2).)*?\$.*?\2)\s*\)\s*;/s', $content, $qMatches);
 
         $rawWithVars = array_map('trim', $qMatches[1] ?? []);
@@ -77,14 +50,14 @@ function testSqlInjection(): void {
             continue;
         }
 
-        // Filter out static-only queries
+        
         $risky = [];
         foreach ($rawWithVars as $qry) {
             $isStatic = false;
             foreach ($staticPatterns as $sp) {
                 if (preg_match($sp, $qry)) { $isStatic = true; break; }
             }
-            // Also filter if it only has simple int casting like (int)$var
+            
             if (preg_match('/=\s*\(int\)/', $qry)) $isStatic = true;
             if (!$isStatic) $risky[] = $qry;
         }
@@ -120,9 +93,6 @@ function testSqlInjection(): void {
     }
 }
 
-// ============================================================================
-// TEST 2: display_errors SCAN
-// ============================================================================
 
 function testDisplayErrors(): void {
     print_header('TEST 2: Error Handling ' . chr(8212) . ' display_errors Setting');
@@ -142,8 +112,7 @@ function testDisplayErrors(): void {
         }
     }
 
-    // stream.php uses error_reporting(0) which is acceptable
-    // bootstrap.php uses environment detection: display_errors=1 hanya untuk dev mode
+    
     $enabled = array_values(array_filter($enabled, fn($f) => !in_array($f, [
         'music/stream.php',
         'modules/core/bootstrap.php',
@@ -160,9 +129,6 @@ function testDisplayErrors(): void {
     }
 }
 
-// ============================================================================
-// TEST 3: CSRF PROTECTION
-// ============================================================================
 
 function testCsrfProtection(): void {
     print_header('TEST 3: CSRF Protection ' . chr(8212) . ' Anti-CSRF Token');
@@ -187,7 +153,7 @@ function testCsrfProtection(): void {
         if ($hasVerify || $hasToken) {
             $protected++;
             if ($hasPost && !$hasVerify && !strpos($rel, 'drive/')) {
-                // Has token field but no verification call
+                
                 $unprot[] = $rel;
             }
         } else {
@@ -206,9 +172,6 @@ function testCsrfProtection(): void {
     }
 }
 
-// ============================================================================
-// TEST 4: XSS PROTECTION
-// ============================================================================
 
 function testXssProtection(): void {
     print_header('TEST 4: XSS Protection ' . chr(8212) . ' htmlspecialchars Usage');
@@ -222,32 +185,31 @@ function testXssProtection(): void {
         $rel     = str_replace(PROJECT_ROOT . '/', '', $path);
         $content = file_get_contents($path);
 
-        // Count all PHP output constructs with variables
+        
         $outPatterns = [
-            '/\<\?\=\s*\$/',           // <?= $var
-            '/echo\s+\$/',             // echo $var
-            '/print\s+\$/',            // print $var
-            '/\<\?\=\s*htmlspecialchars/', // already escaped
+            '/\<\?\=\s*\$/',           
+            '/echo\s+\$/',             
+            '/print\s+\$/',            
+            '/\<\?\=\s*htmlspecialchars/', 
         ];
 
         $rawOut = 0;
         foreach ($outPatterns as $i => $pat) {
-            if ($i === 3) continue; // skip the escaped one for counting
+            if ($i === 3) continue; 
             preg_match_all($pat, $content, $m);
             $rawOut += count($m[0]);
         }
 
-        // Count htmlspecialchars usage
+        
         $hsCount = countInFile($path, '/htmlspecialchars\s*\(/');
 
         $totalOut += $rawOut;
         $totalHs  += $hsCount;
 
-        // Flag only if there are many outputs but zero or very few htmlspecialchars
         if ($rawOut > 10 && $hsCount === 0) {
             $issues[] = ['file' => $rel, 'out' => $rawOut, 'hs' => $hsCount];
         }
-        // Also flag large files that have very low ratio
+        
         if ($rawOut > 30 && $hsCount < 5) {
             $issues[] = ['file' => $rel, 'out' => $rawOut, 'hs' => $hsCount];
         }
@@ -264,9 +226,6 @@ function testXssProtection(): void {
     }
 }
 
-// ============================================================================
-// TEST 5: FILE UPLOAD SECURITY
-// ============================================================================
 
 function testFileUploadSecurity(): void {
     print_header('TEST 5: File Upload Security');
@@ -297,9 +256,6 @@ function testFileUploadSecurity(): void {
     }
 }
 
-// ============================================================================
-// TEST 6: PATH TRAVERSAL
-// ============================================================================
 
 function testPathTraversal(): void {
     print_header('TEST 6: Path Traversal Protection');
@@ -327,27 +283,32 @@ function testPathTraversal(): void {
     }
 }
 
-// ============================================================================
-// TEST 7: .HTACCESS SECURITY
-// ============================================================================
 
 function testHtaccessSecurity(): void {
     print_header('TEST 7: .htaccess & HTTP Security Headers');
 
-    // ── 7a: Cek semua folder sensitif wajib punya .htaccess ──
+    
     $sensitiveDirs = [
-        // PHP-include only folders
+        
         'controllers', 'controllers/admin', 'controllers/api', 'controllers/profile', 'controllers/system',
-        'modules', 'modules/core', 'modules/media', 'modules/transcoder', 'modules/exceptions',
+        'modules', 'modules/core', 'modules/core/helpers', 'modules/media', 'modules/transcoder', 'modules/exceptions',
+        
+        'modules/auth', 'modules/auth/helpers',
         'partials', 'drive/templates', 'docs/partials',
-        // Auth & config
+        
         'auth', 'database',
-        // Error & temp
+        
         'err', 'temp',
-        // Logs & tests
+        
         'logs', 'tests',
-        // Upload dirs (harus disable PHP)
+        
+        
+        
+        
+        
         'data_drive', 'books/upload', 'music/upload', 'video/upload',
+        
+        'profile/upload',
     ];
 
     $missing = [];
@@ -366,13 +327,13 @@ function testHtaccessSecurity(): void {
         }
     }
 
-    // ── 7b: Verifikasi directive spesifik per folder ──
+    
     $checks = [
         '.htaccess'                 => ['Options -Indexes', 'X-Content-Type-Options', 'Deny from all'],
         'auth/.htaccess'            => ['Options -Indexes', 'Deny from all'],
         'admin/.htaccess'           => ['Options -Indexes', 'FilesMatch'],
         'logs/.htaccess'            => ['Options -Indexes', 'Deny from all'],
-        'data_drive/.htaccess'      => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
+        'data_drive/.htaccess'      => ['php_flag engine off', 'ForceType', 'Options -Indexes', 'RewriteRule ^private_admins'],
         'books/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'music/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'video/upload/.htaccess'    => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
@@ -383,7 +344,11 @@ function testHtaccessSecurity(): void {
         'controllers/.htaccess'     => ['Deny from all'],
         'modules/.htaccess'         => ['Deny from all'],
         'modules/core/.htaccess'    => ['Deny from all'],
+        'modules/core/helpers/.htaccess' => ['Deny from all'],
+        'modules/auth/.htaccess'    => ['Deny from all'],
+        'modules/auth/helpers/.htaccess' => ['Deny from all'],
         'modules/exceptions/.htaccess' => ['Deny from all'],
+        'profile/upload/.htaccess'  => ['php_flag engine off', 'ForceType', 'Options -Indexes'],
         'partials/.htaccess'        => ['Deny from all'],
         'docs/partials/.htaccess'   => ['Deny from all'],
         'drive/templates/.htaccess' => ['Deny from all'],
@@ -407,17 +372,14 @@ function testHtaccessSecurity(): void {
     }
 }
 
-// ============================================================================
-// TEST 8: SESSION SECURITY
-// ============================================================================
 
 function testSessionSecurity(): void {
     print_header('TEST 8: Session & Authentication Security');
 
     $checks = [
-        'Session name unik (meel)'        => ['auth/config.php', '/session_name.*meel/'],
-        'Session timeout (gc_maxlifetime)' => ['auth/config.php', '/session\.gc_maxlifetime/'],
-        'HTTP-only cookie params'          => ['auth/config.php', '/session_set_cookie_params/'],
+        'Session name unik (meel)'        => ['modules/auth/helpers/session.php', '/session_name.*meel/'],
+        'Session timeout (gc_maxlifetime)' => ['modules/auth/helpers/session.php', '/session\.gc_maxlifetime/'],
+        'HTTP-only cookie params'          => ['modules/auth/helpers/session.php', '/session_set_cookie_params/'],
         'CSRF token generation'            => ['auth/config.php', '/random_bytes.*32/'],
         'Activity timeout check'           => ['auth/config.php', '/LAST_ACTIVITY/'],
         'Session hijack protection'        => ['auth/auth.php', '/last_session_id/'],
@@ -443,9 +405,6 @@ function testSessionSecurity(): void {
     }
 }
 
-// ============================================================================
-// TEST 9: HTTP SECURITY HEADERS (CSP)
-// ============================================================================
 
 function testCspHeaders(): void {
     print_header('TEST 9: HTTP Security Headers & CSP');
@@ -481,9 +440,6 @@ function testCspHeaders(): void {
     }
 }
 
-// ============================================================================
-// TEST 10: COMMAND INJECTION (SHELL EXEC)
-// ============================================================================
 
 function testCommandInjection(): void {
     print_header('TEST 10: Command Injection ' . chr(8212) . ' Shell Execution Safety');
@@ -491,7 +447,7 @@ function testCommandInjection(): void {
     $risky = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
-        'modules/core/helpers.php'      => ['shell_exec'],
+        'modules/core/helpers/storage.php' => ['shell_exec'], 
         'modules/core/System.php'       => ['shell_exec'],
         'auth/config.example.php'  => ['proc_open', 'shell_exec'],
         'modules/core/japanese.php'     => ['proc_open'],
@@ -519,19 +475,17 @@ function testCommandInjection(): void {
     }
 }
 
-// ============================================================================
-// TEST 11: PASSWORD POLICY
-// ============================================================================
 
 function testPasswordPolicy(): void {
     print_header('TEST 11: Password Policy & Strength');
 
     $checks = [
-        ['Min 8 karakter password',          'auth/register.php', '/strlen.*pass.*8|min.*8/'],
+
+        ['Min 8 karakter password',          'auth/auth_helpers.php', '/strlen.*pass.*8|min.*8/'],
         ['Brute force lockout',              'auth/login.php',    '/login_fail_count/'],
         ['Lockout timeout',                  'auth/login.php',    '/lockout_time/'],
-        ['Username regex (alpha numeric)',   'auth/register.php', '/preg_match.*a-zA-Z0-9/'],
-        ['Guest username blacklist',         'auth/register.php', '/stripos.*guest/'],
+        ['Username regex (alpha numeric)',   'auth/auth_helpers.php', '/preg_match.*a-zA-Z0-9/'],
+        ['Guest username blacklist',         'auth/auth_helpers.php', '/stripos.*guest/'],
     ];
 
     foreach ($checks as $c) {
@@ -546,21 +500,22 @@ function testPasswordPolicy(): void {
     }
 }
 
-// ============================================================================
-// TEST 12: FILE INTEGRITY
-// ============================================================================
 
 function testFileIntegrity(): void {
     print_header('TEST 12: File Integrity ' . chr(8212) . ' Critical Files');
 
     $critical = [
         '.htaccess', 'auth/config.php', 'auth/auth.php', 'auth/login.php',
-        'auth/logout.php', 'auth/register.php', 'modules/core/helpers.php',
+        'auth/logout.php', 'auth/register.php', 'auth/auth_helpers.php',
+        'modules/core/helpers.php',
+        'modules/core/helpers/main.php', 'modules/core/helpers/storage.php',
         'modules/core/activity_logger.php', 'modules/core/System.php', 'modules/core/Uploader.php',
-        'modules/core/Transcoder.php', 'modules/media/MediaInteraction.php', 'modules/media/MediaViewer.php',
+        'modules/core/Transcoder.php', 'modules/auth/SsrfGuard.php', 'modules/auth/ValidatingProxy.php',
+        'modules/auth/validating_proxy_server.php', 'modules/media/MediaInteraction.php',
+        'modules/media/MediaViewer.php',
         'modules/media/MediaLibrary.php', 'modules/core/GarbageCollector.php', 'modules/core/japanese.php',
         'admin/.htaccess', 'auth/.htaccess', 'data_drive/.htaccess',
-        'drive/DriveService.php', 'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
+        'drive/DriveService.php', 'drive/stream.php', 'controllers/admin/admin_actions.php', 'controllers/admin/admin_data.php',
         'controllers/profile/profile_edit.php',
         'controllers/api/like.php', 'controllers/api/delete_comment.php',
         'controllers/api/download_transcode.php', 'controllers/system/UpdateManager.php',
@@ -578,14 +533,467 @@ function testFileIntegrity(): void {
     }
 }
 
-// ============================================================================
-// MAIN
-// ============================================================================
+
+function testSsrfAndPrivateDrive(): void {
+    print_header('TEST 13: SSRF Guard & Private Drive Hardening');
+
+    
+    $guardFile = PROJECT_ROOT . '/modules/auth/SsrfGuard.php';
+    if (!file_exists($guardFile)) {
+        record('modules/auth/SsrfGuard.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $gc = file_get_contents($guardFile);
+        foreach (['function validate', 'function isPrivateIp', 'function resolvePublicAddresses', 'function pinHttpUrl'] as $m) {
+            if (strpos($gc, $m) !== false) {
+                record("SsrfGuard::{$m}() ada", true);
+            } else {
+                record("SsrfGuard — metode {$m}() TIDAK ditemukan", false, false);
+            }
+        }
+    }
+
+    $tcFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
+    if (file_exists($tcFile)) {
+        $tc = file_get_contents($tcFile);
+        if (strpos($tc, 'new SsrfGuard()') !== false) {
+            record('Transcoder memanggil SsrfGuard sebelum yt-dlp', true);
+        } else {
+            record('Transcoder TIDAK memakai SsrfGuard — SSRF terbuka!', false, false);
+        }
+        if (strpos($tc, 'FILTER_VALIDATE_URL') === false) {
+            record('Transcoder tidak lagi mengandalkan filter_var(FILTER_VALIDATE_URL)', true);
+        } else {
+            record('Transcoder masih memakai FILTER_VALIDATE_URL sebagai validasi URL', false, false);
+        }
+        if (strpos($tc, '$dl_extra') !== false && strpos($tc, 'pinHttpUrl') !== false) {
+            record('HTTP pinning aktif (SsrfGuard::pinHttpUrl + $dl_extra)', true);
+        } else {
+            record('HTTP pinning (SsrfGuard::pinHttpUrl + $dl_extra) TIDAK terdeteksi', false, false);
+        }
+
+        $guardContent = $guardFile !== null && file_exists($guardFile) ? (string) file_get_contents($guardFile) : '';
+        if (strpos($guardContent, '--add-header') !== false) {
+            record('SsrfGuard: --add-header Host (IP pinning) terpasang', true);
+        } else {
+            record('SsrfGuard: --add-header Host TIDAK terdeteksi', false, false);
+        }
+
+        
+        if (strpos($tc, 'ensureDownloadProxy') !== false && strpos($tc, '--proxy') !== false) {
+            record('Transcoder: yt-dlp diarahkan lewat validating proxy (--proxy)', true);
+        } else {
+            record('Transcoder: --proxy / ensureDownloadProxy TIDAK terdeteksi', false, false,
+                'Tanpa proxy, redirect ke IP private masih bisa diikuti yt-dlp');
+        }
+    }
+
+    $proxyClass = PROJECT_ROOT . '/modules/auth/ValidatingProxy.php';
+    if (!file_exists($proxyClass)) {
+        record('modules/auth/ValidatingProxy.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $pc = file_get_contents($proxyClass);
+        if (strpos($pc, '127.0.0.1') !== false && strpos($pc, 'proc_open') !== false) {
+            record('ValidatingProxy: spawn CLI + bind 127.0.0.1 (loopback-only)', true);
+        } else {
+            record('ValidatingProxy: bind loopback / proc_open TIDAK terdeteksi', false, false);
+        }
+    }
+
+    $proxyServer = PROJECT_ROOT . '/modules/auth/validating_proxy_server.php';
+    if (!file_exists($proxyServer)) {
+        record('modules/auth/validating_proxy_server.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $ps = file_get_contents($proxyServer);
+        foreach (['SsrfGuard', 'CONNECT', 'resolvePublicAddresses'] as $pat) {
+            if (strpos($ps, $pat) === false) {
+                record("validating_proxy_server: {$pat} TIDAK ditemukan", false, false);
+            }
+        }
+        record('validating_proxy_server: SsrfGuard diterapkan per hop (CONNECT + resolve)', true);
+    }
+
+    
+    
+    
+    $parentHt = PROJECT_ROOT . '/data_drive/.htaccess';
+    if (!file_exists($parentHt)) {
+        record('data_drive/.htaccess — FILE TIDAK DITEMUKAN!', false, false,
+            'Tanpa deny, file private bisa diambil langsung lewat web!');
+    } else {
+        $phc = (string) file_get_contents($parentHt);
+        if (strpos($phc, 'private_admins') !== false && strpos($phc, '[F') !== false) {
+            record('data_drive/.htaccess — deny subtree private_admins OK (RewriteRule [F])', true);
+        } else {
+            record('data_drive/.htaccess — TIDAK ada deny untuk private_admins', false, false,
+                'Tambahkan RewriteRule ^private_admins/ - [F,L]');
+        }
+    }
+
+    
+    
+    $nestedHt = PROJECT_ROOT . '/data_drive/private_admins/.htaccess';
+    if (is_file($nestedHt)) {
+        $nhc = (string) file_get_contents($nestedHt);
+        if (strpos($nhc, 'Require all denied') !== false) {
+            record('data_drive/private_admins/.htaccess — Require all denied OK (lapisan 2)', true);
+        } else {
+            record('data_drive/private_admins/.htaccess — TIDAK ada Require all denied', true, true);
+        }
+    } else {
+        record('data_drive/private_admins/.htaccess — tidak ada (deploy-time; parent rule aktif)', true, true);
+    }
+
+    
+    $streamFile = PROJECT_ROOT . '/drive/stream.php';
+    if (!file_exists($streamFile)) {
+        record('drive/stream.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $sc = file_get_contents($streamFile);
+        $need = [
+            'authorize()'            => 'authorize()',
+            'verify_csrf_token'      => 'verify_csrf_token',
+            'getFileForDownload'     => 'getFileForDownload',
+            'basename (traversal)'   => 'basename(',
+        ];
+        foreach ($need as $label => $pat) {
+            if (strpos($sc, $pat) !== false) {
+                record("drive/stream.php — {$label} OK", true);
+            } else {
+                record("drive/stream.php — {$label} TIDAK ditemukan", false, false);
+            }
+        }
+    }
+
+    
+    $dsFile = PROJECT_ROOT . '/drive/DriveService.php';
+    if (file_exists($dsFile)) {
+        $ds = file_get_contents($dsFile);
+        
+        
+        
+        $usesAuthStream =
+            strpos($ds, "'stream?file='") !== false ||
+            strpos($ds, "'stream.php?file='") !== false;
+        if ($usesAuthStream) {
+            record('DriveService: listing private memakai stream.php ber-auth', true);
+        } else {
+            record('DriveService: listing private TIDAK memakai stream.php', false, false,
+                'URL web langsung membocorkan file private');
+        }
+        if (strpos($ds, "fopen(\$destination, 'x')") !== false || (strpos($ds, '@fopen($destination') !== false && strpos($ds, ", 'x')") !== false)) {
+            record('DriveService: reservasi nama file atomik (fopen O_EXCL)', true);
+        } else {
+            record('DriveService: reservasi nama file atomik TIDAK terdeteksi', false, false);
+        }
+        if (strpos($ds, 'flock($lockFp') !== false) {
+            record('DriveService: kuota ditegakkan di dalam flock (atomik)', true);
+        } else {
+            record('DriveService: kuota tanpa flock — rawan race condition', false, false);
+        }
+    }
+}
+
+
+
+
+
+
+
+function testFatalBugRegression(): void {
+    print_header('TEST 14: Fatal-Bug Regression Guard');
+
+    
+    
+    
+    
+    $alFile = PROJECT_ROOT . '/modules/core/activity_logger.php';
+    if (!file_exists($alFile)) {
+        record('modules/core/activity_logger.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $al = (string) file_get_contents($alFile);
+
+        if (strpos($al, 'INSERT INTO users (username, password, role') !== false) {
+            record('activity_logger: INSERT guest menyertakan kolom password', true);
+        } else {
+            record('activity_logger: INSERT guest TIDAK mengisi kolom password — fatal di strict mode!', false, false,
+                'Tambahkan kolom password + bind_param, isi dengan random_bytes()');
+        }
+
+        if (strpos($al, 'random_bytes') !== false && strpos($al, '$guest_pass') !== false) {
+            record('activity_logger: password guest acak (random_bytes) — aman', true);
+        } else {
+            record('activity_logger: password guest tidak di-generate acak', false, false,
+                'Kolom password NOT NULL tanpa nilai acak = error strict mode');
+        }
+
+        if (strpos($al, 'ON DUPLICATE KEY UPDATE') !== false) {
+            record('activity_logger: guest upsert (ON DUPLICATE KEY UPDATE) OK', true);
+        } else {
+            record('activity_logger: ON DUPLICATE KEY UPDATE TIDAK terdeteksi', true, true,
+                'Guest row bisa menumpuk setiap request');
+        }
+    }
+
+    
+    
+    
+    $insertSites = [];
+    $ri = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(PROJECT_ROOT, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+    foreach ($ri as $f) {
+        if ($f->getExtension() !== 'php') continue;
+        $p = $f->getPathname();
+        foreach (['/vendor/', '/node_modules/', '/.git/', '/assets/dict/', '/temp/'] as $ex) {
+            if (strpos($p, $ex) !== false) continue 2;
+        }
+        $c = (string) file_get_contents($p);
+        if (preg_match_all('/INSERT\s+INTO\s+users\s*\(([^)]*)\)/i', $c, $ms)) {
+            foreach ($ms[1] as $cols) {
+                $insertSites[] = [
+                    str_replace(PROJECT_ROOT . '/', '', $p),
+                    (bool) preg_match('/\bpassword\b/i', $cols),
+                ];
+            }
+        }
+    }
+
+    if (empty($insertSites)) {
+        record('Tidak ada INSERT INTO users ditemukan', true, true);
+    } else {
+        $bad = array_filter($insertSites, fn($s) => !$s[1]);
+        if (empty($bad)) {
+            record(count($insertSites) . ' call site INSERT INTO users — semua mengisi kolom password', true);
+        } else {
+            foreach ($bad as $b) {
+                record("{$b[0]} — INSERT INTO users TANPA kolom password (fatal di strict mode!)", false, false,
+                    'Tambahkan kolom password (nilai acak untuk guest/test)');
+            }
+        }
+    }
+
+    
+    
+    
+    
+    $adFile = PROJECT_ROOT . '/controllers/admin/admin_data.php';
+    if (!file_exists($adFile)) {
+        record('controllers/admin/admin_data.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $ad = (string) file_get_contents($adFile);
+
+        if (strpos($ad, 'COALESCE(SUM(views), 0)') !== false && strpos($ad, 'GROUP BY DATE(upload_date)') !== false) {
+            record('admin_data: chart 7-Day pakai COALESCE(SUM(views),0) + GROUP BY tanggal', true);
+        } else {
+            record('admin_data: chart 7-Day TIDAK memakai COALESCE(SUM(views),0)/GROUP BY', false, false,
+                'Query lama gagal: Unknown column v.views in field list');
+        }
+
+        if (strpos($ad, 'v.views') === false && strpos($ad, 'm.views') === false) {
+            record('admin_data: tidak ada referensi v.views/m.views (pola bug lama)', true);
+        } else {
+            record('admin_data: masih ada referensi v.views/m.views — query rusak!', false, false,
+                'Ganti jadi COALESCE(SUM(views), 0) FROM (...) AS t');
+        }
+    }
+}
+
+
+
+
+function testAdminContextAndPipelineHardening(): void {
+    print_header('TEST 15: Admin Context Guards & Media Pipeline Hardening');
+
+    
+    $adminFiles = [
+        'admin/catur.php' => [
+            'Role check admin (require_admin)' => '/require_admin\s*\(/',
+        ],
+        'controllers/admin/admin_actions.php' => [
+            'Role check via is_admin()'        => '/is_admin\s*\(\s*\$conn\s*\)/',
+            'Guard direct access (MEEL_ADMIN_CONTEXT)' => "/defined\('MEEL_ADMIN_CONTEXT'\)/",
+        ],
+        'controllers/admin/admin_data.php' => [
+            'Guard direct access (MEEL_ADMIN_CONTEXT)' => "/defined\('MEEL_ADMIN_CONTEXT'\)/",
+        ],
+        'admin/index.php' => [
+            'Define MEEL_ADMIN_CONTEXT sebelum include' => "/define\('MEEL_ADMIN_CONTEXT'/",
+        ],
+        'admin/mfa_reset.php' => [
+            'Define MEEL_ADMIN_CONTEXT sebelum include' => "/define\('MEEL_ADMIN_CONTEXT'/",
+        ],
+    ];
+
+    foreach ($adminFiles as $file => $pats) {
+        $full = PROJECT_ROOT . '/' . $file;
+        if (!file_exists($full)) {
+            record("{$file} — tidak ditemukan", true, true);
+            continue;
+        }
+        $content = file_get_contents($full);
+        foreach ($pats as $label => $pat) {
+            if (preg_match($pat, $content)) {
+                record("{$file}: {$label} ✓", true);
+            } else {
+                record("{$file}: {$label} ✗ — PATCH MISSING!", false, false);
+            }
+        }
+    }
+
+    
+    $uploaderFile = PROJECT_ROOT . '/modules/core/Uploader.php';
+    if (!file_exists($uploaderFile)) {
+        record('modules/core/Uploader.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $uc = (string) file_get_contents($uploaderFile);
+        $uploaderChecks = [
+            'checkActiveUploadLimit() method'          => '/function checkActiveUploadLimit/',
+            'flock() untuk serialisasi'                => '/flock\(/',
+            'TTL auto-reset 5 menit'                   => '/300\)/',
+            'Max 3 simultaneous uploads'               => '/current >= 3/',
+            'register_shutdown_function decrement'     => '/register_shutdown_function/',
+            'Dipanggil di processMusic()'              => '/\$this->checkActiveUploadLimit\(\)/',
+            'Dipanggil di processVideo()'              => '/\$this->checkActiveUploadLimit\(\)/',
+            'flock untuk penamaan folder video'        => '/meel_upload_video\.lock/',
+            'flock music upload'                       => '/meel_music_upload\.lock/',
+            'flock music transcode'                    => '/meel_music_transcode\.lock/',
+            'flock HDD move'                           => '/meel_move_hdd\.lock/',
+            'FFprobe failure handling'                 => '/duration.*<=.*0/',
+            'try-finally untuk unlock'                 => '/finally \{.*flock\(\$lock_fp, LOCK_UN\)/s',
+        ];
+
+        foreach ($uploaderChecks as $name => $pat) {
+            if (preg_match($pat, $uc)) {
+                record("Uploader: {$name} ✓", true);
+            } else {
+                record("Uploader: {$name} ✗ — pattern tidak ditemukan", false, false);
+            }
+        }
+    }
+
+    
+    $transcoderFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
+    if (!file_exists($transcoderFile)) {
+        record('modules/core/Transcoder.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $tc = (string) file_get_contents($transcoderFile);
+        $tcChecks = [
+            'proc_open array (finalizeVideo)'   => '/proc_open\(\$hls_cmd/',
+            'proc_open array (transcodeVideo)'  => '/proc_open\(\$tc_cmd/',
+            'env vars via $env (LD_LIBRARY_PATH)' => "/'LD_LIBRARY_PATH'/",
+            'env vars via $env (PATH)'          => "/'PATH'/",
+            'putenv() untuk processDownload'    => "/putenv\('PATH/",
+            'marker file anti-duplikat transcode' => '/marker_file/',
+            'folder naming lock'                => '/meel_transcode_folder\.lock/',
+            'stderr pipe untuk progress FFmpeg' => '/\$hls_pipes\[2\]/',
+        ];
+
+        foreach ($tcChecks as $name => $pat) {
+            if (preg_match($pat, $tc)) {
+                record("Transcoder: {$name} ✓", true);
+            } else {
+                record("Transcoder: {$name} ✗ — pattern tidak ditemukan", false, false);
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+function testOpenRedirectHardening(): void {
+    print_header('TEST 16: Open-Redirect & Redirect-Hardening Guard');
+
+    
+    $dcFile = PROJECT_ROOT . '/controllers/api/delete_comment.php';
+    if (!file_exists($dcFile)) {
+        record('controllers/api/delete_comment.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $dc = (string) file_get_contents($dcFile);
+
+        
+        preg_match_all('/header\s*\(\s*["\']Location:/i', $dc, $locMs);
+        $locCount = count($locMs[0]);
+        preg_match_all('/header\s*\(\s*["\']Location:\s*["\']\s*\.\s*safe_comment_back_url\(\)/i', $dc, $safeMs);
+        $safeCount = count($safeMs[0]);
+        if ($locCount > 0 && $locCount === $safeCount) {
+            record("delete_comment: {$locCount} Location header — semua via safe_comment_back_url()", true);
+        } else {
+            record("delete_comment: {$locCount} Location, hanya {$safeCount} via helper tervalidasi — open redirect!", false, false,
+                'Semua redirect harus lewat safe_comment_back_url() (validasi host referer)');
+        }
+
+        
+        if (preg_match('/header\s*\(\s*["\']Location:\s*["\']\s*\.\s*\$_SERVER\[\'HTTP_REFERER\'\]/i', $dc)) {
+            record('delete_comment: redirect ke HTTP_REFERER MENTAH — open redirect!', false, false,
+                'Redirect referer harus lewat safe_comment_back_url()');
+        } else {
+            record('delete_comment: tidak ada redirect ke HTTP_REFERER mentah', true);
+        }
+
+        
+        
+        
+        
+        foreach ([
+            'controllers/api/delete_comment.php',
+            'controllers/api/comment.php',
+            'controllers/api/like.php',
+        ] as $rateFile) {
+            $rfContent = (string) file_get_contents(PROJECT_ROOT . '/' . $rateFile);
+            if (preg_match('/include[^;]*RateLimiter\.php/i', $rfContent)) {
+                record("{$rateFile}: include RateLimiter.php tersisa — fatal Cannot declare class!", false, false,
+                    'Hapus include; loader.php sudah require otomatis');
+            } else {
+                record("{$rateFile}: tanpa include RateLimiter.php (loader.php sudah require)", true);
+            }
+        }
+    }
+
+    
+    $paFile = PROJECT_ROOT . '/music/playlist_action.php';
+    if (!file_exists($paFile)) {
+        record('music/playlist_action.php — FILE TIDAK DITEMUKAN!', false, false);
+    } else {
+        $pa = (string) file_get_contents($paFile);
+
+        if (strpos($pa, "str_starts_with(\$url, '//')") !== false) {
+            record('playlist_action: redirect() tolak //host (protocol-relative)', true);
+        } else {
+            record('playlist_action: redirect() TIDAK menolak //host — open redirect!', false, false,
+                'Tambah cek str_starts_with($url, \'//\') sebelum menerima URL root-relative');
+        }
+
+        if (strpos($pa, "str_contains(\$url, '://')") !== false) {
+            record('playlist_action: redirect() tolak URL dengan skema (://)', true);
+        } else {
+            record('playlist_action: redirect() TIDAK menolak skema (://)', false, false,
+                'Tambah cek str_contains($url, \'://\')');
+        }
+
+        
+        $hasClean = strpos($pa, "'beranda'") !== false
+            && strpos($pa, "'playlist'") !== false
+            && strpos($pa, "'watch'") !== false
+            && strpos($pa, "'music/'" ) !== false;
+        if ($hasClean) {
+            record('playlist_action: allowlist redirect mencakup rute bersih (beranda/playlist/watch/music/)', true);
+        } else {
+            record('playlist_action: allowlist redirect TIDAK lengkap (rute bersih hilang)', false, false,
+                'Prefix harus mencakup beranda, playlist, watch, music/');
+        }
+    }
+}
+
 
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
-    echo "  " . chr(9553) . "   MEeL Automated Security Test Suite v1.1" . str_repeat(' ', 19) . chr(9553) . "\n";
+    echo "  " . chr(9553) . "   MEeL Automated Security Test Suite v1.2" . str_repeat(' ', 19) . chr(9553) . "\n";
     echo "  " . chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . "\n";
     echo CLR_RESET;
     echo CLR_GRAY . "  Path : " . PROJECT_ROOT . "\n";
@@ -603,8 +1011,12 @@ function run(): int {
     testCommandInjection();
     testPasswordPolicy();
     testFileIntegrity();
+    testSsrfAndPrivateDrive();
+    testFatalBugRegression();
+    testAdminContextAndPipelineHardening();
+    testOpenRedirectHardening();
 
-    // ─── SUMMARY ───
+    
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
     echo chr(9553) . "                    SUMMARY REPORT" . str_repeat(' ', 23) . chr(9553) . "\n";
     echo chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . CLR_RESET . "\n\n";
@@ -635,7 +1047,6 @@ function run(): int {
         echo CLR_YELLOW . "  Review warnings above for best-practice improvements.\n\n" . CLR_RESET;
     }
 
-    // Save report
     $reportFile = PROJECT_ROOT . '/logs/security_report_' . date('Ymd_His') . '.log';
     $report  = "MEeL Security Report\n";
     $report .= "Date: " . date('Y-m-d H:i:s') . "\n";

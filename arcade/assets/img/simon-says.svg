@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Simon Says">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#10201d"/>
+      <stop offset="100%" stop-color="#0b0e14"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <circle cx="400" cy="200" r="150" fill="#34d399" opacity="0.08"/>
+  <!-- 4 pad Simon -->
+  <g rx="26">
+    <rect x="280" y="80" width="110" height="110" rx="26" fill="#22c55e"/>
+    <rect x="400" y="80" width="110" height="110" rx="26" fill="#ef4444"/>
+    <rect x="280" y="200" width="110" height="110" rx="26" fill="#eab308"/>
+    <rect x="400" y="200" width="110" height="110" rx="26" fill="#3b82f6"/>
+  </g>
+  <circle cx="395" cy="195" r="26" fill="#0b0e14"/>
+  <text x="395" y="202" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" text-anchor="middle" fill="#34d399">SIMON</text>
+  <text x="400" y="380" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" text-anchor="middle" fill="url(#title)">SIMON SAYS</text>
+  <text x="400" y="420" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="6" text-anchor="middle" fill="#4f6b66">MEeL ARCADE</text>
+</svg>

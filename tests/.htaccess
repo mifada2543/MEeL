@@ -4,7 +4,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{REQUEST_URI} ^(.*/)[^/]+/?$
-    RewriteRule ^ %1err/denied.php [R=303,L]
+    RewriteRule ^ - [F,L]
 </IfModule>
 
 <IfModule !mod_rewrite.c>

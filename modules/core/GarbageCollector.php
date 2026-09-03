@@ -1,60 +1,35 @@
 <?php
-/**
- * GarbageCollector — Otomatis membersihkan file/folder sampah dari direktori temp.
- *
- * File yang sudah tidak disentuh >5 menit (stale) akan dihapus.
- * Berjalan di setiap request halaman upload/transcode agar real-time.
- *
- * Target direktori:
- * - /dev/shm/meel/temp/     (Transcoder RAM disk — upload/download)
- * - /dev/shm/meel/upload/   (Uploader RAM disk)
- * - /dev/shm/meel/transcode/ (Transcoder RAM disk — transcode audio)
- * - {project}/temp/          (fallback disk)
- */
-
 class GarbageCollector
 {
-    // File/folder lebih dari STALE_SECONDS detik sejak mtime terakhir akan dihapus
-    private const STALE_SECONDS = 300; // 5 menit
 
-    // Berapa jam tanpa aktivitas sebelum guest dianggap stale
+    private const STALE_SECONDS = 300;
+
     private const GUEST_STALE_HOURS = 2;
 
-    // Minimal interval antar auto-cleanup guest (dalam detik)
-    private const GUEST_CLEANUP_INTERVAL = 3600; // 1 jam
+    private const GUEST_CLEANUP_INTERVAL = 3600;
 
-    // Static flag agar GC hanya 1x per request (dipanggil dari banyak titik)
+    private const ROOM_LOBBY_STALE_HOURS = 24;
+
+    private const ROOM_GAME_STALE_HOURS = 168;
+
+    private const CHESS_CLEANUP_INTERVAL = 3600;
+
     private static bool $hasRun = false;
 
-    /**
-     * Bersihkan guest stale dari database secara otomatis.
-     *
-     * Alur:
-     * 1. Mark guest dengan last_activity > N jam sebagai is_active = 0
-     * 2. Hapus semua guest dengan is_active = 0
-     * 3. Reset AUTO_INCREMENT users ke MAX(id) + 1
-     *
-     * Throttle: hanya berjalan SEKALI per interval (default 1 jam),
-     * dilacak via file temp/gc_guest_last_run.txt
-     *
-     * @param \mysqli $conn Koneksi database aktif
-     * @return int Jumlah guest yang dibersihkan
-     */
+    
     public static function cleanGuests(\mysqli $conn): int
     {
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_guest_last_run.txt';
 
-        // Throttle: cek apakah sudah jalan dalam < interval
-        if (file_exists($throttleFile)) {
-            $lastRun = (int) @file_get_contents($throttleFile);
+        if (is_readable($throttleFile)) {
+            $lastRun = (int) file_get_contents($throttleFile);
             if ($lastRun > 0 && (time() - $lastRun) < self::GUEST_CLEANUP_INTERVAL) {
-                return 0; // Masih dalam cooldown
+                return 0;
             }
         }
 
         $totalCleaned = 0;
 
-        // Step 1: Mark guest stale sebagai is_active = 0
         $stmt = $conn->prepare(
             "UPDATE users SET is_active = 0 WHERE role = 'guest' AND is_active = 1 AND last_activity < DATE_SUB(NOW(), INTERVAL ? HOUR)"
         );
@@ -70,19 +45,11 @@ class GarbageCollector
             }
         }
 
-        // Step 2: Hapus semua guest yang sudah is_active = 0
-        $stmt = $conn->prepare("DELETE FROM users WHERE role = 'guest' AND is_active = 0");
-        if ($stmt) {
-            $stmt->execute();
-            $deleted = $stmt->affected_rows;
-            $stmt->close();
-
-            if ($deleted > 0) {
-                $totalCleaned += $deleted;
-            }
+        $deleted = purge_guest_users($conn) ?? 0;
+        if ($deleted > 0) {
+            $totalCleaned += $deleted;
         }
 
-        // Step 3: Reset AUTO_INCREMENT ke MAX(id) + 1
         if ($totalCleaned > 0) {
             $result = $conn->query("SELECT COALESCE(MAX(id), 0) + 1 AS new_ai FROM users");
             if ($result) {
@@ -92,17 +59,105 @@ class GarbageCollector
             }
         }
 
-        // Simpan timestamp throttle
-        @file_put_contents($throttleFile, time());
+        self::writeThrottleFile($throttleFile);
 
         return $totalCleaned;
     }
 
-    /**
-     * Jalankan garbage collection pada semua direktori temp.
-     * Panggil method ini di awal setiap halaman yang memproses upload/transcode.
-     * Hanya berjalan 1 kali per request (static flag).
-     */
+    
+    public static function cleanChessRooms(\mysqli $conn): int
+    {
+        $throttleFile = dirname(__DIR__, 2) . '/temp/gc_chess_last_run.txt';
+
+        if (is_readable($throttleFile)) {
+            $lastRun = (int) file_get_contents($throttleFile);
+            if ($lastRun > 0 && (time() - $lastRun) < self::CHESS_CLEANUP_INTERVAL) {
+                return 0;
+            }
+        }
+
+        $totalCleaned = 0;
+
+        $lobbyHours = self::ROOM_LOBBY_STALE_HOURS;
+        $stmt = $conn->prepare(
+            "DELETE FROM moves WHERE room_code IN (
+                SELECT room_code FROM rooms
+                WHERE black_joined = 0 AND created_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+            )"
+        );
+        if ($stmt) {
+            $stmt->bind_param("i", $lobbyHours);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $stmt = $conn->prepare(
+            "DELETE FROM rooms
+             WHERE black_joined = 0 AND created_at < DATE_SUB(NOW(), INTERVAL ? HOUR)"
+        );
+        if ($stmt) {
+            $stmt->bind_param("i", $lobbyHours);
+            $stmt->execute();
+            $totalCleaned += $stmt->affected_rows;
+            $stmt->close();
+        }
+
+        $gameHours = self::ROOM_GAME_STALE_HOURS;
+        $staleRooms = "SELECT room_code FROM (
+                SELECT r.room_code
+                FROM rooms r
+                LEFT JOIN (
+                    SELECT room_code, MAX(created_at) AS last_move_at
+                    FROM moves GROUP BY room_code
+                ) m ON m.room_code = r.room_code
+                WHERE r.black_joined = 1
+                  AND NOT EXISTS (
+                      SELECT 1 FROM moves t
+                      WHERE t.room_code = r.room_code
+                        AND JSON_UNQUOTE(JSON_EXTRACT(t.move_data, '$.type'))
+                            IN ('resign','draw_accept','disconnect','game_over')
+                  )
+                  AND COALESCE(m.last_move_at, r.created_at) < DATE_SUB(NOW(), INTERVAL ? HOUR)
+            ) AS stale_rooms";
+        $stmt = $conn->prepare("DELETE FROM moves WHERE room_code IN ($staleRooms)");
+        if ($stmt) {
+            $stmt->bind_param("i", $gameHours);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $stmt = $conn->prepare("DELETE FROM rooms WHERE room_code IN ($staleRooms)");
+        if ($stmt) {
+            $stmt->bind_param("i", $gameHours);
+            $stmt->execute();
+            $totalCleaned += $stmt->affected_rows;
+            $stmt->close();
+        }
+
+        self::writeThrottleFile($throttleFile);
+
+        return $totalCleaned;
+    }
+
+    
+    private static function writeThrottleFile(string $throttleFile): void
+    {
+        $dir = dirname($throttleFile);
+        if (!is_dir($dir) || !is_writable($dir)) {
+            error_log("[MEeL] GarbageCollector: throttle file tidak bisa ditulis: {$throttleFile}");
+            return;
+        }
+
+        if (is_file($throttleFile) && !is_writable($throttleFile)) {
+            if (!@unlink($throttleFile)) {
+                error_log("[MEeL] GarbageCollector: throttle file tidak writable & gagal dihapus: {$throttleFile}");
+                return;
+            }
+        }
+
+        if (@file_put_contents($throttleFile, time()) === false) {
+            error_log("[MEeL] GarbageCollector: gagal menulis throttle file: {$throttleFile}");
+        }
+    }
+
     public static function run(): void
     {
         if (self::$hasRun) return;
@@ -111,7 +166,6 @@ class GarbageCollector
         $directories = self::getTargetDirectories();
         if (empty($directories)) return;
 
-        // Batasi eksekusi maksimal 3 detik agar tidak menggangu response user
         $timeout = microtime(true) + 3;
 
         foreach ($directories as $dir) {
@@ -119,36 +173,28 @@ class GarbageCollector
             self::cleanDirectory($dir);
         }
 
-        // Cleanup expired rate limit files
         if (class_exists('RateLimiter')) {
             RateLimiter::cleanup();
         }
     }
 
-    /**
-     * Kumpulkan semua direktori temp yang ada saat runtime.
-     */
     private static function getTargetDirectories(): array
     {
         $dirs = [];
 
-        // 1. Project temp/ fallback
         $project_temp = dirname(__DIR__, 2) . '/temp';
         if (is_dir($project_temp)) {
             $dirs[] = $project_temp;
         }
 
-        // 2. RAM disk Transcoder — upload/download
         if (is_dir('/dev/shm/meel/temp')) {
             $dirs[] = '/dev/shm/meel/temp';
         }
 
-        // 3. RAM disk Uploader
         if (is_dir('/dev/shm/meel/upload')) {
             $dirs[] = '/dev/shm/meel/upload';
         }
 
-        // 4. RAM disk Transcode (khusus ekstrak audio dari video)
         if (is_dir('/dev/shm/meel/transcode')) {
             $dirs[] = '/dev/shm/meel/transcode';
         }
@@ -156,9 +202,6 @@ class GarbageCollector
         return $dirs;
     }
 
-    /**
-     * Hapus semua file/folder stale di dalam direktori (non-rekursif level-1).
-     */
     private static function cleanDirectory(string $dir): void
     {
         $cutoff = time() - self::STALE_SECONDS;
@@ -169,33 +212,64 @@ class GarbageCollector
         foreach ($items as $item) {
             $basename = basename($item);
 
-            // ── Skip yt-dlp persistent cache ────────────────────────────────
+            
             if ($basename === 'ytdlp-cache') continue;
 
-            // ── Skip file yang masih baru (mtime dalam 5 menit) ──────────────
-            $mtime = @filemtime($item);
+            
+            if (!file_exists($item)) continue; 
+            $mtime = filemtime($item);
             if ($mtime === false || $mtime > $cutoff) continue;
 
-            // ── Hapus file/folder stale ──────────────────────────────────────
             if (is_dir($item)) {
                 self::removeDirectory($item);
             } else {
-                @unlink($item);
+                self::removeFile($item);
             }
         }
     }
 
-    /**
-     * Hapus direktori beserta seluruh isinya secara rekursif.
-     */
+    
     private static function removeDirectory(string $dir): void
     {
-        $items = glob(rtrim($dir, '/') . '/*');
-        if ($items) {
-            foreach ($items as $item) {
-                is_dir($item) ? self::removeDirectory($item) : @unlink($item);
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $parent = dirname($dir);
+        if (!is_dir($parent) || !is_writable($parent)) {
+            error_log("[MEeL] GarbageCollector: direktori tidak writable, dilewati: {$dir}");
+            return;
+        }
+
+        foreach (glob(rtrim($dir, '/') . '/*') ?: [] as $item) {
+            if (is_dir($item)) {
+                self::removeDirectory($item);
+            } else {
+                self::removeFile($item);
             }
         }
-        @rmdir($dir);
+
+        $remaining = glob(rtrim($dir, '/') . '/*') ?: [];
+        if (empty($remaining) && !rmdir($dir)) {
+            error_log("[MEeL] GarbageCollector: Gagal menghapus direktori: {$dir}");
+        }
+    }
+
+    
+    private static function removeFile(string $path): void
+    {
+        if (!is_file($path) && !is_link($path)) {
+            return;
+        }
+
+        $parent = dirname($path);
+        if (!is_dir($parent) || !is_writable($parent)) {
+            error_log("[MEeL] GarbageCollector: direktori tidak writable, file dilewati: {$path}");
+            return;
+        }
+
+        if (!unlink($path)) {
+            error_log("[MEeL] GarbageCollector: Gagal menghapus file: {$path}");
+        }
     }
 }

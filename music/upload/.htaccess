@@ -1,0 +1,40 @@
+# =================================================================
+# MEeL Media Upload Storage — Hardening (music/upload)
+# =================================================================
+# 1. Matikan mesin eksekusi PHP untuk semua versi (mod_php)
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# 2. Amankan penanganan handler CGI / FastCGI jika LAMPP menggunakan PHP-FPM
+<FilesMatch "\.(php|php3|php4|php5|phtml|phps|pl|py|jsp|asp|sh|cgi|bat|cmd)$">
+SetHandler default-handler
+RemoveHandler .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .sh .cgi
+RemoveType .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .sh .cgi
+</FilesMatch>
+
+# 3. Proteksi MIME-Type: Paksa file berbahaya menjadi plain text atau download biner
+ForceType application/octet-stream
+<FilesMatch "(?i)\.(php|phtml|pl|py|sh|cgi|exe|bat|cmd|html|htm|js)$">
+ForceType text/plain
+</FilesMatch>
+
+# 4. Kembalikan file media dan dokumen standar agar bisa dibaca/di-stream normal oleh browser
+<FilesMatch "(?i)\.(mp3|mp4|webm|mkv|opus|ogg|wav|jpg|jpeg|png|gif|webp|pdf|txt)$">
+ForceType inherit
+</FilesMatch>
+
+# 5. Matikan Directory Listing (Mencegah intip struktur folder)
+Options -Indexes
+
+# 6. Nonaktifkan redirect trailing-slash mod_dir untuk URL /music/upload
+#    (halaman upload disajikan router di URL bersih /music/upload — tanpa
+#    trailing slash, aset relatif ../assets/ resolve ke base proyek dengan
+#    benar. Dengan redirect ke /music/upload/, depth berubah dan CSS/JS 404.)
+DirectorySlash Off

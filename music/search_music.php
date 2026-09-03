@@ -10,11 +10,10 @@ $result = $engine->searchMusic($params);
 if ($result['count'] > 0) {
     foreach ($result['results'] as $v) {
         if ($result['sidebar']) {
-            // Tampilan rekomendasi di watch.php
             $v_ext = strtolower(pathinfo($v['filename'], PATHINFO_EXTENSION));
             $v_lbl = $v_ext === 'ogg' ? 'opus' : $v_ext;
             ?>
-            <a href="watch.php?id=<?= $v['id'] ?>"
+            <a href="<?= base_url('/music/watch?id=' . (int)$v['id']) ?>"
                class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl no-underline htmx-added"
                title="<?= htmlspecialchars($v['title']) ?>">
                 <div class="w-full lg:w-16 aspect-square lg:h-12 lg:aspect-auto rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">
@@ -40,6 +39,26 @@ if ($result['count'] > 0) {
             include 'music_item.php';
         }
     }
-} else {
-    echo '<div class="py-12 text-center text-[10px] text-gray-700 uppercase tracking-widest">Tidak ada lagu ditemukan.</div>';
+
+    if (!$result['sidebar'] && $result['hasMore']) {
+        $curPage    = (int)((int)$result['offset'] / max((int)$result['limit'], 1)) + 1;
+        $totalPages = max(1, (int)$result['total_pages']);
+        ?>
+        <button type="button" id="load-more-music-search"
+            class="w-full py-4 border border-dashed border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-[.25em] text-gray-700 hover:text-orange-500 hover:border-orange-500/30 transition-all"
+            hx-get="search?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
+            hx-target="#load-more-music-search"
+            hx-swap="outerHTML"
+            title="Muat lebih banyak lagu">
+            Load More · <?= $curPage ?>/<?= $totalPages ?>
+        </button>
+        <?php
+    } elseif (!$result['sidebar'] && (int)$result['offset'] > 0) {
+        ?>
+        <div class="py-10 text-center text-[9px] text-gray-800 uppercase tracking-[.4em]">End of Collection</div>
+        <?php
+    }
+} elseif ($result['offset'] === 0) {
+
+    echo '<div class="py-16 text-center text-[10px] text-gray-700 uppercase tracking-widest">Tidak ada lagu ditemukan.</div>';
 }

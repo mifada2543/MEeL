@@ -5,6 +5,19 @@ DirectoryIndex index.php index.html
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Cache audio assets (direct access, not via stream.php)
+    <FilesMatch "\.(ogg|mp3|m4a|flac)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType audio/ogg "access plus 30 days"
+    ExpiresByType audio/mpeg "access plus 30 days"
+    ExpiresByType audio/mp4 "access plus 30 days"
+    ExpiresByType audio/flac "access plus 30 days"
 </IfModule>
 
 <FilesMatch "(\.env|\.git|\.htaccess|\.htpasswd|\.sql|\.log|config\.php|cookies\.txt|auth\.php|db\.php)$">

@@ -11,15 +11,16 @@ require_once 'auth/auth.php';
 require_once 'auth/config.php';
 require_once 'modules/core/activity_logger.php';
 require_once 'modules/core/Transcoder.php';
+require_once 'modules/core/BrowserProgressObserver.php';
 require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
 GarbageCollector::run();
 
-// ─── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (strpos($errfile, 'node_modules') !== false || strpos($errfile, 'vendor') !== false) return false;
     $safe_msg = "$errstr (Line $errline)";
-    echo "<script>meelError(" . json_encode($safe_msg) . ");</script>";
+    $js = 'if(typeof meelError==="function"){meelError(' . json_encode($safe_msg) . ')}';
+    echo '<script>' . $js . '</script>';
     echo str_repeat(' ', 1024);
     flush();
     return true;
@@ -28,7 +29,8 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) {
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        echo "<script>meelError(" . json_encode($error['message']) . ");</script>";
+        $js = 'if(typeof meelError==="function"){meelError(' . json_encode($error['message']) . ')}';
+        echo '<script>' . $js . '</script>';
         echo str_repeat(' ', 1024);
         flush();
     }
@@ -36,39 +38,26 @@ register_shutdown_function(function () {
 
 $message        = "";
 $rate_limit_msg = "";
-$transcoder     = new Transcoder($conn, $_SESSION['user_id']);
 
 require_once 'modules/core/System.php';
 $sys     = new System($conn);
 $is_busy = $sys->isServerBusy();
 
-// Ambil role untuk tampilkan info ekstra
-$stmt_role = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-$stmt_role->bind_param("i", $_SESSION['user_id']);
-$stmt_role->execute();
-$user_role = $stmt_role->get_result()->fetch_assoc()['role'] ?? 'user';
+$user_role = get_user_role($conn, (int)$_SESSION['user_id']);
 $is_admin  = ($user_role === 'admin');
 
-// Queue stats
+$transcoder     = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver($is_admin));
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
+
+
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
-// ── Hitung sisa kuota upload per jam ──
-$quota_video_used = 0;
-$quota_music_used = 0;
-$upload_max = 2;
 
-if ($user_role !== 'admin') {
-    $q_vid = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR");
-    $q_vid->bind_param("i", $_SESSION['user_id']);
-    $q_vid->execute();
-    $quota_video_used = (int)$q_vid->get_result()->fetch_row()[0];
 
-    $q_mus = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR");
-    $q_mus->bind_param("i", $_SESSION['user_id']);
-    $q_mus->execute();
-    $quota_music_used = (int)$q_mus->get_result()->fetch_row()[0];
-}
+$upload_max = get_upload_hourly_limit($user_role);
+$quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
+$quota_music_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'music');
 
 $quota_video_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_video_used;
 $quota_music_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_music_used;
@@ -81,13 +70,11 @@ if (isset($_GET['success'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-        http_response_code(403);
-        die('CSRF token tidak valid.');
-    }
-    if ($is_busy) {
+        $message = 'csrf_invalid';
+    } elseif ($is_busy) {
         $message = 'busy';
     } else {
-        // ── Rate limit check (sama seperti Uploader.php) ────────────────
+        
         $type        = $_POST['type'] ?? '';
         $limit_table = ($type === 'music') ? 'music' : 'video';
         $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
@@ -98,13 +85,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
             try {
                 $url     = trim($_POST['url']);
                 $message = $transcoder->processDownload($url, $type);
+
+                
+                
+                if (is_string($message) && str_starts_with($message, 'ENCODE_MUSIC:')) {
+                    $temp_file = substr($message, strlen('ENCODE_MUSIC:'));
+
+                    while (ob_get_level()) {
+                        ob_end_clean();
+                    }
+
+                    echo '<script>if(typeof meelPhase==="function"){meelPhase("encode");}</script>';
+                    echo str_repeat(' ', 1024);
+                    flush();
+
+                    $meta_key = pathinfo($temp_file, PATHINFO_FILENAME);
+                    $pending  = is_array($_SESSION['meel_pending_music'] ?? null)
+                        ? ($_SESSION['meel_pending_music'][$meta_key] ?? null)
+                        : null;
+
+                    $enc_title    = (string)($pending['title']       ?? 'Unknown');
+                    $enc_artist   = (string)($pending['artist']      ?? 'Unknown Artist');
+                    $enc_album    = (string)($pending['album']       ?? 'Single');
+                    $enc_duration = (int)($pending['duration']       ?? 0);
+                    $enc_desc     = (string)($pending['description'] ?? 'Upload by MEeL Engine');
+
+                    try {
+                        $result = $transcoder->encodeMusic(
+                            $temp_file, $enc_title, $enc_artist, $enc_album, $enc_duration, $enc_desc
+                        );
+                    } catch (\Throwable $e) {
+                        error_log('[MEeL-Upload] encodeMusic exception: ' . $e->getMessage());
+                        $result = ['status' => 'error', 'msg' => 'Gagal mengonversi audio: ' . $e->getMessage()];
+                    }
+
+                    if ($result['status'] === 'success') {
+                        MediaLibrary::clearCountsCache();
+                        log_activity($conn, (int)$_SESSION['user_id'], 'upload_music', 'music');
+                        $done_title = json_encode($enc_title);
+                        echo '<script>'
+                           . 'if(typeof meelDone==="function"){meelDone(' . $done_title . ',"music/index.php");}'
+                           . 'else{window.location.href="upload?success=1&file="+encodeURIComponent(' . json_encode($result['filename']) . ');}'
+                           . '</script>';
+                    } else {
+                        $err_msg = json_encode($result['msg'] ?? 'Gagal mengonversi audio.');
+                        echo '<script>'
+                           . 'if(typeof meelError==="function"){meelError(' . $err_msg . ');}'
+                           . 'else{document.open();document.write("<pre style=\\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\\">"+"<b style=\\"color:#f44\\">⚠ Encode Gagal</b><br><br>"+document.createTextNode(' . $err_msg . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}'
+                           . '</script>';
+                    }
+
+                    echo str_repeat(' ', 1024);
+                    flush();
+                    exit;
+                }
+
+                
+                if (is_string($message) && str_starts_with($message, 'REDIRECT:')) {
+                    $target = substr($message, strlen('REDIRECT:'));
+                    while (ob_get_level()) {
+                        ob_end_clean();
+                    }
+                    $target_attr = htmlspecialchars($target, ENT_QUOTES);
+                    $target_js   = json_encode($target, JSON_UNESCAPED_SLASHES);
+                    echo '<meta http-equiv="refresh" content="0;url=' . $target_attr . '">'
+                       . '<script>'
+                       . 'if (typeof window.meelRedirect === "function") { window.meelRedirect(' . $target_js . '); }'
+                       . 'else { window.location.replace(' . $target_js . '); }'
+                       . '</script></body></html>';
+                    exit;
+                }
             } catch (Exception $e) {
-                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($is_admin) {
+                    $msg = $e->getMessage();
+                    echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
+                } else {
+                    header('Location: err/index.php?code=server_error');
+                    exit;
+                }
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
             } catch (Throwable $e) {
-                echo "<script>meelError(" . json_encode($e->getMessage()) . ");</script>";
+                error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($is_admin) {
+                    $msg = $e->getMessage();
+                    echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
+                } else {
+                    header('Location: err/index.php?code=server_error');
+                    exit;
+                }
                 echo str_repeat(' ', 1024);
                 flush();
                 exit;
@@ -112,421 +183,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
         }
     }
 }
+
+$__v = function ($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <title>MEeL — Advanced Upload</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL — Advanced Upload">
-    <meta property="og:description" content="Upload video/musik via URL menggunakan yt-dlp dan FFmpeg. Download dari YouTube, SoundCloud, Instagram, dan 1000+ situs.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/png" href="assets/MEeL.png">
-    <link rel="manifest" href="assets/manifest.json">
-    <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
+<?php
+$_META_TITLE = 'MEeL — Advanced Upload';
+$_META_DESC  = 'MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.';
+include __DIR__ . '/partials/link.php';
+$scripts_root = '';
+include __DIR__ . '/partials/scripts.php';
+?>
     <link rel="stylesheet" href="assets/css/up.css">
-    <style>
-        /* ── Additional page-specific styles ── */
-
-        /* Scanline accent override — blue for advanced page */
-        body::after {
-            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-        }
-
-        /* ── Two-col layout ── */
-        .page-grid {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        @media (max-width: 900px) {
-            .page-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* ── Form card ── */
-        .form-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            overflow: hidden;
-        }
-
-        .form-card-header {
-            padding: 2rem 2rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .form-card-body {
-            padding: 2rem;
-        }
-
-        /* ── URL input ── */
-        .url-wrap {
-            position: relative;
-        }
-
-        .url-wrap .url-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #3b82f6;
-            pointer-events: none;
-        }
-
-        .url-input {
-            width: 100%;
-            background: rgba(0, 0, 0, .35);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 16px 14px 46px;
-            color: var(--white);
-            font-family: var(--font-mono);
-            font-size: .8rem;
-            transition: border-color .2s, box-shadow .2s;
-            outline: none;
-        }
-
-        .url-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
-        }
-
-        .url-input::placeholder {
-            color: var(--muted);
-        }
-
-        /* ── Type selector ── */
-        .type-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .type-label {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 20px 16px;
-            background: rgba(0, 0, 0, .25);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all .2s;
-            overflow: hidden;
-        }
-
-        .type-label::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            transition: opacity .2s;
-        }
-
-        .type-label.video-label::before {
-            background: linear-gradient(135deg, rgba(239, 68, 68, .08), transparent);
-        }
-
-        .type-label.music-label::before {
-            background: linear-gradient(135deg, rgba(249, 115, 22, .08), transparent);
-        }
-
-        .type-label:has(input:checked) {
-            border-color: transparent;
-        }
-
-        .type-label.video-label:has(input:checked) {
-            border-color: rgba(239, 68, 68, .4);
-            box-shadow: 0 0 0 1px rgba(239, 68, 68, .15);
-        }
-
-        .type-label.music-label:has(input:checked) {
-            border-color: rgba(249, 115, 22, .4);
-            box-shadow: 0 0 0 1px rgba(249, 115, 22, .15);
-        }
-
-        .type-label:has(input:checked)::before {
-            opacity: 1;
-        }
-
-        .type-label input {
-            display: none;
-        }
-
-        .type-icon-wrap {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background .2s;
-        }
-
-        .video-label .type-icon-wrap {
-            background: rgba(239, 68, 68, .1);
-            border: 1px solid rgba(239, 68, 68, .18);
-        }
-
-        .music-label .type-icon-wrap {
-            background: rgba(249, 115, 22, .1);
-            border: 1px solid rgba(249, 115, 22, .18);
-        }
-
-        .type-label-text {
-            font-family: var(--font-mono);
-            font-size: .62rem;
-            letter-spacing: .2em;
-            text-transform: uppercase;
-            color: var(--muted);
-            transition: color .2s;
-        }
-
-        .video-label:has(input:checked) .type-label-text {
-            color: #ef4444;
-        }
-
-        .music-label:has(input:checked) .type-label-text {
-            color: #f97316;
-        }
-
-        .type-ext {
-            font-family: var(--font-mono);
-            font-size: .55rem;
-            letter-spacing: .12em;
-            color: #2a3040;
-            text-transform: uppercase;
-        }
-
-        /* ── Submit button ── */
-        .submit-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            background: #3b82f6;
-            color: #fff;
-            font-family: var(--font-mono);
-            font-size: .72rem;
-            letter-spacing: .18em;
-            text-transform: uppercase;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: opacity .2s, transform .15s, box-shadow .2s;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, .25);
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            opacity: .88;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 32px rgba(59, 130, 246, .35);
-        }
-
-        .submit-btn:disabled {
-            opacity: .4;
-            cursor: not-allowed;
-        }
-
-        /* ── Alert banners ── */
-        .alert-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            font-family: var(--font-mono);
-            font-size: .72rem;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        .alert-success {
-            background: rgba(34, 197, 94, .07);
-            border: 1px solid rgba(34, 197, 94, .2);
-            color: #4ade80;
-        }
-
-        .alert-busy {
-            background: rgba(249, 115, 22, .07);
-            border: 1px solid rgba(249, 115, 22, .2);
-            color: #fb923c;
-        }
-
-        /* ── Sidebar cards ── */
-        .side-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 1rem;
-        }
-
-        .side-card-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-            font-family: var(--font-mono);
-            font-size: .6rem;
-            letter-spacing: .22em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .side-card-body {
-            padding: 1.25rem;
-        }
-
-        /* ── Status dot ── */
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .dot-green {
-            background: #22c55e;
-            box-shadow: 0 0 6px #22c55e;
-            animation: pulse-dot 2s infinite;
-        }
-
-        .dot-orange {
-            background: #f97316;
-            box-shadow: 0 0 6px #f97316;
-            animation: pulse-dot 1s infinite;
-        }
-
-        @keyframes pulse-dot {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: .4;
-            }
-        }
-
-        /* ── Supported list ── */
-        .support-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 0;
-            border-bottom: 1px solid var(--border);
-            font-family: var(--font-mono);
-            font-size: .72rem;
-            color: var(--text);
-        }
-
-        .support-row:last-child {
-            border-bottom: none;
-        }
-
-        .support-badge {
-            font-size: .55rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            padding: 2px 7px;
-            border-radius: 6px;
-            font-weight: 600;
-            margin-left: auto;
-        }
-
-        /* ── Queue indicator ── */
-        .queue-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-family: var(--font-mono);
-            font-size: .58rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        /* ── meel-seg ── */
-        .meel-seg {
-            width: 14px;
-            height: 6px;
-            background: rgba(249, 115, 22, .12);
-            border: 1px solid rgba(249, 115, 22, .18);
-            border-radius: 2px;
-            transition: background .3s, border-color .3s;
-        }
-
-        .meel-seg.done {
-            background: #f97316;
-            border-color: #f97316;
-            box-shadow: 0 0 6px rgba(249, 115, 22, .5);
-        }
-
-        .meel-segs {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 100%;
-        }
-
-        /* ── meel-icon-wrap (done/error phases) ── */
-        .meel-icon-wrap {
-            width: 56px;
-            height: 56px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ── Hover effects for type labels on mobile ── */
-        @media (hover: none) {
-            .type-label:active {
-                opacity: .85;
-            }
-        }
-    </style>
+    <?php foreach (require __DIR__ . '/assets/css/up/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="assets/css/up/<?= $__f ?><?= $__v('assets/css/up/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
 </head>
 
 <body class="min-h-screen flex flex-col">
 
-    <!-- ── MEeL Engine Overlay (dari ui.php) ── -->
+    
     <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === 'busy' || $message === 'rate_limit'): ?>
         <?php include 'partials/ui.php'; ?>
     <?php endif; ?>
-
     <main class="flex-grow" style="position:relative;z-index:1;">
         <div class="wrap">
 
-            <!-- ── Masthead ── -->
+            
             <div class="masthead">
-                <a href="index.php" class="masthead-logo">
+                <a href="./" class="masthead-logo">
                     <img src="assets/MEeL.png" alt="MEeL">
                 </a>
                 <div>
@@ -542,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 </div>
             </div>
 
-            <!-- ── Admin bar ── -->
+            
             <?php if ($is_admin): ?>
                 <div class="admin-bar">
                     <span class="admin-badge">
@@ -554,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     <span style="font-family:var(--font-mono);font-size:.6rem;color:var(--muted);letter-spacing:.1em;">
                         No queue limit · Extended timeout · Priority processing
                     </span>
-                    <a href="admin/index.php" class="admin-btn" style="margin-left:auto;">
+                    <a href="admin/beranda" class="admin-btn" style="margin-left:auto;">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7" />
                             <rect x="14" y="3" width="7" height="7" />
@@ -565,13 +261,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     </a>
                 </div>
             <?php endif; ?>
-
-            <!-- ── Main grid ── -->
+            
             <div class="page-grid">
 
-                <!-- ── LEFT: Form ── -->
+                
                 <div>
-                    <!-- Alert banners -->
+                    
                     <?php if ($message === 'success'): ?>
                         <div class="alert-banner alert-success">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px">
@@ -606,10 +301,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                                 <div style="color:rgba(251,146,60,.7);"><?= htmlspecialchars($rate_limit_msg) ?></div>
                             </div>
                         </div>
+                    <?php elseif ($message === 'csrf_invalid'): ?>
+                        <div class="alert-banner alert-error">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px">
+                                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <div>
+                                <div style="font-weight:700;letter-spacing:.1em;margin-bottom:3px;">CSRF TOKEN TIDAK VALID</div>
+                                <div style="color:rgba(248,113,113,.7);">Sesi Anda kedaluwarsa. Muat ulang halaman lalu coba lagi.</div>
+                            </div>
+                        </div>
                     <?php endif; ?>
-
                     <div class="form-card">
-                        <!-- Card header -->
+                        
                         <div class="form-card-header">
                             <div>
                                 <div style="font-family:var(--font-mono);font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;">
@@ -619,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                                     Download & <span style="color:#3b82f6;">Process</span>
                                 </div>
                             </div>
-                            <!-- Server status chip -->
+                            
                             <div class="queue-chip" style="<?= $is_busy
                                                                 ? 'background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);color:#f97316;'
                                                                 : 'background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#22c55e;' ?>">
@@ -628,14 +334,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                             </div>
                         </div>
 
-                        <!-- Card body / form -->
+                        
                         <div class="form-card-body">
                             <form method="POST" onsubmit="return startAdvancedUpload(this)" style="display:flex;flex-direction:column;gap:1.25rem;">
                                 <?php if (isset($_SESSION['csrf_token'])): ?>
                                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <?php endif; ?>
-
-                                <!-- URL input -->
+                                
                                 <div>
                                     <label class="f-label">URL Sumber</label>
                                     <div class="url-wrap">
@@ -648,7 +353,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                                     <div id="url-preview" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);font-family:var(--font-mono);font-size:.65rem;color:#60a5fa;word-break:break-all;"></div>
                                 </div>
 
-                                <!-- Type selector -->
+                                
                                 <div>
                                     <label class="f-label">Tipe Media</label>
                                     <div class="type-grid">
@@ -671,7 +376,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                                     </div>
                                 </div>
 
-                                <!-- Submit -->
+                                
                                 <button type="submit" class="submit-btn" id="submit-btn"
                                     <?= $is_busy ? 'disabled' : '' ?>>
                                     <i data-lucide="download-cloud" style="width:16px;height:16px;"></i>
@@ -681,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                         </div>
                     </div>
 
-                    <!-- Tips card -->
+                    
                     <div class="entry" style="margin-top:1rem;padding:1.5rem 1.75rem;">
                         <div style="font-family:var(--font-mono);font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -712,9 +417,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                     </div>
                 </div>
 
-                <!-- ── RIGHT: Sidebar ── -->
+                
                 <aside>
-                    <!-- Server status card -->
+                    
                     <div class="side-card">
                         <div class="side-card-header">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -745,7 +450,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                                 </span>
                             </div>
 
-                            <!-- ── Quota bar ── -->
+                            
                             <div style="height:1px;background:var(--border);"></div>
                             <div>
                                 <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">
@@ -779,7 +484,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
 
                             <?php if ($is_admin): ?>
                                 <div style="height:1px;background:var(--border);"></div>
-                                <a href="admin/index.php#queues" style="font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);text-decoration:none;display:flex;align-items:center;gap:.4rem;opacity:.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">
+                                <a href="admin/beranda#queues" style="font-family:var(--font-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);text-decoration:none;display:flex;align-items:center;gap:.4rem;opacity:.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
                                         <polyline points="15 3 21 3 21 9" />
@@ -791,7 +496,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                         </div>
                     </div>
 
-                    <!-- Supported sources card -->
+                    
                     <div class="side-card">
                         <div class="side-card-header">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -819,7 +524,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                         </div>
                     </div>
 
-                    <!-- Output format card -->
+                    
                     <div class="side-card">
                         <div class="side-card-header">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -849,23 +554,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                         </div>
                     </div>
 
-                    <!-- Nav links -->
+                    
                     <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-                        <a href="index.php" class="check-btn" style="flex:1;">
+                        <a href="./" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M3 12L12 3l9 9" />
                                 <path d="M9 21V12h6v9" />
                             </svg>
                             Portal
                         </a>
-                        <a href="video/index.php" class="check-btn" style="flex:1;">
+                        <a href="video/beranda" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polygon points="23 7 16 12 23 17 23 7" />
                                 <rect x="1" y="5" width="15" height="14" rx="2" />
                             </svg>
                             Video
                         </a>
-                        <a href="music/index.php" class="check-btn" style="flex:1;">
+                        <a href="music/beranda" class="check-btn" style="flex:1;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M9 18V5l12-2v13" />
                                 <circle cx="6" cy="18" r="3" />
@@ -880,47 +585,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     </main>
 
     <?php include 'partials/footer.php'; ?>
-
-    <script>
-        lucide.createIcons();
-
-        // ── URL live preview ──
-        const urlInput = document.getElementById('url-input');
-        const urlPreview = document.getElementById('url-preview');
-
-        if (urlInput) {
-            urlInput.addEventListener('input', function() {
-                const val = this.value.trim();
-                if (val.length > 10 && val.startsWith('http')) {
-                    try {
-                        const u = new URL(val);
-                        urlPreview.textContent = u.hostname + u.pathname.slice(0, 60) + (u.pathname.length > 60 ? '…' : '');
-                        urlPreview.style.display = 'block';
-                    } catch (e) {
-                        urlPreview.style.display = 'none';
-                    }
-                } else {
-                    urlPreview.style.display = 'none';
-                }
-            });
-        }
-
-        // ── Form submit — show overlay, let PHP stream ──
-        function startAdvancedUpload(form) {
-            const url = document.getElementById('url-input').value.trim();
-            if (!url) return false;
-
-            // Transisi tombol
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<div style="width:14px;height:14px;border:1.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:meel-spin .7s linear infinite;"></div> Memproses...';
-
-            // Tampilkan overlay pada fase download
-            if (typeof meelPhase === 'function') meelPhase('download');
-
-            return true; // Biarkan form submit biasa (PHP streaming)
-        }
-    </script>
+    <script src="assets/js/up/main.js<?= $__v('assets/js/up/main.js') ?>"></script>
 </body>
 
 </html>

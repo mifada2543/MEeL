@@ -1,0 +1,194 @@
+<?php
+
+
+final class MeelRouter
+{
+    
+    private const ROUTES = [
+        ''                => ['handler' => 'index.php',           'script' => '/index.php'],
+        'introduction'    => ['handler' => 'introduction.php',    'script' => '/introduction.php'],
+        'update'          => ['handler' => 'update.php',          'script' => '/update.php'],
+        'upload'         => ['handler' => 'upload_advanced.php', 'script' => '/upload_advanced.php'],
+        'transcode'       => ['handler' => 'transcode.php',       'script' => '/transcode.php'],
+        'err'             => ['handler' => 'err/index.php',       'script' => '/err/index.php'],
+        'err/offline'     => ['handler' => 'err/offline.php',     'script' => '/err/offline.php'],
+
+        'video'           => ['handler' => 'video/index.php',       'script' => '/video/index.php'],
+        'video/beranda'   => ['handler' => 'video/index.php',       'script' => '/video/index.php'],
+        'video/watch'     => ['handler' => 'video/watch.php',       'script' => '/video/watch.php'],
+        'video/search'    => ['handler' => 'video/search_video.php','script' => '/video/search_video.php'],
+        'video/load-more' => ['handler' => 'video/load_more.php',   'script' => '/video/load_more.php'],
+        'video/upload'    => ['handler' => 'video/upload.php',      'script' => '/video/upload.php'],
+        'video/stream'    => ['handler' => 'video/stream.php',      'script' => '/video/stream.php'],
+
+        'music'                 => ['handler' => 'music/index.php',          'script' => '/music/index.php'],
+        'music/beranda'         => ['handler' => 'music/index.php',          'script' => '/music/index.php'],
+        'music/watch'           => ['handler' => 'music/watch.php',          'script' => '/music/watch.php'],
+        'music/search'          => ['handler' => 'music/search_music.php',   'script' => '/music/search_music.php'],
+        'music/load-more'       => ['handler' => 'music/load_more_music.php','script' => '/music/load_more_music.php'],
+        'music/upload'          => ['handler' => 'music/upload.php',         'script' => '/music/upload.php'],
+        'music/playlist'        => ['handler' => 'music/view_playlist.php',  'script' => '/music/view_playlist.php'],
+        'music/playlist-action' => ['handler' => 'music/playlist_action.php','script' => '/music/playlist_action.php'],
+        'music/stream'          => ['handler' => 'music/stream.php',          'script' => '/music/stream.php'],
+        'music/file'            => ['handler' => 'music/file.php',            'script' => '/music/file.php'],
+
+        'books'        => ['handler' => 'books/index.php',     'script' => '/books/index.php'],
+        'books/beranda'=> ['handler' => 'books/index.php',     'script' => '/books/index.php'],
+        'books/read'   => ['handler' => 'books/read.php',      'script' => '/books/read.php'],
+        'books/read-pdf' => ['handler' => 'books/read_pdf.php','script' => '/books/read_pdf.php'],
+        'books/search' => ['handler' => 'books/search_books.php','script' => '/books/search_books.php'],
+        'books/upload' => ['handler' => 'books/upload.php',    'script' => '/books/upload.php'],
+        'books/file'   => ['handler' => 'books/file.php',      'script' => '/books/file.php'],
+
+        'drive'          => ['handler' => 'drive/index.php',   'script' => '/drive/index.php'],
+        'drive/beranda'  => ['handler' => 'drive/index.php',   'script' => '/drive/index.php'],
+        'drive/upload'   => ['handler' => 'drive/upload.php',  'script' => '/drive/upload.php'],
+        'drive/delete'   => ['handler' => 'drive/delete.php',  'script' => '/drive/delete.php'],
+        'drive/download' => ['handler' => 'drive/download.php','script' => '/drive/download.php'],
+        'drive/stream'   => ['handler' => 'drive/stream.php',  'script' => '/drive/stream.php'],
+
+        'profile'            => ['handler' => 'profile/index.php',              'script' => '/profile/index.php'],
+        'profile/manage'     => ['handler' => 'profile/manage.php',             'script' => '/profile/manage.php'],
+        'profile/edit'       => ['handler' => 'controllers/profile/profile_edit.php', 'script' => '/controllers/profile/profile_edit.php'],
+        'profile/manage-action' => ['handler' => 'controllers/profile/fun-manage.php', 'script' => '/controllers/profile/fun-manage.php'],
+
+        'admin'             => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
+        'admin/beranda'     => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
+        'admin/edit-video'  => ['handler' => 'admin/edit-video.php',          'script' => '/admin/edit-video.php'],
+        'admin/edit-music'  => ['handler' => 'admin/edit-music.php',          'script' => '/admin/edit-music.php'],
+        'admin/analys'      => ['handler' => 'admin/cookies.php',             'script' => '/admin/cookies.php'],
+        'admin/activity-log'=> ['handler' => 'admin/activity_log.php',        'script' => '/admin/activity_log.php'],
+        'admin/catur'       => ['handler' => 'admin/catur.php',               'script' => '/admin/catur.php'],
+        'admin/mfa-reset'   => ['handler' => 'admin/mfa_reset.php',           'script' => '/admin/mfa_reset.php'],
+        'admin/actions'     => ['handler' => 'controllers/admin/admin_actions.php', 'script' => '/controllers/admin/admin_actions.php'],
+        'admin/data'        => ['handler' => 'controllers/admin/admin_data.php',    'script' => '/controllers/admin/admin_data.php'],
+
+        'auth/login'    => ['handler' => 'auth/login.php',    'script' => '/auth/login.php'],
+        'auth/register' => ['handler' => 'auth/register.php', 'script' => '/auth/register.php'],
+        'auth/logout'   => ['handler' => 'auth/logout.php',   'script' => '/auth/logout.php'],
+        'auth/mfa-setup'=> ['handler' => 'auth/mfa_setup.php','script' => '/auth/mfa_setup.php'],
+        'auth/mfa-verify' => ['handler' => 'auth/mfa_verify.php','script' => '/auth/mfa_verify.php'],
+
+        'arcade'           => ['handler' => 'arcade/index.php',          'script' => '/arcade/index.php'],
+        'arcade/beranda'   => ['handler' => 'arcade/index.php',          'script' => '/arcade/index.php'],
+        'arcade/chess'     => ['handler' => 'arcade/chess/index.php',    'script' => '/arcade/chess/index.php'],
+        'arcade/rhythm'    => ['handler' => 'arcade/rhythm/index.php',   'script' => '/arcade/rhythm/index.php'],
+        'arcade/rhythm/game'=> ['handler' => 'arcade/rhythm/game.php',   'script' => '/arcade/rhythm/game.php'],
+        'arcade/rhythm/editor' => ['handler' => 'arcade/rhythm/editor/index.php', 'script' => '/arcade/rhythm/editor/index.php'],
+        'arcade/rhythm/manage' => ['handler' => 'arcade/rhythm/manage/index.php', 'script' => '/arcade/rhythm/manage/index.php'],
+        'arcade/rhythm/edit'   => ['handler' => 'arcade/rhythm/manage/edit.php',  'script' => '/arcade/rhythm/manage/edit.php'],
+        'arcade/rhythm/manage/edit' => ['handler' => 'arcade/rhythm/manage/edit.php', 'script' => '/arcade/rhythm/manage/edit.php'],
+        'arcade/rhythm/api/upload'   => ['handler' => 'arcade/rhythm/api/upload.php',   'script' => '/arcade/rhythm/api/upload.php'],
+        'arcade/rhythm/api/delete'   => ['handler' => 'arcade/rhythm/api/delete.php',   'script' => '/arcade/rhythm/api/delete.php'],
+        'arcade/rhythm/api/songs'    => ['handler' => 'arcade/rhythm/api/songs.php',    'script' => '/arcade/rhythm/api/songs.php'],
+        'arcade/rhythm/api/beatmap'  => ['handler' => 'arcade/rhythm/api/beatmap.php',  'script' => '/arcade/rhythm/api/beatmap.php'],
+
+        'api/like'               => ['handler' => 'controllers/api/like.php',              'script' => '/controllers/api/like.php'],
+        'api/comment'            => ['handler' => 'controllers/api/comment.php',           'script' => '/controllers/api/comment.php'],
+        'api/delete-comment'     => ['handler' => 'controllers/api/delete_comment.php',    'script' => '/controllers/api/delete_comment.php'],
+        'api/auto-metadata'      => ['handler' => 'controllers/api/auto_metadata.php',     'script' => '/controllers/api/auto_metadata.php'],
+        'api/pdf'                => ['handler' => 'controllers/api/pdf.php',               'script' => '/controllers/api/pdf.php'],
+        'api/download-transcode' => ['handler' => 'controllers/api/download_transcode.php','script' => '/controllers/api/download_transcode.php'],
+        'api/post-encode'        => ['handler' => 'controllers/api/post_encode.php',       'script' => '/controllers/api/post_encode.php'],
+        'api/theme'              => ['handler' => 'controllers/api/theme.php',              'script' => '/controllers/api/theme.php'],
+        'api/ajax-refresh'       => ['handler' => 'controllers/api/ajax_refresh.php',      'script' => '/controllers/api/ajax_refresh.php'],
+        'api/server-stats'       => ['handler' => 'controllers/api/server_stats.php',      'script' => '/controllers/api/server_stats.php'],
+        'api/server-stats-sse'   => ['handler' => 'controllers/api/server_stats_sse.php',  'script' => '/controllers/api/server_stats_sse.php'],
+        'system/mfa'             => ['handler' => 'controllers/system/mfa.php',            'script' => '/controllers/system/mfa.php'],
+    ];
+
+    
+    private static ?string $base = null;
+
+    
+
+    public static function basePath(): string
+    {
+        if (self::$base === null) {
+            if (defined('MEEL_BASE_URL')) {
+                self::$base = rtrim((string) MEEL_BASE_URL, '/');
+            } else {
+                require_once __DIR__ . '/base_url.php';
+                self::$base = meel_base_url_path();
+            }
+        }
+        return self::$base;
+    }
+
+    
+
+    public static function resolvePath(): string
+    {
+        $uri    = $_SERVER['REQUEST_URI'] ?? '/';
+        $path   = (string) parse_url($uri, PHP_URL_PATH);
+        $base   = self::basePath();
+        if ($base !== '' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+        }
+        $path = ltrim($path, '/');
+        $path = rtrim($path, '/');
+        $path = rawurldecode($path);
+        return $path;
+    }
+
+    
+
+    public static function routeFor(string $path): ?array
+    {
+        if (isset(self::ROUTES[$path])) {
+            return self::ROUTES[$path];
+        }
+        if (preg_match('#^music/([^/]+)$#', $path, $m)) {
+            $_GET['slug'] = $m[1];
+            return self::ROUTES['music/playlist'];
+        }
+        return null;
+    }
+
+    
+
+    public static function dispatch(string $path): void
+    {
+        $route = self::routeFor($path);
+
+        if ($route === null) {
+            http_response_code(404);
+            $_GET['code'] = 'not_found';
+            require dirname(__DIR__, 2) . '/err/index.php';
+            exit;
+        }
+
+        $root     = dirname(__DIR__, 2);
+        $handler  = $root . '/' . $route['handler'];
+        $base     = self::basePath();
+        $script   = $base . $route['script'];
+
+        $_SERVER['SCRIPT_NAME'] = $script;
+        $_SERVER['PHP_SELF']    = $script;
+        unset($_SERVER['PATH_INFO']);
+
+        if (!@chdir(dirname($handler))) {
+            http_response_code(500);
+            exit('Gagal mengubah working directory.');
+        }
+
+        require $handler;
+        exit;
+    }
+
+    
+
+    public static function url(string $route, array|string $query = []): string
+    {
+        $base  = self::basePath();
+        $route = trim($route, '/');
+        $url   = $base . ($route !== '' ? '/' . $route : '');
+        if (is_array($query) && $query !== []) {
+            $url .= '?' . http_build_query($query);
+        } elseif (is_string($query) && $query !== '') {
+            $url .= (str_starts_with($query, '?') ? '' : '?') . $query;
+        }
+        return $url;
+    }
+
+}

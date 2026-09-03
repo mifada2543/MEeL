@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline — MEeL</title>
     <meta name="theme-color" content="#05070c">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    <style>        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
             background: #05070c;
@@ -100,7 +99,7 @@
             0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
         }
-    </style>
+</style>
 </head>
 <body>
     <div class="container">
@@ -115,7 +114,7 @@
             Silakan periksa koneksi internet dan coba lagi.
         </p>
         <a href="javascript:location.reload()" class="btn btn-primary">Coba Lagi</a>
-        <a href="../index.php" class="btn" style="margin-left:0.5rem">Ke Halaman Utama</a>
+        <a href="../" class="btn" style="margin-left:0.5rem">Ke Halaman Utama</a>
         <div class="footer">MEeL &mdash; Media Hub Platform</div>
     </div>
 </body>

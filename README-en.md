@@ -18,13 +18,13 @@
 
 ## 📖 Overview
 
-**MEeL** is a personal media hub platform built with PHP & MySQL running on Apache (XAMPP/LAMPP). The platform combines **Video**, **Music**, **Books**, and **Cloud Drive** modules into a modern dark-themed monospace web interface. Key features include:
+**MEeL** is a personal media hub platform built with PHP & MySQL running on Apache (XAMPP/LAMPP). The platform combines **Video**, **Music**, **Books**, and **Cloud Drive** modules into a modern monospace web interface (dark & light mode). Key features include:
 
 - **HLS Adaptive Streaming** (HTTP Live Streaming)
 - **Automatic Transcoding** using FFmpeg
 - **yt-dlp Integration** for external URL downloads
 - **Role-Based Access Control** (RBAC)
-- **Interactive Arcade** mini-games (Dino Run, Snake, Chess)
+- **Interactive Arcade** mini-games (9 games: Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania)
 - **Layered Security** (CSRF, IP Banning, Session Management, Rate Limiting)
 - **Audit Trail** with admin activity log viewer
 - **Admin Dashboard** with 7-day activity charts
@@ -43,6 +43,11 @@
 | **Smooth Transitions** | Next video loads SPA-like without page reload, preserves fullscreen |
 | **Auto Resume** | Last position saved via `localStorage` |
 | **Thumbnail Preview** | VTT sprite thumbnail on seekbar |
+| **Auto-Next with Countdown** | YouTube-style 5s countdown overlay + dark backdrop + cancel button |
+| **Mutual Exclusion Loop/AutoNext** | Auto Next ON → Loop OFF; Loop ON → Auto Next OFF |
+| **Ambient Glow** | Real-time canvas sampling → navbar glow + fullscreen bloom |
+| **Mini-Player Mode** | Custom picture-in-picture, index navigation without reload |
+| **Seamless Recovery** | Stuck detector, waiting timeout, auto-reconnect HLS |
 
 ### 🎵 Music (Audio Platform)
 
@@ -73,9 +78,17 @@
 
 ### 🕹️ Arcade (Mini Games)
 
-- **Dino Run** — endless runner inspired by Chrome Dino with Miku & Teto characters
-- **Chess** — classic chess with online multiplayer mode (LAN)
-- **Snake** — nostalgic classic Snake game
+| Game | Description |
+|------|-------------|
+| **Miku & Teto Run** | Endless runner inspired by Chrome Dino with Miku & Teto characters |
+| **Chess** | Classic chess + online multiplayer (login required, pick White/Black color before the game starts) |
+| **Snake** | Nostalgic classic Snake game |
+| **2048** | Slide & merge tiles up to 2048 |
+| **Tetris** | Legendary block game — stack tetrominoes, clear full rows |
+| **Breakout** | Break all bricks with a bouncing ball |
+| **Simon Says** | Memory game — repeat the ever-growing light sequence |
+| **Ludo** | Classic 2–4 player board game — roll dice, chase opponent pieces, or play vs Bot |
+| **MEeL!Mania** | 4-lane rhythm game inspired by osu!mania (A/S/K/L + touch) — beatmap editor + custom song uploads |
 
 ### 🔧 General Functionality
 
@@ -86,12 +99,13 @@
 | **URL Downloader** | yt-dlp + FFmpeg for downloads from YouTube and others |
 | **Comments** | Nested comments on video & music |
 | **Like/Dislike** | Social interaction on media content |
-| **User Profiles** | Avatar, bio, upload statistics |
+| **User Profiles** | Avatar, bio, upload statistics, **Preference page** (theme toggle) |
+| **Light/Dark Mode** | Theme toggle via Profile page — localStorage (guest) + DB sync (logged-in) |
 | **20-20-20 Eye Care** | Eye rest notifications every 20 minutes |
 | **PSR-4 Autoloader** | Auto-loading core classes (`MediaLibrary`, `Uploader`, etc.) without manual require |
-| **Migration System v1–v8** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, schema sync) |
+| **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, composite indexes, schema sync) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — consistent paths across all subdirectories |
-| **FULLTEXT Search** | Search video/music 10-100× faster via `MATCH AGAINST` (MySQL 5.7+) |
+| **FULLTEXT Search** | Search video/music/books 10-100× faster via `MATCH AGAINST` — query sanitizer + pagination (MySQL 5.7+) |
 | **Admin Panel** | Dashboard monitoring, user management, queue control, activity log viewer |
 | **Role Helper** | `get_user_role()` — cached role query, eliminating duplication in upload files |
 | **Redirect Guard** | URL redirect validation to prevent open redirect |
@@ -100,6 +114,8 @@
 | **API Rate Limiting** | Endpoint protection from abuse (likes: 30/min, comments: 10/min) |
 | **Pagination Metadata** | UI displays page info (`total_pages`, `from`, `to`) |
 | **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
+| **PWA Offline** | Dynamic service worker (`sw.js.php` + `SwPrecache`) — auto precache per module via `manifest.php`, installable + offline support |
+| **Deployment Health Check** | `tests/check_deploy.php` — verifies MEEL_HDD_BASE, upload dirs/subdirectories, upload .htaccess, data_drive symlink guard, PWA mod_rewrite |
 
 ---
 
@@ -111,8 +127,6 @@
 ### 🎵 Music Discovery
 ![Music Discovery](assets/img/music0.webp)
 
-> More coming soon
-
 ---
 
 ## 🛠️ Tech Stack
@@ -122,7 +136,7 @@
 | **Backend** | PHP 8.0+ | Core logic & API endpoints |
 | **Database** | MySQL 5.7+ / MariaDB 10.2+ | Relational storage & metadata |
 | **Web Server** | Apache 2.4+ | `mod_rewrite` engine |
-| **Styling** | TailwindCSS (Self-hosted, Purged) + Vanilla CSS | Dark-mode monospace theme |
+| **Styling** | TailwindCSS (Self-hosted, Purged) + Vanilla CSS | Dark & Light mode (toggle in Profile) |
 | **Interactivity** | HTMX + Vanilla JavaScript | AJAX SPA-like without page reload |
 | **Media Player** | Plyr.js + HLS.js | HLS video & audio playback |
 | **Icons** | Lucide Icons | SVG icon library |
@@ -130,8 +144,9 @@
 | **Downloader** | yt-dlp (optional) | External media URL downloads |
 | **Transliteration** | PHP `intl` (Transliterator) | File name sanitization (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loads 10+ core classes |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v8 (FULLTEXT, FK, activity_log, schema sync) |
-| **Rate Limiting** | `modules/core/RateLimiter.php` | File-based rate limiter (flock safety) |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
+| **Rate Limiting** | `modules/auth/RateLimiter.php` | File-based rate limiter (flock safety) |
+| **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Auto offline precache + installable |
 
 ---
 
@@ -144,10 +159,12 @@ MEeL/
 │   ├── activity_log.php   # Audit trail viewer
 │   ├── edit-video.php     # Edit video metadata
 │   └── edit-music.php     # Edit music metadata
-├── arcade/                # Mini Games (Dino Run, Snake, Chess)
+├── arcade/                # Mini Games (9 games: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Static assets (CSS, JS, fonts, images)
 ├── auth/                  # Authentication & session management
-│   ├── config.php         # Centralized database config + paths (MEEL_HDD_*)
+│   ├── config.php         # Entry point: bootstrap + requires settings.php
+│   ├── settings.php       # Pure data: DB + paths (MEEL_HDD_*)
+│   └── settings.example.php # Config data template
 │   └── config.example.php # Configuration template
 ├── books/                 # E-Book / Comic module
 ├── controllers/           # API Actions & Event Handlers (AJAX/HTMX)
@@ -156,7 +173,7 @@ MEeL/
 │   └── profile/           # profile_edit, fun-manage
 ├── database/              # Database schema
 │   ├── schema.sql         # Standalone schema file (20 tables)
-│   └── migrate.php        # 🔄 Migration system v1–v8 (FULLTEXT, FK, activity_log, schema sync)
+│   └── migrate.php        # 🔄 Migration system v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
 ├── data_drive/            # Cloud Drive runtime storage
 ├── docs/                  # Project documentation
 ├── drive/                 # Cloud Drive module
@@ -165,22 +182,33 @@ MEeL/
 ├── err/                   # Error pages (denied, maintenance, banned, revoked)
 ├── modules/               # Core logic & business layer (OOP)
 │   ├── core/              # All core modules (moved from modules/ root)
-│   │   ├── helpers.php    # Helper functions: base_url(), resolve_binary(), time_ago(), etc.
+│   │   ├── helpers.php    # Backward-compat shim → helpers/main.php + auth/loader.php
+│   │   ├── helpers/       # Per-domain utilities: main, storage, audio, url, metadata, subtitle, upload
+│   │   ├── Router.php     # MeelRouter — front controller & clean-URL route table
+│   │   ├── base_url.php   # base_url() — consistent paths (MEEL_BASE_URL)
 │   │   ├── System.php     # Queue management & monitoring
 │   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
 │   │   ├── Uploader.php   # File upload & validation
-│   │   ├── GarbageCollector.php # Auto-cleanup temp files + rate limit cache
-│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
+│   │   ├── ProgressObserver.php / BrowserProgressObserver.php # Progress event contract & browser presenter
 │   │   ├── CommentRenderer.php # Nested comment rendering
 │   │   ├── activity_logger.php # Activity logging & IP ban check
 │   │   ├── japanese.php   # Japanese text analysis (MeCab/Romaji)
+│   │   ├── japanese_aliases.php # Japanese text alias dictionary
+│   │   ├── SwPrecache.php # PWA precache generator (dynamic sw.js)
 │   │   └── bootstrap.php  # Centralized error handling bootstrap
 │   ├── autoload.php       # 🔄 PSR-4-like autoloader (all core classes auto-load)
+│   ├── auth/              # Centralized security infrastructure (via loader.php)
+│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── SsrfGuard.php  # SSRF-safe URL validation
+│   │   ├── ValidatingProxy.php # SSRF-defense forward proxy
+│   │   └── helpers/       # authz, csrf, session, stream_auth, mfa, user
 │   ├── media/             # Media library classes
-│   │   ├── MediaLibrary.php   # Database queries, search, pagination metadata
+│   │   ├── MediaLibrary.php   # Database queries, search, pagination metadata (+ BookRepository/BookUploader)
 │   │   ├── MediaViewer.php    # View tracking, comments, recommendations
 │   │   ├── MediaInteraction.php # Like/dislike
-│   │   └── SearchEngine.php   # FULLTEXT search engine
+│   │   ├── SearchEngine.php   # FULLTEXT search engine
+│   │   ├── PlaylistRepository.php / MediaAdminRepository.php / ProfileRepository.php / AdminActivityRepository.php
 │   ├── transcoder/        # FFmpeg utilities
 │   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
 │   └── exceptions/        # Custom exception classes
@@ -193,6 +221,7 @@ MEeL/
 ├── temp/                  # Runtime staging transcoding + rate limit cache
 ├── video/                 # Video player module
 ├── .htaccess              # Apache rewrite rules
+├── sw.js.php              # Dynamic service worker (PWA) — auto precache
 ├── index.php              # Homepage Hub / module portal
 ├── introduction.php       # Interactive walkthrough guide
 ├── transcode.php          # Video→audio transcoding entry point
@@ -235,6 +264,23 @@ extension=zip       # For manga file extraction (ZIP/CBZ)
 
 ## 🚀 Quick Install
 
+> ⚡ **Automatic installer (recommended, Ubuntu/Debian):** run `./install.sh` to
+> automate all steps below — database setup + `schema.sql` import, create
+> `auth/settings.php`/`auth/config.php` (patch DB + `MEEL_HDD_BASE`), full
+> storage tree + deploy-time symlinks to the centralized storage (`.htaccess`
+> hardening is copied along), enable mod_rewrite, run the migration, then the
+> final `tests/check_deploy.php` verification (**exit code `1` on any FAIL**):
+>
+> ```bash
+> ./install.sh                 # interactive mode (asks for configuration)
+> ./install.sh --yes           # non-interactive, uses all defaults
+> ./install.sh --hdd=/path     # set MEEL_HDD_BASE directly
+> ./install.sh --skip-apt      # skip system package installation (already present)
+> ./install.sh --xsendfile     # enable MEEL_USE_XSENDFILE (requires Apache mod_xsendfile)
+> ```
+>
+> Full details → [docs/en/installation.md](docs/en/installation.md).
+
 ### 1. Clone Repository
 
 ```bash
@@ -256,10 +302,12 @@ mysql -u root -p MEeL < database/schema.sql
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php` and fill in your database credentials.
+Edit `auth/settings.php` and fill in your database credentials (+ set
+`MEEL_HDD_BASE`).
 
 ### 4. Setup Runtime Directories
 
@@ -271,6 +319,23 @@ mkdir -p data_drive/public data_drive/private_admins temp profile/upload \
 sudo chown -R www-data:www-data data_drive temp profile/upload music/upload books/upload
 sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
+
+> ⚠️ **Never commit symlinks inside `data_drive/`.** `data_drive/public` and
+> `data_drive/private_admins` are **real directories** tracked in the repo
+> (`.gitkeep` placeholders + deny `.htaccess`). Their contents (user uploads) are
+> auto-ignored by `.gitignore`. For Drive storage outside the repo, set
+> `MEEL_HDD_DRIVE` in `auth/settings.php` — the Drive module follows it
+> automatically (falls back to `data_drive/` when the constant is absent). Manual
+> symlinks pointing to absolute development paths (`/media/<username>/...`) leak
+> the OS username through the public repo and crash the Drive module
+> (`RuntimeException: Folder penyimpanan gagal dibuat`) on other machines.
+
+> 💡 **`install.sh` does this automatically:** the full storage tree (including
+> `music/upload/{file,thumbnail}` & `books/upload/{manga,pdf,thumbnail}` — the
+> music/books modules do **not** create them), deploy-time symlinks
+> `{video,music,books}/upload` + `data_drive/public` → `MEEL_HDD_BASE`, with the
+> `.htaccess` hardening copied to the target. Missing subdirectories make the
+> first upload fail — verify with `tests/check_deploy.php`.
 
 ### 5. Enable Apache mod_rewrite
 
@@ -285,6 +350,16 @@ sudo systemctl restart apache2
 /opt/lampp/bin/php database/migrate.php
 ```
 
+### 7. Verify Deployment
+
+```bash
+php tests/check_deploy.php        # exit 0 = healthy, 1 = FAIL
+```
+
+Verifies `MEEL_HDD_BASE`, upload dirs + non-auto-created subdirectories
+(`music/upload/{file,thumbnail}`, `books/upload/{pdf,thumbnail}`), `.htaccess`
+hardening, the `data_drive/` symlink guard, and the PWA `mod_rewrite` rule.
+
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 
 > 📖 **Full installation guide** → [docs/en/installation.md](docs/en/installation.md)
@@ -297,20 +372,23 @@ sudo systemctl restart apache2
 
 | File | Purpose |
 |------|---------|
-| `auth/config.php` | Database, session, CSRF, **centralized paths (`MEEL_HDD_*`)** |
-| `auth/config.example.php` | Configuration template (copy to config.php) |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers (requires settings.php) |
+| `auth/settings.php` | **Pure data**: DB credentials + centralized paths (`MEEL_HDD_*`) |
+| `auth/config.example.php` | Entry point template (copy to config.php) |
+| `auth/settings.example.php` | Config data template (copy to settings.php) |
 | `database/schema.sql` | Standalone database schema |
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
 | `modules/core/Uploader.php` | File upload, FFmpeg |
 | `modules/core/helpers.php` | HDD check paths (from `MEEL_HDD_BASE`) |
+| `modules/core/Router.php` | Front controller — clean-URL route table |
 | `modules/core/System.php` | Queue & rate limit config |
-| `modules/core/RateLimiter.php` | API rate limiter — per-endpoint limits |
+| `modules/auth/RateLimiter.php` | API rate limiter — per-endpoint limits |
 
 ### Centralized Path Configuration
 
 ```php
-// auth/config.php — ★ Only change this 1 line
-define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
+// auth/settings.php — ★ Only change this 1 line
+define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 
 // All modules automatically follow:
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
@@ -318,6 +396,12 @@ define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
 define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
 define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ```
+
+> ⚠️ **Migration note (security audit):** Since `auth/settings.php` is no longer tracked
+> in the repository (gitignored so credentials are never committed), **existing developers
+> must re-verify `MEEL_HDD_BASE`** in their local `settings.php` after `git pull`.
+> The default value is now the `CHANGE_ME` placeholder — make sure your storage path is
+> still correct, or media will not be found.
 
 ### Base URL Portability
 
@@ -343,7 +427,7 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 ### Migration System
 
 ```bash
-# Upgrade database to latest version (v1–v8)
+# Upgrade database to latest version (v1–v12)
 /opt/lampp/bin/php database/migrate.php
 ```
 
@@ -358,6 +442,15 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 | **v6** | activity_log table for audit trail |
 | **v7** | UNIQUE INDEX on users.username |
 | **v8** | role→varchar(20), remove duplicate UNIQUE KEY, sync default values |
+| **v9** | MFA columns (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`) on users |
+| **v10** | Composite index on comments `(video_id, created_at)` & `(music_id, created_at)` |
+| **v11** | `interactions` unique keys split: `(user_id, video_id)` & `(user_id, music_id)` |
+| **v12** | Bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code` |
+
+> 💡 **Rhythm module note (MEeL!Mania):** the `arcade_song` & `arcade_score` tables
+> are managed by `arcade/rhythm/migration.sql` — **separate** from the main migration
+> system (v1–v12). Import manually once: `mysql MEeL < arcade/rhythm/migration.sql`
+> (or run the CREATE TABLE statements from that file).
 
 Migrations are **idempotent** — safe to run repeatedly.
 
@@ -365,11 +458,16 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3% A** |
-| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100% A** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 55 | 53 pass, 2 warn | 0 | **0** | **✅ 98/100** |
+| **Security Test** | 137 | 133 pass, 4 warn | 0 | **0** | **✅ 99/100** |
+| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
+
+> Security test: 4 non-critical warnings (MediaViewer raw-query review, profile_edit
+> MIME check, download_transcode filename validation review, and System.php shell
+> exec) — not failures; score **99/100**.
+> Storage & deployment verification: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
 
@@ -386,7 +484,7 @@ Migrations are **idempotent** — safe to run repeatedly.
 | **Admin** | Full control: all modules, admin panel, advanced upload, transcode, user management, IP banning, activity log viewer |
 | **Member** | All media, comments, like/dislike, books, personal Cloud Drive (20GB quota) |
 | **User** | All media, comments, like/dislike, books (no Cloud Drive) |
-| **Guest** | Limited: only watch/listen without interaction |
+| **Guest** | Limited: watch/listen without interaction, default profile, **theme toggle via Preference** |
 
 ---
 
@@ -411,6 +509,7 @@ Documentation is available in two languages:
 | 📥 Advanced Upload | [🇮🇩](docs/id/upload_issue.md) | [🇬🇧](docs/en/upload_issue.md) |
 | 📋 Project Analysis | [🇮🇩](docs/id/deskripsi.md) | [🇬🇧](docs/en/analysis.md) |
 | 🧪 Testing Guide | [🇮🇩](docs/id/test.md) | [🇬🇧](docs/en/test.md) |
+| 📱 PWA & Offline | [🇮🇩](docs/id/pwa.md) | [🇬🇧](docs/en/pwa.md) |
 
 ---
 
@@ -466,7 +565,7 @@ This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
 
 **Contact:** `mifada2543@gmail.com` · [github.com/mifada2543](https://github.com/mifada2543)
 
-*Last synced with README.md: July 25, 2026*
+*Last synced with README.md: September 3, 2026*
 
 ---
 

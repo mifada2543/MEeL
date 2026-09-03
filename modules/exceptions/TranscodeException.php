@@ -1,11 +1,5 @@
 <?php
-/**
- * modules/exceptions/TranscodeException.php
- *
- * Exception spesifik untuk kegagalan transcoding (FFmpeg HLS, audio encode).
- *
- * @package MEeL\Exceptions
- */
+
 
 class TranscodeException extends \RuntimeException
 {

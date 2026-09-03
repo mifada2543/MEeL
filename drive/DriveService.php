@@ -1,5 +1,4 @@
 <?php
-
 final class DriveUserContext
 {
     public const ROLE_ADMIN = 'admin';
@@ -8,6 +7,7 @@ final class DriveUserContext
     public ?int $userId;
     public string $role;
     public string $username;
+    public ?string $profile_picture = null;
 
     private function __construct(?int $userId, string $role, string $username)
     {
@@ -25,10 +25,30 @@ final class DriveUserContext
         );
     }
 
+    public function loadProfilePicture(mysqli $conn): void
+    {
+        if ($this->userId === null) {
+            return;
+        }
+
+        $stmt = $conn->prepare('SELECT profile_picture FROM users WHERE id = ?');
+        if (!$stmt) {
+            return;
+        }
+
+        $stmt->bind_param('i', $this->userId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $this->profile_picture = $row['profile_picture'] ?? null;
+    }
+
     public function authorize(): void
     {
         if (!$this->isAllowedRole()) {
-            die(include __DIR__ . '/../err/denied.php');
+            $_GET['code'] = 'denied';
+            die(include __DIR__ . '/../err/index.php');
         }
     }
 
@@ -79,6 +99,13 @@ final class DriveStorage
         $this->webBasePath = $webBasePath;
     }
 
+    
+
+    public static function defaultBasePath(?string $hddDriveOverride = null): string
+    {
+        return meel_drive_base_path($hddDriveOverride);
+    }
+
     public function normalizeScope(?string $scope): string
     {
         return $scope === self::SCOPE_PRIVATE ? self::SCOPE_PRIVATE : self::SCOPE_PUBLIC;
@@ -114,11 +141,18 @@ final class DriveStorage
                 continue;
             }
 
+            
+            
+            $path = 'stream?file=' . rawurlencode($fileInfo->getFilename())
+                . '&type=' . rawurlencode($type)
+                . '&scope=' . rawurlencode($scope)
+                . '&csrf_token=' . rawurlencode(get_csrf_token());
+
             $files[] = [
                 'name' => $fileInfo->getFilename(),
                 'size' => $fileInfo->getSize(),
                 'time' => $fileInfo->getMTime(),
-                'path' => $webDirectory . '/' . rawurlencode($fileInfo->getFilename()),
+                'path' => $path,
                 'ext' => strtolower($fileInfo->getExtension()),
             ];
         }
@@ -131,13 +165,14 @@ final class DriveStorage
         return $files;
     }
 
-    public function upload(array $file, ?string $requestedScope): array
+    
+
+    public function upload(array $file, ?string $requestedScope, int $quotaLimitBytes = 0): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             throw new RuntimeException('Berkas gagal diterima dari browser.');
         }
 
-        // 🟢 PRE-FLIGHT: Cek ruang disk drive — minimal 100MB free
         $scope = $this->resolveUploadScope($requestedScope);
         $cleanName = $this->sanitizeFileName((string) ($file['name'] ?? ''));
         $type = $this->detectTypeFromFilename($cleanName);
@@ -145,24 +180,56 @@ final class DriveStorage
         $this->ensureDirectoryExists($directory);
 
         $fileSize = (int) ($file['size'] ?? 0);
-        $requiredBytes = max(100 * 1024 * 1024, $fileSize * 2); // minimal 100MB atau 2x ukuran file
+        $requiredBytes = max(100 * 1024 * 1024, $fileSize * 2);
         try {
             require_disk_space($requiredBytes, $directory, 'Drive storage');
         } catch (\RuntimeException $e) {
             throw new RuntimeException($e->getMessage());
         }
 
-        $finalName = $this->ensureUniqueFilename($directory, $cleanName);
+        $lockFp = null;
+        if ($quotaLimitBytes > 0 && $this->user->isMember()) {
+            $lockFp = @fopen($this->quotaLockPath(), 'c');
+            if ($lockFp === false) {
+                $currentUsage = dir_size($this->privateRootForUser($this->user->username), 0);
+                if (($currentUsage + $fileSize) > $quotaLimitBytes) {
+                    throw new RuntimeException('quota_full');
+                }
+            } else {
+                @flock($lockFp, LOCK_EX);
+                $currentUsage = dir_size($this->privateRootForUser($this->user->username), 0);
+                if (($currentUsage + $fileSize) > $quotaLimitBytes) {
+                    @flock($lockFp, LOCK_UN);
+                    @fclose($lockFp);
+                    throw new RuntimeException('quota_full');
+                }
+            }
+        }
+
+        $finalName = $this->reserveUniqueFilename($directory, $cleanName);
         $destination = $directory . '/' . $finalName;
 
         if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
+            @unlink($destination);
+            if (is_resource($lockFp)) {
+                @flock($lockFp, LOCK_UN);
+                @fclose($lockFp);
+            }
             throw new RuntimeException('Gagal mengunggah file. Cek izin folder penyimpanan.');
         }
 
-        // Validasi file type menggunakan magic bytes
         if (!$this->validateFileByMagicBytes($destination, $type)) {
-            unlink($destination);
+            @unlink($destination);
+            if (is_resource($lockFp)) {
+                @flock($lockFp, LOCK_UN);
+                @fclose($lockFp);
+            }
             throw new RuntimeException('Tipe file tidak sesuai dengan extension yang diberikan.');
+        }
+
+        if (is_resource($lockFp)) {
+            @flock($lockFp, LOCK_UN);
+            @fclose($lockFp);
         }
 
         return [
@@ -171,20 +238,6 @@ final class DriveStorage
             'filename' => $finalName,
             'path' => $destination,
         ];
-    }
-
-    public function enforceQuota(array $file, int $limitBytes): void
-    {
-        if (!$this->user->isMember()) {
-            return;
-        }
-
-        $currentUsage = get_user_usage($this->user->username);
-        $newFileSize = (int) ($file['size'] ?? 0);
-
-        if (($currentUsage + $newFileSize) > $limitBytes) {
-            throw new RuntimeException('quota_full');
-        }
     }
 
     public function getFileForDownload(?string $filename, ?string $type, ?string $scope): array
@@ -198,7 +251,6 @@ final class DriveStorage
             throw new RuntimeException('File fisik tidak ditemukan di server.');
         }
 
-        // Validasi access control untuk private files
         if ($safeScope === self::SCOPE_PRIVATE && !$this->verifyPrivateFileAccess($filePath)) {
             throw new RuntimeException('Anda tidak memiliki akses ke file ini.');
         }
@@ -221,12 +273,10 @@ final class DriveStorage
             throw new RuntimeException('File tidak ditemukan.');
         }
 
-        // CRITICAL: Validasi access control untuk public files - HANYA ADMIN
         if ($safeScope === self::SCOPE_PUBLIC && !$this->user->isAdmin()) {
             throw new RuntimeException('Hanya Admin yang dapat menghapus file di Public Space.');
         }
 
-        // Validasi access control untuk private files - HANYA OWNER
         if ($safeScope === self::SCOPE_PRIVATE && !$this->verifyPrivateFileAccess($filePath)) {
             throw new RuntimeException('Anda tidak memiliki akses ke file ini.');
         }
@@ -236,14 +286,10 @@ final class DriveStorage
         }
     }
 
-    /**
-     * Verifikasi user dapat mengakses private file
-     */
     private function verifyPrivateFileAccess(string $filePath): bool
     {
         $userPath = $this->privateRootForUser($this->user->username);
 
-        // Normalize paths untuk comparison
         $realPath = realpath($filePath);
         $realUserPath = realpath($userPath);
 
@@ -251,8 +297,8 @@ final class DriveStorage
             return false;
         }
 
-        // Ensure file is within user's private directory
-        return strpos($realPath, $realUserPath) === 0;
+        return $realPath === $realUserPath
+            || str_starts_with($realPath, $realUserPath . DIRECTORY_SEPARATOR);
     }
 
     private function buildFilePath(string $type, string $scope, string $filename, bool $forDelete = false): string
@@ -313,9 +359,6 @@ final class DriveStorage
         }
     }
 
-    /**
-     * Validasi file type menggunakan magic bytes
-     */
     private function validateFileByMagicBytes(string $filePath, string $detectedType): bool
     {
         if (!is_file($filePath)) {
@@ -333,18 +376,17 @@ final class DriveStorage
         fclose($handle);
 
         if ($detectedType === self::TYPE_VIDEO) {
-            if (str_starts_with($header, "\x1A\x45\xDF\xA3")) { // WebM / MKV
+            if (str_starts_with($header, "\x1A\x45\xDF\xA3")) {
                 return true;
             }
-            if (substr($header, 4, 4) === 'ftyp') { // MP4 / MOV
+            if (substr($header, 4, 4) === 'ftyp') {
                 return true;
             }
             return false;
         }
 
-        // Validasi Audio
         if ($detectedType === self::TYPE_AUDIO) {
-            $audioSignatures = [0xFFFB, 0xFFA, 0x664C6143, 0x4F676753]; // MP3, FLAC, OGG
+            $audioSignatures = [0xFFFB, 0xFFA, 0x664C6143, 0x4F676753];
             $fileSignature = unpack('N', substr($header, 0, 4))[1] ?? 0;
             return in_array($fileSignature, $audioSignatures);
         }
@@ -386,22 +428,36 @@ final class DriveStorage
         return $safeFilename;
     }
 
-    private function ensureUniqueFilename(string $directory, string $filename): string
+    
+
+    private function reserveUniqueFilename(string $directory, string $filename): string
     {
         $candidate = $filename;
         $nameOnly = pathinfo($filename, PATHINFO_FILENAME);
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $counter = 1;
 
-        while (file_exists($directory . '/' . $candidate)) {
+        while (true) {
+            $destination = $directory . '/' . $candidate;
+            $reservation = @fopen($destination, 'x');
+            if ($reservation !== false) {
+                fclose($reservation);
+                return $candidate;
+            }
+            if ($counter > 1000) {
+                throw new RuntimeException('Gagal membuat nama file unik. Cek izin folder penyimpanan.');
+            }
             $suffix = '_(' . $counter . ')';
             $candidate = $extension !== ''
                 ? $nameOnly . $suffix . '.' . $extension
                 : $nameOnly . $suffix;
             $counter++;
         }
+    }
 
-        return $candidate;
+    private function quotaLockPath(): string
+    {
+        return dirname(__DIR__) . '/temp/drive_quota_' . md5($this->user->username) . '.lock';
     }
 }
 final class DriveViewRenderer
@@ -409,7 +465,7 @@ final class DriveViewRenderer
     public function renderFileGrid(array $files, string $accent, string $icon, string $type, string $scope): void
     {
         $csrfToken = get_csrf_token();
-        // Template terpisah — lebih mudah dibaca & dimaintain daripada string concat
+
         include __DIR__ . '/templates/file_grid.php';
     }
 }

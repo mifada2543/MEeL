@@ -1,9 +1,5 @@
 <?php
 
-/**
- * UpdateManager
- * Menangani aksi admin: simpan sidebar_settings & CRUD update entry.
- */
 class UpdateManager
 {
     private mysqli $db;
@@ -14,18 +10,11 @@ class UpdateManager
         $this->db = $db;
     }
 
-    /* ── Entry point ──────────────────────────────────────────── */
-
-    /**
-     * Tangani POST request bila ada.
-     * Redirect kembali ke update.php setelah selesai.
-     */
     public function handle(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
         if (($_SESSION['role'] ?? '') !== 'admin')  return;
 
-        // 🔒 FIX CSRF: Verifikasi token
         if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
             $this->setFlash('error', 'CSRF Token tidak valid.');
             $this->redirect();
@@ -37,13 +26,11 @@ class UpdateManager
         match ($action) {
             'sidebar'       => $this->saveSidebar(),
             'update'        => $this->saveUpdate(),
-            'edit_update'   => $this->saveEditUpdate(),   // Aksi Edit Baru
-            'delete_update' => $this->deleteUpdate(),     // Aksi Hapus Baru
+            'edit_update'   => $this->saveEditUpdate(),
+            'delete_update' => $this->deleteUpdate(),
             default         => null,
         };
     }
-
-    /* ── Aksi: sidebar ────────────────────────────────────────── */
 
     private function saveSidebar(): void
     {
@@ -66,8 +53,6 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ── Aksi: tambah update entry (Create) ────────────────────── */
-
     private function saveUpdate(): void
     {
         $version = $this->clean($_POST['version'] ?? '');
@@ -84,7 +69,7 @@ class UpdateManager
             $date = date('Y-m-d');
         }
 
-        // PREPARED STATEMENT untuk keamanan SQL Injection
+        
         $stmt = $this->db->prepare(
             "INSERT INTO updates (version, content, created_at) VALUES (?, ?, ?)"
         );
@@ -100,8 +85,6 @@ class UpdateManager
 
         $this->redirect();
     }
-
-    /* ── Aksi: edit update entry (Update) ─────────────────────── */
 
     private function saveEditUpdate(): void
     {
@@ -120,7 +103,6 @@ class UpdateManager
             $date = date('Y-m-d');
         }
 
-        // PREPARED STATEMENT untuk Update Data
         $stmt = $this->db->prepare(
             "UPDATE updates SET version = ?, content = ?, created_at = ? WHERE id = ?"
         );
@@ -137,8 +119,6 @@ class UpdateManager
         $this->redirect();
     }
 
-    /* ── Aksi: hapus update entry (Delete) ────────────────────── */
-
     private function deleteUpdate(): void
     {
         $id = (int)($_POST['id'] ?? 0);
@@ -149,7 +129,6 @@ class UpdateManager
             return;
         }
 
-        // PREPARED STATEMENT untuk Delete Data secara aman
         $stmt = $this->db->prepare("DELETE FROM updates WHERE id = ?");
         $stmt->bind_param('i', $id);
         $ok = $stmt->execute();
@@ -163,8 +142,6 @@ class UpdateManager
 
         $this->redirect();
     }
-
-    /* ── Query helpers ────────────────────────────────────────── */
 
     public function getSidebarData(): array
     {
@@ -180,8 +157,6 @@ class UpdateManager
         while ($row = $result->fetch_assoc()) $rows[] = $row;
         return $rows;
     }
-
-    /* ── Flash message ────────────────────────────────────────── */
 
     public function getFlash(): array
     {
@@ -202,18 +177,16 @@ class UpdateManager
         $_SESSION['flash']         = $this->flash;
     }
 
-    /* ── Utilities ────────────────────────────────────────────── */
-
     private function clean(string $val): string
     {
-        // htmlspecialchars di sini mengamankan tag <script> agar disimpan sebagai entities aman
+
         return htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
     }
 
     private function redirect(): void
     {
-        $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-        header("Location: {$base}/update.php");
+
+        header("Location: " . base_url('/update'));
         exit;
     }
 }

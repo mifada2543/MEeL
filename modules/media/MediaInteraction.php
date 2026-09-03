@@ -1,30 +1,17 @@
 <?php
-
 class MediaInteraction {
     private \mysqli $conn;
     private int $user_id;
     private string $error = '';
-    private bool $success = false;
 
     public function __construct(\mysqli $db_connection, int $session_user_id) {
         $this->conn = $db_connection;
         $this->user_id = (int)$session_user_id;
     }
 
-    // ============================================================
-    // LIKE / DISLIKE FUNCTIONALITY
-    // ============================================================
+    
 
-    /**
-     * Toggle like/dislike untuk music atau video
-     * 
-     * @param int $media_id ID dari music atau video
-     * @param string $media_type 'music' atau 'video'
-     * @param string $like_type 'like' atau 'dislike'
-     * @return array Status dan data terbaru
-     */
     public function toggleLike(int $media_id, string $media_type, string $like_type): array {
-        // Validasi
         if (!$this->validateUser()) {
             return $this->getResponse(false, 'User tidak terautentikasi', 403);
         }
@@ -37,16 +24,9 @@ class MediaInteraction {
             $col = ($media_type === 'music') ? 'music_id' : 'video_id';
             $table = ($media_type === 'music') ? 'music' : 'video';
 
-            // 1. Cek interaksi sebelumnya
             $existing = $this->getExistingInteraction($col, $media_id);
-
-            // 2. INSERT / UPDATE / DELETE
             $this->performInteractionOperation($existing, $col, $media_id, $like_type);
-
-            // 3. Sinkronisasi likes/dislikes
             $this->syncLikesCount($table, $col, $media_id);
-
-            // 4. Ambil data terbaru
             $data = $this->getLikesData($table, $media_id, $col);
             return $this->getResponse(true, 'Berhasil', 200, $data);
 
@@ -55,26 +35,14 @@ class MediaInteraction {
         }
     }
 
-    /**
-     * Get status interaksi user saat ini
-     * 
-     * @param int $media_id
-     * @param string $media_type
-     * @return array|null
-     */
+    
     public function getUserInteractionStatus(int $media_id, string $media_type): ?string {
         $col = ($media_type === 'music') ? 'music_id' : 'video_id';
         $existing = $this->getExistingInteraction($col, $media_id);
         return $existing ? $existing['TYPE'] : null;
     }
 
-    /**
-     * Get likes/dislikes count
-     * 
-     * @param string $table
-     * @param int $media_id
-     * @return array
-     */
+    
     public function getLikesCount(string $table, int $media_id): array {
         $stmt = $this->conn->prepare("SELECT likes, dislikes FROM $table WHERE id = ?");
         $stmt->bind_param("i", $media_id);
@@ -89,18 +57,8 @@ class MediaInteraction {
         ];
     }
 
-    // ============================================================
-    // COMMENT FUNCTIONALITY
-    // ============================================================
-
-    /**
-     * Delete comment dengan ownership check
-     * 
-     * @param int $comment_id
-     * @return array Status response
-     */
+    
     public function deleteComment(int $comment_id): array {
-        // Validasi
         if (!$this->validateUser()) {
             return $this->getResponse(false, 'User tidak terautentikasi', 403);
         }
@@ -110,13 +68,45 @@ class MediaInteraction {
         }
 
         try {
-            // Ownership check: hanya bisa delete komentar milik sendiri
-            $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ? AND user_id = ?");
+            $stmt = $this->conn->prepare("SELECT user_id, video_id, music_id FROM comments WHERE id = ?");
             if (!$stmt) {
                 throw new RuntimeException($this->conn->error);
             }
 
-            $stmt->bind_param("ii", $comment_id, $this->user_id);
+            $stmt->bind_param("i", $comment_id);
+            $stmt->execute();
+            $comment = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if (!$comment) {
+                return $this->getResponse(false, 'Komentar tidak ditemukan', 404);
+            }
+
+            $is_owner    = ((int)$comment['user_id'] === $this->user_id);
+            $is_uploader = false;
+            $is_admin    = false;
+
+            if (!$is_owner) {
+                $is_uploader = $this->isMediaUploader(
+                    (int)($comment['video_id'] ?? 0),
+                    (int)($comment['music_id'] ?? 0)
+                );
+            }
+
+            if (!$is_owner && !$is_uploader) {
+                $is_admin = $this->isAdmin();
+            }
+
+            if (!$is_owner && !$is_uploader && !$is_admin) {
+                return $this->getResponse(false, 'Komentar tidak ditemukan atau Anda tidak berwenang', 404);
+            }
+
+            $stmt = $this->conn->prepare("DELETE FROM comments WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+
+            $stmt->bind_param("i", $comment_id);
 
             if (!$stmt->execute()) {
                 throw new RuntimeException($this->conn->error);
@@ -136,9 +126,42 @@ class MediaInteraction {
         }
     }
 
-    // ============================================================
-    // PRIVATE HELPER FUNCTIONS
-    // ============================================================
+    
+
+    private function isMediaUploader(?int $video_id, ?int $music_id): bool
+    {
+        if ($video_id) {
+            $stmt = $this->conn->prepare("SELECT user_id FROM video WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+            $stmt->bind_param("i", $video_id);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $row && (int)$row['user_id'] === $this->user_id;
+        }
+
+        if ($music_id) {
+            $stmt = $this->conn->prepare("SELECT user_id FROM music WHERE id = ?");
+            if (!$stmt) {
+                throw new RuntimeException($this->conn->error);
+            }
+            $stmt->bind_param("i", $music_id);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $row && (int)$row['user_id'] === $this->user_id;
+        }
+
+        return false;
+    }
+
+    
+    private function isAdmin(): bool
+    {
+        return get_user_role($this->conn, $this->user_id) === 'admin';
+    }
 
     private function validateUser(): bool {
         return $this->user_id > 0;
@@ -178,16 +201,13 @@ class MediaInteraction {
     private function performInteractionOperation(?array $existing, string $col, int $media_id, string $like_type): void {
         if ($existing) {
             if ($existing['TYPE'] === $like_type) {
-                // Delete: toggle OFF (same type)
                 $op = $this->conn->prepare("DELETE FROM interactions WHERE user_id = ? AND $col = ?");
                 $op->bind_param("ii", $this->user_id, $media_id);
             } else {
-                // Update: change type
                 $op = $this->conn->prepare("UPDATE interactions SET `TYPE` = ? WHERE user_id = ? AND $col = ?");
                 $op->bind_param("sii", $like_type, $this->user_id, $media_id);
             }
         } else {
-            // Insert: new interaction
             $op = $this->conn->prepare("INSERT INTO interactions (user_id, $col, `TYPE`) VALUES (?, ?, ?)");
             $op->bind_param("iis", $this->user_id, $media_id, $like_type);
         }
@@ -235,10 +255,6 @@ class MediaInteraction {
             'data' => $data
         ];
     }
-
-    // ============================================================
-    // GETTERS
-    // ============================================================
 
     public function getError(): string {
         return $this->error;

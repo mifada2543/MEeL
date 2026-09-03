@@ -121,7 +121,7 @@ ffmpeg -version   # Should return version
 **Solution:**
 ```bash
 sudo apt install ffmpeg
-# Or set path in auth/config.php
+# Or set the binary path in auth/settings.php (MEEL_FFMPEG_PATH)
 ```
 
 ### ❌ "yt-dlp not found"
@@ -161,8 +161,28 @@ mysql -u root -p -e "SHOW DATABASES;"
 
 **Solutions:**
 - Start MySQL: `sudo systemctl start mysql`
-- Check credentials in `auth/config.php`
+- Check credentials in `auth/settings.php`
 - Check MySQL port (default: 3306)
+
+**MariaDB-specific: `root` uses the `unix_socket` auth plugin**
+
+On default MariaDB installs, `root` authenticates via the `unix_socket` plugin
+— connections are only valid from a process running as the OS `root` user (via
+the socket). So `mysql -u root` works from the CLI, but connections from the
+web-server process (`www-data`) fail with **"Access denied"** even with an
+empty password. Recommended fix: create a dedicated database user for the app:
+
+```sql
+CREATE USER 'meel'@'localhost' IDENTIFIED BY 'strong_password';
+GRANT ALL PRIVILEGES ON MEeL.* TO 'meel'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Then use those credentials in `auth/settings.php` (`$username`/`$password`).
+Alternative (less recommended): switch `root` to `mysql_native_password`:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('new_password');
+```
 
 ### ❌ "Table not found"
 
@@ -196,7 +216,7 @@ sudo chmod -R 775 /path/to/upload/dir
 
 **Check:**
 ```php
-// auth/config.php
+// auth/settings.php
 define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
 ```
 
@@ -217,7 +237,7 @@ Verify the mount point exists and is accessible.
 
 **Solution:**
 ```html
-<script src="/MEeL/assets/js/lucide.js"></script>
+<script src="/MEeL/assets/js/compatibilitas/lucide.js"></script>
 <script>lucide.createIcons();</script>
 ```
 
@@ -257,6 +277,52 @@ $timeout = 43200; // 12 hours in seconds
 ---
 
 ## Storage & Disk Issues
+
+### ❌ Drive module crashes: "Folder penyimpanan gagal dibuat" (RuntimeException)
+
+**Symptoms:**
+- Opening `drive/index.php`, uploading, downloading or streaming throws
+  `RuntimeException: Folder penyimpanan gagal dibuat` from `drive/DriveService.php`
+  (`ensureDirectoryExists()`)
+- Happens on a fresh clone or on a machine where the old repo symlinks were broken
+
+**Causes & Solutions:**
+
+1. **Legacy committed symlink to a dead absolute path** (old checkout): the repo
+   used to track `data_drive/public` & `data_drive/private_admins` as **symlinks**
+   pointing to `/media/<devuser>/MEeL/media/drive/...` — broken on any other
+   machine. Update the repo (the symlinks are removed and the folders are now
+   tracked as real directories), or fix locally:
+   ```bash
+   rm -f data_drive/public data_drive/private_admins   # remove old symlinks
+   mkdir -p data_drive/public data_drive/private_admins
+   ```
+
+2. **`MEEL_HDD_DRIVE` points to an unreadable/nonexistent path:** when defined,
+   the Drive module reads its storage directly from `MEEL_HDD_DRIVE` (derived
+   from `MEEL_HDD_BASE` in `auth/settings.php`) — **no symlink is involved**.
+   Verify where the app actually resolves storage:
+   ```bash
+   php -r "require 'auth/settings.php'; echo defined('MEEL_HDD_DRIVE') ? MEEL_HDD_DRIVE : 'NOT SET';"
+   php -r "require 'modules/core/helpers.php'; echo meel_drive_base_path();"
+   ```
+   If the resolved path doesn't exist or isn't writable, fix `MEEL_HDD_BASE` in
+   `auth/settings.php` (or leave it unset to use the `data_drive/` fallback).
+
+3. **Fallback folders not writable** (when `MEEL_HDD_DRIVE` is not defined):
+   ```bash
+   sudo chown -R www-data:www-data data_drive
+   sudo chmod -R 775 data_drive
+   ```
+   `data_drive/public` & `data_drive/private_admins` are auto-created by
+   `DriveStorage::ensureDirectoryExists()`.
+
+> ⚠️ **Never commit symlinks inside `data_drive/`** — `.gitignore` blocks them.
+> `tests/check_deploy.php` only warns about symlinks pointing OUTSIDE
+> `MEEL_HDD_DRIVE` (e.g. `/media/<user>/...`); deploy-time symlinks pointing
+> inside `MEEL_HDD_DRIVE` are rated PASS. See
+> [Installation §5a](installation.md#5a-media-storage-meel_hdd_base--php-endpoint--rewrite-no-symlinks)
+> for the Drive storage layout (`MEEL_HDD_DRIVE` vs the `data_drive/` fallback).
 
 ### ❌ "Disk full" error
 

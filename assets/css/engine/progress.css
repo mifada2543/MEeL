@@ -1,0 +1,80 @@
+
+.meel-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+
+.meel-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+#meel-dl-bar {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+}
+#meel-tc-bar {
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.6);
+}
+#meel-sp-bar {
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.6);
+}
+.meel-pct {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.4);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+.meel-label {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.meel-scan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: meel-scan 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.meel-segs {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  min-height: 6px;
+}
+.meel-seg {
+  width: 14px;
+  height: 6px;
+  border-radius: 2px;
+  background: rgba(249, 115, 22, 0.18);
+  border: 0.5px solid rgba(249, 115, 22, 0.25);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.meel-seg.done {
+  background: #f97316;
+  box-shadow: 0 0 5px rgba(249, 115, 22, 0.5);
+}

@@ -10,7 +10,7 @@ if ($result['count'] > 0) {
     foreach ($result['results'] as $v) {
         if ($result['sidebar']) {
 ?>
-            <a href="watch.php?id=<?= $v['id'] ?>"
+            <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>"
                 class="flex gap-3 group rekomendasi-item htmx-added">
                 <div class="w-28 h-[4.5rem] bg-black rounded-xl overflow-hidden flex-shrink-0 border border-white/[.05]">
                     <img src="upload/thumbnail/<?= htmlspecialchars($v['thumbnail']) ?>"
@@ -35,19 +35,30 @@ if ($result['count'] > 0) {
         }
     }
 
-    if (!$result['sidebar'] && $result['hasMore']) {
-        ?>
-        <div id="load-more-area"
-            class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
-            hx-get="search_video.php?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
-            hx-target="#load-more-area"
-            hx-swap="outerHTML">
-            <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-700 group-hover:text-red-500 transition-colors">
-                Muat Lebih Banyak
-            </span>
-        </div>
-<?php
+    if (!$result['sidebar']) {
+        $curPage    = (int)((int)$result['offset'] / max((int)$result['limit'], 1)) + 1;
+        $totalPages = max(1, (int)$result['total_pages']);
+
+        if ($result['hasMore']) {
+            ?>
+            <div id="load-more-area"
+                class="aspect-video flex items-center justify-center bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-red-500/30 hover:bg-white/[.03] transition-all group"
+                hx-get="search?search=<?= urlencode($result['query']) ?>&exclude=<?= $result['exclude'] ?>&offset=<?= $result['offset'] + $result['limit'] ?>"
+                hx-target="#load-more-area"
+                hx-swap="outerHTML">
+                <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-300 group-hover:text-red-500 transition-colors">
+                    Muat Lebih Banyak · <?= $curPage ?>/<?= $totalPages ?>
+                </span>
+            </div>
+            <?php
+        } elseif ((int)$result['offset'] > 0) {
+            ?>
+            <div class="aspect-video flex items-center justify-center border border-dashed border-white/[.04] rounded-2xl">
+                <span class="text-[9px] text-gray-800 uppercase tracking-widest">End of Results · <?= $curPage ?>/<?= $totalPages ?></span>
+            </div>
+            <?php
+        }
     }
 } elseif ($result['offset'] === 0) {
-    echo '<div class="py-12 text-center text-[10px] text-gray-700 uppercase tracking-widest">Video tidak ditemukan.</div>';
+    echo '<div class="col-span-full py-16 text-center text-[10px] text-gray-700 uppercase tracking-widest">Video tidak ditemukan.</div>';
 }

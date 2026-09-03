@@ -1,36 +1,29 @@
 <?php
 require_once '../modules/core/helpers.php';
-session_name('meel');
-session_start();
+meel_boot_session();
 include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
+require_once '../modules/media/PlaylistRepository.php';
 
 $playlist_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id     = $_SESSION['user_id'] ?? 0;
 $format_filter = $_GET['format'] ?? 'all';
 
-// Validasi playlist milik user
-$pl_stmt = $conn->prepare("SELECT * FROM playlists WHERE id = ? AND user_id = ?");
-$pl_stmt->bind_param("ii", $playlist_id, $user_id);
-$pl_stmt->execute();
-$playlist = $pl_stmt->get_result()->fetch_assoc();
-
-if (!$playlist) {
-    include '../err/denied.php';
-    exit;
+$library   = new MediaLibrary($conn);
+$pl_routes = $library->getUserPlaylistRoutes($user_id);
+if ($playlist_id === 0 && isset($_GET['slug']) && $_GET['slug'] !== '') {
+    $playlist_id = $library->resolvePlaylistSlug((string) $_GET['slug'], $user_id);
 }
 
-// Daftar lagu — prepared statement untuk keamanan
-$songs_stmt = $conn->prepare("
-    SELECT m.*, pt.id as pivot_id
-    FROM music m
-    JOIN playlist_tracks pt ON m.id = pt.music_id
-    WHERE pt.playlist_id = ?
-    ORDER BY pt.added_at DESC
-");
-$songs_stmt->bind_param("i", $playlist_id);
-$songs_stmt->execute();
-$songs_query = $songs_stmt->get_result();
+$playlistsRepo = new PlaylistRepository($conn);
+$playlist      = $playlistsRepo->getOwnedPlaylist($playlist_id, $user_id);
+
+if (!$playlist) {
+    $_GET['code'] = 'denied';
+    include '../err/index.php';
+    exit;
+}
+$songs_query = $playlistsRepo->getTracks($playlist_id);
 $total_songs = $songs_query->num_rows;
 
 $first_song = null;
@@ -39,30 +32,27 @@ if ($total_songs > 0) {
     $songs_query->data_seek(0);
 }
 
-$library       = new MediaLibrary($conn);
 $artists       = $library->getArtists();
 $is_logged_in  = isset($_SESSION['user_id']);
 
-// ─── Fungsi render konten utama ───────────────────────────────────────────────
 function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, $include_script = true)
 {
 ?>
-    <!-- BACK TO LIBRARY (when loaded via HTMX into index.php) -->
+    
     <?php if (!$include_script): ?>
         <div class="mb-6">
             <a href="javascript:void(0)"
-                hx-get="index.php?content_only=1"
+                hx-get="beranda?content_only=1"
                 hx-target="main"
                 hx-swap="innerHTML"
-                hx-push-url="index.php"
-                onclick="if (typeof resetActivePlaylist === 'function') resetActivePlaylist(); if (typeof resetArtistHighlight === 'function') resetArtistHighlight();"
+                hx-push-url="beranda"
+                onclick="if (typeof resetActivePlaylist === 'function') resetActivePlaylist(); if (typeof resetArtistHighlight === 'function') resetArtistHighlight(); if (typeof resetFormatPills === 'function') resetFormatPills();"
                 class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-600 hover:text-orange-400 transition-all">
                 <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Library
             </a>
         </div>
     <?php endif; ?>
-
-    <!-- PLAYLIST HEADER -->
+    
     <div class="flex items-start sm:items-end gap-5 mb-8 pb-6 border-b border-white/[.04]">
         <div class="relative flex-shrink-0">
             <div class="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-orange-500 via-orange-600 to-red-700
@@ -87,15 +77,15 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             </div>
             <div class="flex flex-wrap items-center gap-2 mt-4">
                 <?php if ($first_song): ?>
-                    <a href="watch.php?id=<?= $first_song['id'] ?>&playlist_id=<?= $playlist_id ?>"
+                    <a href="<?= base_url('/music/watch?id=' . (int)$first_song['id'] . '&playlist_id=' . (int)$playlist_id) ?>"
                         class="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white
                               px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest
                               transition-all shadow-lg shadow-orange-600/20 border border-orange-500/20">
                         <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Play All
                     </a>
                 <?php endif; ?>
-                <form action="playlist_action.php" method="POST"
-                    onsubmit="return confirm('Hapus seluruh playlist ini?')">
+                <form action="playlist-action" method="POST"
+                    onsubmit="return meelConfirmForm(event, { title:'Hapus Playlist', text:'Hapus seluruh playlist ini?', confirmButtonText:'HAPUS' })">
                     <input type="hidden" name="action" value="delete_playlist">
                     <input type="hidden" name="playlist_id" value="<?= $playlist_id ?>">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -110,7 +100,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
         </div>
     </div>
 
-    <!-- TRACK LIST -->
+    
     <?php if ($total_songs > 0): ?>
         <div class="hidden sm:grid grid-cols-[2rem_1fr_auto_2rem] gap-4 px-3 mb-2">
             <span class="text-[9px] font-bold uppercase tracking-[.3em] text-gray-700 text-center">#</span>
@@ -124,9 +114,10 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
             $idx = 0;
             while ($s = $songs_query->fetch_assoc()):
                 $idx++;
+                authorize_stream((int)$s['id']);
                 $s_ext   = strtolower(pathinfo($s['filename'], PATHINFO_EXTENSION));
                 $s_lbl   = $s_ext === 'ogg' ? 'opus' : $s_ext;
-                $watch_url = "watch.php?id={$s['id']}&playlist_id={$playlist_id}";
+                $watch_url = base_url('/music/watch?id=' . (int)$s['id'] . '&playlist_id=' . (int)$playlist_id);
             ?>
                 <div class="group grid grid-cols-[2rem_1fr_auto_2rem] items-center gap-4 px-3 py-2 rounded-xl
                             hover:bg-white/[.04] border border-transparent hover:border-white/[.05] transition-all duration-150
@@ -140,7 +131,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                     data-watch-url="<?= htmlspecialchars($watch_url) ?>"
                     data-playlist-id="<?= $playlist_id ?>">
 
-                    <!-- Nomor / play icon -->
+                    
                     <div class="flex items-center justify-center w-8 flex-shrink-0">
                         <span class="group-hover:hidden block text-[10px] font-mono text-gray-600"><?= $idx ?></span>
                         <button type="button"
@@ -150,7 +141,7 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                         </button>
                     </div>
 
-                    <!-- Thumbnail + Info -->
+                    
                     <a href="<?= htmlspecialchars($watch_url) ?>"
                         class="flex items-center gap-3 min-w-0 no-underline">
                         <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0
@@ -178,15 +169,15 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                         </div>
                     </a>
 
-                    <!-- Format -->
+                    
                     <span class="text-[8px] px-1.5 py-0.5 rounded bg-white/[.04] border border-white/[.05]
                                  text-gray-600 uppercase font-bold tracking-wide text-right">
                         <?= $s_lbl ?>
                     </span>
 
-                    <!-- Hapus dari playlist -->
-                    <form action="playlist_action.php" method="POST"
-                        onsubmit="return confirm('Hapus lagu ini dari playlist?')">
+                    
+                    <form action="playlist-action" method="POST"
+                        onsubmit="return meelConfirmForm(event, { title:'Hapus dari Playlist', text:'Hapus lagu ini dari playlist?', confirmButtonText:'HAPUS' })">
                         <input type="hidden" name="action" value="remove_from_playlist">
                         <input type="hidden" name="pivot_id" value="<?= $s['pivot_id'] ?>">
                         <input type="hidden" name="playlist_id" value="<?= $playlist_id ?>">
@@ -212,104 +203,29 @@ function renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_que
                 <div class="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-1">Playlist Kosong</div>
                 <div class="text-[10px] text-gray-700">Tambahkan lagu dari halaman player</div>
             </div>
-            <a href="index.php"
+            <a href="beranda"
                 class="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600/10 border border-orange-500/20
                       text-orange-400 text-[10px] font-black uppercase tracking-widest hover:bg-orange-600/20 transition-all">
                 <i data-lucide="library" class="w-3.5 h-3.5"></i> Buka Library
             </a>
         </div>
     <?php endif; ?>
-
-    <?php if ($include_script): ?>
-        <!-- Script: setup klik track di playlist untuk mini player (menyertakan playlist_id) -->
-        <script>
-            (function() {
-                function setupPlaylistClicks() {
-                    document.querySelectorAll('.music-pl-item').forEach(function(item) {
-                        if (item.dataset.plListenerAdded) return;
-                        item.dataset.plListenerAdded = 'true';
-
-                        // Klik seluruh row (kecuali form hapus) → play via mini player
-                        item.addEventListener('click', function(e) {
-                            // Abaikan klik pada tombol hapus / form
-                            if (e.target.closest('form') || e.target.closest('button[type="submit"]')) return;
-                            // Kalau klik link langsung (judul/thumbnail) → biarkan navigasi biasa
-                            if (e.target.closest('a')) return;
-
-                            e.preventDefault();
-                            playViaPlayer(item);
-                        });
-
-                        // Tombol play (ikon ▶ di kolom nomor)
-                        var playBtn = item.querySelector('.pl-play-btn');
-                        if (playBtn) {
-                            playBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                playViaPlayer(item);
-                            });
-                        }
-                    });
-                }
-
-                function playViaPlayer(item) {
-                    var playlistId = item.dataset.playlistId;
-                    var musicId = item.dataset.id;
-                    var watchUrl = item.dataset.watchUrl; // sudah mengandung &playlist_id=X
-
-                    // Cari nextSong: item berikutnya di DOM
-                    var allItems = Array.from(document.querySelectorAll('.music-pl-item'));
-                    var idx = allItems.indexOf(item);
-                    var nextSongUrl = '';
-                    if (idx >= 0 && idx < allItems.length - 1) {
-                        nextSongUrl = allItems[idx + 1].dataset.watchUrl || '';
-                    }
-
-                    var state = {
-                        id: musicId,
-                        musicId: musicId,
-                        title: item.dataset.title,
-                        artist: item.dataset.artist,
-                        thumbnail: item.dataset.thumbnail,
-                        thumbnailUrl: item.dataset.thumbnailUrl,
-                        filename: item.dataset.filename,
-                        // ↓ KEY FIX: watchUrl menyertakan playlist_id
-                        watchUrl: watchUrl,
-                        nextSongUrl: nextSongUrl,
-                        playlistId: playlistId,
-                        currentTime: 0,
-                        isPlaying: true,
-                    };
-
-                    sessionStorage.setItem('skip_resume_once', 'true');
-                    sessionStorage.setItem('meel_audio_state', JSON.stringify(state));
-
-                    // Trigger mini player index jika ada di halaman ini
-                    if (typeof loadAudio === 'function') {
-                        loadAudio(state, true);
-                        updateIndexUI();
-                        isMiniPlayerIndexActive = true;
-                        document.getElementById('mini-player-index').classList.add('active');
-                    }
-                }
-
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', setupPlaylistClicks);
-                } else {
-                    setupPlaylistClicks();
-                }
-                document.addEventListener('htmx:afterSwap', setupPlaylistClicks);
-            })();
-        </script>
-    <?php endif; ?>
 <?php
 }
 
-// ─── Mode content_only untuk HTMX swap ───────────────────────────────────────
 if (isset($_GET['content_only'])) {
     renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song, false);
     exit;
 }
+
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -323,12 +239,12 @@ if (isset($_GET['content_only'])) {
     <title><?= htmlspecialchars($playlist['name']) ?> — MEeL Playlist</title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/music.css">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/htmx.min.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <style>
-        .artist-dropdown-active #library-container > main {
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
+    <style>        .artist-dropdown-active #library-container > main {
             position: relative;
             z-index: 10;
             filter: blur(4px);
@@ -357,15 +273,15 @@ if (isset($_GET['content_only'])) {
         .mp-thumbnail:hover {
             transform: scale(1.05);
         }
-    </style>
+</style>
 </head>
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR — identik dengan index.php -->
+    
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-5 h-14 flex items-center justify-between gap-2 sm:gap-4">
-            <a href="../index.php" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
+            <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
                 <div class="w-6 h-6 sm:w-7 sm:h-7 bg-orange-600 rounded-lg flex items-center justify-center">
                     <i data-lucide="music" class="w-3.5 h-3.5 text-white fill-current"></i>
                 </div>
@@ -384,7 +300,7 @@ if (isset($_GET['content_only'])) {
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-8 sm:pl-9 pr-3 sm:pr-4 text-xs focus:outline-none focus:border-orange-500/40 transition-all text-gray-300"
                         autocomplete="off">
                 </div>
-                <a href="index.php"
+                <a href="beranda"
                     class="px-2.5 sm:px-4 py-2 bg-white/[.04] border border-white/[.06] rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-orange-500 hover:border-orange-500/30 transition-all flex-shrink-0">
                     <span class="hidden sm:inline">Library</span>
                     <i data-lucide="library" class="w-3.5 h-3.5 sm:hidden"></i>
@@ -397,36 +313,36 @@ if (isset($_GET['content_only'])) {
         </div>
     </nav>
 
-    <!-- LAYOUT GRID — identik dengan index.php -->
+    
     <div id="library-container"
         class="w-full px-4 sm:px-6 xl:px-10 2xl:px-16 pt-8 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        <!-- SIDEBAR -->
+        
         <aside class="lg:col-span-3 xl:col-span-2">
             <div class="sticky top-20 space-y-6">
 
-                <!-- FORMAT PILLS (Desktop) -->
+                
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3">Format</div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="index.php?format=all"
+                        <a href="beranda?format=all"
                             class="format-pill <?= $format_filter === 'all' ? 'active-orange' : '' ?>">All</a>
-                        <a href="index.php?format=ogg"
+                        <a href="beranda?format=ogg"
                             class="format-pill <?= $format_filter === 'ogg' ? 'active-orange' : '' ?>">Opus</a>
-                        <a href="index.php?format=m4a"
+                        <a href="beranda?format=m4a"
                             class="format-pill <?= $format_filter === 'm4a' ? 'active-green' : '' ?>">M4A</a>
-                        <a href="index.php?format=mp3"
+                        <a href="beranda?format=mp3"
                             class="format-pill <?= $format_filter === 'mp3' ? 'active-blue' : '' ?>">MP3</a>
                     </div>
                 </div>
 
-                <!-- ARTISTS (Desktop) -->
+                
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3 flex items-center gap-2">
                         <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
                     </div>
                     <div class="space-y-0.5 max-h-[45vh] overflow-y-auto no-scrollbar">
-                        <a href="index.php"
+                        <a href="beranda"
                             class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all
                                  text-gray-600 hover:text-gray-300 hover:bg-white/[.03]">
                             <span>All Collections</span>
@@ -434,7 +350,7 @@ if (isset($_GET['content_only'])) {
                         <?php
                         $artists->data_seek(0);
                         while ($a = $artists->fetch_assoc()): ?>
-                            <a href="index.php?artist=<?= urlencode($a['artist']) ?>"
+                            <a href="beranda?artist=<?= urlencode($a['artist']) ?>"
                                 class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all
                                      text-gray-600 hover:text-gray-300 hover:bg-white/[.03]">
                                 <span class="truncate"><?= htmlspecialchars($a['artist']) ?></span>
@@ -443,7 +359,7 @@ if (isset($_GET['content_only'])) {
                     </div>
                 </div>
 
-                <!-- PLAYLISTS (Desktop) -->
+                
                 <?php if ($is_logged_in): ?>
                     <div class="hidden lg:block">
                         <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3 flex items-center gap-2">
@@ -454,18 +370,21 @@ if (isset($_GET['content_only'])) {
                             $my_pls = $library->getUserPlaylists($user_id);
                             while ($pl = $my_pls->fetch_assoc()):
                                 $is_active = ($pl['id'] == $playlist_id);
+                                $pl_route  = $pl_routes[$pl['id']] ?? ('playlist?id=' . (int) $pl['id']);
+                                $pl_sep    = str_contains($pl_route, '?') ? '&' : '?';
                             ?>
-                                <a href="view_playlist.php?id=<?= $pl['id'] ?>"
-                                    hx-get="view_playlist.php?id=<?= $pl['id'] ?>&content_only=1"
+                                <a href="<?= $pl_route ?>"
+                                    hx-get="<?= $pl_route . $pl_sep ?>content_only=1"
                                     hx-target="#playlist-main"
                                     hx-swap="innerHTML"
-                                    hx-push-url="view_playlist.php?id=<?= $pl['id'] ?>"
+                                    hx-push-url="<?= $pl_route ?>"
                                     class="sidebar-link flex items-center gap-2 px-3 py-2.5 rounded-lg text-[11px] font-bold transition-all
                                          <?= $is_active
                                                ? 'active'
                                                : 'text-gray-600 hover:text-gray-300 hover:bg-white/[.03]' ?>
                                          pl-link"
                                     data-playlist-id="<?= $pl['id'] ?>"
+                                    data-playlist-url="<?= $pl_route ?>"
                                     onclick="setActivePlaylistSidebar(<?= $pl['id'] ?>)">
                                     <i data-lucide="disc-3" class="w-3 h-3 flex-shrink-0"></i>
                                     <span class="truncate"><?= htmlspecialchars($pl['name']) ?></span>
@@ -477,24 +396,23 @@ if (isset($_GET['content_only'])) {
                         </div>
                     </div>
                 <?php endif; ?>
-
-                <!-- MOBILE FILTERS & MENUS -->
+                
                 <div class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/95 backdrop-blur-md p-4 rounded-xl border border-white/[.04] shadow-lg">
 
-                    <!-- Format Pills (Mobile) -->
+                    
                     <div class="flex flex-wrap gap-2">
-                        <a href="index.php?format=all"
+                        <a href="beranda?format=all"
                             class="format-pill <?= $format_filter === 'all' ? 'active-orange' : '' ?>">All</a>
-                        <a href="index.php?format=ogg"
+                        <a href="beranda?format=ogg"
                             class="format-pill <?= $format_filter === 'ogg' ? 'active-orange' : '' ?>">Opus</a>
-                        <a href="index.php?format=m4a"
+                        <a href="beranda?format=m4a"
                             class="format-pill <?= $format_filter === 'm4a' ? 'active-green' : '' ?>">M4A</a>
-                        <a href="index.php?format=mp3"
+                        <a href="beranda?format=mp3"
                             class="format-pill <?= $format_filter === 'mp3' ? 'active-blue' : '' ?>">MP3</a>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Artists Select (Custom Dropdown) -->
+                        
                         <div>
                             <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-1.5 flex items-center gap-1.5">
                                 <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
@@ -523,7 +441,7 @@ if (isset($_GET['content_only'])) {
                             </div>
                         </div>
 
-                        <!-- Playlists Select (Custom Dropdown) -->
+                        
                         <?php if ($is_logged_in): ?>
                             <div>
                                 <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-1.5 flex items-center gap-1.5">
@@ -541,9 +459,12 @@ if (isset($_GET['content_only'])) {
                                         $my_pls2 = $library->getUserPlaylists($user_id);
                                         while ($pl = $my_pls2->fetch_assoc()):
                                             $pl_active = ($pl['id'] == $playlist_id);
+                                            $pl_route  = $pl_routes[$pl['id']] ?? ('playlist?id=' . (int) $pl['id']);
+                                            $pl_sep    = str_contains($pl_route, '?') ? '&' : '?';
                                         ?>
                                             <button onclick="navigateToPlaylistPL(<?= $pl['id'] ?>)"
                                                 data-playlist-id="<?= $pl['id'] ?>"
+                                                data-playlist-url="<?= $pl_route ?>"
                                                 class="w-full text-left px-4 py-2.5 text-xs transition-colors truncate <?= $pl_active ? 'text-orange-500 font-bold' : 'text-gray-300 hover:bg-white/[.04]' ?>">
                                                 <?= htmlspecialchars($pl['name']) ?>
                                             </button>
@@ -558,13 +479,13 @@ if (isset($_GET['content_only'])) {
             </div>
         </aside>
 
-        <!-- MAIN — bisa di-swap HTMX tanpa reload halaman/player -->
+        
         <main id="playlist-main" class="lg:col-span-9 xl:col-span-10">
             <?php renderPlaylistContent($playlist, $playlist_id, $total_songs, $songs_query, $first_song); ?>
         </main>
     </div>
 
-    <!-- MINI PLAYER — identik dengan index.php agar state audio tidak terputus -->
+    
     <div id="mini-player-index" aria-label="Mini Player">
         <div class="mp-seekbar" id="mp-seekbar-index" onclick="miniSeekIndex(event)" title="Klik untuk seek">
             <div class="mp-seekbar-fill" id="mp-seekbar-fill-index"></div>
@@ -612,298 +533,15 @@ if (isset($_GET['content_only'])) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
-
-    <script>
-        lucide.createIcons();
-
-        // ── Sidebar: Playlist Active Highlight ──
-        window.setActivePlaylistSidebar = function(id) {
-            document.querySelectorAll('.sidebar-link.pl-link').forEach(function(el) {
-                if (parseInt(el.dataset.playlistId) === id) {
-                    el.classList.add('active');
-                } else {
-                    el.classList.remove('active');
-                }
-            });
-            // Update mobile playlist dropdown label + active state
-            var label = document.getElementById('playlist-dropdown-label-pl');
-            var options = document.querySelectorAll('#playlist-options-pl button');
-            options.forEach(function(btn) {
-                btn.classList.remove('text-orange-500', 'font-bold');
-                btn.classList.add('text-gray-300', 'hover:bg-white/[.04]');
-            });
-            options.forEach(function(btn) {
-                if (parseInt(btn.dataset.playlistId) === id) {
-                    btn.classList.remove('text-gray-300', 'hover:bg-white/[.04]');
-                    btn.classList.add('text-orange-500', 'font-bold');
-                    if (label) label.textContent = btn.textContent.trim();
-                }
-            });
-        };
-
-        // ── Mobile Artist Dropdown (custom toggle) ──
-        window.toggleArtistDropdownPL = function() {
-            var dd = document.getElementById('artist-options-pl');
-            if (!dd) return;
-            var hidden = dd.classList.contains('hidden');
-            dd.classList.toggle('hidden');
-            if (hidden) {
-                document.body.classList.add('artist-dropdown-active');
-                var active = dd.querySelector('.text-orange-500');
-                if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            } else {
-                setTimeout(function() { document.body.classList.remove('artist-dropdown-active'); }, 350);
-            }
-        };
-
-        window.closeArtistDropdownPL = function() {
-            const dropdown = document.getElementById('artist-options-pl');
-            if (dropdown) dropdown.classList.add('hidden');
-            setTimeout(function() {
-                const artistStillOpen = document.getElementById('artist-options-pl') && !document.getElementById('artist-options-pl').classList.contains('hidden');
-                const playlistStillOpen = document.getElementById('playlist-options-pl') && !document.getElementById('playlist-options-pl').classList.contains('hidden');
-                if (!artistStillOpen && !playlistStillOpen) {
-                    document.body.classList.remove('artist-dropdown-active');
-                }
-            }, 350);
-        };
-
-        window.navigateToArtistPL = function(artist) {
-            closeArtistDropdownPL();
-            if (artist === 'all') {
-                window.location.href = 'index.php';
-            } else {
-                window.location.href = 'index.php?artist=' + encodeURIComponent(artist);
-            }
-        };
-
-        // ── Mobile Playlist Dropdown (custom toggle) ──
-        window.togglePlaylistDropdownPL = function() {
-            const dropdown = document.getElementById('playlist-options-pl');
-            if (dropdown) {
-                const isHidden = dropdown.classList.contains('hidden');
-                if (isHidden) {
-                    dropdown.classList.remove('hidden');
-                    document.body.classList.add('artist-dropdown-active');
-                } else {
-                    dropdown.classList.add('hidden');
-                    setTimeout(function() {
-                        document.body.classList.remove('artist-dropdown-active');
-                    }, 350);
-                }
-            }
-        };
-
-        window.closePlaylistDropdownPL = function() {
-            const dropdown = document.getElementById('playlist-options-pl');
-            if (dropdown) dropdown.classList.add('hidden');
-            setTimeout(function() {
-                const artistStillOpen = document.getElementById('artist-options-pl') && !document.getElementById('artist-options-pl').classList.contains('hidden');
-                const playlistStillOpen = document.getElementById('playlist-options-pl') && !document.getElementById('playlist-options-pl').classList.contains('hidden');
-                if (!artistStillOpen && !playlistStillOpen) {
-                    document.body.classList.remove('artist-dropdown-active');
-                }
-            }, 350);
-        };
-
-        window.navigateToPlaylistPL = function(id) {
-            closePlaylistDropdownPL();
-            setActivePlaylistSidebar(id);
-            htmx.ajax('GET', 'view_playlist.php?id=' + id + '&content_only=1', {
-                target: '#playlist-main',
-                swap: 'innerHTML',
-                pushUrl: 'view_playlist.php?id=' + id
-            });
-        };
-
-        // ── Close dropdowns on outside click ──
-        document.addEventListener('click', function(e) {
-            const artistDropdown = document.getElementById('artist-options-pl');
-            const artistTrigger = e.target.closest('#custom-artist-dropdown-pl');
-            if (!artistTrigger && artistDropdown && !artistDropdown.classList.contains('hidden')) {
-                closeArtistDropdownPL();
-            }
-            const playlistDropdown = document.getElementById('playlist-options-pl');
-            const playlistTrigger = e.target.closest('#custom-playlist-dropdown-pl');
-            if (!playlistTrigger && playlistDropdown && !playlistDropdown.classList.contains('hidden')) {
-                closePlaylistDropdownPL();
-            }
-        });
-
-        // =============================================
-        // === MINI PLAYER — identik dengan index.php ===
-        // =============================================
-        const miniPlayerIndex = document.getElementById('mini-player-index');
-        let audioPlayer = null;
-        let isMiniPlayerIndexActive = false;
-        let currentState = null;
-
-        function fmtTime(s) {
-            if (!s || isNaN(s)) return '0:00';
-            return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-        }
-
-        function saveIndexState() {
-            if (!currentState || !audioPlayer) return;
-            currentState.currentTime = audioPlayer.currentTime;
-            currentState.isPlaying = !audioPlayer.paused;
-            currentState.isLooping = isMiniLoopIndexActive;
-            sessionStorage.setItem('meel_audio_state', JSON.stringify(currentState));
-        }
-
-        function loadAudio(state, autoplay) {
-            if (!audioPlayer) {
-                audioPlayer = document.createElement('audio');
-                audioPlayer.id = 'hidden-audio-player';
-                audioPlayer.preload = 'metadata';
-                document.body.appendChild(audioPlayer);
-                audioPlayer.addEventListener('timeupdate', updateIndexUI);
-                audioPlayer.addEventListener('play', () => setPlayIcon('pause'));
-                audioPlayer.addEventListener('pause', () => setPlayIcon('play'));
-                audioPlayer.addEventListener('ended', () => miniNextIndex());
-            }
-            if (currentState && currentState.filename === state.filename) return;
-            currentState = state;
-            audioPlayer.src = `stream.php?id=${state.id}`;
-            audioPlayer.load();
-            const _gLoop = localStorage.getItem('meel_global_loop') === 'true';
-            isMiniLoopIndexActive = (state.isLooping !== undefined) ? state.isLooping : _gLoop;
-            localStorage.setItem('meel_global_loop', String(isMiniLoopIndexActive));
-            audioPlayer.loop = isMiniLoopIndexActive;
-            updateMiniLoopUIIndex();
-            if (autoplay) {
-                audioPlayer.currentTime = state.currentTime || 0;
-                audioPlayer.play().catch(() => {});
-            }
-        }
-
-        function updateIndexUI() {
-            if (!audioPlayer || !currentState) return;
-            const pct = audioPlayer.duration > 0 ?
-                (audioPlayer.currentTime / audioPlayer.duration) * 100 : 0;
-            const fill = document.getElementById('mp-seekbar-fill-index');
-            const thumb = document.getElementById('mp-seekbar-thumb-index');
-            if (fill) fill.style.width = pct + '%';
-            if (thumb) thumb.style.left = pct + '%';
-            const ct = document.getElementById('mini-current-time-index');
-            const dt = document.getElementById('mini-duration-index');
-            if (ct) ct.textContent = fmtTime(audioPlayer.currentTime);
-            if (dt) dt.textContent = fmtTime(audioPlayer.duration);
-            const img = document.getElementById('mini-thumbnail-index');
-            const title = document.getElementById('mini-title-index');
-            const artist = document.getElementById('mini-artist-index');
-            if (img) img.src = currentState.thumbnailUrl || `upload/thumbnail/${currentState.thumbnail}`;
-            if (title) title.textContent = currentState.title || 'Unknown';
-            if (artist) artist.textContent = currentState.artist || 'Unknown';
-        }
-
-        function setPlayIcon(icon) {
-            const btn = document.getElementById('mini-play-btn-index');
-            if (btn) {
-                btn.innerHTML = `<i data-lucide="${icon}" style="width:18px;height:18px;"></i>`;
-                lucide.createIcons();
-            }
-        }
-
-        window.miniSeekIndex = function(e) {
-            if (!audioPlayer || !audioPlayer.duration) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const pct = (e.clientX - rect.left) / rect.width;
-            audioPlayer.currentTime = Math.max(0, Math.min(pct * audioPlayer.duration, audioPlayer.duration));
-        };
-
-        window.miniPlayPauseIndex = function() {
-            if (!audioPlayer || !currentState) return;
-            audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
-        };
-
-        window.miniNextIndex = function() {
-            if (!audioPlayer || (audioPlayer.loop)) return;
-            if (currentState && currentState.nextSongUrl) {
-                saveIndexState();
-                window.location.href = currentState.nextSongUrl;
-            }
-        };
-
-        window.miniPrevIndex = function() {
-            if (!audioPlayer) return;
-            if (audioPlayer.currentTime > 3) {
-                audioPlayer.currentTime = 0;
-                return;
-            }
-            if (currentState && currentState.prevSongUrl) {
-                saveIndexState();
-                window.location.href = currentState.prevSongUrl;
-            } else {
-                audioPlayer.currentTime = 0;
-            }
-        };
-
-        // KEY FIX: expandPlayerFromMiniPlayer selalu menyertakan playlist_id dari state
-        function expandPlayerFromMiniPlayer() {
-            saveIndexState();
-            const raw = sessionStorage.getItem('meel_audio_state');
-            if (!raw) return;
-            try {
-                const state = JSON.parse(raw);
-                // watchUrl sudah mengandung &playlist_id=X karena disimpan dari data-watch-url
-                if (state.watchUrl) {
-                    window.location.href = state.watchUrl;
-                } else if (state.id) {
-                    const plId = state.playlistId ? `&playlist_id=${state.playlistId}` : '';
-                    window.location.href = `watch.php?id=${state.id}${plId}`;
-                }
-            } catch (e) {}
-        }
-
-        let isMiniLoopIndexActive = localStorage.getItem('meel_global_loop') === 'true';
-
-        window.toggleMiniLoopIndex = function() {
-            isMiniLoopIndexActive = !isMiniLoopIndexActive;
-            localStorage.setItem('meel_global_loop', String(isMiniLoopIndexActive));
-            if (audioPlayer) audioPlayer.loop = isMiniLoopIndexActive;
-            updateMiniLoopUIIndex();
-            saveIndexState();
-        };
-
-        function updateMiniLoopUIIndex() {
-            const btn = document.getElementById('mini-loop-btn-index');
-            if (!btn) return;
-            btn.style.color = isMiniLoopIndexActive ? '#f97316' : '';
-            btn.style.opacity = isMiniLoopIndexActive ? '1' : '0.5';
-        }
-
-        window.closeMiniPlayerIndex = function() {
-            if (audioPlayer) audioPlayer.pause();
-            miniPlayerIndex.classList.remove('active');
-            sessionStorage.removeItem('meel_audio_state');
-            isMiniPlayerIndexActive = false;
-            currentState = null;
-        };
-
-        function initMiniPlayerIndex() {
-            isMiniLoopIndexActive = localStorage.getItem('meel_global_loop') === 'true';
-            updateMiniLoopUIIndex();
-            const raw = sessionStorage.getItem('meel_audio_state');
-            if (!raw) return;
-            try {
-                const state = JSON.parse(raw);
-                isMiniPlayerIndexActive = true;
-                loadAudio(state, state.isPlaying);
-                updateIndexUI();
-                miniPlayerIndex.classList.add('active');
-            } catch (e) {}
-        }
-
-        document.addEventListener('DOMContentLoaded', initMiniPlayerIndex);
-        document.addEventListener('htmx:afterSwap', function() {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        });
-
-        setInterval(() => {
-            if (isMiniPlayerIndexActive) saveIndexState();
-        }, 5000);
-    </script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
+    <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
+    <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/audio-engine.js<?= $__v('assets/js/shared/audio-engine.js') ?>"></script>
+    <script src="../assets/js/shared/view-router.js<?= $__v('assets/js/shared/view-router.js') ?>"></script>
+    <script src="../assets/js/music/shared/mini-player.js<?= $__v('assets/js/music/shared/mini-player.js') ?>"></script>
+    <script src="../assets/js/music/view_playlist/view_playlist.js<?= $__v('assets/js/music/view_playlist/view_playlist.js') ?>"></script>
 </body>
 
 </html>

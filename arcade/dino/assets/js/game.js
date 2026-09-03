@@ -1,12 +1,6 @@
-// ==========================================
-// FILE: game.js
-// FUNGSI: Logika Game Utama, Fisika, dan Kontrol UI
-// ==========================================
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// 1. STATE & KONFIGURASI GLOBAL
 const gameState = {
   isPlaying: false,
   isGameOver: false,
@@ -17,19 +11,14 @@ const gameState = {
   gravityValue: 0.6,
   isTetoActive: false,
 };
-
 const cheatState = {
   godMode: false,
   moonGravity: false,
   hyperSpeed: false,
 };
-
-// Update Hi-Score awal
 document.getElementById("hiScoreText").innerText = String(
   gameState.hiScore,
 ).padStart(5, "0");
-
-// Daftarkan 'resetScoreBtn' di sini agar otomatis terkunci saat game dimainkan
 const GAME_CONTROLS = {
   lockableToggles: [
     "themeToggle",
@@ -39,41 +28,45 @@ const GAME_CONTROLS = {
     "resetScoreBtn",
   ],
 };
-// LOGIKA UNTUK RESET HIGH SCORE
 document.getElementById("resetScoreBtn").addEventListener("click", () => {
-  // Pastikan tidak sedang bermain untuk menghindari ketidaksengajaan tertekan
   if (gameState.isPlaying) return;
 
-  const konfirmasi = confirm(
-    "Apakah kamu yakin ingin mereset High Score kembali ke nol?",
-  );
-  if (konfirmasi) {
-    localStorage.removeItem("miku_hi_score");
-    gameState.hiScore = 0;
-    document.getElementById("hiScoreText").innerText = "00000";
-  }
+  meelConfirm({
+    title: "Reset High Score",
+    text: "Apakah kamu yakin ingin mereset High Score kembali ke nol?",
+    confirmButtonText: "RESET",
+  }).then((konfirmasi) => {
+    if (konfirmasi) {
+      localStorage.removeItem("miku_hi_score");
+      gameState.hiScore = 0;
+      document.getElementById("hiScoreText").innerText = "00000";
+    }
+  });
 });
-// LOGIKA MANUALLY STOP/RESET RUNNING GAME
 document.getElementById("resetGameBtn").addEventListener("click", () => {
-  // Validasi jika game memang sedang tidak berjalan
   if (!gameState.isPlaying) {
-    alert("Tidak ada permainan yang sedang berjalan!");
+    meelAlert({
+      title: "Info",
+      text: "Tidak ada permainan yang sedang berjalan!",
+      icon: "info",
+    });
     return;
   }
 
-  const konfirmasi = confirm(
-    "Apakah kamu ingin menghentikan permainan yang sedang berjalan?",
-  );
-  if (konfirmasi) {
-    endGame(); // Memicu kondisi Game Over agar panel cheat terbuka kembali
-  }
+  meelConfirm({
+    title: "Hentikan Game",
+    text: "Apakah kamu ingin menghentikan permainan yang sedang berjalan?",
+    confirmButtonText: "HENTIKAN",
+  }).then((konfirmasi) => {
+    if (konfirmasi) {
+      endGame();
+    }
+  });
 });
-// Fungsi Helper untuk mengunci/membuka UI
 function setGameplayControlsLocked(isLocked) {
   GAME_CONTROLS.lockableToggles.forEach((id) => {
     const toggleBtn = document.getElementById(id);
     if (!toggleBtn) return;
-
     toggleBtn.disabled = isLocked;
     if (isLocked) {
       toggleBtn.parentElement.classList.add("opacity-50", "cursor-not-allowed");
@@ -87,16 +80,12 @@ function setGameplayControlsLocked(isLocked) {
     }
   });
 }
-
-// 3. VARIABEL POINTER GAMBAR (Aset bersumber dari assets.js)
 let activeImgRun1 = imgMikuRun1;
 let activeImgRun2 = imgMikuRun2;
 let activeImgJump = imgMikuJump;
 let activeImgDuck = imgMikuDuck;
 let activeImgObstacleDarat = imgNegi;
 let activeImgObstacleUdara = imgSpeakerMiku;
-
-// Render Chibi SVG di Start Screen sesuai tema aktif
 function renderStartScreenChibi() {
   const chibiContainer = document.getElementById("chibiIconContainer");
   if (!gameState.isTetoActive) {
@@ -106,7 +95,6 @@ function renderStartScreenChibi() {
   }
 }
 
-// 4. EVENT LISTENERS PANEL CHEAT & TEMA
 document.getElementById("themeToggle").addEventListener("change", (e) => {
   gameState.isTetoActive = e.target.checked;
   if (gameState.isTetoActive) {
@@ -124,14 +112,11 @@ document.getElementById("themeToggle").addEventListener("change", (e) => {
     activeImgObstacleDarat = imgNegi;
     activeImgObstacleUdara = imgSpeakerMiku;
   }
-
-  // Update UI Colors
-  const root = document.documentElement;
+    const root = document.documentElement;
   const title = document.getElementById("gameTitle");
   const desc = document.getElementById("gameDescription");
   const sync = document.getElementById("syncStatus");
   const subTag = document.getElementById("subTitleTag");
-
   if (gameState.isTetoActive) {
     root.style.setProperty("--theme-primary", "#FF5E7E");
     root.style.setProperty("--theme-glow", "rgba(255, 94, 126, 0.15)");
@@ -166,16 +151,12 @@ document.getElementById("themeToggle").addEventListener("change", (e) => {
     desc.innerText = "Lompati Negi bersama Diva Virtual ter-HD abad ini!";
     sync.className = "text-teal-400 transition-colors";
   }
-
   renderStartScreenChibi();
   if (!gameState.isPlaying) {
     miku = new Miku();
     miku.y = 220 - miku.height;
   }
-});
-
-// Listener Cheat
-document
+});  document
   .getElementById("godModeToggle")
   .addEventListener("change", (e) => (cheatState.godMode = e.target.checked));
 document
@@ -186,11 +167,9 @@ document
   );
 document.getElementById("moonGravityToggle").addEventListener("change", (e) => {
   cheatState.moonGravity = e.target.checked;
-  gameState.gravityValue = cheatState.moonGravity ? 0.25 : 0.6; // Gravitasi lebih pelan
+  gameState.gravityValue = cheatState.moonGravity ? 0.25 : 0.6;
   if (miku) miku.gravity = gameState.gravityValue;
 });
-
-// 5. GAME CLASSES
 class Miku {
   constructor() {
     this.x = 50;
@@ -199,38 +178,48 @@ class Miku {
     this.height = 66;
     this.vy = 0;
     this.gravity = gameState.gravityValue;
-    this.jumpForce = cheatState.moonGravity ? -8 : -12; // Lompatan disesuaikan dengan gravitasi
+    this.jumpForce = cheatState.moonGravity ? -8 : -12;
     this.isJumping = false;
     this.isDucking = false;
     this.runFrame = 0;
     this.animTimer = 0;
+    
+    this.scaleY = 1;
+    this.scaleX = 1;
   }
-
   jump() {
     if (!this.isJumping && !this.isDucking) {
       this.vy = this.jumpForce;
       this.isJumping = true;
+      
+      this.scaleY = 1.18;
+      this.scaleX = 0.86;
     }
   }
-
   duck(state) {
     if (!this.isJumping) {
       this.isDucking = state;
       this.height = state ? 46 : 66;
     }
   }
-
   update() {
     this.vy += this.gravity;
     this.y += this.vy;
-
     const groundY = 220 - this.height;
+    const wasAirborne = this.isJumping;
     if (this.y >= groundY) {
       this.y = groundY;
       this.vy = 0;
       this.isJumping = false;
+      if (wasAirborne) {
+        
+        this.scaleY = 0.82;
+        this.scaleX = 1.16;
+      }
     }
-
+    
+    this.scaleY += (1 - this.scaleY) * 0.18;
+    this.scaleX += (1 - this.scaleX) * 0.18;
     if (!this.isJumping && !this.isDucking) {
       this.animTimer++;
       if (this.animTimer > 7) {
@@ -239,9 +228,14 @@ class Miku {
       }
     }
   }
-
   draw() {
     ctx.save();
+    
+    const cx = this.x + this.width / 2;
+    const bottom = this.y + this.height;
+    ctx.translate(cx, bottom);
+    ctx.scale(this.scaleX, this.scaleY);
+    ctx.translate(-cx, -bottom);
     if (this.isJumping) {
       ctx.drawImage(activeImgJump, this.x, this.y, this.width, this.height);
     } else if (this.isDucking) {
@@ -253,7 +247,6 @@ class Miku {
     ctx.restore();
   }
 }
-
 class Obstacle {
   constructor(type) {
     this.type = type;
@@ -281,7 +274,6 @@ class Obstacle {
     );
   }
 }
-
 class BackgroundItem {
   constructor(type) {
     this.type = type;
@@ -320,14 +312,11 @@ class BackgroundItem {
     }
   }
 }
-
-// 6. INITIALIZATION & CORE LOGIC
 let miku;
 let obstacles = [];
 let bgItems = [];
 let obstacleTimer = 0;
 let nextObstacleInterval = 100;
-
 function resetGame() {
   miku = new Miku();
   obstacles = [];
@@ -338,25 +327,19 @@ function resetGame() {
   nextObstacleInterval = 100;
   gameState.isGameOver = false;
   gameState.isPlaying = true;
-
   for (let i = 0; i < 4; i++) {
     let cloud = new BackgroundItem("cloud");
     cloud.x = Math.random() * canvas.width;
     bgItems.push(cloud);
   }
-
   document.getElementById("gameOverScreen").classList.add("hidden");
   document.getElementById("startScreen").classList.add("hidden");
-
-  // Kunci semua tombol kontrol UI
   setGameplayControlsLocked(true);
 }
-
 function endGame() {
   gameState.isGameOver = true;
   gameState.isPlaying = false;
   document.getElementById("gameOverScreen").classList.remove("hidden");
-
   let finalScore = Math.floor(gameState.score);
   if (finalScore > gameState.hiScore) {
     gameState.hiScore = finalScore;
@@ -365,11 +348,8 @@ function endGame() {
       gameState.hiScore,
     ).padStart(5, "0");
   }
-
-  // Buka semua tombol kontrol UI
   setGameplayControlsLocked(false);
 }
-
 function checkCollision(rect1, rect2) {
   const paddingX = 8;
   const paddingY = 6;
@@ -380,11 +360,9 @@ function checkCollision(rect1, rect2) {
     rect1.y + rect1.height - paddingY > rect2.y + paddingY
   );
 }
-
 function gameLoop() {
   ctx.fillStyle = "#080b11";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.strokeStyle = gameState.isTetoActive
     ? "rgba(255, 94, 126, 0.25)"
     : "rgba(57, 197, 187, 0.25)";
@@ -393,7 +371,6 @@ function gameLoop() {
   ctx.moveTo(0, 220);
   ctx.lineTo(canvas.width, 220);
   ctx.stroke();
-
   let gridLineOffset = (Date.now() / 25) % 40;
   ctx.strokeStyle = gameState.isTetoActive
     ? "rgba(255, 94, 126, 0.09)"
@@ -404,7 +381,6 @@ function gameLoop() {
     ctx.lineTo(x - 55, canvas.height);
     ctx.stroke();
   }
-
   if (gameState.isPlaying && !gameState.isGameOver) {
     bgItems.forEach((item, index) => {
       item.update();
@@ -414,7 +390,6 @@ function gameLoop() {
         bgItems.push(new BackgroundItem("cloud"));
       }
     });
-
     obstacleTimer++;
     if (obstacleTimer >= nextObstacleInterval) {
       const type = Math.random() > 0.4 ? "darat" : "udara";
@@ -426,26 +401,20 @@ function gameLoop() {
         Math.floor(Math.random() * 45);
       nextObstacleInterval = Math.max(50, rawInterval);
     }
-
     obstacles.forEach((obs, index) => {
       obs.update();
       obs.draw();
       if (obs.x + obs.width < 0) obstacles.splice(index, 1);
-
-      // Implementasi tabrakan dan God Mode
       if (checkCollision(miku, obs) && !cheatState.godMode) {
         endGame();
       }
     });
-
     miku.update();
     miku.draw();
-
     gameState.score += cheatState.hyperSpeed ? 0.45 : 0.15;
     document.getElementById("scoreText").innerText = String(
       Math.floor(gameState.score),
     ).padStart(5, "0");
-
     if (
       !cheatState.hyperSpeed &&
       Math.floor(gameState.score) % 100 === 0 &&
@@ -458,11 +427,8 @@ function gameLoop() {
     bgItems.forEach((item) => item.draw());
     obstacles.forEach((obs) => obs.draw());
   }
-
   requestAnimationFrame(gameLoop);
 }
-
-// 7. INPUT HANDLING
 const keys = {};
 window.addEventListener("keydown", (e) => {
   keys[e.code] = true;
@@ -477,12 +443,10 @@ window.addEventListener("keydown", (e) => {
     if (gameState.isPlaying && miku) miku.duck(true);
   }
 });
-
 window.addEventListener("keyup", (e) => {
   keys[e.code] = false;
   if (e.code === "ArrowDown" && gameState.isPlaying && miku) miku.duck(false);
 });
-
 canvas.addEventListener(
   "touchstart",
   (e) => {
@@ -492,13 +456,11 @@ canvas.addEventListener(
   },
   { passive: false },
 );
-
 document.getElementById("mobileJump").addEventListener("touchstart", (e) => {
   e.preventDefault();
   if (!gameState.isPlaying) resetGame();
   else miku.jump();
 });
-
 document.getElementById("mobileDuck").addEventListener("touchstart", (e) => {
   e.preventDefault();
   if (miku) miku.duck(true);
@@ -512,8 +474,6 @@ document.getElementById("restartBtn").addEventListener("click", resetGame);
 document.getElementById("startScreen").addEventListener("click", () => {
   if (!gameState.isPlaying) resetGame();
 });
-
-// START
 window.onload = function () {
   renderStartScreenChibi();
   miku = new Miku();

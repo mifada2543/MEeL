@@ -14,14 +14,14 @@ class MediaLibraryTest extends TestCase
     {
         parent::setUp();
 
-        // Create a mock mysqli connection
+        
         $this->mockConn = $this->createMock(mysqli::class);
         $this->library = new MediaLibrary($this->mockConn);
     }
 
     public function testGetCountsReturnsArrayWithKeys(): void
     {
-        // getCounts() may hit cache or DB - just verify structure
+        
         $result = $this->library->getCounts();
         $this->assertArrayHasKey('music', $result);
         $this->assertArrayHasKey('video', $result);
@@ -31,7 +31,7 @@ class MediaLibraryTest extends TestCase
 
     public function testClearCountsCacheIsSafe(): void
     {
-        // Should not throw even if file doesn't exist or isn't writable
+
         MediaLibrary::clearCountsCache();
         $this->assertTrue(true);
     }
@@ -47,7 +47,7 @@ class MediaLibraryTest extends TestCase
         $this->assertSame(50, $result['total']);
         $this->assertSame(1, $result['page']);
         $this->assertSame(15, $result['per_page']);
-        $this->assertSame(4, $result['total_pages']); // ceil(50/15) = 4
+        $this->assertSame(4, $result['total_pages']); 
         $this->assertSame(1, $result['from']);
         $this->assertSame(15, $result['to']);
     }
@@ -71,9 +71,9 @@ class MediaLibraryTest extends TestCase
         $method = $reflection->getMethod('paginateResult');
         $method->setAccessible(true);
 
-        // Page 10 but only 4 pages exist
+        
         $result = $method->invokeArgs($this->library, [null, 50, 10, 15]);
-        $this->assertSame(4, $result['page']); // Clamped to max
+        $this->assertSame(4, $result['page']); 
     }
 
     public function testPaginateResultLargeNumbers(): void
@@ -83,8 +83,8 @@ class MediaLibraryTest extends TestCase
         $method->setAccessible(true);
 
         $result = $method->invokeArgs($this->library, [null, 1000, 50, 20]);
-        $this->assertSame(50, $result['total_pages']); // ceil(1000/20) = 50
-        $this->assertSame(50, $result['page']); // Clamped to max page
+        $this->assertSame(50, $result['total_pages']); 
+        $this->assertSame(50, $result['page']); 
     }
 
     public function testPaginateResultEdgeCase(): void
@@ -93,13 +93,13 @@ class MediaLibraryTest extends TestCase
         $method = $reflection->getMethod('paginateResult');
         $method->setAccessible(true);
 
-        // 0 total page
+        
         $result = $method->invokeArgs($this->library, [null, 0, 1, 15]);
         $this->assertSame(1, $result['total_pages']);
         $this->assertSame(0, $result['total']);
     }
 
-    // ─── BookRepository Tests ────────────────────────────────────────────────
+    
 
     public function testBookRepositoryConstructs(): void
     {

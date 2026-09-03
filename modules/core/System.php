@@ -1,28 +1,25 @@
 <?php
-// File: auth/System.php
 
-require_once __DIR__ . '/RateLimiter.php';
+require_once __DIR__ . '/../auth/RateLimiter.php';
 
 class System
 {
-    private $conn;
+    private mysqli $conn;
 
-    public function __construct($db_connection)
+    public function __construct(mysqli $db_connection)
     {
         $this->conn = $db_connection;
     }
-
-    // ─── MONITORING ──────────────────────────────────────────────────────────
 
     public function getActiveQueues(): array
     {
         $active_queues = [];
 
-        // Advanced Upload (yt-dlp)
-        $res1 = $this->conn->query("SELECT q.id, q.url, q.media_type, q.status, q.created_at, u.username, 'download' as task_type 
-                                    FROM upload_queue q 
-                                    JOIN users u ON q.user_id = u.id 
-                                    WHERE q.status = 'processing' 
+        
+        $res1 = $this->conn->query("SELECT q.id, q.url, q.media_type, q.status, q.created_at, u.username, 'download' as task_type
+                                    FROM upload_queue q
+                                    JOIN users u ON q.user_id = u.id
+                                    WHERE q.status = 'processing'
                                     ORDER BY q.created_at ASC");
         if ($res1) {
             while ($row = $res1->fetch_assoc()) {
@@ -30,11 +27,11 @@ class System
             }
         }
 
-        // Transcoder (ffmpeg)
-        $res2 = $this->conn->query("SELECT q.id, q.status, q.created_at, u.username, 'transcode' as task_type, q.user_id 
-                                    FROM transcode_queue q 
-                                    JOIN users u ON q.user_id = u.id 
-                                    WHERE q.status = 'processing' 
+        
+        $res2 = $this->conn->query("SELECT q.id, q.status, q.created_at, u.username, 'transcode' as task_type, q.user_id
+                                    FROM transcode_queue q
+                                    JOIN users u ON q.user_id = u.id
+                                    WHERE q.status = 'processing'
                                     ORDER BY q.created_at ASC");
         if ($res2) {
             while ($row = $res2->fetch_assoc()) {
@@ -44,30 +41,11 @@ class System
             }
         }
 
-        // Sort by created_at
         usort($active_queues, function ($a, $b) {
             return strtotime($a['created_at']) - strtotime($b['created_at']);
         });
 
         return $active_queues;
-    }
-
-    public function getTodayUploadStats(): array
-    {
-        $stats = ['video' => 0, 'music' => 0, 'drive' => 0, 'total' => 0];
-
-        $q_vid = $this->conn->query("SELECT COUNT(*) FROM video WHERE DATE(upload_date) = CURDATE()");
-        $stats['video'] = $q_vid ? (int)$q_vid->fetch_row()[0] : 0;
-
-        $q_mus = $this->conn->query("SELECT COUNT(*) FROM music WHERE DATE(upload_date) = CURDATE()");
-        $stats['music'] = $q_mus ? (int)$q_mus->fetch_row()[0] : 0;
-
-        $q_drv = $this->conn->query("SELECT COUNT(*) FROM drive_files WHERE DATE(upload_date) = CURDATE()");
-        $stats['drive'] = $q_drv ? (int)$q_drv->fetch_row()[0] : 0;
-
-        $stats['total'] = $stats['video'] + $stats['music'] + $stats['drive'];
-
-        return $stats;
     }
 
     private static function getFolderSizeSys(string $path): float
@@ -76,7 +54,7 @@ class System
         if (!$full_path || !file_exists($full_path)) {
             return 0.0;
         }
-        // Pastikan helpers.php termuat (dir_size sudah memiliki cache + fallback)
+
         require_once __DIR__ . '/helpers.php';
         return dir_size($full_path);
     }
@@ -84,21 +62,27 @@ class System
     public function getStorageUsage(): array
     {
         $project_root = dirname(__DIR__, 2);
+        require_once __DIR__ . '/helpers.php';
 
         $ssd_free  = @disk_free_space("/") / (1024 ** 3);
         $ssd_total = @disk_total_space("/") / (1024 ** 3);
         $ssd_used  = $ssd_total - $ssd_free;
         $ssd_perc  = ($ssd_total > 0) ? ($ssd_used / $ssd_total) * 100 : 0;
 
-        $hdd_path  = $project_root . '/video/upload';
+        $video_base = meel_media_base_path('video');
+        $music_base = meel_media_base_path('music');
+        $books_base = meel_media_base_path('books');
+        $drive_base = meel_drive_base_path();
+
+        $hdd_path  = $video_base;
         $hdd_free  = @disk_free_space($hdd_path) / (1024 ** 3);
         $hdd_total = @disk_total_space($hdd_path) / (1024 ** 3);
 
-        $sz_vid   = self::getFolderSizeSys($project_root . '/video/upload') / (1024 ** 3);
-        $sz_mus   = self::getFolderSizeSys($project_root . '/music/upload') / (1024 ** 3);
-        $sz_book  = self::getFolderSizeSys($project_root . '/books/upload') / (1024 ** 3);
-        $sz_d_pub = self::getFolderSizeSys($project_root . '/data_drive/public') / (1024 ** 3);
-        $sz_d_prv = self::getFolderSizeSys($project_root . '/data_drive/private_admins') / (1024 ** 3);
+        $sz_vid   = self::getFolderSizeSys($video_base) / (1024 ** 3);
+        $sz_mus   = self::getFolderSizeSys($music_base) / (1024 ** 3);
+        $sz_book  = self::getFolderSizeSys($books_base) / (1024 ** 3);
+        $sz_d_pub = self::getFolderSizeSys($drive_base . '/public') / (1024 ** 3);
+        $sz_d_prv = self::getFolderSizeSys($drive_base . '/private_admins') / (1024 ** 3);
 
         $sz_drive_total = $sz_d_pub + $sz_d_prv;
         $p_vid   = ($hdd_total > 0) ? ($sz_vid / $hdd_total) * 100 : 0;
@@ -134,34 +118,30 @@ class System
         ];
     }
 
-    // ─── LIMITING ────────────────────────────────────────────────────────────
+    
 
     public function isServerBusy(): bool
     {
-        // Jika total proses transcode + download >= 2, anggap sibuk
         $active = count($this->getActiveQueues());
         return $active >= 2;
     }
 
     public function checkRateLimit(int $user_id, string $type, string $user_role): array
     {
-        // Admin tanpa batas
         if ($user_role === 'admin') return ['allowed' => true];
 
-        // Validasi tabel
         $allowed_tables = ['music', 'video', 'drive_files'];
         if (!in_array($type, $allowed_tables)) return ['allowed' => false, 'minutes' => 99];
 
-        $max_upload = 2; // Default 2 upload per jam
+        $max_upload = 2;
         if ($type === 'drive_files') {
-            $max_upload = 10; // Drive biasanya lebih banyak file kecil
+            $max_upload = 10;
         }
 
-        // Gunakan method pusat dari RateLimiter untuk role-based adjustment
         $max_upload = RateLimiter::getRoleLimit($max_upload, $user_role);
 
-        $sql = "SELECT upload_date FROM $type 
-                WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR 
+        $sql = "SELECT upload_date FROM $type
+                WHERE user_id = ? AND upload_date > NOW() - INTERVAL 1 HOUR
                 ORDER BY upload_date ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $user_id);
@@ -177,7 +157,143 @@ class System
         return ['allowed' => true];
     }
 
-    // ─── MANAGEMENT ──────────────────────────────────────────────────────────
+    public function getServerStats(): array
+    {
+        $info = $this->getCachedServerInfo();
+
+        $load = sys_getloadavg();
+        $cpu_load_1m  = $load[0] ?? 0;
+        $cpu_load_5m  = $load[1] ?? 0;
+        $cpu_load_15m = $load[2] ?? 0;
+
+        $cpu_cores = $info['cores'];
+        $cpu_perc  = ($cpu_cores > 0) ? round(($cpu_load_1m / $cpu_cores) * 100, 1) : 0;
+        $cpu_perc  = min($cpu_perc, 100);
+
+        $meminfo    = self::readProcMeminfo();
+        $mem_total  = $meminfo['MemTotal'] ?? 0;
+        $mem_avail  = $meminfo['MemAvailable'] ?? 0;
+        $mem_used   = $mem_total - $mem_avail;
+        $mem_perc   = ($mem_total > 0) ? round(($mem_used / $mem_total) * 100, 1) : 0;
+
+        $swap_total = $meminfo['SwapTotal'] ?? 0;
+        $swap_free  = $meminfo['SwapFree'] ?? 0;
+        $swap_used  = $swap_total - $swap_free;
+        $swap_perc  = ($swap_total > 0) ? round(($swap_used / $swap_total) * 100, 1) : 0;
+
+        $uptime_raw = @file_get_contents('/proc/uptime');
+        $uptime_sec = (float) explode(' ', (string) $uptime_raw)[0];
+        $days  = floor($uptime_sec / 86400);
+        $hours = floor(($uptime_sec % 86400) / 3600);
+        $mins  = floor(($uptime_sec % 3600) / 60);
+
+        $net_rx = 0;
+        $net_tx = 0;
+        $net_lines = @file('/proc/net/dev');
+        if ($net_lines) {
+            foreach ($net_lines as $line) {
+                if (preg_match('/^\s*([a-zA-Z0-9_.-]+):\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)/', $line, $m)) {
+                    if ($m[1] !== 'lo') {
+                        $net_rx += (int)$m[2];
+                        $net_tx += (int)$m[3];
+                    }
+                }
+            }
+        }
+
+        $proc_list  = @glob('/proc/[0-9]*');
+        $proc_count = is_array($proc_list) ? count($proc_list) : 0;
+
+        return [
+            'cpu' => [
+                'cores'       => $cpu_cores,
+                'load_1m'     => round($cpu_load_1m, 2),
+                'load_5m'     => round($cpu_load_5m, 2),
+                'load_15m'    => round($cpu_load_15m, 2),
+                'usage_perc'  => $cpu_perc,
+            ],
+            'ram' => [
+                'total'  => $mem_total,
+                'used'   => $mem_used,
+                'avail'  => $mem_avail,
+                'usage_perc' => $mem_perc,
+            ],
+            'swap' => [
+                'total'  => $swap_total,
+                'used'   => $swap_used,
+                'usage_perc' => $swap_perc,
+            ],
+            'uptime' => [
+                'seconds' => (int) $uptime_sec,
+                'days'    => $days,
+                'hours'   => $hours,
+                'mins'    => $mins,
+                'text'    => "{$days}d {$hours}h {$mins}m",
+            ],
+            'network' => [
+                'rx' => $net_rx,
+                'tx' => $net_tx,
+            ],
+            'info' => [
+                'hostname'    => $info['hostname'],
+                'os'          => $info['os'],
+                'kernel'      => $info['kernel'],
+                'php_version' => $info['php_version'],
+                'processes'   => $proc_count,
+            ],
+        ];
+    }
+
+    
+
+    private static function readProcMeminfo(): array
+    {
+        $lines = @file('/proc/meminfo');
+        if (!$lines) {
+            return [];
+        }
+        $info = [];
+        foreach ($lines as $line) {
+            if (preg_match('/^(\w+):\s+(\d+)\s*kB/', $line, $m)) {
+                $info[$m[1]] = (int)$m[2] * 1024;
+            }
+        }
+        return $info;
+    }
+
+    
+
+    private function getCachedServerInfo(): array
+    {
+        $cache_file = defined('MEEL_SERVER_STATS_CACHE')
+            ? MEEL_SERVER_STATS_CACHE
+            : __DIR__ . '/../../temp/cache/server_stats_info.json';
+        $cache_ttl  = 300;
+
+        if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
+            $cached = json_decode((string) file_get_contents($cache_file), true);
+            if (is_array($cached)
+                && isset($cached['hostname'], $cached['os'], $cached['kernel'], $cached['php_version'], $cached['cores'])) {
+                return $cached;
+            }
+        }
+
+        $info = [
+            'hostname'    => @exec('hostname') ?: gethostname(),
+            'os'          => @exec('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d\" -f2') ?: PHP_OS,
+            'kernel'      => @exec('uname -r') ?: PHP_OS,
+            'php_version' => phpversion(),
+            'cores'       => (int) (@exec('nproc') ?: 1),
+        ];
+
+        $cache_dir = dirname($cache_file);
+        if (!is_dir($cache_dir)) {
+            @mkdir($cache_dir, 0755, true);
+        }
+        @file_put_contents($cache_file, json_encode($info, JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+        return $info;
+    }
 
     public function cleanStuckQueues(): int
     {
@@ -198,7 +314,29 @@ class System
     }
     public function forceStopQueue(int $id, string $task_type): bool
     {
-        // Tentukan tabel berdasarkan jenis task
+        
+        
+        $pid_dir = '/tmp/meel_pids';
+        $pid_file = $pid_dir . "/{$task_type}_{$id}.pid";
+        if (is_file($pid_file)) {
+            $pid = (int)@file_get_contents($pid_file);
+            @unlink($pid_file);
+            if ($pid > 0) {
+                if (function_exists('posix_kill')) {
+                    @posix_kill($pid, SIGTERM);
+                } else {
+                    @shell_exec('kill -TERM ' . $pid . ' 2>/dev/null');
+                }
+                usleep(300000);
+                if (function_exists('posix_kill')) {
+                    @posix_kill($pid, SIGKILL);
+                } else {
+                    @shell_exec('kill -KILL ' . $pid . ' 2>/dev/null');
+                }
+            }
+        }
+
+        
         if ($task_type === 'download') {
             $stmt = $this->conn->prepare("DELETE FROM upload_queue WHERE id = ?");
         } elseif ($task_type === 'transcode') {
@@ -207,7 +345,6 @@ class System
             return false;
         }
 
-        // Eksekusi penghapusan spesifik berdasarkan ID
         if ($stmt) {
             $stmt->bind_param("i", $id);
             return $stmt->execute();

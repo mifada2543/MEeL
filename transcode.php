@@ -1,10 +1,18 @@
 <?php
+set_time_limit(0);
+ignore_user_abort(false);
+@ini_set('zlib.output_compression', 'Off');
+@ob_implicit_flush(true);
+
 require_once 'modules/core/helpers.php';
 require_once 'auth/auth.php';
 require_once 'auth/config.php';
 require_once 'modules/core/Transcoder.php';
+require_once 'modules/core/BrowserProgressObserver.php';
 
-$transcoder      = new Transcoder($conn, $_SESSION['user_id']);
+
+$transcoder      = new Transcoder($conn, $_SESSION['user_id'], new BrowserProgressObserver());
+register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 $download_link   = null;
 $output_filename = "";
 $format          = "mp3";
@@ -12,38 +20,35 @@ $alert_message   = "";
 $video_title     = "";
 
 if (isset($_POST['start_transcode'])) {
-    // 🔒 FIX CSRF: Verifikasi token
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF Token tidak valid.';
     } else {
-    $video_id = (int)($_POST['video_id'] ?? 0);
-    $format   = $_POST['format'] ?? 'mp3';
+        $video_id = (int)($_POST['video_id'] ?? 0);
+        $format   = $_POST['format'] ?? 'mp3';
 
-    if ($video_id <= 0) {
-        $alert_message = 'ID Video harus berupa angka valid!';
-    } else {
-        // Ambil judul video untuk ditampilkan di hasil
-        $stmt_title = $conn->prepare("SELECT title FROM video WHERE id = ? LIMIT 1");
-        $stmt_title->bind_param("i", $video_id);
-        $stmt_title->execute();
-        $title_row  = $stmt_title->get_result()->fetch_assoc();
-        $video_title = $title_row['title'] ?? "Video #$video_id";
-
-        $result = $transcoder->transcodeVideo($video_id, $format);
-
-        if ($result['status'] === 'success') {
-            $download_link   = $result['download_link'];
-            $output_filename = $result['output_filename'];
+        if ($video_id <= 0) {
+            $alert_message = 'ID Video harus berupa angka valid!';
         } else {
-            $alert_message = $result['msg'];
+            $stmt_title = $conn->prepare("SELECT title FROM video WHERE id = ? LIMIT 1");
+            $stmt_title->bind_param("i", $video_id);
+            $stmt_title->execute();
+            $title_row  = $stmt_title->get_result()->fetch_assoc();
+            $video_title = $title_row['title'] ?? "Video #$video_id";
+
+            $result = $transcoder->transcodeVideo($video_id, $format);
+
+            if ($result['status'] === 'success') {
+                $download_link   = $result['download_link'];
+                $output_filename = $result['output_filename'];
+            } else {
+                $alert_message = $result['msg'];
+            }
         }
-    }
-    } // tutup else verify_csrf
+    } 
 }
 
 $video_id_value = isset($_GET['id']) ? (int)$_GET['id'] : "";
 
-// Format meta info
 $format_meta = [
     'mp3' => ['label' => 'MP3',  'desc' => '128 kbps · MPEG Audio',    'color' => '#ef4444', 'dim' => 'rgba(239,68,68,.12)',  'icon' => 'music', 'textClass' => 'text-red-500'],
     'ogg' => ['label' => 'OGG',  'desc' => 'Opus · Efisien & Modern',  'color' => '#f97316', 'dim' => 'rgba(249,115,22,.12)', 'icon' => 'radio', 'textClass' => 'text-orange-500'],
@@ -55,26 +60,17 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL Transcoder - Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.">
-    <meta property="og:title" content="MEeL Transcoder">
-    <meta property="og:description" content="Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>MEeL Transcoder</title>
-    <link rel="icon" type="image/png" href="assets/MEeL.png">
-    <link rel="manifest" href="assets/manifest.json">
-    <link href="assets/css/fonts.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
-    <script src="assets/js/sweetalert2.all.min.js"></script>
-    <script src="assets/js/script.min.js"></script>
-
-    <link href="assets/css/tailwind.min.css" rel="stylesheet">
+    <?php
+    $_META_TITLE = 'MEeL Transcoder';
+    $_META_DESC  = 'MEeL Transcoder - Konversi video ke format audio MP3, OGG, dan M4A. Ekstrak audio dari library video dengan mudah.';
+    include __DIR__ . '/partials/link.php';
+    $scripts_root = '';
+    include __DIR__ . '/partials/scripts.php';
+    ?>
+    <link href="assets/css/font.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
     <style>
-        /* Efek khusus murni CSS yang sulit dilakukan dengan utilitas Tailwind standar */
+        
         body::before {
             content: '';
             position: fixed;
@@ -95,15 +91,32 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
             z-index: 100;
             animation: glow 3s ease-in-out infinite;
         }
+
+        
+        .has-\[\:checked\]\:border-green-500\/40:has(:checked) {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .has-\[\:checked\]\:bg-green-500\/10:has(:checked) {
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+
+        .group:has(:checked) .group-has-\[\:checked\]\:bg-green-500\/15 {
+            background-color: rgba(34, 197, 94, 0.15);
+        }
+
+        .group:has(:checked) .group-has-\[\:checked\]\:text-green-500 {
+            color: rgb(34 197 94);
+        }
     </style>
 </head>
 
 <body class="bg-bg text-[#c9cdd6] font-sans min-h-screen flex flex-col relative">
 
     <nav class="sticky top-0 z-50 h-[52px] bg-[#080b11]/90 backdrop-blur-md border-b border-white/[.06] flex items-center px-5 gap-2.5">
-        <a href="index.php" class="font-syne text-[13px] font-extrabold text-[#f0f2f7] no-underline tracking-[.05em]">MEeL<span class="text-red-500">.</span></a>
+        <a href="./" class="font-syne text-[13px] font-extrabold text-[#f0f2f7] no-underline tracking-[.05em]">MEeL<span class="text-red-500">.</span></a>
         <div class="w-px h-[18px] bg-white/10"></div>
-        <a href="video/index.php" class="text-[11px] font-semibold text-muted no-underline transition-colors hover:text-red-500">Video</a>
+        <a href="video/beranda" class="text-[11px] font-semibold text-muted no-underline transition-colors hover:text-red-500">Video</a>
         <span class="text-[#2c3440] text-[13px]">›</span>
         <span class="text-[11px] font-semibold text-[#f0f2f7]">Transcoder</span>
     </nav>
@@ -138,19 +151,18 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                                 <?= htmlspecialchars(mb_substr($video_title, 0, 40)) ?><?= mb_strlen($video_title) > 40 ? '…' : '' ?>
                             </div>
                         <?php endif; ?>
-
                         <div class="text-[11px] text-muted max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap">
                             <?= htmlspecialchars($output_filename) ?>
                         </div>
                     </div>
 
-                    <a href="<?= htmlspecialchars($download_link) ?>" download="<?= htmlspecialchars($output_filename) ?>" class="w-full flex items-center justify-center gap-2.5 p-4 bg-green-500 text-black font-syne text-[12px] font-extrabold tracking-[.12em] uppercase rounded-xl transition-all shadow-[0_4px_20px_rgba(34,197,94,.22)] hover:bg-green-400 hover:-translate-y-[1px] hover:shadow-[0_8px_28px_rgba(34,197,94,.32)]">
+                    <a href="<?= htmlspecialchars($download_link) ?>" download="<?= htmlspecialchars(($video_title ?: pathinfo($output_filename, PATHINFO_FILENAME)) . '.' . pathinfo($output_filename, PATHINFO_EXTENSION)) ?>" class="w-full flex items-center justify-center gap-2.5 p-4 bg-green-500 text-black font-syne text-[12px] font-extrabold tracking-[.12em] uppercase rounded-xl transition-all shadow-[0_4px_20px_rgba(34,197,94,.22)] hover:bg-green-400 hover:-translate-y-[1px] hover:shadow-[0_8px_28px_rgba(34,197,94,.32)]">
                         <i data-lucide="download" class="w-[15px] h-[15px]"></i>
                         Unduh Sekarang
                     </a>
 
                     <div class="text-center">
-                        <a href="transcode.php" class="inline-block text-[10px] font-bold uppercase tracking-[.14em] text-muted transition-colors hover:text-[#f0f2f7]">
+                        <a href="transcode" class="inline-block text-[10px] font-bold uppercase tracking-[.14em] text-muted transition-colors hover:text-[#f0f2f7]">
                             ← Transcode video lain
                         </a>
                     </div>
@@ -188,30 +200,30 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                                         'icon' => 'music',
                                         'name' => 'MP3',
                                         'desc' => "128kbps\nMPEG",
-                                        'activeBorder' => 'has-[:checked]:border-red-500/40',
-                                        'activeBg' => 'has-[:checked]:bg-red-500/10',
-                                        'iconBg' => 'group-has-[:checked]:bg-red-500/15',
-                                        'textActive' => 'group-has-[:checked]:text-red-500',
+                                        'activeBorder' => 'has-[:checked]:border-green-500/40',
+                                        'activeBg' => 'has-[:checked]:bg-green-500/10',
+                                        'iconBg' => 'group-has-[:checked]:bg-green-500/15',
+                                        'textActive' => 'group-has-[:checked]:text-green-500',
                                         'color' => 'text-red-500'
                                     ],
                                     'ogg' => [
                                         'icon' => 'radio',
                                         'name' => 'OGG',
                                         'desc' => "Opus\nModern",
-                                        'activeBorder' => 'has-[:checked]:border-orange-500/40',
-                                        'activeBg' => 'has-[:checked]:bg-orange-500/10',
-                                        'iconBg' => 'group-has-[:checked]:bg-orange-500/15',
-                                        'textActive' => 'group-has-[:checked]:text-orange-500',
+                                        'activeBorder' => 'has-[:checked]:border-green-500/40',
+                                        'activeBg' => 'has-[:checked]:bg-green-500/10',
+                                        'iconBg' => 'group-has-[:checked]:bg-green-500/15',
+                                        'textActive' => 'group-has-[:checked]:text-green-500',
                                         'color' => 'text-orange-500'
                                     ],
                                     'm4a' => [
                                         'icon' => 'headphones',
                                         'name' => 'M4A',
                                         'desc' => "AAC\nApple",
-                                        'activeBorder' => 'has-[:checked]:border-purple-400/40',
-                                        'activeBg' => 'has-[:checked]:bg-purple-400/10',
-                                        'iconBg' => 'group-has-[:checked]:bg-purple-400/15',
-                                        'textActive' => 'group-has-[:checked]:text-purple-400',
+                                        'activeBorder' => 'has-[:checked]:border-green-500/40',
+                                        'activeBg' => 'has-[:checked]:bg-green-500/10',
+                                        'iconBg' => 'group-has-[:checked]:bg-green-500/15',
+                                        'textActive' => 'group-has-[:checked]:text-green-500',
                                         'color' => 'text-purple-400'
                                     ],
                                 ];
@@ -241,18 +253,16 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                 </div>
 
             <?php endif; ?>
-
             <div class="h-px bg-white/[.06]"></div>
             <div class="p-4 pb-5 flex items-center justify-center gap-5">
-                <a href="video/index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Video</a>
-                <a href="music/index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Musik</a>
-                <a href="index.php" class="text-[10px] font-bold uppercase tracking-[.14em] text-red-500 no-underline transition-colors hover:text-red-400">Portal</a>
+                <a href="video/beranda" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Video</a>
+                <a href="music/beranda" class="text-[10px] font-bold uppercase tracking-[.14em] text-muted no-underline transition-colors hover:text-[#f0f2f7]">Musik</a>
+                <a href="./" class="text-[10px] font-bold uppercase tracking-[.14em] text-red-500 no-underline transition-colors hover:text-red-400">Portal</a>
             </div>
         </div>
     </div>
 
     <?php include 'partials/footer.php'; ?>
-
     <script>
         lucide.createIcons();
 
@@ -264,8 +274,7 @@ $chosen = $format_meta[$format] ?? $format_meta['mp3'];
                 redirectUrl: 'transcode.php<?= $video_id_value ? "?id=$video_id_value" : "" ?>'
             });
         <?php endif; ?>
-
-        // ── Submit animation ──
+        
         function startProcess() {
             const btn = document.getElementById('btn-submit');
             const progress = document.getElementById('progress-strip');

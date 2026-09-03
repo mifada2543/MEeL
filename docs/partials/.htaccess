@@ -1,10 +1,13 @@
-# Deny all web access — PHP include-only files
+# Deny web access — partial HTML (head.html, nav.html, footer.html) boleh
+# di-fetch oleh docs viewer (docs.js); file lain (PHP, dll.) diblokir.
 Options -Indexes
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    # Izinkan partial .html yang di-fetch docs viewer; blokir semua file lain
+    RewriteCond %{REQUEST_URI} !\.html?$ [NC]
     RewriteCond %{REQUEST_URI} ^(.*/)[^/]+/?$
-    RewriteRule ^ %1err/denied.php [R=303,L]
+    RewriteRule ^ - [F,L]
 </IfModule>
 
 <IfModule !mod_rewrite.c>

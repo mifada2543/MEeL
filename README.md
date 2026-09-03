@@ -14,17 +14,19 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 [![Maintenance](https://img.shields.io/badge/Maintained-Yes-22c55e?style=flat-square)](https://github.com/mifada2543/MEeL)
 [![GitHub Stars](https://img.shields.io/github/stars/mifada2543/MEeL?style=social)](https://github.com/mifada2543/MEeL)
+[![MEeL CI](https://github.com/mifada2543/MEeL-HUB/actions/workflows/ci.yml/badge.svg)](https://github.com/mifada2543/MEeL)
+
 ---
 
 ## 📖 Ikhtisar
 
-**MEeL** adalah platform media hub pribadi berbasis PHP & MySQL yang berjalan di atas Apache (XAMPP/LAMPP). Platform ini menggabungkan modul **Video**, **Music**, **Books**, dan **Cloud Drive** ke dalam antarmuka web gelap bertema monospace yang modern. Sistem ini dilengkapi dengan:
+**MEeL** adalah platform media hub pribadi berbasis PHP & MySQL yang berjalan di atas Apache (XAMPP/LAMPP). Platform ini menggabungkan modul **Video**, **Music**, **Books**, dan **Cloud Drive** ke dalam antarmuka web bertema monospace yang modern (dark & light mode). Sistem ini dilengkapi dengan:
 
 - **Streaming HLS** (HTTP Live Streaming) adaptif
 - **Transcoding otomatis** menggunakan FFmpeg
 - **Integrasi yt-dlp** untuk download via URL
 - **Manajemen file** berbasis peran (RBAC)
-- **Mini-game arcade** interaktif (Dino Run, Snake, Chess)
+- **Mini-game arcade** interaktif (9 game: Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania)
 - **Sistem keamanan** berlapis (CSRF, IP Banning, Session Management, Rate Limiting)
 - **Audit Trail** aktivitas pengguna dengan admin viewer
 - **Dashboard admin** dengan grafik aktivitas 7 hari
@@ -43,6 +45,11 @@
 | **Transisi Mulus** | Video berikutnya dimuat SPA-like tanpa reload, pertahankan fullscreen |
 | **Resume Otomatis** | Posisi terakhir disimpan via `localStorage` |
 | **Preview Thumbnail** | VTT sprite thumbnail pada seekbar |
+| **Auto-Next dengan Countdown** | Overlay YouTube-style countdown 5s + backdrop gelap + tombol batal |
+| **Mutual Exclusion Loop/AutoNext** | Auto Next ON → Loop OFF; Loop ON → Auto Next OFF |
+| **Ambient Glow** | Real-time canvas sampling → navbar glow + fullscreen bloom |
+| **Mini-Player Mode** | Picture-in-picture kustom, navigasi index tanpa reload |
+| **Seamless Recovery** | Stuck detector, waiting timeout, auto-reconnect HLS |
 
 ### 🎵 Music (Audio Platform)
 
@@ -73,9 +80,17 @@
 
 ### 🕹️ Arcade (Mini Games)
 
-- **Dino Run** — endless runner ala Chrome Dino dengan karakter Miku & Teto
-- **Chess** — permainan catur klasik dengan mode multiplayer online (LAN)
-- **Snake** — permainan Snake klasik yang nostalgia
+| Game | Deskripsi |
+|------|-----------|
+| **Miku & Teto Run** | Endless runner ala Chrome Dino dengan karakter Miku & Teto |
+| **Chess** | Catur klasik + multiplayer online (wajib login, pilih warna Putih/Hitam sebelum game dimulai) |
+| **Snake** | Permainan Snake klasik yang nostalgia |
+| **2048** | Puzzle geser & gabungkan tile hingga 2048 |
+| **Tetris** | Game blok legendaris — susun tetromino, bersihkan baris penuh |
+| **Breakout** | Hancurkan semua bata dengan bola pantul |
+| **Simon Says** | Game memori — ulangi urutan lampu yang makin panjang |
+| **Ludo** | Game papan 2–4 pemain — lempar dadu, kejar pion lawan, atau lawan Bot |
+| **MEeL!Mania** | Rhythm game 4-lane ala osu!mania (A/S/K/L + touch) — beatmap editor + upload lagu custom |
 
 ### 🔧 Fungsionalitas Umum
 
@@ -86,12 +101,13 @@
 | **Download URL** | yt-dlp + FFmpeg untuk download dari YouTube dll |
 | **Komentar** | Nested comments pada video & musik |
 | **Like/Dislike** | Interaksi sosial pada konten media |
-| **Profil User** | Avatar, bio, statistik upload |
+| **Profil User** | Avatar, bio, statistik upload, **Preference page** (theme toggle) |
+| **Light/Dark Mode** | Toggle tema via Profile page — localStorage (guest) + DB sync (login) |
 | **Mode Sehat 20-20-20** | Notifikasi istirahat mata tiap 20 menit |
 | **Autoloader PSR-4** | Auto-loading class core (`MediaLibrary`, `Uploader`, dll.) tanpa require manual |
-| **Migration System v1–v8** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, schema sync) |
+| **Migration System v1–v12** | Database schema versioning + auto-upgrade (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, index komposit, schema sync) |
 | **Base URL Portability** | `base_url()` + `MEEL_BASE_URL` constant — path konsisten di semua subdirektori |
-| **FULLTEXT Search** | Search video/music 10-100× lebih cepat via `MATCH AGAINST` (MySQL 5.7+) |
+| **FULLTEXT Search** | Search video/music/books 10-100× lebih cepat via `MATCH AGAINST` — sanitizer query + pagination (MySQL 5.7+) |
 | **Admin Panel** | Dashboard monitoring, manajemen user, queue control, activity log viewer |
 | **Role Helper** | `get_user_role()` — query role ter-cache, menghilangkan duplikasi di upload files |
 | **Redirect Guard** | Validasi URL redirect cegah open redirect |
@@ -100,6 +116,8 @@
 | **API Rate Limiting** | Proteksi endpoint dari abuse (like: 30/menit, comment: 10/menit) |
 | **Pagination Metadata** | UI menampilkan info halaman (`total_pages`, `from`, `to`) |
 | **Admin Dashboard Charts** | Chart.js 7-Day Activity Chart — views, uploads, active users |
+| **PWA Offline** | Service worker dinamis (`sw.js.php` + `SwPrecache`) — precache otomatis per modul via `manifest.php`, installable + offline support |
+| **Deployment Health Check** | `tests/check_deploy.php` — verifikasi MEEL_HDD_BASE, folder/subdirektori upload, .htaccess upload, guard symlink data_drive, mod_rewrite PWA |
 
 ---
 
@@ -111,8 +129,6 @@
 ### 🎵 Music Discovery
 ![Music Discovery](assets/img/music0.webp)
 
-> Sisanya menyusul
-
 ---
 
 ## 🛠️ Tech Stack
@@ -122,7 +138,7 @@
 | **Backend** | PHP 8.0+ | Core logic & API endpoints |
 | **Database** | MySQL 5.7+ / MariaDB 10.2+ | Relational storage & metadata |
 | **Web Server** | Apache 2.4+ | `mod_rewrite` engine |
-| **Styling** | TailwindCSS (Self-hosted, Purged) + Vanilla CSS | Dark-mode monospace theme |
+| **Styling** | TailwindCSS (Self-hosted, Purged) + Vanilla CSS | Dark & Light mode (toggle di Profile) |
 | **Interaktivitas** | HTMX + Vanilla JavaScript | AJAX SPA-like tanpa reload |
 | **Media Player** | Plyr.js + HLS.js | HLS video & audio playback |
 | **Icons** | Lucide Icons | SVG icon library |
@@ -130,8 +146,9 @@
 | **Downloader** | yt-dlp (optional) | Download media dari URL eksternal |
 | **Transliterasi** | PHP `intl` (Transliterator) | Pembersihan nama file (Romaji) |
 | **Autoloader** | Manual PSR-4-like (`modules/autoload.php`) | Auto-loading 10+ class core |
-| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v8 (FULLTEXT, FK, activity_log, schema sync) |
-| **Rate Limiting** | `modules/RateLimiter.php` | File-based rate limiter (flock safety) |
+| **Migration** | PHP-based (`database/migrate.php`) | Schema versioning v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync) |
+| **Rate Limiting** | `modules/auth/RateLimiter.php` | File-based rate limiter (flock safety) |
+| **PWA** | `sw.js.php` + `modules/core/SwPrecache.php` | Precache offline otomatis + installable |
 
 ---
 
@@ -144,11 +161,13 @@ MEeL/
 │   ├── activity_log.php   # Audit trail viewer
 │   ├── edit-video.php     # Edit video metadata
 │   └── edit-music.php     # Edit music metadata
-├── arcade/                # Mini Games (Dino Run, Snake, Chess)
+├── arcade/                # Mini Games (9 game: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Aset statis (CSS, JS, font, gambar)
 ├── auth/                  # Autentikasi & manajemen sesi
-│   ├── config.php         # Konfigurasi database + path terpusat (MEEL_HDD_*)
-│   └── config.example.php # Template konfigurasi
+│   ├── config.php         # Entry point: bootstrap + require settings.php
+│   ├── config.example.php # Template entry point
+│   ├── settings.php       # Data murni: DB + path terpusat (MEEL_HDD_*)
+│   └── settings.example.php # Template data konfigurasi
 ├── books/                 # Modul E-Book / Komik
 ├── controllers/           # API Actions & Event Handler (AJAX/HTMX)
 │   ├── api/               # WatchController, like, comment, transcode
@@ -156,7 +175,7 @@ MEeL/
 │   └── profile/           # profile_edit, fun-manage
 ├── database/              # Skema database
 │   ├── schema.sql         # File schema standalone (20 tabel)
-│   └── migrate.php        # 🔄 Migration system v1–v8 (FULLTEXT, FK, activity_log, schema sync)
+│   └── migrate.php        # 🔄 Migration system v1–v12 (FULLTEXT, FK, activity_log, UNIQUE KEY, MFA, schema sync)
 ├── data_drive/            # Cloud Drive storage runtime
 ├── docs/                  # Dokumentasi proyek
 ├── drive/                 # Modul Cloud Drive
@@ -166,21 +185,32 @@ MEeL/
 ├── modules/               # Core logic & business layer (OOP)
 │   ├── autoload.php       # 🔄 Autoloader PSR-4-like (semua class core auto-load)
 │   ├── core/              # Semua file core dipindah ke sini
-│   │   ├── helpers.php    # Fungsi bantuan: base_url(), resolve_binary(), time_ago(), dll
+│   │   ├── helpers.php    # Shim backward-compat → helpers/main.php + auth/loader.php
+│   │   ├── helpers/       # Utilitas per domain: main, storage, audio, url, metadata, subtitle, upload
+│   │   ├── Router.php     # MeelRouter — front controller & tabel rute URL bersih
+│   │   ├── base_url.php   # base_url() — path konsisten (MEEL_BASE_URL)
 │   │   ├── System.php     # Queue management & monitoring
 │   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
 │   │   ├── Uploader.php   # Upload file & validasi
-│   │   ├── GarbageCollector.php # Auto-cleanup temp files + rate limit cache
-│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
+│   │   ├── ProgressObserver.php / BrowserProgressObserver.php # Kontrak & presenter progress event
 │   │   ├── CommentRenderer.php # Render komentar nested
 │   │   ├── activity_logger.php # Logging aktivitas & IP ban check
 │   │   ├── japanese.php   # Analisis teks Jepang (MeCab/Romaji)
+│   │   ├── japanese_aliases.php # Kamus alias teks Jepang
+│   │   ├── SwPrecache.php # Generator precache PWA (sw.js dinamis)
 │   │   └── bootstrap.php  # Bootstrap error handling terpusat
+│   ├── auth/              # Infrastruktur keamanan terpusat (via loader.php)
+│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── SsrfGuard.php  # Validasi URL SSRF-safe
+│   │   ├── ValidatingProxy.php # Forward proxy SSRF-defense
+│   │   └── helpers/       # authz, csrf, session, stream_auth, mfa, user
 │   ├── media/             # Media library classes
-│   │   ├── MediaLibrary.php   # Query database, search, pagination metadata
+│   │   ├── MediaLibrary.php   # Query database, search, pagination metadata (+ BookRepository/BookUploader)
 │   │   ├── MediaViewer.php    # View tracking, komentar, rekomendasi
 │   │   ├── MediaInteraction.php # Like/dislike
-│   │   └── SearchEngine.php   # Mesin pencari FULLTEXT
+│   │   ├── SearchEngine.php   # Mesin pencari FULLTEXT
+│   │   ├── PlaylistRepository.php / MediaAdminRepository.php / ProfileRepository.php / AdminActivityRepository.php
 │   ├── transcoder/        # Utilitas FFmpeg
 │   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
 │   └── exceptions/        # Custom exception classes
@@ -193,6 +223,7 @@ MEeL/
 ├── temp/                  # Runtime staging transcoding + rate limit cache
 ├── video/                 # Modul pemutar video
 ├── .htaccess              # Apache rewrite rules
+├── sw.js.php              # Service worker dinamis (PWA) — precache otomatis
 ├── index.php              # Homepage Hub / portal modul
 ├── introduction.php       # Panduan interaktif walkthrough
 ├── transcode.php          # Entry point transcoding video→audio
@@ -235,6 +266,25 @@ extension=zip       # Untuk ekstraksi file manga (ZIP/CBZ)
 
 ## 🚀 Instalasi Cepat
 
+> ⚡ **Instalasi otomatis (disarankan, Ubuntu/Debian):** jalankan `./install.sh`
+> untuk menjalankan semua langkah di bawah secara otomatis — setup database +
+> import `schema.sql`, buat `auth/settings.php`/`auth/config.php` (patch DB +
+> `MEEL_HDD_BASE`), struktur storage lengkap + symlink deploy ke storage
+> terpusat (hardening `.htaccess` ikut disalin), aktifkan mod_rewrite, jalankan
+> migrasi, lalu verifikasi akhir `tests/check_deploy.php` (**exit code `1` jika
+> ada FAIL**):
+>
+> ```bash
+> sudo chmod +x install.sh
+> ./install.sh                 # mode interaktif (tanya konfigurasi)
+> ./install.sh --yes           # non-interaktif, pakai semua default
+> ./install.sh --hdd=/path     # set MEEL_HDD_BASE langsung
+> ./install.sh --skip-apt      # lewati instalasi paket sistem (sudah ada)
+> ./install.sh --xsendfile     # aktifkan MEEL_USE_XSENDFILE (wajib mod_xsendfile Apache)
+> ```
+>
+> Detail lengkap → [docs/id/installation.md](docs/id/installation.md).
+
 ### 1. Kloning Repositori
 
 ```bash
@@ -256,10 +306,12 @@ mysql -u root -p MEeL < database/schema.sql
 
 ```bash
 cd /opt/lampp/htdocs/MEeL/auth
+cp settings.example.php settings.php
 cp config.example.php config.php
 ```
 
-Edit `auth/config.php` dan isi kredensial database Anda.
+Edit `auth/settings.php` dan isi kredensial database Anda (DB + `MEEL_HDD_*`).
+File `auth/config.php` adalah entry point yang me-require `settings.php`.
 
 ### 4. Setup Direktori Runtime
 
@@ -271,6 +323,23 @@ mkdir -p data_drive/public data_drive/private_admins temp profile/upload \
 sudo chown -R www-data:www-data data_drive temp profile/upload music/upload books/upload
 sudo chmod -R 775 data_drive temp profile/upload music/upload books/upload
 ```
+
+> ⚠️ **JANGAN commit symlink di dalam `data_drive/`.** `data_drive/public` dan
+> `data_drive/private_admins` adalah **folder nyata** yang ter-track di repo
+> (placeholder `.gitkeep` + `.htaccess` deny). Isinya (file upload user) otomatis
+> di-ignore oleh `.gitignore`. Untuk storage Drive di luar repo, set `MEEL_HDD_DRIVE`
+> di `auth/settings.php` — modul Drive otomatis mengikuti (fallback ke `data_drive/`
+> bila konstanta tidak ada). Symlink manual ke path absolut development
+> (`/media/<username>/...`) mem-bocorkan username OS lewat repo publik dan
+> membuat modul Drive crash (`RuntimeException: Folder penyimpanan gagal dibuat`)
+> di mesin orang lain.
+
+> 💡 **`install.sh` melakukannya otomatis:** struktur storage lengkap (termasuk
+> subdirektori `music/upload/{file,thumbnail}` & `books/upload/{manga,pdf,thumbnail}` —
+> modul music/books **tidak** membuatnya sendiri), symlink deploy
+> `{video,music,books}/upload` + `data_drive/public` → `MEEL_HDD_BASE`, dengan
+> `.htaccess` hardening ikut disalin ke target. Subdirektori yang hilang membuat
+> upload pertama gagal — cek via `tests/check_deploy.php`.
 
 ### 5. Aktifkan mod_rewrite Apache
 
@@ -285,6 +354,16 @@ sudo systemctl restart apache2
 /opt/lampp/bin/php database/migrate.php
 ```
 
+### 7. Verifikasi Deployment
+
+```bash
+php tests/check_deploy.php        # exit 0 = sehat, 1 = ada FAIL
+```
+
+Memverifikasi `MEEL_HDD_BASE`, folder upload + subdirektori non-auto-create
+(`music/upload/{file,thumbnail}`, `books/upload/{pdf,thumbnail}`), hardening
+`.htaccess`, guard symlink `data_drive/`, dan mod_rewrite PWA.
+
 > ⚠️ **Default Login:** Username: `Admin` | Password: `Admin#123`
 
 > 📖 **Instalasi detail** → [docs/id/installation.md](docs/id/installation.md) | [English](docs/en/installation.md)
@@ -297,20 +376,23 @@ sudo systemctl restart apache2
 
 | File | Keperluan |
 |------|-----------|
-| `auth/config.php` | Database, session, CSRF, **path terpusat (`MEEL_HDD_*`)** |
-| `auth/config.example.php` | Template konfigurasi (copy ke config.php) |
+| `auth/config.php` | Entry point: bootstrap, session, CSRF, headers (me-require settings.php) |
+| `auth/settings.php` | **Data murni**: DB credentials + path terpusat (`MEEL_HDD_*`) |
+| `auth/config.example.php` | Template entry point (copy ke config.php) |
+| `auth/settings.example.php` | Template data konfigurasi (copy ke settings.php) |
 | `database/schema.sql` | Skema database standalone |
-| `modules/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
-| `modules/Uploader.php` | Upload file, FFmpeg |
-| `modules/helpers.php` | HDD check path (dari `MEEL_HDD_BASE`) |
-| `modules/System.php` | Queue & rate limit config |
-| `modules/RateLimiter.php` | **Baru!** API rate limiter — per-endpoint limits |
+| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
+| `modules/core/Uploader.php` | Upload file, FFmpeg |
+| `modules/core/helpers.php` | HDD check path (dari `MEEL_HDD_BASE`) |
+| `modules/core/Router.php` | Front controller — tabel rute URL bersih |
+| `modules/core/System.php` | Queue & rate limit config |
+| `modules/auth/RateLimiter.php` | API rate limiter — per-endpoint limits |
 
 ### Konfigurasi Path Terpusat
 
 ```php
-// auth/config.php — ★ Cukup ubah 1 baris ini
-define('MEEL_HDD_BASE', '/media/[user]/MEeL/media');
+// auth/settings.php — ★ Cukup ubah 1 baris ini
+define('MEEL_HDD_BASE', '/media/CHANGE_ME/MEeL/media');
 
 // Semua modul otomatis mengikuti:
 define('MEEL_HDD_VIDEO_UPLOAD', MEEL_HDD_BASE . '/video/upload/');
@@ -318,6 +400,12 @@ define('MEEL_HDD_MUSIC_UPLOAD', MEEL_HDD_BASE . '/music/upload/');
 define('MEEL_HDD_BOOKS_UPLOAD', MEEL_HDD_BASE . '/books/upload/');
 define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 ```
+
+> ⚠️ **Catatan Migrasi (audit keamanan):** Sejak `auth/settings.php` tidak lagi di-track
+> di repositori (di-ignore agar kredensial tidak ter-commit), **developer lama harus
+> verifikasi ulang nilai `MEEL_HDD_BASE`** di file `settings.php` lokal mereka setelah
+> `git pull`. Nilai default sekarang placeholder `CHANGE_ME` — pastikan path storage
+> Anda masih benar, atau media tidak akan ditemukan.
 
 ### Base URL Portability
 
@@ -333,7 +421,7 @@ $url = base_url('/assets/css/style.css'); // → /MEeL/assets/css/style.css
 ### Migration System
 
 ```bash
-# Upgrade database ke versi terbaru (v1–v8)
+# Upgrade database ke versi terbaru (v1–v12)
 /opt/lampp/bin/php database/migrate.php
 ```
 
@@ -348,6 +436,15 @@ $url = base_url('/assets/css/style.css'); // → /MEeL/assets/css/style.css
 | **v6** | activity_log table untuk audit trail |
 | **v7** | UNIQUE INDEX on users.username |
 | **v8** | role→varchar(20), hapus duplicate UNIQUE KEY, sync default values |
+| **v9** | Kolom MFA (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`) di tabel users |
+| **v10** | Index komposit comments `(video_id, created_at)` & `(music_id, created_at)` |
+| **v11** | Unique key `interactions` dipecah: `(user_id, video_id)` & `(user_id, music_id)` |
+| **v12** | Ikat identitas user ke room catur (`white_user_id`, `black_user_id`) — cegah akses ilegal via `room_code` |
+
+> 💡 **Catatan modul Rhythm (MEeL!Mania):** tabel `arcade_song` & `arcade_score`
+> dikelola lewat `arcade/rhythm/migration.sql` — **terpisah** dari migration system
+> utama (v1–v12). Import manual sekali: `mysql MEeL < arcade/rhythm/migration.sql`
+> (atau jalankan query CREATE TABLE dari file tersebut).
 
 Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
@@ -355,11 +452,16 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 86 | 86 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 19 | 19 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 144 | 143 | 1 | **0** | **✅ 99.3% A** |
-| **Security Test** | 72 | 72 | 0 | **0** | **✅ 100% A** |
-| **PHP Syntax** | 20 files | 20 | 0 | **0** | **✅ ALL PASS** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 55 | 53 pass, 2 warn | 0 | **0** | **✅ 98/100** |
+| **Security Test** | 137 | 133 pass, 4 warn | 0 | **0** | **✅ 99/100** |
+| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
+
+> Security test: 4 warning non-kritis (review query mentah MediaViewer, cek MIME
+> profile_edit, review validasi filename download_transcode, dan shell exec
+> System.php) — bukan kegagalan; skor **99/100**.
+> Verifikasi storage & deployment: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
 
@@ -376,7 +478,7 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 | **Admin** | Kontrol penuh: semua modul, admin panel, upload advanced, transcode, manajemen user, IP banning, activity log viewer |
 | **Member** | Semua media, komentar, like/dislike, books, Cloud Drive pribadi (quota 20GB) |
 | **User** | Semua media, komentar, like/dislike, books (tanpa Cloud Drive) |
-| **Guest** | Terbatas: hanya nonton/dengar tanpa interaksi |
+| **Guest** | Terbatas: nonton/dengar tanpa interaksi, profil default, **theme toggle via Preference** |
 
 ---
 
@@ -401,6 +503,7 @@ Dokumentasi proyek tersedia dalam dua bahasa:
 | 📥 Advanced Upload | [🇮🇩](docs/id/upload_issue.md) | [🇬🇧](docs/en/upload_issue.md) |
 | 📋 Analisis Proyek | [🇮🇩](docs/id/deskripsi.md) | [🇬🇧](docs/en/analysis.md) |
 | 🧪 Testing Guide | [🇮🇩](docs/id/test.md) | [🇬🇧](docs/en/test.md) |
+| 📱 PWA & Offline | [🇮🇩](docs/id/pwa.md) | [🇬🇧](docs/en/pwa.md) |
 
 ---
 
@@ -438,7 +541,7 @@ Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**.
 
 ### Q: Ukuran MEeL?
 
-> A: 77MB untuk source codenya, 1-2GB untuk env (ffmpeg, yt-dlp, apache, MariaDB, php, dsb).
+> A: 47,3MB untuk source codenya, 1-2GB untuk env (ffmpeg, yt-dlp, apache, MariaDB, php, dsb).
 
 ### Q: System Requirement?
 

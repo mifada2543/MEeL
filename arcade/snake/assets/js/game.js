@@ -1,25 +1,17 @@
-// ==========================================
-// FILE: game.js
-// FUNGSI: Snake Game — Logika, Fisika, Kontrol
-// ==========================================
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// ── KONFIGURASI ──────────────────────────────
-const GRID_SIZE = 20; // 20x20 grid
+const GRID_SIZE = 20;
 const CELL_SIZE = canvas.width / GRID_SIZE;
-
 const gameState = {
   isPlaying: false,
   isGameOver: false,
   score: 0,
   hiScore: parseInt(localStorage.getItem("snake_hi_score")) || 0,
-  speed: 150, // ms per tick — makin kecil makin cepat
+  speed: 150,
   minSpeed: 60,
 };
 
-// ── STATE SNAKE ──────────────────────────────
 let snake = [];
 let food = {};
 let direction = "RIGHT";
@@ -27,19 +19,18 @@ let nextDirection = "RIGHT";
 let gameLoopInterval = null;
 let foodEatenCount = 0;
 
-// DOM refs
+let foodPulse = 0;
+let eatFlash = 0;
+let lastAnimT = 0;
 const scoreEl = document.getElementById("scoreText");
 const hiScoreEl = document.getElementById("hiScoreText");
 const startScreen = document.getElementById("startScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const finalScoreEl = document.getElementById("finalScore");
 const newHighScoreEl = document.getElementById("newHighScore");
-
 function updateHiScoreDisplay() {
   hiScoreEl.textContent = String(gameState.hiScore).padStart(5, "0");
 }
-
-// ── FUNGSI GAME ──────────────────────────────
 
 function initGame() {
   snake = [
@@ -51,6 +42,8 @@ function initGame() {
   nextDirection = "RIGHT";
   gameState.score = 0;
   foodEatenCount = 0;
+  foodPulse = 0;
+  eatFlash = 0;
   gameState.speed = 150;
   gameState.isGameOver = false;
   gameState.isPlaying = true;
@@ -63,7 +56,6 @@ function initGame() {
   clearInterval(gameLoopInterval);
   gameLoopInterval = setInterval(gameTick, gameState.speed);
 }
-
 function spawnFood() {
   let pos;
   do {
@@ -74,36 +66,35 @@ function spawnFood() {
   } while (snake.some((seg) => seg.x === pos.x && seg.y === pos.y));
   food = pos;
 }
-
 function gameTick() {
   direction = nextDirection;
-
-  // Hitung kepala baru
   const head = { ...snake[0] };
   switch (direction) {
-    case "UP":    head.y--; break;
-    case "DOWN":  head.y++; break;
-    case "LEFT":  head.x--; break;
-    case "RIGHT": head.x++; break;
+    case "UP":
+      head.y--;
+      break;
+    case "DOWN":
+      head.y++;
+      break;
+    case "LEFT":
+      head.x--;
+      break;
+    case "RIGHT":
+      head.x++;
+      break;
   }
-
-  // Tabrak dinding?
   if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
     endGame();
     return;
   }
-
-  // Tabrak diri sendiri?
   if (snake.some((seg) => seg.x === head.x && seg.y === head.y)) {
     endGame();
     return;
   }
-
-  // Masukkan kepala
   snake.unshift(head);
-
-  // Makan?
   if (head.x === food.x && head.y === food.y) {
+    eatFlash = 12;
+    foodPulse = 0;
     gameState.score += 10;
     foodEatenCount++;
     scoreEl.textContent = String(gameState.score).padStart(5, "0");
@@ -111,8 +102,6 @@ function gameTick() {
     void scoreEl.offsetWidth;
     scoreEl.classList.add("score-pop");
     spawnFood();
-
-    // Speed up setiap 5 makanan
     if (foodEatenCount % 5 === 0 && gameState.speed > gameState.minSpeed) {
       gameState.speed = Math.max(gameState.minSpeed, gameState.speed - 8);
       clearInterval(gameLoopInterval);
@@ -121,24 +110,19 @@ function gameTick() {
   } else {
     snake.pop();
   }
-
   draw();
 }
-
 function endGame() {
   gameState.isGameOver = true;
   gameState.isPlaying = false;
   clearInterval(gameLoopInterval);
   gameLoopInterval = null;
-
-  // Cek high score
   const isNewHigh = gameState.score > gameState.hiScore;
   if (isNewHigh) {
     gameState.hiScore = gameState.score;
     localStorage.setItem("snake_hi_score", gameState.hiScore);
     updateHiScoreDisplay();
   }
-
   finalScoreEl.textContent = String(gameState.score).padStart(5, "0");
   newHighScoreEl.classList.toggle("hidden", !isNewHigh);
   gameOverScreen.classList.remove("hidden");
@@ -147,7 +131,6 @@ function endGame() {
   draw();
 }
 
-// ── Helper fill rounded rectangle (cross-browser) ──
 function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -163,16 +146,10 @@ function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.fill();
 }
 
-// ── RENDER ──────────────────────────────────
-
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Background grid
   ctx.fillStyle = "#0d1117";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Grid lines (subtle)
   ctx.strokeStyle = "rgba(34, 197, 94, 0.04)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= GRID_SIZE; i++) {
@@ -185,78 +162,105 @@ function draw() {
     ctx.lineTo(canvas.width, i * CELL_SIZE);
     ctx.stroke();
   }
-
-  // Makanan
-  if (food) {
+  if (food && typeof food.x === "number") {
     const fx = food.x * CELL_SIZE;
     const fy = food.y * CELL_SIZE;
+    
+    const pulse = 0.08 * Math.sin(foodPulse * 0.09);
+    const r0 = 0.4 + 0.15 * Math.abs(Math.sin(foodPulse * 0.09));
     const glow = ctx.createRadialGradient(
-      fx + CELL_SIZE / 2, fy + CELL_SIZE / 2, 0,
-      fx + CELL_SIZE / 2, fy + CELL_SIZE / 2, CELL_SIZE
+      fx + CELL_SIZE / 2,
+      fy + CELL_SIZE / 2,
+      0,
+      fx + CELL_SIZE / 2,
+      fy + CELL_SIZE / 2,
+      CELL_SIZE * (1 + Math.abs(Math.sin(foodPulse * 0.09)) * 0.35),
     );
-    glow.addColorStop(0, "rgba(239, 68, 68, 0.4)");
+    glow.addColorStop(0, `rgba(239, 68, 68, ${r0})`);
     glow.addColorStop(1, "rgba(239, 68, 68, 0)");
     ctx.fillStyle = glow;
-    ctx.fillRect(fx - CELL_SIZE / 2, fy - CELL_SIZE / 2, CELL_SIZE * 2, CELL_SIZE * 2);
-
+    ctx.fillRect(
+      fx - CELL_SIZE,
+      fy - CELL_SIZE,
+      CELL_SIZE * 2,
+      CELL_SIZE * 2,
+    );
+    const foodR = (CELL_SIZE / 2.5) * (1 + pulse);
     ctx.fillStyle = "#ef4444";
     ctx.beginPath();
-    ctx.arc(fx + CELL_SIZE / 2, fy + CELL_SIZE / 2, CELL_SIZE / 2.5, 0, Math.PI * 2);
+    ctx.arc(fx + CELL_SIZE / 2, fy + CELL_SIZE / 2, foodR, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
     ctx.beginPath();
-    ctx.arc(fx + CELL_SIZE / 2 - 2, fy + CELL_SIZE / 2 - 2, 3, 0, Math.PI * 2);
+    ctx.arc(fx + CELL_SIZE / 2 - 2, fy + CELL_SIZE / 2 - 2, 3.2, 0, Math.PI * 2);
     ctx.fill();
   }
-
-  // Ular
+  
+  if (eatFlash > 0) {
+    ctx.fillStyle = `rgba(255,255,255,${(eatFlash / 12) * 0.12})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
   snake.forEach((seg, index) => {
     const x = seg.x * CELL_SIZE;
     const y = seg.y * CELL_SIZE;
     const isHead = index === 0;
     const padding = isHead ? 1 : 2;
     const radius = isHead ? 5 : 4;
-
     if (isHead) {
-      // Kepala — efek glow
       const headGlow = ctx.createRadialGradient(
-        x + CELL_SIZE / 2, y + CELL_SIZE / 2, 2,
-        x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE
+        x + CELL_SIZE / 2,
+        y + CELL_SIZE / 2,
+        2,
+        x + CELL_SIZE / 2,
+        y + CELL_SIZE / 2,
+        CELL_SIZE,
       );
       headGlow.addColorStop(0, "rgba(34, 197, 94, 0.3)");
       headGlow.addColorStop(1, "rgba(34, 197, 94, 0)");
       ctx.fillStyle = headGlow;
       ctx.fillRect(x - 4, y - 4, CELL_SIZE + 8, CELL_SIZE + 8);
     }
-
-    // Badan — gradient dari hijau terang ke hijau gelap
     const ratio = index / snake.length;
     const r = Math.round(34 + (22 - 34) * ratio);
     const g = Math.round(197 + (163 - 197) * ratio);
     const b = Math.round(94 + (44 - 94) * ratio);
     ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-
-    fillRoundRect(ctx, x + padding, y + padding, CELL_SIZE - padding * 2, CELL_SIZE - padding * 2, radius);
-
-    // Mata di kepala
+    fillRoundRect(
+      ctx,
+      x + padding,
+      y + padding,
+      CELL_SIZE - padding * 2,
+      CELL_SIZE - padding * 2,
+      radius,
+    );
     if (isHead) {
       ctx.fillStyle = "white";
       let eyeX1, eyeY1, eyeX2, eyeY2;
       const eyeSize = 3;
-      const eyeOffset = 5;
       switch (direction) {
         case "RIGHT":
-          eyeX1 = x + 13; eyeY1 = y + 5; eyeX2 = x + 13; eyeY2 = y + 12;
+          eyeX1 = x + 13;
+          eyeY1 = y + 5;
+          eyeX2 = x + 13;
+          eyeY2 = y + 12;
           break;
         case "LEFT":
-          eyeX1 = x + 4; eyeY1 = y + 5; eyeX2 = x + 4; eyeY2 = y + 12;
+          eyeX1 = x + 4;
+          eyeY1 = y + 5;
+          eyeX2 = x + 4;
+          eyeY2 = y + 12;
           break;
         case "UP":
-          eyeX1 = x + 5; eyeY1 = y + 4; eyeX2 = x + 12; eyeY2 = y + 4;
+          eyeX1 = x + 5;
+          eyeY1 = y + 4;
+          eyeX2 = x + 12;
+          eyeY2 = y + 4;
           break;
         case "DOWN":
-          eyeX1 = x + 5; eyeY1 = y + 13; eyeX2 = x + 12; eyeY2 = y + 13;
+          eyeX1 = x + 5;
+          eyeY1 = y + 13;
+          eyeX2 = x + 12;
+          eyeY2 = y + 13;
           break;
       }
       ctx.beginPath();
@@ -265,40 +269,39 @@ function draw() {
       ctx.beginPath();
       ctx.arc(eyeX2, eyeY2, eyeSize / 1.5, 0, Math.PI * 2);
       ctx.fill();
-
-      // Pupil
       ctx.fillStyle = "#0d1117";
       ctx.beginPath();
-      ctx.arc(eyeX1 + (direction === "RIGHT" ? 1 : direction === "LEFT" ? -1 : 0),
-              eyeY1 + (direction === "DOWN" ? 1 : direction === "UP" ? -1 : 0), 1.2, 0, Math.PI * 2);
+      ctx.arc(
+        eyeX1 + (direction === "RIGHT" ? 1 : direction === "LEFT" ? -1 : 0),
+        eyeY1 + (direction === "DOWN" ? 1 : direction === "UP" ? -1 : 0),
+        1.2,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(eyeX2 + (direction === "RIGHT" ? 1 : direction === "LEFT" ? -1 : 0),
-              eyeY2 + (direction === "DOWN" ? 1 : direction === "UP" ? -1 : 0), 1.2, 0, Math.PI * 2);
+      ctx.arc(
+        eyeX2 + (direction === "RIGHT" ? 1 : direction === "LEFT" ? -1 : 0),
+        eyeY2 + (direction === "DOWN" ? 1 : direction === "UP" ? -1 : 0),
+        1.2,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
     }
   });
 }
 
-// ── INPUT ────────────────────────────────────
-
 window.addEventListener("keydown", (e) => {
   const key = e.key;
-  // Cegah scroll arrow
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
     e.preventDefault();
   }
-
-  if (!gameState.isPlaying && !gameState.isGameOver && (key === " " || key === "Enter")) {
-    initGame();
-    return;
-  }
-  if (gameState.isGameOver && (key === " " || key === "Enter")) {
+  if (!gameState.isPlaying && (key === " " || key === "Enter")) {
     initGame();
     return;
   }
   if (!gameState.isPlaying) return;
-
   switch (key) {
     case "ArrowUp":
     case "w":
@@ -322,52 +325,51 @@ window.addEventListener("keydown", (e) => {
       break;
   }
 });
-
-// Touch / Swipe
 let touchStartX = 0;
 let touchStartY = 0;
+canvas.addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
 
-canvas.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-
-  if (!gameState.isPlaying && !gameState.isGameOver) {
-    initGame();
-  } else if (gameState.isGameOver) {
-    initGame();
-  }
-}, { passive: false });
-
-canvas.addEventListener("touchmove", (e) => {
-  e.preventDefault();
-}, { passive: false });
-
-canvas.addEventListener("touchend", (e) => {
-  if (!gameState.isPlaying) return;
-  e.preventDefault();
-
-  const rect = canvas.getBoundingClientRect();
-  const touch = e.changedTouches[0];
-  const dx = touch.clientX - touchStartX;
-  const dy = touch.clientY - touchStartY;
-
-  const absDx = Math.abs(dx);
-  const absDy = Math.abs(dy);
-
-  if (Math.max(absDx, absDy) < 20) return; // threshold
-
-  if (absDx > absDy) {
-    if (dx > 0 && direction !== "LEFT") nextDirection = "RIGHT";
-    else if (dx < 0 && direction !== "RIGHT") nextDirection = "LEFT";
-  } else {
-    if (dy > 0 && direction !== "UP") nextDirection = "DOWN";
-    else if (dy < 0 && direction !== "DOWN") nextDirection = "UP";
-  }
-}, { passive: false });
-
-// Mobile buttons
+    if (!gameState.isPlaying) {
+      initGame();
+    }
+  },
+  { passive: false },
+);
+canvas.addEventListener(
+  "touchmove",
+  (e) => {
+    e.preventDefault();
+  },
+  { passive: false },
+);
+canvas.addEventListener(
+  "touchend",
+  (e) => {
+    if (!gameState.isPlaying) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (Math.max(absDx, absDy) < 20) return;
+    if (absDx > absDy) {
+      if (dx > 0 && direction !== "LEFT") nextDirection = "RIGHT";
+      else if (dx < 0 && direction !== "RIGHT") nextDirection = "LEFT";
+    } else {
+      if (dy > 0 && direction !== "UP") nextDirection = "DOWN";
+      else if (dy < 0 && direction !== "DOWN") nextDirection = "UP";
+    }
+  },
+  { passive: false },
+);
 document.getElementById("btn-up").addEventListener("touchstart", (e) => {
   e.preventDefault();
   if (gameState.isPlaying && direction !== "DOWN") nextDirection = "UP";
@@ -384,20 +386,14 @@ document.getElementById("btn-right").addEventListener("touchstart", (e) => {
   e.preventDefault();
   if (gameState.isPlaying && direction !== "LEFT") nextDirection = "RIGHT";
 });
-
-// Restart / start buttons
 document.getElementById("restartBtn").addEventListener("click", initGame);
 startScreen.addEventListener("click", () => {
   if (!gameState.isPlaying) initGame();
 });
 
-// ── DRAW ON LOAD ─────────────────────────────
-
-// Draw grid on load so user sees the board
 function drawEmptyBoard() {
   ctx.fillStyle = "#0d1117";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.strokeStyle = "rgba(34, 197, 94, 0.04)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= GRID_SIZE; i++) {
@@ -410,8 +406,6 @@ function drawEmptyBoard() {
     ctx.lineTo(canvas.width, i * CELL_SIZE);
     ctx.stroke();
   }
-
-  // Draw a small preview snake
   const preview = [
     { x: 10, y: 10 },
     { x: 9, y: 10 },
@@ -423,9 +417,26 @@ function drawEmptyBoard() {
     const g = Math.round(197 + (163 - 197) * ratio);
     const b = Math.round(94 + (44 - 94) * ratio);
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
-    fillRoundRect(ctx, seg.x * CELL_SIZE + 2, seg.y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4, 4);
+    fillRoundRect(
+      ctx,
+      seg.x * CELL_SIZE + 2,
+      seg.y * CELL_SIZE + 2,
+      CELL_SIZE - 4,
+      CELL_SIZE - 4,
+      4,
+    );
   });
 }
+
+function animLoop(ts) {
+  const dt = lastAnimT ? Math.min(50, ts - lastAnimT) : 16;
+  lastAnimT = ts;
+  foodPulse++;
+  if (eatFlash > 0) eatFlash--;
+  draw();
+  requestAnimationFrame(animLoop);
+}
+requestAnimationFrame(animLoop);
 
 updateHiScoreDisplay();
 drawEmptyBoard();

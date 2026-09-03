@@ -4,29 +4,24 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 require_once '../modules/core/japanese.php';
 
-// Proteksi: harus login
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 $user_id = $_SESSION['user_id'];
 $curr_role = get_user_role($conn, (int)$user_id);
-$is_admin  = ($curr_role === 'admin');
-
-// Tolak guest
+$is_admin  = is_admin($conn);
 if ($curr_role === 'guest') {
-    header("Location: ../index.php");
+    header("Location: ../");
     exit();
 }
-
-// ── Back URL (smart referer) ──
-$back_url = $is_admin ? 'cookies.php' : '../video/index.php';
+$back_url = $is_admin ? 'analys' : '../video/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
     $host     = $_SERVER['HTTP_HOST'];
     if (parse_url($ref, PHP_URL_HOST) === $host) {
         $ref_path       = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages = ['edit-music.php', 'edit-video.php'];
+        $excluded_pages = ['edit-music.php', 'edit-music', 'edit-video.php', 'edit-video'];
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -37,28 +32,23 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         if (!$should_exclude) $back_url = $ref;
     }
 }
+require_once __DIR__ . '/../modules/media/MediaAdminRepository.php';
+$adminMedia = new MediaAdminRepository($conn);
 
-// Validasi ID Video
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt_video = $conn->prepare("SELECT v.*, u.username AS uploader, u.profile_picture AS uploader_pfp FROM video v JOIN users u ON v.user_id = u.id WHERE v.id = ? LIMIT 1");
-$stmt_video->bind_param("i", $id);
-$stmt_video->execute();
-$video = $stmt_video->get_result()->fetch_assoc();
-
+$video = $adminMedia->getMedia('video', $id);
 if (!$video) {
-    die("<div style='color:red; padding:20px; background:#0b0e14; min-height:100vh; font-family:sans-serif;'><h2>Error: Video tidak ditemukan!</h2><a href='../video/index.php' style='color:#ef4444;'>Kembali ke Video</a></div>");
+    header("Location: ../err/?code=not_found");
+    exit;
 }
 
-// Cek kepemilikan: admin bisa edit semua, uploader hanya miliknya
 $is_owner = ((int)$video['user_id'] === (int)$user_id);
 if (!$is_admin && !$is_owner) {
-    header("Location: ../err/denied.php");
+    header("Location: ../err/?code=denied");
     exit();
 }
-
 $status = "";
 $error_message = "";
-
 if (isset($_POST['update'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $error_message = "CSRF Token tidak valid.";
@@ -66,15 +56,11 @@ if (isset($_POST['update'])) {
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $thumbnail_url = $video['thumbnail'];
-
         if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
-            // Validasi ukuran file (maks 5MB)
             $max_size = 5 * 1024 * 1024;
             if ($_FILES['thumbnail']['size'] > $max_size) {
                 $error_message = 'Ukuran file thumbnail maksimal 5MB.';
             }
-
-            // Validasi MIME type — finfo() cek magic bytes, lebih aman dari $_FILES['type']
             if (empty($error_message)) {
                 $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -84,14 +70,11 @@ if (isset($_POST['update'])) {
                     $error_message = 'File thumbnail harus berupa gambar (JPEG, PNG, WebP, GIF, atau AVIF).';
                 }
             }
-
-            // Proses thumbnail hanya jika validasi lolos
             if (empty($error_message)) {
-                $target_dir = __DIR__ . '/../video/upload/thumbnail/';
+                $target_dir = meel_media_base_path('video') . '/thumbnail/';
                 if (!is_dir($target_dir)) {
                     @mkdir($target_dir, 0755, true);
                 }
-                // Nama file berdasarkan judul video
                 $clean_title = getRomajiName($title);
                 if (empty($clean_title)) $clean_title = 'video-thumb';
                 $new_name = $clean_title . '_thumb.webp';
@@ -102,7 +85,7 @@ if (isset($_POST['update'])) {
                 }
                 $upload_path = $target_dir . $new_name;
                 $ffmpeg_bin = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-                // Konversi ke WebP — 500×500 square, scale+pad agar tidak distorsi
+
                 $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
                     . " -vf \"scale=500:500:force_original_aspect_ratio=decrease,pad=500:500:(ow-iw)/2:(oh-ih)/2\" -c:v libwebp -q:v 78 "
                     . escapeshellarg($upload_path) . " 2>&1";
@@ -110,7 +93,6 @@ if (isset($_POST['update'])) {
                 if ($ret === 0 && file_exists($upload_path) && filesize($upload_path) > 0) {
                     $thumbnail_url = $new_name;
                 } else {
-                    // Fallback: simpan file asli jika ffmpeg gagal
                     if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $upload_path)) {
                         $thumbnail_url = $new_name;
                     } else {
@@ -119,18 +101,44 @@ if (isset($_POST['update'])) {
                 }
             }
         }
+        if (empty($error_message) && isset($_FILES['subtitle']) && $_FILES['subtitle']['error'] === UPLOAD_ERR_OK) {
+            $sub_ext     = strtolower(pathinfo($_FILES['subtitle']['name'], PATHINFO_EXTENSION));
+            $sub_lang    = sanitize_subtitle_lang($_POST['subtitle_lang'] ?? 'id');
+            $sub_allowed = ['vtt', 'srt'];
 
+            if (in_array($sub_ext, $sub_allowed, true) && validate_subtitle_file($_FILES['subtitle']['tmp_name'])) {
+                $sub_content = (string)@file_get_contents($_FILES['subtitle']['tmp_name']);
+                if ($sub_content !== '') {
+                    if ($sub_ext === 'srt') {
+                        $sub_content = convert_srt_to_vtt($sub_content);
+                    }
+                    $sub_content = strip_utf8_bom($sub_content);
+
+                    $hls_folder = basename(dirname($video['filename']));
+                    $sub_dir    = meel_media_base_path('video') . '/video/' . $hls_folder . '/';
+                    if (is_dir($sub_dir)) {
+                        $sub_target = $sub_dir . $hls_folder . '.' . $sub_lang . '.vtt';
+                        if (@file_put_contents($sub_target, $sub_content, LOCK_EX) !== false) {
+                            $status = "success";
+                        } else {
+                            $error_message = "Gagal menulis file subtitle ke storage.";
+                        }
+                    } else {
+                        $error_message = "Folder HLS video tidak ditemukan di storage.";
+                    }
+                } else {
+                    $error_message = "File subtitle kosong atau tidak dapat dibaca.";
+                }
+            } else {
+                $error_message = "File subtitle tidak valid. Gunakan format VTT atau SRT (maks 2MB).";
+            }
+        }
         if ($title === '') {
             $error_message = "Judul video tidak boleh kosong.";
-        } else {
-            // Generate search_metadata baru
-            $original = trim($title);
-            $romaji   = getRomajiName($original);
-            $meta     = mb_strtolower($original . " " . $romaji, 'UTF-8');
+        } elseif ($error_message === '') {
 
-            $stmt_update = $conn->prepare("UPDATE video SET title = ?, description = ?, thumbnail = ?, search_metadata = ? WHERE id = ?");
-            $stmt_update->bind_param("ssssi", $title, $description, $thumbnail_url, $meta, $id);
-            if ($stmt_update->execute()) {
+            $meta = generate_search_metadata($title);
+            if ($adminMedia->updateVideo($id, $title, $description, $thumbnail_url, $meta)) {
                 $status = "success";
                 $video['title'] = $title;
                 $video['description'] = $description;
@@ -139,8 +147,46 @@ if (isset($_POST['update'])) {
                 $error_message = "Gagal menyimpan perubahan ke database.";
             }
         }
+        if ($error_message !== '' && $thumbnail_url !== $video['thumbnail']) {
+            $orphan_thumb = meel_media_base_path('video') . '/thumbnail/' . basename($thumbnail_url);
+            if (is_file($orphan_thumb)) {
+                @unlink($orphan_thumb);
+            }
+        }
     }
 }
+if (isset($_POST['delete_subtitle_lang']) && $_POST['delete_subtitle_lang'] !== '') {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $error_message = "CSRF Token tidak valid.";
+    } else {
+        $del_lang   = sanitize_subtitle_lang($_POST['delete_subtitle_lang'], 'und');
+        $hls_folder = basename(dirname($video['filename']));
+        $del_path   = meel_media_base_path('video') . '/video/' . $hls_folder . '/' . $hls_folder . '.' . $del_lang . '.vtt';
+        if (file_exists($del_path)) {
+            if (@unlink($del_path)) {
+                $status = "success";
+            } else {
+                $error_message = "Gagal menghapus file subtitle.";
+            }
+        } else {
+            $error_message = "File subtitle bahasa tersebut tidak ditemukan.";
+        }
+    }
+}
+
+$existing_subtitles = [];
+$hls_folder_dir    = basename(dirname($video['filename']));
+$sub_scan_dir      = meel_media_base_path('video') . '/video/' . $hls_folder_dir . '/';
+if (is_dir($sub_scan_dir)) {
+    foreach (glob($sub_scan_dir . '*.vtt') ?: [] as $sf) {
+        $sbase = basename($sf);
+        if ($sbase === 'thumbnails.vtt') continue;
+        if (preg_match('/\.([a-z]{2,3}(?:-[a-z]{2,8})?)\.vtt$/i', $sbase, $m)) {
+            $existing_subtitles[] = ['lang' => strtolower($m[1]), 'file' => $sbase];
+        }
+    }
+}
+usort($existing_subtitles, fn($a, $b) => strcmp($a['lang'], $b['lang']));
 
 $thumb_src = !empty($video['thumbnail'])
     ? '../video/upload/thumbnail/' . htmlspecialchars($video['thumbnail'])
@@ -150,39 +196,33 @@ $thumb_src = !empty($video['thumbnail'])
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="Edit Video | MEeL Admin">
-    <meta property="og:description" content="Edit detail video di MEeL. Ubah judul, deskripsi, dan thumbnail video.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>Edit Video | MEeL Admin</title>
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link rel="stylesheet" href="../assets/css/em.css">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
+<?php
+$_META_TITLE = 'Edit Video | MEeL Admin';
+$_META_DESC  = 'Edit detail video di MEeL. Ubah judul, deskripsi, dan thumbnail video.';
+include __DIR__ . '/../partials/link.php';
+?>
+    <link rel="stylesheet" href="../assets/css/shared/design-tokens.css?v=<?= filemtime('../assets/css/shared/design-tokens.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/upload-form.css?v=<?= filemtime('../assets/css/shared/upload-form.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/edit/shared/main.css?v=<?= filemtime('../assets/css/admin/edit/shared/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/admin/edit/video/main.css?v=<?= filemtime('../assets/css/admin/edit/video/main.css') ?>">
 </head>
 
 <body class="theme-video">
     <div class="page-wrap">
 
-        <!-- Top nav -->
+        
         <?php
         $page_title = 'Edit Video';
         $media_type = 'video';
         include 'header-admin.php';
         ?>
-
         <div class="edit-layout">
 
-            <!-- ── LEFT: Sidebar ── -->
+            
             <aside class="sidebar-panel">
-                <!-- Thumbnail — klik atau drag untuk ganti -->
+                
                 <div class="thumb-wrap" id="thumb-wrap">
-                    <!-- File input dipindahkan ke dalam form (ID: thumb-file-hidden) -->
+                    
                     <img src="<?= $thumb_src ?>"
                         alt="Thumbnail <?= htmlspecialchars($video['title']) ?>"
                         class="thumb-img"
@@ -197,7 +237,7 @@ $thumb_src = !empty($video['thumbnail'])
                     <span class="thumb-changed-badge" id="thumb-changed-badge">✓ Baru</span>
                 </div>
 
-                <!-- Uploader card -->
+                
                 <div class="uploader-card">
                     <?php if (!empty($video['uploader_pfp'])): ?>
                         <img src="../profile/upload/<?= htmlspecialchars($video['uploader_pfp']) ?>"
@@ -215,7 +255,7 @@ $thumb_src = !empty($video['thumbnail'])
                     <div class="uploader-role-badge"><?= $is_admin && !$is_owner ? 'Admin Edit' : 'Uploader' ?></div>
                 </div>
 
-                <!-- Meta rows -->
+                
                 <div class="meta-info">
                     <div class="meta-row">
                         <div class="meta-row-icon">
@@ -237,7 +277,7 @@ $thumb_src = !empty($video['thumbnail'])
                     </div>
                 </div>
 
-                <!-- Stats -->
+                
                 <div class="stats-strip">
                     <div class="stat-chip">
                         <div class="stat-number"><?= number_format($video['views'] ?? 0) ?></div>
@@ -253,24 +293,24 @@ $thumb_src = !empty($video['thumbnail'])
                     </div>
                 </div>
 
-                <!-- Nav buttons -->
+                
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;">
-                    <a href="../video/watch.php?id=<?= $id ?>" class="btn-secondary" style="justify-content:center;">
+                    <a href="<?= base_url('/video/watch?id=' . (int)$id) ?>" class="btn-secondary" style="justify-content:center;">
                         <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Lihat Video
                     </a>
                     <?php if ($is_admin): ?>
-                        <a href="index.php" class="btn-secondary" style="justify-content:center;">
+                        <a href="." class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Dashboard Admin
                         </a>
                     <?php else: ?>
-                        <a href="../profile/index.php" class="btn-secondary" style="justify-content:center;">
+                        <a href="../profile/?u=<?= $_SESSION['username'] ?>" class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="user" style="width:13px;height:13px;"></i> Profil Saya
                         </a>
                     <?php endif; ?>
                 </div>
             </aside>
 
-            <!-- ── RIGHT: Form panel ── -->
+            
             <section class="form-panel">
                 <div class="form-header">
                     <div>
@@ -286,21 +326,18 @@ $thumb_src = !empty($video['thumbnail'])
                         Detail video berhasil diperbarui!
                     </div>
                 <?php endif; ?>
-
                 <?php if ($error_message !== ""): ?>
                     <div class="alert alert-error" style="margin-bottom:20px;">
                         <i data-lucide="alert-triangle" style="width:15px;height:15px;flex-shrink:0;"></i>
                         <?= htmlspecialchars($error_message) ?>
                     </div>
                 <?php endif; ?>
-
                 <form id="edit-form" method="POST" enctype="multipart/form-data" onsubmit="handleSubmit()" style="display:flex;flex-direction:column;gap:20px;flex:1;">
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
-                    <input type="file" name="thumbnail" accept="image/*" id="thumb-file-hidden" style="display:none">
+                        <input type="file" name="thumbnail" accept="image/*" id="thumb-file-hidden" style="display:none">
                     <?php endif; ?>
-
-                    <!-- Judul -->
+                    
                     <div class="field-group">
                         <label class="field-label" for="f-title">Judul Video</label>
                         <input type="text" id="f-title" name="title" placeholder="Masukkan judul video..."
@@ -309,7 +346,7 @@ $thumb_src = !empty($video['thumbnail'])
                             oninput="document.getElementById('sidebar-title').textContent = this.value || '—'">
                     </div>
 
-                    <!-- Deskripsi — mengisi sisa ruang -->
+                    
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description"
@@ -317,7 +354,72 @@ $thumb_src = !empty($video['thumbnail'])
                             class="field-input" style="flex:1;min-height:120px;resize:none;"><?= htmlspecialchars($video['description'] ?? '') ?></textarea>
                     </div>
 
-                    <!-- Actions -->
+                    
+                    <div class="field-group" style="gap:10px;">
+                        <label class="field-label">Subtitle</label>
+                        <?php if (!empty($existing_subtitles)): ?>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <?php foreach ($existing_subtitles as $_sub): ?>
+                                    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 10px;">
+                                        <i data-lucide="captions" style="width:13px;height:13px;color:var(--accent);flex-shrink:0;"></i>
+                                        <span style="flex:1;font-size:11px;font-weight:700;color:#e2e6ef;text-transform:uppercase;letter-spacing:.06em;"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
+                                        <span style="font-size:9px;color:#455060;text-transform:uppercase;letter-spacing:.05em;"><?= htmlspecialchars($_sub['file']) ?></span>
+                                        <form method="POST" style="display:inline;margin:0;"
+                                            onsubmit="return meelConfirmForm(event, { title:'Hapus Subtitle', text:'Hapus subtitle bahasa <?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?>?', confirmButtonText:'HAPUS' })">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                                            <input type="hidden" name="delete_subtitle_lang" value="<?= htmlspecialchars($_sub['lang']) ?>">
+                                            <button type="submit" title="Hapus subtitle"
+                                                style="background:none;border:none;cursor:pointer;color:#f87171;padding:4px;display:flex;"
+                                                aria-label="Hapus subtitle <?= htmlspecialchars($_sub['lang']) ?>">
+                                                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="font-size:10px;color:#455060;">Belum ada subtitle untuk video ini.</div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <label class="field-label">Upload / Ganti Subtitle</label>
+                        
+                        <div class="drop-zone-subtitle" id="subtitle-zone">
+                            <input type="file" name="subtitle" accept=".vtt,.srt"
+                                id="f-subtitle" onchange="handleSubtitleFile(this)" aria-label="Pilih file subtitle (VTT atau SRT)">
+                            <div class="drop-zone-icon">
+                                <i data-lucide="captions" style="width:18px;height:18px;color:var(--accent);"></i>
+                            </div>
+                            <div class="drop-zone-text">
+                                <div class="drop-zone-label" id="subtitle-label">Subtitle</div>
+                                <div class="drop-zone-sub" id="subtitle-sub">Opsional · VTT / SRT (maks 2MB)</div>
+                            </div>
+                        </div>
+
+                        
+                        <div class="field-group" id="subtitle-lang-wrap" style="display:none;">
+                            <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
+                            <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
+                                <button type="button" class="lang-trigger" id="f-subtitle-lang-trigger"
+                                    aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="lang-trigger-label" id="f-subtitle-lang-label"><?= htmlspecialchars(lang_map()['id'] ?? 'Indonesia') ?></span>
+                                    <i data-lucide="chevron-down" class="lang-trigger-chevron"></i>
+                                </button>
+                                <div class="lang-options hidden" role="listbox" aria-label="Pilih bahasa subtitle">
+                                    <?php foreach (lang_map() as $_lang_code => $_lang_label): ?>
+                                        <button type="button" class="lang-option<?= $_lang_code === 'id' ? ' active' : '' ?>"
+                                            data-lang="<?= htmlspecialchars($_lang_code) ?>" role="option"
+                                            aria-selected="<?= $_lang_code === 'id' ? 'true' : 'false' ?>"><?= htmlspecialchars($_lang_label) ?></button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <input type="hidden" name="subtitle_lang" id="f-subtitle-lang" value="id">
+                        </div>
+                        <div style="font-size:9px;color:#455060;">SRT dikonversi otomatis ke VTT</div>
+                    </div>
+
+                    
                     <div class="form-actions">
                         <button type="submit" name="update" id="btn-save" class="btn-primary">
                             <i data-lucide="save" style="width:15px;height:15px;"></i>
@@ -331,11 +433,13 @@ $thumb_src = !empty($video['thumbnail'])
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <?php $scripts_root = '../'; include __DIR__ . '/../partials/scripts.php'; ?>
+    <script src="../assets/js/admin/edit/shared/form.js?v=<?= filemtime('../assets/js/admin/edit/shared/form.js') ?>"></script>
+    <script src="../assets/js/admin/edit/shared/thumbnail.js?v=<?= filemtime('../assets/js/admin/edit/shared/thumbnail.js') ?>"></script>
+    <script src="../assets/js/admin/edit/shared/dragdrop.js?v=<?= filemtime('../assets/js/admin/edit/shared/dragdrop.js') ?>"></script>
+    <script src="../assets/js/admin/edit/video.js?v=<?= filemtime('../assets/js/admin/edit/video.js') ?>"></script>
+    <script src="../assets/js/shared/lang-dropdown.js?v=<?= filemtime('../assets/js/shared/lang-dropdown.js') ?>"></script>
     <script>
-        lucide.createIcons();
-
         <?php if ($status === "success"): ?>
             Swal.fire({
                 title: 'Berhasil!',
@@ -346,64 +450,6 @@ $thumb_src = !empty($video['thumbnail'])
                 color: '#fff'
             });
         <?php endif; ?>
-
-        function handleSubmit() {
-            const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin2 .7s linear infinite;"></div> Menyimpan...';
-            btn.style.opacity = '.6';
-            btn.style.pointerEvents = 'none';
-        }
-
-        // Hidden file input di dalam form — trigger via klik/drop di sidebar
-        const thumbHidden = document.getElementById('thumb-file-hidden');
-
-        function handleThumbChange(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('thumb-preview').src = e.target.result;
-                    document.getElementById('thumb-changed-badge').style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // Klik pada area thumbnail → trigger hidden input
-        document.getElementById('thumb-wrap').addEventListener('click', function(e) {
-            if (e.target === thumbHidden) return;
-            thumbHidden.click();
-        });
-
-        // Hidden input change → preview
-        thumbHidden.addEventListener('change', function() {
-            handleThumbChange(this);
-        });
-
-        // Drag-and-drop onto thumbnail
-        const thumbWrap = document.getElementById('thumb-wrap');
-
-        thumbWrap.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            thumbWrap.classList.add('drag-over');
-        });
-        thumbWrap.addEventListener('dragleave', function() {
-            thumbWrap.classList.remove('drag-over');
-        });
-        thumbWrap.addEventListener('drop', function(e) {
-            e.preventDefault();
-            thumbWrap.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files && files[0] && files[0].type.startsWith('image/')) {
-                const dt = new DataTransfer();
-                dt.items.add(files[0]);
-                thumbHidden.files = dt.files;
-                handleThumbChange(thumbHidden);
-            }
-        });
-
-        const style = document.createElement('style');
-        style.textContent = '@keyframes spin2 { to { transform: rotate(360deg); } }';
-        document.head.appendChild(style);
     </script>
 </body>
 

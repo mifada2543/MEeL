@@ -1,56 +1,49 @@
 <?php
-/**
- * controllers/admin_data.php
- *
- * Penyedia data untuk admin dashboard.
- * Mendefinisikan semua variabel yang dipakai di view admin/index.php:
- *   $banned_ips, $stats, $top_media, $sys, $storage_usage,
- *   $ssd_free, $ssd_total, $ssd_used, $ssd_perc,
- *   $hdd_free, $hdd_total,
- *   $sz_vid, $sz_mus, $sz_book, $sz_d_pub, $sz_d_prv, $sz_drive_total,
- *   $p_vid, $p_mus, $p_book, $p_drive,
- *   $orphans, $pending_users, $result_monitor, $all_users
- */
 
-// ─── BANNED IPS ────────────────────────────────────────────────────────────
+if (!defined('MEEL_ADMIN_CONTEXT')) {
+    $_GET['code'] = 'denied';
+    die(include __DIR__ . '/../../err/index.php');
+}
+
 $banned_ips = $conn->query("SELECT * FROM ip_ban ORDER BY banned_at DESC");
 
-// ─── ALL NON-GUEST USERS ──────────────────────────────────────────────────
 $all_users = $conn->query(
     "SELECT id, username, role, is_active, created_at FROM users WHERE role != 'guest' ORDER BY role ASC, username ASC"
 );
 
-// ─── STATISTICS ────────────────────────────────────────────────────────────
-if (!function_exists('__admin_get_count')) {
-    function __admin_get_count(mysqli $conn, string $query): int
-    {
-        $r = $conn->query($query);
-        return ($r) ? (int)($r->fetch_row()[0] ?? 0) : 0;
-    }
-}
-
+$stats_row = $conn->query("
+    SELECT
+        (SELECT COUNT(*) FROM video)                                   AS video,
+        (SELECT COUNT(*) FROM music)                                   AS music,
+        (SELECT COUNT(*) FROM books)                                   AS books,
+        (SELECT COALESCE(SUM(views), 0) FROM video)                    AS v_views,
+        (SELECT COALESCE(SUM(views), 0) FROM music)                    AS m_views,
+        (SELECT COUNT(*) FROM interactions WHERE type = 'like')        AS likes,
+        (SELECT COUNT(*) FROM interactions WHERE type = 'dislike')     AS dislikes,
+        (SELECT COUNT(*) FROM users WHERE is_active = 2)               AS pending
+");
+$stats_row = $stats_row ? $stats_row->fetch_assoc() : [];
 $stats = [
-    'video'         => __admin_get_count($conn, "SELECT COUNT(*) FROM video"),
-    'music'         => __admin_get_count($conn, "SELECT COUNT(*) FROM music"),
-    'books'         => __admin_get_count($conn, "SELECT COUNT(*) FROM books"),
-    'total_views'   => __admin_get_count($conn, "SELECT SUM(views) FROM video")
-                       + __admin_get_count($conn, "SELECT SUM(views) FROM music"),
-    'total_likes'   => __admin_get_count($conn, "SELECT COUNT(*) FROM interactions WHERE type = 'like'"),
-    'total_dislikes'=> __admin_get_count($conn, "SELECT COUNT(*) FROM interactions WHERE type = 'dislike'"),
-    'pending'       => __admin_get_count($conn, "SELECT COUNT(*) FROM users WHERE is_active = 2"),
+    'video'         => (int)($stats_row['video'] ?? 0),
+    'music'         => (int)($stats_row['music'] ?? 0),
+    'books'         => (int)($stats_row['books'] ?? 0),
+    'total_views'   => (int)($stats_row['v_views'] ?? 0) + (int)($stats_row['m_views'] ?? 0),
+    'total_likes'   => (int)($stats_row['likes'] ?? 0),
+    'total_dislikes'=> (int)($stats_row['dislikes'] ?? 0),
+    'pending'       => (int)($stats_row['pending'] ?? 0),
 ];
 
-// ─── TOP MEDIA ─────────────────────────────────────────────────────────────
 $top_media = $conn->query("
     (SELECT id, title, views, 'video' AS type FROM video ORDER BY views DESC LIMIT 1)
     UNION ALL
     (SELECT id, title, views, 'music' AS type FROM music ORDER BY views DESC LIMIT 1)
 ");
 
-// ─── STORAGE USAGE ─────────────────────────────────────────────────────────
 require_once __DIR__ . '/../../modules/core/System.php';
 $sys           = new System($conn);
 $storage_usage = $sys->getStorageUsage();
+
+$server_stats = $sys->getServerStats();
 
 $ssd_free  = $storage_usage['ssd']['free'];
 $ssd_total = $storage_usage['ssd']['total'];
@@ -72,8 +65,26 @@ $p_mus   = $storage_usage['percentages']['music'];
 $p_book  = $storage_usage['percentages']['books'];
 $p_drive = $storage_usage['percentages']['drive'];
 
-// ─── ORPHAN CHECK ──────────────────────────────────────────────────────────
-$orphans   = [];
+
+$orphans           = [];
+$orphan_checked_at = null;
+
+$ORPHAN_CACHE_TTL  = 600;
+$orphan_cache_file = defined('MEEL_ADMIN_ORPHANS_CACHE')
+    ? MEEL_ADMIN_ORPHANS_CACHE
+    : dirname(__DIR__, 2) . '/temp/cache/admin_orphans.json';
+
+if (is_readable($orphan_cache_file)) {
+    $cached = json_decode((string) file_get_contents($orphan_cache_file), true);
+    if (is_array($cached) && isset($cached['checked_at'], $cached['orphans'])
+        && is_array($cached['orphans'])
+        && (time() - (int) $cached['checked_at']) < $ORPHAN_CACHE_TTL) {
+        $orphans           = $cached['orphans'];
+        $orphan_checked_at = (int) $cached['checked_at'];
+    }
+}
+
+if ($orphan_checked_at === null) {
 $check_map = [
     'video/upload/video/'       => 'video',
     'music/upload/file/'        => 'music',
@@ -84,7 +95,6 @@ $check_map = [
     'books/upload/thumbnail/'   => 'books',
 ];
 
-// Ambil data DB sekaligus ke memori
 $db_data = ['video_files' => [], 'video_thumbs' => [], 'music_files' => [], 'books_folders' => [], 'books_thumbs' => []];
 
 $res = $conn->query("SELECT filename, thumbnail FROM video");
@@ -125,55 +135,65 @@ if (!function_exists('__admin_scan_files')) {
 
 $ignored_files = ['.htaccess', 'default_video.png', 'music_default.png', 'default_cover.jpg'];
 
-$base_dir = realpath(__DIR__ . '/../..') . '/';
+$__video_files_flip   = array_flip($db_data['video_files']);
+$__video_thumbs_flip  = array_flip($db_data['video_thumbs']);
+$__music_files_flip   = array_flip($db_data['music_files']);
+$__books_folders_flip = array_flip($db_data['books_folders']);
+$__books_thumbs_flip  = array_flip($db_data['books_thumbs']);
+$__ignored_flip       = array_flip($ignored_files);
+$__all_video_files    = implode("\n", $db_data['video_files']);
+
+$base_dirs = [
+    'video/upload/video/'       => meel_media_base_path('video') . '/video/',
+    'music/upload/file/'        => meel_media_base_path('music') . '/file/',
+    'video/upload/thumbnail/'   => meel_media_base_path('video') . '/thumbnail/',
+    'music/upload/thumbnail/'   => meel_media_base_path('music') . '/thumbnail/',
+    'books/upload/manga/'       => meel_media_base_path('books') . '/manga/',
+    'books/upload/pdf/'         => meel_media_base_path('books') . '/pdf/',
+    'books/upload/thumbnail/'   => meel_media_base_path('books') . '/thumbnail/',
+];
 
 foreach ($check_map as $rel_path => $table) {
-    $abs_path  = $base_dir . $rel_path;
+    $abs_path  = $base_dirs[$rel_path];
     $all_files = __admin_scan_files($abs_path);
 
     foreach ($all_files as $full_path) {
         $fname = basename($full_path);
-        if (in_array($fname, $ignored_files, true)) continue;
+        if (isset($__ignored_flip[$fname])) continue;
 
         $is_orphan = true;
 
-        // Manga folder
         if (str_contains($full_path, '/books/upload/manga/')) {
             $relative = substr($full_path, strlen($abs_path));
             $folder   = explode('/', $relative)[0];
-            if (in_array($folder, $db_data['books_folders'], true)) $is_orphan = false;
+            if (isset($__books_folders_flip[$folder])) $is_orphan = false;
         }
-        // Video
         elseif ($table === 'video') {
             if (str_contains($full_path, '/thumbnail/')) {
-                if (in_array($fname, $db_data['video_thumbs'], true)) $is_orphan = false;
+                if (isset($__video_thumbs_flip[$fname])) $is_orphan = false;
             } else {
-                if (in_array($fname, $db_data['video_files'], true)) {
+                if (isset($__video_files_flip[$fname])) {
                     $is_orphan = false;
                 } else {
                     $segments = explode('/', str_replace('\\', '/', $full_path));
                     $parent   = count($segments) >= 2 ? $segments[count($segments) - 2] : '';
-                    if (!empty($parent) && !in_array($parent, ['video', 'upload'], true)) {
-                        foreach ($db_data['video_files'] as $db_f) {
-                            if (str_contains($db_f, $parent)) { $is_orphan = false; break; }
-                        }
+                    if (!empty($parent) && !in_array($parent, ['video', 'upload'], true)
+                        && str_contains($__all_video_files, $parent)) {
+                        $is_orphan = false;
                     }
                     if ($is_orphan) {
                         foreach ($segments as $seg) {
                             if (empty($seg) || in_array($seg, ['video', 'upload'], true)) continue;
-                            foreach ($db_data['video_files'] as $db_f) {
-                                if (str_contains($db_f, $seg)) { $is_orphan = false; break 2; }
-                            }
+                            if (str_contains($__all_video_files, $seg)) { $is_orphan = false; break; }
                         }
                     }
                 }
             }
         }
-        // Music / Books
         else {
-            if ($table === 'books' && (in_array($fname, $db_data['books_folders'], true) || in_array($fname, $db_data['books_thumbs'], true))) {
+            if ($table === 'books' && (isset($__books_folders_flip[$fname]) || isset($__books_thumbs_flip[$fname]))) {
                 $is_orphan = false;
-            } elseif ($table === 'music' && in_array($fname, $db_data['music_files'], true)) {
+            } elseif ($table === 'music' && isset($__music_files_flip[$fname])) {
                 $is_orphan = false;
             }
         }
@@ -182,58 +202,55 @@ foreach ($check_map as $rel_path => $table) {
     }
 }
 
-// ─── PENDING USERS ─────────────────────────────────────────────────────────
+    $orphan_checked_at = time();
+    if (function_exists('meel_write_cache_file')) {
+        meel_write_cache_file($orphan_cache_file, json_encode([
+            'checked_at' => $orphan_checked_at,
+            'orphans'    => $orphans,
+        ], JSON_UNESCAPED_UNICODE));
+    }
+}
+
 $pending_users = $conn->query("SELECT id, username, created_at FROM users WHERE is_active = 2");
 
-// ─── ACTIVITY MONITOR ─────────────────────────────────────────────────────
 $result_monitor = $conn->query(
     "SELECT username, role, last_activity, last_page, user_agent, access_via, ip_address
      FROM users ORDER BY last_activity DESC LIMIT 10"
 );
 
-// ─── CHART DATA: 7-Day Activity ─────────────────────────────────────────
+$chart_from = date('Y-m-d', strtotime('-6 days'));
+
+$chart_views = [];
+$res = $conn->query("SELECT DATE(upload_date) AS d, COALESCE(SUM(views), 0) AS v FROM video WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
+while ($row = $res->fetch_assoc()) $chart_views[$row['d']] = (int) $row['v'];
+$res = $conn->query("SELECT DATE(upload_date) AS d, COALESCE(SUM(views), 0) AS v FROM music WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
+while ($row = $res->fetch_assoc()) $chart_views[$row['d']] = ($chart_views[$row['d']] ?? 0) + (int) $row['v'];
+
+$chart_uploads = [];
+$res = $conn->query("SELECT DATE(upload_date) AS d, COUNT(*) AS c FROM (
+    SELECT upload_date FROM video
+    UNION ALL SELECT upload_date FROM music
+    UNION ALL SELECT upload_date FROM books
+) AS u WHERE upload_date >= '$chart_from' GROUP BY DATE(upload_date)");
+while ($row = $res->fetch_assoc()) $chart_uploads[$row['d']] = (int) $row['c'];
+
+$chart_active = [];
+$res = $conn->query("SELECT DATE(created_at) AS d, COUNT(DISTINCT user_id) AS c FROM activity_log WHERE created_at >= '$chart_from' GROUP BY DATE(created_at)");
+while ($row = $res->fetch_assoc()) $chart_active[$row['d']] = (int) $row['c'];
+
+$chart_new = [];
+$res = $conn->query("SELECT DATE(created_at) AS d, COUNT(*) AS c FROM users WHERE created_at >= '$chart_from' AND role != 'guest' GROUP BY DATE(created_at)");
+while ($row = $res->fetch_assoc()) $chart_new[$row['d']] = (int) $row['c'];
+
 $chart_activity = [];
 for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime("-$i days"));
-    $label = date('D', strtotime("-$i days"));
-
-    // Total views (video + music) per day
-    $views = __admin_get_count($conn, "
-        SELECT COALESCE(SUM(v.views), 0) + COALESCE(SUM(m.views), 0)
-        FROM (
-            SELECT SUM(views) AS views FROM video WHERE DATE(upload_date) = '$date'
-            UNION ALL
-            SELECT SUM(views) AS views FROM music WHERE DATE(upload_date) = '$date'
-        ) AS t
-    ");
-
-    // Uploads per day
-    $uploads = __admin_get_count($conn, "
-        SELECT COUNT(*) FROM (
-            SELECT id FROM video WHERE DATE(upload_date) = '$date'
-            UNION ALL
-            SELECT id FROM music WHERE DATE(upload_date) = '$date'
-            UNION ALL
-            SELECT id FROM books WHERE DATE(upload_date) = '$date'
-        ) AS u
-    ");
-
-    // Active users (activity_log entries)
-    $active_users = __admin_get_count($conn, "
-        SELECT COUNT(DISTINCT user_id) FROM activity_log WHERE DATE(created_at) = '$date'
-    ");
-
-    // New registrations per day
-    $new_users = __admin_get_count($conn, "
-        SELECT COUNT(*) FROM users WHERE DATE(created_at) = '$date' AND role != 'guest'
-    ");
-
     $chart_activity[] = [
         'date'  => $date,
-        'label' => $label,
-        'views' => $views,
-        'uploads' => $uploads,
-        'users' => $active_users,
-        'new_users' => $new_users,
+        'label' => date('D', strtotime("-$i days")),
+        'views'     => $chart_views[$date] ?? 0,
+        'uploads'   => $chart_uploads[$date] ?? 0,
+        'users'     => $chart_active[$date] ?? 0,
+        'new_users' => $chart_new[$date] ?? 0,
     ];
 }

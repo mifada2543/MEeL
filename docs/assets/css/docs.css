@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
-   MEeL — Documentation Shared Styles
-   ═══════════════════════════════════════════════════════════ */
+/* MEeL — Documentation Shared Styles */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,7 +12,7 @@ body {
     flex-direction: column;
 }
 
-/* ── Navbar ──────────────────────────────── */
+/* Navbar */
 .navbar {
     background: rgba(11,15,26,0.92);
     backdrop-filter: blur(12px);
@@ -77,7 +75,7 @@ body {
     background: rgba(59,130,246,0.08);
 }
 
-/* ── Container ───────────────────────────── */
+/* Container */
 .container {
     max-width: 860px;
     width: 100%;
@@ -86,7 +84,7 @@ body {
     flex: 1;
 }
 
-/* ── Markdown Content ─────────────────────── */
+/* Markdown Content */
 .content h1 {
     font-size: 2rem;
     font-weight: 800;
@@ -194,7 +192,7 @@ body {
     margin: 1rem 0;
 }
 
-/* ── Landing Page ─────────────────────────── */
+/* Landing Page */
 .landing {
     display: flex;
     flex-direction: column;
@@ -268,7 +266,7 @@ body {
     border-color: rgba(59,130,246,0.4);
 }
 
-/* ── Loading ──────────────────────────────── */
+/* Loading */
 #loading {
     display: flex;
     align-items: center;
@@ -287,7 +285,7 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Error ────────────────────────────────── */
+/* Error */
 #error {
     display: none;
     text-align: center;
@@ -296,7 +294,7 @@ body {
 #error h2 { color: #ef4444; font-size: 1.2rem; margin-bottom: 0.5rem; }
 #error p { color: #64748b; font-size: 0.9rem; }
 
-/* ── Footer ───────────────────────────────── */
+/* Footer */
 .footer {
     text-align: center;
     padding: 1.5rem;
@@ -306,7 +304,7 @@ body {
 }
 .footer a { color: #3b82f6; text-decoration: none; }
 
-/* ── Responsive ───────────────────────────── */
+/* Responsive */
 @media (max-width: 640px) {
     .container { padding: 1.25rem 1rem 3rem; }
     .content h1 { font-size: 1.4rem; }

@@ -1,0 +1,98 @@
+
+.file-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.file-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.file-icon-wrapper {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  transition: background 0.2s;
+}
+.file-card:hover .file-icon-wrapper {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.file-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.file-card:hover .file-actions {
+  opacity: 1;
+}
+.file-action-btn {
+  padding: 6px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.file-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.file-action-btn.preview:hover {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+}
+.file-action-btn.download:hover {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+}
+.file-action-btn.delete:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.file-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.drive-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1rem;
+  opacity: 0.3;
+  text-align: center;
+}
+.drive-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  color: currentColor;
+}
+.drive-empty-text {
+  font-size: 1rem;
+  font-weight: 600;
+}

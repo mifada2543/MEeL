@@ -1,0 +1,10 @@
+# Deny all web access — PHP include-only files (dipakai auth/login.php & auth/register.php)
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

@@ -1,13 +1,28 @@
 <?php
-session_name('meel');
-session_start();
+require_once '../modules/core/helpers.php';
+meel_boot_session();
 include '../auth/config.php';
 
-if (!isset($_SESSION['user_id'])) die('Silakan login terlebih dahulu.');
+function playlist_back_url(): string
+{
+    $back = 'beranda';
+    if (isset($_SERVER['HTTP_REFERER']) && $_SERVER['HTTP_REFERER'] !== '') {
+        $ref_host = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
+        if ($ref_host === ($_SERVER['HTTP_HOST'] ?? '')) {
+            $back = $_SERVER['HTTP_REFERER'];
+        }
+    }
+    return $back;
+}
 
-// 🔒 FIX CSRF: Verifikasi token untuk semua aksi playlist
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../auth/login');
+    exit;
+}
+
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
-    die('CSRF Token tidak valid.');
+    header('Location: ' . playlist_back_url());
+    exit;
 }
 
 $user_id = (int) $_SESSION['user_id'];
@@ -15,8 +30,10 @@ $action  = $_POST['action'] ?? '';
 
 function redirect(string $url): never
 {
-    // Validasi redirect — hanya izinkan URL relatif atau internal
-    $allowed_prefixes = ['watch.php', 'view_playlist.php', 'index.php'];
+    $allowed_prefixes = [
+        'watch.php', 'view_playlist.php', 'index.php',
+        'watch', 'playlist', 'beranda', 'music/',
+    ];
     $safe = false;
     foreach ($allowed_prefixes as $prefix) {
         if (str_starts_with($url, $prefix)) {
@@ -24,20 +41,24 @@ function redirect(string $url): never
             break;
         }
     }
+    if (!$safe
+        && str_starts_with($url, '/')
+        && !str_starts_with($url, '//')
+        && !str_contains($url, '://')) {
+        $safe = true;
+    }
     if (!$safe) {
-        $url = 'index.php';
+        $url = 'beranda';
     }
     header("Location: $url");
     exit;
 }
 
-// ── 1. BUAT PLAYLIST BARU ─────────────────────────────────────────────────
 if ($action === 'create_playlist') {
     $name     = trim($_POST['playlist_name'] ?? '');
     $music_id = (int) ($_POST['music_id'] ?? 0);
 
     if ($name !== '') {
-        // 🔒 TRANSACTION: Atomic playlist + track creation
         $conn->begin_transaction();
         try {
             $stmt = $conn->prepare('INSERT INTO playlists (user_id, name) VALUES (?, ?)');
@@ -60,18 +81,18 @@ if ($action === 'create_playlist') {
             $conn->commit();
         } catch (\Throwable $e) {
             $conn->rollback();
-            die('Error: ' . $e->getMessage());
+            error_log('playlist_action: ' . $e->getMessage());
+            header('Location: ' . playlist_back_url());
+            exit;
         }
     }
-    redirect("watch.php?id=$music_id&msg=playlist_created");
+    redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=playlist_created');
 }
 
-// ── 2. TAMBAH LAGU KE PLAYLIST ────────────────────────────────────────────
 if ($action === 'add_to_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
     $music_id    = (int) ($_POST['music_id']    ?? 0);
 
-    // 🔒 TRANSACTION: Atomic check + insert — cegah duplicate race condition
     $conn->begin_transaction();
     try {
         $check = $conn->prepare('SELECT id FROM playlist_tracks WHERE playlist_id = ? AND music_id = ?');
@@ -94,10 +115,9 @@ if ($action === 'add_to_playlist') {
         $conn->rollback();
         die('Error: ' . $e->getMessage());
     }
-    redirect("watch.php?id=$music_id&msg=added_to_playlist");
+    redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=added_to_playlist');
 }
 
-// ── 3. HAPUS LAGU DARI PLAYLIST ───────────────────────────────────────────
 if ($action === 'remove_from_playlist') {
     $pivot_id    = (int) ($_POST['pivot_id']    ?? 0);
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
@@ -106,23 +126,20 @@ if ($action === 'remove_from_playlist') {
     $stmt->bind_param('i', $pivot_id);
     $stmt->execute();
     $stmt->close();
-    redirect("view_playlist.php?id=$playlist_id");
+    redirect(base_url('/music/playlist?id=' . (int)$playlist_id));
 }
 
-// ── 4. HAPUS TOTAL PLAYLIST ───────────────────────────────────────────────
 if ($action === 'delete_playlist') {
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
 
-    // 🔒 TRANSACTION: Hapus playlist beserta semua track di dalamnya
     $conn->begin_transaction();
     try {
-        // Hapus semua track milik playlist ini
         $stmt_tracks = $conn->prepare('DELETE FROM playlist_tracks WHERE playlist_id = ?');
         $stmt_tracks->bind_param('i', $playlist_id);
         $stmt_tracks->execute();
         $stmt_tracks->close();
 
-        // Hapus playlist (hanya milik user yang bersangkutan)
+        
         $stmt = $conn->prepare('DELETE FROM playlists WHERE id = ? AND user_id = ?');
         $stmt->bind_param('ii', $playlist_id, $user_id);
         if (!$stmt->execute()) {
@@ -135,5 +152,5 @@ if ($action === 'delete_playlist') {
         $conn->rollback();
         die('Error: ' . $e->getMessage());
     }
-    redirect('index.php?msg=playlist_deleted');
+    redirect(base_url('/music/beranda?msg=playlist_deleted'));
 }

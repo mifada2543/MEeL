@@ -93,7 +93,14 @@ jobs:
       - name: Run Functional Tests
         run: |
           if [ -f tests/functional_test.php ]; then
-            php tests/functional_test.php || exit $?
+            # Catat rc via || (bukan baris terpisah) karena run: di GitHub Actions
+            # berjalan dengan `bash -e` — perintah yang return 1 langsung menghentikan
+            # shell sebelum rc=$? sempat dieksekusi; || membuatnya exempt dari set -e.
+            rc=0
+            php tests/functional_test.php || rc=$?
+            # 1 = lulus dengan peringatan (storage/HDD belum ter-mount, dll.) → tetap hijau
+            if [ "$rc" -gt 1 ]; then exit "$rc"; fi
+            if [ "$rc" -eq 1 ]; then echo "⚠️  Functional test passed with warnings (exit 1)"; fi
           else
             echo "⚠️  Functional test not found, skipping."
           fi
@@ -125,7 +132,14 @@ jobs:
       - name: Run Security Tests
         run: |
           if [ -f tests/security_test.php ]; then
-            php tests/security_test.php || exit $?
+            # Catat rc via || (bukan baris terpisah) karena run: di GitHub Actions
+            # berjalan dengan `bash -e` — perintah yang return 1 langsung menghentikan
+            # shell sebelum rc=$? sempat dieksekusi; || membuatnya exempt dari set -e.
+            rc=0
+            php tests/security_test.php || rc=$?
+            # 1 = lulus dengan peringatan (storage/HDD belum ter-mount, dll.) → tetap hijau
+            if [ "$rc" -gt 1 ]; then exit "$rc"; fi
+            if [ "$rc" -eq 1 ]; then echo "⚠️  Security test passed with warnings (exit 1)"; fi
           else
             echo "⚠️  Security test not found, skipping."
           fi
@@ -175,10 +189,82 @@ jobs:
             echo "⚠️  composer.json not found, skipping."
           fi
 
+      - name: Install mecab (Japanese tests dependency)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mecab
+          # Nama paket kamus berbeda antar versi Ubuntu:
+          #   < 20.04: mecab-ipadic-utf8 ; >= 20.04: mecab-ipadic
+          sudo apt-get install -y mecab-ipadic-utf8 || sudo apt-get install -y mecab-ipadic || true
+          echo "テスト" | mecab || echo "⚠️  mecab gagal diuji — Japanese tests akan skip"
+
       - name: Run PHPUnit Tests
         run: |
           if [ -f vendor/bin/phpunit ]; then
-            php vendor/bin/phpunit --no-coverage --verbose
+            # Hanya suite unit: integration tests membutuhkan MySQL + data nyata
+            # yang tidak tersedia di runner (lihat docs/en/test.md).
+            php vendor/bin/phpunit --no-coverage --verbose --testsuite='MEeL Core Unit Tests'
+          else
+            echo "⚠️  PHPUnit not installed, skipping."
+          fi
+
+  # ─── Job 4b: PHPUnit Integration Tests (MySQL service) ───
+  # Integration tests membutuhkan MySQL — service container menyediakan
+  # MySQL 8.0. Database test terpisah `MEeL-test` di-reset, di-import
+  # schema-nya, lalu di-drop OTOMATIS oleh tests/DbTestHelper.php — tidak
+  # pernah menyentuh database produksi dan tidak meninggalkan sisa.
+  phpunit-integration-tests:
+    name: PHPUnit Integration Tests
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          extensions: mysqli
+          tools: composer
+
+      - name: Install Composer Dependencies
+        run: |
+          if [ -f composer.json ]; then
+            composer install --no-progress --no-interaction --prefer-dist
+          else
+            echo "⚠️  composer.json not found, skipping."
+          fi
+
+      - name: Run PHPUnit Integration Tests
+        env:
+          MEEL_TEST_DB_HOST: 127.0.0.1
+          MEEL_TEST_DB_USER: root
+          MEEL_TEST_DB_PASS: root
+        run: |
+          if [ -f vendor/bin/phpunit ]; then
+            php vendor/bin/phpunit --no-coverage --verbose --testsuite='MEeL Integration Tests'
           else
             echo "⚠️  PHPUnit not installed, skipping."
           fi
@@ -201,7 +287,7 @@ jobs:
             "controllers" "modules" "logs" "tests" "database"
             "auth" "err" "temp" "data_drive" "books/upload"
             "music/upload" "video/upload" "drive/templates"
-            "docs/partials" "partials" "admin"
+            "docs/partials" "partials" "admin" "scripts"
           )
           missing=0
           for dir in "${sensitive_dirs[@]}"; do
@@ -234,11 +320,127 @@ jobs:
           done
           echo "✅ Permission check complete."
 
-  # ─── Job 6: Summary / Status ───
+  # ─── Job 6: Deployment Check ───
+  deploy-check:
+    name: Deployment Check
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2']
+    env:
+      # secrets TIDAK tersedia di step-level if: → expose di env job-level
+      # lalu baca lewat env.STAGING_URL (kosong bila secret belum diset)
+      STAGING_URL: ${{ secrets.STAGING_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: none
+
+      - name: Simulate storage layout (temp HDD + upload dirs)
+        run: |
+          # check_deploy memverifikasi MEEL_HDD_BASE, upload symlinks dan
+          # .htaccess upload dirs. Runner tidak punya /media storage, jadi kita
+          # buat layout tiruan yang valid di $RUNNER_TEMP lalu arahkan upload
+          # dir ke sana (check_deploy memeriksa target symlink).
+          #
+          # Sejak refactor portabilitas: books/music/video/upload adalah folder
+          # NYATA ter-track di repo (placeholder .gitkeep/.htaccess), bukan
+          # symlink. Di sini folder-nya di-remove lalu diganti symlink ke
+          # storage temp — mensimulasikan layout deploy produksi (symlink dibuat
+          # saat deploy, TIDAK pernah di-commit).
+          #
+          # data_drive/public & data_drive/private_admins juga folder nyata
+          # ter-track — modul Drive membaca storage langsung dari
+          # MEEL_HDD_DRIVE (disimulasikan lewat --hdd), jadi tidak ada symlink
+          # yang perlu diarahkan ke temp untuk Drive.
+          HDD="$RUNNER_TEMP/meel_storage/media"
+          # check_deploy menganggap subdirektori non-auto-create (music/books)
+          # sebagai FAIL jika hilang — buat struktur lengkap seperti install.sh.
+          mkdir -p "$HDD/video/upload/video" "$HDD/video/upload/thumbnail" \
+                   "$HDD/music/upload/file" "$HDD/music/upload/thumbnail" \
+                   "$HDD/books/upload/pdf" "$HDD/books/upload/thumbnail" \
+                   "$HDD/drive/private_admins"
+
+          # .htaccess hardening untuk tiap upload dir (pola sama dengan deploy)
+          for m in video music books; do
+            cp "${{ github.workspace }}/data_drive/.htaccess" "$HDD/$m/upload/.htaccess" 2>/dev/null || true
+            # Upload dir di repo adalah folder nyata → ganti dengan symlink ke storage temp
+            rm -rf "${{ github.workspace }}/$m/upload"
+            ln -s "$HDD/$m/upload" "${{ github.workspace }}/$m/upload"
+          done
+
+          # settings.php dibutuhkan check_deploy (di-copy dari contoh)
+          cp "${{ github.workspace }}/auth/settings.example.php" "${{ github.workspace }}/auth/settings.php" 2>/dev/null || true
+
+          echo "HDD=$HDD" >> "$GITHUB_ENV"
+
+      - name: Run Deployment Check
+        run: |
+          if [ -f tests/check_deploy.php ]; then
+            php tests/check_deploy.php --no-color --hdd="$HDD" || exit $?
+          else
+            echo "⚠️  Deployment check not found, skipping."
+          fi
+
+      - name: Verify Private Drive 403 (staging)
+        if: env.STAGING_URL != ''
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$STAGING_URL/data_drive/private_admins/" || true)
+          [ "$code" = "403" ] || { echo "Expected 403, got $code"; exit 1; }
+
+  # ─── Job 6b: Drive Storage Integrity — tolak symlink di data_drive/ ───
+  drive-storage-check:
+    name: Drive Storage Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Reject symlinks inside data_drive/
+        run: |
+          echo "🔍 Memeriksa data_drive/public & data_drive/private_admins (harus folder nyata)..."
+          # 1) Index check: mode 120000 = symlink ter-track. Git index adalah
+          #    sumber kebenaran apa yang akan ter-commit — bukan sekadar
+          #    working tree.
+          tracked=$(git ls-files -s data_drive/ | awk '$1 == "120000" {print $4}')
+          if [ -n "$tracked" ]; then
+            echo "❌ Symlink ter-track di data_drive/ (dilarang):"
+            echo "$tracked" | sed 's/^/   - /'
+            echo ""
+            echo "Perbaikan: hapus symlink; untuk storage eksternal set MEEL_HDD_DRIVE"
+            echo "di auth/settings.php (modul Drive membaca langsung, tanpa symlink)."
+            exit 1
+          fi
+          # 2) Working-tree check: symlink yang muncul di filesystem (mis. hasil
+          #    deploy lokal yang keliru di-commit via -f).
+          found=0
+          while IFS= read -r -d '' link; do
+            echo "❌ Symlink di data_drive/: $link -> $(readlink "$link")"
+            found=1
+          done < <(find data_drive -type l -print0)
+          [ $found -eq 1 ] && exit 1
+          echo "✅ Tidak ada symlink di data_drive/ (index & working tree bersih)."
+
+  # ─── Job 7: Summary / Status ───
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, htaccess-check]
+    needs: [php-syntax, functional-tests, security-tests, phpunit-tests, phpunit-integration-tests, htaccess-check, deploy-check, drive-storage-check]
     if: always()
     steps:
       - name: Generate Job Status Summary
@@ -266,7 +468,10 @@ jobs:
           report_job "Functional Tests" "${{ needs.functional-tests.result }}"
           report_job "Security Tests" "${{ needs.security-tests.result }}"
           report_job "PHPUnit Unit Tests" "${{ needs.phpunit-tests.result }}"
+          report_job "PHPUnit Integration Tests" "${{ needs.phpunit-integration-tests.result }}"
           report_job "HTACCESS & Integrity" "${{ needs.htaccess-check.result }}"
+          report_job "Deployment Check" "${{ needs.deploy-check.result }}"
+          report_job "Drive Storage Integrity" "${{ needs.drive-storage-check.result }}"
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⚡ Optimizations applied" >> $GITHUB_STEP_SUMMARY

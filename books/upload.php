@@ -1,20 +1,18 @@
 <?php
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
-// activity_logger loaded via auth/config.php
+
 require_once '../modules/media/MediaLibrary.php';
 
-// ── Proteksi role admin ───────────────────────────────────────────────────────
 $repo    = new BookRepository($conn);
 $user_id = (int)$_SESSION['user_id'];
 $role    = $repo->getUserRole($user_id);
 
 if ($role !== 'admin') {
-    header("Location: index.php?error=unauthorized");
+    header("Location: ..?error=unauthorized");
     exit();
 }
 
-// ── Handle POST upload ────────────────────────────────────────────────────────
 $message  = '';
 $val_title = htmlspecialchars($_GET['reup'] ?? '');
 
@@ -22,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $message = 'CSRF Token tidak valid.';
     } else {
-    $uploader = new BookUploader($conn, __DIR__);
+    $books_base = dirname(meel_media_base_path('books'));
+    $uploader = new BookUploader($conn, $books_base);
     $result   = $uploader->handleUpload(
         array_merge($_POST, ['user_id' => $user_id]),
         $_FILES
@@ -45,12 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
     <meta property="og:description" content="Upload buku dan dokumen ke perpustakaan digital MEeL Books.">
     <title>MEeL | Upload Book</title>
     <?php include '../partials/link.php'; ?>
-    <style>
-        body {
-            background-color: #05070a;
-            color: white;
-        }
-    </style>
+    <?php foreach (require __DIR__ . '/../assets/css/books/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/books/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/books/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/books/upload/main.css">
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-6">
@@ -58,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
 
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-2xl font-black">Upload to Library</h1>
-            <a href="index.php" class="text-gray-500 hover:text-white transition">
+            <a href="beranda" class="text-gray-500 hover:text-white transition">
                 <i data-lucide="x"></i>
             </a>
         </div>
@@ -69,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
                 <?= htmlspecialchars($message) ?>
             </div>
         <?php endif; ?>
-
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
@@ -125,9 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_book'])) {
         </form>
     </div>
 
-    <script>
-        lucide.createIcons();
-    </script>
+    <script>        lucide.createIcons();
+</script>
 </body>
 
 </html>

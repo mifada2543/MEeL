@@ -1,0 +1,34 @@
+
+
+@media (max-width: 639px) {
+  #video-glow-container {
+    position: sticky;
+    top: 56px;
+    z-index: 40;
+    width: auto;
+    margin-top: -1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    background: var(--bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  #main-video-wrapper,
+  #main-video-wrapper .plyr,
+  #main-video-wrapper .plyr__video-wrapper {
+    border-radius: 0 !important;
+  }
+  #video-info {
+    margin-left: -1rem;
+  }
+}
+
+@media (max-width: 639px) {
+  #main-video-wrapper {
+    max-height: 80vh;
+  }
+}
+
+#video-info {
+  padding-top: 0.5rem;
+  padding-left: 0;
+}

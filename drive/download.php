@@ -1,4 +1,6 @@
 <?php
+error_reporting(0);
+
 require '../auth/auth.php';
 require '../auth/config.php';
 require '../modules/core/helpers.php';
@@ -7,17 +9,19 @@ require __DIR__ . '/DriveService.php';
 $user = DriveUserContext::fromSession($_SESSION);
 $user->authorize();
 
-// CSRF Token Validation untuk GET parameter
+
 if (!isset($_GET['csrf_token']) || !verify_csrf_token($_GET['csrf_token'])) {
     http_response_code(403);
     echo htmlspecialchars('CSRF token tidak valid.', ENT_QUOTES, 'UTF-8');
     exit();
 }
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
 
-// Download adalah operasi baca — tidak perlu rate limit
-// Proteksi sudah cukup via CSRF token + autentikasi session
+set_time_limit(0);
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
 
 try {
     $file = $storage->getFileForDownload(
@@ -26,7 +30,6 @@ try {
         $_GET['scope'] ?? DriveStorage::SCOPE_PUBLIC
     );
 
-    // Audit Logging
     log_drive_operation(
         $user->userId,
         $user->username,
@@ -44,6 +47,14 @@ try {
     header('Cache-Control: must-revalidate');
     header('Pragma: public');
     header('Content-Length: ' . (string) $file['size']);
+    while (@ob_get_level()) {
+        @ob_end_clean();
+    }
+
+    if (defined('MEEL_USE_XSENDFILE') && MEEL_USE_XSENDFILE === true) {
+        header('X-Sendfile: ' . $file['path']);
+        exit();
+    }
 
     readfile($file['path']);
     exit();

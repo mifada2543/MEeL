@@ -3,28 +3,46 @@
 # ==========================================
 
 # ─── SENSITIVE CONFIGURATION ───────────────────────────
-# Database credentials and local configuration
+auth/settings.php
 auth/local.config.php
 .env
 .env.local
 .env.*.local
 
 # ─── UPLOADED MEDIA & USER FILES ───────────────────────
-# User-generated content - these are large and should not be in repo
+music/upload
+!music/upload/
 music/upload/*
+video/upload
+!video/upload/
 video/upload/*
+books/upload
+!books/upload/
 books/upload/*
-data_drive/public/*
-data_drive/private_admins/*
 profile/upload/*
 temp/*
 .agents
-# Keep .gitkeep files to maintain directory structure
+# ─── DATA_DRIVE (Cloud Drive storage) ───────────────────
+data_drive/public
+!data_drive/public/
+data_drive/public/*
+!**/data_drive/public/.gitkeep
+data_drive/private_admins
+!data_drive/private_admins/
+data_drive/private_admins/*
+!**/data_drive/private_admins/.gitkeep
+!**/data_drive/private_admins/.htaccess
 !**/upload/.gitkeep
+!**/upload/.htaccess
 !profile/upload/default_avatar.png
 !**/temp/.gitkeep
-!**/data_drive/public/.gitkeep
-!**/data_drive/private_admins/.gitkeep
+!**/temp/.htaccess
+
+# ─── SEO (file & generator — khusus lokal/personal, tidak untuk di-commit) ───
+sitemap.xml
+robots.txt
+sitemap.php
+robots.php
 
 # ─── CACHE & TEMPORARY FILES ──────────────────────────
 .cache/
@@ -42,6 +60,7 @@ session/*
 # ─── DATABASE FILES ───────────────────────────────────
 /mysql/
 *.sql
+!migration.sql
 !install.sql
 !schema.sql
 *.db
@@ -96,8 +115,6 @@ $RECYCLE.BIN/
 *.user
 
 # ─── DEPENDENCY MANAGEMENT ────────────────────────────
-# Composer — vendor/ is ignored (installed at deploy), but composer.lock
-# MUST be tracked for reproducible CI builds across environments.
 vendor/
 composer.phar
 
@@ -132,6 +149,8 @@ tests/*.result
 .phpunit.result.cache
 logs/tests/
 !logs/tests/.htaccess
+*.html
+!index.html
 
 # ─── DEPLOYMENT FILES ─────────────────────────────────
 deploy.sh
@@ -161,14 +180,5 @@ __pycache__/
 *.key
 *.pub
 
-# ==========================================
-# IMPORTANT: Files to KEEP in Repository
-# ==========================================
-# The following are kept and should be committed:
-# ✓ All source code (.php files)
-# ✓ auth/ directory (except config.php)
-# ✓ assets/ - CSS, JS, images
-# ✓ partials/ - UI components
-# ✓ README.md & Documentation
-# ✓ .htaccess (if needed for routing, or exclude if contains secrets)
-# ✓ Directory structure with .gitkeep files
+# ---Another----
+skills-lock.json

@@ -7,23 +7,37 @@ require __DIR__ . '/DriveService.php';
 $user = DriveUserContext::fromSession($_SESSION);
 $user->authorize();
 
-// CSRF Token Validation
+
 if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     echo htmlspecialchars('CSRF token tidak valid.', ENT_QUOTES, 'UTF-8');
     exit();
 }
 
-$storage = new DriveStorage(dirname(__DIR__) . '/data_drive', $user);
+$storage = new DriveStorage(DriveStorage::defaultBasePath(), $user);
+
+$filename = isset($_POST['file']) ? basename($_POST['file']) : null;
+$type = isset($_POST['type']) ? basename($_POST['type']) : null;
+$scope = $_POST['scope'] ?? DriveStorage::SCOPE_PUBLIC;
+
+$normalizedScope = $storage->normalizeScope($scope);
+if ($normalizedScope === DriveStorage::SCOPE_PUBLIC && !$user->isAdmin()) {
+    log_drive_operation(
+        $user->userId,
+        $user->username,
+        'delete',
+        $filename ?? 'unknown',
+        $type ?? 'unknown',
+        $scope,
+        'denied: member tidak boleh hapus file public'
+    );
+    header('Location: ../err/?code=denied');
+    exit;
+}
 
 try {
-    $filename = isset($_POST['file']) ? basename($_POST['file']) : null;
-    $type = isset($_POST['type']) ? basename($_POST['type']) : null;
-    $scope = $_POST['scope'] ?? DriveStorage::SCOPE_PUBLIC;
-
     $storage->delete($filename, $type, $scope);
 
-    // Audit Logging
     log_drive_operation(
         $_SESSION['user_id'],
         $user->username,
@@ -34,8 +48,11 @@ try {
         'success'
     );
 
-    $normalizedScope = $storage->normalizeScope($scope);
-    header('Location: index.php?scope=' . urlencode($normalizedScope) . '&status=deleted');
+    if ($user->isMember()) {
+        invalidate_dir_size_cache($user->username);
+    }
+
+    header('Location: .?scope=' . urlencode($normalizedScope) . '&status=deleted');
     exit();
 } catch (RuntimeException $exception) {
     log_drive_operation(
@@ -51,5 +68,3 @@ try {
     http_response_code(400);
     echo htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8');
 }
-
-

@@ -52,7 +52,7 @@ MEeL is the answer to that question. It's not just a coding project — it's a *
 Take a look at average monthly digital spending:
 
 | Service | Monthly Cost (USD) | Purpose | Usage Frequency |
-|---------|-----------------|-----------|-----------------|
+|---|---|---|---|
 | Netflix | $10 - $20 | Movies & Series | ⭐⭐⭐ Daily |
 | Spotify / Apple Music | $10 | Music | ⭐⭐⭐ Daily |
 | YouTube Premium | $12 | Ad-free video | ⭐⭐⭐ Daily |
@@ -79,7 +79,7 @@ And that's **not including**:
 ├───────────┬───────────┬──────────┬──────────┬───────────┤
 │  🎬 Video  │  🎵 Music  │ 📚 Books  │ ☁️ Drive  │ 🕹️ Games  │
 │  Streaming │  Player   │  Reader  │ Storage  │  Arcade   │
-│  (HLS.js)  │  (Opus)   │ (PDF/ZIP)│ (RBAC)   │ (Dino/Chess)│
+│  (HLS.js)  │  (Opus)   │ (PDF/ZIP)│ (RBAC)   │ (9 Games)   │
 ├───────────┴───────────┴──────────┴──────────┴───────────┤
 │  Monthly cost: $0 (zero)                                 │
 │  Yearly cost: $0 (zero)                                  │
@@ -130,7 +130,7 @@ You → [ 🖥️ MEeL (Local Server) ] → 100% Your data → 🔒
 Average person's digital collection:
 
 | Media Type | Location 1 | Location 2 | Location 3 |
-|------------|----------|----------|----------|
+|---|---|---|---|
 | 🎬 Video | Laptop | YouTube | Google Drive |
 | 🎵 Music | Phone | Spotify playlist | Work laptop |
 | 📚 Comics/Manga | Laptop folder | Phone | Flash drive |
@@ -157,7 +157,7 @@ Looking for one file? **Open 3-4 different apps** and check one by one.
 Commercial platforms force you to use their formats:
 
 | Platform | Format | Quality | Notes |
-|----------|--------|----------|---------|
+|---|---|---|---|
 | YouTube | H.264/AAC | 👍 Good but compressed | 4K video gets re-encoded |
 | Spotify | Ogg Vorbis 320kbps | 👌 Decent | But not lossless |
 | Netflix | H.264/H.265 | 👍 Good | Depends on connection |
@@ -173,7 +173,7 @@ Commercial platforms force you to use their formats:
 **Automatic transcoding without quality compromise:**
 
 | Input → Output | Engine |
-|----------------|--------|
+|---|---|
 | MP4, MKV, AVI, MOV, WEBM → **HLS (.m3u8 + .ts)** | FFmpeg |
 | MP3, FLAC, WAV, M4A, OGG → **Opus/OGG** | FFmpeg |
 | PDF, ZIP, CBZ → **In-browser Viewer** | PHP |
@@ -204,7 +204,7 @@ Commercial streaming platforms **REQUIRE internet**. If it's down, you can't acc
 **LAN vs internet advantages:**
 
 | Aspect | Commercial Platforms | MEeL (LAN) |
-|-------|-------------------|------------|
+|---|---|---|
 | Speed | 10-50 Mbps (internet) | **1,000+ Mbps (LAN)** |
 | Buffering | Frequent (ISP dependent) | **✅ Zero buffering** |
 | Data usage | High (1-3GB/hour) | **✅ Free (LAN)** |
@@ -220,7 +220,7 @@ Commercial streaming platforms **REQUIRE internet**. If it's down, you can't acc
 ### Yearly Comparison
 
 | Item | Commercial Platforms | MEeL |
-|-----|------------------------|------------|
+|---|---|---|
 | Streaming subscriptions | $360 - $600/year | **$0** |
 | Cloud storage | $25 - $120/year | **$0** |
 | Converter software | $20 - $50/year | **$0** |
@@ -243,7 +243,7 @@ SAVINGS:             $1,850 - $3,600 in 5 years!
 ## Quick Summary
 
 | Real World Problem | Impact | MEeL Solution |
-|---------------------|--------|-------------|
+|---|---|---|
 | 💸 Subscription costs | $360 - $720+/year | **Free — just electricity + HDD** |
 | 🔒 Data privacy | Data sold to advertisers | **Private server, 100% your data** |
 | 📂 Scattered collections | 5+ different platforms | **One integrated hub for all media** |

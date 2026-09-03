@@ -4,22 +4,18 @@
   --snake-glow-heavy: rgba(34, 197, 94, 0.4);
   --snake-gradient: linear-gradient(to right, #22c55e, #06b6d4);
 }
-
 html {
   touch-action: manipulation;
 }
-
 body {
   font-family: "Plus Jakarta Sans", sans-serif;
   background-color: #080b11;
   min-height: 100dvh;
   overflow-x: hidden;
 }
-
 .pixel-font {
   font-family: "Press Start 2P", monospace;
 }
-
 #gameCanvas {
   width: 100%;
   height: auto;
@@ -27,7 +23,6 @@ body {
   display: block;
   image-rendering: pixelated;
 }
-
 @media (min-width: 600px) {
   #gameCanvas {
     max-width: 500px;
@@ -35,32 +30,19 @@ body {
   }
 }
 
-/* Mobile swipe overlay arrows */
-.swipe-arrow {
-  position: absolute;
-  color: rgba(34, 197, 94, 0.15);
-  font-size: 2rem;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-/* Score pulse animation */
 @keyframes score-pop {
   0% { transform: scale(1); }
   50% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
-
 .score-pop {
   animation: score-pop 0.2s ease;
 }
 
-/* Game over overlay */
 #gameOverScreen {
   transition: opacity 0.3s ease;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }

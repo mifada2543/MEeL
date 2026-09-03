@@ -2,10 +2,10 @@
 require_once '../auth/auth.php';
 require_once '../auth/config.php';
 require_once '../modules/core/helpers.php';
+require_once '../modules/media/ProfileRepository.php';
 
-// ── Hanya user login ──
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login");
     exit();
 }
 
@@ -13,36 +13,28 @@ $user_id   = (int)$_SESSION['user_id'];
 $username  = htmlspecialchars($_SESSION['username'] ?? '');
 $is_admin  = ($_SESSION['role'] ?? '') === 'admin';
 
-// ── Cek apakah user punya konten ──
-$q_vid_count = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
-$q_vid_count->bind_param("i", $user_id);
-$q_vid_count->execute();
-$total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
+$profileRepo = new ProfileRepository($conn);
 
-$q_mus_count = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ?");
-$q_mus_count->bind_param("i", $user_id);
-$q_mus_count->execute();
-$total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
+$total_video = $profileRepo->countVideo($user_id);
+$total_music = $profileRepo->countMusic($user_id);
 
 $has_content = ($total_video + $total_music) > 0;
 
-// ── Redirect jika tidak punya konten ──
 if (!$has_content) {
-    header("Location: ../upload_advanced.php?first=1");
+    header("Location: ../upload?first=1");
     exit();
 }
 
-// ── Load backend functions ──
 define('MEEL_MANAGE_ACCESS', true);
 require_once '../controllers/profile/fun-manage.php';
 
-// ── Cleanup files >30 menit setiap kali halaman dimuat ──
 $cleaned_count = cleanupPendingDeletions();
 
-// ── Handle delete action ──
 $delete_msg = '';
 if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+    $csrf_input = $_GET['csrf_token'] ?? ($_POST['csrf_token'] ?? null);
+    $csrf_input = is_string($csrf_input) ? $csrf_input : null;
+    if (!verify_csrf_token($csrf_input)) {
         $delete_msg = 'Token tidak valid.';
     } else {
         $del_id   = (int)$_GET['id'];
@@ -58,20 +50,15 @@ if (isset($_GET['delete']) && isset($_GET['type']) && isset($_GET['id'])) {
 
         $delete_msg = $result['message'];
         if ($result['success']) {
-            // Refresh counts
-            $q_vid_count->execute();
-            $total_video = (int)$q_vid_count->get_result()->fetch_row()[0];
-            $q_mus_count->execute();
-            $total_music = (int)$q_mus_count->get_result()->fetch_row()[0];
+            $total_video = $profileRepo->countVideo($user_id);
+            $total_music = $profileRepo->countMusic($user_id);
         }
     }
 }
 
-// ── Tab aktif ──
 $active_tab = $_GET['tab'] ?? 'video';
 if (!in_array($active_tab, ['video', 'music'])) $active_tab = 'video';
 
-// ── Ambil data konten ──
 $page_size = 20;
 $page = max(1, (int)($_GET['p'] ?? 1));
 $offset = ($page - 1) * $page_size;
@@ -80,25 +67,11 @@ $videos = [];
 $music_list = [];
 
 if ($active_tab === 'video') {
-    $q = $conn->prepare("SELECT id, title, thumbnail, views, likes, dislikes, upload_date FROM video WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
-    $q->bind_param("iii", $user_id, $page_size, $offset);
-    $q->execute();
-    $videos = $q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $q_total = $conn->prepare("SELECT COUNT(*) FROM video WHERE user_id = ?");
-    $q_total->bind_param("i", $user_id);
-    $q_total->execute();
-    $total_items = (int)$q_total->get_result()->fetch_row()[0];
+    $videos      = $profileRepo->getVideosPaginated($user_id, $page_size, $offset);
+    $total_items = $profileRepo->countVideo($user_id);
 } else {
-    $q = $conn->prepare("SELECT id, title, artist, thumbnail, views, likes, dislikes, upload_date FROM music WHERE user_id = ? ORDER BY upload_date DESC LIMIT ? OFFSET ?");
-    $q->bind_param("iii", $user_id, $page_size, $offset);
-    $q->execute();
-    $music_list = $q->get_result()->fetch_all(MYSQLI_ASSOC);
-
-    $q_total = $conn->prepare("SELECT COUNT(*) FROM music WHERE user_id = ?");
-    $q_total->bind_param("i", $user_id);
-    $q_total->execute();
-    $total_items = (int)$q_total->get_result()->fetch_row()[0];
+    $music_list  = $profileRepo->getMusicPaginated($user_id, $page_size, $offset);
+    $total_items = $profileRepo->countMusic($user_id);
 }
 
 $total_pages = max(1, ceil($total_items / $page_size));
@@ -115,9 +88,10 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
     <meta property="og:description" content="Kelola konten video dan musik Anda di MEeL. Edit, hapus, dan pantau statistik.">
     <title>Kelola Konten | MEeL</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/video.css">
-    <style>
-        body {
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
+    <style>        body {
             background-color: #080a0f;
         }
 
@@ -128,7 +102,6 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border-radius: 24px;
         }
 
-        /* ── Tabs ── */
         .manage-tabs {
             display: flex;
             gap: 4px;
@@ -148,7 +121,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             text-transform: uppercase;
             color: #6b7280;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
             text-align: center;
         }
 
@@ -169,13 +142,12 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border: 1px solid rgba(239, 68, 68, 0.15);
         }
 
-        /* ── Content card ── */
         .content-card {
             background: rgba(20, 24, 32, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 16px;
             overflow: hidden;
-            transition: all 0.25s ease;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         .content-card:hover {
@@ -226,7 +198,6 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             gap: 8px;
         }
 
-        /* ── Action buttons ── */
         .action-btn {
             display: inline-flex;
             align-items: center;
@@ -239,7 +210,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             letter-spacing: 0.1em;
             text-transform: uppercase;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
             border: none;
             cursor: pointer;
         }
@@ -266,7 +237,6 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border-color: rgba(239, 68, 68, 0.3);
         }
 
-        /* ── Stats bar ── */
         .stats-bar {
             display: flex;
             gap: 16px;
@@ -299,7 +269,6 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             color: #f97316;
         }
 
-        /* ── Pagination ── */
         .pagination {
             display: flex;
             justify-content: center;
@@ -314,7 +283,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             font-weight: 700;
             color: #6b7280;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -351,7 +320,6 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             letter-spacing: 0.15em;
         }
 
-        /* ── Alert ── */
         .alert-bar {
             padding: 12px 18px;
             border-radius: 14px;
@@ -374,12 +342,12 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             border: 1px solid rgba(239, 68, 68, 0.2);
             color: #ef4444;
         }
-    </style>
+</style>
 </head>
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR -->
+    
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-6 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="<?= $back_url ?>" class="flex items-center gap-2 flex-shrink-0" title="Kembali ke Profil">
@@ -393,7 +361,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
     <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
 
-        <!-- HEADER -->
+        
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Dashboard</div>
@@ -423,15 +391,14 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             </div>
         </div>
 
-        <!-- ALERT -->
+        
         <?php if (!empty($delete_msg)): ?>
             <div class="alert-bar <?= strpos($delete_msg, 'berhasil') !== false || strpos($delete_msg, 'dibersihkan') !== false ? 'alert-success' : 'alert-error' ?>">
                 <i data-lucide="<?= strpos($delete_msg, 'berhasil') !== false || strpos($delete_msg, 'dibersihkan') !== false ? 'check-circle' : 'alert-triangle' ?>" class="w-4 h-4 flex-shrink-0"></i>
                 <?= htmlspecialchars($delete_msg) ?>
             </div>
         <?php endif; ?>
-
-        <!-- TABS -->
+        
         <div class="manage-tabs mb-6 max-w-sm">
             <a href="?tab=video<?= isset($_GET['csrf_token']) ? '&csrf_token=' . urlencode($_GET['csrf_token']) : '' ?>"
                 class="manage-tab <?= $active_tab === 'video' ? 'active-video' : '' ?>" title="Kelola video Anda">
@@ -445,7 +412,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             </a>
         </div>
 
-        <!-- CONTENT GRID -->
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <?php if ($active_tab === 'video'): ?>
                 <?php if (!empty($videos)): ?>
@@ -455,11 +422,11 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                             : '../assets/img/video0.webp';
                     ?>
                         <div class="content-card">
-                            <a href="../video/watch.php?id=<?= $v['id'] ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
-                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy">
+                            <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($v['title']) ?>">
+                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy" width="640" height="360">
                             </a>
                             <div class="card-body">
-                                <a href="../video/watch.php?id=<?= $v['id'] ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
+                                <a href="<?= base_url('/video/watch?id=' . (int)$v['id']) ?>" class="card-title no-underline hover:text-red-400 transition-colors" title="<?= htmlspecialchars($v['title']) ?>">
                                     <?= htmlspecialchars($v['title']) ?>
                                 </a>
                                 <div class="card-meta">
@@ -476,7 +443,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     <span><?= date('d M Y', strtotime($v['upload_date'])) ?></span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="../admin/edit-video.php?id=<?= $v['id'] ?>"
+                                    <a href="<?= base_url('/admin/edit-video?id=' . (int)$v['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit video <?= htmlspecialchars($v['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>
@@ -503,11 +470,11 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                             : '../assets/img/music0.webp';
                     ?>
                         <div class="content-card">
-                            <a href="../music/watch.php?id=<?= $m['id'] ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
-                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($m['title']) ?>" loading="lazy">
+                            <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="block card-thumb" title="<?= htmlspecialchars($m['title']) ?>">
+                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($m['title']) ?>" loading="lazy" width="640" height="360">
                             </a>
                             <div class="card-body">
-                                <a href="../music/watch.php?id=<?= $m['id'] ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
+                                <a href="<?= base_url('/music/watch?id=' . (int)$m['id']) ?>" class="card-title no-underline hover:text-orange-400 transition-colors" title="<?= htmlspecialchars($m['title']) ?>">
                                     <?= htmlspecialchars($m['title']) ?>
                                 </a>
                                 <div class="card-meta">
@@ -524,7 +491,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     </span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="../admin/edit-music.php?id=<?= $m['id'] ?>"
+                                    <a href="<?= base_url('/admin/edit-music?id=' . (int)$m['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit musik <?= htmlspecialchars($m['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>
@@ -546,7 +513,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             <?php endif; ?>
         </div>
 
-        <!-- PAGINATION -->
+        
         <?php if ($total_pages > 1): ?>
             <div class="pagination">
                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
@@ -557,15 +524,12 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                 <?php endfor; ?>
             </div>
         <?php endif; ?>
-
     </main>
 
     <?php include '../partials/footer.php'; ?>
-
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <script>
-        lucide.createIcons();
+    <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="../assets/js/compatibilitas/script.min.js"></script>
+    <script>        lucide.createIcons();
 
         function confirmHapus(event, title, type) {
             event.preventDefault();
@@ -574,9 +538,9 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
             Swal.fire({
                 title: 'Hapus ' + typeLabel + '?',
-                html: '<div style="font-size:12px;color:#9ca3af">' +
-                    '"<strong style="color:#e5e7eb">' + title + '</strong>" akan dihapus dari database.<br>' +
-                    '<span style="color:#6b7280;font-size:10px">File akan dibersihkan otomatis dalam 30 menit.</span>' +
+                html: '<div style="font-size:12px;color:var(--meel-text-secondary)">' +
+                    '"<strong style="color:var(--meel-text-heading)">' + title + '</strong>" akan dihapus dari database.<br>' +
+                    '<span style="color:var(--meel-text-muted);font-size:10px">File akan dibersihkan otomatis dalam 30 menit.</span>' +
                     '</div>',
                 icon: 'warning',
                 iconColor: '#ef4444',
@@ -584,8 +548,8 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                 confirmButtonText: 'HAPUS',
                 cancelButtonText: 'BATAL',
 
-                background: '#141820',
-                color: '#fff',
+                background: 'var(--meel-surface)',
+                color: 'var(--meel-text)',
                 reverseButtons: true,
                 customClass: {
                     popup: 'border border-red-600/25 border-t-2 border-t-red-600 rounded-2xl shadow-2xl',
@@ -602,7 +566,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
             return false;
         }
-    </script>
+</script>
 </body>
 
 </html>

@@ -23,7 +23,7 @@ class SearchEngineTest extends TestCase
 
     public function testParseParamsDefaults(): void
     {
-        // Ensure no GET params set
+        
         unset($_GET['search'], $_GET['exclude'], $_GET['offset']);
 
         $params = $this->searchEngine->parseParams();
@@ -48,7 +48,35 @@ class SearchEngineTest extends TestCase
 
     public function testConstants(): void
     {
-        $this->assertSame(20, SearchEngine::VIDEO_LIMIT);
-        $this->assertSame(20, SearchEngine::MUSIC_LIMIT);
+        $this->assertSame(15, SearchEngine::VIDEO_LIMIT);
+        $this->assertSame(10, SearchEngine::MUSIC_LIMIT);
+        $this->assertSame(15, SearchEngine::SIDEBAR_LIMIT);
+
+        $this->assertSame(3, SearchEngine::MIN_SEARCH_QUERY);
+    }
+
+    public function testSanitizeQueryNeutralizesFulltextBreakingInput(): void
+    {
+        
+        $this->assertSame('', SearchEngine::sanitizeQuery('*'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('-'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('+'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('"'));
+        $this->assertSame('', SearchEngine::sanitizeQuery('<<>>()~@'));
+
+        
+        $this->assertSame('foo', SearchEngine::sanitizeQuery('foo -'));
+        $this->assertSame('foo', SearchEngine::sanitizeQuery('*foo'));
+        $this->assertSame('a b', SearchEngine::sanitizeQuery('a - b'));
+
+        $this->assertSame('hello', SearchEngine::sanitizeQuery('"hello'));
+        $this->assertSame('hello', SearchEngine::sanitizeQuery('hello"'));
+        $this->assertSame('"a b"', SearchEngine::sanitizeQuery('"a b"'));
+
+        
+        $this->assertSame('foo*', SearchEngine::sanitizeQuery('foo*'));
+
+        
+        $this->assertSame('test query', SearchEngine::sanitizeQuery('test query'));
     }
 }

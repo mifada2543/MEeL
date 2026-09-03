@@ -1,5 +1,4 @@
 <?php
-// File: auth/MediaLibrary.php
 
 class MediaLibrary
 {
@@ -10,13 +9,11 @@ class MediaLibrary
         $this->conn = $db_connection;
     }
 
-    // ── HUB ──────────────────────────────────────────────────────────────────
     public function getCounts(): array
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
-        $cache_ttl  = 30; // detik — refresh maksimal tiap 30 detik
+        $cache_ttl  = 30;
 
-        // Cek cache: jika file ada dan masih fresh, return langsung
         if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_ttl) {
             $cached = json_decode(file_get_contents($cache_file), true);
             if (is_array($cached) && isset($cached['music'], $cached['video'], $cached['books'])) {
@@ -24,9 +21,7 @@ class MediaLibrary
             }
         }
 
-        // Cache miss — query database
         $counts = ['music' => 0, 'video' => 0, 'books' => 0];
-        // Query ini aman karena tidak ada variabel input dari user
         $sql = "SELECT 'music' AS type, COUNT(*) AS total FROM music
                 UNION ALL
                 SELECT 'video', COUNT(*) FROM video
@@ -39,7 +34,6 @@ class MediaLibrary
             }
         }
 
-        // Simpan ke cache
         $cache_dir = dirname($cache_file);
         if (!is_dir($cache_dir)) {
             @mkdir($cache_dir, 0755, true);
@@ -49,10 +43,6 @@ class MediaLibrary
         return $counts;
     }
 
-    /**
-     * Hapus cache counts — panggil setelah upload/delete agar data segar.
-     * Static agar bisa dipanggil tanpa instansiasi MediaLibrary.
-     */
     public static function clearCountsCache(): void
     {
         $cache_file = __DIR__ . '/../../temp/cache/media_counts.json';
@@ -61,16 +51,8 @@ class MediaLibrary
         }
     }
 
-    // ── PAGINATION HELPER ─────────────────────────────────────────────────────
-    /**
-     * Bungkus result set + count menjadi array pagination metadata.
-     *
-     * @param mysqli_result|false $result   Result set dari query data
-     * @param int                 $total    Total record
-     * @param int                 $page     Halaman saat ini (1-based)
-     * @param int                 $perPage  Item per halaman
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
     protected function paginateResult($result, int $total, int $page, int $perPage): array
     {
         $totalPages = max(1, (int)ceil($total / max($perPage, 1)));
@@ -87,13 +69,8 @@ class MediaLibrary
         ];
     }
 
-    /**
-     * Ambil video dengan pagination metadata.
-     *
-     * @param int $page    Halaman (1-based)
-     * @param int $perPage Item per halaman (default 15)
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
     public function getVideosWithMeta(int $page = 1, int $perPage = 15): array
     {
         $offset = ($page - 1) * $perPage;
@@ -102,7 +79,6 @@ class MediaLibrary
         return $this->paginateResult($data, $total, $page, $perPage);
     }
 
-    // ── VIDEO ─────────────────────────────────────────────────────────────────
     public function getVideos(int $limit = 15, int $offset = 0)
     {
         $stmt = $this->conn->prepare("SELECT * FROM video ORDER BY upload_date DESC LIMIT ? OFFSET ?");
@@ -113,22 +89,19 @@ class MediaLibrary
 
     public function countVideos(): int
     {
-        // Aman karena query statis
         $res = $this->conn->query("SELECT COUNT(*) AS total FROM video");
         return (int)$res->fetch_assoc()['total'];
     }
 
-    public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0)
+    public function searchVideo(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
     {
-        $limit = 21; // Fetch limit+1 untuk efficiently check hasMore
+        $limit = $fetchLimit; 
 
         if (empty($q)) {
             if ($sidebar) {
-                // Optimized: Replace ORDER BY RAND() dengan more efficient approach
-                // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM video");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
-                
+
                 if ($max_id > 15) {
                     $random_offset = rand(0, max(0, $max_id - 15));
                 } else {
@@ -142,7 +115,7 @@ class MediaLibrary
                 );
                 $stmt->bind_param("ii", $exclude, $random_offset);
             } else {
-                // Optimized: Fetch limit+1 untuk check hasMore
+                
                 $stmt = $this->conn->prepare(
                     "SELECT v.*, u.username AS uploader_name FROM video v
                      JOIN users u ON v.user_id = u.id
@@ -151,7 +124,6 @@ class MediaLibrary
                 $stmt->bind_param("iii", $exclude, $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking
             $stmt = $this->conn->prepare(
                 "SELECT v.*, u.username AS uploader_name,
                  MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AS rank
@@ -160,25 +132,48 @@ class MediaLibrary
                  WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE) AND v.id != ?
                  ORDER BY rank DESC, v.upload_date DESC LIMIT ? OFFSET ?"
             );
-            // Prepared statement handle escaping natively — aman untuk MySQL 5.7+
+
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        $stmt->execute();
-        return $stmt->get_result();
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return null;
+        }
+        $result = $stmt->get_result();
+        return $result ?: null;
     }
 
-    // ── MUSIC ─────────────────────────────────────────────────────────────────
+    public function countSearchVideo(string $q, int $exclude = 0): int
+    {
+        if (empty($q)) {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM video v
+                 JOIN users u ON v.user_id = u.id
+                 WHERE v.id != ?"
+            );
+            $stmt->bind_param("i", $exclude);
+        } else {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM video v
+                 JOIN users u ON v.user_id = u.id
+                 WHERE MATCH(v.title, v.search_metadata) AGAINST (? IN BOOLEAN MODE)
+                   AND v.id != ?"
+            );
+            $stmt->bind_param("si", $q, $exclude);
+        }
 
-    // DIUBAH: Fungsi ini sekarang mengirim parameter ke buildMusicWhere untuk prepared statement
-    /**
-     * Ambil musik dengan pagination metadata.
-     *
-     * @param string $format  Filter format ('all', 'mp3', 'ogg', 'm4a', 'flac', dll)
-     * @param string $artist  Filter artist ('all' atau nama artist)
-     * @param int    $page    Halaman (1-based)
-     * @param int    $perPage Item per halaman (default 10)
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return 0;
+        }
+        $res = $stmt->get_result();
+        return $res ? (int)$res->fetch_assoc()['total'] : 0;
+    }
+
+    
+
     public function getMusicListWithMeta(string $format = 'all', string $artist = 'all', int $page = 1, int $perPage = 10): array
     {
         $offset = ($page - 1) * $perPage;
@@ -192,7 +187,6 @@ class MediaLibrary
         $data = $this->buildMusicWhere($format, $artist);
         $stmt = $this->conn->prepare("SELECT * FROM music WHERE {$data['where']} ORDER BY id DESC LIMIT ? OFFSET ?");
 
-        // Gabungkan parameter dari buildMusicWhere dengan limit & offset
         $params = array_merge($data['params'], [$limit, $offset]);
         $types = $data['types'] . "ii";
 
@@ -228,17 +222,64 @@ class MediaLibrary
         return $stmt->get_result();
     }
 
-    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0)
+    
+
+    public static function playlistSlug(string $name): string
     {
-        $limit = 21; // Fetch limit+1 untuk efficiently check hasMore
+        $slug = strtolower(trim($name));
+        $slug = (string) preg_replace('/[^a-z0-9]+/', '-', $slug);
+        $slug = trim($slug, '-');
+        return $slug !== '' ? $slug : 'playlist';
+    }
+
+    
+
+    private const RESERVED_MUSIC_ROUTES = [
+        'index', 'beranda', 'watch', 'upload', 'search', 'load-more', 'stream',
+        'file', 'playlist', 'playlist-action',
+    ];
+
+    
+
+    public function getUserPlaylistRoutes(int $user_id): array
+    {
+        $routes = [];
+        $used   = [];
+        $res    = $this->conn->query("SELECT id, name FROM playlists WHERE user_id = " . (int) $user_id . " ORDER BY id ASC");
+        while ($row = $res->fetch_assoc()) {
+            $id   = (int) $row['id'];
+            $base = self::playlistSlug((string) $row['name']);
+            $slug = $base;
+            if (isset($used[$slug]) || in_array($slug, self::RESERVED_MUSIC_ROUTES, true)) {
+                $slug = $base . '-' . $id;
+            }
+            $used[$slug] = true;
+            $routes[$id] = $slug;
+        }
+        return $routes;
+    }
+
+    
+
+    public function resolvePlaylistSlug(string $slug, int $user_id): int
+    {
+        foreach ($this->getUserPlaylistRoutes($user_id) as $id => $route) {
+            if ($route === $slug) {
+                return $id;
+            }
+        }
+        return 0;
+    }
+
+    public function searchMusic(string $q, int $exclude = 0, bool $sidebar = false, int $offset = 0, int $fetchLimit = 21)
+    {
+        $limit = $fetchLimit; 
 
         if (empty($q)) {
             if ($sidebar) {
-                // Optimized: Replace ORDER BY RAND() dengan more efficient approach
-                // Get max ID dan random offset
                 $max_id_res = $this->conn->query("SELECT MAX(id) AS max_id FROM music");
                 $max_id = (int)$max_id_res?->fetch_assoc()['max_id'] ?? 0;
-                
+
                 if ($max_id > 15) {
                     $random_offset = rand(0, max(0, $max_id - 15));
                 } else {
@@ -252,7 +293,7 @@ class MediaLibrary
                 );
                 $stmt->bind_param("ii", $exclude, $random_offset);
             } else {
-                // Optimized: Fetch limit+1 untuk check hasMore + support pagination
+
                 $stmt = $this->conn->prepare(
                     "SELECT m.*, u.username AS uploader FROM music m
                      JOIN users u ON m.user_id = u.id
@@ -261,7 +302,6 @@ class MediaLibrary
                 $stmt->bind_param("ii", $limit, $offset);
             }
         } else {
-            // Full-text search query — optimized dengan proper ranking
             $stmt = $this->conn->prepare(
                 "SELECT m.*, u.username AS uploader,
                  (MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)) AS rank
@@ -272,13 +312,43 @@ class MediaLibrary
             );
             $stmt->bind_param("ssiii", $q, $q, $exclude, $limit, $offset);
         }
-        $stmt->execute();
-        return $stmt->get_result();
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return null;
+        }
+        $result = $stmt->get_result();
+        return $result ?: null;
     }
 
-    // ── PRIVATE HELPER ────────────────────────────────────────────────────────
+    public function countSearchMusic(string $q, int $exclude = 0): int
+    {
+        if (empty($q)) {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM music m
+                 JOIN users u ON m.user_id = u.id
+                 WHERE m.id != ?"
+            );
+            $stmt->bind_param("i", $exclude);
+        } else {
+            $stmt = $this->conn->prepare(
+                "SELECT COUNT(*) AS total FROM music m
+                 JOIN users u ON m.user_id = u.id
+                 WHERE MATCH(m.title, m.artist, m.search_metadata) AGAINST (? IN BOOLEAN MODE)
+                   AND m.id != ?"
+            );
+            $stmt->bind_param("si", $q, $exclude);
+        }
 
-    // DIUBAH: Sekarang mengembalikan array berisi string WHERE, parameter, dan tipe data
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return 0;
+        }
+        $res = $stmt->get_result();
+        return $res ? (int)$res->fetch_assoc()['total'] : 0;
+    }
+
     private function buildMusicWhere(string $format, string $artist): array
     {
         $allowed_formats = ['mp3', 'ogg', 'm4a', 'opus', 'flac', 'wav'];
@@ -306,9 +376,6 @@ class MediaLibrary
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BookRepository — Query layer untuk tabel `books`
-// ═══════════════════════════════════════════════════════════════════════════════
 class BookRepository
 {
     private $conn;
@@ -318,13 +385,7 @@ class BookRepository
         $this->conn = $db_connection;
     }
 
-    /**
-     * Ambil semua buku, atau filter berdasarkan tipe ('manga' / 'pdf' / 'all').
-     *
-     * @param string $filter  Filter tipe ('manga', 'pdf', 'all')
-     * @param int    $limit   Batas item (0 = no limit)
-     * @param int    $offset  Offset untuk pagination
-     */
+    
     public function getBooks(string $filter = 'all', int $limit = 0, int $offset = 0)
     {
         $allowed = ['manga', 'pdf'];
@@ -340,7 +401,6 @@ class BookRepository
                 $stmt->bind_param("s", $filter);
             }
         } else {
-            // 'all' — query statis, tidak ada input user
             $stmt = $this->conn->prepare(
                 "SELECT * FROM books ORDER BY upload_date DESC{$limitSql}"
             );
@@ -353,12 +413,7 @@ class BookRepository
         return $stmt->get_result();
     }
 
-    /**
-     * Hitung total buku (dengan filter opsional).
-     *
-     * @param string $filter Filter tipe ('manga', 'pdf', 'all')
-     * @return int
-     */
+    
     public function countBooks(string $filter = 'all'): int
     {
         $allowed = ['manga', 'pdf'];
@@ -374,14 +429,48 @@ class BookRepository
         return (int)$stmt->get_result()->fetch_assoc()['total'];
     }
 
-    /**
-     * Ambil buku dengan pagination metadata.
-     *
-     * @param string $filter  Filter tipe ('manga', 'pdf', 'all')
-     * @param int    $page    Halaman (1-based)
-     * @param int    $perPage Item per halaman (default 24)
-     * @return array ['data', 'total', 'page', 'per_page', 'total_pages', 'from', 'to']
-     */
+    
+
+    public function searchBooks(string $q, string $type = 'all', int $offset = 0, int $limit = 24)
+    {
+        $allowed    = ['manga', 'pdf'];
+        $type_where = in_array($type, $allowed, true) ? " AND type = ?" : "";
+
+        if (empty($q)) {
+            $stmt = $this->conn->prepare(
+                "SELECT * FROM books WHERE 1=1{$type_where} ORDER BY upload_date DESC LIMIT ? OFFSET ?"
+            );
+            if ($type_where !== '') {
+                $stmt->bind_param("sii", $type, $limit, $offset);
+            } else {
+                $stmt->bind_param("ii", $limit, $offset);
+            }
+        } else {
+            $stmt = $this->conn->prepare(
+                "SELECT *, MATCH(title, author) AGAINST (? IN BOOLEAN MODE) AS rank
+                 FROM books
+                 WHERE MATCH(title, author) AGAINST (? IN BOOLEAN MODE){$type_where}
+                 ORDER BY rank DESC, upload_date DESC
+                 LIMIT ? OFFSET ?"
+            );
+            if ($type_where !== '') {
+                $stmt->bind_param("sssii", $q, $q, $type, $limit, $offset);
+            } else {
+                $stmt->bind_param("ssii", $q, $q, $limit, $offset);
+            }
+        }
+
+        try {
+            $stmt->execute();
+        } catch (\mysqli_sql_exception $e) {
+            return null;
+        }
+        $result = $stmt->get_result();
+        return $result ?: null;
+    }
+
+    
+
     public function getBooksPaginated(string $filter = 'all', int $page = 1, int $perPage = 24): array
     {
         $total  = $this->countBooks($filter);
@@ -401,10 +490,6 @@ class BookRepository
         ];
     }
 
-    /**
-     * Ambil satu buku berdasarkan ID.
-     * Return array buku, atau null jika tidak ditemukan.
-     */
     public function getBookById(int $id): ?array
     {
         $stmt = $this->conn->prepare("SELECT * FROM books WHERE id = ? LIMIT 1");
@@ -414,40 +499,23 @@ class BookRepository
         return ($result && $result->num_rows > 0) ? $result->fetch_assoc() : null;
     }
 
-    /**
-     * Ambil role user berdasarkan ID.
-     * Return string role ('admin' / 'member'), atau null jika user tidak ada.
-     */
     public function getUserRole(int $user_id): ?string
     {
-        $stmt = $this->conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result ? $result->fetch_assoc() : null;
-        return $row ? $row['role'] : null;
+        return get_user_role($this->conn, $user_id);
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BookUploader — Menangani validasi, file handling, dan insert DB untuk buku
-// ═══════════════════════════════════════════════════════════════════════════════
 class BookUploader
 {
     private $conn;
-    private $base_path; // Absolute / relative base path ke direktori upload books
+    private $base_path;
 
-    // $base_path: path ke folder books/ (misal: __DIR__ . '/../books')
     public function __construct($db_connection, string $base_path)
     {
         $this->conn = $db_connection;
         $this->base_path = rtrim($base_path, '/');
     }
 
-    /**
-     * Entry point upload buku.
-     * Return array ['success' => bool, 'message' => string]
-     */
     public function handleUpload(array $post, array $files): array
     {
         $title    = trim($post['title'] ?? '');
@@ -460,28 +528,22 @@ class BookUploader
             return ['success' => false, 'message' => 'Error: Data tidak lengkap atau tipe tidak valid.'];
         }
 
-        // 1. Thumbnail
         $thumb_name = $this->handleThumbnail($files['thumbnail'] ?? []);
 
-        // 2. File konten
         $content = ($type === 'pdf')
             ? $this->handlePdf($files['book_file'] ?? [], $title)
             : $this->handleManga($files['book_file'] ?? [], $title);
 
         if (!$content['success']) {
-            return $content; // Kembalikan pesan error dari handler
+            return $content;
         }
 
-        // 3. Jika manga sudah ada di DB (re-upload chapter), tidak perlu insert ulang
         if (isset($content['existing']) && $content['existing'] === true) {
             return ['success' => true, 'message' => $content['message']];
         }
 
-        // 4. Insert ke database
         return $this->insertBook($title, $author, $type, $content['has_chapters'], $category, $content['path_result'], $thumb_name, $user_id);
     }
-
-    // ── PRIVATE HELPERS ──────────────────────────────────────────────────────
 
     private function handleThumbnail(array $file): string
     {
@@ -489,7 +551,6 @@ class BookUploader
             $name = time() . '_' . bin2hex(random_bytes(4)) . '.webp';
             $target_path = $this->base_path . '/upload/thumbnail/' . $name;
             $ffmpeg_bin = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-            // Konversi ke WebP — lebih kecil dari JPG/PNG asli
             $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($file['tmp_name'])
                 . " -vf \"scale='min(500,iw)':-1\" -c:v libwebp -q:v 78 "
                 . escapeshellarg($target_path) . " 2>&1";
@@ -497,7 +558,7 @@ class BookUploader
             if ($ret === 0 && file_exists($target_path) && filesize($target_path) > 0) {
                 return $name;
             }
-            // Fallback: simpan file asli jika ffmpeg gagal
+            
             if (move_uploaded_file($file['tmp_name'], $target_path)) {
                 return $name;
             }
@@ -533,7 +594,6 @@ class BookUploader
         $manga_folder = $this->base_path . '/upload/manga/' . $clean;
         $has_chapters = 0;
 
-        // Cek apakah entry sudah ada di DB (re-upload / tambah chapter)
         $check = $this->conn->prepare("SELECT id FROM books WHERE path_folder = ? LIMIT 1");
         $check->bind_param("s", $clean);
         $check->execute();
@@ -551,13 +611,11 @@ class BookUploader
         $zip->extractTo($manga_folder);
         $first_entry = $zip->getNameIndex(0);
 
-        // Jika entry pertama mengandung '/', berarti ada subfolder (chapter)
         if (strpos($first_entry, '/') !== false) {
             $has_chapters = 1;
         }
         $zip->close();
 
-        // Manga sudah ada → hanya update flag has_chapters, tidak insert ulang
         if ($exists) {
             $stmt = $this->conn->prepare(
                 "UPDATE books SET has_chapters = 1 WHERE path_folder = ?"

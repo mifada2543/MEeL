@@ -1,26 +1,36 @@
 <?php
 $games = [
-  ["id"=>1,"title"=>"Miku & Teto Run","developer"=>"MEeL Teams","year"=>2026,"category"=>"Action / Beat 'em up","controls"=>"Up Arrow to Jump & Down Arrow to Slide","maxPlayers"=>"1 Players","rating"=>4.9,"description"=>"Kendalikan Miku/Teto di track panjang yang menyenangkan dengan rintangan unik dan power-up menarik. Cocok untuk semua usia, game ini menggabungkan elemen puzzle sederhana dengan kecepatan arcade yang seru. Tantang temanmu untuk skor tertinggi atau nikmati mode solo untuk mengasah refleksmu!","image"=>"assets/img/dino.png","favorite"=>false,"play_url"=>"dino/"],
-  ["id"=>2,"title"=>"Chess","developer"=>"MEeL Teams","year"=>2026,"category"=>"Strategy","controls"=>"Pawn, Knight, Rook, Bishop, Queen, King","maxPlayers"=>"2 Players","rating"=>5.0,"description"=>"Game strategi klasik yang membutuhkan pemikiran taktis dan perencanaan jangka panjang. Susun bidak-bidakmu dengan cermat untuk mengalahkan lawan dan menguasai papan catur.","image"=>"assets/img/catur.png","favorite"=>false,"play_url"=>"chess/"],
-  ["id"=>3,"title"=>"Snake","developer"=>"MEeL Teams","year"=>2026,"category"=>"Action","controls"=>"Arrow & WASD Keys","maxPlayers"=>"1 Players","rating"=>4.8,"description"=>"Game ular klasik yang tak pernah mati. Kendalikan ular hijau, kumpulkan apel merah, dan hindari menabrak dinding atau tubuh sendiri. Semakin banyak makan, semakin cepat! Cocok untuk mengisi waktu luang dan melatih refleks.","image"=>"assets/img/snake.png","favorite"=>false,"play_url"=>"snake/"]
+  ["id" => 1, "title" => "Miku & Teto Run", "developer" => "MEeL Teams", "year" => 2026, "category" => "Action / Beat 'em up", "controls" => "Up Arrow to Jump & Down Arrow to Slide", "maxPlayers" => "1 Players", "rating" => 4.9, "description" => "Kendalikan Miku/Teto di track panjang yang menyenangkan dengan rintangan unik dan power-up menarik. Cocok untuk semua usia, game ini menggabungkan elemen puzzle sederhana dengan kecepatan arcade yang seru. Tantang temanmu untuk skor tertinggi atau nikmati mode solo untuk mengasah refleksmu!", "image" => "assets/img/dino.png", "favorite" => false, "play_url" => "dino/"],
+  ["id" => 2, "title" => "Chess", "developer" => "MEeL Teams", "year" => 2026, "category" => "Strategy", "controls" => "Pawn, Knight, Rook, Bishop, Queen, King", "maxPlayers" => "2 Players", "rating" => 5.0, "description" => "Game strategi klasik yang membutuhkan pemikiran taktis dan perencanaan jangka panjang. Susun bidak-bidakmu dengan cermat untuk mengalahkan lawan dan menguasai papan catur.", "image" => "assets/img/catur.png", "favorite" => false, "play_url" => "chess/"],
+  ["id" => 3, "title" => "Snake", "developer" => "MEeL Teams", "year" => 2026, "category" => "Action", "controls" => "Arrow & WASD Keys", "maxPlayers" => "1 Players", "rating" => 4.8, "description" => "Game ular klasik yang tak pernah mati. Kendalikan ular hijau, kumpulkan apel merah, dan hindari menabrak dinding atau tubuh sendiri. Semakin banyak makan, semakin cepat! Cocok untuk mengisi waktu luang dan melatih refleks.", "image" => "assets/img/snake.png", "favorite" => false, "play_url" => "snake/"],
+  ["id" => 4, "title" => "2048", "developer" => "MEeL Teams", "year" => 2026, "category" => "Puzzle", "controls" => "Arrow, WASD & Swipe", "maxPlayers" => "1 Players", "rating" => 4.7, "description" => "Geser dan gabungkan tile bernomor hingga mencapai angka 2048! Puzzle adiktif yang menguji logika dan perencanaan. Semakin besar angka, semakin menantang — berapa skor tertinggimu?", "image" => "assets/img/2048.svg", "favorite" => false, "play_url" => "2048/"],
+  ["id" => 5, "title" => "Tetris", "developer" => "MEeL Teams", "year" => 2026, "category" => "Puzzle", "controls" => "Arrow & WASD Keys", "maxPlayers" => "1 Players", "rating" => 4.9, "description" => "Game blok legendaris yang menguji refleks dan strategi. Susun tetromino jatuh secepat mungkin, bersihkan baris penuh, dan hindari tumpukan sampai ke atas. Semakin tinggi level, semakin cepat blok jatuh!", "image" => "assets/img/tetris.svg", "favorite" => false, "play_url" => "tetris/"],
+  ["id" => 6, "title" => "Breakout", "developer" => "MEeL Teams", "year" => 2026, "category" => "Action", "controls" => "Mouse, Touch & Arrows", "maxPlayers" => "1 Players", "rating" => 4.6, "description" => "Hancurkan semua bata dengan bola pantul! Gerakkan paddle untuk mengarahkan bola, rebut poin dari bata berwarna, dan bertahanlah dari level demi level yang makin cepat.", "image" => "assets/img/breakout.svg", "favorite" => false, "play_url" => "breakout/"],
+  ["id" => 7, "title" => "Simon Says", "developer" => "MEeL Teams", "year" => 2026, "category" => "Memory", "controls" => "Click, Tap & 1-4 Keys", "maxPlayers" => "1 Players", "rating" => 4.7, "description" => "Perhatikan urutan lampu yang menyala, lalu ulangi dengan tepat. Setiap ronde urutannya semakin panjang — uji daya ingat dan konsentrasimu sampai kamu salah menekan!", "image" => "assets/img/simon-says.svg", "favorite" => false, "play_url" => "simon-says/"],
+  ["id" => 8, "title" => "Ludo", "developer" => "MEeL Teams", "year" => 2026, "category" => "Board", "controls" => "Mouse, Tap & Dice", "maxPlayers" => "2-4 Players", "rating" => 4.8, "description" => "Game papan klasik untuk 2-4 pemain! Lempar dadu, keluarkan keempat pionmu, kejar pion lawan, dan jadilah yang pertama membawa semua pion ke rumah. Mainkan bersama teman secara bergiliran atau lawan Bot.", "image" => "assets/img/ludo.svg", "favorite" => false, "play_url" => "ludo/"],
+  ["id" => 9, "title" => "MEeL!Mania", "developer" => "MEeL Teams", "year" => 2026, "category" => "Rhythm", "controls" => "A, S, K, L & Touch", "maxPlayers" => "1 Players", "rating" => 4.8, "description" => "Rhythm game 4-lane terinspirasi osu!mania. Tangkap note yang jatuh dengan menekan A, S, K, L atau sentuh layar. Tantang ritmemu dengan 4 tingkat kecepatan dari Santai hingga Gila!", "image" => "rhythm/assets/img/rhythm.svg", "favorite" => false, "play_url" => "rhythm/"]
 ];
+$categories = array_values(array_unique(array_column($games, 'category')));
+sort($categories);
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="description" content="Koleksi game arcade klasik yang ikonik, lengkap dengan detail spesifikasi kabinet dan fitur favorit untuk para penggemar nostalgia." />
   <meta property="og:title" content="Koleksi Game Arcade Klasik — MEeL Arcade" />
-  <meta property="og:description" content="Koleksi game arcade klasik untuk para penggemar nostalgia. Mainkan Miku & Teto Run, Chess, dan Snake!" />
+  <meta property="og:description" content="Koleksi game arcade klasik untuk para penggemar nostalgia. Mainkan Dino Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, dan Ludo!" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Koleksi Game Arcade Klasik</title>
   <?php include '../partials/link.php'; ?>
 </head>
+
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
   <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 transition-all duration-300">
     <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
-        <div class="p-2 bg-pink-500/10 rounded-lg border border-pink-500/30 animate-pulse cursor-pointer" onclick="window.location.href='../index.php'" title="Kembali ke MEeL Hub">
+        <div class="p-2 bg-pink-500/10 rounded-lg border border-pink-500/30 animate-pulse cursor-pointer" onclick="window.location.href='../'" title="Kembali ke MEeL Hub">
           <img src="../assets/MEeL.png" alt="Logo MEeL-Arcade" class="w-10 h-10 object-contain" />
         </div>
         <div>
@@ -48,17 +58,14 @@ $games = [
       <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div class="relative w-full md:max-w-md">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i data-lucide="search" class="h-5 w-5 text-slate-500"></i></span>
-          <input type="text" id="search-input" placeholder="Cari judul game atau developer..." class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all duration-200" />
+          <input type="text" id="search-input" placeholder="Cari judul game atau developer..." enterkeyhint="search" class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all duration-200" />
         </div>
         <div class="flex flex-wrap gap-3 w-full md:w-auto justify-start md:justify-end">
           <select id="category-filter" class="px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer">
             <option value="all">Semua Kategori</option>
-            <option value="Action">Action / Beat 'em up</option>
-            <option value="Shooter">Space Shooter / Shmup</option>
-            <option value="Fighting">Fighting</option>
-            <option value="Platformer">Platformer</option>
-            <option value="Puzzle">Puzzle</option>
-            <option value="Racing">Racing</option>
+            <?php foreach ($categories as $cat): ?>
+              <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
+            <?php endforeach; ?>
           </select>
           <select id="sort-filter" class="px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer">
             <option value="newest">Tahun (Terbaru)</option>
@@ -77,13 +84,8 @@ $games = [
       <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php foreach ($games as $game): ?>
           <div class="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-pink-500/50 transition-all duration-300 group flex flex-col h-full hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/5 cursor-pointer game-card-item"
-               data-id="<?= $game['id'] ?>"
-               data-title="<?= htmlspecialchars(strtolower($game['title'])) ?>"
-               data-developer="<?= htmlspecialchars(strtolower($game['developer'])) ?>"
-               data-category="<?= htmlspecialchars($game['category']) ?>"
-               data-year="<?= $game['year'] ?>"
-               data-rating="<?= $game['rating'] ?>"
-               onclick="openModal(<?= $game['id'] ?>)">
+            data-id="<?= $game['id'] ?>"
+            onclick="openModal(<?= $game['id'] ?>)">
             <div class="relative h-48 overflow-hidden bg-slate-950">
               <img src="<?= htmlspecialchars($game['image']) ?>" alt="<?= htmlspecialchars($game['title']) ?>" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-85 group-hover:opacity-100" />
               <div class="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-slate-800 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300"><?= $game['year'] ?></div>
@@ -132,7 +134,9 @@ $games = [
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 bg-slate-950/50 border border-slate-800 p-4 rounded-xl">
           <div><span class="block text-xs text-slate-500">Tipe Kontrol</span><span id="modal-control" class="text-sm font-semibold text-slate-300">-</span></div>
           <div><span class="block text-xs text-slate-500">Maks. Pemain</span><span id="modal-players" class="text-sm font-semibold text-slate-300">-</span></div>
-          <div><span class="block text-xs text-slate-500">Rating</span><div class="flex items-center gap-1 mt-0.5"><i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-yellow-500"></i><span id="modal-rating" class="text-sm font-semibold text-slate-300">-</span></div></div>
+          <div><span class="block text-xs text-slate-500">Rating</span>
+            <div class="flex items-center gap-1 mt-0.5"><i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-yellow-500"></i><span id="modal-rating" class="text-sm font-semibold text-slate-300">-</span></div>
+          </div>
         </div>
         <div class="mb-6">
           <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Sinopsis / Deskripsi</h3>
@@ -146,128 +150,192 @@ $games = [
     </div>
   </div>
 
-  <?php include "../partials/footer.php";?>
-
+  <?php include "../partials/footer.php"; ?>
   <script>
-    const games = (()=>{
-      const init = <?= json_encode($games) ?>, saved = JSON.parse(localStorage.getItem("arcade_games"))||[], map = {};
-      saved.forEach(g=>map[g.id]=g.favorite);
-      const merged = init.map(ig=>({...ig, favorite: map[ig.id]!==undefined?map[ig.id]:ig.favorite}));
+    let games = (() => {
+      const init = <?= json_encode($games) ?>,
+        saved = JSON.parse(localStorage.getItem("arcade_games")) || [],
+        map = {};
+      saved.forEach(g => map[g.id] = g.favorite);
+      const merged = init.map(ig => ({
+        ...ig,
+        favorite: map[ig.id] !== undefined ? map[ig.id] : ig.favorite
+      }));
       localStorage.setItem("arcade_games", JSON.stringify(merged));
       return merged;
     })();
-
-    let favOnly = false, filter, sort, search;
-    const $ = id=>document.getElementById(id);
-    const grid = $("game-grid"), empty = $("empty-state"), statFav = $("stat-fav"), favBtn = $("fav-toggle-btn");
-    const modal = $("detail-modal"), mc = $("modal-container");
-    const mb = {}, mIds = ["banner","category","year","title","developer","control","players","rating","description","fav-btn","play-btn"];
-    mIds.forEach(k=>mb[k]=$(`modal-${k}`));
-
-    function save(){localStorage.setItem("arcade_games", JSON.stringify(games));updateStats();render();}
-
-    function updateStats(){
-      $("stat-total").textContent=games.length;
-      statFav.textContent=games.filter(g=>g.favorite).length;
-      games.forEach(g=>{
-        const btn=document.querySelector(`.fav-btn[data-game-id="${g.id}"]`);
-        if(!btn) return;
-        btn.className=g.favorite
-          ?"fav-btn absolute top-3 right-3 p-2 rounded-lg backdrop-blur-md border transition-all duration-200 bg-pink-500/20 border-pink-500 text-pink-500"
-          :"fav-btn absolute top-3 right-3 p-2 rounded-lg backdrop-blur-md border transition-all duration-200 bg-slate-950/80 border-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500/50";
-        btn.innerHTML=g.favorite?'<i data-lucide="heart" class="w-4 h-4 fill-pink-500"></i>':'<i data-lucide="heart" class="w-4 h-4"></i>';
+    let favOnly = false,
+      filter, sort, search;
+    const $ = id => document.getElementById(id);
+    const grid = $("game-grid"),
+      empty = $("empty-state"),
+      statFav = $("stat-fav"),
+      favBtn = $("fav-toggle-btn");
+    const modal = $("detail-modal"),
+      mc = $("modal-container");
+    const mb = {},
+      mIds = ["banner", "category", "year", "title", "developer", "control", "players", "rating", "description", "fav-btn", "play-btn"];
+    mIds.forEach(k => mb[k] = $(`modal-${k}`));
+    function save() {
+      localStorage.setItem("arcade_games", JSON.stringify(games));
+      updateStats();
+      render();
+    }
+    function updateStats() {
+      $("stat-total").textContent = games.length;
+      statFav.textContent = games.filter(g => g.favorite).length;
+      games.forEach(g => {
+        const btn = document.querySelector(`.fav-btn[data-game-id="${g.id}"]`);
+        if (!btn) return;
+        btn.className = g.favorite ?
+          "fav-btn absolute top-3 right-3 p-2 rounded-lg backdrop-blur-md border transition-all duration-200 bg-pink-500/20 border-pink-500 text-pink-500" :
+          "fav-btn absolute top-3 right-3 p-2 rounded-lg backdrop-blur-md border transition-all duration-200 bg-slate-950/80 border-slate-800 text-slate-400 hover:text-pink-500 hover:border-pink-500/50";
+        btn.innerHTML = g.favorite ? '<i data-lucide="heart" class="w-4 h-4 fill-pink-500"></i>' : '<i data-lucide="heart" class="w-4 h-4"></i>';
       });
       lucide.createIcons();
     }
-
-    function render(){
-      const term=(search.value||"").toLowerCase().trim(), cat=filter.value, srt=sort.value;
-      const ids = games.filter(g=>
-        (g.title.toLowerCase().includes(term)||g.developer.toLowerCase().includes(term))&&
-        (cat==="all"||g.category===cat)&&(!favOnly||g.favorite)
-      ).map(g=>g.id);
-
+    function render() {
+      const term = (search.value || "").toLowerCase().trim(),
+        cat = filter.value,
+        srt = sort.value;
+      const ids = games.filter(g =>
+        (g.title.toLowerCase().includes(term) ||
+          g.developer.toLowerCase().includes(term) ||
+          (g.description || "").toLowerCase().includes(term) ||
+          g.category.toLowerCase().includes(term)) &&
+        (cat === "all" || g.category === cat) && (!favOnly || g.favorite)
+      ).map(g => g.id);
       const cards = Array.from(document.querySelectorAll(".game-card-item"));
-      let visible=0;
-      cards.forEach(c=>{const m=ids.includes(parseInt(c.dataset.id));c.classList.toggle("hidden",!m);if(m)visible++;});
-
-      if(visible){
-        cards.sort((a,b)=>{
-          const ga=games.find(g=>g.id===parseInt(a.dataset.id)), gb=games.find(g=>g.id===parseInt(b.dataset.id));
-          if(srt==="newest") return gb.year-ga.year;
-          if(srt==="oldest") return ga.year-gb.year;
-          if(srt==="alphabetical") return ga.title.localeCompare(gb.title);
-          if(srt==="rating") return gb.rating-ga.rating;
+      let visible = 0;
+      cards.forEach(c => {
+        const m = ids.includes(parseInt(c.dataset.id));
+        c.classList.toggle("hidden", !m);
+        if (m) visible++;
+      });
+      if (visible) {
+        cards.sort((a, b) => {
+          const ga = games.find(g => g.id === parseInt(a.dataset.id)),
+            gb = games.find(g => g.id === parseInt(b.dataset.id));
+          if (srt === "newest") return gb.year - ga.year;
+          if (srt === "oldest") return ga.year - gb.year;
+          if (srt === "alphabetical") return ga.title.localeCompare(gb.title);
+          if (srt === "rating") return gb.rating - ga.rating;
           return 0;
         });
-        cards.forEach(c=>grid.appendChild(c));
-        grid.classList.remove("hidden");empty.classList.add("hidden");empty.classList.remove("flex");
+        cards.forEach(c => grid.appendChild(c));
+        grid.classList.remove("hidden");
+        empty.classList.add("hidden");
+        empty.classList.remove("flex");
       } else {
-        grid.classList.add("hidden");empty.classList.remove("hidden");empty.classList.add("flex");
+        grid.classList.add("hidden");
+        empty.classList.remove("hidden");
+        empty.classList.add("flex");
       }
       lucide.createIcons();
     }
-
-    function toggleFavorite(e,id){
-      if(e) e.stopPropagation();
-      games=games.map(g=>g.id===id?{...g,favorite:!g.favorite}:g);
+    function toggleFavorite(e, id) {
+      if (e) e.stopPropagation();
+      games = games.map(g => g.id === id ? {
+        ...g,
+        favorite: !g.favorite
+      } : g);
       save();
-      const cur=modal.dataset.activeId;
-      if(cur&&parseInt(cur)===id) updateModalFavBtn(id);
+      const cur = modal.dataset.activeId;
+      if (cur && parseInt(cur) === id) updateModalFavBtn(id);
     }
-
-    function updateModalFavBtn(id){
-      const g=games.find(g=>g.id===id); if(!g) return;
-      (mb["fav-btn"]).className=g.favorite
-        ?"flex items-center gap-2 px-4 py-2 border border-pink-500 bg-pink-500/10 text-pink-500 rounded-xl transition-all duration-200"
-        :"flex items-center gap-2 px-4 py-2 border border-slate-800 hover:border-pink-500 rounded-xl text-slate-300 transition-all duration-200";
-      mb["fav-btn"].innerHTML=g.favorite?'<i data-lucide="heart" class="w-5 h-5 fill-pink-500"></i> <span>Hapus Favorit</span>':'<i data-lucide="heart" class="w-5 h-5"></i> <span>Tambah Favorit</span>';
-      mb["fav-btn"].onclick=e=>toggleFavorite(e,id);
+    function updateModalFavBtn(id) {
+      const g = games.find(g => g.id === id);
+      if (!g) return;
+      (mb["fav-btn"]).className = g.favorite ?
+        "flex items-center gap-2 px-4 py-2 border border-pink-500 bg-pink-500/10 text-pink-500 rounded-xl transition-all duration-200" :
+        "flex items-center gap-2 px-4 py-2 border border-slate-800 hover:border-pink-500 rounded-xl text-slate-300 transition-all duration-200";
+      mb["fav-btn"].innerHTML = g.favorite ? '<i data-lucide="heart" class="w-5 h-5 fill-pink-500"></i> <span>Hapus Favorit</span>' : '<i data-lucide="heart" class="w-5 h-5"></i> <span>Tambah Favorit</span>';
+      mb["fav-btn"].onclick = e => toggleFavorite(e, id);
       lucide.createIcons();
     }
-
-    function openModal(id){
-      const g=games.find(g=>g.id===id); if(!g) return;
-      modal.dataset.activeId=id;
-      mb.banner.src=g.image;
-      mb.banner.onerror=function(){this.src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80";};
-      mb.category.textContent=g.category;
-      mb.year.textContent=g.year;
-      mb.title.textContent=g.title;
-      mb.developer.textContent=g.developer;
-      mb.control.textContent=g.controls;
-      mb.players.textContent=g.maxPlayers;
-      mb.rating.textContent=g.rating.toFixed(1);
-      mb.description.textContent=g.description;
-      mb["play-btn"].onclick=()=>{window.location.href=g.play_url||`${g.id}.html`;};
+    function openModal(id) {
+      const g = games.find(g => g.id === id);
+      if (!g) return;
+      modal.dataset.activeId = id;
+      mb.banner.src = g.image;
+      mb.banner.onerror = function() {
+        this.src = "https:
+      };
+      mb.category.textContent = g.category;
+      mb.year.textContent = g.year;
+      mb.title.textContent = g.title;
+      mb.developer.textContent = g.developer;
+      mb.control.textContent = g.controls;
+      mb.players.textContent = g.maxPlayers;
+      mb.rating.textContent = g.rating.toFixed(1);
+      mb.description.textContent = g.description;
+      mb["play-btn"].onclick = () => {
+        window.location.href = g.play_url || `${g.id}.html`;
+      };
       updateModalFavBtn(id);
       modal.classList.remove("hidden");
-      setTimeout(()=>{mc.classList.remove("scale-95","opacity-0");mc.classList.add("scale-100","opacity-100");},50);
-      document.body.style.overflow="hidden";
+      setTimeout(() => {
+        mc.classList.remove("scale-95", "opacity-0");
+        mc.classList.add("scale-100", "opacity-100");
+      }, 50);
+      document.body.style.overflow = "hidden";
     }
-
-    function closeModal(){
-      mc.classList.remove("scale-100","opacity-100");mc.classList.add("scale-95","opacity-0");
-      setTimeout(()=>{modal.classList.add("hidden");modal.removeAttribute("data-active-id");document.body.style.overflow="";},200);
+    function closeModal() {
+      mc.classList.remove("scale-100", "opacity-100");
+      mc.classList.add("scale-95", "opacity-0");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+        modal.removeAttribute("data-active-id");
+        document.body.style.overflow = "";
+      }, 200);
     }
-
-    function resetFilters(){
-      search.value="";filter.value="all";sort.value="newest";favOnly=false;updateFavStyle();render();
+    function resetFilters() {
+      search.value = "";
+      filter.value = "all";
+      sort.value = "newest";
+      favOnly = false;
+      updateFavStyle();
+      render();
     }
-
-    function updateFavStyle(){
-      favBtn.classList.toggle("bg-slate-950",!favOnly);favBtn.classList.toggle("border-slate-800",!favOnly);favBtn.classList.toggle("text-slate-300",!favOnly);
-      favBtn.classList.toggle("bg-pink-500/20",favOnly);favBtn.classList.toggle("border-pink-500",favOnly);favBtn.classList.toggle("text-pink-500",favOnly);
+    function updateFavStyle() {
+      favBtn.classList.toggle("bg-slate-950", !favOnly);
+      favBtn.classList.toggle("border-slate-800", !favOnly);
+      favBtn.classList.toggle("text-slate-300", !favOnly);
+      favBtn.classList.toggle("bg-pink-500/20", favOnly);
+      favBtn.classList.toggle("border-pink-500", favOnly);
+      favBtn.classList.toggle("text-pink-500", favOnly);
+      favBtn.innerHTML = favOnly ?
+        '<i data-lucide="heart" class="w-5 h-5 fill-pink-500"></i><span>Hanya Favorit</span>' :
+        '<i data-lucide="heart" class="w-5 h-5"></i><span>Hanya Favorit</span>';
+      lucide.createIcons();
     }
-
-    search=$("search-input");filter=$("category-filter");sort=$("sort-filter");
-    search.addEventListener("input",render);
-    filter.addEventListener("change",render);
-    sort.addEventListener("change",render);
-    favBtn.addEventListener("click",()=>{favOnly=!favOnly;updateFavStyle();render();});
-    modal.addEventListener("click",e=>{if(e.target===modal)closeModal();});
-    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!modal.classList.contains("hidden"))closeModal();});
-    window.onload=()=>{updateStats();render();};
+    search = $("search-input");
+    filter = $("category-filter");
+    sort = $("sort-filter");
+    search.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        render();
+      }
+    });
+    filter.addEventListener("change", render);
+    sort.addEventListener("change", render);
+    favBtn.addEventListener("click", () => {
+      favOnly = !favOnly;
+      updateFavStyle();
+      render();
+    });
+    modal.addEventListener("click", e => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+    });
+    window.onload = () => {
+      updateStats();
+      render();
+    };
   </script>
 </body>
+
 </html>

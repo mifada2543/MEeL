@@ -4,122 +4,36 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 include_once '../modules/core/activity_logger.php';
 include_once '../modules/core/GarbageCollector.php';
-include_once '../modules/core/RateLimiter.php';
+include_once '../modules/auth/RateLimiter.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die(include '../err/denied.php');
-}
 
-// 🔴 Guard independen: verifikasi role admin (tidak bergantung pada side-effect include)
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    die(include '../err/denied.php');
-}
+require_admin($conn);
+
+define('MEEL_ADMIN_CONTEXT', true);
 
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';
 
-// Auto-cleanup guest stale (adaptive — throttle 1 jam via GarbageCollector)
 GarbageCollector::cleanGuests($conn);
 
-/** * --- IDE Type Hinting for Intelephense ---
- * These variables are initialized in '../controllers/fun.php'
- * * @var float $ssd_free
- * @var float $ssd_used
- * @var float $ssd_total
- * @var float $hdd_free
- * @var float $hdd_total
- * @var float $p_vid
- * @var float $sz_vid
- * @var float $p_mus
- * @var float $sz_mus
- * @var float $p_book
- * @var float $sz_book
- * @var float $p_drive
- * @var float $sz_d_pub
- * @var float $sz_d_prv
- * @var float $sz_drive_total
- * @var array $stats
- * @var array $orphans
- * @var float $ssd_free
- * @var mysqli_result $top_media
- * @var mysqli_result $pending_users
- * @var mysqli_result $all_users
- * @var mysqli_result $result_monitor
- * @var mysqli_result $banned_ips
- * @var object $sys
- * @var array $chart_activity
- */
+GarbageCollector::cleanChessRooms($conn);
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <title>MEeL | System Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
-    <meta property="og:title" content="MEeL | System Admin">
-    <meta property="og:description" content="Panel administrasi MEeL untuk mengelola konten, pengguna, dan monitoring server.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/png" href="../assets/MEeL.png">
-    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="../assets/js/lucide.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
-    <script src="../assets/js/chart.umd.min.js"></script>
-    <style>
-        body {
-            background-color: #0b0e14;
-        }
-
-        .glass {
-            background: rgba(22, 27, 34, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .scrollable-table-wrap {
-            overflow: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #374151 transparent;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 999px;
-        }
-        .scrollable-table-wrap::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        .scrollable-table-wrap thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .scrollable-table-wrap thead th {
-            background: #0b0e14;
-        }
-        .scrollable-table-wrap thead::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.03);
-            pointer-events: none;
-        }
-    </style>
+<?php
+$_META_TITLE = 'MEeL | System Admin';
+$_META_DESC  = 'Panel administrasi MEeL untuk mengelola konten, pengguna, dan monitoring server.';
+include __DIR__ . '/../partials/link.php';
+$scripts_root = '../';
+include __DIR__ . '/../partials/scripts.php';
+?>
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/admin/index.css?v=<?= filemtime('../assets/css/admin/index.css') ?>">
+    <script defer src="../assets/js/compatibilitas/chart.umd.min.js"></script>
 </head>
 
 <body class="text-gray-300 font-sans min-h-screen">
@@ -128,10 +42,9 @@ GarbageCollector::cleanGuests($conn);
     $is_admin = true;
     $page_title = 'Dashboard';
     $media_type = 'dashboard';
-    $back_url = '../index.php';
+    $back_url = '../';
     include 'header-admin.php';
     ?>
-
     <div class="max-w-5xl mx-auto px-4 md:px-8 py-8">
 
         <div class="flex items-center gap-4 mb-8">
@@ -226,7 +139,6 @@ GarbageCollector::cleanGuests($conn);
                         <p class="text-[9px] font-black text-gray-600 uppercase mb-3 tracking-tighter">Most Viewed Content</p>
                         <div class="space-y-2">
                             <?php
-                            // Ambil maksimal 1 video & 1 music dengan views tertinggi dari hasil $top_media
                             $top_picks = ['video' => null, 'music' => null];
                             while ($tm = $top_media->fetch_assoc()) {
                                 if (array_key_exists($tm['type'], $top_picks) && $top_picks[$tm['type']] === null) {
@@ -238,7 +150,7 @@ GarbageCollector::cleanGuests($conn);
                             }
                             foreach ($top_picks as $type => $tm):
                                 if ($tm === null) continue;
-                                $link = ($type == 'video') ? "../video/watch.php?id=" : "../music/watch.php?id=";
+                                $link = ($type == 'video') ? base_url('/video/watch?id=') : base_url('/music/watch?id=');
                                 $color = ($type == 'video') ? "text-red-500" : "text-orange-500";
                                 $icon = ($type == 'video') ? "play-circle" : "music-2";
                             ?>
@@ -259,17 +171,153 @@ GarbageCollector::cleanGuests($conn);
                     </div>
                 </div>
 
-                <a href="activity_log.php" class="block mb-2 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat trail audit aktivitas pengguna">
+                <a href="activity-log" class="block mb-2 text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat trail audit aktivitas pengguna">
                     <i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Activity Log
                 </a>
-                        <a href="cookies.php" class="block text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
+                <a href="mfa-reset" class="block mb-2 text-center text-[9px] text-purple-400 border border-purple-400/20 py-2.5 rounded-xl hover:bg-purple-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Kelola autentikasi dua faktor (MFA) user">
+                    <i data-lucide="shield" class="w-3 h-3 inline mr-1"></i> MFA Management
+                </a>
+                        <a href="cookies" class="block text-center text-[9px] text-blue-400 border border-blue-400/20 py-2.5 rounded-xl hover:bg-blue-400 hover:text-white font-black uppercase tracking-widest transition-all" title="Lihat laporan analitik lengkap">
                     Full Reports
                 </a>
 
             </div>
         </div>
 
-        <!-- 7-Day Activity Chart -->
+        
+        <div class="glass p-6 rounded-3xl mb-8">
+            <div class="flex items-center gap-2 mb-6">
+                <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
+                <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Server Stats — <?= htmlspecialchars($server_stats['info']['hostname'] ?? 'Unknown') ?></h3>
+                <span id="stats-live" class="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 border border-green-500/25 px-2 py-1 rounded-lg" title="Data diperbarui otomatis setiap 3 detik">
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Live
+                </span>
+                <span id="stats-updated" class="text-[8px] text-gray-600 font-mono"></span>
+                <label class="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest text-gray-500 cursor-pointer" title="Interval pembaruan realtime">
+                    <i data-lucide="timer" class="w-3 h-3 text-cyan-400"></i>
+                    Polling
+                    <select id="stats-poll-interval" class="bg-gray-800/80 text-gray-300 text-[9px] font-bold uppercase tracking-widest border border-white/10 rounded-lg px-1.5 py-1 outline-none focus:border-cyan-500 cursor-pointer">
+                        <option value="1000">1s</option>
+                        <option value="3000" selected>3s</option>
+                        <option value="5000">5s</option>
+                        <option value="10000">10s</option>
+                    </select>
+                </label>
+                <span class="ml-auto text-[8px] text-gray-600 font-mono">Uptime: <span id="stat-uptime"><?= $server_stats['uptime']['text'] ?></span></span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <?php
+                $cpu_color = $server_stats['cpu']['usage_perc'] > 80 ? 'red' : ($server_stats['cpu']['usage_perc'] > 50 ? 'yellow' : 'green');
+                $ram_color = $server_stats['ram']['usage_perc'] > 80 ? 'red' : ($server_stats['ram']['usage_perc'] > 50 ? 'yellow' : 'cyan');
+                $swap_color = $server_stats['swap']['usage_perc'] > 50 ? 'red' : 'gray';
+                $net_rx = $server_stats['network']['rx'];
+                $net_tx = $server_stats['network']['tx'];
+                $net_fmt = function ($bytes) {
+                    if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+                    if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
+                    if ($bytes >= 1024) return round($bytes / 1024, 2) . ' KB';
+                    return $bytes . ' B';
+                };
+
+                $stat_cards = [
+                    [
+                        'id'    => 'cpu',
+                        'label' => 'CPU Load',
+                        'value' => $server_stats['cpu']['load_1m'],
+                        'sub'   => $server_stats['cpu']['cores'] . ' Cores • ' . $server_stats['cpu']['usage_perc'] . '%',
+                        'icon'  => 'cpu',
+                        'color' => $cpu_color,
+                        'bar'   => $server_stats['cpu']['usage_perc'],
+                    ],
+                    [
+                        'id'    => 'ram',
+                        'label' => 'RAM Usage',
+                        'value' => $net_fmt($server_stats['ram']['used']),
+                        'sub'   => $net_fmt($server_stats['ram']['total']) . ' Total • ' . $server_stats['ram']['usage_perc'] . '%',
+                        'icon'  => 'memory-stick',
+                        'color' => $ram_color,
+                        'bar'   => $server_stats['ram']['usage_perc'],
+                    ],
+                    [
+                        'id'    => 'swap',
+                        'label' => 'Swap',
+                        'value' => $net_fmt($server_stats['swap']['used']),
+                        'sub'   => $net_fmt($server_stats['swap']['total']) . ' Total • ' . $server_stats['swap']['usage_perc'] . '%',
+                        'icon'  => 'hard-drive',
+                        'color' => $swap_color,
+                        'bar'   => $server_stats['swap']['usage_perc'],
+                    ],
+                    [
+                        'id'    => 'net',
+                        'label' => 'Network',
+                        'value' => '↓ —',
+                        'sub'   => '↑ —',
+                        'icon'  => 'network',
+                        'color' => 'blue',
+                        'bar'   => 0,
+                    ],
+                ];
+
+                foreach ($stat_cards as $c):
+                    $bar_color = match($c['color']) {
+                        'red'    => 'bg-red-500',
+                        'yellow' => 'bg-yellow-500',
+                        'green'  => 'bg-green-500',
+                        'cyan'   => 'bg-cyan-500',
+                        'blue'   => 'bg-blue-500',
+                        default  => 'bg-gray-500',
+                    };
+                    $text_color = match($c['color']) {
+                        'red'    => 'text-red-400',
+                        'yellow' => 'text-yellow-400',
+                        'green'  => 'text-green-400',
+                        'cyan'   => 'text-cyan-400',
+                        'blue'   => 'text-blue-400',
+                        default  => 'text-gray-400',
+                    };
+                ?>
+                    <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4<?= $c['id'] === 'net' ? ' md:col-span-4' : '' ?>">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="<?= $c['icon'] ?>" id="stat-<?= $c['id'] ?>-icon" class="w-3.5 h-3.5 <?= $text_color ?>"></i>
+                            <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest"><?= $c['label'] ?></span>
+                            <?php if ($c['id'] === 'net'): ?>
+                                <span id="stat-net-ping" class="ml-auto text-[9px] font-mono font-bold text-gray-500" title="Latensi koneksi ke server (RTT polling / handshake SSE)">—</span>
+                            <?php endif; ?>
+                        </div>
+                        <p id="stat-<?= $c['id'] ?>-value" class="text-xl font-black text-white mb-1"><?= $c['value'] ?></p>
+                        <p id="stat-<?= $c['id'] ?>-sub" class="text-[10px] text-gray-500 font-medium mb-3"<?= $c['id'] === 'net' ? ' title="Total: ↓ ' . $net_fmt($net_rx) . ' / ↑ ' . $net_fmt($net_tx) . '"' : '' ?>><?= $c['sub'] ?></p>
+                        <?php if ($c['bar'] > 0): ?>
+                            <div class="w-full bg-gray-800/80 h-1.5 rounded-full">
+                                <div id="stat-<?= $c['id'] ?>-bar" class="<?= $bar_color ?> h-full rounded-full transition-all" style="width:<?= $c['bar'] ?>%"></div>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($c['id'] === 'net'): ?>
+                            
+                            <div class="h-24 mt-2">
+                                <canvas id="netChart"></canvas>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            
+            <div class="flex flex-wrap gap-4 text-[10px]">
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">OS:</span> <?= htmlspecialchars($server_stats['info']['os']) ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Kernel:</span> <?= htmlspecialchars($server_stats['info']['kernel']) ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">PHP:</span> <?= $server_stats['info']['php_version'] ?></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Load Avg:</span> <span id="stat-load"><?= $server_stats['cpu']['load_1m'] ?> / <?= $server_stats['cpu']['load_5m'] ?> / <?= $server_stats['cpu']['load_15m'] ?></span></span>
+                <span class="text-gray-600">•</span>
+                <span class="text-gray-500"><span class="text-gray-400 font-bold">Processes:</span> <span id="stat-procs"><?= $server_stats['info']['processes'] ?></span></span>
+            </div>
+        </div>
+
+        
         <div class="glass p-6 rounded-3xl mb-8">
             <div class="flex items-center gap-2 mb-4">
                 <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
@@ -307,8 +355,16 @@ GarbageCollector::cleanGuests($conn);
                             <tr class="hover:bg-white/[0.02]">
                                 <td class="py-4 px-6 font-bold text-white"><?= htmlspecialchars($u['username']) ?></td>
                                 <td class="py-4 px-6 text-right space-x-2">
-                                    <a href="?approve_id=<?= $u['id'] ?>" class="bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold text-[10px]" title="Setujui pendaftaran <?= htmlspecialchars($u['username']) ?>">APPROVE</a>
-                                    <a href="?reject_id=<?= $u['id'] ?>" class="bg-red-600/20 text-red-500 px-4 py-1.5 rounded-xl font-bold text-[10px] border border-red-500/20" title="Tolak pendaftaran <?= htmlspecialchars($u['username']) ?>">REJECT</a>
+                                    <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Setujui User', text: 'Setujui pendaftaran <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'APPROVE' })">
+                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                        <input type="hidden" name="approve_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold text-[10px] cursor-pointer" title="Setujui pendaftaran <?= htmlspecialchars($u['username']) ?>">APPROVE</button>
+                                    </form>
+                                    <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Tolak User', text: 'Tolak pendaftaran <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'TOLAK' })">
+                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                        <input type="hidden" name="reject_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="bg-red-600/20 text-red-500 px-4 py-1.5 rounded-xl font-bold text-[10px] border border-red-500/20 cursor-pointer" title="Tolak pendaftaran <?= htmlspecialchars($u['username']) ?>">REJECT</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -316,9 +372,15 @@ GarbageCollector::cleanGuests($conn);
                 </table>
             </div>
         <?php endif; ?>
-
-        <div class="glass p-6 rounded-3xl mb-8">
-            <h3 class="text-xs font-bold text-gray-500 uppercase mb-4">Database Sync Check</h3>
+        <div class="glass p-6 rounded-3xl mb-8" id="system_check">
+            <div class="flex items-center gap-3 mb-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase">Database Sync Check</h3>
+                <span class="text-[9px] text-gray-600 font-mono" title="Hasil scan storage di-cache 10 menit agar halaman tetap responsif">Dicek: <?= $orphan_checked_at ? date('d/m/Y H:i:s', $orphan_checked_at) : '—' ?></span>
+                <form method="POST" class="ml-auto">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                    <button type="submit" name="recheck_orphans" value="1" class="text-[9px] border border-white/10 text-gray-400 px-2.5 py-1 rounded-lg hover:bg-white/5 hover:text-white font-bold uppercase tracking-wider cursor-pointer" title="Paksa scan ulang seluruh storage media sekarang">Cek Ulang</button>
+                </form>
+            </div>
             <?php if (count($orphans) > 0): ?>
                 <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl">
                     <p class="text-xs text-red-400 mb-2">Ditemukan <?= count($orphans) ?> file sampah (tidak ada di DB):</p>
@@ -376,14 +438,16 @@ GarbageCollector::cleanGuests($conn);
                                     </td>
                                     <td class="py-4 px-6 text-right">
                                         <?php
-                                        // Tombol Hapus HANYA muncul jika role BUKAN admin
                                         if ($u['role'] !== 'admin'):
                                         ?>
-                                            <a href="?delete_user_id=<?= $u['id'] ?>"
-                                                onclick="return meelConfirmLink(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })"
-                                                class="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] uppercase" title="Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>">
-                                                Delete
-                                            </a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Hapus User', text: 'Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?', confirmButtonText: 'HAPUS' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="delete_user_id" value="<?= (int)$u['id'] ?>">
+                                                <button type="submit"
+                                                    class="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] uppercase cursor-pointer" title="Hapus permanen user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>">
+                                                    Delete
+                                                </button>
+                                            </form>
                                         <?php else: ?>
                                             <span class="text-[9px] text-gray-600 italic">Protected</span>
                                         <?php endif; ?>
@@ -403,7 +467,7 @@ GarbageCollector::cleanGuests($conn);
                     <i data-lucide="server" class="w-5 h-5 text-purple-500"></i>
                     <h3 class="text-xs font-bold text-purple-500 uppercase">Active Background Tasks</h3>
                 </div>
-                <form method="POST" action="index.php" onsubmit="return meelConfirmForm(event, { title: 'Bersihkan Antrean', text: 'Bersihkan semua antrean yang stuck (> 30 menit)?', confirmButtonText: 'BERSIHKAN' });">
+                <form method="POST" onsubmit="return meelConfirmForm(event, { title: 'Bersihkan Antrean', text: 'Bersihkan semua antrean yang stuck (> 30 menit)?', confirmButtonText: 'BERSIHKAN' });">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <button type="submit" name="clean_stuck_queues" value="1" class="flex items-center gap-2 text-[9px] bg-purple-600/10 text-purple-400 border border-purple-500/20 px-3 py-1.5 rounded-xl hover:bg-purple-600 hover:text-white transition-all font-bold uppercase cursor-pointer" title="Bersihkan semua antrean yang macet (> 30 menit)">
                         <i data-lucide="refresh-cw" class="w-3 h-3"></i>
@@ -443,7 +507,7 @@ GarbageCollector::cleanGuests($conn);
                                         <div class="flex items-center justify-end gap-3">
                                             <span class="text-gray-500 font-mono text-[10px]"><?= $q['created_at'] ?></span>
 
-                                            <form method="POST" action="index.php" class="m-0" onsubmit="return meelConfirmForm(event, { title: 'Hentikan Proses', text: 'Hentikan paksa proses spesifik ini?', confirmButtonText: 'HENTIKAN' });">
+                                            <form method="POST" class="m-0" onsubmit="return meelConfirmForm(event, { title: 'Hentikan Proses', text: 'Hentikan paksa proses spesifik ini?', confirmButtonText: 'HENTIKAN' });">
                                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                                 <input type="hidden" name="queue_id" value="<?= $q['id'] ?>">
                                                 <input type="hidden" name="task_type" value="<?= $q['task_type'] ?>">
@@ -471,7 +535,7 @@ GarbageCollector::cleanGuests($conn);
         <div class="glass rounded-3xl overflow-hidden shadow-2xl" id="monitor">
             <div class="p-6 border-b border-white/5 justify-between flex items-center">
                 <h3 class="text-xs font-bold text-gray-500 uppercase">Live Activity Monitor</h3>
-                <form method="POST" action="index.php" onsubmit="return meelConfirmForm(event, { title: 'Hapus Guest', text: 'Hapus semua Guest?', confirmButtonText: 'HAPUS' });">
+                <form method="POST" onsubmit="return meelConfirmForm(event, { title: 'Hapus Guest', text: 'Hapus semua Guest?', confirmButtonText: 'HAPUS' });">
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     <button type="submit" name="clear_all_guests" value="1" class="group flex flex-col items-end gap-1 cursor-pointer" title="Hapus semua user guest yang tidak aktif">
                         <div class="flex items-center gap-2 text-[9px] bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1.5 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold uppercase">
@@ -482,7 +546,6 @@ GarbageCollector::cleanGuests($conn);
                     </button>
                 </form>
             </div>
-
 
             <div class="scrollable-table-wrap" style="max-height:520px;">
                 <table class="w-full text-left text-xs">
@@ -500,11 +563,11 @@ GarbageCollector::cleanGuests($conn);
                             $is_cloud = strpos($row['access_via'] ?? '', 'trycloudflare.com') !== false;
                             $is_mobile = strpos($row['user_agent'] ?? '', 'Smartphone') !== false || strpos($row['user_agent'] ?? '', 'Android') !== false;
                         ?>
-                            <tr class="group hover:bg-white/[0.02] transition-colors">
+                            <tr class="group hover:bg-white/[0.02] transition-colors" data-sec-since="<?= max(0, time() - strtotime($row['last_activity'])) ?>">
                                 <td class="py-4 px-2">
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold <?= $row['role'] === 'guest' ? 'text-gray-500 italic' : 'text-white' ?>">
-                                            <a href="profile/?u=<?= $row['username'] ?>"><?= htmlspecialchars($row['username']) ?></a>
+                                            <a href="profile/?u=<?= htmlspecialchars($row['username'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($row['username']) ?></a>
                                         </span>
                                         <?php if ($row['role'] === 'guest'): ?>
                                             <span class="text-[7px] bg-white/5 text-gray-500 px-1 rounded border border-white/10 uppercase font-black">Guest</span>
@@ -520,7 +583,6 @@ GarbageCollector::cleanGuests($conn);
                                             $ip_display = $row['ip_address'] ?? 'Unknown';
                                             $is_local = ($ip_display === 'LOCAL' || strpos($ip_display, 'Local') !== false);
 
-                                            // Deteksi tipe IP
                                             $ip_type = 'Unknown';
                                             $ip_color_class = 'bg-gray-800 text-gray-400 border-gray-700';
                                             if ($is_local) {
@@ -555,9 +617,9 @@ GarbageCollector::cleanGuests($conn);
                                     </div>
                                 </td>
                                 <td class="py-4 px-2">
-                                    <div class="flex items-center gap-2 <?= $is_online ? 'text-green-500' : 'text-gray-600' ?>">
-                                        <span class="h-1.5 w-1.5 rounded-full <?= $is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-700' ?>"></span>
-                                        <span class="text-[10px] font-black uppercase tracking-tighter"><?= $is_online ? 'Online' : 'Offline' ?></span>
+                                    <div class="monitor-status flex items-center gap-2 <?= $is_online ? 'text-green-500' : 'text-gray-600' ?>">
+                                        <span class="monitor-dot h-1.5 w-1.5 rounded-full <?= $is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-700' ?>"></span>
+                                        <span class="monitor-label text-[10px] font-black uppercase tracking-tighter"><?= $is_online ? 'Online' : 'Offline' ?></span>
                                     </div>
                                 </td>
                                 <td class="py-4 px-2">
@@ -568,17 +630,19 @@ GarbageCollector::cleanGuests($conn);
                                         <span class="text-xs text-gray-400 font-mono"><?= date('H:i:s', strtotime($row['last_activity'])) ?></span>
 
                                         <?php
-                                        // Hitung ulang status online di dalam loop agar akurat
                                         $is_online = (time() - strtotime($row['last_activity'])) < 300;
 
                                         if ($is_online && $row['username'] !== $_SESSION['username'] && $row['role'] !== 'guest'):
                                         ?>
-                                            <a href="?kick_user=<?= urlencode($row['username']) ?>"
-                                                onclick="return meelConfirmLink(event, { title: 'Kick User', text: 'Tendang <?= htmlspecialchars($row['username'], ENT_QUOTES) ?>? User akan langsung offline.', confirmButtonText: 'TENDANG' })"
-                                                class="p-1.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                                                title="Kick Active User">
-                                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-                                            </a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Kick User', text: 'Tendang <?= htmlspecialchars($row['username'], ENT_QUOTES) ?>? User akan langsung offline.', confirmButtonText: 'TENDANG' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="kick_user" value="<?= htmlspecialchars($row['username'], ENT_QUOTES) ?>">
+                                                <button type="submit"
+                                                    class="p-1.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-600 hover:text-white transition-all cursor-pointer"
+                                                    title="Kick Active User">
+                                                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </form>
                                         <?php elseif (!$is_online && $row['username'] !== $_SESSION['username']): ?>
                                             <span class="p-1.5 bg-gray-800/30 text-gray-700 rounded-lg border border-gray-800/50 cursor-not-allowed" title="User is already offline">
                                                 <i data-lucide="user-minus" class="w-3.5 h-3.5"></i>
@@ -636,7 +700,11 @@ GarbageCollector::cleanGuests($conn);
                                         <td class="py-3 text-gray-400"><?= $ban['reason'] ?></td>
                                         <td class="py-3 text-gray-500"><?= $ban['banned_at'] ?></td>
                                         <td class="py-3 text-right">
-                                            <a href="?unban_ip=<?= $ban['ip_address'] ?>" class="text-[9px] border border-green-500/30 text-green-500 px-3 py-1 rounded hover:bg-green-500 hover:text-white transition" title="Buka blokir IP <?= $ban['ip_address'] ?>">UNBAN</a>
+                                            <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Unban IP', text: 'Buka blokir IP <?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>?', confirmButtonText: 'UNBAN' })">
+                                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                                <input type="hidden" name="unban_ip" value="<?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>">
+                                                <button type="submit" class="text-[9px] border border-green-500/30 text-green-500 px-3 py-1 rounded hover:bg-green-500 hover:text-white transition cursor-pointer" title="Buka blokir IP <?= htmlspecialchars($ban['ip_address']) ?>">UNBAN</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -649,91 +717,16 @@ GarbageCollector::cleanGuests($conn);
             </div>
         </div>
     </div>
+    
     <script>
-        lucide.createIcons();
-
-        // ── CHART DATA ────────────────────────────────────────────────────────
         var activityData = <?= json_encode($chart_activity) ?>;
-
-        // ── 7-DAY ACTIVITY BAR CHART ───────────────────────────────────────
-            var ctx2 = document.getElementById('activityChart');
-            if (ctx2 && activityData.length > 0) {
-                new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: activityData.map(function(d) { return d.label; }),
-                        datasets: [
-                            {
-                                label: 'Views',
-                                data: activityData.map(function(d) { return d.views; }),
-                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                                borderColor: '#3b82f6',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                order: 1
-                            },
-                            {
-                                label: 'Uploads',
-                                data: activityData.map(function(d) { return d.uploads; }),
-                                backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                                borderColor: '#22c55e',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                order: 2
-                            },
-                            {
-                                label: 'Active Users',
-                                data: activityData.map(function(d) { return d.users; }),
-                                type: 'line',
-                                borderColor: '#a855f7',
-                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                                pointBackgroundColor: '#a855f7',
-                                pointRadius: 3,
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3,
-                                order: 0
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#9ca3af',
-                                    font: { size: 9 },
-                                    boxWidth: 12,
-                                    padding: 8
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#6b7280', font: { size: 9 } }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#6b7280', font: { size: 9 } }
-                            }
-                        }
-                    }
-                });
-            }
-        
-
-        // Auto-refresh every 60 seconds
-        setTimeout(function() {
-            location.reload();
-        }, 60000);
+        var serverStatsUrl = <?= json_encode(base_url('/api/server-stats')) ?>;
+        var serverStatsSseUrl = <?= json_encode(base_url('/api/server-stats-sse')) ?>;
     </script>
+    <script src="../assets/js/admin/shared/modal.js?v=<?= filemtime('../assets/js/admin/shared/modal.js') ?>"></script>
+    <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
+    <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>
+    <script src="../assets/js/admin/index.js?v=<?= filemtime('../assets/js/admin/index.js') ?>"></script>
 </body>
 
 </html>

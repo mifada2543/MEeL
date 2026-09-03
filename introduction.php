@@ -8,7 +8,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $host = $_SERVER['HTTP_HOST'];
     if (parse_url($ref, PHP_URL_HOST) === $host) {
         $ref_path        = parse_url($ref, PHP_URL_PATH);
-        $excluded_pages  = ['profile_edit.php', 'index.php'];
+        $excluded_pages  = ['profile_edit.php', 'edit', 'index.php'];
         $should_exclude  = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
@@ -24,37 +24,30 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Panduan penggunaan fitur video & musik MEeL.">
-    <meta property="og:title" content="MEeL | Panduan Penggunaan">
-    <meta property="og:description" content="Panduan lengkap penggunaan fitur video, musik, dan navigasi di platform MEeL.">
-    <meta property="og:image" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>/assets/MEeL.png">
-    <meta property="og:url" content="<?= (function_exists('detectProtocol') ? detectProtocol() : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ? 'https' : 'http')) . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $_SERVER['REQUEST_URI'] ?>">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <title>MEeL | Panduan Penggunaan</title>
-    <link rel="manifest" href="assets/manifest.json">
-    <link rel="icon" type="image/png" href="assets/MEeL.png">
+<?php
+$_META_TITLE = 'MEeL | Panduan Penggunaan';
+$_META_DESC  = 'Panduan penggunaan fitur video & musik MEeL.';
+include __DIR__ . '/partials/link.php';
+$scripts_root = '';
+include __DIR__ . '/partials/scripts.php';
+?>
     <link rel="stylesheet" href="assets/css/introduction.css">
-    <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
 </head>
 
 <body>
 
-    <!-- ── READING PROGRESS ── -->
+    
     <div id="reading-progress"></div>
 
-    <!-- ── MOBILE HAMBURGER ── -->
+    
     <button id="hamburger" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Buka menu samping">
         <i data-lucide="menu"></i>
     </button>
 
-    <!-- ── SIDEBAR OVERLAY (mobile) ── -->
+    
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- ── SIDEBAR ── -->
+    
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="<?= htmlspecialchars($back_url) ?>" class="back-link">
@@ -94,11 +87,11 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         </div>
     </aside>
 
-    <!-- ── MAIN ── -->
+    
     <main class="main">
         <div class="main-inner">
 
-            <!-- ══ VIDEO GUIDE ══ -->
+            
             <div id="guide-video" class="guide-section active">
                 <div class="guide-header">
                     <div class="guide-eyebrow">Dokumentasi · Fitur</div>
@@ -106,7 +99,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     <p class="guide-desc">Kenali cara bernavigasi dan menggunakan fitur pemutar video MEeL.</p>
                 </div>
 
-                <!-- Halaman Index -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);">
@@ -140,7 +133,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     </div>
                 </div>
 
-                <!-- Halaman Watch -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);">
@@ -176,7 +169,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     </div>
                 </div>
 
-                <!-- Keyboard shortcuts -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);">
@@ -200,6 +193,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                             ['F',         'Layar penuh'],
                             ['C',         'Toggle caption'],
                             ['L',         'Toggle loop'],
+                            ['A',         'Toggle auto-next'],
                         ];
                         foreach ($shortcuts_video as $s): ?>
                             <div class="shortcut-item">
@@ -211,7 +205,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                 </div>
             </div>
 
-            <!-- ══ MUSIC GUIDE ══ -->
+            
             <div id="guide-music" class="guide-section">
                 <div class="guide-header">
                     <div class="guide-eyebrow">Dokumentasi · Fitur</div>
@@ -219,7 +213,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     <p class="guide-desc">Kenali cara bernavigasi dan menggunakan fitur pemutar musik MEeL.</p>
                 </div>
 
-                <!-- Halaman Index -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.2);">
@@ -254,7 +248,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     </div>
                 </div>
 
-                <!-- Halaman Watch -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.2);">
@@ -286,7 +280,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                     </div>
                 </div>
 
-                <!-- Keyboard shortcuts -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);">
@@ -319,10 +313,10 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
                 </div>
             </div>
 
-        </div><!-- /main-inner -->
+        </div>
     </main>
 
-    <!-- ── LIGHTBOX ── -->
+    
     <div id="lightbox" onclick="closeLightbox()" title="Klik untuk menutup">
         <div id="lightbox-close" onclick="closeLightbox()" title="Tutup">
             <i data-lucide="x" style="width:14px;height:14px;color:#9ca3af;"></i>
@@ -330,10 +324,9 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         <img id="lightbox-img" src="" alt="Preview" onclick="event.stopPropagation()">
     </div>
 
-    <script>
-        lucide.createIcons();
+    <script>        lucide.createIcons();
 
-        // ── Mobile sidebar toggle ──
+        
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -343,7 +336,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             hamburger.classList.toggle('open');
         }
 
-        // ── Close sidebar on nav click (mobile) ──
+        
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
@@ -352,7 +345,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             });
         });
 
-        // ── Reading progress bar ──
+        
         const mainEl = document.querySelector('.main');
         const progressBar = document.getElementById('reading-progress');
 
@@ -360,13 +353,11 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             let scrollTop, scrollHeight, clientHeight;
 
             if (window.innerWidth <= 768) {
-                // Mobile: body/html is the scroll container
-                scrollTop = window.scrollY || document.documentElement.scrollTop;
+                            scrollTop = window.scrollY || document.documentElement.scrollTop;
                 scrollHeight = document.documentElement.scrollHeight;
                 clientHeight = window.innerHeight;
             } else if (mainEl) {
-                // Desktop: .main is the scroll container
-                scrollTop = mainEl.scrollTop;
+                            scrollTop = mainEl.scrollTop;
                 scrollHeight = mainEl.scrollHeight;
                 clientHeight = mainEl.clientHeight;
             } else {
@@ -381,8 +372,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             }
         }
 
-        // Throttled scroll listener
-        let ticking = false;
+            let ticking = false;
         function onScroll() {
             if (!ticking) {
                 requestAnimationFrame(function() {
@@ -424,7 +414,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeLightbox();
         });
-    </script>
+</script>
 </body>
 
 </html>

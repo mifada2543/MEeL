@@ -1,6 +1,6 @@
 <?php
-session_name('meel');
-session_start();
+require_once '../modules/core/helpers.php';
+meel_boot_session();
 
 include '../auth/config.php';
 require_once '../modules/core/helpers.php';
@@ -13,13 +13,33 @@ $user_id = $_SESSION['user_id'] ?? null;
 $ctrl = new VideoWatchController($conn, $user_id, $id);
 $ctrl->handleRequest();
 
-// Semua variabel template diekstrak dari controller
-// EXTR_SKIP mencegah overwrite variabel yang sudah ada di scope
 extract($ctrl->getViewData(), EXTR_SKIP);
 
-// Lepas session lock sesegera mungkin
 session_write_close();
-?><!DOCTYPE html>
+
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
+
+$__vdir = function($dir) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $dir;
+    if (!isset($mtimeCache[$path])) {
+        $max = 0;
+        foreach (glob($path . '/*.js') ?: [] as $f) {
+            $max = max($max, (int)@filemtime($f));
+        }
+        $mtimeCache[$path] = $max;
+    }
+    return '?v=' . $mtimeCache[$path];
+};
+?>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -28,12 +48,27 @@ session_write_close();
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($v['title']) ?> — MEeL Video">
     <meta property="og:description" content="Tonton <?= htmlspecialchars($v['title']) ?> di MEeL Video - Streaming HLS dengan kualitas terbaik.">
-    <title><?= htmlspecialchars($v['title']) ?> — MEeL Video</title>
+    <?php
+    $__thumb_name = $v['thumbnail'] ?? '';
+    $__thumb_ok   = $__thumb_name !== '' && is_file(meel_media_base_path('video') . '/thumbnail/' . basename($__thumb_name));
+    $__og_image   = $__thumb_ok
+        ? detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/video/upload/thumbnail/' . rawurlencode($__thumb_name)
+        : detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/assets/img/video0.webp';
+    ?>
+    <meta property="og:image" content="<?= $__og_image ?>">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="720">
+    <meta property="og:type" content="video.other">
+    <title><?= htmlspecialchars($v['title']) ?> | MEeL Video</title>
     <?php include '../partials/link.php'; ?>
-    <link rel="stylesheet" href="../assets/css/plyr.css">
-    <link rel="stylesheet" href="../assets/css/video.css">
-    <script src="../assets/js/htmx.min.js"></script>
-    <script src="../assets/js/hls.js"></script>
+    <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/video/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/video/<?= $__f ?><?= $__v('assets/css/video/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/video/watch/main.css<?= $__v('assets/css/video/watch/main.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
+    <script src="../assets/js/compatibilitas/hls.js"></script>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -41,9 +76,9 @@ session_write_close();
     <nav class="border-b border-white/[.04] sticky top-0 z-50">
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
-            <a href="index.php" class="flex items-center gap-2 flex-shrink-0 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] transition-all" title="MEeL Video">
-                <div class="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="play" class="w-3.5 h-3.5 text-white fill-current"></i>
+            <a href="beranda" class="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-xl transition-all" title="MEeL Video">
+                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style="background:var(--meel-red)">
+                    <i data-lucide="play" class="nav-logo-icon w-3.5 h-3.5"></i>
                 </div>
                 <span class="text-sm font-bold tracking-tight text-white uppercase">
                     MEeL<span class="text-red-500">Video</span>
@@ -59,13 +94,14 @@ session_write_close();
                         placeholder="Cari video lain..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-red-500/40 transition-all text-gray-300"
                         autocomplete="off"
+                        enterkeyhint="search"
                         title="Cari Video">
                     <div id="search-indicator" class="htmx-indicator absolute right-3.5 top-1/2 -translate-y-1/2">
                         <div class="animate-spin h-3 w-3 border-2 border-red-500 border-t-transparent rounded-full"></div>
                     </div>
                 </div>
                 <button id="v-search-btn"
-                    hx-get="search_video.php?exclude=<?= $id ?>"
+                    hx-get="search?exclude=<?= $id ?>"
                     title="Cari"
                     hx-include="#v-search-watch"
                     hx-target="#recommendation-column"
@@ -100,19 +136,20 @@ session_write_close();
                 name="search"
                 placeholder="Cari video..."
                 class="w-full bg-white/[.06] border border-white/[.08] rounded-xl py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:border-red-500/40 text-gray-300"
-                hx-get="search_video.php?exclude=<?= $id ?>"
+                hx-get="search?exclude=<?= $id ?>"
                 hx-trigger="keyup[key=='Enter']"
                 hx-target="#recommendation-column"
-                autocomplete="off">
+                autocomplete="off"
+                enterkeyhint="search">
         </div>
     </div>
 
-    <main id="app-content-grid" class="w-full pt-4 sm:pt-8 pb-20 flex flex-col lg:flex-row gap-4">
-        <div id="left-column" class="flex-1 space-y-4 sm:space-y-5 px-4 sm:px-5">
+    <main id="app-content-grid" class="w-full pt-4 sm:pt-4 pb-20 flex flex-col lg:flex-row gap-4">
+        <div id="left-column" class="flex-1 space-y-2 sm:space-y-3 px-4 sm:px-5">
             <div id="video-glow-container" class="relative w-full">
-                <canvas id="video-glow-canvas" class="hidden sm:block"></canvas>
+                <canvas id="video-glow-canvas" class="block"></canvas>
                 <div id="main-video-wrapper" class="relative bg-black rounded-none sm:rounded-none overflow-hidden border-0 shadow-2xl w-full" style="aspect-ratio: 16/9;">
-                    <video id="main-video" playsinline controls preload="auto"
+                    <video id="main-video" playsinline controls preload="metadata"
                         data-poster="upload/thumbnail/<?= htmlspecialchars($v['thumbnail']) ?>"
                         data-src="<?= htmlspecialchars($video_src) ?>"
                         aria-label="Pemutar video: <?= htmlspecialchars($v['title']) ?>"
@@ -125,6 +162,11 @@ session_write_close();
                         <?php if (!empty($vtt_src)): ?>
                             <track kind="metadata" src="<?= $vtt_src ?>" default>
                         <?php endif; ?>
+                        <?php foreach (($subtitles ?? []) as $_sub): ?>
+                            <track kind="captions" src="<?= htmlspecialchars($_sub['src']) ?>"
+                                srclang="<?= htmlspecialchars($_sub['lang']) ?>"
+                                label="<?= htmlspecialchars($_sub['label']) ?>">
+                        <?php endforeach; ?>
                     </video>
                     <div id="resume-modal" class="hidden">
                         <div class="bg-[#141820] border border-red-600/25 border-t-2 border-t-red-600 rounded-2xl text-center">
@@ -150,8 +192,8 @@ session_write_close();
                 </div>
             </div>
 
-            <div id="watch-details-wrapper" class="space-y-4 sm:space-y-5">
-                <div id="video-info" class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
+            <div id="watch-details-wrapper" class="space-y-2 sm:space-y-3">
+                <div id="video-info" class=" rounded-xl sm:rounded-2xl px-4 sm:px-6 pb-2 sm:pb-3 flex flex-col gap-4">
                     <div class="video-title w-full text-2xl font-bold text-white" id="main-video-title" title="<?= htmlspecialchars($v['title']) ?>"><?= htmlspecialchars($v['title']) ?></div>
                     <?php
                     $can_edit = $is_logged_in && (
@@ -160,7 +202,7 @@ session_write_close();
                     );
                     if ($can_edit): ?>
                         <div class="flex gap-2">
-                            <a href="../admin/edit-video.php?id=<?= $id ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
+                            <a href="<?= base_url('/admin/edit-video?id=' . (int)$id) ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
                                 <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit Video
                             </a>
                         </div>
@@ -194,14 +236,14 @@ session_write_close();
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <?php if (isset($_SESSION['username'])): ?>
-                            <a href="../transcode.php?id=<?= $id ?>"
+                            <a href="../transcode?id=<?= $id ?>"
                                 class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-gray-800/50 border border-white/[.05] text-gray-500 hover:bg-gray-700 hover:text-gray-300 no-underline"
                                 title="Download audio saja">
                                 <i data-lucide="download" class="w-3.5 h-3.5"></i> Audio
                             </a>
                             <div id="like-dislike-container" class="flex items-center gap-2">
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"video","type":"like","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     title="Suka video"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
@@ -212,7 +254,7 @@ session_write_close();
                                     Like<?= ($v['likes'] ?? 0) > 0 ? " <span class='tabular-nums ml-0.5'>{$v['likes']}</span>" : '' ?>
                                 </button>
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"video","type":"dislike","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     title="Tidak suka video"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
@@ -231,31 +273,60 @@ session_write_close();
                             <i data-lucide="align-left" class="w-3.5 h-3.5 text-red-500"></i> Deskripsi
                         </div>
                         <div class="relative">
-                            <p id="desc-text" class="text-sm text-gray-400 leading-relaxed break-words whitespace-pre-wrap line-clamp-5 transition-all duration-300"><?= htmlspecialchars($v['description']) ?></p>
-                        </div>                                <button id="btn-read-more" onclick="toggleDescription()" class="mt-3 text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer border-none bg-transparent p-0 hidden" title="Tampilkan deskripsi lengkap">
+                            <p id="desc-text" class="text-sm text-gray-400 leading-relaxed break-words whitespace-pre-wrap line-clamp-2 transition-all duration-300"><?= htmlspecialchars($v['description']) ?></p>
+                        </div> <button id="btn-read-more" onclick="toggleDescription()" class="mt-3 text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer border-none bg-transparent p-0 hidden" title="Tampilkan deskripsi lengkap">
                             Selengkapnya
                         </button>
                     </div>
-                    <script>
-                        requestAnimationFrame(function() {
+                    <script>                        requestAnimationFrame(function() {
                             var d = document.getElementById('desc-text'),
                                 b = document.getElementById('btn-read-more');
                             if (d && b && d.scrollHeight > d.clientHeight) b.classList.remove('hidden');
                         });
-                    </script>
+</script>
 
                 <?php endif; ?>
                 <?php if ($is_logged_in): ?>
                     <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden" id="comment-section">
-                        <div class="px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
+                        <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
+                            class="w-full px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2 cursor-pointer hover:bg-white/[.08] transition-colors text-left"
+                            title="Buka / tutup komentar">
                             <i data-lucide="message-square" class="w-3.5 h-3.5 text-red-500"></i>
                             <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-300">Komentar</span>
+                            <i data-lucide="chevron-up" id="comment-chevron-open" class="w-3.5 h-3.5 ml-auto text-gray-500 hidden"></i>
+                            <i data-lucide="chevron-down" id="comment-chevron-closed" class="w-3.5 h-3.5 ml-auto text-gray-500"></i>
+                        </button>
+                        <div id="comment-preview" class="px-4 sm:px-6 py-3">
+                            <?php
+                            
+                            
+                            $preview       = comment_preview($comments_grouped ?? []);
+                            $preview_items = $preview['items'];
+                            ?>
+                            <div id="comment-preview-text" class="space-y-1 text-sm text-gray-400 <?= empty($preview_items) ? 'italic' : '' ?>">
+                                <?php if (empty($preview_items)): ?>
+                                    <span>Jadilah komentar pertama</span>
+                                <?php else: foreach ($preview_items as $_pc): ?>
+                                    <div class="line-clamp-1"
+                                        title="<?= htmlspecialchars('@' . ($_pc['username'] ?? 'Guest') . ': ' . preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? '')), ENT_QUOTES) ?>">
+                                        <span class="font-bold text-red-400">@<?= htmlspecialchars($_pc['username'] ?? 'Guest') ?></span>: <?= htmlspecialchars(preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? ''))) ?>
+                                    </div>
+                                <?php endforeach; endif; ?>
+                            </div>
                         </div>
-                        <div class="p-4 sm:p-6">
-                            <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6">                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                                        <textarea name="comments"
-                                            class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-red-500/40 min-h-[80px] resize-y transition-all"
-                                            placeholder="Tulis komentar..." required></textarea>
+                        <div id="comment-body">
+                            <div class="p-4 sm:p-6">
+                                <div id="comment-alert"></div>
+                            <form action="<?= base_url('/video/watch?id=' . (int)$id) ?>" method="post" class="mb-6"
+                                hx-post="../api/comment"
+                                hx-target="#comment-list"
+                                hx-swap="innerHTML"
+                                hx-vals='{"id":"<?= $id ?>","media_type":"video"}'
+                                hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('comment-alert')?.replaceChildren(); var l=document.getElementById('comment-list'); if (l) l.scrollTop = l.scrollHeight; }">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                                <textarea name="comments"
+                                    class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-red-500/40 min-h-[80px] resize-y transition-all"
+                                    placeholder="Tulis komentar..." required></textarea>
                                 <div class="flex justify-end mt-2">
                                     <button name="send"
                                         class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all border-none cursor-pointer"
@@ -265,17 +336,23 @@ session_write_close();
                                 </div>
                             </form>
 
-                            <div class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                            <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                                 <?php
+                                $GLOBALS['uploader_id'] = (int)($v['user_id'] ?? 0);
                                 if (empty($comments_grouped)) {
-                                    echo "<div class='py-10 text-center text-[10px] text-gray-300 uppercase tracking-widest'>Belum ada komentar.</div>";
+                                    render_comment_empty_state('video');
                                 } else {
                                     render_comments(0, $comments_grouped, 0, 'video');
                                 }
                                 ?>
+                                </div>
                             </div>
                         </div>
                     </section>
+                    <script>                        document.getElementById('comment-body')?.classList.add('collapsed');
+</script>
+                    <noscript><style>#comment-preview{display:none}
+</style></noscript>
                 <?php endif; ?>
             </div>
         </div>
@@ -287,7 +364,7 @@ session_write_close();
             </div>
             <div id="recommendation-column" class="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:gap-0 lg:space-y-1">
                 <?php while ($r = $rekom->fetch_assoc()): ?>
-                    <a href="watch.php?id=<?= $r['id'] ?>"
+                    <a href="<?= base_url('/video/watch?id=' . (int)$r['id']) ?>"
                         class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 px-2 py-2.5 rounded-xl no-underline"
                         title="<?= htmlspecialchars($r['title']) ?>">
                         <div class="w-full lg:w-32 aspect-video lg:h-20 lg:aspect-auto rounded-xl overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">
@@ -313,30 +390,30 @@ session_write_close();
     </main>
 
     <?php include '../partials/footer.php'; ?>
-
-    <script src="../assets/js/plyr.min.js"></script>
-    <script src="../assets/js/sweetalert2.all.min.js"></script>
-    <script src="../assets/js/script.min.js"></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
 
     <script>
         window.playerConfig = <?= json_encode([
                                     'videoSrc' => $video_src,
                                     'isHls' => (bool)$is_hls,
                                     'vttSrc' => $vtt_src ?? '',
-                                    'id' => (int)$id,
+                                                        'id' => (int)$id,
                                     'title' => $v['title'] ?? '',
                                     'uploader' => $v['uploader'] ?? ''
                                 ]); ?>;
     </script>
-    <script src="../assets/js/player_video.js"></script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
+    <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
+    <script src="../assets/js/shared/resume-modal.js<?= $__v('assets/js/shared/resume-modal.js') ?>"></script>
+    <script src="../assets/js/shared/mini-player-popstate.js<?= $__v('assets/js/shared/mini-player-popstate.js') ?>"></script>
+    <script src="../assets/js/video/watch/main.js<?= $__vdir('assets/js/video/watch') ?>"></script>
+    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
+    <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 
-    <script>
-        lucide.createIcons();
-        document.body.addEventListener('htmx:afterOnLoad', function() {
-            lucide.createIcons();
-        });
-        
-        // Handle Enter key untuk video search
+    <script>        
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = ['v-search-watch', 'v-search-mobile'];
             searchInputs.forEach(id => {
@@ -351,7 +428,7 @@ session_write_close();
                 }
             });
         });
-    </script>
+</script>
 </body>
 
 </html>

@@ -1,7 +1,6 @@
 <?php
 require_once 'modules/core/helpers.php';
-session_name('meel');
-session_start();
+meel_boot_session();
 include 'auth/config.php';
 require_once 'modules/media/MediaLibrary.php';
 
@@ -21,19 +20,24 @@ $counts  = $library->getCounts();
 ?>
     <link rel="stylesheet" href="assets/css/index(hub).css">
     <link href="assets/css/tailwind.min.css" rel="stylesheet">
-    <script src="assets/js/lucide.js"></script>
-    <script src="assets/js/sweetalert2.all.min.js"></script>
-    <script src="assets/js/script.min.js"></script>
+    <link rel="stylesheet" href="assets/css/shared/theme-tokens.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/theme-tokens.css') ?>">
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
+    <link rel="stylesheet" href="assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/assets/css/shared/light-theme.css') ?>">
+    <script src="assets/js/compatibilitas/lucide.js"></script>
+    <script src="assets/js/compatibilitas/sweetalert2.all.min.js"></script>
+    <script src="assets/js/compatibilitas/script.min.js"></script>
+    <script src="assets/js/shared/state-keys.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/state-keys.js') ?>"></script>
+    <script src="assets/js/shared/health-reminder.js?v=<?= filemtime(__DIR__ . '/assets/js/shared/health-reminder.js') ?>"></script>
+    <script src="assets/js/shared/theme.js?v=<?= @filemtime(__DIR__ . '/assets/js/shared/theme.js') ?>"></script>
 </head>
 
 <body class="text-gray-300 min-h-screen" style="background:#05070c">
 
-    <!-- NAVBAR -->
+    
     <?php include 'partials/navbar.php'; ?>
-
     <main class="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-20 flex flex-col items-center">
 
-        <!-- HERO -->
+        
         <div class="text-center mb-20">
             <div class="inline-block mb-6">
                 <img onclick="window.location.href='arcade/'" src="assets/MEeL.png" class="w-14 h-14 object-contain mx-auto opacity-80 hover:opacity-100 transition" alt="MEeL" title="MEeL Arcade">
@@ -43,12 +47,12 @@ $counts  = $library->getCounts();
             <p onclick="window.location.href='index.html'" class="text-xs text-gray-400 mt-4 tracking-[.25em] uppercase">Streaming &amp; Archive Platform</p>
         </div>
 
-        <!-- MEDIA CARDS -->
+        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 w-full mb-20">
 
-            <!-- MUSIC (diperbesar di tengah) -->
+            
             <div class="media-card card-music flex flex-col gap-4 md:h-64"
-                onclick="window.location.href='music/index.php'"
+                onclick="window.location.href='music/beranda'"
                 title="MEeL Music">
                 <div class="flex items-start justify-between">
                     <div class="card-icon-wrap">
@@ -70,9 +74,9 @@ $counts  = $library->getCounts();
                 </div>
             </div>
 
-            <!-- VIDEO -->
+            
             <div class="media-card card-video flex flex-col gap-4 md:h-64"
-                onclick="window.location.href='video/index.php'"
+                onclick="window.location.href='video/beranda'"
                 title="MEeL Video" hx-boost="true">
                 <div class="flex items-start justify-between">
                     <div class="card-icon-wrap">
@@ -94,10 +98,10 @@ $counts  = $library->getCounts();
                 </div>
             </div>
 
-            <!-- BOOKS -->
+            
             <?php if ($is_logged_in): ?>
                 <div class="media-card card-books flex flex-col gap-4 md:h-64"
-                    onclick="window.location.href='books/index.php'"
+                    onclick="window.location.href='books/beranda'"
                     title="MEeL Books">
                     <div class="flex items-start justify-between">
                         <div class="card-icon-wrap">
@@ -121,24 +125,24 @@ $counts  = $library->getCounts();
             <?php endif; ?>
         </div>
 
-        <!-- BOTTOM LINKS -->
+        
         <div class="flex flex-wrap items-center justify-center gap-3">
             <?php if ($is_logged_in && isset($_SESSION['role'])): ?>
                 <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <a href="admin/index.php" class="bottom-link" title="Panel Admin untuk mengelola konten dan pengguna">
+                    <a href="admin/beranda" class="bottom-link" title="Panel Admin untuk mengelola konten dan pengguna">
                         <i data-lucide="settings" class="w-3 h-3"></i> Admin Panel
                     </a>
-                    <a href="upload_advanced.php" class="bottom-link" title="Unggah media baru ke platform">
+                    <a href="upload" class="bottom-link" title="Unggah media baru ke platform">
                         <i data-lucide="upload-cloud" class="w-3 h-3"></i> Upload Media
                     </a>
                 <?php endif; ?>
                 <?php if (in_array($_SESSION['role'], ['member', 'admin'])): ?>
-                    <a href="drive/index.php" class="bottom-link" title="Akses drive Anda untuk mengelola file dan dokumen">
+                    <a href="drive/beranda" class="bottom-link" title="Akses drive Anda untuk mengelola file dan dokumen">
                         <i data-lucide="hard-drive" class="w-3 h-3"></i> Drive
                     </a>
                 <?php endif; ?>
             <?php endif; ?>
-            <a href="update.php" class="bottom-link" title="Lihat perubahan terbaru dan pembaruan platform">
+            <a href="update" class="bottom-link" title="Lihat perubahan terbaru dan pembaruan platform">
                 <i data-lucide="radio" class="w-3 h-3"></i> Changelog
             </a>
             <a href="docs/index.html" class="bottom-link" title="Lihat dokumentasi platform">
@@ -146,7 +150,7 @@ $counts  = $library->getCounts();
             </a>
         </div>
 
-        <!-- MODE SEHAT -->
+        
         <div class="mt-10 flex items-center gap-3">
             <span class="text-[10px] text-gray-200 uppercase tracking-widest">Mode 20-20-20</span>
             <button id="healthToggle"
@@ -159,7 +163,7 @@ $counts  = $library->getCounts();
         <?php include 'partials/footer.php'; ?>
     </main>
 
-    <!-- DEMO TOP BANNER -->
+    
     <div id="demoBanner" class="demo-banner" role="alert" aria-label="Pemberitahuan website demo">
         <div class="demo-banner-inner">
             <div class="demo-banner-left">
@@ -177,14 +181,18 @@ $counts  = $library->getCounts();
     <script>
         lucide.createIcons();
 
-        // ── BANNER LOGIC ──
+        if (typeof MEELTheme !== 'undefined') {
+            MEELTheme.init({
+                isLoggedIn: <?= json_encode($is_logged_in) ?>,
+                csrfToken: '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+            });
+        }
+
         (function() {
             const banner = document.getElementById('demoBanner');
             const closeBtn = document.getElementById('demoBannerClose');
 
-            // Selalu tampilkan banner setiap kali halaman di-refresh
             if (banner) {
-                // Ukur tinggi aktual banner (menangani text wrap di layar kecil)
                 banner.style.visibility = 'hidden';
                 banner.style.display = 'block';
                 const h = banner.scrollHeight;
@@ -200,11 +208,10 @@ $counts  = $library->getCounts();
 
             if (closeBtn && banner) {
                 closeBtn.addEventListener('click', function() {
-                    // Kembalikan navbar ke posisi semula
                     document.body.classList.remove('demo-banner-active');
                     banner.classList.remove('demo-banner-visible');
                     banner.classList.add('demo-banner-hiding');
-                    // Hanya sembunyikan untuk sesi ini — saat refresh akan muncul lagi
+
                     setTimeout(() => {
                         banner.style.display = 'none';
                     }, 400);
@@ -212,13 +219,10 @@ $counts  = $library->getCounts();
             }
         })();
 
-        // ── SWEETALERT2 ──
         (function() {
-            // Hanya tampilkan sekali per sesi browser
             if (sessionStorage.getItem('meelDemoAlertShown')) return;
             sessionStorage.setItem('meelDemoAlertShown', '1');
 
-            // Tunda sedikit agar banner sempat render dulu
             setTimeout(() => {
                 Swal.fire({
                     icon: 'warning',

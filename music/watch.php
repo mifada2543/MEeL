@@ -1,26 +1,49 @@
 <?php
-session_name('meel');
-session_start();
+require_once '../modules/core/helpers.php';
+meel_boot_session();
 
 include '../auth/config.php';
 require_once '../modules/core/helpers.php';
 require_once '../modules/core/CommentRenderer.php';
+require_once '../modules/media/MediaLibrary.php';
 require_once '../controllers/api/WatchController.php';
 
 $id          = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id     = $_SESSION['user_id'] ?? null;
 $playlist_id = isset($_GET['playlist_id']) ? (int)$_GET['playlist_id'] : 0;
 
+authorize_stream($id);
+
 $ctrl = new MusicWatchController($conn, $user_id, $id, $playlist_id);
 $ctrl->handleRequest();
 
-// Semua variabel template diekstrak dari controller
-// EXTR_SKIP mencegah overwrite variabel yang sudah ada di scope
 extract($ctrl->getViewData(), EXTR_SKIP);
 
-// Lepas session lock agar range request streaming tidak terblokir
 session_write_close();
-?><!DOCTYPE html>
+
+$__v = function($f) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $f;
+    if (!isset($mtimeCache[$path])) {
+        $mtimeCache[$path] = @filemtime($path);
+    }
+    return '?v=' . $mtimeCache[$path];
+};
+
+$__vdir = function($dir) {
+    static $mtimeCache = [];
+    $path = __DIR__ . '/../' . $dir;
+    if (!isset($mtimeCache[$path])) {
+        $max = 0;
+        foreach (glob($path . '/*.js') ?: [] as $f) {
+            $max = max($max, (int)@filemtime($f));
+        }
+        $mtimeCache[$path] = $max;
+    }
+    return '?v=' . $mtimeCache[$path];
+};
+?>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -29,13 +52,26 @@ session_write_close();
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($v['title']) ?> — MEeL Music">
     <meta property="og:description" content="Dengarkan <?= htmlspecialchars($v['title']) ?> oleh <?= htmlspecialchars($v['artist'] ?? 'Unknown') ?> di MEeL Music.">
+    <?php
+    $__thumb_raw = music_thumbnail_url($v['thumbnail']);
+    $__og_image  = str_starts_with($__thumb_raw, '../')
+        ? detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/' . substr($__thumb_raw, 3)
+        : detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/music/' . ltrim($__thumb_raw, '/');
+    ?>
+    <meta property="og:image" content="<?= $__og_image ?>">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:type" content="music.song">
     <title><?= htmlspecialchars($v['title']) ?> — MEeL Music</title>
     <?php include '../partials/link.php'; ?>
     <?php $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'); ?>
     <link rel="preconnect" href="<?= $base_url ?>/" crossorigin>
-    <link rel="stylesheet" href="../assets/css/plyr.css">
-    <link rel="stylesheet" href="../assets/css/music.css">
-    <script src="../assets/js/htmx.min.js" defer></script>
+    <link rel="stylesheet" href="../assets/css/plyr.css<?= $__v('assets/css/plyr.css') ?>">
+    <?php foreach (require __DIR__ . '/../assets/css/music/manifest.php' as $__f): ?>
+    <link rel="stylesheet" href="../assets/css/music/<?= $__f ?><?= $__v('assets/css/music/' . $__f) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="../assets/css/shared/comment.css<?= $__v('assets/css/shared/comment.css') ?>">
+    <script src="../assets/js/compatibilitas/htmx.min.js" defer></script>
 </head>
 
 <body class="text-gray-400 min-h-screen">
@@ -46,9 +82,9 @@ session_write_close();
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-4 sm:px-5 h-14 flex items-center justify-between gap-3">
 
-            <a href="index.php" class="flex items-center gap-2 flex-shrink-0" title="MEeL Music">
-                <div class="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center">
-                    <i data-lucide="music" class="w-3.5 h-3.5 text-white fill-current"></i>
+            <a href="beranda" class="flex items-center gap-2 flex-shrink-0" title="MEeL Music">
+                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style="background:var(--meel-orange)">
+                    <i data-lucide="music" class="nav-logo-icon w-3.5 h-3.5"></i>
                 </div>
                 <span class="text-sm font-bold tracking-tight text-white uppercase">
                     MEeL<span class="text-orange-500">Music</span>
@@ -63,13 +99,14 @@ session_write_close();
                         name="search"
                         placeholder="Cari lagu atau artis..."
                         class="w-full bg-white/[.04] border border-white/[.06] rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-orange-500/40 transition-all text-gray-300"
-                        autocomplete="off">
+                        autocomplete="off"
+                        enterkeyhint="search">
                     <div id="music-search-indicator" class="htmx-indicator absolute right-3.5 top-1/2 -translate-y-1/2">
                         <div class="animate-spin h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></div>
                     </div>
                 </div>
                 <button id="m-search-btn"
-                    hx-get="search_music.php?exclude=<?= $id ?>"
+                    hx-get="search?exclude=<?= $id ?>"
                     hx-include="#m-search-watch"
                     hx-target="#music-recommendation-column"
                     hx-indicator="#music-search-indicator"
@@ -111,7 +148,7 @@ session_write_close();
 
                 <div class="flex flex-col sm:flex-row gap-5 p-4 sm:p-6 border-b border-white/[.04]">
                     <div class="flex-shrink-0 flex items-center justify-center sm:justify-start">
-                        <div class="vinyl-spin vinyl-disc">
+                        <div class="vinyl-spin vinyl-disc" onclick="event.stopPropagation();(window.goBackToLibrary ? window.goBackToLibrary() : window.toggleMiniPlayer?.())" style="cursor:pointer" title="Mini Player (I)">
                             <img src="<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>" alt="<?= htmlspecialchars($v['title']) ?> cover" width="512" height="512" class="w-full h-full object-cover" fetchpriority="high" decoding="async">
                         </div>
                     </div>
@@ -120,7 +157,7 @@ session_write_close();
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="text-center sm:text-left flex-1 min-w-0">
                                 <div class="track-title truncate" title="<?= htmlspecialchars($v['title']) ?>"><?= htmlspecialchars($v['title']) ?></div>
-                                <a href="index.php?artist=<?= urlencode($v['artist']) ?>"
+                                <a href="beranda?artist=<?= urlencode($v['artist']) ?>"
                                     class="text-orange-400 font-bold text-sm uppercase tracking-widest hover:underline block mt-2 truncate">
                                     <?= htmlspecialchars($v['artist']) ?>
                                 </a>
@@ -200,10 +237,9 @@ session_write_close();
                 </div>
 
                 <div class="p-4 sm:p-5">
-                    <audio id="main-player" controls preload="<?= $preloadVal ?>" class="w-full" oncontextmenu="return false;">
-                        <source src="stream.php?id=<?= $id ?>" type="<?= $mimeType ?>">
-                        Your browser does not support the audio element.
-                    </audio>
+                    
+
+                    <div id="player-audio-slot" class="w-full"></div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 border-t border-white/[.04] bg-black/10">
@@ -235,7 +271,7 @@ session_write_close();
                         <div class="flex items-center gap-2 flex-wrap">
                             <div id="like-dislike-container" class="flex items-center gap-2 flex-wrap">
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"music","type":"like","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
                                    <?= $user_interaction === 'like'
@@ -245,7 +281,7 @@ session_write_close();
                                     Like<?= ($v['likes'] ?? 0) > 0 ? " <span class='tabular-nums ml-0.5'>{$v['likes']}</span>" : '' ?>
                                 </button>
                                 <button
-                                    hx-post="../controllers/api/like.php" hx-target="#like-dislike-container" hx-swap="outerHTML"
+                                    hx-post="../api/like" hx-target="#like-dislike-container" hx-swap="outerHTML"
                                     hx-vals='{"id":"<?= $id ?>","media_type":"music","type":"dislike","csrf_token":"<?= htmlspecialchars($_SESSION["csrf_token"]) ?>"}'
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer
                                    <?= $user_interaction === 'dislike'
@@ -265,7 +301,7 @@ session_write_close();
                                 (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)($v['user_id'] ?? -1))
                             );
                             if ($can_edit): ?>
-                                <a href="../admin/edit-music.php?id=<?= $id ?>" title="Edit Musik"
+                                <a href="<?= base_url('/admin/edit-music?id=' . (int)$id) ?>" title="Edit Musik"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer no-underline bg-orange-600/10 border-orange-600/20 text-orange-400 hover:bg-orange-600 hover:text-white">
                                     <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit
                                 </a>
@@ -288,8 +324,7 @@ session_write_close();
                     </button>
                 </div>
 
-                <script>
-                    function toggleDescriptionMusic() {
+                <script>                    function toggleDescriptionMusic() {
                         const descText = document.getElementById('desc-text-music');
                         const btn = document.getElementById('btn-read-more-music');
 
@@ -325,17 +360,56 @@ session_write_close();
                     document.addEventListener('DOMContentLoaded', checkDescriptionLengthMusic);
                     document.body.addEventListener('htmx:afterOnLoad', checkDescriptionLengthMusic);
                     window.addEventListener('resize', checkDescriptionLengthMusic);
-                </script>
+                    const descContainer = document.querySelector('.desc-container');
+                    if (descContainer && 'IntersectionObserver' in window) {
+                        const descObserver = new IntersectionObserver((entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    descObserver.disconnect();
+                                    checkDescriptionLengthMusic();
+                                }
+                            });
+                        });
+                        descObserver.observe(descContainer);
+                    }
+</script>
             <?php endif; ?>
-
             <?php if ($is_logged_in): ?>
-                <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section" style="content-visibility:auto;contain-intrinsic-size:200px">
-                    <div class="px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
+                <section class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden comment-section" id="comment-section">
+                    <button type="button" id="comment-toggle" onclick="toggleCommentSection()" aria-expanded="false"
+                        class="w-full px-4 sm:px-6 py-4 border-b border-white/[.04] bg-black/10 flex items-center gap-2 cursor-pointer hover:bg-white/[.08] transition-colors text-left"
+                        title="Buka / tutup komentar">
                         <i data-lucide="message-square" class="w-3.5 h-3.5 text-orange-500"></i>
                         <span class="text-[10px] font-bold uppercase tracking-[.25em] text-gray-500">Komentar</span>
+                        <i data-lucide="chevron-up" id="comment-chevron-open" class="w-3.5 h-3.5 ml-auto text-gray-500 hidden"></i>
+                        <i data-lucide="chevron-down" id="comment-chevron-closed" class="w-3.5 h-3.5 ml-auto text-gray-500"></i>
+                    </button>
+                    <div id="comment-preview" class="px-4 sm:px-6 py-3">
+                        <?php
+                        
+                        
+                        $preview       = comment_preview($comments_grouped ?? []);
+                        $preview_items = $preview['items'];
+                        ?>
+                        <div id="comment-preview-text" class="space-y-1 text-sm text-gray-400 <?= empty($preview_items) ? 'italic' : '' ?>">
+                            <?php if (empty($preview_items)): ?>
+                                <span>Jadilah komentar pertama</span>
+                            <?php else: foreach ($preview_items as $_pc): ?>
+                                <div class="line-clamp-1"
+                                    title="<?= htmlspecialchars('@' . ($_pc['username'] ?? 'Guest') . ': ' . preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? '')), ENT_QUOTES) ?>">
+                                    <span class="font-bold text-orange-400">@<?= htmlspecialchars($_pc['username'] ?? 'Guest') ?></span>: <?= htmlspecialchars(preg_replace('/\s+/', ' ', (string)($_pc['comment'] ?? ''))) ?>
+                                </div>
+                            <?php endforeach; endif; ?>
+                        </div>
                     </div>
-                    <div class="p-4 sm:p-6">
-                        <form action="watch.php?id=<?= $id ?>" method="post" class="mb-6">
+                    <div id="comment-body">
+                        <div class="p-4 sm:p-6">
+                            <div id="comment-alert"></div>
+                        <form action="<?= base_url('/music/watch?id=' . (int)$id . ($playlist_context > 0 ? '&playlist_id=' . (int)$playlist_context : '')) ?>" method="post" class="mb-6"                                hx-post="../api/comment"
+                            hx-target="#comment-list"
+                            hx-swap="innerHTML"
+                            hx-vals='{"id":"<?= $id ?>","media_type":"music"<?= $playlist_context > 0 ? ',"playlist_id":"' . (int)$playlist_context . '"' : '' ?>}'
+                            hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('comment-alert')?.replaceChildren(); var l=document.getElementById('comment-list'); if (l) l.scrollTop = l.scrollHeight; }">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                             <textarea name="comments"
                                 class="w-full bg-black/25 border border-white/[.06] rounded-xl p-3 sm:p-4 text-sm text-gray-300 focus:outline-none focus:border-orange-500/40 min-h-[80px] resize-y transition-all"
@@ -348,19 +422,24 @@ session_write_close();
                             </div>
                         </form>
 
-                        <div class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                        <div id="comment-list" class="space-y-1 max-h-[500px] overflow-y-auto pr-1">
                             <?php
+                            $GLOBALS['uploader_id'] = (int)($v['user_id'] ?? 0);
                             if (empty($comments_grouped)) {
-                                echo "<div class='py-10 text-center text-[10px] text-gray-700 uppercase tracking-widest'>Belum ada komentar.</div>";
+                                render_comment_empty_state('music');
                             } else {
                                 render_comments(0, $comments_grouped, 0, 'music', $playlist_context);
                             }
                             ?>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            <?php endif; ?>
-
+                    </section>
+                    <script>                        document.getElementById('comment-body')?.classList.add('collapsed');
+</script>
+                    <noscript><style>#comment-preview{display:none}
+</style></noscript>
+                <?php endif; ?>
         </div>
 
         <div class="w-full lg:w-80 flex-shrink-0 space-y-6 px-4 sm:px-5 lg:px-0 rekomendasi-sidebar" style="content-visibility:auto;contain-intrinsic-size:500px;min-height:300px">
@@ -377,7 +456,7 @@ session_write_close();
                         while ($q = $queue_query->fetch_assoc()):
                             $is_pl = ($q['id'] == $id);
                         ?>
-                            <a href="watch.php?id=<?= $q['id'] ?>&playlist_id=<?= $playlist_context ?>"
+                            <a href="<?= base_url('/music/watch?id=' . (int)$q['id'] . '&playlist_id=' . (int)$playlist_context) ?>"
                                 class="flex items-center gap-3 px-2 py-2 rounded-xl transition-all no-underline
                               <?= $is_pl ? 'bg-orange-500/8 border border-orange-500/20' : 'hover:bg-white/[.025] border border-transparent' ?>">
                                 <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 <?= $is_pl ? 'opacity-50' : '' ?>">
@@ -395,7 +474,6 @@ session_write_close();
                     </div>
                 </div>
             <?php endif; ?>
-
             <div class="bg-[#0d1017] border border-white/[.06] rounded-xl sm:rounded-2xl overflow-hidden">
                 <div class="px-5 py-3.5 border-b border-white/[.04] bg-black/10 flex items-center gap-2">
                     <i data-lucide="shuffle" class="w-3.5 h-3.5 text-gray-600"></i>
@@ -406,7 +484,7 @@ session_write_close();
                         $r_ext = strtolower(pathinfo($r['filename'], PATHINFO_EXTENSION));
                         $r_lbl = $r_ext === 'ogg' ? 'opus' : $r_ext;
                     ?>
-                        <a href="watch.php?id=<?= $r['id'] ?>"
+                        <a href="<?= base_url('/music/watch?id=' . (int)$r['id']) ?>"
                             class="rekomendasi-item flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl no-underline"
                             title="<?= htmlspecialchars($r['title']) ?>">
                             <div class="w-full lg:w-16 aspect-square lg:h-12 lg:aspect-auto rounded-lg overflow-hidden flex-shrink-0 bg-white/[.04] border border-white/[.05]">
@@ -447,14 +525,11 @@ session_write_close();
                     </div>
                     <div class="space-y-1.5 mb-4 max-h-[180px] overflow-y-auto pr-1 no-scrollbar">
                         <?php
-                        $stmt_pl = $conn->prepare("SELECT * FROM playlists WHERE user_id = ? ORDER BY id DESC");
-                        $stmt_pl->bind_param("i", $_SESSION['user_id']);
-                        $stmt_pl->execute();
-                        $my_playlists = $stmt_pl->get_result();
+                        $my_playlists = (new MediaLibrary($conn))->getUserPlaylists((int) $_SESSION['user_id']);
                         if ($my_playlists && $my_playlists->num_rows > 0):
                             while ($pl = $my_playlists->fetch_assoc()):
                         ?>
-                                <form action="playlist_action.php" method="POST">
+                                <form action="playlist-action" method="POST">
                                     <input type="hidden" name="action" value="add_to_playlist">
                                     <input type="hidden" name="music_id" value="<?= $id ?>">
                                     <input type="hidden" name="playlist_id" value="<?= $pl['id'] ?>">
@@ -470,7 +545,7 @@ session_write_close();
                         <?php endif; ?>
                     </div>
                     <div class="border-t border-white/[.05] pt-4">
-                        <form action="playlist_action.php" method="POST" class="flex gap-2">
+                        <form action="playlist-action" method="POST" class="flex gap-2">
                             <input type="hidden" name="action" value="create_playlist">
                             <input type="hidden" name="music_id" value="<?= $id ?>">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
@@ -486,7 +561,6 @@ session_write_close();
                 </div>
             </div>
         <?php endif; ?>
-
         <div id="mini-player" aria-label="Mini Player">
             <div class="mp-seekbar" id="mp-seekbar" onclick="miniSeek(event)" title="Klik untuk seek">
                 <div class="mp-seekbar-fill" id="mp-seekbar-fill"></div>
@@ -536,25 +610,25 @@ session_write_close();
         </div>
 
     </main> <?php include '../partials/footer.php'; ?>
-    <script src="../assets/js/script.min.js"></script>
     <script>
         window.MEEL_MUSIC_CONFIG = {
             id: <?= $id ?>,
             playlistId: <?= (int)$playlist_id ?>,
             fileSizeBytes: <?= (int)$file_size_bytes ?>,
-            nextSongUrl: "<?= $next_song_url ?>",
-            title: '<?= htmlspecialchars(addslashes($v['title'])) ?>',
-            artist: '<?= htmlspecialchars(addslashes($v['artist'] ?? '')) ?>',
-            thumbnail: '<?= htmlspecialchars($v['thumbnail']) ?>',
-            thumbnailUrl: '<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>',
-            filename: '<?= htmlspecialchars($v['filename']) ?>'
+            nextSongUrl: <?= json_encode($next_song_url) ?>,
+            title: <?= json_encode($v['title']) ?>,
+            artist: <?= json_encode($v['artist'] ?? '') ?>,
+            thumbnail: <?= json_encode($v['thumbnail']) ?>,
+            thumbnailUrl: <?= json_encode(music_thumbnail_url($v['thumbnail'])) ?>,
+            filename: <?= json_encode($v['filename']) ?>,
+            streamUrl: <?= json_encode('stream?id=' . $id) ?>,
+            mimeType: <?= json_encode($mimeType) ?>
         };
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            
-            // Handle Enter key untuk music search
+
             const searchInput = document.getElementById('m-search-watch');
             const searchBtn = document.getElementById('m-search-btn');
             if (searchInput && searchBtn) {
@@ -567,9 +641,11 @@ session_write_close();
             }
         });
 
-        document.body.addEventListener('htmx:afterOnLoad', function() {
+        document.body.addEventListener('htmx:afterOnLoad', function(e) {
             if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+                
+                
+                lucide.createIcons({}, e.detail?.target || document.body);
             }
         });
 
@@ -599,9 +675,18 @@ session_write_close();
             if (options) options.classList.add('hidden');
         };
     </script>
-    <script src="../assets/js/plyr.min.js" defer></script>
-    <script src="../assets/js/sweetalert2.all.min.js" defer></script>
-    <script src="../assets/js/player_music.js" defer></script>
+    <script src="../assets/js/compatibilitas/plyr.min.js"></script>
+    <script src="../assets/js/shared/state-keys.js<?= $__v('assets/js/shared/state-keys.js') ?>"></script>
+    <script src="../assets/js/shared/keyboard.js<?= $__v('assets/js/shared/keyboard.js') ?>"></script>
+    <script src="../assets/js/shared/temp-index.js<?= $__v('assets/js/shared/temp-index.js') ?>"></script>
+    <script src="../assets/js/shared/plyr-config.js<?= $__v('assets/js/shared/plyr-config.js') ?>"></script>
+    <script src="../assets/js/shared/format-time.js<?= $__v('assets/js/shared/format-time.js') ?>"></script>
+    <script src="../assets/js/shared/resume-modal.js<?= $__v('assets/js/shared/resume-modal.js') ?>"></script>
+    <script src="../assets/js/shared/mini-player-popstate.js<?= $__v('assets/js/shared/mini-player-popstate.js') ?>"></script>
+    <script src="../assets/js/shared/audio-engine.js<?= $__v('assets/js/shared/audio-engine.js') ?>"></script>
+    <script src="../assets/js/shared/view-router.js<?= $__v('assets/js/shared/view-router.js') ?>"></script>
+    <script src="../assets/js/music/watch/main.js<?= $__vdir('assets/js/music/watch') ?>"></script>
+    <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
 </body>
 
 </html>
