@@ -1671,3 +1671,120 @@ html[data-theme="light"] [style*="border: 4px solid #0b0e14"] {
 html[data-theme="light"] .bg-gray-800 {
   background-color: var(--meel-surface-hover) !important;
 }
+
+/* ════════════════════════════════════════════════════════════
+   PROFILE/MANAGE — Kelola Konten (light mode)
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Manage Tabs ─── */
+html[data-theme="light"] .manage-tabs {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .manage-tab {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .manage-tab:hover {
+  color: var(--meel-text) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .manage-tab.active-tab {
+  background: rgba(249, 115, 22, 0.10) !important;
+  border-color: rgba(249, 115, 22, 0.22) !important;
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .manage-tab.active-video {
+  background: rgba(239, 68, 68, 0.10) !important;
+  border-color: rgba(239, 68, 68, 0.22) !important;
+  color: var(--meel-red) !important;
+}
+
+/* ─── Content Cards ─── */
+html[data-theme="light"] .content-card {
+  background: var(--meel-surface) !important;
+  border-color: var(--meel-border) !important;
+  box-shadow: var(--meel-shadow-sm) !important;
+}
+html[data-theme="light"] .content-card:hover {
+  border-color: var(--meel-border-strong) !important;
+  box-shadow: var(--meel-shadow-lg) !important;
+}
+html[data-theme="light"] .content-card .card-thumb {
+  background: #e9e9ec !important;
+}
+html[data-theme="light"] .content-card .card-title {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .content-card .card-meta {
+  color: var(--meel-text-muted) !important;
+}
+
+/* ─── Action Buttons ─── */
+html[data-theme="light"] .action-btn-edit {
+  background: rgba(37, 99, 235, 0.08) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+  color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .action-btn-edit:hover {
+  background: rgba(37, 99, 235, 0.14) !important;
+  border-color: rgba(37, 99, 235, 0.30) !important;
+}
+html[data-theme="light"] .action-btn-delete {
+  background: rgba(220, 38, 38, 0.08) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: var(--meel-red) !important;
+}
+html[data-theme="light"] .action-btn-delete:hover {
+  background: rgba(220, 38, 38, 0.14) !important;
+  border-color: rgba(220, 38, 38, 0.30) !important;
+}
+
+/* ─── Stats Bar ─── */
+html[data-theme="light"] .stat-item {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+  color: var(--meel-text-secondary) !important;
+}
+
+/* ─── Pagination ─── */
+html[data-theme="light"] .page-link {
+  color: var(--meel-text-muted) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .page-link:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--meel-text) !important;
+}
+html[data-theme="light"] .page-link.active-page {
+  background: rgba(249, 115, 22, 0.10) !important;
+  border-color: rgba(249, 115, 22, 0.22) !important;
+  color: var(--meel-orange) !important;
+}
+
+/* ─── Empty State ─── */
+html[data-theme="light"] .empty-state svg {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .empty-state p {
+  color: var(--meel-text-secondary) !important;
+}
+
+/* ─── Alert Bars ─── */
+html[data-theme="light"] .alert-success {
+  background: rgba(22, 163, 74, 0.10) !important;
+  border-color: rgba(22, 163, 74, 0.22) !important;
+  color: var(--meel-green) !important;
+}
+html[data-theme="light"] .alert-error {
+  background: rgba(220, 38, 38, 0.10) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  color: var(--meel-red) !important;
+}
+
+/* ─── Card Title Hover Accents (light) ─── */
+html[data-theme="light"] .hover\:text-red-400:hover {
+  color: var(--meel-red) !important;
+}
+html[data-theme="light"] .hover\:text-orange-400:hover {
+  color: var(--meel-orange) !important;
+}
