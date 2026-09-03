@@ -3,20 +3,8 @@ use PHPUnit\Framework\TestCase;
 
 require_once dirname(__DIR__, 2) . '/modules/auth/ValidatingProxy.php';
 
-/**
- * Regression tests for the validating forward proxy
- * (modules/auth/ValidatingProxy.php + validating_proxy_server.php).
- *
- * These spawn a REAL proxy process on 127.0.0.1:<ephemeral> and send real
- * CONNECT / absolute-URI requests to it, verifying that:
- * * private/reserved targets are REFUSED (502 / closed) — including
- * redirect targets, which is the whole point of the proxy,
- * * public targets are accepted (200 Connection Established / relayed),
- * * the process is cleaned up on stop().
- *
- * Network-dependent acceptance tests degrade to markTestSkipped() when no
- * resolver/egress is available; the rejection tests are fully local.
- */
+
+
 class ValidatingProxyTest extends TestCase
 {
     private ?ValidatingProxy $proxy = null;
@@ -37,10 +25,8 @@ class ValidatingProxyTest extends TestCase
         return $this->proxy;
     }
 
-    /**
-     * Open a raw TCP connection to the proxy and send a request, returning
-     * whatever the proxy replies (or '' if it closes the connection).
-     */
+    
+
     private function probeProxy(string $request, float $timeout = 6.0): string
     {
         $proxy = $this->startProxy();
@@ -79,14 +65,16 @@ class ValidatingProxyTest extends TestCase
         return $response;
     }
 
-    /** @dataProvider privateConnectTargetsProvider */
+    /**
+     * @dataProvider privateConnectTargetsProvider
+     */
     public function testConnectToPrivateTargetIsRefused(string $target, string $hostHeader): void
     {
         $response = $this->probeProxy(
             "CONNECT $target HTTP/1.1\r\nHost: $hostHeader\r\n\r\n"
         );
 
-        // Proxy harus MENOLAK: tidak boleh ada "200 Connection Established".
+        
         $this->assertStringNotContainsStringIgnoringCase(
             '200 Connection Established',
             $response,
@@ -115,7 +103,9 @@ class ValidatingProxyTest extends TestCase
         ];
     }
 
-    /** @dataProvider privateGetTargetsProvider */
+    /**
+     * @dataProvider privateGetTargetsProvider
+     */
     public function testHttpAbsoluteUriToPrivateTargetIsRefused(string $absoluteUri): void
     {
         $response = $this->probeProxy(
@@ -149,7 +139,7 @@ class ValidatingProxyTest extends TestCase
 
     public function testHttpsSchemeAbsoluteUriIsNotRelayed(): void
     {
-        // https hanya boleh lewat CONNECT — proxy tidak boleh relay langsung
+        
         $response = $this->probeProxy(
             "GET https://example.com/ HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"
         );
@@ -157,10 +147,8 @@ class ValidatingProxyTest extends TestCase
         $this->assertStringNotContainsStringIgnoringCase('200 OK', $response);
     }
 
-    /**
-     * CONNECT ke host publik harus dijawab 200 Connection Established.
-     * Network-dependent — skip bila tidak ada resolusi/egress.
-     */
+    
+
     public function testConnectToPublicTargetIsAccepted(): void
     {
         $records = @dns_get_record('postman-echo.com', DNS_A);
@@ -198,26 +186,21 @@ class ValidatingProxyTest extends TestCase
         $this->assertStringContainsString('Example Domain', $response);
     }
 
-    /**
-     * resolvePhpBinary() harus menghasilkan binary PHP yang benar-benar bisa
-     * dijalankan. Regresi untuk bug produksi: di mod_php (Apache) PHP_BINARY
-     * kosong dan PATH Apache tidak menyertakan direktori php (mis.
-     * /opt/lampp/bin) — fallback 'php' mentah gagal dengan "php: not found"
-     * (exit 127), membuat proxy tidak bisa start dan upload ditolak.
-     */
+    
+
     public function testResolvePhpBinaryReturnsExecutablePhp(): void
     {
         $bin = ValidatingProxy::resolvePhpBinary();
         $this->assertNotSame('', $bin, 'resolvePhpBinary() tidak boleh kosong');
 
-        // Jika path absolut — harus executable. Fallback 'php' (via PATH shell)
-        // hanya valid di lingkungan CLI, bukan di Apache.
+        
+        
         if (str_contains($bin, '/')) {
             $this->assertFileExists($bin, "Binary PHP harus ada: $bin");
             $this->assertTrue(is_executable($bin), "Binary PHP harus executable: $bin");
         }
 
-        // Bukti nyata: binary harus menjalankan PHP.
+        
         exec(escapeshellarg($bin) . ' -r "echo PHP_VERSION;" 2>&1', $out, $rc);
         $this->assertSame(0, $rc, "Binary PHP $bin harus bisa menjalankan php -r");
         $this->assertNotEmpty(trim(implode('', $out)), 'Output PHP_VERSION tidak boleh kosong');
@@ -239,7 +222,7 @@ class ValidatingProxyTest extends TestCase
         $this->assertTrue($proxy->isRunning());
         $proxy->stop();
         $this->assertFalse($proxy->isRunning());
-        // stop() harus idempotent
+        
         $proxy->stop();
         $this->assertFalse($proxy->isRunning());
     }

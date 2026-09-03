@@ -1,7 +1,7 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* engine/main.js — Entry point folder engine/ (overlay download/ */
+
+
+
+
 (function () {
   "use strict";
   if (document.readyState !== "loading") return;

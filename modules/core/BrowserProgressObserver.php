@@ -1,5 +1,5 @@
 <?php
-/* @package MEeL\Core */
+
 
 require_once __DIR__ . '/ProgressObserver.php';
 
@@ -14,7 +14,7 @@ class BrowserProgressObserver implements ProgressObserver
         $this->isAdmin = $isAdmin;
     }
 
-    /* @throws \RuntimeException Tidak dilempar — method ini tidak melempar */
+    
     public function onProgress(string $stage, array $data = []): void
     {
         switch ($stage) {
@@ -60,7 +60,7 @@ class BrowserProgressObserver implements ProgressObserver
                 break;
 
             case 'redirect':
-                // browser (dokumen di-abort saat navigasi terjadi di tengah
+                
                 break;
 
             case 'error':
@@ -80,7 +80,7 @@ class BrowserProgressObserver implements ProgressObserver
         }
     }
 
-    /* @param string $js Badan JavaScript tanpa tag <script> */
+    
     private function emitJs(string $js): void
     {
         echo '<script>' . $js . '</script>';
@@ -88,7 +88,7 @@ class BrowserProgressObserver implements ProgressObserver
         flush();
     }
 
-    /* @param string $initialPhase Fase awal overlay ('download' | 'transcode') */
+    
     private function injectOverlay(string $initialPhase): void
     {
         if ($this->overlayInjected) {
@@ -110,13 +110,13 @@ class BrowserProgressObserver implements ProgressObserver
             error_log('[MEeL] WARN: partials/ui.php tidak ditemukan: ' . $ui_file);
         }
 
-        // Padding agar browser langsung flush dan render
+        
         echo str_repeat(' ', 65536);
         echo '<script>meelPhase(' . json_encode($initialPhase) . ');</script>';
         flush();
     }
 
-    /* @param array<string, mixed> $data */
+    
     private function emitDownloadProgress(array $data): void
     {
 

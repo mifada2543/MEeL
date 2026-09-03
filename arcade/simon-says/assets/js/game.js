@@ -29,14 +29,14 @@ const gameState = {
 
 let sequence = [];
 let inputIdx = 0;
-let mode = "idle"; // idle | showing | input
+let mode = "idle"; 
 let litPad = -1;
 let timers = [];
 let audioCtx = null;
-// Animasi halus: glow panel meluruh & splash ronde memudar
+
 let glowDecay = 0;
 let frameCount = 0;
-let roundSplash = 0; // timer splash "RONDE N" (detik)
+let roundSplash = 0; 
 
 const pad = (n) => String(n).padStart(5, "0");
 
@@ -52,7 +52,7 @@ function scorePop() {
   el.classList.add("score-pop");
 }
 
-// ---- Audio ----
+
 function beep(freq, dur = 0.16, type = "sine") {
   try {
     audioCtx =
@@ -68,7 +68,7 @@ function beep(freq, dur = 0.16, type = "sine") {
     osc.start();
     osc.stop(audioCtx.currentTime + dur);
   } catch (_) {
-    /* audio tidak tersedia — abaikan */
+    
   }
 }
 
@@ -76,7 +76,7 @@ function buzzWrong() {
   beep(110, 0.4, "sawtooth");
 }
 
-// ---- Alur permainan ----
+
 function clearTimers() {
   timers.forEach(clearTimeout);
   timers = [];
@@ -116,7 +116,7 @@ function playSequence() {
 
 function nextRound() {
   sequence.push(Math.floor(Math.random() * 4));
-  roundSplash = 1.0; // tampilkan splash ronde baru
+  roundSplash = 1.0; 
   playSequence();
 }
 
@@ -139,7 +139,7 @@ function startGame() {
   gos.style.opacity = "0";
   gos.style.pointerEvents = "none";
 
-  // Beri jeda sebentar sebelum urutan pertama diputar
+  
   timers.push(setTimeout(nextRound, 600));
 }
 
@@ -183,7 +183,7 @@ function handlePad(idx) {
   }
   inputIdx++;
   if (inputIdx === sequence.length) {
-    // Ronde selesai
+    
     gameState.score++;
     scorePop();
     renderHUD();
@@ -191,7 +191,7 @@ function handlePad(idx) {
   }
 }
 
-// ---- Rendering ----
+
 function roundRect(x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -208,7 +208,7 @@ function draw() {
 
   PADS.forEach((p, i) => {
     const lit = litPad === i;
-    // Glow halus: intensitas naik cepat lalu meluruh, bukan nyala-mati mendadak
+    
     const glow = lit ? Math.max(glowDecay, 0.55) : glowDecay * 0.9;
     ctx.save();
     if (glow > 0.05) {
@@ -216,7 +216,7 @@ function draw() {
       ctx.shadowBlur = 34 * glow;
     }
     const col = lit ? p.color : p.dark;
-    // Perpaduan warna halus saat glow meluruh
+    
     ctx.fillStyle = lit
       ? col
       : `rgb(${Math.round(18 + (34 - 18) * glow)}, ${Math.round(40 + (92 - 40) * glow)}, ${Math.round(18 + (84 - 18) * glow)})`;
@@ -231,7 +231,7 @@ function draw() {
     }
   });
 
-  // Splash "RONDE N" memudar di tengah
+  
   if (roundSplash > 0 && gameState.isPlaying && !gameState.isGameOver) {
     const a = Math.min(1, roundSplash * 2.5);
     ctx.save();
@@ -247,7 +247,7 @@ function draw() {
     ctx.restore();
   }
 
-  // Indikator ronde saat bermain
+  
   if (gameState.isPlaying && !gameState.isGameOver) {
     const label = `RONDE ${gameState.score + 1}`;
     ctx.font = 'bold 11px "Press Start 2P", monospace';
@@ -264,14 +264,14 @@ function draw() {
 
 function gameLoop() {
   frameCount++;
-  // Glow meluruh cepat (≈0.05/frame)
+  
   if (glowDecay > 0) glowDecay = Math.max(0, glowDecay - 0.06);
   if (roundSplash > 0) roundSplash -= 1 / 60;
   draw();
   requestAnimationFrame(gameLoop);
 }
 
-// ---- Input ----
+
 function padFromPointer(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   const x = ((clientX - rect.left) / rect.width) * SIZE;
@@ -338,6 +338,6 @@ document.getElementById("resetScoreBtn").addEventListener("click", () => {
   });
 });
 
-// ---- Init ----
+
 renderHUD();
 gameLoop();

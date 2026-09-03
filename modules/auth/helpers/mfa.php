@@ -1,6 +1,6 @@
 <?php
 if (!function_exists('base32_decode')) {
-/* @param string $input Base32-encoded string; @return string Decoded binary string */
+
 function base32_decode(string $input): string
 {
     $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -27,7 +27,7 @@ function base32_decode(string $input): string
 }
 
 if (!function_exists('generate_mfa_secret')) {
-/* @return string Base32 secret key */
+
 function generate_mfa_secret(): string
 {
     $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -40,7 +40,7 @@ function generate_mfa_secret(): string
 }
 
 if (!function_exists('generate_totp')) {
-/* @param string $secret Base32 secret key; @param int|null $time_slice Unix timestamp / 30 (null = waktu sekarang); @return string Kode 6-digit */
+
 function generate_totp(string $secret, ?int $time_slice = null): string
 {
     if ($time_slice === null) {
@@ -62,7 +62,7 @@ function generate_totp(string $secret, ?int $time_slice = null): string
 }
 
 if (!function_exists('verify_totp')) {
-/* @param string $secret Base32 secret key; @param string $code Kode 6-digit yang dimasukkan user; @return bool True jika valid */
+
 function verify_totp(string $secret, string $code): bool
 {
     $time_slice = (int)floor(time() / 30);
@@ -76,7 +76,7 @@ function verify_totp(string $secret, string $code): bool
 }
 
 if (!function_exists('generate_otpauth_url')) {
-/* @param string $secret Base32 secret; @param string $username Username pengguna; @return string OTP Auth URL */
+
 function generate_otpauth_url(string $secret, string $username): string
 {
     $issuer = 'MEeL';
@@ -86,7 +86,7 @@ function generate_otpauth_url(string $secret, string $username): string
 }
 
 if (!function_exists('generate_backup_codes')) {
-/* @return array ['plain' => string[], 'hashed' => string[]] */
+
 function generate_backup_codes(): array
 {
     $plain = [];
@@ -102,11 +102,8 @@ function generate_backup_codes(): array
 }
 
 if (!function_exists('verify_backup_code')) {
-/**
- * @param string $hashed_json JSON array of hashed backup codes dari DB
- * @param string $input Input user
- * @return array ['valid' => bool, 'remaining' => string[]|null]
- */
+
+
 function verify_backup_code(string $hashed_json, string $input): array
 {
     $codes = json_decode($hashed_json, true);

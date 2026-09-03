@@ -1,7 +1,7 @@
-/* MEeL Admin — Edit Video (edit-video.php) Entry Point */
+
 (function () {
   "use strict";
-  // Subtitle file: label update
+  
   window.handleSubtitleFile = function (input) {
     if (!input.files || !input.files[0]) return;
     var file = input.files[0];
@@ -26,11 +26,11 @@
       sub.textContent =
         ext === "srt" ? "SRT · akan dikonversi otomatis" : "VTT";
     if (zone) zone.classList.add("has-file");
-    // Tampilkan dropdown bahasa subtitle
+    
     var langWrap = document.getElementById("subtitle-lang-wrap");
     if (langWrap) langWrap.style.display = "";
   };
-  // Subtitle drop zone
+  
   function setupSubtitleDragDrop() {
     var zone = document.getElementById("subtitle-zone");
     var input = document.getElementById("f-subtitle");
@@ -53,7 +53,7 @@
       window.handleSubtitleFile(input);
     });
   }
-  // Page init
+  
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
     if (typeof setupImageDragDrop !== "undefined") {

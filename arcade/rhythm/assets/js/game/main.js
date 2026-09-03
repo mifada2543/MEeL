@@ -1,14 +1,14 @@
-/**
- * MEeL!Mania Game — Main Entry Point
- * Imports all modules and initializes the game engine.
- */
+
+
+
+
 import { S } from "./state.js";
 import { resizeCanvas } from "./canvas.js";
 import { loadSongData } from "./loader.js";
 import { loadOptions } from "./gameFlow.js";
 import { initKeyboard, initTouch, initButtons } from "./input.js";
 
-/* INIT */
+
 async function init() {
   try { resizeCanvas(); } catch (e) { console.error("[Game] resizeCanvas failed:", e); }
   window.addEventListener("resize", () => { try { resizeCanvas(); } catch (e) {} });

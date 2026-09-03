@@ -1,9 +1,7 @@
 <?php
 ini_set('display_errors', 0); ini_set('display_startup_errors', 0); error_reporting(E_ALL);
-/**
- * MEeL!Mania — Beatmap Management
- * Dashboard for managing user's beatmaps
- */
+
+
 require_once __DIR__ . '/../../../auth/auth.php';
 require_once __DIR__ . '/../api/config.php';
 
@@ -231,7 +229,7 @@ foreach ($user_songs as $s) {
   </nav>
 
   <div class="manage-layout">
-    <!-- Stats -->
+    
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-num"><?= count($user_songs) ?></div>
@@ -253,7 +251,7 @@ foreach ($user_songs as $s) {
       <?php endif; ?>
     </div>
 
-    <!-- My Beatmaps -->
+    
     <div class="section-header">
       <h2>Beatmap Saya (<?= count($user_songs) ?>)</h2>
       <a href="edit" class="btn btn-primary btn-sm">+ Buat Baru</a>
@@ -319,7 +317,7 @@ foreach ($user_songs as $s) {
     <?php endif; ?>
   </div>
 
-  <!-- Detail Modal -->
+  
   <div id="detailModal" class="detail-modal" onclick="if(event.target===this)this.classList.remove('active')">
     <div class="detail-card" id="detailContent"></div>
   </div>

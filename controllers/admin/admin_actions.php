@@ -1,5 +1,5 @@
 <?php
-// Guard Direct Access
+
 if (!defined('MEEL_ADMIN_CONTEXT')) {
     $_GET['code'] = 'denied';
     die(include __DIR__ . '/../../err/index.php');
@@ -10,7 +10,7 @@ if (!is_admin($conn)) {
     die(include __DIR__ . '/../../err/index.php');
 }
 
-// CSRF Guard
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_token'] ?? null)) {
     header("Location: .?msg=CSRF_Token_Invalid");
     exit();
@@ -153,7 +153,7 @@ if (isset($_POST['kick_user'])) {
 }
 
 if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
-    // CSRF guard
+    
     if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
         header("Location: ../admin/mfa-reset?msg=csrf_invalid");
         exit;

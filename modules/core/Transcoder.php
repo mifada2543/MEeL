@@ -35,32 +35,32 @@ class Transcoder
 
     private ?ProgressObserver $progressObserver = null;
 
-    /** Validating forward proxy (SSRF per redirect hop). Null sampai download pertama. */
+    
     private ?ValidatingProxy $validatingProxy = null;
-    /** Argumen yt-dlp untuk proxy (cache hasil spawn). */
+    
     private string $proxyArgs = '';
 
-    /* @var array<int, array{pid:int, group:bool, label:string, started:int}> */
+    
     private array $childProcesses = [];
 
     private const FFMPEG_THREADS        = 8;
 
-    // HLS: durasi tiap segment (detik)
+    
     private const HLS_SEGMENT_DURATION  = 10;
 
-    // Download timeout (detik)
+    
     private const DOWNLOAD_TIMEOUT      = 900;
 
-    // Ambang deteksi timeout fragment yt-dlp: berapa kali pesan
-    // 1 = hentikan segera begitu pola retry fragment terdeteksi.
+    
+    
     private const FRAGMENT_RETRY_LIMIT  = 1;
 
-    // PID file directory untuk cross-process kill (admin panel)
+    
     private const PID_DIR = '/tmp/meel_pids';
-    // Transcode audio timeout (detik) — mencegah loop tak berujung
+    
     private const TRANSCODE_AUDIO_TIMEOUT = 600;
 
-    // Shared library path untuk ffmpeg/ffprobe (diperlukan oleh proc_open)
+    
     private const FFMPEG_LIB_PATH = '/usr/lib/x86_64-linux-gnu:/usr/local/lib';
 
     private const ENV_PREFIX = "export LD_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu:/usr/local/lib'; export PATH=/usr/local/bin:/usr/bin:/bin; export LC_ALL=en_US.UTF-8; ";
@@ -98,11 +98,11 @@ class Transcoder
         $this->setProgressListener($progressListener);
     }
 
-    /* @param callable(string $stage, array $data): void|ProgressObserver|null $listener */
+    
     public function __destruct()
     {
-        // Pastikan proxy (dan seluruh child process) ikut dimatikan saat
-        // object Transcoder dibuang — tidak ada proses yatim yang tersisa.
+        
+        
         $this->validatingProxy?->stop();
         $this->terminateAllProcesses();
     }
@@ -123,7 +123,7 @@ class Transcoder
         return $this->user_role;
     }
 
-    /* @param string $stage Nama stage (lihat ProgressObserver docblock); @param array<string, mixed> $data Payload event */
+    
     private function emit(string $stage, array $data = []): void
     {
         try {
@@ -137,12 +137,9 @@ class Transcoder
         }
     }
 
-    // PROCESS CONTROL (PID-BASED TERMINATION)
-    /**
-     * @param int $pid PID (atau PGID bila $processGroup true)
-     * @param bool $processGroup True bila proses adalah session/group leader
-     * @param string $label Label deskriptif untuk logging
-     */
+    
+    
+
     private function trackChildProcess(int $pid, bool $processGroup, string $label): void
     {
         if ($pid > 0) {
@@ -155,7 +152,7 @@ class Transcoder
         }
     }
 
-    /* @param int $pid PID yang dicatat oleh trackChildProcess() */
+    
     private function untrackChildProcess(int $pid): void
     {
         foreach ($this->childProcesses as $i => $proc) {
@@ -166,7 +163,7 @@ class Transcoder
         $this->childProcesses = array_values($this->childProcesses);
     }
 
-    /* @param int $pid PID target; @param string $label Label untuk logging; @param bool $processGroup True = kill seluruh process group (-$pid) */
+    
     private function terminateChildProcess(int $pid, string $label, bool $processGroup = false): void
     {
         if ($pid <= 0) {
@@ -181,11 +178,11 @@ class Transcoder
             $termSent = posix_kill($target, SIGTERM);
         }
         if (!$termSent) {
-            // bukan pkill -f dengan pencocokan string/regex.
+            
             shell_exec('kill -TERM -- ' . $prefix . $pid . ' 2>/dev/null');
         }
 
-        usleep(300000); // grace period 300ms
+        usleep(300000); 
 
         if (function_exists('posix_kill')) {
             posix_kill($target, SIGKILL);
@@ -209,9 +206,9 @@ class Transcoder
         $this->childProcesses = [];
     }
 
-    // PID FILE MANAGEMENT — cross-process kill (admin panel)
+    
 
-    /** Tulis PID ke file agar bisa di-kill dari proses lain (admin panel). */
+    
     private function writePidFile(string $taskType, int $queueId, int $pid): void
     {
         $dir = self::PID_DIR;
@@ -222,7 +219,7 @@ class Transcoder
         @file_put_contents($path, (string)$pid);
     }
 
-    /** Hapus PID file setelah proses selesai. */
+    
     private function removePidFile(string $taskType, int $queueId): void
     {
         $path = self::PID_DIR . "/{$taskType}_{$queueId}.pid";
@@ -231,10 +228,8 @@ class Transcoder
         }
     }
 
-    /**
-     * Kill proses berdasarkan PID file (dipanggil dari admin panel / System.php).
-     * @return bool true jika proses ditemukan dan di-kill
-     */
+    
+
     public static function killByPidFile(string $taskType, int $queueId): bool
     {
         $path = self::PID_DIR . "/{$taskType}_{$queueId}.pid";
@@ -256,7 +251,7 @@ class Transcoder
             @shell_exec('kill -TERM ' . $pid . ' 2>/dev/null');
         }
 
-        usleep(500000); // 500ms grace period
+        usleep(500000); 
 
         if (function_exists('posix_kill')) {
             @posix_kill($pid, SIGKILL);
@@ -268,10 +263,8 @@ class Transcoder
         return true;
     }
 
-    /**
-     * Bersihkan semua PID file stale (> 30 menit).
-     * Dipanggil dari GarbageCollector atau periodic cleanup.
-     */
+    
+
     public static function cleanupStalePidFiles(): int
     {
         $dir = self::PID_DIR;
@@ -288,7 +281,7 @@ class Transcoder
         return $cleaned;
     }
 
-    /* @param string $subdir Subdirektori (misal: 'temp', 'upload', 'transcode') */
+    
     private function resolveShmPath(string $subdir): string
     {
         GarbageCollector::run();
@@ -354,12 +347,8 @@ class Transcoder
         $stmt->close();
     }
 
-    /**
-     * Pastikan validating forward proxy aktif dan kembalikan argumen yt-dlp
-     * untuk memakainya (--proxy). Fail closed: bila proxy tidak bisa
-     * dijalankan, lempar RuntimeException — download tidak pernah diizinkan
-     * melewati jalur yang tidak tervalidasi.
-     */
+    
+
     private function ensureDownloadProxy(): string
     {
         if ($this->proxyArgs !== '') {
@@ -372,25 +361,25 @@ class Transcoder
 
     private function fetchMetadata(string $url, string $extraArgs = ''): ?array
     {
-        // Defense-in-depth: never let an unvalidated URL reach yt-dlp, even if
-        // a future caller skips processDownload(). SsrfGuard performs protocol
-        // allowlisting + public-IP validation of every resolved address.
+        
+        
+        
         try {
             (new SsrfGuard())->validate($url);
         } catch (\RuntimeException $e) {
             throw new DownloadException($e->getMessage(), $url, 'validation');
         }
 
-        // Defense-in-depth: routing lewat validating proxy juga dipaksa di sini,
-        // sehingga hop redirect apa pun (termasuk yang diikuti yt-dlp sendiri)
-        // tetap melewati SsrfGuard di sisi proxy. Hindari duplikasi bila caller
-        // (processDownload) sudah menempelkan --proxy pada $extraArgs.
+        
+        
+        
+        
         $proxyArgs = str_contains($extraArgs, '--proxy') ? '' : $this->ensureDownloadProxy();
         $cmd    = $this->base_cmd . $proxyArgs . $extraArgs . "--skip-download --print-json " . escapeshellarg($url) . " 2>&1";
         exec($cmd, $output_array, $return_var);
         $output = implode("\n", $output_array);
 
-        // yt-dlp kadang return exit 1 padahal JSON-nya valid (WARNING di-promote ke error).
+        
         $start = strpos($output, '{');
         $end   = strrpos($output, '}');
 
@@ -442,28 +431,28 @@ class Transcoder
             throw new DownloadException("URL terlalu panjang.", $url, 'validation');
         }
 
-        // SSRF GUARD
-        // Validasi sentral: hanya http/https, dan semua alamat hasil resolusi
-        // DNS harus publik (bukan localhost/10.x/172.16-31.x/192.168.x/
-        // 169.254.x/IPv6 private, dll). Gagal-fail = tolak URL.
+        
+        
+        
+        
         try {
             $ssrf = new SsrfGuard();
             $ssrf->validate($url);
 
-            // Pin koneksi HTTP ke IP publik yang sudah divalidasi + paksa Host
-            // header asli. Ini menutup celah DNS-rebinding antara validasi dan
-            // request nyata.
+            
+            
+            
             [$dl_url, $dl_extra] = $ssrf->pinHttpUrl($url);
         } catch (\RuntimeException $e) {
             throw new DownloadException("URL tidak diizinkan: " . $e->getMessage(), $url, 'validation');
         }
 
-        // Arahkan SEMUA trafik yt-dlp (metadata + download + setiap redirect)
-        // lewat validating forward proxy. Proxy menerapkan SsrfGuard pada
-        // SETIAP hop — menutup celah open-redirect → IP private yang tidak bisa
-        // ditutup hanya dengan validasi URL awal. Gagal start = tolak download
-        // (fail closed, tidak ada fallback tanpa proteksi). Kegagalan ini adalah
-        // masalah infrastruktur, BUKAN penolakan URL — jadi pesan dibedakan.
+        
+        
+        
+        
+        
+        
         try {
             $dl_extra = $this->ensureDownloadProxy() . $dl_extra;
         } catch (\RuntimeException $e) {
@@ -509,8 +498,8 @@ class Transcoder
 
         if ($type === 'music') {
             $shm_temp  = $this->getShmTempPath();
-            // temp_id unik per download — cegah bentrok file staging antar
-            // proses yang mulai di detik yang sama.
+            
+            
             $temp_id   = "raw_" . time() . "_" . substr(md5(uniqid('', true)), 0, 4);
             $temp_path = "$shm_temp/$temp_id.%(ext)s";
             $cmd_dl    = $this->base_cmd . $dl_extra
@@ -553,8 +542,8 @@ class Transcoder
             $this->emit('error', ['message' => 'Gagal menjalankan yt-dlp. Cek permission atau install yt-dlp.']);
             return "";
         }
-        fclose($dl_pipes[0]); // stdin — tidak dipakai
-        fclose($dl_pipes[2]); // stderr — sudah diarahkan ke stdout via 2>&1
+        fclose($dl_pipes[0]); 
+        fclose($dl_pipes[2]); 
 
         $dl_status = proc_get_status($dl_proc);
         $dl_pgid   = (int)($dl_status['pid'] ?? 0);
@@ -577,7 +566,7 @@ class Transcoder
 
             $error_log .= $line;
 
-            // TIMEOUT FRAGMENT: yt-dlp retry fragment berulang ("1/10, 2/10, dst")
+            
             if (preg_match('/Retrying\s+fragment[s]?\b/i', $line)) {
                 $frag_total++;
                 if ($frag_total >= self::FRAGMENT_RETRY_LIMIT) {
@@ -605,7 +594,7 @@ class Transcoder
             }
         }
 
-        // TIMEOUT FRAGMENT / TIMEOUT SISI PHP: hentikan tree proses yt-dlp
+        
         if ($frag_retry_abort || $php_timeout_abort) {
             $this->terminateChildProcess(
                 $dl_pgid,
@@ -648,7 +637,7 @@ class Transcoder
                 $error_msg = "Timeout: yt-dlp gagal mengunduh fragment berulang kali (retry 1/10, 2/10, dst). "
                     . "Proses dihentikan otomatis. Coba lagi nanti atau gunakan URL lain.";
             } else {
-                // Tampilkan SEMUA baris error dari yt-dlp (ERROR, WARNING, trace)
+                
                 $lines = array_filter(explode("\n", $error_log), fn($l) => $l !== '');
                 $lines = array_slice($lines, -10);
                 $detail = trim(implode("\n", $lines));
@@ -709,7 +698,7 @@ class Transcoder
         return "File audio tidak ditemukan setelah download.";
     }
 
-    // FINALIZE VIDEO (HLS)
+    
 
     private function finalizeVideo(
         string $basename,
@@ -763,7 +752,7 @@ class Transcoder
 
         $work_thumb = $work_folder . $db_thumb;
         if ($dl_thumb_src && file_exists($dl_thumb_src)) {
-            // WebP rata-rata 30-50% lebih kecil dari JPG setara
+            
             $cmd_compress = self::ENV_PREFIX . escapeshellarg($this->ffmpeg_bin)
                 . " -y -threads 1"
                 . " -i " . escapeshellarg($dl_thumb_src)
@@ -772,7 +761,7 @@ class Transcoder
             shell_exec($cmd_compress);
 
             if (!file_exists($work_thumb) || filesize($work_thumb) === 0) {
-                copy($dl_thumb_src, $work_thumb); // fallback: simpan asli sebagai .webp
+                copy($dl_thumb_src, $work_thumb); 
             }
             $this->removeFile($dl_thumb_src);
         }
@@ -782,7 +771,7 @@ class Transcoder
 
         $file_dur = $this->probeDuration($staging_mp4);
 
-        // Transcode ke HLS
+        
         $work_m3u8  = $work_folder . $folder_name . ".m3u8";
 
         $lib_path = '/usr/lib/x86_64-linux-gnu:/usr/local/lib';
@@ -815,9 +804,9 @@ class Transcoder
             $this->emit('error', ['message' => 'Gagal menjalankan ffmpeg untuk transcode HLS. Cek instalasi ffmpeg.']);
             return "";
         }
-        fclose($hls_pipes[0]); // stdin
-        fclose($hls_pipes[1]); // stdout — tidak dipakai (FFmpeg output progress ke stderr)
-        $hls_out = $hls_pipes[2]; // stderr — FFmpeg tulis time=... di sini
+        fclose($hls_pipes[0]); 
+        fclose($hls_pipes[1]); 
+        $hls_out = $hls_pipes[2]; 
 
         $hls_status = proc_get_status($hls_proc);
         $hls_pid    = (int)($hls_status['pid'] ?? 0);
@@ -826,7 +815,7 @@ class Transcoder
 
         stream_set_timeout($hls_out, 30);
         $hls_start = time();
-        $hls_timeout = max(120, (int)($file_dur * 2)); // min 2min atau 2x durasi (codec copy = cepat)
+        $hls_timeout = max(120, (int)($file_dur * 2)); 
         while (!feof($hls_out)) {
             if (time() - $hls_start > $hls_timeout) {
                 error_log("[MEeL] finalizeVideo: HLS timeout setelah {$hls_timeout}s");
@@ -961,11 +950,8 @@ class Transcoder
         return "";
     }
 
-    /**
-     * @param string $hdd_target_folder Folder video target di HDD
-     * @param string $db_thumb Nama file thumbnail di database
-     * @param bool $thumb_generated Apakah thumbnail benar-benar dibuat (bukan default)
-     */
+    
+
     private function rollbackFinalizeVideo(
         string $hdd_target_folder,
         string $db_thumb,
@@ -974,7 +960,7 @@ class Transcoder
         if (is_dir($hdd_target_folder)) {
             $this->removeDir($hdd_target_folder);
         }
-        // Jangan hapus default_thumb.webp — dipakai bersama.
+        
         if ($thumb_generated && $db_thumb !== 'default_thumb.webp') {
             $this->removeFile(MEEL_HDD_THUMB_DIR . $db_thumb);
         }
@@ -1048,8 +1034,8 @@ class Transcoder
             $log = (string) shell_exec($cmd);
 
             if (!file_exists($final_path) || filesize($final_path) === 0) {
-                // Pesan ramah — jangan tampilkan banner ffmpeg mentah ke user.
-                // Detail lengkap tetap dicatat ke error_log.
+                
+                
                 $friendly = "Gagal mengonversi audio. Silakan coba lagi nanti.";
                 if (!file_exists($input_path)) {
                     $friendly = "File sumber audio tidak ditemukan. Media mungkin sudah diproses — periksa library Anda, atau coba upload ulang.";
@@ -1280,12 +1266,12 @@ class Transcoder
         if (file_exists($output_path)) {
             $cache_size = filesize($output_path);
             if ($cache_size > 10240) {
-                // Validasi durasi output mendekati durasi sumber (toleransi 50%)
+                
                 $cache_dur = $this->probeDuration($output_path);
                 if ($cache_dur > 0 && $file_dur > 0 && $cache_dur >= $file_dur * 0.5) {
                     $cache_valid = true;
                 } elseif ($cache_dur <= 0 && $cache_size > 50000) {
-                    // Jika ffprobe gagal tapi file cukup besar, anggap valid
+                    
                     $cache_valid = true;
                 }
             }
@@ -1309,7 +1295,7 @@ class Transcoder
 
         if (file_exists($marker_file)) {
             $marker_age = time() - filemtime($marker_file);
-            if ($marker_age < 600) { // < 10 menit — masih wajar
+            if ($marker_age < 600) { 
                 if ($mtx_locked) {
                     flock($mtx_fp, LOCK_UN);
                     fclose($mtx_fp);
@@ -1344,7 +1330,7 @@ class Transcoder
         $concat_list_path = $output_dir . "concat_{$video_id}_" . time() . ".txt";
         $concat_content   = "";
         foreach ($ts_files as $ts) {
-            // Gunakan single quote yang di-escape untuk path ffmpeg concat
+            
             $safe_ts        = str_replace("'", "'\\''", $ts);
             $concat_content .= "file '$safe_ts'\n";
         }
@@ -1357,13 +1343,13 @@ class Transcoder
             case 'ogg':
                 $codec     = "libopus";
                 $bitrate   = "-b:a 128k -vbr on";
-                $use_thumb = false; // OGG/Opus tidak support embedded picture
+                $use_thumb = false; 
                 break;
             case 'm4a':
-                $codec   = "copy"; // Stream copy audio dari HLS AAC
+                $codec   = "copy"; 
                 $bitrate = "";
                 break;
-            default: // mp3
+            default: 
                 $codec   = "libmp3lame";
                 $bitrate = "-q:a 2";
                 break;
@@ -1415,13 +1401,13 @@ class Transcoder
         if ($use_thumb) {
             $tc_cmd[] = '-map';
             $tc_cmd[] = '1:v';
-            // PENTING: JANGAN stream-copy ('copy') gambar cover di sini.
-            // Thumbnail disimpan sebagai WebP (lihat finalizeVideo()), dan
-            // muxer MP3/M4A tidak tahu mimetype untuk codec WebP saat
-            // dipakai sebagai attached_pic ("No mimetype is known for
-            // stream 1, cannot write an attached picture." -> ffmpeg exit
-            // 234, Conversion failed). Re-encode ke MJPEG (image/jpeg)
-            // yang dikenali semua muxer ID3/MP4.
+            
+            
+            
+            
+            
+            
+            
             $tc_cmd[] = '-c:v';
             $tc_cmd[] = 'mjpeg';
             $tc_cmd[] = '-disposition:v:0';
@@ -1456,16 +1442,16 @@ class Transcoder
         $desc = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $tc_proc = proc_open($tc_cmd, $desc, $tc_pipes, null, $tc_env);
         if (is_resource($tc_proc)) {
-            fclose($tc_pipes[0]); // stdin
-            fclose($tc_pipes[1]); // stdout — tidak dipakai (FFmpeg output progress ke stderr)
-            $tc_out = $tc_pipes[2]; // stderr — FFmpeg tulis time=... di sini
+            fclose($tc_pipes[0]); 
+            fclose($tc_pipes[1]); 
+            $tc_out = $tc_pipes[2]; 
 
             $tc_status = proc_get_status($tc_proc);
             $tc_pid    = (int)($tc_status['pid'] ?? 0);
             $this->trackChildProcess($tc_pid, false, 'ffmpeg transcode audio (' . $output_filename . ')');
             $this->writePidFile('transcode', $queue_id, $tc_pid);
 
-            stream_set_timeout($tc_out, 30); // 30s timeout per fgets
+            stream_set_timeout($tc_out, 30); 
             $ffmpeg_stderr = [];
             $tc_start = time();
             while (!feof($tc_out)) {
@@ -1485,11 +1471,11 @@ class Transcoder
                         $label = "$pct% — CONVERTING TO $fmt";
                         $this->emit('transcode_progress', ['pct' => $pct, 'label' => $label]);
                     } else {
-                        // Fallback: ffprobe gagal membaca durasi ($file_dur = 0).
-                        // Tanpa ini progress tidak pernah terkirim dan UI terlihat
-                        // freeze di 0% sampai TRANSCODE_AUDIO_TIMEOUT (600s), padahal
-                        // ffmpeg berjalan normal. Pakai rasio elapsed/timeout sebagai
-                        // estimasi kasar agar user tetap melihat pergerakan.
+                        
+                        
+                        
+                        
+                        
                         $elapsed = time() - $tc_start;
                         $pct     = min(95, (int)round(($elapsed / self::TRANSCODE_AUDIO_TIMEOUT) * 100));
                         $label   = "$pct% — CONVERTING TO $fmt (estimasi)";
@@ -1499,7 +1485,7 @@ class Transcoder
             }
             fclose($tc_pipes[2]);
 
-            // Cek exit code FFmpeg
+            
             $tc_exit = proc_close($tc_proc);
             $this->untrackChildProcess($tc_pid);
             $this->removePidFile('transcode', $queue_id);

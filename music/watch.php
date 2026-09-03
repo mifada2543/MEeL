@@ -237,11 +237,8 @@ $__vdir = function($dir) {
                 </div>
 
                 <div class="p-4 sm:p-5">
-                    <!-- Elemen <audio> aslinya dirender statis di sini. Sekarang audio
-                         dipegang oleh audio-engine.js yang persisten (satu <audio> untuk
-                         seluruh page-session, direparent ke sini oleh engine.mount() —
-                         BUKAN dibuat ulang), supaya transisi mini<->full player gapless.
-                         Slot ini adalah target reparent-nya. -->
+                    
+
                     <div id="player-audio-slot" class="w-full"></div>
                 </div>
 
@@ -389,8 +386,8 @@ $__vdir = function($dir) {
                     </button>
                     <div id="comment-preview" class="px-4 sm:px-6 py-3">
                         <?php
-                        // Preview mini: tampilkan 4 komentar terbaru (id terbesar),
-                        // atau ajakan jika belum ada komentar sama sekali.
+                        
+                        
                         $preview       = comment_preview($comments_grouped ?? []);
                         $preview_items = $preview['items'];
                         ?>
@@ -646,8 +643,8 @@ $__vdir = function($dir) {
 
         document.body.addEventListener('htmx:afterOnLoad', function(e) {
             if (typeof lucide !== 'undefined') {
-                // Scope ke elemen hasil swap saja (detail.target, bukan detail.elt
-                // yang merupakan elemen pemicu) — hindari scan seluruh DOM tiap request
+                
+                
                 lucide.createIcons({}, e.detail?.target || document.body);
             }
         });

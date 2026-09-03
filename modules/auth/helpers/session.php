@@ -3,7 +3,7 @@ if (!function_exists('meel_boot_session')) {
     function meel_boot_session(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
-            $timeout = 43200; // 12 jam — sama dengan auth/config.php
+            $timeout = 43200; 
             ini_set('session.gc_maxlifetime', $timeout);
             $secure_cookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                 || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');

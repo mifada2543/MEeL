@@ -1,9 +1,9 @@
-/* MEeL Admin — Activity Log (activity_log.php) */
+
 (function () {
   "use strict";
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
-    // Action Dropdown
+    
     var trigger = document.getElementById("action-dropdown-trigger");
     var panel = document.getElementById("action-dropdown-panel");
     var actionInput = document.getElementById("action-input");
@@ -32,7 +32,7 @@
         }
       });
     }
-    // Search Enter key
+    
     var searchInput = document.getElementById("search-input");
     if (searchInput) {
       searchInput.addEventListener("keydown", function (e) {
@@ -43,7 +43,7 @@
       });
     }
   });
-  // Days Pill Buttons
+  
   window.selectDays = function (val) {
     var input = document.getElementById("days-input");
     if (input) input.value = val;
@@ -51,7 +51,7 @@
       btn.classList.toggle("active-blue", parseInt(btn.dataset.days) === val);
     });
   }
-  // Clear Days Pill Buttons (Maintenance)
+  
   window.selectClearDays = function (val) {
     var input = document.getElementById("clear-days-input");
     if (input) input.value = val;
@@ -62,7 +62,7 @@
       );
     });
   };
-  // Submit Filters
+  
   window.submitFilters = function () {
     var action = document.getElementById("action-input");
     var q = document.getElementById("search-input");
@@ -74,12 +74,12 @@
 
     window.location.href = "activity-log?" + params.toString();
   };
-  // Action Dropdown Toggle
+  
   window.toggleActionDropdown = function () {
     var panel = document.getElementById("action-dropdown-panel");
     if (panel) panel.classList.toggle("hidden");
   };
-  // Action Select
+  
   window.selectAction = function (val) {
     var input = document.getElementById("action-input");
     var label = document.getElementById("action-dropdown-label");
@@ -93,8 +93,8 @@
       panel.classList.add("hidden");
     }
   };
-  // Preview Export
-  /* * * Preview export data di SweetAlert2 modal sebelum didownload. * @param {string} format - 'csv', 'json', atau 'xls' */
+  
+  
   window.previewExport = function (format) {
     var params = new URLSearchParams(window.location.search);
     params.set("preview", "1");

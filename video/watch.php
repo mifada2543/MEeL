@@ -298,8 +298,8 @@ $__vdir = function($dir) {
                         </button>
                         <div id="comment-preview" class="px-4 sm:px-6 py-3">
                             <?php
-                            // Preview mini: tampilkan 4 komentar terbaru (id terbesar),
-                            // atau ajakan jika belum ada komentar sama sekali.
+                            
+                            
                             $preview       = comment_preview($comments_grouped ?? []);
                             $preview_items = $preview['items'];
                             ?>
@@ -413,7 +413,7 @@ $__vdir = function($dir) {
     <script src="../assets/js/shared/comment.js<?= $__v('assets/js/shared/comment.js') ?>"></script>
     <script src="../assets/js/shared/htmx-lucide.js<?= $__v('assets/js/shared/htmx-lucide.js') ?>"></script>
 
-    <script>        // Handle Enter key untuk video search
+    <script>        
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = ['v-search-watch', 'v-search-mobile'];
             searchInputs.forEach(id => {

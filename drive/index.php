@@ -100,7 +100,7 @@ if ($user->isMember()) {
         </aside>
 
         <main class="flex-1 p-4 md:p-10 w-full overflow-x-hidden">
-            <!-- Mobile Header -->
+            
             <div class="md:hidden flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
                 <div class="flex items-center gap-3" onclick="window.location.href='../'" style="cursor: pointer;" title="Kembali ke MEeL HUB">
                     <img src="../assets/MEeL.png" class="w-8 h-8 rounded-lg shadow-lg shadow-blue-500/20" alt="Logo">
@@ -119,13 +119,13 @@ if ($user->isMember()) {
                 <?php endif; ?>
             </div>
 
-            <!-- Mobile Scope Toggle -->
+            
             <div class="md:hidden flex items-center gap-2 mb-4">
                 <a href="?scope=public" class="flex-1 text-center text-xs px-4 py-2 rounded-lg font-semibold transition <?= $currentScope === 'public' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400' ?>">Public</a>
                 <a href="?scope=private" class="flex-1 text-center text-xs px-4 py-2 rounded-lg font-semibold transition <?= $currentScope === 'private' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400' ?>">Private</a>
             </div>
 
-            <!-- Mobile Category Tabs -->
+            
             <div class="md:hidden flex overflow-x-auto gap-2 mb-6 pb-2 scrollbar-hide">
                 <button onclick="showSection('video', this, true)" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500 text-blue-500 whitespace-nowrap nav-btn-mobile active font-medium text-xs" title="Tampilkan file video">
                     <i data-lucide="play-circle" class="w-4 h-4"></i> Video
@@ -157,7 +157,7 @@ if ($user->isMember()) {
                 </div>
             </header>
 
-            <!-- Mobile Heading & Search (since desktop header is hidden on mobile) -->
+            
             <div class="md:hidden flex flex-col gap-3 mb-6">
                 <div>
                     <h2 class="text-xl font-extrabold tracking-tight">
@@ -191,7 +191,7 @@ if ($user->isMember()) {
                 </div>
             <?php endif; ?>
             <section class="upload-dropzone glass rounded-2xl p-6 mb-8 border-dashed border-2 border-gray-800 hover:border-blue-500/50 transition-colors" id="uploadDropzone">
-                <!-- Drop hint overlay (visible saat drag) -->
+                
                 <div class="dropzone-hint" id="dropzoneHint">
                     <div class="dropzone-hint-icon">
                         <i data-lucide="cloud-upload" class="w-5 h-5"></i>
@@ -228,7 +228,7 @@ if ($user->isMember()) {
         </main>
     </div>
 
-    <!-- Floating Upload Progress Card -->
+    
     <div id="uploadProgressCard" class="upload-prog-card hidden">
         <div class="upload-prog-header">
             <div class="upload-prog-header-title" id="uploadProgToggle" title="Klik untuk detail">
@@ -244,18 +244,18 @@ if ($user->isMember()) {
         </div>
 
         <div class="upload-prog-body">
-            <!-- Progress bar -->
+            
             <div class="upload-prog-track">
                 <div id="uploadProgBar" class="upload-prog-fill" style="width: 0%"></div>
             </div>
 
-            <!-- Percentage + status text -->
+            
             <div class="upload-prog-info">
                 <span id="uploadProgPercent" class="upload-prog-pct">0%</span>
                 <span id="uploadProgStatus" class="upload-prog-status">Mengunggah...</span>
             </div>
 
-            <!-- Stats grid: speed, duration, size -->
+            
             <div class="upload-prog-stats">
                 <div class="upload-prog-stat">
                     <span class="upload-prog-stat-label">Kecepatan</span>
@@ -271,10 +271,10 @@ if ($user->isMember()) {
                 </div>
             </div>
 
-            <!-- Done / Error state -->
+            
             <div id="uploadProgDone" class="upload-prog-result hidden">
                 <div class="upload-prog-result-icon upload-prog-result-success">
-                    <!-- Animated checkmark SVG -->
+                    
                     <svg class="upload-checkmark" viewBox="0 0 52 52" width="28" height="28">
                         <circle class="upload-checkmark-circle" cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="3" />
                         <path class="upload-checkmark-check" d="M14 27l7 7 16-16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
@@ -289,7 +289,7 @@ if ($user->isMember()) {
                 <span class="upload-prog-result-text">Unggah Gagal</span>
             </div>
 
-            <!-- Confetti container (triggered via JS on success) -->
+            
             <div id="uploadConfetti" class="upload-confetti hidden"></div>
         </div>
     </div>

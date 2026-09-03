@@ -24,7 +24,7 @@ class ChessHelpersIntegrationTest extends ChessTestCase
 
     public function testStaleUserIsOffline(): void
     {
-        // last_activity 10 menit lalu → lewat ambang → offline.
+        
         $this->conn->query(
             "UPDATE users SET last_activity = DATE_SUB(NOW(), INTERVAL 10 MINUTE)
              WHERE id = " . DbTestHelper::REGULAR_USER_ID
@@ -35,7 +35,7 @@ class ChessHelpersIntegrationTest extends ChessTestCase
 
     public function testBoundaryJustUnderThresholdIsOnline(): void
     {
-        // 60 detik lalu (< 90) → masih dianggap online.
+        
         $this->conn->query(
             "UPDATE users SET last_activity = DATE_SUB(NOW(), INTERVAL 60 SECOND)
              WHERE id = " . DbTestHelper::REGULAR_USER_ID
@@ -51,7 +51,7 @@ class ChessHelpersIntegrationTest extends ChessTestCase
 
     public function testZeroIdIsOffline(): void
     {
-        // black_user_id NULL → (int)null = 0 → tidak boleh "online".
+        
         $this->assertFalse(chess_opponent_online($this->conn, 0));
     }
 

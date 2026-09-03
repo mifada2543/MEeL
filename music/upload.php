@@ -15,12 +15,12 @@ $alert_message = "";
 $user_role = get_user_role($conn, $user_id);
 $is_admin  = ($user_role === 'admin');
 
-// Upload 1 jam terakhir — window sama dengan System::checkRateLimit
+
 $hour_count = get_hourly_upload_count($conn, $user_id, 'music');
 
 $total_uploads = get_total_upload_count($conn, $user_id, 'music');
 
-// Limit upload per jam — konsisten dengan enforcement (member 2x lipat)
+
 $hourly_limit = $is_admin ? '∞' : get_upload_hourly_limit($user_role);
 
 $uploader = new Uploader($conn, $user_id, $user);
@@ -76,7 +76,7 @@ $__v = function($f) {
 <body>
     <div class="page-wrap">
 
-        <!-- Nav -->
+        
         <nav class="top-nav">
             <a href="../" class="nav-brand">MEeL<span>Music</span></a>
             <div class="nav-sep"></div>
@@ -91,10 +91,10 @@ $__v = function($f) {
         <main>
             <div class="upload-layout">
 
-            <!-- LEFT: Sidebar -->
+            
             <aside class="sidebar-panel">
 
-                <!-- Hero waveform -->
+                
                 <div class="hero-waveform">
                     <div class="waveform-bars">
                         <span></span><span></span><span></span><span></span>
@@ -107,7 +107,7 @@ $__v = function($f) {
                     </div>
                 </div>
 
-                <!-- Stats -->
+                
                 <div class="stats-strip">
                     <div class="stat-chip">
                         <div class="stat-number"><?= $hour_count ?></div>
@@ -123,7 +123,7 @@ $__v = function($f) {
                     </div>
                 </div>
 
-                <!-- Guide -->
+                
                 <div class="guide-list">
                     <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:#455060;padding-left:2px;">Panduan Upload</div>
                     <div class="guide-item">
@@ -160,7 +160,7 @@ $__v = function($f) {
 
             </aside>
 
-            <!-- RIGHT: Form panel -->
+            
             <section class="form-panel">
                 <div class="form-header">
                     <div>
@@ -180,7 +180,7 @@ $__v = function($f) {
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                     <?php endif; ?>
-                    <!-- Judul + Auto-fill -->
+                    
                     <div class="field-group">
                         <div style="display:flex;align-items:center;justify-content:space-between;">
                             <label class="field-label" for="f-title">Judul Lagu</label>
@@ -196,7 +196,7 @@ $__v = function($f) {
                             class="field-input">
                     </div>
 
-                    <!-- Artis & Album -->
+                    
                     <div class="two-col">
                         <div class="field-group">
                             <label class="field-label" for="f-artist">Artis</label>
@@ -210,7 +210,7 @@ $__v = function($f) {
                         </div>
                     </div>
 
-                    <!-- Deskripsi -->
+                    
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description"
@@ -220,11 +220,11 @@ $__v = function($f) {
 
                     <div class="divider" style="margin:0;"></div>
 
-                    <!-- Drop zones -->
+                    
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <label class="field-label">File Audio & Cover Art</label>
                         <div class="drop-grid">
-                            <!-- Audio file -->
+                            
                             <div class="drop-zone" id="audio-zone">
                                 <input type="file" name="media" accept="audio/*" required
                                     id="audio-input" onchange="handleAudioFile(this)" aria-label="Pilih atau drop file audio untuk upload lagu">
@@ -235,7 +235,7 @@ $__v = function($f) {
                                 <div class="drop-zone-sub">FLAC · MP3 · WAV · OPUS</div>
                             </div>
 
-                            <!-- Cover art -->
+                            
                             <div class="drop-zone" id="cover-zone">
                                 <input type="file" name="thumbnail" accept="image/*"
                                     id="cover-input" onchange="handleCoverFile(this)" aria-label="Pilih atau drop cover art untuk lagu">
@@ -250,7 +250,7 @@ $__v = function($f) {
                     </div>
 
                     <?php if ($is_admin): ?>
-                        <!-- Anti-transcode toggle (admin only) -->
+                        
                         <div class="toggle-card">
                             <div>
                                 <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;">Anti Transcode</div>
@@ -262,7 +262,7 @@ $__v = function($f) {
                             </label>
                         </div>
                     <?php endif; ?>
-                    <!-- Upload button -->
+                    
                     <div style="margin-top:auto;">
                         <button type="submit" name="upload" id="btn-upload" class="btn-primary">
                             <i data-lucide="upload" style="width:15px;height:15px;"></i>
@@ -270,7 +270,7 @@ $__v = function($f) {
                         </button>
                     </div>
 
-                    <!-- Footer links -->
+                    
                     <div class="footer-links">
                         <a href="beranda" class="footer-link">Library</a>
                         <a href="../" class="footer-link">Portal</a>
@@ -288,7 +288,7 @@ $__v = function($f) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <!-- Upload Overlay -->
+    
     <div id="upload-overlay">
         <div class="overlay-card">
             <div class="upload-wave">

@@ -1,32 +1,32 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
-/* player-core.js — Bootstrap player watch.php, sekarang berbasis
- * assets/js/shared/audio-engine.js yang persisten (bukan bikin `new
- * Plyr(audio)` + AudioContext sendiri tiap load).
- *
- * window.meelInitWatchPlayer() IDEMPOTENT & DIPANGGIL ULANG setiap kali
- * landing di view watch.php (baik full page load ASLI, MAUPUN AJAX
- * transition dari index.php lewat view-router.js) — karena DOM-nya selalu
- * baru tiap kali (#player-container, #cava-container, dst di-innerHTML-
- * replace). TAPI listener yang menempel ke `audio`/`player` (elemen yang
- * SAMA, tidak pernah dibuat ulang) hanya dipasang SEKALI (lihat
- * bindEngineOnce, di-guard `player.__meelCoreBound`), supaya tidak dobel
- * tiap toggle mini<->full.
- *
- * Logic "lagu baru" (FLAC loading-timeout, resume-modal, reset counter
- * posisi) HANYA jalan kalau engine.loadTrack() benar-benar ganti src
- * (isFreshTrack) — kalau cuma pindah tampilan pada lagu yang sama, semua
- * itu di-skip total supaya gapless & tidak ada resume-modal nongol lagi.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 (function () {
   "use strict";
 
-  // True hanya untuk landing PERTAMA dalam dokumen ini (full page load /
-  // Ctrl+R / F5). Setelah itu semua pemanggilan meelInitWatchPlayer berasal
-  // dari transisi AJAX view-router di dokumen yang sama (expand mini->full,
-  // auto-next). Dipakai untuk membedakan "kunjungan dingin" (resume-modal
-  // harus tampil) dari transisi gapless (modal tidak boleh interupsi).
+  
+  
+  
+  
+  
   var isWatchDocFreshLoad = true;
 
   function updateVisualizerUI(on) {
@@ -41,7 +41,7 @@
     }
   }
 
-  // Rebuild visualizer bars tiap #cava-container adalah node baru (per mount).
+  
   function buildVisualizerBars(engine) {
     const cava = document.getElementById("cava-container");
     if (!cava) return;
@@ -79,9 +79,9 @@
     }
   }
 
-  // Semua listener yang menempel ke `audio`/`player` (elemen persisten)
-  // Dipasang SEKALI SEUMUR SESI, tidak peduli berapa kali user
-  // toggle mini<->full.
+  
+  
+  
   function bindEngineOnce(engine) {
     if (engine.player.__meelCoreBound) return;
     engine.player.__meelCoreBound = true;
@@ -89,7 +89,7 @@
     const audio = engine.audio,
       player = engine.player;
 
-    // FLAC loading-overlay & timeout
+    
     let loadingTimeout = null,
       secondaryTimeout = null,
       metadataLoaded = false,
@@ -97,7 +97,7 @@
       errorHandled = false,
       audioEndedNaturally = false;
 
-    // STREAM RECOVERY — detect & auto-recover when stream drops after idle / network interruption.
+    
     const RECOVERY_MAX_RETRIES = 15;
     const STUCK_CHECK_INTERVAL_MS = 3000;
     const STUCK_THRESHOLD_S = 6;
@@ -163,7 +163,7 @@
       var streamUrl = (window.MEEL_MUSIC_CONFIG && window.MEEL_MUSIC_CONFIG.streamUrl) || '';
       if (!streamUrl) { isRecovering = false; return; }
 
-      // Cache-buster supaya browser tidak pakai response lama
+      
       var sep = streamUrl.indexOf('?') >= 0 ? '&' : '?';
       var freshUrl = streamUrl + sep + '_r=' + Date.now();
 
@@ -182,7 +182,7 @@
         }).catch(function (err) {
           console.warn('⚠️ Music recovery play() failed:', err);
           isRecovering = false;
-          // Coba lagi setelah cooldown
+          
           setTimeout(triggerStreamRecovery, RECOVERY_COOLDOWN_MS);
         });
       }
@@ -231,7 +231,7 @@
       if (waitingTimeout) { clearTimeout(waitingTimeout); waitingTimeout = null; }
     }
 
-    // Detect network errors (code 2 = MEDIA_ERR_NETWORK, 3 = DECODE, 4 = SRC_NOT_SUPPORTED)
+    
     audio.addEventListener('error', function () {
       var code = audio.error ? audio.error.code : 0;
       if (code === 2 && hasEverPlayed && !isRecovering) {
@@ -240,7 +240,7 @@
       }
     });
 
-    // Detect stall — browser cannot get data
+    
     audio.addEventListener('stalled', function () {
       if (!player.paused && hasEverPlayed && !isRecovering) {
         console.warn('⚠️ Audio stalled event, starting waiting timeout...');
@@ -301,7 +301,7 @@
       const overlay = document.getElementById("flac-loading-overlay");
       if (overlay) overlay.style.display = "none";
     }
-    // Dipanggil HANYA saat isFreshTrack (lihat meelInitWatchPlayer).
+    
     engine.__armLoadingTimeout = function () {
       metadataLoaded = false;
       errorHandled = false;
@@ -330,7 +330,7 @@
     audio.addEventListener("error", function () {
       if (errorHandled) return;
       const errCode = audio.error ? audio.error.code : 0;
-      // Network error (code 2) saat playback aktif → serahkan ke recovery system
+      
       if (errCode === 2 && hasEverPlayed) return;
       errorHandled = true;
       audioEndedNaturally = false;
@@ -353,7 +353,7 @@
       stopWaitingTimeout();
     });
 
-    // Visualizer / bitrate — pakai analyser dari engine
+    
     let rafId = null,
       visLastTs = 0,
       visualizerOn = window.innerWidth >= 1024,
@@ -454,8 +454,8 @@
       updateVisualizerUI(next);
     };
 
-    // Sync visual di-expose ke engine & dipanggil eksplisit tiap
-    // landing — event 'play'/'pause' tidak fire saat loadTrack() no-op.
+    
+    
     function applyPlayingVisualState(isPlaying) {
       const container = document.getElementById("player-container");
       const vinyl = document.querySelector(".vinyl-wrap .vinyl-spin");
@@ -499,8 +499,8 @@
         if (sec !== lastSecond) {
           lastSecond = sec;
           localStorage.setItem(storageKeyMusic, player.currentTime);
-          // Throttle ~5 detik: posisi tersimpan tetap segar untuk restore
-          // mini-player index / kunjungan ulang watch tanpa menulis tiap tick.
+          
+          
           if (sec % 5 === 0) saveAudioState();
         }
       }
@@ -538,7 +538,7 @@
         isNavigating = false;
         return;
       }
-      // Auto-next lewat AJAX router agar konsisten gapless.
+      
       if (window.meelNavigateView) {
         window.meelNavigateView(target, "watch", {
           onAfterSwap: function () {
@@ -554,17 +554,17 @@
 
   window.meelInitWatchPlayer = function () {
     window.__meelCurrentView = "watch";
-    // Self-heal: pastikan preview komentar tidak pernah kosong setelah
-    // swap AJAX (mini->full / auto-next / expand dari index) — kalau
-    // kosong (mis. empty-state raib), bangun ulang dari #comment-list.
+    
+    
+    
     if (typeof window.meelRebuildCommentPreview === "function") {
       const _ptxt = document.getElementById("comment-preview-text");
       if (_ptxt && !_ptxt.textContent.trim()) {
         window.meelRebuildCommentPreview();
       }
     }
-    // Reset mode mini-player — interval saveAudioState() (5s) dari sesi
-    // mini-mode sebelumnya tidak boleh terus menulis state.
+    
+    
     isMiniPlayerActive = false;
     const engine = window.meelGetAudioEngine();
     const slot = document.getElementById("player-audio-slot");
@@ -576,7 +576,7 @@
     watchUrl = window.location.href;
     storageKeyMusic = "music_pos_" + window.MEEL_MUSIC_CONFIG.id;
 
-    // Reparent (BUKAN re-create) elemen audio+Plyr ke slot watch.php ini.
+    
     engine.mount(slot, { compact: false });
     audio = engine.audio;
     player = engine.player;
@@ -585,8 +585,8 @@
 
     bindEngineOnce(engine);
 
-    // Sync visual playing-state eksplisit — event 'play'/'pause' tidak
-    // fire saat loadTrack() no-op (transisi gapless).
+    
+    
     if (engine.__syncPlayingVisualState) {
       engine.__syncPlayingVisualState(!engine.audio.paused);
     }
@@ -594,11 +594,11 @@
     const globalLoop = "true" === localStorage.getItem(MEEL_KEYS.GLOBAL_LOOP);
     loadEqState();
     updateEqUI();
-    // EQ gain perlu di-reapply tiap landing — engine persisten tidak
-    // reset sendiri saat pindah tampilan.
+    
+    
     applyEqToFilters();
 
-    // Baca sessionStorage untuk resume lintas-halaman.
+    
     let savedActive = false,
       savedTime = 0,
       savedPlaying = false,
@@ -621,21 +621,21 @@
       }
     }
 
-    // Baca & buang flag skip_resume_once SELALU di sini (sebelum early-return
-    // gapless) agar tidak menekan resume-modal pada fresh-track load berikutnya.
+    
+    
     const skipFromIndex = sessionStorage.getItem(MEEL_KEYS.SKIP_RESUME_ONCE) === "true";
     if (skipFromIndex) sessionStorage.removeItem(MEEL_KEYS.SKIP_RESUME_ONCE);
-    // Marker sesi mini-player in-memory — jangan interupsi lagu berikutnya
-    // di sesi yang sama; dibersihkan saat pause/close eksplisit.
+    
+    
     if (skipFromIndex) window.__meelResumeSessionActive = true;
 
-    // Landing dokumen BARU (refresh/full page load) = kunjungan dingin:
-    // engine kosong & marker sesi in-memory sudah reset. State AUDIO_STATE
-    // peninggalan sesi AJAX sebelumnya (mini-player index) TIDAK boleh
-    // menekan resume-modal di sini — kalau tidak, refresh pertama diam-diam
-    // resume dan modal hanya muncul di refresh kedua (state sudah habis
-    // dikonsumsi). Transisi AJAX di dokumen sama tidak terkena override ini,
-    // jadi tetap gapless & bebas modal.
+    
+    
+    
+    
+    
+    
+    
     if (isWatchDocFreshLoad) {
       isWatchDocFreshLoad = false;
       savedActive = false;
@@ -643,7 +643,7 @@
       savedPlaying = false;
     }
 
-    // KUNCI GAPLESS: track ID sama → loadTrack() no-op total.
+    
     const isFreshTrack = engine.loadTrack(
       {
         id: window.MEEL_MUSIC_CONFIG.id,
@@ -651,8 +651,8 @@
         isLooping: savedLoop,
       },
       {
-        // play() didelegasikan ke onFreshTrackReady() — jangan autoplay
-        // langsung di sini (resume-modal race).
+        
+        
         autoplay: savedActive ? savedPlaying : false,
         startTime: savedActive ? savedTime : 0,
       },
@@ -662,20 +662,20 @@
     updateVisualizerUI(engine.__vis ? engine.__vis.isOn() : window.innerWidth >= 1024);
 
     if (!isFreshTrack) {
-      // Mobile-only
-      // iOS Safari menghentikan <audio> saat elemen dipindah antar-DOM
-      // oleh view-router — sync ulang eksplisit.
+      
+      
+      
       const wantStream = window.MEEL_MUSIC_CONFIG.streamUrl || "";
       const haveSrc = engine.audio.currentSrc || engine.audio.src || "";
       const wantId = String(window.MEEL_MUSIC_CONFIG.id);
-      // Bandingkan param id (boundary-safe); haveId === null → dianggap cocok.
+      
       let haveId = null;
       try {
         haveId = new URL(haveSrc, window.location.href).searchParams.get("id");
       } catch (e) {}
       if (wantStream && haveSrc && haveId !== null && haveId !== wantId) {
-        // Resource termuat ≠ lagu halaman ini (quirk mobile) → muat ulang src
-        // & pulihkan posisi/playback dari state tersimpan.
+        
+        
         engine.audio.src = wantStream;
         engine.audio.load();
         if (savedActive && savedPlaying) {
@@ -691,27 +691,27 @@
             });
         }
       } else if (savedActive && savedPlaying && engine.audio.paused) {
-        // Audio berhenti karena detach → pulihkan posisi & playback.
+        
         if (savedTime > 5 && engine.audio.currentTime < 1) {
           engine.audio.currentTime = savedTime;
         }
         engine.audio.play().catch(function () {});
       }
-      // Track sama — hanya pindah tampilan: tanpa reset, tanpa resume-modal.
-      // Sync loop via setter Plyr agar config.loop.active tidak stale.
+      
+      
       player.loop = engine.audio.loop;
       _applyLoopUI(player.loop);
       return;
     }
 
-    // Hanya untuk track yang BENAR-BENAR baru
-    // setLoop menyinkronkan media.loop + Plyr config + localStorage secara atomik.
+    
+    
     engine.setLoop(savedLoop);
     updateLoopUI();
-    // JANGAN cuma removeItem — state lama (lagu sebelumnya) bisa tertinggal
-    // di sessionStorage dan membuat index/mini-player memutar lagu STALE
-    // setelah auto-next (mis. masih stream?id=145 padahal sedang 49).
-    // Tulis ulang state agar selalu mencerminkan track yang baru dimuat.
+    
+    
+    
+    
     saveAudioState();
     if (engine.__armLoadingTimeout) engine.__armLoadingTimeout();
 
@@ -720,8 +720,8 @@
       btnRestart = document.getElementById("btn-restart"),
       timeEl = document.getElementById("resume-time");
     if (modalEl && btnResume && btnRestart && timeEl) {
-      // Arm one-shot skip HANYA kalau modal benar-benar bisa muncul
-      // (savedActive false); kalau resume lintas-halaman, jangan di-arm.
+      
+      
       if (skipFromIndex && !savedActive) skipResumeModalOnce = true;
 
       function showResumeModal() {
@@ -768,15 +768,15 @@
           if (needsResume) {
             const shown = showResumeModal();
             if (!shown) {
-              // Modal ditekan tapi ada posisi tersimpan
-              // → auto putar dari awal.
+              
+              
               localStorage.removeItem(storageKeyMusic);
               audio.currentTime = 0;
               player.play();
             }
           } else {
-            // Tidak ada posisi tersimpan → mulai putar; one-shot
-            // skipResumeModalOnce "habis" di sini.
+            
+            
             skipResumeModalOnce = false;
             player.play();
           }

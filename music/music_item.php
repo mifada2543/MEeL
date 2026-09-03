@@ -1,4 +1,4 @@
-<?php /** @var array $v Data musik dari hasil query (music/index.php) */
+<?php 
 authorize_stream((int)$v['id']);
 ?>
 <div class="music-item flex items-center gap-3 px-3 py-2.5 rounded-xl htmx-added"
@@ -8,7 +8,7 @@ authorize_stream((int)$v['id']);
      data-thumbnail="<?= htmlspecialchars($v['thumbnail']) ?>"
      data-thumbnail-url="<?= htmlspecialchars(music_thumbnail_url($v['thumbnail'])) ?>"
      data-filename="<?= htmlspecialchars($v['filename']) ?>">
-    <!-- THUMBNAIL -->
+    
     <a href="<?= base_url('/music/watch?id=' . (int)$v['id']) ?>"
        class="music-item-link relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0"
        style="background:var(--meel-surface-hover)"
@@ -31,7 +31,7 @@ authorize_stream((int)$v['id']);
         <?php endif; ?>
     </a>
 
-    <!-- INFO -->
+    
     <div class="flex-1 min-w-0">
         <a href="<?= base_url('/music/watch?id=' . (int)$v['id']) ?>"
            class="music-item-link block text-[12px] font-bold truncate transition-colors leading-tight"
@@ -58,7 +58,7 @@ authorize_stream((int)$v['id']);
         </div>
     </div>
 
-    <!-- PLAY BUTTON (desktop hover) -->
+    
     <a href="<?= base_url('/music/watch?id=' . (int)$v['id']) ?>"
        class="music-item-link play-btn hidden md:flex opacity-0 -translate-x-2 transition-all duration-200
               text-[9px] font-bold uppercase tracking-widest

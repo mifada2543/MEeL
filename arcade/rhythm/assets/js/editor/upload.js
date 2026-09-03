@@ -1,9 +1,9 @@
-/**
- * MEeL!Mania — Upload / Delete API calls
- * CSRF_TOKEN and EDIT_SONG come from the inline <script> block in
- * edit.php (top-level const in a classic script is visible to module
- * scripts in the same document/realm).
- */
+
+
+
+
+
+
 import { S } from "./state.js";
 import { showToast } from "./toast.js";
 

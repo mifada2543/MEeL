@@ -1,10 +1,10 @@
-/* gestures.js — Gestur mobile: tap, stacking double-tap (10→20→30 like YouTube). */
+
 function setupMobileGestures() {
   if (!isTouchDevice) return;
   var plyr = document.querySelector(".plyr");
   if (!plyr) return;
 
-  /* ── State ── */
+  
   var controlsVisible = false,
     hideTimer = null,
     lastTapTime = 0,
@@ -12,7 +12,7 @@ function setupMobileGestures() {
     tapTimer = null,
     tapZone = null;
 
-  /* Double-tap stacking state */
+  
   var ddStreak = 0,
     ddSide = null,
     ddResetTimer = null,
@@ -20,7 +20,7 @@ function setupMobileGestures() {
     DD_WINDOW = 600,
     DD_SEEK_STEP = 10;
 
-  /* ── Controls visibility ── */
+  
   function showControls() {
     controlsVisible = true;
     plyr.classList.add("plyr--hide-controls");
@@ -52,7 +52,7 @@ function setupMobileGestures() {
     }, 3000);
   }
 
-  /* DOUBLE-TAP STACKING (10→20→30) */
+  
   function handleDoubleTap(x, y, side) {
     var now = Date.now();
 
@@ -72,7 +72,7 @@ function setupMobileGestures() {
       else player.forward(seekAmount);
     }
 
-    /* Use original indicator — label updates otomatis */
+    
     tampilkanSisiIndikator(side, seekLabel);
 
     clearTimeout(ddResetTimer);
@@ -84,7 +84,7 @@ function setupMobileGestures() {
 
 
 
-  /* MAIN TOUCH HANDLER */
+  
   plyr.addEventListener(
     "touchstart",
     function (ev) {
@@ -111,7 +111,7 @@ function setupMobileGestures() {
       var relX = x - rect.left;
       var zone = relX < 0.4 * rect.width ? "left" : relX > 0.6 * rect.width ? "right" : "center";
 
-      /* Double-tap detection */
+      
       if (now - lastTapTime < 300 && tapPending) {
         clearTimeout(tapTimer);
         tapPending = false;
@@ -124,7 +124,7 @@ function setupMobileGestures() {
         return;
       }
 
-      /* First tap */
+      
       lastTapTime = now;
       tapPending = true;
       tapZone = zone;
@@ -161,7 +161,7 @@ function setupMobileGestures() {
     true,
   );
 
-  /* ── Volume slider swipe ── */
+  
   (function () {
     var startY = null,
       startVal = null,
@@ -201,7 +201,7 @@ function setupMobileGestures() {
     });
   })();
 
-  /* ── Player events ── */
+  
   if (player) {
     player.on("play", function () {
       resetHideTimer();

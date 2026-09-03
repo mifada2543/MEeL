@@ -39,14 +39,14 @@ class StreamAuthTest extends TestCase
 
     public function testExpiredMarkerDenied(): void
     {
-        // Marker sangat tua (jauh melebihi TTL default 12 jam)
+        
         $_SESSION['stream_ok'] = [145 => time() - 99999];
         $this->assertFalse(is_stream_authorized(145));
     }
 
     public function testCustomTtl(): void
     {
-        $_SESSION['stream_ok'] = [7 => time() - 60]; // 1 menit lalu
+        $_SESSION['stream_ok'] = [7 => time() - 60]; 
         $this->assertTrue(is_stream_authorized(7, 3600));
         $this->assertFalse(is_stream_authorized(7, 30));
     }
@@ -57,7 +57,7 @@ class StreamAuthTest extends TestCase
             authorize_stream($i);
         }
         $this->assertLessThanOrEqual(100, count($_SESSION['stream_ok']));
-        // Marker terbaru tetap tersimpan
+        
         $this->assertTrue(is_stream_authorized(150));
     }
 

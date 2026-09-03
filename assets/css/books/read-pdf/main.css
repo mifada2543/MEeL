@@ -1,4 +1,4 @@
-/* read-pdf/main.css — Page-specific untuk PDF Standalone Viewer */
+
 body {
   background-color: #080a0f;
   color: white;
@@ -12,7 +12,7 @@ body {
   display: flex;
   flex-direction: column;
 }
-/* PDF Navbar */
+
 .pdf-nav {
   display: flex;
   align-items: center;
@@ -92,7 +92,7 @@ body {
   color: #22c55e;
   background: rgba(255, 255, 255, 0.04);
 }
-/* PDF Body */
+
 .pdf-body {
   flex: 1;
   min-height: 0;
@@ -103,7 +103,7 @@ body {
   justify-content: center;
   padding: 2rem;
 }
-/* Branded redirect card */
+
 .pdf-redirect-card {
   text-align: center;
   max-width: 420px;
@@ -161,7 +161,7 @@ body {
   letter-spacing: 0.15em;
   font-weight: 600;
 }
-/* Tombol akses langsung (muncul jika redirect gagal) */
+
 .pdf-redirect-card .btn {
   display: none;
   align-items: center;

@@ -1,7 +1,7 @@
-/**
- * MEeL!Mania Game — Renderer
- * The main draw() function that renders the gameplay field, notes, and effects.
- */
+
+
+
+
 import {
   S, canvas, ctx, LANE_COUNT, LANE_COLORS, LANE_COLORS_BRIGHT,
   COLOR_CLICK, COLOR_CLICK_BRIGHT, COLOR_HOLD, COLOR_HOLD_BRIGHT,
@@ -10,7 +10,7 @@ import {
 } from "./state.js";
 import { getW, getH, laneWidth, playfieldX, hitY } from "./canvas.js";
 
-/* HELPERS */
+
 export function pad6(n) { return String(Math.floor(n)).padStart(6, "0"); }
 
 function getNoteSize() {
@@ -27,7 +27,7 @@ function noteColorFor(note) {
   return note.endTime ? COLOR_HOLD : COLOR_CLICK;
 }
 
-/* HUD UPDATES */
+
 export function updateHUD() {
   const hs = document.getElementById("hudScore");
   const ha = document.getElementById("hudAcc");
@@ -75,7 +75,7 @@ export function showJudgment(type, isGold) {
   judgeTimer = setTimeout(() => jw.classList.add("hidden"), 550);
 }
 
-/* MAIN DRAW */
+
 export function draw() {
   const w = getW(), h = getH();
   const lw = laneWidth();
@@ -88,10 +88,10 @@ export function draw() {
 
   ctx.clearRect(0, 0, w, h);
 
-  // Background
+  
   ctx.fillStyle = "#08080f";
   ctx.fillRect(0, 0, w, h);
-  if (S.gameOptions.lowGfx) { /* skip gradient */ } else {
+  if (S.gameOptions.lowGfx) {  } else {
     const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
     bgGrad.addColorStop(0, "rgba(168,85,247,0.03)");
     bgGrad.addColorStop(0.5, "transparent");
@@ -100,11 +100,11 @@ export function draw() {
     ctx.fillRect(0, 0, w, h);
   }
 
-  // Playfield background
+  
   ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.fillRect(pfx, 0, pfw, h);
 
-  // Lanes
+  
   for (let i = 0; i < LANE_COUNT; i++) {
     const x = pfx + i * lw;
     ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.01)";
@@ -145,7 +145,7 @@ export function draw() {
     ctx.stroke();
   }
 
-  // Hit line glow
+  
   const hlGlow = ctx.createLinearGradient(0, hy - 3, 0, hy + 3);
   hlGlow.addColorStop(0, "transparent");
   hlGlow.addColorStop(0.5, "rgba(255,255,255,0.08)");
@@ -160,14 +160,14 @@ export function draw() {
   ctx.lineTo(pfx + pfw, hy);
   ctx.stroke();
 
-  // Receptors
+  
   for (let i = 0; i < LANE_COUNT; i++) {
     const rx = pfx + i * lw;
     ctx.fillStyle = S.lanePressed[i] ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)";
     ctx.fillRect(rx + lw * 0.08, hy - 2, lw * 0.84, 3);
   }
 
-  // Hold note trails
+  
   for (const note of S.activeNotes) {
     if (!note.endTime || note.hit || note.missed) continue;
     const cx = pfx + note.lane * lw + lw / 2;
@@ -183,7 +183,7 @@ export function draw() {
     const trailW = lw * 0.75 * ns;
     const color = noteColorFor(note);
 
-    // Clamp to visible area to avoid huge draw calls
+    
     const visTop = Math.max(0, drawTop);
     const visBot = Math.min(h, drawBottom);
     const visH = visTop - visBot;
@@ -198,14 +198,14 @@ export function draw() {
     ctx.lineWidth = 2;
     ctx.strokeRect(cx - trailW / 2, visBot, trailW, visH);
 
-    // Head cap (only if visible)
+    
     if (!note.holding && cyStart >= 0 && cyStart <= h) {
       ctx.globalAlpha = 0.85;
       ctx.fillStyle = color;
       ctx.fillRect(cx - trailW / 2, cyStart - 5, trailW, 10);
     }
 
-    // Tail cap (only if visible)
+    
     if (visBot >= 0 && visBot <= h) {
       ctx.globalAlpha = 0.9;
       ctx.fillStyle = color;
@@ -215,7 +215,7 @@ export function draw() {
     ctx.globalAlpha = 1;
   }
 
-  // Tap & hold head notes
+  
   for (const note of S.activeNotes) {
     if (note.hit || note.missed) continue;
     if (note.holding) continue;
@@ -248,7 +248,7 @@ export function draw() {
     }
   }
 
-  // Approach lines
+  
   for (let i = 0; i < LANE_COUNT; i++) {
     const cx = pfx + i * lw + lw / 2;
     ctx.fillStyle = LANE_COLORS[i] + "15";

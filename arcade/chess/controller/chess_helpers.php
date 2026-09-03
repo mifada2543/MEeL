@@ -41,7 +41,7 @@ function chess_has_terminal_event(\mysqli $conn, string $room): bool
     return $found;
 }
 
-/* @param \mysqli $conn Koneksi database aktif; @param string $room Room code; @return string|null 'w'/'b', atau null bila belum ada langkah sama sekali */
+
 function chess_last_move_color(\mysqli $conn, string $room): ?string
 {
     $stmt = $conn->prepare(
@@ -60,7 +60,7 @@ function chess_last_move_color(\mysqli $conn, string $room): ?string
     return $row ? $row['color'] : null;
 }
 
-/** @return array{success:bool, message?:string, id?:int} */
+
 function chess_record_game_over(\mysqli $conn, string $room, string $loserColor, string $reason): array
 {
     if (!in_array($reason, ['checkmate', 'stalemate'], true)) {
@@ -101,11 +101,8 @@ function insertGameEvent(\mysqli $conn, string $room, string $color, string $typ
     }
 }
 
-/**
- * @param \mysqli $conn Koneksi database aktif
- * @param string $room Room code
- * @return array{type: string|null, color: string|null}|null null bila belum ada event
- */
+
+
 function chess_last_event(\mysqli $conn, string $room): ?array
 {
     $stmt = $conn->prepare(
@@ -131,7 +128,7 @@ function chess_last_event(\mysqli $conn, string $room): ?array
     ];
 }
 
-/* @param \mysqli $conn Koneksi database aktif; @param string $room Room code */
+
 function chess_reset_room_game(\mysqli $conn, string $room): void
 {
     $stmt = $conn->prepare("DELETE FROM moves WHERE room_code = ?");
@@ -145,14 +142,8 @@ function chess_reset_room_game(\mysqli $conn, string $room): void
     $stmt->close();
 }
 
-/**
- * @param \mysqli $conn Koneksi database aktif
- * @param string $room Room code
- * @param string $color Warna pemain yang mengirim aksi ('w'/'b')
- * @param string $action rematch_offer | rematch_accept | rematch_decline
- * @param int|null $opponentId user_id lawan untuk validasi kehadiran; null =
- * @return array{success:bool, message?:string, id?:int, opponent_gone?:bool}
- */
+
+
 function chess_rematch(\mysqli $conn, string $room, string $color, string $action, ?int $opponentId = null): array
 {
 

@@ -1,5 +1,5 @@
 <?php
-// Ambil profile picture dari session (nav.php bisa di-include dari mana saja)
+
 $_nav_pfp = null;
 if (isset($_SESSION['user_id']) && isset($conn)) {
     $stmt_nav = $conn->prepare("SELECT profile_picture FROM users WHERE id = ? LIMIT 1");
@@ -25,7 +25,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     }
 </style>
 
-<!-- Cross-link Video ↔ Music (DESKTOP) -->
+
 <?php if ($_nav_is_video): ?>
     <a href="<?= $_nav_root ?>music/beranda"
         class="hidden sm:flex items-center gap-1.5 bg-white/[.04] px-3 py-2 rounded-xl hover:bg-white/[.08] text-gray-300 hover:text-orange-500 transition-all"
@@ -55,7 +55,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
     </a>
 <?php endif; ?>
 <?php if (isset($_SESSION['username'])): ?>
-    <!-- AVATAR DROPDOWN (desktop) -->
+    
     <div class="relative hidden sm:block" id="nav-dropdown-wrap">
         <button id="nav-avatar-btn"
             onclick="toggleNavDropdown()"
@@ -65,7 +65,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             onmouseout="this.style.background='transparent'"
             title="Menu Akun">
 
-            <!-- Avatar -->
+            
             <div class="w-8 h-8 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
                 <?php if (!empty($_nav_pfp)): ?>
                     <img src="<?= $_nav_pfp_base . htmlspecialchars($_nav_pfp) ?>"
@@ -84,12 +84,12 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             <i data-lucide="chevron-down" class="w-3 h-3 text-gray-600 transition-transform duration-200" id="nav-chevron"></i>
         </button>
 
-        <!-- Dropdown panel -->
+        
         <div id="nav-dropdown"
             class="hidden absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-[200]"
             style="background:var(--meel-surface-elevated); border:1px solid var(--meel-border-strong); box-shadow:var(--meel-shadow-xl)">
 
-            <!-- User info header -->
+            
             <div class="px-4 py-3 flex items-center gap-3" style="border-bottom:1px solid var(--meel-border)">
                 <div class="w-9 h-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
                     <?php if (!empty($_nav_pfp)): ?>
@@ -133,7 +133,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                 </div>
             </div>
 
-            <!-- Menu items -->
+            
             <div class="py-1.5">
                 <a href="<?= $_nav_root ?>profile/?u=<?= urlencode($_SESSION['username']) ?>" title="Pengaturan profil dan tema"
                     class="flex items-center gap-3 px-4 py-2.5 text-[11px] transition-all no-underline"
@@ -177,7 +177,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                         <span>Admin Panel</span>
                     </a>
                 <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'member'): ?>
-                    <!-- Upload tersedia juga untuk member -->
+                    
                     <a href="upload"
                         title="Unggah media baru ke platform"
                         class="flex items-center gap-3 px-4 py-2.5 text-[11px] text-gray-400 hover:text-blue-400 hover:bg-white/[.04] transition-all no-underline">
@@ -203,21 +203,21 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         </div>
     </div>
 
-    <!-- HAMBURGER (mobile only) -->        <button id="nav-hamburger"
+            <button id="nav-hamburger"
         onclick="toggleNavDrawer()"
         class="sm:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-white transition-all"
         title="Buka menu navigasi">
         <i data-lucide="menu" class="w-6 h-6"></i>
     </button>
 
-    <!-- MOBILE DRAWER -->
+    
     <div id="nav-drawer-overlay"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden sm:hidden"
         onclick="toggleNavDrawer()"></div>
 
     <div id="nav-drawer"
         class="fixed top-0 right-0 h-[100dvh] w-72 sm:w-80 bg-[#0a0d14] border-l border-white/[.06] z-[310] transform translate-x-full transition-transform duration-300 ease-out hidden sm:hidden flex-col">
-        <!-- Drawer header -->
+        
         <div class="flex items-center justify-between px-5 py-4 border-b border-white/[.05]">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
@@ -264,7 +264,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             </button>
         </div>
 
-        <!-- Drawer menu items -->
+        
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
             <a href="<?= $_nav_root ?>profile/?u=<?= urlencode($_SESSION['username']) ?>"
                 title="Pengaturan profil dan tema"
@@ -358,7 +358,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         </div>
     </div>
 <?php else: ?>
-    <!-- Belum login - DESKTOP -->
+    
     <div class="hidden sm:flex items-center gap-2">
         <a href="<?= $_nav_root ?>auth/login"
             title="Login"
@@ -382,7 +382,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         </a>
     </div>
 
-    <!-- Hamburger MOBILE (guest) -->
+    
     <button id="nav-hamburger-guest"
         onclick="toggleNavDrawerGuest()"
         class="sm:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white/[.04] border border-white/[.06] text-gray-500 hover:text-white transition-all"
@@ -390,16 +390,16 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
         <i data-lucide="menu" class="w-6 h-6"></i>
     </button>
 
-    <!-- MOBILE DRAWER OVERLAY (guest) -->
+    
     <div id="nav-drawer-guest-overlay"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] hidden sm:hidden"
         onclick="toggleNavDrawerGuest()"></div>
 
-    <!-- MOBILE DRAWER (guest) -->
+    
     <div id="nav-drawer-guest"
         class="fixed top-0 right-0 h-[100dvh] w-72 sm:w-80 bg-[#0a0d14] border-l border-white/[.06] z-[310] transform translate-x-full transition-transform duration-300 ease-out hidden sm:hidden flex-col">
 
-        <!-- Drawer header -->
+        
         <div class="flex items-center justify-between px-5 py-4 border-b border-white/[.05]">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
@@ -416,7 +416,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             </button>
         </div>
 
-        <!-- Drawer menu items -->
+        
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
             <a href="<?= $_nav_root ?>auth/login"
                 class="flex items-center gap-4 px-6 py-4 text-base text-blue-400 hover:text-blue-300 hover:bg-blue-500/[.06] transition-all no-underline font-bold">

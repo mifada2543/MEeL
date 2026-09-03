@@ -2,15 +2,11 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * Verifikasi file JS hasil dedup:
- * - assets/js/shared/state-keys.js      (konstanta storage key terpusat)
- * - assets/js/shared/download-backup-codes.js (format file TXT backup codes)
- *
  * @coversNothing
  */
 class SharedJsTest extends TestCase
 {
-    /** Literal asli sebelum dedup — nilai konstanta harus identik. */
+    
     private const EXPECTED_KEYS = [
         'AUDIO_STATE'       => 'meel_audio_state',
         'SKIP_RESUME_ONCE'  => 'skip_resume_once',
@@ -38,12 +34,8 @@ class SharedJsTest extends TestCase
         return $content;
     }
 
-    /**
-     * Semua file JS di assets/js kecuali vendor (compatibilitas/) dan
-     * state-keys.js itu sendiri (yang memang berisi nilai literal).
-     *
-     * @return string[] Path relatif, terurut.
-     */
+    
+
     private function allAssetsJsFiles(): array
     {
         $root = $this->rootPath() . '/assets/js';
@@ -63,7 +55,7 @@ class SharedJsTest extends TestCase
         return $files;
     }
 
-    /** @return array<string,string> Peta KEY => nilai dari Object.freeze(...) */
+    
     private function parseStateKeys(): array
     {
         $src = $this->readSource('assets/js/shared/state-keys.js');
@@ -83,7 +75,7 @@ class SharedJsTest extends TestCase
         $map      = $this->parseStateKeys();
         $expected = self::EXPECTED_KEYS;
         $this->assertCount(count($expected), $map, 'Jumlah konstanta tidak sesuai.');
-        // Bandingkan order-independent: urutan konstanta di file bukan kontrak.
+        
         ksort($expected);
         ksort($map);
         $this->assertSame(
@@ -127,7 +119,7 @@ class SharedJsTest extends TestCase
         }
     }
 
-    /* download-backup-codes.js (via harness Node + mock browser)   */
+    
 
     private static function nodeAvailable(): bool
     {
@@ -137,7 +129,7 @@ class SharedJsTest extends TestCase
         return $code === 0;
     }
 
-    /** @return array<string,mixed> Hasil observasi dari harness. */
+    
     private function runNodeHarness(string $scenario): array
     {
         if (!self::nodeAvailable()) {

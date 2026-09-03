@@ -1,5 +1,5 @@
 if (typeof lucide !== "undefined") lucide.createIcons();
-// Sidebar: Playlist Active Highlight
+
 window.setActivePlaylistSidebar = function (id) {
   document.querySelectorAll(".sidebar-link.pl-link").forEach(function (el) {
     if (parseInt(el.dataset.playlistId) === id) {
@@ -22,7 +22,7 @@ window.setActivePlaylistSidebar = function (id) {
     }
   });
 };
-// Mobile Artist Dropdown
+
 window.toggleArtistDropdownPL = function () {
   var dd = document.getElementById("artist-options-pl");
   if (!dd) return;
@@ -65,7 +65,7 @@ window.navigateToArtistPL = function (artist) {
     window.location.href = "beranda?artist=" + encodeURIComponent(artist);
   }
 };
-// Mobile Playlist Dropdown
+
 window.togglePlaylistDropdownPL = function () {
   const dropdown = document.getElementById("playlist-options-pl");
   if (dropdown) {
@@ -115,7 +115,7 @@ window.navigateToPlaylistPL = function (id) {
     pushUrl: url,
   });
 };
-// Close dropdowns on outside click
+
 document.addEventListener("click", function (e) {
   const artistDropdown = document.getElementById("artist-options-pl");
   const artistTrigger = e.target.closest("#custom-artist-dropdown-pl");
@@ -136,7 +136,7 @@ document.addEventListener("click", function (e) {
     closePlaylistDropdownPL();
   }
 });
-// Boot: mini player (shared) + klik track playlist
+
 function bootPlaylistPage() {
   initMiniPlayerIndex();
   setupPlaylistItemClicks();

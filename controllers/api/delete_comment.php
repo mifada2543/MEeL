@@ -9,9 +9,9 @@ include '../../modules/media/MediaInteraction.php';
 
 $is_ajax = !empty($_SERVER['HTTP_HX_REQUEST']);
 
-// Redirect balik yang aman: referer DITERIMA hanya jika host sama (cegah
-// open redirect). Fallback ke halaman asal module. Dipakai di semua jalur
-// non-AJAX agar konsisten (CSRF gagal, rate limit, error, sukses).
+
+
+
 if (!function_exists('safe_comment_back_url')) {
     function safe_comment_back_url(): string
     {

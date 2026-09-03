@@ -1,4 +1,4 @@
-/* resume-modal.css — Resume modal with container queries */
+
 #resume-modal {
   position: absolute;
   inset: 0;
@@ -12,7 +12,7 @@
   align-items: center;
   justify-content: center;
 }
-/* Default: medium player (360-600px) */
+
 #resume-modal > div {
   max-width: min(320px, 68%);
   padding: clamp(16px, 4cqw, 24px);
@@ -28,7 +28,7 @@
   padding-top: clamp(8px, 1.8cqw, 10px);
   padding-bottom: clamp(8px, 1.8cqw, 10px);
 }
-/* Small player: <= 360px */
+
 @container (max-width: 360px) {
   #resume-modal > div {
     max-width: 88%;
@@ -47,7 +47,7 @@
     padding-bottom: 6px !important;
   }
 }
-/* Large player: >= 600px */
+
 @container (min-width: 600px) {
   #resume-modal > div {
     max-width: 400px;

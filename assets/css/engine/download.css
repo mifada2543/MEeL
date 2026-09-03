@@ -1,4 +1,4 @@
-/* engine/download.css — Fase download (ikon, track, statistik) */
+
 #meel-phase-download .dl-icon-wrap {
   width: 72px;
   height: 72px;
@@ -10,7 +10,7 @@
   justify-content: center;
   position: relative;
   margin: 0 auto;
-  /* Hardware acceleration untuk kontainer icon */
+  
   transform: translateZ(0);
 }
 #meel-phase-download .dl-icon-wrap::after {

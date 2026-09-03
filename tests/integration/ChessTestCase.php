@@ -1,10 +1,8 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-/**
- * Base class test integrasi catur: koneksi DB dengan rollback per-test
- * + helper pembuatan room & langkah (dipakai oleh beberapa test class).
- */
+
+
 abstract class ChessTestCase extends TestCase
 {
     protected DbTestHelper $dbHelper;
@@ -24,7 +22,7 @@ abstract class ChessTestCase extends TestCase
         parent::tearDown();
     }
 
-    /* Buat room test dengan black sudah join (black_joined=1). */
+    
     protected function insertRoom(string $code): void
     {
         $stmt = $this->conn->prepare(
@@ -36,7 +34,7 @@ abstract class ChessTestCase extends TestCase
         $stmt->close();
     }
 
-    /* Buat langkah catur asli (bukan event) — move_data JSON tanpa 'type'. */
+    
     protected function insertMove(string $code, string $color): void
     {
         $stmt = $this->conn->prepare(

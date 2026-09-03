@@ -20,7 +20,7 @@ export class ChessGame {
     this.promotionPending = null;
     this.lastCapturedPiece = null;
     this.lastMoveType = null;
-    // Aturan Draw: 50-move rule & Threefold Repetition
+    
     this.halfMoveClock = 0;
     this.positionHistory = {};
   }
@@ -91,10 +91,10 @@ export class ChessGame {
     for (let r = 0; r < 8; r++)
       for (let c = 0; c < 8; c++)
         if (this.board[r][c]) pieces.push(this.board[r][c]);
-    if (pieces.length === 2) return true; // Hanya Raja
+    if (pieces.length === 2) return true; 
     if (pieces.length === 3) {
       const types = pieces.map((p) => p.type);
-      if (types.includes("n") || types.includes("b")) return true; // Raja + Kuda/Gajah vs Raja
+      if (types.includes("n") || types.includes("b")) return true; 
     }
     return false;
   }
@@ -375,7 +375,7 @@ export class ChessGame {
     this.validMoves = [];
     const enemyColor = this.turn;
     const enemyInCheck = this.isKingInCheck(enemyColor);
-    // Tambah tanda check/checkmate di Algebraic Notation
+    
     const noMovesLeft = !this.hasAnyValidMoves(enemyColor);
     if (enemyInCheck) {
       this.history[this.history.length - 1].algebraic += noMovesLeft
@@ -558,7 +558,7 @@ export class ChessGame {
           }
         }
       }
-    // Move ordering
+    
     const mvvLva = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 };
       moves.sort((a, b) => {
         const capA = this.board[a.to.r][a.to.c];

@@ -1,7 +1,7 @@
-/**
- * MEeL!Mania Game — Song Data Loader
- * Loads song metadata and beatmap from PHP globals or filesystem fallback.
- */
+
+
+
+
 import { S, songId, phpSong, phpBeatmap, speedMult, audioElement } from "./state.js";
 
 const SONGS_BASE = "/MEeL/arcade/rhythm/songs";
@@ -33,13 +33,13 @@ export async function loadSongData() {
     await loadFromFiles();
   }
 
-  // Load high score
+  
   try {
     const saved = JSON.parse(localStorage.getItem("mania_scores")) || {};
     S.highScore = saved[String(songId)] || 0;
   } catch (e) { S.highScore = 0; }
 
-  // Setup start overlay
+  
   document.getElementById("overlayEmoji").textContent = S.song.emoji;
   document.getElementById("overlayTitle").textContent = S.song.title;
   document.getElementById("overlaySub").textContent =

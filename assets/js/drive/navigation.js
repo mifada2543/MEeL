@@ -1,4 +1,4 @@
-/* MEeL Drive — Navigation & Section Switching */
+
 (function () {
   lucide.createIcons();
   window.counts = {

@@ -1,25 +1,13 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// DriveStorage/DriveUserContext TIDAK dipetakan ke nama kelasnya di autoload
-// (map autoload memakai nama 'DriveService'), jadi load eksplisit seperti
-// yang dilakukan drive/index.php, drive/download.php, dst.
+
+
+
 require_once MEEL_ROOT . '/drive/DriveService.php';
 
-/**
- * Security regression tests for the Drive module.
- *
- * Covers the private-file ACL boundary:
- * - owner may download, other users / guests may not
- * - path traversal and username-prefix confusion cannot escape the boundary
- * - private previews are routed through the authenticated stream endpoint
- * (direct web paths are denied by data_drive/private_admins/.htaccess)
- * - quota enforcement rejects over-limit uploads
- *
- * Full end-to-end HTTP verification (direct URL fetch → 403) needs a running
- * Apache with AllowOverride; that remains environment-dependent and is
- * covered by the .htaccess contract asserted here plus tests/security_test.php.
- */
+
+
 class DriveSecurityTest extends TestCase
 {
     private string $baseDir = '';
@@ -66,7 +54,7 @@ class DriveSecurityTest extends TestCase
         @rmdir($dir);
     }
 
-    // ACL: authorized vs unauthorized
+    
 
     public function testOwnerCanDownloadOwnPrivateFile(): void
     {
@@ -114,8 +102,8 @@ class DriveSecurityTest extends TestCase
 
     public function testUsernamePrefixCannotBypassRealpathBoundary(): void
     {
-        // bobby has a file; alice must NOT be able to reach it even though
-        // "bobby" shares the "bob" prefix with a potential alice-owned dir.
+        
+        
         file_put_contents($this->baseDir . '/private_admins/bobby/video/secret.mp4', 'bob-data');
         $this->expectException(RuntimeException::class);
         $this->storage('alice')->getFileForDownload('secret.mp4', 'video', 'private');
@@ -127,7 +115,7 @@ class DriveSecurityTest extends TestCase
         $this->storage('alice')->getFileForDownload('', 'video', 'private');
     }
 
-    // Preview routing: private must go through stream (route bersih)
+    
 
     public function testPrivateListingUsesAuthenticatedStreamEndpoint(): void
     {
@@ -137,7 +125,7 @@ class DriveSecurityTest extends TestCase
         $this->assertStringStartsWith('stream?file=' . rawurlencode('x.mp4'), $files[0]['path']);
         $this->assertStringContainsString('scope=private', $files[0]['path']);
         $this->assertStringContainsString('csrf_token=test_token_123', $files[0]['path']);
-        // Must NOT expose the raw filesystem/web path of the private file.
+        
         $this->assertStringNotContainsString('private_admins', $files[0]['path']);
         $this->assertStringNotContainsString('/x.mp4', str_replace('stream?file=', '', $files[0]['path']));
     }
@@ -152,11 +140,11 @@ class DriveSecurityTest extends TestCase
         $this->assertStringContainsString('csrf_token=', $files[0]['path']);
     }
 
-    // Quota enforcement (atomic, rejects over-limit)
+    
 
     public function testQuotaEnforcementRejectsOverLimitUpload(): void
     {
-        // Seed existing usage.
+        
         file_put_contents($this->baseDir . '/private_admins/alice/audio/old.mp3', str_repeat('A', 1024));
         @mkdir($this->baseDir . '/private_admins/alice/dokumen', 0755, true);
 
@@ -170,7 +158,7 @@ class DriveSecurityTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('quota_full');
-        $this->storage('alice')->upload($file, 'private', 1000); // limit < existing + new
+        $this->storage('alice')->upload($file, 'private', 1000); 
     }
 
     public function testQuotaDoesNotApplyToAdmin(): void
@@ -187,8 +175,8 @@ class DriveSecurityTest extends TestCase
             'size'     => 100000,
             'type'     => 'video/mp4',
         ];
-        // Admin bypasses quota, so the call proceeds past the quota gate and
-        // fails later at move_uploaded_file — never with 'quota_full'.
+        
+        
         try {
             $storage->upload($file, 'private', 1);
         } catch (RuntimeException $e) {
@@ -197,20 +185,20 @@ class DriveSecurityTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    // Web-server deny contract for private storage
+    
 
     public function testPrivateStorageDeniedByWebServerConfig(): void
     {
-        // Lapisan 1 (ter-track di repo): data_drive/.htaccess memblokir subtree
-        // private_admins lewat mod_rewrite — berlaku di semua deployment.
+        
+        
         $parent = MEEL_ROOT . '/data_drive/.htaccess';
         $this->assertFileExists($parent);
         $parentContent = (string) file_get_contents($parent);
         $this->assertStringContainsString('private_admins', $parentContent);
         $this->assertStringContainsString('[F', $parentContent);
 
-        // Lapisan 2 (deploy-time, target storage symlink): kalau file ada,
-        // harus memakai Require all denied — bukan sekadar Options -Indexes.
+        
+        
         $nested = MEEL_ROOT . '/data_drive/private_admins/.htaccess';
         if (is_file($nested)) {
             $content = (string) file_get_contents($nested);

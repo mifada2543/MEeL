@@ -4,8 +4,8 @@ const ctx = canvas.getContext("2d");
 const COLS = 10;
 const ROWS = 20;
 const CELL = 24;
-const BOARD_W = COLS * CELL; // 240
-const BOARD_H = ROWS * CELL; // 480
+const BOARD_W = COLS * CELL; 
+const BOARD_H = ROWS * CELL; 
 const SIDE = 80;
 canvas.width = BOARD_W + SIDE;
 canvas.height = BOARD_H;
@@ -39,12 +39,12 @@ let dropAcc = 0;
 let lockTimer = 0;
 let lastTime = 0;
 
-// Animasi clear baris: baris penuh berkedip dulu, baru dihapus & di-compact.
-let clearingRows = null; // [rowIndex...] yang sedang berkedip
+
+let clearingRows = null; 
 let clearTimer = 0;
-let pendingClear = null; // { cleared, points, lines } untuk diselesaikan setelah animasi
-let lockFlash = 0; // kilat singkat saat piece terkunci
-const CLEAR_MS = 280; // durasi animasi clear
+let pendingClear = null; 
+let lockFlash = 0; 
+const CLEAR_MS = 280; 
 
 const pad = (n) => String(n).padStart(5, "0");
 
@@ -166,23 +166,23 @@ function lockPiece() {
       if (by >= 0) board[by][piece.x + c] = piece.color;
     }),
   );
-  lockFlash = 6; // ~100ms kilat di area lock
+  lockFlash = 6; 
 
-  // Deteksi baris penuh -> mulai animasi flash
+  
   const full = [];
   for (let r = 0; r < ROWS; r++) if (board[r].every((v) => v)) full.push(r);
   if (full.length) {
     clearingRows = full;
     clearTimer = CLEAR_MS;
     pendingClear = { cleared: full.length, rowIndices: full };
-    return; // piece berikutnya menunggu sampai animasi selesai
+    return; 
   }
   spawnPiece();
 }
 
 function finishClear() {
   const { cleared } = pendingClear;
-  // Hapus baris penuh (dari bawah ke atas) & compact
+  
   const rowsToRemove = new Set(pendingClear.rowIndices);
   const newBoard = board.filter((_, r) => !rowsToRemove.has(r));
   while (newBoard.length < ROWS) newBoard.unshift(Array(COLS).fill(0));
@@ -210,7 +210,7 @@ function spawnPiece() {
   }
 }
 
-// ---- Rendering ----
+
 function roundRect(x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -235,7 +235,7 @@ function drawSidePanel() {
   const px = BOARD_W + 8;
   const pw = SIDE - 16;
 
-  // Kotak preview NEXT
+  
   ctx.fillStyle = "rgba(255,255,255,0.05)";
   roundRect(px, 10, pw, 76, 10);
   ctx.fill();
@@ -294,7 +294,7 @@ function draw() {
   ctx.fillStyle = "#0b0e14";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Papan + grid
+  
   ctx.fillStyle = "#0f131c";
   ctx.fillRect(0, 0, BOARD_W, BOARD_H);
   ctx.strokeStyle = "rgba(255,255,255,0.04)";
@@ -316,7 +316,7 @@ function draw() {
     for (let c = 0; c < COLS; c++)
       if (board[r][c]) drawCell(c * CELL, r * CELL, board[r][c]);
 
-  // Flash baris yang sedang di-clear (berkedip putih, memudar)
+  
   if (clearingRows) {
     const phase = clearTimer / CLEAR_MS;
     const flashA = 0.25 + 0.55 * Math.abs(Math.sin((1 - phase) * Math.PI));
@@ -326,7 +326,7 @@ function draw() {
     }
   }
 
-  // Kilat singkat saat piece terkunci
+  
   if (lockFlash > 0) {
     ctx.fillStyle = `rgba(255,255,255,${(lockFlash / 6) * 0.18})`;
     ctx.fillRect(0, 0, BOARD_W, BOARD_H);
@@ -349,10 +349,10 @@ function draw() {
   if (gameState.isPaused) drawCenterText("PAUSE", "Tekan P atau SPASI untuk lanjut");
 }
 
-// ---- Loop ----
-// Defensive loop: jika frame melempar exception, rAF tetap dijadwalkan agar
-// loop tidak pernah mati permanen. 1-2 error transien dilewati (frame di-skip);
-// error beruntun (>=3) memicu self-heal: board di-reset ke keadaan valid.
+
+
+
+
 let consecutiveErrors = 0;
 
 function gameLoop(ts) {
@@ -364,7 +364,7 @@ function gameLoop(ts) {
   try {
     const dt = Math.min(100, ts - lastTime);
     lastTime = ts;
-    // Animasi clear baris: pause drop & tunda piece berikutnya sampai selesai
+    
     if (clearingRows && gameState.isPlaying) {
       clearTimer -= dt;
       if (clearTimer <= 0) finishClear();
@@ -393,7 +393,7 @@ function gameLoop(ts) {
   }
 }
 
-// ---- Flow ----
+
 function startGame() {
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   bag = [];
@@ -444,7 +444,7 @@ function endGame() {
   });
 }
 
-// ---- Input ----
+
 window.addEventListener("keydown", (e) => {
   const k = e.key;
   if (k === " " || k === "Enter") {
@@ -540,6 +540,6 @@ document.getElementById("resetScoreBtn").addEventListener("click", () => {
   });
 });
 
-// ---- Init ----
+
 renderHUD();
 requestAnimationFrame(gameLoop);

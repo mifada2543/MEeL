@@ -24,7 +24,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         'files'     => []
     ];
 
-    // File video (HLS folder atau file mp4 langsung) — di storage terpusat
+    
     $video_base = meel_media_base_path('video') . '/video/';
     $video_file = $video['filename'];
     $video_path = $video_base . $video_file;
@@ -32,7 +32,7 @@ function handleDeleteVideo(int $id, int $user_id, mysqli $conn): array
         $pending['files'][] = $video_path;
     }
 
-    // Cek kemungkinan folder HLS (nama file tanpa ekstensi)
+    
     $hls_dir = $video_base . pathinfo($video_file, PATHINFO_FILENAME);
     if (is_dir($hls_dir)) {
         $pending['files'][] = $hls_dir;
@@ -195,7 +195,7 @@ function logActivity(mysqli $conn, int $user_id, string $action, string $media_t
     $stmt = $conn->prepare("INSERT INTO activity_log (user_id, action, media_type, media_id, ip_address) VALUES (?, ?, ?, ?, ?)");
 
     if ($stmt === false) {
-        // Gagal prepare — log ke error log saja, jangan crash
+        
         error_log('[MEeL] logActivity gagal: ' . $conn->error);
         return;
     }

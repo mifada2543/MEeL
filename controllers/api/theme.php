@@ -1,13 +1,6 @@
 <?php
-/**
- * MEeL — Theme Preference API
- *
- * GET  /api/theme → { "theme": "dark" } atau { "theme": "light" }
- * POST /api/theme → update preference, return { "theme": "...", "ok": true }
- *
- * Untuk user login: simpan ke users.custom_theme (database)
- * Untuk guest: return saja (client simpan ke localStorage)
- */
+
+
 
 require_once '../../modules/core/helpers.php';
 meel_boot_session();
@@ -18,7 +11,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $user_id = $_SESSION['user_id'] ?? null;
 
-// ─── GET: baca preferensi ───
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($user_id) {
         $stmt = $conn->prepare("SELECT custom_theme FROM users WHERE id = ? LIMIT 1");
@@ -31,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ? $row['custom_theme']
             : 'dark';
     } else {
-        // Guest — client handle via localStorage; server default dark
+        
         $theme = 'dark';
     }
 
@@ -39,9 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// ─── POST: update preferensi ───
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Verifikasi CSRF
+    
     $input = json_decode(file_get_contents('php://input'), true);
     $token = $input['csrf_token'] ?? $_POST['csrf_token'] ?? '';
 
@@ -69,6 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Method not allowed
+
 http_response_code(405);
 echo json_encode(['ok' => false, 'error' => 'Method not allowed']);

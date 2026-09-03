@@ -1,5 +1,5 @@
 <?php
-/* @package MEeL */
+
 
 require_once __DIR__ . '/MediaLibrary.php';
 
@@ -9,11 +9,11 @@ class SearchEngine
     private static array $cache = [];
     private static int $cacheSize = 50;
 
-    // Limit default, harus sinkron dengan @ MediaLibrary
+    
     const VIDEO_LIMIT = 15;
     const MUSIC_LIMIT = 10;
-    // Sidebar rekomendasi selalu 15 item (sinkron dengan LIMIT 15 di query
-    // MUSIC_LIMIT supaya ubah ukuran halaman library tidak memangkas
+    
+    
     const SIDEBAR_LIMIT = 15;
     const MIN_SEARCH_QUERY = 3;
     const MAX_SEARCH_QUERY = 255;

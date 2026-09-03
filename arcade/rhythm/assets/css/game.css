@@ -1,4 +1,4 @@
-/* MEeL!Mania — Game Page Stylesheet */
+
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
 
@@ -35,7 +35,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Canvas ────────────────────────────────────────── */
+
 .game-bg-image {
   position: fixed;
   inset: 0;
@@ -83,7 +83,7 @@ body {
   image-rendering: auto;
 }
 
-/* ─── HUD ───────────────────────────────────────────── */
+
 .hud {
   position: fixed;
   inset: 0;
@@ -138,7 +138,7 @@ body {
   transform: translateY(36px);
 }
 
-/* ─── Combo ─────────────────────────────────────────── */
+
 .combo-wrap {
   position: absolute;
   top: 50%;
@@ -174,7 +174,7 @@ body {
   margin-top: 2px;
 }
 
-/* ─── Judgment ──────────────────────────────────────── */
+
 .judgment-wrap {
   position: absolute;
   top: 38%;
@@ -196,7 +196,7 @@ body {
   100% { opacity: 0; transform: scale(0.85) translateY(-10px); }
 }
 
-/* ─── Progress Bar ──────────────────────────────────── */
+
 .progress-bar {
   position: absolute;
   bottom: 0;
@@ -212,7 +212,7 @@ body {
   transition: width 0.3s linear;
 }
 
-/* ─── Touch Lanes ───────────────────────────────────── */
+
 .touch-lanes {
   position: fixed;
   bottom: 0;
@@ -255,7 +255,7 @@ body {
 .tl-3 { border-color: rgba(129,140,248,0.25); color: #818cf8; }
 .tl-3:active { background: rgba(129,140,248,0.2); }
 
-/* ─── Overlay Base ──────────────────────────────────── */
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -277,7 +277,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Pause Card ─── */
+
 .pause-card {
   background: rgba(30,30,40,0.85);
   border: 1px solid rgba(255,255,255,0.08);
@@ -353,7 +353,7 @@ body {
   color: #fff;
 }
 
-/* ─── Options Card ─── */
+
 .options-card {
   background: rgba(30,30,40,0.92);
   border: 1px solid rgba(255,255,255,0.08);
@@ -520,7 +520,7 @@ body {
   color: var(--text-primary);
 }
 
-/* ─── Countdown ─── */
+
 .countdown-num {
   font-size: 120px;
   font-weight: 900;
@@ -543,7 +543,7 @@ body {
   user-select: none;
 }
 
-/* ─── Results ───────────────────────────────────────── */
+
 .results-content {
   max-width: 380px;
   width: 90%;
@@ -670,7 +670,7 @@ body {
   box-shadow: 0 4px 20px rgba(244,63,122,0.3);
 }
 
-/* ─── Score pop ─────────────────────────────────────── */
+
 @keyframes score-pop {
   0% { transform: scale(1); }
   50% { transform: scale(1.08); }
@@ -678,7 +678,7 @@ body {
 }
 .score-pop { animation: score-pop 0.15s ease; }
 
-/* ─── Responsive ────────────────────────────────────── */
+
 @media (max-width: 600px) {
   .combo-number { font-size: 42px; }
   .judgment-text { font-size: 18px; }

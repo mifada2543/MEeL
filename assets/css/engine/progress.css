@@ -1,4 +1,4 @@
-/* engine/progress.css — Bar progres, pct, label, scan, segmen HLS */
+
 .meel-track {
   width: 100%;
   height: 3px;
@@ -7,7 +7,7 @@
   overflow: hidden;
   position: relative;
 }
-/* Progress Bar Glow & Mulus */
+
 .meel-bar {
   height: 100%;
   width: 0%;
@@ -38,7 +38,7 @@
   text-transform: uppercase;
   font-weight: 600;
 }
-/* Animasi Scan GPU Accelerated */
+
 .meel-scan {
   position: absolute;
   top: 0;
@@ -55,7 +55,7 @@
   will-change: transform;
   transform: translate3d(0, 0, 0);
 }
-/* Segmen HLS — blok kecil di bawah progress bar transcode */
+
 .meel-segs {
   display: flex;
   gap: 3px;

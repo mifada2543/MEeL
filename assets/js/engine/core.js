@@ -16,7 +16,7 @@ function startSpriteTrickle() {
     }
   }, 135);
 }
-// FASE UTAMA SCRIPT
+
 window.meelPhase = function (phase) {
   var overlay = document.getElementById("meel-overlay");
   if (overlay) overlay.style.display = "flex";
@@ -39,7 +39,7 @@ window.meelPhase = function (phase) {
       row.appendChild(s);
     }
   }
-  // Picu animasi merayap saat masuk fase sprite
+  
   if (phase === "sprite" || phase === "sp") {
     startSpriteTrickle();
   } else {

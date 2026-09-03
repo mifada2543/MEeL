@@ -36,18 +36,18 @@ include __DIR__ . '/partials/scripts.php';
 
 <body>
 
-    <!-- READING PROGRESS -->
+    
     <div id="reading-progress"></div>
 
-    <!-- MOBILE HAMBURGER -->
+    
     <button id="hamburger" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Buka menu samping">
         <i data-lucide="menu"></i>
     </button>
 
-    <!-- SIDEBAR OVERLAY (mobile) -->
+    
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- SIDEBAR -->
+    
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="<?= htmlspecialchars($back_url) ?>" class="back-link">
@@ -87,11 +87,11 @@ include __DIR__ . '/partials/scripts.php';
         </div>
     </aside>
 
-    <!-- MAIN -->
+    
     <main class="main">
         <div class="main-inner">
 
-            <!-- VIDEO GUIDE -->
+            
             <div id="guide-video" class="guide-section active">
                 <div class="guide-header">
                     <div class="guide-eyebrow">Dokumentasi · Fitur</div>
@@ -99,7 +99,7 @@ include __DIR__ . '/partials/scripts.php';
                     <p class="guide-desc">Kenali cara bernavigasi dan menggunakan fitur pemutar video MEeL.</p>
                 </div>
 
-                <!-- Halaman Index -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);">
@@ -133,7 +133,7 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- Halaman Watch -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);">
@@ -169,7 +169,7 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- Keyboard shortcuts -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);">
@@ -205,7 +205,7 @@ include __DIR__ . '/partials/scripts.php';
                 </div>
             </div>
 
-            <!-- MUSIC GUIDE -->
+            
             <div id="guide-music" class="guide-section">
                 <div class="guide-header">
                     <div class="guide-eyebrow">Dokumentasi · Fitur</div>
@@ -213,7 +213,7 @@ include __DIR__ . '/partials/scripts.php';
                     <p class="guide-desc">Kenali cara bernavigasi dan menggunakan fitur pemutar musik MEeL.</p>
                 </div>
 
-                <!-- Halaman Index -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.2);">
@@ -248,7 +248,7 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- Halaman Watch -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.2);">
@@ -280,7 +280,7 @@ include __DIR__ . '/partials/scripts.php';
                     </div>
                 </div>
 
-                <!-- Keyboard shortcuts -->
+                
                 <div class="content-card">
                     <div class="content-card-header">
                         <div class="card-header-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);">
@@ -313,10 +313,10 @@ include __DIR__ . '/partials/scripts.php';
                 </div>
             </div>
 
-        </div><!-- /main-inner -->
+        </div>
     </main>
 
-    <!-- LIGHTBOX -->
+    
     <div id="lightbox" onclick="closeLightbox()" title="Klik untuk menutup">
         <div id="lightbox-close" onclick="closeLightbox()" title="Tutup">
             <i data-lucide="x" style="width:14px;height:14px;color:#9ca3af;"></i>
@@ -326,7 +326,7 @@ include __DIR__ . '/partials/scripts.php';
 
     <script>        lucide.createIcons();
 
-        // Mobile sidebar toggle
+        
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -336,7 +336,7 @@ include __DIR__ . '/partials/scripts.php';
             hamburger.classList.toggle('open');
         }
 
-        // Close sidebar on nav click (mobile)
+        
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
@@ -345,7 +345,7 @@ include __DIR__ . '/partials/scripts.php';
             });
         });
 
-        // Reading progress bar
+        
         const mainEl = document.querySelector('.main');
         const progressBar = document.getElementById('reading-progress');
 

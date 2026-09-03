@@ -1,10 +1,10 @@
-/**
- * MEeL!Mania Game — Audio Engine
- * Web Audio API init, SFX playback, BGM generation.
- */
+
+
+
+
 import { S } from "./state.js";
 
-/* WEB AUDIO API */
+
 export let audioCtx = null;
 export let masterGain = null;
 export let sfxGain = null;
@@ -27,7 +27,7 @@ export function resumeAudio() {
   if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
 }
 
-/* SFX */
+
 export function playSFX(type) {
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -52,17 +52,17 @@ export function playSFX(type) {
   osc.stop(now + c.dur + 0.01);
 }
 
-/* BGM */
+
 let bgmInterval = null;
 
 export function startBGM() {
   if (!audioCtx || !S.song) return;
 
-  // If song has a real audio file, play it instead of synthetic BGM
+  
   if (S.song.audioUrl) {
     try {
       S._audioPlaying = true;
-      // audioElement is already loaded by loader.js
+      
       const el = document.getElementById("audioPlayer");
       if (el) {
         el.currentTime = 0;
@@ -72,7 +72,7 @@ export function startBGM() {
     return;
   }
 
-  // Synthetic BGM for builtin songs (no audio file)
+  
   S._audioPlaying = false;
   let beat = 0;
   const bpm = S.song.bpm;
@@ -131,7 +131,7 @@ export function startBGM() {
 
 export function stopBGM() {
   if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
-  // Also stop real audio if playing
+  
   if (S._audioPlaying) {
     try {
       const el = document.getElementById("audioPlayer");
@@ -140,7 +140,7 @@ export function stopBGM() {
   }
 }
 
-/* COUNTDOWN BEEP */
+
 export function playCountdownBeep(freq, duration) {
   if (!audioCtx) return;
   try {

@@ -1,4 +1,4 @@
-/* MEeL — Custom Language Dropdown (shared) */
+
 (function () {
   "use strict";
   function setOpen(dd, open) {

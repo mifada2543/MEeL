@@ -1,4 +1,4 @@
-/* shared/comment.js — JS bersama untuk section komentar. */
+
 window.toggleReply = function (e) {
   const t = document.getElementById(e);
   if (!t) return;
@@ -72,9 +72,9 @@ window.meelConfirmHtmx = function (e) {
   if (!window.htmx) return;
   document.body.addEventListener("htmx:confirm", window.meelConfirmHtmx);
 })();
-// Bangun ulang preview komentar (#comment-preview-text) dari #comment-list.
-// Dipakai saat section ditutup DAN setelah transisi mini->full di watch,
-// supaya empty-state "Jadilah komentar pertama" tidak pernah raib.
+
+
+
 window.meelRebuildCommentPreview = function () {
   const list = document.getElementById("comment-list"),
     txt = document.getElementById("comment-preview-text");

@@ -1,5 +1,5 @@
-// AJAX partial-navigation for music watch<->index. Swaps <body> (except data-meel-persist)
-// without reload. Scripts loaded via loadScriptOnce() (no let/const duplication).
+
+
 (function () {
   "use strict";
 
@@ -28,16 +28,16 @@
     seedLoadedScripts();
   }
 
-  // Cache-buster stabil per page-session — loadScriptOnce tetap no-op
-  // untuk URL yang sama pada transisi berikutnya.
+  
+  
   var SESSION_TS = Date.now();
 
   function loadScriptOnce(absSrc) {
     var key = toPathname(absSrc);
     if (loadedScriptSrcs.has(key)) return Promise.resolve();
     loadedScriptSrcs.add(key);
-    // Paksa fresh fetch — tanpa query unik, cache immutable 1 tahun
-    // melayani versi lama selamanya.
+    
+    
     var buster = absSrc.indexOf("?") === -1 ? "?_meel=" : "&_meel=";
     var srcWithBuster = absSrc + buster + SESSION_TS;
     return new Promise(function (resolve, reject) {
@@ -58,7 +58,7 @@
     return new URL(relSrc, window.location.href).href;
   }
 
-  // Set href stylesheet yang SUDAH ada di dokumen saat ini (absolute URL).
+  
   var loadedStyleHrefs = new Set(
     Array.prototype.map.call(
       document.querySelectorAll('link[rel="stylesheet"][href]'),
@@ -68,9 +68,9 @@
     ),
   );
 
-  // Tambahkan <link> stylesheet yang ada di halaman hasil fetch tapi belum
-  // ada di <head> (router hanya swap <body>). Stylesheet lama tidak dihapus
-  // — aman & mencegah flash-of-unstyled-content.
+  
+  
+  
   function ensureViewStyles(doc) {
     var links = doc.querySelectorAll('link[rel="stylesheet"][href]');
     for (var i = 0; i < links.length; i++) {
@@ -84,8 +84,8 @@
     }
   }
 
-  // Daftar <script src> "langsung" yang wajib ada per view, HARUS SINKRON
-  // dengan urutan <script> di music/watch.php & music/index.php.
+  
+  
   var DIRECT_SCRIPTS = {
     watch: [
       "../assets/js/shared/state-keys.js",
@@ -124,7 +124,7 @@
     for (var i = 0; i < directList.length; i++) {
       await loadScriptOnce(toAbsolute(directList[i]));
     }
-    // Muat loader bundle; loadScriptOnce() no-op jika sudah pernah dimuat.
+    
     await loadScriptOnce(toAbsolute(BUNDLE_LOADER_SRC[viewType]));
     var bundleInfo = window[BUNDLE_GLOBAL[viewType]];
     if (bundleInfo && Array.isArray(bundleInfo.files)) {
@@ -134,19 +134,19 @@
     }
   }
 
-  // Re-set window.MEEL_*_CONFIG tiap transisi. Di mobile (CSP):
-  // eval() gagal di luar localhost tanpa 'unsafe-eval' → eksekusi inline
-  // script via elemen <script> dinamis ('unsafe-inline' ada di semua CSP),
-  // dengan fallback JSON.parse atas object literal config.
+  
+  
+  
+  
   function runInlineScript(code) {
     var s = document.createElement("script");
     s.textContent = code;
     document.body.appendChild(s);
-    // Node sengaja tidak dihapus — zero-risk, bloat DOM sangat kecil.
+    
   }
 
-  // Ekstrak object literal `window.<varName> = {...}` lalu parse sebagai
-  // JSON (jaring pengaman; jalur utama sudah mengeksekusi script aslinya).
+  
+  
 
   function parseConfigJson(text, varName) {
     try {
@@ -155,7 +155,7 @@
       if (idx === -1) return undefined;
       var open = text.indexOf("{", idx + marker.length);
       if (open === -1) return undefined;
-      // Cari kurung tutup `}` yang match — lompati string literal.
+      
       var depth = 0;
       var inStr = null;
       var end = -1;
@@ -189,8 +189,8 @@
     }
   }
 
-  // Ubah object literal JS (key tanpa kutip, mis. `id: 146`) menjadi JSON
-  // yang valid — key dikutip hanya di luar string literal.
+  
+  
   function quoteObjectKeys(literal) {
     var out = "";
     var inStr = null;
@@ -217,7 +217,7 @@
       }
       if (canKey) {
         if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
-          out += ch; // whitespace sebelum `:` — pertahankan canKey
+          out += ch; 
           continue;
         }
         if (/[A-Za-z_$0-9]/.test(ch)) {
@@ -250,7 +250,7 @@
     var scripts = doc.querySelectorAll("script:not([src])");
     for (var i = 0; i < scripts.length; i++) {
       var text = scripts[i].textContent || "";
-      // Gate: assignment eksplisit "window.X =" — hindari variabel mirip.
+      
       if (text.indexOf("window." + varName + " =") === -1) continue;
       try {
         runInlineScript(text);
@@ -269,13 +269,13 @@
     }
   }
 
-  /**
-   * Navigasi AJAX ke `url` (halaman watch.php atau index.php lain) tanpa
-   * reload dokumen. `viewType` = 'watch' | 'index'.
-   * `onAfterSwap(doc)` dipanggil setelah DOM & script siap, sebelum
-   * pushState — dipakai caller untuk mount() audio-engine & panggil
-   * bootstrap idempotent halaman (meelInitWatchPlayer / bootPlayerIndex).
-   */
+  
+
+
+
+
+
+
   window.meelNavigateView = async function (url, viewType, options) {
     options = options || {};
     try {
@@ -284,11 +284,11 @@
       var html = await res.text();
       var doc = new DOMParser().parseFromString(html, "text/html");
 
-      // Pastikan <head> punya semua stylesheet halaman tujuan.
+      
       ensureViewStyles(doc);
 
-      // Lepas node persisten (audio-engine) — disimpan di memory, bukan
-      // dihapus, agar <audio> tidak kehilangan koneksi/posisi playback.
+      
+      
       var persisted = Array.prototype.slice.call(
         document.body.querySelectorAll("[data-meel-persist]"),
       );
@@ -297,30 +297,30 @@
         holder.appendChild(n);
       });
 
-      // <noscript> di-parse oleh DOMParser dengan scripting disabled →
-      // <style> di dalamnya jadi elemen NYATA dan AKTIF saat di-import
-      // (mis. `#comment-preview{display:none}` menyembunyikan preview
-      // komentar). Hapus SEMUA noscript dari hasil fetch sebelum di-import
-      // — SPA selalu ber-JS, noscript tidak pernah dibutuhkan.
+      
+      
+      
+      
+      
       var noscripts = doc.body.querySelectorAll("noscript");
       for (var ns = 0; ns < noscripts.length; ns++) {
         if (noscripts[ns].parentNode) noscripts[ns].parentNode.removeChild(noscripts[ns]);
       }
-      // Ganti seluruh isi <body> dengan markup halaman baru.
+      
       document.body.innerHTML = "";
       Array.prototype.forEach.call(doc.body.children, function (node) {
-        // <script src> fetch tidak auto-eksekusi via importNode — dimuat
-        // lewat ensureViewScripts() agar guarded (anti duplikasi deklarasi).
+        
+        
         if (node.tagName === "SCRIPT" && node.src) return;
         document.body.appendChild(document.importNode(node, true));
       });
 
-      // Kembalikan node persisten ke body (caller akan mount() lewat onAfterSwap).
+      
       document.body.appendChild(holder);
 
-      // Eksekusi inline <script> — importNode() tidak menjalankan script
-      // secara otomatis. Tanpa ini, fungsi seperti checkDescriptionLengthMusic()
-      // tidak terdefinisi dan tombol "Selengkapnya" tidak muncul.
+      
+      
+      
       var inlineScripts = document.body.querySelectorAll("script:not([src])");
       for (var k = 0; k < inlineScripts.length; k++) {
         runInlineScript(inlineScripts[k].textContent);
@@ -329,16 +329,16 @@
       document.title = doc.title;
       applyInlineConfig(doc, viewType);
 
-      // Pastikan bundle JS untuk view ini dimuat (sekali saja).
+      
       await ensureViewScripts(viewType);
 
-      // Riwayat URL & judul — tombol back & reload tetap benar.
+      
       if (options.pushState !== false) {
         window.history.pushState({ meelView: viewType }, "", url);
       }
 
-      // onAfterSwap dulu, baru lucide.createIcons()/htmx.process —
-      // elemen data-lucide baru tidak terlewat render ikon.
+      
+      
       if (typeof options.onAfterSwap === "function") {
         options.onAfterSwap(doc);
       }
@@ -348,7 +348,7 @@
       return true;
     } catch (err) {
       console.error("❌ view-router: navigasi AJAX gagal, fallback ke reload penuh:", err);
-      // Fallback aman: AJAX gagal → navigasi biasa.
+      
       window.location.href = url;
       return false;
     }

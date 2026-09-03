@@ -1,19 +1,13 @@
 <?php
-/**
- * MEeL Functional Test Suite — Struktur & Lingkungan.
- *
- * Verifikasi keamanan statis (CSRF, SQL injection, shell escape, .htaccess,
- * SSRF, hardening Uploader/Transcoder, patch keamanan, dll.) telah
- * dikonsolidasikan ke tests/security_test.php — suite ini fokus pada syntax,
- * struktur, dan kesehatan lingkungan runtime.
- */
+
+
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 define('EXCLUDE_DIRS', ['vendor', 'node_modules', '.git', 'assets/dict', 'data_drive']);
 define('EXCLUDE_FILES', ['config.example.php', 'settings.example.php', 'test.php', '.gitkeep']);
 
 require_once __DIR__ . '/helpers.php';
 
-// Globals
+
 $GLOBALS['total_tests']  = 0;
 $GLOBALS['passed']       = 0;
 $GLOBALS['warnings']     = 0;
@@ -21,7 +15,7 @@ $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 $GLOBALS['test_timestamp'] = date('Y-m-d H:i:s');
 
-// TEST 1: PHP SYNTAX — Semua file PHP
+
 function testPhpSyntax(): void {
     print_header('TEST 1: PHP Syntax — Semua File PHP');
 
@@ -55,7 +49,7 @@ function testPhpSyntax(): void {
     }
 }
 
-// TEST 2: CLASS LOADING — Semua class bisa di-load
+
 function testClassLoading(): void {
     print_header('TEST 2: Class Loading — Instantiation Check');
 
@@ -74,7 +68,7 @@ function testClassLoading(): void {
         'BookUploader'       => 'modules/media/MediaLibrary.php',
     ];
 
-    // Cek class tanpa instantiation (karena constructor butuh DB)
+    
     foreach ($classes as $name => $file) {
         $full = PROJECT_ROOT . '/' . $file;
         if (!file_exists($full)) {
@@ -90,7 +84,7 @@ function testClassLoading(): void {
         }
     }
 
-    // Cek abstract/interface
+    
     foreach (['DriveUserContext', 'DriveStorage', 'DriveViewRenderer'] as $driveClass) {
         $full = PROJECT_ROOT . '/drive/DriveService.php';
         if (file_exists($full)) {
@@ -102,7 +96,7 @@ function testClassLoading(): void {
     }
 }
 
-// TEST 3: FUNCTION EXISTENCE — Semua fungsi kunci ada
+
 function testFunctionExistence(): void {
     print_header('TEST 3: Function Existence — Helper Functions');
 
@@ -116,7 +110,7 @@ function testFunctionExistence(): void {
         'verify_csrf_token'     => 'modules/auth/helpers/csrf.php',
         'log_drive_operation'   => 'modules/core/helpers/storage.php',
         'generate_search_metadata' => 'modules/core/helpers/metadata.php',
-        // japanese.php
+        
         'getRomajiName'         => 'modules/core/japanese.php',
         'analyzeJapaneseText'   => 'modules/core/japanese.php',
 
@@ -125,7 +119,7 @@ function testFunctionExistence(): void {
         'verify_csrf_token'     => 'modules/auth/helpers/csrf.php',
     ];
 
-    $warning_funcs = ['log_activity']; // fungsi ini boleh warning, bukan failure
+    $warning_funcs = ['log_activity']; 
 
     foreach ($functions as $name => $file) {
         $full = PROJECT_ROOT . '/' . $file;
@@ -155,7 +149,7 @@ function testFunctionExistence(): void {
     }
 }
 
-// TEST 4: DIRECTORY STRUCTURE
+
 function testDirectoryStructure(): void {
     print_header('TEST 4: Directory Structure & Permissions');
 
@@ -186,7 +180,7 @@ function testDirectoryStructure(): void {
     }
 }
 
-// TEST 5: CONFIG CHECK
+
 function testConfigCheck(): void {
     print_header('TEST 5: Config Check — auth/config.php');
 
@@ -210,7 +204,7 @@ function testConfigCheck(): void {
         'Activity logger include'        => '/activity_logger/',
     ];
 
-    // Session config delegated to modules/auth/helpers/session.php — check there too
+    
     $sessionFile = PROJECT_ROOT . '/modules/auth/helpers/session.php';
     $sessionContent = file_exists($sessionFile) ? file_get_contents($sessionFile) : '';
 
@@ -223,9 +217,9 @@ function testConfigCheck(): void {
         }
     }
 
-    // Mendukung dua pola:
-    // - Pola variabel: $server = "localhost" (config.example.php)
-    // - Pola langsung: new mysqli("localhost", ...) (config.php)
+    
+    
+    
     $hasServerVar = preg_match('/\$server\s*=\s*"[^"]*"/', $content);
     $hasDirectConn = preg_match('/new\s+mysqli\(\s*"[^"]+"/', $content);
 
@@ -242,7 +236,7 @@ function testConfigCheck(): void {
     }
 }
 
-// TEST 6: DATABASE CONNECTIVITY
+
 function testDatabaseConnectivity(): void {
     print_header('TEST 6: Database Connectivity Check');
 
@@ -253,13 +247,13 @@ function testDatabaseConnectivity(): void {
         return;
     }
 
-    // Coba include config.php — CATATAN: ini akan memulai session!
-    // Kita lakukan dengan try-catch di environment terisolasi
+    
+    
     try {
-        // Baca file dan cek variabel saja
+        
         $content = file_get_contents($configFile);
 
-        // Cek koneksi database via file parsing
+        
         $hasConfig = preg_match('/\$conn\s*=\s*new\s+mysqli\(/', $content);
 
         if ($hasConfig) {
@@ -272,12 +266,12 @@ function testDatabaseConnectivity(): void {
     }
 }
 
-// TEST 7: INDEX PAGE CHECKS
+
 function testIndexPages(): void {
     print_header('TEST 7: Index Pages — HTML Structure');
 
-    // Mapping: nama partial yang dicek (tanpa ekstensi .php)
-    // Catatan:
+    
+    
     $index_pages = [
         'index.php'             => ['head', 'footer'],
         'video/index.php'       => ['head', 'footer'],
@@ -313,7 +307,7 @@ function testIndexPages(): void {
                     strpos($content, 'partials/link.php') !== false
                 );
             } else {
-                // Partial lainnya (footer, dll) — cek langsung
+                
                 if (strpos($content, "partials/{$partial}.php") !== false) {
                     $found = true;
                 }
@@ -343,7 +337,7 @@ function testIndexPages(): void {
     }
 }
 
-// TEST 8: ERROR PAGES — Path Consistency & Depth-Independence
+
 function testErrorPages(): void {
     print_header('TEST 8: Error Pages — Path Consistency');
 
@@ -362,10 +356,10 @@ function testErrorPages(): void {
         $issues = [];
 
         if (strpos($code, '/MEeL/') !== false) {
-            $issues[] = 'path hardcoded /MEeL/ ditemukan'; // harus pakai base dinamis
+            $issues[] = 'path hardcoded /MEeL/ ditemukan'; 
         }
         if (strpos($code, 'meel_base_url_path()') === false) {
-            $issues[] = 'meel_base_url_path() tidak dipakai'; // helper base URL terpusat
+            $issues[] = 'meel_base_url_path() tidak dipakai'; 
         }
 
         if (preg_match("/include\s*['\"]\.\.\/partials\//", $code)) {
@@ -385,7 +379,7 @@ function testErrorPages(): void {
     }
 }
 
-// MAIN
+
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
@@ -395,7 +389,7 @@ function run(): int {
     echo CLR_GRAY . "  Path : " . PROJECT_ROOT . "\n";
     echo "  Time : " . $GLOBALS['test_timestamp'] . "\n" . CLR_RESET;
 
-    // RUN ALL TESTS
+    
     testPhpSyntax();
     testClassLoading();
     testFunctionExistence();
@@ -405,7 +399,7 @@ function run(): int {
     testIndexPages();
     testErrorPages();
 
-    // SUMMARY
+    
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
     echo chr(9553) . "                    FUNCTIONAL TEST SUMMARY" . str_repeat(' ', 20) . chr(9553) . "\n";
     echo chr(9562) . str_repeat(chr(9552), 56) . chr(9565) . CLR_RESET . "\n\n";
@@ -425,7 +419,7 @@ function run(): int {
 
     echo "  Score : {$score}/100  Grade: " . $grade . CLR_RESET . "\n\n";
 
-    // Functional test specific: Health indicators
+    
     $health_issues = $f + ($w > 5 ? $w - 5 : 0);
     $health = match(true) {
         $f > 0 => CLR_RED . '⚠ CRITICAL' . CLR_RESET . ' — Ada test gagal yang perlu diperbaiki',

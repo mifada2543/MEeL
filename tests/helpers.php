@@ -1,11 +1,11 @@
 <?php
-/* @package MEeL\Tests */
+
 
 if (!defined('PROJECT_ROOT')) {
     define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 }
 
-// Color codes
+
 if (!defined('CLR_GREEN'))  { define('CLR_GREEN',  "\033[32m"); }
 if (!defined('CLR_RED'))    { define('CLR_RED',    "\033[31m"); }
 if (!defined('CLR_YELLOW')) { define('CLR_YELLOW', "\033[33m"); }
@@ -37,7 +37,7 @@ function print_header(string $title): void {
 }
 
 if (!function_exists('record')) {
-/* Record a test result and increment counters. */
+
 function record(string $name, bool $pass, bool $isWarning = false, string $detail = ''): void {
     $GLOBALS['total_tests']++;
     if ($pass && !$isWarning) {
@@ -85,11 +85,11 @@ function getPhpFiles(): array {
 }
 
 if (!function_exists('stripPhpComments')) {
-/* @param string $code Konten PHP source; @return string Konten tanpa komentar */
+
 function stripPhpComments(string $code): string {
-    // Hapus multi-line comment /* ... */
+    
     $code = preg_replace('/\/\*.*?\*\//s', '', $code);
-    // Hapus single-line comment // ... dan # ...
+    
     $code = preg_replace('/\/\/.*$/m', '', $code);
     $code = preg_replace('/(?:^|\s)#.*$/m', '', $code);
     return $code;
@@ -97,7 +97,7 @@ function stripPhpComments(string $code): string {
 }
 
 if (!function_exists('countInFile')) {
-/* @param string $path Path ke file; @param string $pattern Regex pattern untuk dicari; @return int Jumlah occurrence */
+
 function countInFile(string $path, string $pattern): int {
     $content = file_get_contents($path);
     $content = stripPhpComments($content);

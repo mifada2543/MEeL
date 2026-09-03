@@ -1,6 +1,6 @@
-/** MEeL - Media Hub Platform
- * @copyright Copyright (C) 2026 Mifada
- * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 */
+
+
+
 
 window.meelLoadTempIndex = async function (options) {
   const opts = options || {};
@@ -25,14 +25,14 @@ window.meelLoadTempIndex = async function (options) {
     document.body.insertBefore(el, ref);
   }
   try {
-    // Route bersih: dari /music/watch atau /video/watch, 'beranda' resolve
-    // ke /music/beranda & /video/beranda. '..' naik ke root → hub (salah
-    // sejak routing bersih — mini-player malah menampilkan hub).
+    
+    
+    
     const res = await fetch("beranda");
     const html = await res.text();
     const parsed = new DOMParser().parseFromString(html, "text/html");
-    // Judul index disimpan agar saat mini-player ditutup in-place (video),
-    // document.title bisa disinkronkan tanpa navigasi/reload.
+    
+    
     window.__meelTempIndexTitle = parsed.title;
     const main = parsed.querySelector("main");
     if (main) {

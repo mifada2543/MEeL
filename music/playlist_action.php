@@ -139,7 +139,7 @@ if ($action === 'delete_playlist') {
         $stmt_tracks->execute();
         $stmt_tracks->close();
 
-        // Hapus playlist (hanya milik user yang bersangkutan)
+        
         $stmt = $conn->prepare('DELETE FROM playlists WHERE id = ? AND user_id = ?');
         $stmt->bind_param('ii', $playlist_id, $user_id);
         if (!$stmt->execute()) {

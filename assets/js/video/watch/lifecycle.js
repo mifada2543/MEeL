@@ -73,10 +73,10 @@
       t && attachMiniPlayerVideoCardListeners(t);
     }
   }),
-  /* Pemulihan: setelah swap HTMX selesai (termasuk settle task htmx yang
-     me-reset atribut class ke versi server), pastikan mini-player-mode
-     kembali terpasang & wrapper tetap di dalam shell. afterSettle jalan
-     SETELAH task settle htmx, jadi class tidak lagi tertimpa. */
+  
+
+
+
   document.addEventListener("htmx:afterSettle", function (e) {
     if ("main-video-wrapper" !== e.detail.target.id || !isMiniPlayerActive)
       return;

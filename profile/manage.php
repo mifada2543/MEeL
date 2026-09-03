@@ -347,7 +347,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR -->
+    
     <nav class="border-b border-white/[.04] bg-[#080a0f]/95 sticky top-0 z-50 backdrop-blur-md">
         <div class="w-full px-3 sm:px-6 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="<?= $back_url ?>" class="flex items-center gap-2 flex-shrink-0" title="Kembali ke Profil">
@@ -361,7 +361,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
 
     <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
 
-        <!-- HEADER -->
+        
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Dashboard</div>
@@ -391,14 +391,14 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             </div>
         </div>
 
-        <!-- ALERT -->
+        
         <?php if (!empty($delete_msg)): ?>
             <div class="alert-bar <?= strpos($delete_msg, 'berhasil') !== false || strpos($delete_msg, 'dibersihkan') !== false ? 'alert-success' : 'alert-error' ?>">
                 <i data-lucide="<?= strpos($delete_msg, 'berhasil') !== false || strpos($delete_msg, 'dibersihkan') !== false ? 'check-circle' : 'alert-triangle' ?>" class="w-4 h-4 flex-shrink-0"></i>
                 <?= htmlspecialchars($delete_msg) ?>
             </div>
         <?php endif; ?>
-        <!-- TABS -->
+        
         <div class="manage-tabs mb-6 max-w-sm">
             <a href="?tab=video<?= isset($_GET['csrf_token']) ? '&csrf_token=' . urlencode($_GET['csrf_token']) : '' ?>"
                 class="manage-tab <?= $active_tab === 'video' ? 'active-video' : '' ?>" title="Kelola video Anda">
@@ -412,7 +412,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             </a>
         </div>
 
-        <!-- CONTENT GRID -->
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <?php if ($active_tab === 'video'): ?>
                 <?php if (!empty($videos)): ?>
@@ -513,7 +513,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             <?php endif; ?>
         </div>
 
-        <!-- PAGINATION -->
+        
         <?php if ($total_pages > 1): ?>
             <div class="pagination">
                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>

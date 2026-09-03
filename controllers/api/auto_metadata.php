@@ -105,7 +105,7 @@ if ($is_video) {
         }
     }
 
-    // Ekstrak thumbnail dari frame pertama via ffmpeg
+    
     if (is_executable($ffmpeg)) {
         $cover_path = $temp_dir . '/' . uniqid('thumb_', true) . '.jpg';
         $cover_cmd  = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($ffmpeg)
@@ -149,7 +149,7 @@ if ($is_video) {
         }
     }
 
-    // Ekstrak cover art via ffmpeg (opsional — dilewati jika ffmpeg tidak ada)
+    
     if (is_executable($ffmpeg)) {
         $cover_path = $temp_dir . '/' . uniqid('cover_', true) . '.jpg';
         $cover_cmd  = 'export LD_LIBRARY_PATH=\'\'; ' . escapeshellarg($ffmpeg)

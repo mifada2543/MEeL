@@ -1,6 +1,6 @@
 function setupMeelPlayerEvents() {
   window.player = player;
-  /* Helper terpusat: apply aspect-ratio + cap video portrait   */
+  
   function applyMeelVideoAspect(wrapper, videoW, videoH) {
     if (!wrapper || !videoW || !videoH) return;
     wrapper.style.aspectRatio = `${videoW} / ${videoH}`;
@@ -27,14 +27,14 @@ function setupMeelPlayerEvents() {
     console.log(`[MEeL] Aspect ratio video: ${n / a}:${o / a} (${n}x${o})`);
     if (!isMiniPlayerActive) applyMeelVideoAspect(e, n, o);
   }
-  /* Auto-Next Overlay Card   */
+  
   const AUTONEXT_COUNTDOWN = 5;
   function showAutoNextOverlay(e) {
     return new Promise((t) => {
       try {
         const n = document.getElementById("autonext-overlay");
         n && n.remove();
-        /* Ekstrak title   */
+        
         const o =
           e
             .querySelector(".rec-title-text, .line-clamp-2, h5")
@@ -42,13 +42,13 @@ function setupMeelPlayerEvents() {
           e.querySelector('[class*="line-clamp"]')?.textContent?.trim() ||
           e.querySelector("a[title]")?.getAttribute("title")?.trim() ||
           "";
-        /* Ekstrak thumbnail src   */
+        
         const l =
           e.querySelector(".rec-thumb-img")?.src ||
           e.querySelector('img[src*="thumbnail"]')?.src ||
           e.querySelector("img")?.src ||
           "";
-        /* Ekstrak uploader   */
+        
         const a =
           e
             .querySelector('[class*="text-red-500"], [class*="text-red-600"]')
@@ -114,7 +114,7 @@ function setupMeelPlayerEvents() {
       }
     });
   }
-  /* Ensure custom Plyr controls exist   */
+  
   function ensureCustomControls() {
     if (!player?.elements?.controls) return;
     const e = player.elements.controls;
@@ -151,7 +151,7 @@ function setupMeelPlayerEvents() {
       n.parentNode.insertBefore(o, n.nextSibling));
     window.lucide && window.lucide.createIcons();
   }
-  /* Skip to Next Video   */
+  
   window.skipToNextVideo = async function (e, isManual = !0) {
     if (window.meelHealthAlertActive) return !1;
     const t = e || document.querySelector(".rekomendasi-item");
@@ -181,7 +181,7 @@ function setupMeelPlayerEvents() {
         c = "true" === i.getAttribute("data-ishls"),
         d = i.getAttribute("data-poster"),
         p = i.getAttribute("data-vtt");
-      /* Subtitle: baca track captions dari halaman baru   */
+      
       const subTracks = Array.from(
         i.querySelectorAll('track[kind="captions"]'),
       ).map((t) => ({
@@ -283,7 +283,7 @@ function setupMeelPlayerEvents() {
               },
               { once: !0 },
             )));
-      /* Subtitle: sinkronkan track captions   */
+      
       if (videoElement) {
         videoElement
           .querySelectorAll('track[kind="captions"]')
@@ -363,9 +363,9 @@ function setupMeelPlayerEvents() {
       if (isAutoRecovering && i) {
         const savedPos = parseFloat(i);
         isAutoRecovering = !1;
-        /* Untuk HLS: tunggu data ter-buffer dulu sebelum seek.
-           Langsung set currentTime sebelum data ada akan menyebabkan
-           HLS diam-diam reset ke 0. */
+        
+
+
         function doRestore() {
           player.currentTime = savedPos;
           player.play().catch(() => {});
@@ -496,7 +496,7 @@ function setupMeelPlayerEvents() {
       stopWaitingTimeout();
     }),
     player.on("ended", async () => {
-      // Jeda kesehatan (20-20-20) aktif
+      
       if (window.meelHealthAlertActive) return;
       if ((stopStuckDetector(), player.loop)) return;
       if (isTransitioningNext) return;
@@ -509,7 +509,7 @@ function setupMeelPlayerEvents() {
       localStorage.removeItem(storageKeyVideo);
       const t = document.querySelector(".rekomendasi-item");
       if (!t) return ((isTransitioningNext = !1), void (isRecovering = !1));
-      /* Tampilkan overlay countdown   */
+      
       const g = await showAutoNextOverlay(t);
       if (!g) {
         autoNextEnabled = !1;
@@ -518,7 +518,7 @@ function setupMeelPlayerEvents() {
         stopPlaybackStartTimeout();
         return;
       }
-      /* Delegasi ke skipToNextVideo   */
+      
       await window.skipToNextVideo(t, !1);
     }),
     player.on("enterfullscreen", () => {
@@ -638,7 +638,7 @@ function setupMeelPlayerEvents() {
     }),
     player.on("exitfullscreen", () => {
       screen.orientation?.unlock && screen.orientation.unlock();
-      /* Restore notch-ignoring overrides   */
+      
       document.body.classList.remove("meel-fs-active");
       const e_xsWrap = document.getElementById("main-video-wrapper"),
         e_xsGlow = document.getElementById("video-glow-container");
@@ -798,7 +798,7 @@ function setupMeelPlayerEvents() {
         n && (n.innerHTML = d(t));
       };
     ((window.updateLoopMenuUI = u), (window.updateGlowMenuUI = p));
-    /* AUTO-NEXT TOGGLE   */
+    
     const S = (e) =>
       `${e ? "On" : "Off"} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:${e ? "inline-block" : "none"};vertical-align:middle;margin-left:4px"><polyline points="20 6 9 17 4 12"/></svg>`;
     window.updateAutoNextMenuUI = () => {
@@ -963,7 +963,7 @@ function setupMeelPlayerEvents() {
       player.on("ended", () => s(!0)),
       videoElement.paused || videoElement.ended || i());
   }
-  /* Click rekomendasi → auto-next OFF   */
+  
   if (!window._meelClickRekomGuard) {
     window._meelClickRekomGuard = !0;
     document.addEventListener("click", function (e) {

@@ -1,8 +1,8 @@
-/* MEeL Admin — Edit Shared: Thumbnail / Cover Preview */
+
 (function () {
   "use strict";
 
-  /* * * Handle file input change — update img preview & show badge * @param {HTMLInputElement} input - file input element * @param {string} previewId - ID from img element * @param {string} badgeId - ID from changed badge */
+  
   window.handleImageChange = function (input, previewId, badgeId) {
     if (!input || !input.files || !input.files[0]) return;
     var reader = new FileReader();
@@ -14,7 +14,7 @@
     };
     reader.readAsDataURL(input.files[0]);
   };
-  // Map untuk backward compatibility
+  
   window.handleThumbChange = function (input) {
     window.handleImageChange(input, "thumb-preview", "thumb-changed-badge");
   };

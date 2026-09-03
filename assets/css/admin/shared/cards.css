@@ -1,5 +1,5 @@
-/* cards.css — Stat cards, stat chips, hover effects */
-/* Stat Card */
+
+
 .stat-card {
   transition:
     border-color 0.2s,
@@ -9,7 +9,7 @@
   border-color: rgba(255, 255, 255, 0.12) !important;
   background: rgba(255, 255, 255, 0.04) !important;
 }
-/* Stat Chip */
+
 .stat-chip {
   padding: 12px 18px;
   border-radius: 14px;

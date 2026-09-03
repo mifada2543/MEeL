@@ -1,14 +1,9 @@
 <?php
-/* @package MEeL */
+
 
 if (!function_exists('render_comments')) {
-/**
- * @param int $parent_id ID parent comment (0 untuk root)
- * @param array $grouped Comments yang sudah dikelompokkan per parent
- * @param int $level Level nesting (internal, untuk rekursi)
- * @param string $theme 'video' (merah) atau 'music' (oranye)
- * @param int $playlist_context ID playlist untuk link navigasi (0 jika tidak ada)
- */
+
+
 function render_comments(int $parent_id, array $grouped, int $level = 0, string $theme = 'video', int $playlist_context = 0): void
 {
     global $id, $user_map, $uploader_id;
@@ -143,11 +138,8 @@ function render_comments(int $parent_id, array $grouped, int $level = 0, string 
 }
 
 if (!function_exists('comment_preview')) {
-/**
- * @param array $grouped Comments yang sudah dikelompokkan per parent
- * @param int $limit Berapa komentar terbaru yang dikembalikan (default 4)
- * @return array{text: string, latest_comment: ?array, items: array}
- */
+
+
 function comment_preview(array $grouped, int $limit = 4): array
 {
     $preview_txt    = 'Jadilah komentar pertama';
@@ -176,7 +168,7 @@ function comment_preview(array $grouped, int $limit = 4): array
 }
 
 if (!function_exists('render_comment_empty_state')) {
-/* @param string $theme 'video' (merah) atau 'music' (oranye) */
+
 function render_comment_empty_state(string $theme = 'video'): void
 {
     $color = ($theme === 'music') ? 'text-gray-700' : 'text-gray-300';

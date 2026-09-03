@@ -126,7 +126,7 @@ if (isset($_SERVER['HTTP_RANGE'])) {
 
 header("Content-Length: " . $length);
 
-$flacChunkSize = ($ext === 'flac') ? 524288 : 262144; // 512KB untuk FLAC, 256KB untuk lainnya
+$flacChunkSize = ($ext === 'flac') ? 524288 : 262144; 
 define('STREAM_CHUNK_SIZE', $flacChunkSize);
 
 $fp = @fopen($filePath, 'rb');

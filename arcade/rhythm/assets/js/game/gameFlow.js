@@ -1,7 +1,7 @@
-/**
- * MEeL!Mania Game — Game Flow
- * Start, pause, resume, restart, countdown, results, options.
- */
+
+
+
+
 import {
   S, songId, speedMult, audioElement,
   hudTitle, hudArtist, hudScore, hudAcc, comboWrap, judgmentWrap,
@@ -18,12 +18,12 @@ function isMobile() {
   return "ontouchstart" in window || navigator.maxTouchPoints > 0;
 }
 
-/* GAME LOOP */
+
 export function gameLoop(ts) {
   if (S.gameState !== "playing") return;
 
   try {
-    // Sync songTime from real audio when available
+    
     if (S._audioPlaying && audioElement && audioElement.duration) {
       S.songTime = audioElement.currentTime * 1000;
     } else {
@@ -36,17 +36,17 @@ export function gameLoop(ts) {
 
     const hy = hitY();
 
-    // Spawn notes
+    
     while (S.noteIndex < S.notes.length && S.notes[S.noteIndex].time - S.songTime <= APPROACH_TIME) {
       S.activeNotes.push({ ...S.notes[S.noteIndex] });
       S.noteIndex++;
     }
 
-    // Miss detection for click notes
+    
     for (const n of S.activeNotes) {
       if (n.hit || n.missed) continue;
       if (n.holding) continue;
-      // Only miss click notes — hold notes are handled differently
+      
       if (!n.endTime && n.time - S.songTime < -TIMING.bad - 30) {
         n.missed = true;
         S.judgmentCounts.miss++;
@@ -55,7 +55,7 @@ export function gameLoop(ts) {
         updateHUD();
         playSFX("miss");
       }
-      // Hold note start missed (never pressed)
+      
       if (n.endTime && !n.holding && n.time - S.songTime < -TIMING.bad * 1.4 - 30) {
         n.missed = true;
         S.judgmentCounts.miss++;
@@ -66,13 +66,13 @@ export function gameLoop(ts) {
       }
     }
 
-    // Check hold sustain for all active holds
+    
     const holdLanes = Object.keys(S.holdNotes).map(Number);
     for (const lane of holdLanes) {
       try {
         checkHoldSustain(lane);
       } catch (e) {
-        // Fallback: release on error
+        
         const hold = S.holdNotes[lane];
         if (hold) {
           hold.hit = true;
@@ -86,20 +86,20 @@ export function gameLoop(ts) {
       }
     }
 
-    // Cleanup old notes
+    
     S.activeNotes = S.activeNotes.filter((n) => {
       if (n.hit || n.missed) return (n.time - S.songTime) > -500;
       return true;
     });
 
-    // Progress
+    
     if (S.songDuration > 0) {
       progressFill.style.width = Math.min(S.songTime / S.songDuration * 100, 100) + "%";
     }
 
     draw();
 
-    // End check
+    
     const allSpawned = S.noteIndex >= S.notes.length;
     const allProcessed = S.activeNotes.length === 0 && allSpawned;
     if (allSpawned && S.songTime >= S.songDuration + 2000 && (allProcessed || S.activeNotes.every((n) => n.hit || n.missed))) {
@@ -113,7 +113,7 @@ export function gameLoop(ts) {
   S.animFrame = requestAnimationFrame(gameLoop);
 }
 
-/* FPS COUNTER */
+
 let fpsDisplay = null;
 let fpsFrames = 0;
 let fpsLastTime = performance.now();
@@ -129,7 +129,7 @@ function updateFPS() {
   }
 }
 
-/* COUNTDOWN (3-2-1-GO) */
+
 function runCountdown(callback) {
   S.gameState = "countdown";
   countdownOverlay.classList.remove("hidden");
@@ -169,7 +169,7 @@ function runCountdown(callback) {
   }, 800);
 }
 
-/* START GAME */
+
 export function startGame() {
   initAudio();
   resumeAudio();
@@ -227,7 +227,7 @@ export function startGame() {
   });
 }
 
-/* PAUSE / RESUME / RESTART */
+
 export function pauseGame() {
   if (S.gameState !== "playing") return;
   S.gameState = "paused";
@@ -237,7 +237,7 @@ export function pauseGame() {
   S.lanePressed = [false, false, false, false];
   S.holdPending = {};
 
-  // Release all active holds — prevent zombie holds after resume
+  
   for (const laneStr of Object.keys(S.holdNotes)) {
     const hold = S.holdNotes[laneStr];
     if (hold) {
@@ -283,7 +283,7 @@ window.restartGame = function () {
   });
 };
 
-/* OPTIONS / ADVANCED */
+
 export function loadOptions() {
   try {
     const saved = JSON.parse(localStorage.getItem("mania_options") || "null");
@@ -357,7 +357,7 @@ window.quitToLobby = function () {
   window.location.href = "/MEeL/arcade/rhythm/";
 };
 
-/* RESULTS */
+
 function showResults() {
   S.gameState = "results";
   stopBGM();

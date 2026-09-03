@@ -25,11 +25,11 @@ function loadEqState() {
   }
 }
 function applyEqToFilters() {
-  // EQ (BiquadFilter chain) sekarang dipegang oleh audio-engine.js yang
-  // persisten (bukan `eqFilters` lokal di sini, yang sudah tidak dipakai
-  // lagi sejak refactor gapless mini<->full player). eqGains/eqEnabled di
-  // sini tetap jadi source-of-truth UI & localStorage seperti sebelumnya —
-  // fungsi ini cuma jembatan yang mendorong nilainya ke engine.
+  
+  
+  
+  
+  
   const engine = window.meelGetAudioEngine && window.meelGetAudioEngine();
   if (!engine) return;
   engine.setEqEnabled(eqEnabled);

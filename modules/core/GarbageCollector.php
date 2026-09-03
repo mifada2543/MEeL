@@ -16,7 +16,7 @@ class GarbageCollector
 
     private static bool $hasRun = false;
 
-    /* @param \mysqli $conn Koneksi database aktif; @return int Jumlah guest yang dibersihkan */
+    
     public static function cleanGuests(\mysqli $conn): int
     {
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_guest_last_run.txt';
@@ -64,7 +64,7 @@ class GarbageCollector
         return $totalCleaned;
     }
 
-    /* @param \mysqli $conn Koneksi database aktif; @return int Jumlah room yang dibersihkan */
+    
     public static function cleanChessRooms(\mysqli $conn): int
     {
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_chess_last_run.txt';
@@ -137,7 +137,7 @@ class GarbageCollector
         return $totalCleaned;
     }
 
-    /* @param string $throttleFile Path file throttle */
+    
     private static function writeThrottleFile(string $throttleFile): void
     {
         $dir = dirname($throttleFile);
@@ -212,11 +212,11 @@ class GarbageCollector
         foreach ($items as $item) {
             $basename = basename($item);
 
-            // Skip yt-dlp persistent cache
+            
             if ($basename === 'ytdlp-cache') continue;
 
-            // Skip file yang masih baru (mtime dalam 5 menit)
-            if (!file_exists($item)) continue; // lenyap antara glob & stat
+            
+            if (!file_exists($item)) continue; 
             $mtime = filemtime($item);
             if ($mtime === false || $mtime > $cutoff) continue;
 
@@ -228,7 +228,7 @@ class GarbageCollector
         }
     }
 
-    /* Hapus direktori beserta seluruh isinya secara rekursif. */
+    
     private static function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {
@@ -255,7 +255,7 @@ class GarbageCollector
         }
     }
 
-    /* @param string $path Path file */
+    
     private static function removeFile(string $path): void
     {
         if (!is_file($path) && !is_link($path)) {

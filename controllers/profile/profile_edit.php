@@ -198,7 +198,7 @@ if (isset($_POST['update_profile'])) {
         $conn->rollback();
         $msg = 'Error: ' . $e->getMessage();
     }
-    } // tutup else verify_csrf
+    } 
 }
 
 $stmt_data = $conn->prepare("SELECT * FROM users WHERE id = ?");
@@ -254,7 +254,7 @@ include __DIR__ . '/../../partials/scripts.php';
                     <p id="avatarStatus" class="hidden text-[10px] text-red-400 text-center"></p>
                 </div>
 
-                <!-- Modal Preview Foto Profil -->
+                
                 <div id="avatarModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="batalPreview()"></div>
                     <div class="relative glass rounded-[2rem] border border-white/10 shadow-2xl w-full max-w-xs p-8 text-center">

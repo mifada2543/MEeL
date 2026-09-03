@@ -1,4 +1,4 @@
-/* utility.css — HTMX animations & misc utilities */
+
 .htmx-added {
   animation: fadeSlideIn 0.35s ease-out both;
 }

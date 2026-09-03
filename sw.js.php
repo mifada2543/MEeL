@@ -1,6 +1,6 @@
 <?php
-// Service Worker generator — di-serve sebagai /sw.js via .htaccess rewrite.
-// Precache list dari SwPrecache; version dari hash konten (deterministik, no timestamp).
+
+
 require_once __DIR__ . '/modules/core/SwPrecache.php';
 
 $sw_precache_urls = SwPrecache::all();
@@ -10,32 +10,32 @@ header('Content-Type: application/javascript; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 ?>
-/**
- * MEeL-HUB — Service Worker (dibangkitkan dari sw.js.php)
- *
- * Cache strategies:
- * - STATIC_ASSETS: Cache-first (CSS, JS, fonts, images) — pre-cached on install
- * - PAGES: Network-first (HTML pages) — fallback to cache, then offline page
- * - API: Network-only (dynamic data)
- *
- * @license GPL v3
- */
+
+
+
+
+
+
+
+
+
+
 
 const SW_VERSION = <?php echo json_encode($sw_version) ?>;
 const STATIC_CACHE = 'meel-static-' + SW_VERSION;
 const PAGE_CACHE   = 'meel-pages-' + SW_VERSION;
-const PAGE_CACHE_MAX = 100; // batas entri cache halaman (cegah membengkak)
+const PAGE_CACHE_MAX = 100; 
 
-// URL absolut halaman offline — dihitung dari scope SW (self.registration.scope),
-// jadi portabel saat project di-deploy ke root ATAU subfolder (tidak hardcoded /MEeL/).
+
+
 const OFFLINE_URL = new URL('err/offline.php', self.registration.scope).href;
 
-// FILES TO PRE-CACHE ON INSTALL
-// Daftar DINAMIS: aset tetap + semua modul CSS dari assets/css/*/manifest.php.
-// Paths are relative to the SW scope (project root).
+
+
+
 const PRECACHE_URLS = <?php echo json_encode($sw_precache_urls, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?>;
 
-// INSTALL
+
 self.addEventListener('install', (event) => {
   console.log('[SW] Install ' + SW_VERSION);
 
@@ -45,13 +45,13 @@ self.addEventListener('install', (event) => {
         console.warn('[SW] Pre-cache warning:', err.message);
       });
     }).then(() => {
-      // Activate immediately — don't wait for reload
+      
       return self.skipWaiting();
     })
   );
 });
 
-// ACTIVATE
+
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activate ' + SW_VERSION);
 
@@ -70,53 +70,53 @@ self.addEventListener('activate', (event) => {
           })
       );
     }).then(() => {
-      // Navigation preload: minta respons navigasi paralel dengan boot SW
-      // → first paint lebih cepat (tidak menunggu SW aktif dulu).
+      
+      
       if (self.registration.navigationPreload) {
         return self.registration.navigationPreload.enable().catch(() => {});
       }
     }).then(() => {
-      // Claim all clients immediately
+      
       return self.clients.claim();
     })
   );
 });
 
-// FETCH
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
   if (request.method !== 'GET') return;
 
-  // Skip non-origin requests (CDN, external)
+  
   if (url.origin !== location.origin) return;
 
-  // API / Dynamic endpoints → Network only
+  
   if (isApiRequest(url)) {
     return;
   }
 
-  // Media streaming & download → Network only
+  
   if (isStreamingMedia(url)) {
     return;
   }
 
-  // Avatar profil (profile/upload/) → Network-first
+  
   if (url.pathname.includes('/profile/upload/')) {
     event.respondWith(networkFirst(request, PAGE_CACHE));
     return;
   }
 
-  // ES modules catur (arcade/chess/assets/js/*.js) → Network-first
+  
   if (url.pathname.includes('/arcade/chess/assets/js/')) {
     event.respondWith(networkFirst(request, PAGE_CACHE));
     return;
   }
 
-  // Static assets (CSS, JS, fonts, images)
+  
   if (isStaticAsset(url)) {
-    // Ber-?v= → cache-first; tanpa ?v= → stale-while-revalidate
+    
     if (url.searchParams.has('v')) {
       event.respondWith(cacheFirst(request, STATIC_CACHE));
     } else {
@@ -125,22 +125,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML pages → Network-first (pakai navigationPreload bila tersedia)
+  
   if (isPageRequest(request)) {
     event.respondWith(networkFirst(request, PAGE_CACHE, event.preloadResponse));
     return;
   }
 
-  // Everything else → Network-first
+  
   event.respondWith(networkFirst(request, PAGE_CACHE));
 });
 
-// STRATEGIES
 
-/**
- * Cache-first: serve from cache, fallback to network.
- * Good for static assets that rarely change.
- */
+
+
+
+
+
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -153,21 +153,21 @@ async function cacheFirst(request, cacheName) {
     }
     return network;
   } catch (err) {
-    // If asset fails to load, return cached offline fallback for pages
+    
     if (request.destination === 'document') {
       return caches.match(OFFLINE_URL);
     }
-    // For other assets, return a transparent placeholder
+    
     return new Response('', { status: 200, headers: { 'Content-Type': 'text/plain' } });
   }
 }
 
-/**
- * Stale-while-revalidate: serve from cache (fast), refresh in background.
- * For unversioned static assets whose URL stays the same but content can
- * change after deploy (e.g. main.js edited during development).
- * Prevents "must hard-refresh to see changes" + stale-JS-against-new-HTML.
- */
+
+
+
+
+
+
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
@@ -184,14 +184,14 @@ async function staleWhileRevalidate(request, cacheName) {
   return new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } });
 }
 
-/**
- * Network-first: try network, fallback to cache, then offline.
- * Good for HTML pages that change frequently.
- */
+
+
+
+
 async function networkFirst(request, cacheName, preloadPromise) {
   try {
-    // Kalau ada (navigasi), pakai hasil navigationPreload dulu — respons
-    // sudah berjalan paralel dengan boot SW, jadi lebih cepat dari fetch().
+    
+    
     let network = null;
     if (preloadPromise) {
       const preload = await preloadPromise.catch(() => null);
@@ -202,8 +202,8 @@ async function networkFirst(request, cacheName, preloadPromise) {
     if (network.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, network.clone());
-      // Batasi ukuran cache halaman agar tidak membengkak tanpa batas
-      // (mis. halaman watch.php?id=X yang terus berganti).
+      
+      
       trimCache(cacheName, PAGE_CACHE_MAX);
     }
     return network;
@@ -211,7 +211,7 @@ async function networkFirst(request, cacheName, preloadPromise) {
     const cached = await caches.match(request);
     if (cached) return cached;
 
-    // Offline fallback for page requests
+    
     if (request.destination === 'document') {
       return caches.match(OFFLINE_URL);
     }
@@ -220,22 +220,22 @@ async function networkFirst(request, cacheName, preloadPromise) {
   }
 }
 
-// HELPERS
+
 
 function isStaticAsset(url) {
   return /\.(css|js|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|webp|svg|ico|webmanifest)$/i.test(url.pathname);
 }
 
 function isApiRequest(url) {
-  // pathname absolut (/MEeL/controllers/... ATAU /controllers/... di root) —
-  // pakai includes('/.../') agar cocok untuk subdir maupun root deployment.
+  
+  
   const p = url.pathname;
-  // Pola lama (file .php) dipertahankan untuk kompatibilitas + pola rute bersih
-  // front controller (router.php): /api/*, /system/mfa, /music/stream, dll.
+  
+  
   return p.includes('/controllers/') ||
          p.includes('/auth/') ||
          p.includes('/partials/engine/') ||
-         p.includes('/controller/') ||      // polling catur (arcade/chess/controller/)
+         p.includes('/controller/') ||      
          p.includes('/api/') ||
          p.includes('/system/') ||
          p.includes('/search_') ||
@@ -245,14 +245,14 @@ function isApiRequest(url) {
          p.includes('delete_comment') ||
          p.includes('admin_data') ||
          p.includes('playlist_action') ||
-         p.includes('stream.php') ||        // streaming audio (Range request)
+         p.includes('stream.php') ||        
          p.includes('read_pdf') ||
-         p.includes('download') ||          // drive/download.php, download_transcode.php
+         p.includes('download') ||          
          p.includes('post_encode') ||
          p.includes('download_transcode') ||
-         // Rute bersih front controller (network-only)
-         /\/(api|system)\/[^/]+\/?$/.test(p) ||      // api/like, api/comment, system/mfa
-         /\/(music|video|drive|books)\/stream\/?$/.test(p) || // streaming
+         
+         /\/(api|system)\/[^/]+\/?$/.test(p) ||      
+         /\/(music|video|drive|books)\/stream\/?$/.test(p) || 
          /\/(music|video|books)\/search\/?$/.test(p) ||
          /\/(music|video)\/load-more\/?$/.test(p) ||
          /\/music\/playlist-action\/?$/.test(p) ||
@@ -262,7 +262,7 @@ function isApiRequest(url) {
 }
 
 function isStreamingMedia(url) {
-  // File media & arsip — tidak pernah disentuh SW (network-only).
+  
   return /\.(mp4|webm|mkv|avi|mov|m4v|mp3|m4a|ogg|oga|wav|flac|aac|opus|pdf|epub|zip|rar|7z|tar|gz)$/i.test(url.pathname);
 }
 
@@ -275,7 +275,7 @@ async function trimCache(cacheName, maxEntries) {
   const cache = await caches.open(cacheName);
   const keys = await cache.keys();
   if (keys.length > maxEntries) {
-    // Buang entri terlama (urutan insert) satu per satu.
+    
     await cache.delete(keys[0]);
   }
 }

@@ -1,8 +1,8 @@
-/**
- * MEeL!Mania — Input handling
- * Canvas mouse interaction, timeline scrubbing, keyboard shortcuts,
- * and note-editing actions triggered from the note-info panel.
- */
+
+
+
+
+
 import { S, DOM, CONST } from "./state.js";
 import { msToY, yToMs, snapMs, getCanvasPos, getLaneAndTime, findNoteAt } from "./canvas.js";
 import { draw, updateNoteInfo } from "./renderer.js";
@@ -14,7 +14,7 @@ var canvas = DOM.canvas;
 var wrap = DOM.wrap;
 var audio = DOM.audio;
 
-/* ─── Note edit actions (called from note-info panel buttons) ─── */
+
 export function toggleGold() {
   if (S.selectedNoteIdx < 0) { showToast("Pilih note dulu!", "warning"); return; }
   S.undoStack.push(JSON.parse(JSON.stringify(S.notes)));
@@ -58,7 +58,7 @@ export function convertToTap() {
   }
 }
 
-/* ─── Canvas mouse: place / drag / move / delete notes ─── */
+
 canvas.addEventListener("mousedown", function (e) {
   var pos = getCanvasPos(e);
 
@@ -76,7 +76,7 @@ canvas.addEventListener("mousedown", function (e) {
 
   S.lastDragPos = pos;
 
-  if (e.button === 2 && e.ctrlKey) return; // Ctrl+Right-click = seek (contextmenu)
+  if (e.button === 2 && e.ctrlKey) return; 
 
   if (e.button === 2 && !e.ctrlKey) {
     e.preventDefault();
@@ -221,7 +221,7 @@ canvas.addEventListener("mouseleave", function () {
   S.dragNoteIdx = -1;
 });
 
-/* ─── Cursor handle hover + time tooltip ─── */
+
 var canvasTooltip = null;
 canvas.addEventListener("mousemove", function (e) {
   if (S.isDragging || S.isDraggingCursor) {
@@ -262,7 +262,7 @@ canvas.addEventListener("mouseleave", function () {
   if (canvasTooltip) canvasTooltip.style.display = "none";
 });
 
-/* ─── Ctrl+Right-click = seek ─── */
+
 canvas.addEventListener("contextmenu", function (e) {
   e.preventDefault();
   if (!e.ctrlKey || !S.audioDuration) return;
@@ -277,7 +277,7 @@ canvas.addEventListener("contextmenu", function (e) {
   showToast("Seek: " + (ms / 1000).toFixed(1) + "s", "info");
 });
 
-/* ─── Timeline click + drag ─── */
+
 function seekTimeline(e) {
   var rect = DOM.timelineBar.getBoundingClientRect();
   var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -294,7 +294,7 @@ document.addEventListener("mousemove", function (e) {
 });
 document.addEventListener("mouseup", function () { S.timelineDragging = false; });
 
-/* ─── Keyboard shortcuts ─── */
+
 document.addEventListener("keydown", function (e) {
   var isInput = e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA";
 
@@ -355,7 +355,7 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
-/* ─── Scroll sync (redraw when scrolling while paused) ─── */
+
 var canvasScroll = canvas.parentElement;
 canvasScroll.addEventListener("scroll", function () {
   if (S.isPlaying) return;

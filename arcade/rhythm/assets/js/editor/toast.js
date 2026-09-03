@@ -1,7 +1,7 @@
-/**
- * MEeL!Mania — Toast Notifications
- * Lightweight custom DOM toast (no SweetAlert2 dependency).
- */
+
+
+
+
 
 export function showToast(message, type) {
   type = type || "info";
@@ -29,7 +29,7 @@ export function showToast(message, type) {
   }, type === "success" ? 3000 : 5000);
 }
 
-// Inject the toast animation keyframes once.
+
 if (!document.getElementById("toastStyle")) {
   var st = document.createElement("style");
   st.id = "toastStyle";

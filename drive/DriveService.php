@@ -99,19 +99,8 @@ final class DriveStorage
         $this->webBasePath = $webBasePath;
     }
 
-    /**
-     * Resolve base path storage Drive untuk seluruh caller modul Drive.
-     *
-     * Prioritas: konstanta MEEL_HDD_DRIVE (terpusat di auth/settings.php,
-     * konsisten dengan Video/Music/Books yang memakai MEEL_HDD_*_UPLOAD).
-     * Bila konstanta belum didefinisikan (lingkungan lama / instalasi tanpa
-     * HDD eksternal), fallback ke folder lokal <root>/data_drive agar tidak
-     * ada breaking change.
-     *
-     * @param string|null $hddDriveOverride Untuk pengujian: simulasikan nilai
-     * MEEL_HDD_DRIVE tanpa mencemari konstanta global. null = baca
-     * konstanta sungguhan; '' = paksa fallback lokal.
-     */
+    
+
     public static function defaultBasePath(?string $hddDriveOverride = null): string
     {
         return meel_drive_base_path($hddDriveOverride);
@@ -152,8 +141,8 @@ final class DriveStorage
                 continue;
             }
 
-            // Gunakan stream.php endpoint untuk semua scope (publik & privat)
-            // agar preview berfungsi baik local maupun external drive.
+            
+            
             $path = 'stream?file=' . rawurlencode($fileInfo->getFilename())
                 . '&type=' . rawurlencode($type)
                 . '&scope=' . rawurlencode($scope)
@@ -176,14 +165,8 @@ final class DriveStorage
         return $files;
     }
 
-    /**
-     * @param array $file Entry $_FILES untuk satu file
-     * @param string|null $requestedScope Scope yang diminta (public/private)
-     * @param int $quotaLimitBytes Batas kuota member (0 = tanpa penegakan kuota).
-     * Penegakan kuota dilakukan ATOMIK di dalam lock per-user sehingga
-     * upload berbarengan tidak bisa melewati kuota secara kolektif.
-     * @throws RuntimeException 'quota_full' saat kuota terlampaui
-     */
+    
+
     public function upload(array $file, ?string $requestedScope, int $quotaLimitBytes = 0): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
@@ -445,10 +428,8 @@ final class DriveStorage
         return $safeFilename;
     }
 
-    /**
-     * Klaim nama file unik secara atomik. fopen('x') gagal bila nama sudah
-     * dipegang proses lain, jadi tidak ada jendela TOCTOU.
-     */
+    
+
     private function reserveUniqueFilename(string $directory, string $filename): string
     {
         $candidate = $filename;

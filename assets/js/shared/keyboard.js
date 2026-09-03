@@ -1,4 +1,4 @@
-// Shared by video & music watch modules.
+
 window.meelKeyShortcutIgnored = function (e) {
   const t = (e.target?.tagName || "").toLowerCase();
   if ("input" === t || "textarea" === t) return true;

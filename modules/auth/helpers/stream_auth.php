@@ -1,6 +1,6 @@
 <?php
 if (!function_exists('authorize_stream')) {
-    /* @param int $id ID media (tabel music) */
+    
     function authorize_stream(int $id): void
     {
         if ($id <= 0) return;
@@ -21,7 +21,7 @@ if (!function_exists('authorize_stream')) {
 }
 
 if (!function_exists('is_stream_authorized')) {
-    /* @param int $id ID media; @param int $ttl Umur marker dalam detik (default 2 jam) */
+    
     function is_stream_authorized(int $id, int $ttl = 7200): bool
     {
         if ($id <= 0) return false;

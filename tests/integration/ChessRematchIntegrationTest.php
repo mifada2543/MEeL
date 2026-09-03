@@ -13,14 +13,14 @@ use PHPUnit\Framework\TestCase;
  */
 class ChessRematchIntegrationTest extends ChessTestCase
 {
-    /* Buat event seperti insertGameEvent(). */
+    
     private function insertEvent(string $code, string $type, string $color = 'w', string $reason = null): void
     {
         $extra = $reason !== null ? ['reason' => $reason] : [];
         insertGameEvent($this->conn, $code, $color, $type, $extra);
     }
 
-    /* Skenario umum: room dengan game sudah selesai (checkmate via game_over). */
+    
     private function insertFinishedGame(string $code): void
     {
         $this->insertRoom($code);
@@ -33,12 +33,12 @@ class ChessRematchIntegrationTest extends ChessTestCase
         return 'RM' . strtoupper(substr(uniqid('', true), -6));
     }
 
-    /* Buat user test dengan last_activity yang dikendalikan (rollback otomatis). */
+    
     private function insertUser(int $lastActivityTs): int
     {
         $username = 'rm_test_' . substr(uniqid('', true), -8);
         $lastActivity = date('Y-m-d H:i:s', $lastActivityTs);
-        // Kolom password NOT NULL di schema.sql — wajib diisi (nilai acak, test-only)
+        
         $password = bin2hex(random_bytes(16));
         $stmt = $this->conn->prepare(
             "INSERT INTO users (username, password, last_activity) VALUES (?, ?, ?)"
@@ -60,12 +60,12 @@ class ChessRematchIntegrationTest extends ChessTestCase
         return (int) $row['n'];
     }
 
-    // REMATCH HANYA SETELAH GAME SELESAI
+    
     public function testOfferRejectedWhenGameNotFinished(): void
     {
         $code = $this->newCode();
         $this->insertRoom($code);
-        $this->insertMove($code, 'w'); // belum ada event terminal
+        $this->insertMove($code, 'w'); 
 
         $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer');
 
@@ -109,7 +109,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
         $this->assertTrue($result['success']);
     }
 
-    // SATU TAWARAN PENDING
+    
     public function testSecondOfferWhilePendingIsRejected(): void
     {
         $code = $this->newCode();
@@ -122,7 +122,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
         $this->assertSame('Masih ada tawaran tanding ulang yang menunggu jawaban.', $result['message']);
     }
 
-    // TERIMA (ACCEPT) → RESET GAME
+    
     public function testAcceptWithoutOfferIsRejected(): void
     {
         $code = $this->newCode();
@@ -138,9 +138,9 @@ class ChessRematchIntegrationTest extends ChessTestCase
     {
         $code = $this->newCode();
         $this->insertFinishedGame($code);
-        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); // putih menawar
+        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); 
 
-        $result = chess_rematch($this->conn, $code, 'w', 'rematch_accept'); // putih menjawab sendiri
+        $result = chess_rematch($this->conn, $code, 'w', 'rematch_accept'); 
 
         $this->assertFalse($result['success']);
         $this->assertSame('Anda tidak dapat menjawab tawaran anda sendiri.', $result['message']);
@@ -155,7 +155,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
         $result = chess_rematch($this->conn, $code, 'b', 'rematch_accept');
 
         $this->assertTrue($result['success']);
-        // Riwayat lama dihapus; hanya tersisa event rematch_accept.
+        
         $this->assertSame(1, $this->countMoves($code));
         $this->assertSame('rematch_accept', chess_last_event($this->conn, $code)['type']);
 
@@ -170,24 +170,24 @@ class ChessRematchIntegrationTest extends ChessTestCase
         chess_rematch($this->conn, $code, 'w', 'rematch_offer');
         chess_rematch($this->conn, $code, 'b', 'rematch_accept');
 
-        // juga bisa ditawarkan setelahnya.
+        
         $this->insertMove($code, 'w');
         $this->assertTrue(chess_record_game_over($this->conn, $code, 'b', 'checkmate')['success']);
         $this->assertTrue(chess_rematch($this->conn, $code, 'b', 'rematch_offer')['success']);
     }
 
-    // TOLAK (DECLINE) / BATAL
+    
     public function testDeclineByOpponentIsAllowed(): void
     {
         $code = $this->newCode();
         $this->insertFinishedGame($code);
-        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); // putih menawar
+        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); 
 
-        $result = chess_rematch($this->conn, $code, 'b', 'rematch_decline'); // hitam menolak
+        $result = chess_rematch($this->conn, $code, 'b', 'rematch_decline'); 
 
         $this->assertTrue($result['success']);
         $this->assertSame('rematch_decline', chess_last_event($this->conn, $code)['type']);
-        // Menolak TIDAK menghapus riwayat game lama.
+        
         $this->assertTrue(chess_has_terminal_event($this->conn, $code));
         $this->assertGreaterThan(1, $this->countMoves($code));
     }
@@ -198,7 +198,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
         $this->insertFinishedGame($code);
         chess_rematch($this->conn, $code, 'w', 'rematch_offer');
 
-        $result = chess_rematch($this->conn, $code, 'w', 'rematch_decline'); // batalkan tawaran sendiri
+        $result = chess_rematch($this->conn, $code, 'w', 'rematch_decline'); 
 
         $this->assertTrue($result['success']);
         $this->assertSame('rematch_decline', chess_last_event($this->conn, $code)['type']);
@@ -222,7 +222,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
         chess_rematch($this->conn, $code, 'w', 'rematch_offer');
         chess_rematch($this->conn, $code, 'b', 'rematch_decline');
 
-        $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer'); // tawar lagi
+        $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer'); 
 
         $this->assertTrue($result['success']);
     }
@@ -234,14 +234,14 @@ class ChessRematchIntegrationTest extends ChessTestCase
         chess_rematch($this->conn, $code, 'w', 'rematch_offer');
         chess_rematch($this->conn, $code, 'b', 'rematch_decline');
 
-        // Tawaran sudah tidak pending → accept tidak valid lagi.
+        
         $result = chess_rematch($this->conn, $code, 'b', 'rematch_accept');
 
         $this->assertFalse($result['success']);
         $this->assertSame('Tidak ada tawaran tanding ulang yang menunggu.', $result['message']);
     }
 
-    // HELPER PENDUKUNG
+    
     public function testLastEventIgnoresRealMoves(): void
     {
         $code = $this->newCode();
@@ -284,7 +284,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
     {
         $code = $this->newCode();
         $this->insertFinishedGame($code);
-        $oppId = $this->insertUser(time() - 7200); // last_activity 2 jam lalu
+        $oppId = $this->insertUser(time() - 7200); 
 
         $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer', $oppId);
 
@@ -299,7 +299,7 @@ class ChessRematchIntegrationTest extends ChessTestCase
     {
         $code = $this->newCode();
         $this->insertFinishedGame($code);
-        $oppId = $this->insertUser(time()); // baru saja aktif
+        $oppId = $this->insertUser(time()); 
 
         $result = chess_rematch($this->conn, $code, 'w', 'rematch_offer', $oppId);
 
@@ -311,8 +311,8 @@ class ChessRematchIntegrationTest extends ChessTestCase
     {
         $code = $this->newCode();
         $this->insertFinishedGame($code);
-        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); // tawaran sukses
-        $offererId = $this->insertUser(time() - 7200); // penawar sudah pergi
+        chess_rematch($this->conn, $code, 'w', 'rematch_offer'); 
+        $offererId = $this->insertUser(time() - 7200); 
 
         $result = chess_rematch($this->conn, $code, 'b', 'rematch_accept', $offererId);
 

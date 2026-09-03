@@ -9,7 +9,7 @@ class PlaylistRepository
         $this->conn = $conn;
     }
 
-    /** @return array|null Playlist row atau null jika tidak ada/bukan milik user. */
+    
     public function getOwnedPlaylist(int $playlist_id, int $user_id): ?array
     {
         $stmt = $this->conn->prepare("SELECT * FROM playlists WHERE id = ? AND user_id = ?");
@@ -20,7 +20,7 @@ class PlaylistRepository
         return $row ?: null;
     }
 
-    /** @return \mysqli_result */
+    
     public function getTracks(int $playlist_id)
     {
         $stmt = $this->conn->prepare(

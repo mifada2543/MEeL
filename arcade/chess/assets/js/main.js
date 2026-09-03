@@ -18,27 +18,27 @@ let roomStatusTimer = null;
 let suppressNetworkSync = false;
 let localBoardFlipped = false;
 let pendingCaptureSvg = null;
-// State resign & draw (multiplayer)
-let drawOfferPending = false; // tawaran seri saya sedang menunggu jawaban
-let drawModalShown = false; // modal terima/tolak seri sedang terbuka
-// State rematch (tanding ulang, multiplayer)
-let rematchOfferPending = false; // tawaran tanding ulang saya sedang menunggu jawaban
-let rematchModalShown = false; // modal terima/tolak tanding ulang sedang terbuka
+
+let drawOfferPending = false; 
+let drawModalShown = false; 
+
+let rematchOfferPending = false; 
+let rematchModalShown = false; 
 let rematchLeaving = false;
-const REMATCH_WAIT_MS = 30000; // batas tunggu jawaban tanding ulang (30 dtk)
-let rematchTimeoutTimer = null; // timer batas tunggu — cegah menunggu jawaban selamanya
+const REMATCH_WAIT_MS = 30000; 
+let rematchTimeoutTimer = null; 
 let exitToLocalModeFn = null;
 let opponentJoined = false;
-let opponentOnline = true; // status koneksi lawan (versi terakhir dari server)
-let opponentOfflineNotified = false; // sudah pernah menampilkan modal terputus?
-let opponentOfflineNextPromptAt = 0; // kapan boleh prompt ulang (ms) — anti spam modal
-let opponentOfflineModalOpen = false; // modal klaim kemenangan sedang terbuka
-let gameOverEventSent = false; // event game_over sudah dikirim ke server (dedup)
+let opponentOnline = true; 
+let opponentOfflineNotified = false; 
+let opponentOfflineNextPromptAt = 0; 
+let opponentOfflineModalOpen = false; 
+let gameOverEventSent = false; 
 const boardEl = document.getElementById("chess-board");
 const moveHistoryList = document.getElementById("move-history-list");
 const promotionModal = document.getElementById("promotion-modal");
 const blackName = document.getElementById("player-black-name");
-// Color Picker Overlay (multiplayer: pilih warna sebelum game dimulai)
+
 const colorPickerOverlay = document.getElementById("color-picker-overlay");
 const cpPick = document.getElementById("cp-pick");
 const cpWaiting = document.getElementById("cp-waiting");
@@ -46,7 +46,7 @@ const cpRoomCode = document.getElementById("cp-room-code");
 const btnPickWhite = document.getElementById("btn-pick-white");
 const btnPickBlack = document.getElementById("btn-pick-black");
 const btnCancelWaiting = document.getElementById("btn-cancel-waiting");
-let colorPickerHideTimer = null; // cegah race hide/show overlay
+let colorPickerHideTimer = null; 
 function resetAllModes() {
   const panel = document.getElementById("multiplayer-panel");
   if (panel) panel.classList.add("hidden");
@@ -83,7 +83,7 @@ function updateRoomUI() {
     badge.innerText = "Offline";
   }
 }
-// COLOR PICKER OVERLAY
+
 function showColorPicker() {
   if (!colorPickerOverlay) return;
 
@@ -103,7 +103,7 @@ function hideColorPicker() {
   colorPickerHideTimer = setTimeout(() => {
     colorPickerOverlay.classList.add("hidden");
     colorPickerHideTimer = null;
-    // begitu game benar-benar dimulai (giliran pemain sesuai).
+    
     updateActionButtons();
   }, 300);
 }
@@ -133,7 +133,7 @@ async function syncRoomState(resetBoard = false) {
         ? JSON.parse(move.move_data)
         : move.move_data;
     if (payload.type) {
-      // silent: saat sync jangan memunculkan modal tawaran seri.
+      
       const evResult = handleGameEvent(payload, true);
       if (evResult) terminalResult = evResult;
       continue;
@@ -170,7 +170,7 @@ function startPolling() {
           typeof move.move_data === "string"
             ? JSON.parse(move.move_data)
             : move.move_data;
-        // Event non-langkah (resign / draw) — bukan gerakan biasa.
+        
         if (payload.type) {
           const evResult = handleGameEvent(payload);
           if (evResult) lastResult = evResult;
@@ -217,11 +217,11 @@ function tungguLawanBergabung(code) {
       if (data.success && data.joined) {
         clearInterval(roomStatusTimer);
         roomStatusTimer = null;
-        opponentJoined = true; // lawan bergabung — tombol seri/menyerah siap muncul
-        hideColorPicker(); // game dimulai — papan aktif & bisa diklik
+        opponentJoined = true; 
+        hideColorPicker(); 
         document.getElementById("room-status").innerText =
           "Lawan bergabung! Menunggu langkah...";
-        // #player-black-name TIDAK ada di HTML arcade/chess/index.php —
+        
         if (blackName) blackName.innerText = "Pemain Hitam (Online)";
         startPolling();
       }
@@ -322,7 +322,7 @@ function renderBoard() {
           cell.appendChild(pieceWrapper);
         }
       }
-      // NAVIGATION COORDINATES
+      
       if (viewC === 0) {
         const rankLabel = document.createElement("span");
         rankLabel.style.cssText = `position:absolute;top:2px;left:3px;font-size:10px;font-weight:700;z-index:30;pointer-events:none;user-select:none;line-height:1;color:${isDark ? "rgba(238,238,210,0.85)" : "rgba(118,150,86,0.85)"}`;
@@ -419,7 +419,7 @@ function handleCellClick(r, c) {
         saveMoveAPI(roomCode, game.history[game.history.length - 1]).then(
           (d) => {
             if (d.success) lastMoveId = d.id;
-            // validasi server (pecundang vs langkah terakhir) benar.
+            
             notifyGameOver(result);
           },
         );
@@ -459,7 +459,7 @@ function triggerAiMove() {
   if (game.isGameOver || game.turn !== "b" || game.gameMode !== "ai") return;
   const aiDecision = game.getBestMove();
   if (aiDecision) {
-    // Simpan SVG piece yang ditangkap oleh AI SEBELUM executeMove
+    
     const aiTarget = game.getPiece(aiDecision.to.r, aiDecision.to.c);
     const isEnPassant = aiDecision.to && aiDecision.to.isEnPassant;
     if (aiTarget) {
@@ -683,7 +683,7 @@ function updateGameStatus(result) {
   }
   updateActionButtons();
 }
-// RESIGN & DRAW (multiplayer)
+
 function updateActionButtons() {
   const offerBtn = document.getElementById("btn-offer-draw");
   const resignBtn = document.getElementById("btn-resign");
@@ -703,7 +703,7 @@ function updateActionButtons() {
   offerBtn.disabled = !myTurn || drawOfferPending || drawModalShown || waiting;
   offerBtn.innerText = drawOfferPending ? "Menunggu jawaban..." : "Tawarkan Seri";
   resignBtn.classList.toggle("hidden", !showActions);
-  // grid tidak meninggalkan kolom kosong.
+  
   resignBtn.classList.toggle("col-span-2", showActions && !offerVisible);
   resignBtn.disabled = !online || !roomCode || game.isGameOver || waiting;
 }
@@ -712,9 +712,9 @@ function handleGameEvent(payload, silent = false) {
   const type = payload.type;
   const color = payload.color;
   const isSelf = color === myColor;
-  // echo aksi sendiri dilewati karena sudah diproses lokal.
+  
   if (type === "resign") {
-    if (!silent && isSelf) return null; // echo aksi sendiri — sudah diproses lokal
+    if (!silent && isSelf) return null; 
     return { status: "resign", winner: color === "w" ? "b" : "w" };
   }
   if (type === "disconnect") {
@@ -731,17 +731,17 @@ function handleGameEvent(payload, silent = false) {
     };
   }
   if (type === "draw_offer") {
-    if (isSelf) return null; // echo sendiri
+    if (isSelf) return null; 
     if (!silent && !drawModalShown && !game.isGameOver) showDrawOfferModal();
     return null;
   }
   if (type === "draw_accept") {
-    if (!silent && isSelf) return null; // echo sendiri — sudah diproses lokal
+    if (!silent && isSelf) return null; 
     return { status: "draw", reason: "Agreement" };
   }
   if (type === "draw_decline") {
     if (!isSelf) {
-      drawOfferPending = false; // lawan menolak tawaran saya
+      drawOfferPending = false; 
       updateActionButtons();
 
       if (!silent) {
@@ -756,7 +756,7 @@ function handleGameEvent(payload, silent = false) {
   }
   if (type === "rematch_offer") {
     if (isSelf) {
-      // ulang supaya waktu tunggu tetap dibatasi setelah reload.
+      
       if (silent) {
         rematchOfferPending = true;
         updateRematchButton();
@@ -768,13 +768,13 @@ function handleGameEvent(payload, silent = false) {
     return null;
   }
   if (type === "rematch_accept") {
-    if (!silent && isSelf) return null; // echo sendiri — sudah di-reset lokal
-    startRematch(); // lawan menerima → mulai game baru di room yang sama
+    if (!silent && isSelf) return null; 
+    startRematch(); 
     return null;
   }
   if (type === "rematch_decline") {
     if (isSelf) {
-      // supaya tidak tersisa "Menunggu jawaban..." yang basi.
+      
       rematchOfferPending = false;
       updateRematchButton();
       return null;
@@ -837,7 +837,7 @@ function handleOfferDraw() {
     colorPickerOverlay &&
     !colorPickerOverlay.classList.contains("hidden")
   )
-    return; // masih menunggu lawan — belum mulai
+    return; 
   if (game.turn !== myColor) {
     window.meelAlert({
       title: "Bukan Giliran",
@@ -865,7 +865,7 @@ function handleResign() {
     colorPickerOverlay &&
     !colorPickerOverlay.classList.contains("hidden")
   )
-    return; // masih menunggu lawan — belum mulai
+    return; 
   window
     .meelConfirm({
       title: "Mengalah?",
@@ -888,7 +888,7 @@ function handleResign() {
       });
     });
 }
-// REMATCH (TANDING ULANG) — multiplayer pasca-game
+
 function updateRematchButton() {
   const btn = document.getElementById("btn-rematch");
   const exitBtn = document.getElementById("btn-exit-game");
@@ -902,7 +902,7 @@ function startRematch() {
   clearRematchTimeout();
   rematchOfferPending = false;
   rematchModalShown = false;
-  restartGame(); // reset papan + sembunyikan overlay + status "Online"
+  restartGame(); 
 }
 
 function clearRematchTimeout() {
@@ -915,7 +915,7 @@ function startRematchTimeout() {
   clearRematchTimeout();
   rematchTimeoutTimer = setTimeout(async () => {
     rematchTimeoutTimer = null;
-    // berjalan lewat polling — jangan keluar.
+    
     try {
       const d = roomCode
         ? await sendGameActionAPI(roomCode, "rematch_decline")
@@ -970,7 +970,7 @@ function showRematchModal() {
             return;
           }
           if (d && d.message === "Tidak ada tawaran tanding ulang yang menunggu.") {
-            // Lawan sudah menolak/membatalkan saat kita menekan TERIMA.
+            
             showRematchRejectedThenExit();
             return;
           }
@@ -978,7 +978,7 @@ function showRematchModal() {
           showRematchModal();
         })
         .catch(() => {
-          showRematchModal(); // gagal jaringan — tawaran masih pending
+          showRematchModal(); 
         });
     } else if (result.dismiss === window.Swal.DismissReason.cancel) {
       sendGameActionAPI(roomCode, "rematch_decline").then(() => {});
@@ -1009,7 +1009,7 @@ function handleRematch() {
     }
     rematchOfferPending = true;
     updateRematchButton();
-    startRematchTimeout(); // lawan yang tidak menjawab → batalkan + keluar
+    startRematchTimeout(); 
   });
 }
 function handleExitGame() {
@@ -1027,10 +1027,10 @@ function showRematchRejectedThenExit(
 ) {
   rematchOfferPending = false;
   rematchModalShown = false;
-  rematchLeaving = true; // kunci tombol overlay selama countdown keluar
+  rematchLeaving = true; 
   clearRematchTimeout();
   updateRematchButton();
-  if (window.Swal) window.Swal.close(); // tutup modal tawaran bila terbuka
+  if (window.Swal) window.Swal.close(); 
   window.Swal.fire({
     title,
     html: `${message}<br>Kembali ke mode <b>Lawan Rakan</b> dalam 5 saat...`,
@@ -1050,12 +1050,12 @@ function showRematchRejectedThenExit(
 function exitToLocalMode() {
   if (typeof exitToLocalModeFn === "function") exitToLocalModeFn();
 }
-// DETEKSI LAWAN TERPUTUS (disconnect)
+
 function handleOpponentStatus(online) {
   if (game.gameMode !== "online" || !roomCode || game.isGameOver) return;
   if (online === opponentOnline) return;
   if (online) {
-    // Lawan kembali terhubung — tutup modal & reset notifikasi.
+    
     opponentOnline = true;
     opponentOfflineNotified = false;
     opponentOfflineNextPromptAt = 0;
@@ -1097,7 +1097,7 @@ function showOpponentOfflineModal() {
     if (result.isConfirmed) {
       claimDisconnectWin();
     } else if (result.dismiss === window.Swal.DismissReason.cancel) {
-      // Tunggu dulu — prompt ulang 60 detik lagi jika masih offline.
+      
       opponentOfflineNotified = true;
       opponentOfflineNextPromptAt = Date.now() + 60000;
     }
@@ -1112,7 +1112,7 @@ function claimDisconnectWin() {
         text: d.message || "Gagal mengklaim kemenangan.",
         icon: "error",
       });
-      // Lawan mungkin sudah kembali — beri kesempatan prompt ulang.
+      
       opponentOfflineNotified = false;
       opponentOfflineNextPromptAt = Date.now() + 30000;
       return;
@@ -1139,11 +1139,11 @@ function notifyGameOver(result) {
     .then((d) => {
 
       if (d && !d.success && d.message !== "Permainan sudah berakhir.") {
-        gameOverEventSent = false; // gagal lain — izinkan coba lagi
+        gameOverEventSent = false; 
       }
     })
     .catch(() => {
-      gameOverEventSent = false; // gagal jaringan — coba lagi
+      gameOverEventSent = false; 
     });
 }
 function restartGame() {
@@ -1180,14 +1180,14 @@ function restartGame() {
   renderBoard();
   updateGameStatus(null);
 }
-// SETUP DOM EVENTS
+
 document.addEventListener("DOMContentLoaded", () => {
   const onlineBtn = document.getElementById("mode-vs-online");
   const btnLocal = document.getElementById("mode-vs-local");
   const btnAi = document.getElementById("mode-vs-ai");
   const diffCont = document.getElementById("ai-difficulty-container");
   const panel = document.getElementById("multiplayer-panel");
-  // Alert "Game Sedang Berjalan"
+  
   function confirmSwitchMode(proceed) {
     if (game.history.length > 0 && !game.isGameOver) {
       window.Swal.fire({
@@ -1208,7 +1208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // lewat stopOnlineSession setelah konfirmasi).
+  
   function confirmExitMultiplayer(proceed, html) {
     window.Swal.fire({
       title: "Keluar dari Mode Multiplayer?",
@@ -1228,7 +1228,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (onlineBtn) {
-    // Masuk mode multiplayer: tampilkan panel room + reset papan.
+    
     function enterOnlineMode() {
 
       if (roomStatusTimer) {
@@ -1257,13 +1257,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (blackName) blackName.innerText = "Pemain Hitam";
       updateRoomUI();
       restartGame();
-      showColorPicker(); // timpa papan dengan pilihan warna
+      showColorPicker(); 
     }
     onlineBtn.addEventListener("click", () => {
-      // Sudah di mode multiplayer — jangan tanya lagi.
+      
       if (game.gameMode === "online") return;
       confirmSwitchMode(() => {
-        // Alert konfirmasi sebelum masuk mode multiplayer.
+        
         window.Swal.fire({
           title: "Mode Multiplayer",
           html: 'Bermain dengan pemain lain memerlukan <b>akun login</b>.<br>Anda akan membuat atau bergabung room menggunakan <b>Room Code</b> yang dibagikan.',
@@ -1280,8 +1280,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-  // Highlight tombol mode "Lawan Rakan" + reset tombol lain.
-  // mode selalu sinkron dengan mode yang sedang aktif.
+  
+  
   function highlightLocalModeButton() {
     resetAllModes();
     if (!btnLocal) return;
@@ -1336,7 +1336,7 @@ document.addEventListener("DOMContentLoaded", () => {
       confirmSwitchMode(enterAiMode);
     });
   }
-  // Multiplayer: alur dimulai dari color picker di atas papan
+  
   async function createRoom() {
     if (roomStatusTimer) {
       clearInterval(roomStatusTimer);
@@ -1361,7 +1361,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("room-color").innerText = "Putih";
     document.getElementById("room-status").innerText =
       "Room dibuat. Bagi code ini ke rakan.";
-    showWaitingState(roomCode); // overlay: room code + menunggu lawan
+    showWaitingState(roomCode); 
     tungguLawanBergabung(roomCode);
   }
 
@@ -1390,24 +1390,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     roomCode = data.room;
     myColor = "b";
-    opponentJoined = true; // sudah masuk room — lawan (putih) sudah ada
+    opponentJoined = true; 
     lastMoveId = 0;
     document.getElementById("room-code-display").innerText = roomCode;
     document.getElementById("room-color").innerText = "Hitam";
     document.getElementById("room-status").innerText =
       "Sudah masuk room. Sync papan...";
     restartGame();
-    // supaya pemain Hitam tidak terjebak di balik overlay.
+    
     try {
       await syncRoomState(true);
     } finally {
-      hideColorPicker(); // game dimulai — papan aktif & bisa diklik
+      hideColorPicker(); 
       startPolling();
     }
     updateRoomUI();
   }
 
-  // pending, server menolak dengan aman (diabaikan).
+  
   function stopOnlineSession() {
     if (game.gameMode === "online" && roomCode) {
       sendGameActionAPI(roomCode, "rematch_decline").catch(() => {});
@@ -1427,7 +1427,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (panelEl) panelEl.classList.add("hidden");
   }
 
-  // Keluar penuh dari multiplayer → kembali ke mode lokal.
+  
   function leaveRoom() {
     stopOnlineSession();
     document.getElementById("room-code-display").innerText = "-";

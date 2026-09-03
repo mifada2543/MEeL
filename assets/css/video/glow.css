@@ -1,4 +1,4 @@
-/* glow.css — Ambient glow canvas (normal & fullscreen) */
+
 #video-glow-canvas {
   position: absolute;
   top: 0;
@@ -33,7 +33,7 @@
 .mini-player-mode ~ #video-glow-canvas {
   display: none !important;
 }
-/* Fullscreen glow canvas */
+
 #video-glow-canvas-fs {
   pointer-events: none;
   image-rendering: pixelated;

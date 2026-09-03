@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-/**
- * MEeL!Mania — Beatmap Generator (with Hold Notes)
- * Run: node _generate.js
- *
- * Note formats:
- *   Tap note:  { t: ms, l: lane }
- *   Hold note: { t: ms, e: ms, l: lane }  (t=start, e=end)
- */
+
+
+
+
+
+
+
+
 const fs = require("fs");
 const path = require("path");
 
@@ -29,11 +29,11 @@ function generateBeatmap(song) {
   const dur = song.duration * 1000;
   const diff = song.difficulty;
 
-  // Density per difficulty
+  
   const singleChance = Math.max(0.15, 0.6 - diff * 0.08);
   const doubleChance = Math.min(0.25, 0.08 + diff * 0.03);
-  const holdChance = Math.min(0.25, 0.05 + diff * 0.04); // higher diff = more holds
-  const goldChance = 0.08; // 8% of notes are gold (bonus score)
+  const holdChance = Math.min(0.25, 0.05 + diff * 0.04); 
+  const goldChance = 0.08; 
 
   let time = beatMs * 4;
   let lastLane = -1;
@@ -44,13 +44,13 @@ function generateBeatmap(song) {
     let noteLanes = [];
 
     if (streamLen > 0) {
-      // Continue stream (no holds during stream)
+      
       streamLen--;
       const avail = [0, 1, 2, 3].filter((l) => l !== lastLane);
       noteLanes.push(avail[Math.floor(Math.random() * avail.length)]);
       time += beatMs / 2;
     } else if (roll < holdChance && diff >= 2) {
-      // Hold note: 1~4 beats long
+      
       const holdBeats = 1 + Math.floor(Math.random() * Math.min(3, diff));
       const holdDuration = holdBeats * beatMs;
       const lane = Math.floor(Math.random() * 4);
@@ -59,9 +59,9 @@ function generateBeatmap(song) {
       if (Math.random() < goldChance) holdNote.g = true;
       notes.push(holdNote);
       lastLane = lane;
-      time += holdDuration + beatMs; // gap after hold
+      time += holdDuration + beatMs; 
     } else if (roll < singleChance + holdChance) {
-      // Single tap
+      
       let l;
       do {
         l = Math.floor(Math.random() * 4);
@@ -69,13 +69,13 @@ function generateBeatmap(song) {
       noteLanes.push(l);
       time += beatMs;
     } else if (roll < singleChance + holdChance + doubleChance) {
-      // Double tap
+      
       const pool = [0, 1, 2, 3];
       noteLanes.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
       noteLanes.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
       time += beatMs;
     } else {
-      // Stream
+      
       streamLen = 2 + Math.floor(Math.random() * (diff + 1));
       noteLanes.push(Math.floor(Math.random() * 4));
       time += beatMs / 2;
@@ -90,7 +90,7 @@ function generateBeatmap(song) {
     if (noteLanes.length > 0) lastLane = noteLanes[noteLanes.length - 1];
   }
 
-  // Sort by time
+  
   notes.sort((a, b) => a.t - b.t);
   return { notes, duration: Math.round(time) };
 }
@@ -121,13 +121,13 @@ function generateCover(song) {
 </svg>`;
 }
 
-// Generate files
+
 const baseDir = path.join(__dirname);
 
 for (const song of SONGS) {
   const dir = path.join(baseDir, song.id);
 
-  // Beatmap
+  
   const map = generateBeatmap(song);
   const beatmapPath = path.join(dir, "beatmap.json");
   fs.writeFileSync(beatmapPath, JSON.stringify(map, null, 2));
@@ -137,7 +137,7 @@ for (const song of SONGS) {
   const goldCount = map.notes.filter(n => n.g).length;
   console.log(`✓ ${song.id}/beatmap.json (${map.notes.length} notes: ${tapCount} tap, ${holdCount} hold, ${goldCount} gold)`);
 
-  // Cover
+  
   const coverPath = path.join(dir, "cover.svg");
   fs.writeFileSync(coverPath, generateCover(song));
   console.log(`✓ ${song.id}/cover.svg`);

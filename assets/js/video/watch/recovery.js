@@ -31,10 +31,10 @@ function destroyPlayer() {
       console.error("Gagal destroy player:", e);
     }
     player = null;
-    /* Plyr.destroy() memulihkan atribut `controls` native pada <video>.
-       Hapus agar kontrol native TIDAK muncul (flash) saat video diganti,
-       khususnya saat gap async HLS (manifest belum parse, Plyr baru belum
-       dibuat) di mode mini-player. */
+    
+
+
+
     videoElement && videoElement.removeAttribute("controls");
   }
   if (hls) {
@@ -61,9 +61,9 @@ function showReconnectingIndicator() {
 }
 function checkMediaAndRecover() {
   if (isCheckingStatus) return;
-  // Wrapper pemutar sudah tidak ada (mis. mini-player baru saja ditutup
-  // in-place) — recovery tidak berguna & htmx.ajax ke target yang hilang
-  // bisa mengosongkan body. Hentikan permanen.
+  
+  
+  
   if (!document.getElementById("main-video-wrapper")) {
     isCheckingStatus = !1;
     isRecovering = !1;

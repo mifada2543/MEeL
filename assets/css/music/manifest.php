@@ -9,6 +9,6 @@ return [
     'visualizer.css',
     'playlist-modal.css',
     'utility.css',
-    // Light theme — harus terakhir untuk override :root variables
+    
     '../shared/light-theme.css',
 ];

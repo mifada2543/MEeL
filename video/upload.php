@@ -73,7 +73,7 @@ $__v = function($f) {
 <body>
     <div class="page-wrap">
 
-        <!-- Nav -->
+        
         <nav class="top-nav">
             <a href="../" class="nav-brand">MEeL<span>Video</span></a>
             <div class="nav-sep"></div>
@@ -87,10 +87,10 @@ $__v = function($f) {
 
         <div class="upload-layout">
 
-            <!-- LEFT: Sidebar -->
+            
             <aside class="sidebar-panel">
 
-                <!-- Hero visual -->
+                
                 <div class="hero-icon">
                     <div class="hero-icon-ring">
                         <i data-lucide="clapperboard" style="width:28px;height:28px;color:var(--accent);"></i>
@@ -101,7 +101,7 @@ $__v = function($f) {
                     </div>
                 </div>
 
-                <!-- Stats -->
+                
                 <div class="stats-strip">
                     <div class="stat-chip">
                         <div class="stat-number"><?= $hour_count ?></div>
@@ -117,7 +117,7 @@ $__v = function($f) {
                     </div>
                 </div>
 
-                <!-- Guide -->
+                
                 <div class="guide-list">
                     <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:#455060;padding-left:2px;">Panduan Upload</div>
                     <div class="guide-item">
@@ -154,7 +154,7 @@ $__v = function($f) {
 
             </aside>
 
-            <!-- RIGHT: Form panel -->
+            
             <section class="form-panel">
                 <div class="form-header">
                     <div>
@@ -174,7 +174,7 @@ $__v = function($f) {
                     <?php if (isset($_SESSION['csrf_token'])): ?>
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                     <?php endif; ?>
-                    <!-- Judul + Auto-fill -->
+                    
                     <div class="field-group">
                         <div style="display:flex;align-items:center;justify-content:space-between;">
                             <label class="field-label" for="f-title">Judul Video</label>
@@ -190,7 +190,7 @@ $__v = function($f) {
                             class="field-input">
                     </div>
 
-                    <!-- Deskripsi -->
+                    
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description"
@@ -200,11 +200,11 @@ $__v = function($f) {
 
                     <div class="divider" style="margin:0;"></div>
 
-                    <!-- Drop zones -->
+                    
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <label class="field-label">File & Thumbnail</label>
                         <div class="drop-grid">
-                            <!-- Video file -->
+                            
                             <div class="drop-zone" id="video-zone">
                                 <input type="file" name="video" accept=".mp4,.webm,.mkv" required
                                     id="video-input" onchange="handleVideoFile(this)" aria-label="Pilih atau drop file video (format: MP4, WEBM, MKV)">
@@ -215,7 +215,7 @@ $__v = function($f) {
                                 <div class="drop-zone-sub">MP4 · WEBM · MKV</div>
                             </div>
 
-                            <!-- Thumbnail -->
+                            
                             <div class="drop-zone" id="thumb-zone">
                                 <input type="file" name="thumbnail" accept="image/*"
                                     id="thumb-input" onchange="handleThumbFile(this)" aria-label="Pilih atau drop file thumbnail (opsional)">
@@ -229,10 +229,10 @@ $__v = function($f) {
                         </div>
                     </div>
 
-                    <!-- Subtitle (opsional) -->
+                    
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <label class="field-label">Subtitle (Opsional)</label>
-                        <!-- Subtitle file — drop zone memanjang satu baris penuh -->
+                        
                         <div class="drop-zone drop-zone-subtitle" id="subtitle-zone">
                             <input type="file" name="subtitle" accept=".vtt,.srt"
                                 id="subtitle-input" onchange="handleSubtitleFile(this)" aria-label="Pilih atau drop file subtitle (format: VTT, SRT)">
@@ -245,7 +245,7 @@ $__v = function($f) {
                             </div>
                         </div>
 
-                        <!-- Bahasa subtitle — custom dropdown ala books/read.php -->
+                        
                         <div class="field-group" id="subtitle-lang-wrap" style="display:none;">
                             <label class="field-label" for="f-subtitle-lang-trigger">Bahasa Subtitle</label>
                             <div class="lang-dropdown" id="f-subtitle-lang-dropdown" data-name="subtitle_lang">
@@ -266,7 +266,7 @@ $__v = function($f) {
                         </div>
                     </div>
 
-                    <!-- Upload button -->
+                    
                     <div style="margin-top:auto;">
                         <button type="submit" name="upload" id="btn-upload" class="btn-primary">
                             <i data-lucide="upload" style="width:15px;height:15px;"></i>
@@ -274,7 +274,7 @@ $__v = function($f) {
                         </button>
                     </div>
 
-                    <!-- Footer links -->
+                    
                     <div class="footer-links">
                         <a href="beranda" class="footer-link">Library</a>
                         <a href="../" class="footer-link">Portal</a>
@@ -293,7 +293,7 @@ $__v = function($f) {
     </div>
 
     <?php include '../partials/footer.php'; ?>
-    <!-- Upload Overlay -->
+    
     <div id="upload-overlay">
         <div class="overlay-card">
             <div class="upload-ring">

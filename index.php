@@ -33,11 +33,11 @@ $counts  = $library->getCounts();
 
 <body class="text-gray-300 min-h-screen" style="background:#05070c">
 
-    <!-- NAVBAR -->
+    
     <?php include 'partials/navbar.php'; ?>
     <main class="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-20 flex flex-col items-center">
 
-        <!-- HERO -->
+        
         <div class="text-center mb-20">
             <div class="inline-block mb-6">
                 <img onclick="window.location.href='arcade/'" src="assets/MEeL.png" class="w-14 h-14 object-contain mx-auto opacity-80 hover:opacity-100 transition" alt="MEeL" title="MEeL Arcade">
@@ -47,10 +47,10 @@ $counts  = $library->getCounts();
             <p onclick="window.location.href='index.html'" class="text-xs text-gray-400 mt-4 tracking-[.25em] uppercase">Streaming &amp; Archive Platform</p>
         </div>
 
-        <!-- MEDIA CARDS -->
+        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 w-full mb-20">
 
-            <!-- MUSIC (diperbesar di tengah) -->
+            
             <div class="media-card card-music flex flex-col gap-4 md:h-64"
                 onclick="window.location.href='music/beranda'"
                 title="MEeL Music">
@@ -74,7 +74,7 @@ $counts  = $library->getCounts();
                 </div>
             </div>
 
-            <!-- VIDEO -->
+            
             <div class="media-card card-video flex flex-col gap-4 md:h-64"
                 onclick="window.location.href='video/beranda'"
                 title="MEeL Video" hx-boost="true">
@@ -98,7 +98,7 @@ $counts  = $library->getCounts();
                 </div>
             </div>
 
-            <!-- BOOKS -->
+            
             <?php if ($is_logged_in): ?>
                 <div class="media-card card-books flex flex-col gap-4 md:h-64"
                     onclick="window.location.href='books/beranda'"
@@ -125,7 +125,7 @@ $counts  = $library->getCounts();
             <?php endif; ?>
         </div>
 
-        <!-- BOTTOM LINKS -->
+        
         <div class="flex flex-wrap items-center justify-center gap-3">
             <?php if ($is_logged_in && isset($_SESSION['role'])): ?>
                 <?php if ($_SESSION['role'] === 'admin'): ?>
@@ -150,7 +150,7 @@ $counts  = $library->getCounts();
             </a>
         </div>
 
-        <!-- MODE SEHAT -->
+        
         <div class="mt-10 flex items-center gap-3">
             <span class="text-[10px] text-gray-200 uppercase tracking-widest">Mode 20-20-20</span>
             <button id="healthToggle"
@@ -163,7 +163,7 @@ $counts  = $library->getCounts();
         <?php include 'partials/footer.php'; ?>
     </main>
 
-    <!-- DEMO TOP BANNER -->
+    
     <div id="demoBanner" class="demo-banner" role="alert" aria-label="Pemberitahuan website demo">
         <div class="demo-banner-inner">
             <div class="demo-banner-left">

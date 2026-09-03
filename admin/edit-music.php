@@ -149,20 +149,20 @@ include __DIR__ . '/../partials/link.php';
 <body class="theme-music">
     <div class="page-wrap">
 
-        <!-- Top navigation -->
+        
         <?php
         $page_title = 'Edit Musik';
         $media_type = 'music';
         include 'header-admin.php';
         ?>
-        <!-- Main edit layout -->
+        
         <div class="edit-layout">
 
-            <!-- LEFT: Info sidebar -->
+            
             <aside class="sidebar-panel">
-                <!-- Cover — klik atau drag untuk ganti -->
+                
                 <div class="cover-wrap" id="cover-wrap">
-                    <!-- File input (ID: cover-file-hidden) -->
+                    
                     <img src="<?= $thumb_src ?>"
                         alt="Cover <?= htmlspecialchars($music['title']) ?>"
                         class="cover-img"
@@ -177,7 +177,7 @@ include __DIR__ . '/../partials/link.php';
                     <span class="cover-changed-badge" id="cover-changed-badge">✓ Baru</span>
                 </div>
 
-                <!-- Uploader card -->
+                
                 <div class="uploader-card">
                     <?php if (!empty($music['uploader_pfp'])): ?>
                         <img src="../profile/upload/<?= htmlspecialchars($music['uploader_pfp']) ?>"
@@ -265,7 +265,7 @@ include __DIR__ . '/../partials/link.php';
                 </div>
             </aside>
 
-            <!-- RIGHT: Form panel -->
+            
             <section class="form-panel">
                 <div class="form-header">
                     <div>
@@ -292,7 +292,7 @@ include __DIR__ . '/../partials/link.php';
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                         <input type="file" name="thumbnail" accept="image/*" id="cover-file-hidden" style="display:none">
                     <?php endif; ?>
-                    <!-- Judul -->
+                    
                     <div class="field-group">
                         <label class="field-label" for="f-title">Judul Lagu</label>
                         <input type="text" id="f-title" name="title" placeholder="Masukkan judul lagu..."
@@ -301,7 +301,7 @@ include __DIR__ . '/../partials/link.php';
                             oninput="document.getElementById('sidebar-title').textContent = this.value || '—'">
                     </div>
 
-                    <!-- Artis & Album -->
+                    
                     <div class="two-col">
                         <div class="field-group">
                             <label class="field-label" for="f-artist">Artis</label>
@@ -319,14 +319,14 @@ include __DIR__ . '/../partials/link.php';
                         </div>
                     </div>
 
-                    <!-- Deskripsi -->
+                    
                     <div class="field-group" style="flex:1;display:flex;flex-direction:column;">
                         <label class="field-label" for="f-desc">Deskripsi / Keterangan</label>
                         <textarea id="f-desc" name="description" placeholder="Masukkan deskripsi musik..."
                             class="field-input" style="flex:1;min-height:120px;resize:none;"><?= htmlspecialchars($music['description'] ?? '') ?></textarea>
                     </div>
 
-                    <!-- Actions -->
+                    
                     <div class="form-actions">
                         <button type="submit" name="update" id="btn-save" class="btn-primary">
                             <i data-lucide="save" style="width:15px;height:15px;"></i>

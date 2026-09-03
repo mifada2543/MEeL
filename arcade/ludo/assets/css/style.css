@@ -20,7 +20,7 @@ body {
   font-family: "Press Start 2P", monospace;
 }
 
-/* Board */
+
 .board-grid {
   display: grid;
   grid-template-columns: repeat(15, 1fr);
@@ -69,7 +69,7 @@ body {
 .cell-start.c-yellow { background: rgba(234, 179, 8, 0.55); }
 .cell-start.c-blue { background: rgba(59, 130, 246, 0.55); }
 
-/* Center finish decoration */
+
 .finish-tri {
   position: absolute;
   inset: 4%;
@@ -87,7 +87,7 @@ body {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
 }
 
-/* Tokens */
+
 .token {
   position: absolute;
   width: 62%;
@@ -119,7 +119,7 @@ body {
 }
 .token.dim { opacity: 0.45; }
 
-/* Dice */
+
 .dice-box:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -142,7 +142,7 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Setup buttons */
+
 .player-count-btn {
   background: #0f131c;
   border-color: #1e293b;
@@ -189,12 +189,12 @@ body {
   color: #fbbf24;
 }
 
-/* Overlays */
+
 #winOverlay {
   transition: opacity 0.3s ease;
 }
 
-/* Player badges */
+
 .player-badge {
   display: flex;
   align-items: center;
@@ -220,7 +220,7 @@ body {
 }
 .player-badge.finished-badge { opacity: 0.5; }
 
-/* Custom scrollbar */
+
 ::-webkit-scrollbar {
   width: 6px;
 }

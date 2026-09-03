@@ -1,7 +1,6 @@
 <?php
-/**
- * MEeL!Mania — API Config & Helpers
- */
+
+
 require_once __DIR__ . '/../../../modules/auth/helpers/session.php';
 meel_boot_session();
 
@@ -18,7 +17,7 @@ require_once __DIR__ . '/../../../modules/auth/helpers/user.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/authz.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/csrf.php';
 
-// FFmpeg paths
+
 $FFMPEG_BIN  = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : 'ffmpeg';
 $FFPROBE_BIN = defined('MEEL_FFPROBE_PATH') && MEEL_FFPROBE_PATH !== '' ? MEEL_FFPROBE_PATH : 'ffprobe';
 
@@ -64,10 +63,8 @@ function get_auth_user() {
     ];
 }
 
-/**
- * Probe audio duration using ffprobe
- * @return float duration in seconds, or 0 on failure
- */
+
+
 function probe_duration(string $filepath): float {
     global $FFPROBE_BIN;
     $cmd = escapeshellarg($FFPROBE_BIN)
@@ -78,9 +75,8 @@ function probe_duration(string $filepath): float {
     return ($duration > 0) ? $duration : 0;
 }
 
-/**
- * Probe audio info using ffprobe (bitrate, format, etc.)
- */
+
+
 function probe_audio_info(string $filepath): array {
     global $FFPROBE_BIN;
     $cmd = escapeshellarg($FFPROBE_BIN)
@@ -91,10 +87,8 @@ function probe_audio_info(string $filepath): array {
     return $data ?? [];
 }
 
-/**
- * Transcode FLAC to Opus using ffmpeg
- * @return string|false output filepath on success, false on failure
- */
+
+
 function transcode_flac_to_opus(string $input): ?string {
     global $FFMPEG_BIN;
     $output = preg_replace('/\.(flac)$/i', '.ogg', $input);
@@ -111,9 +105,8 @@ function transcode_flac_to_opus(string $input): ?string {
     return false;
 }
 
-/**
- * Validate audio MIME type using finfo
- */
+
+
 function validate_audio_mime(string $filepath): ?string {
     global $ALLOWED_AUDIO_MIME;
     $finfo = new finfo(FILEINFO_MIME_TYPE);
@@ -121,9 +114,8 @@ function validate_audio_mime(string $filepath): ?string {
     return in_array($mime, $ALLOWED_AUDIO_MIME, true) ? $mime : null;
 }
 
-/**
- * Generate unique filename
- */
+
+
 function unique_filename(string $base, string $ext, string $dir): string {
     $name = $base . '.' . $ext;
     $counter = 1;
@@ -134,9 +126,8 @@ function unique_filename(string $base, string $ext, string $dir): string {
     return $name;
 }
 
-/**
- * Sanitize string for filename
- */
+
+
 function sanitize_filename(string $name): string {
     $name = preg_replace('/[^\w\-]/u', '_', $name);
     $name = preg_replace('/_+/', '_', $name);

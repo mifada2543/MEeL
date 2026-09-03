@@ -1,8 +1,8 @@
-/* MEeL!Mania — Lobby Stylesheet Professional rhythm game theme. Dark neon aesthetic. */
+
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
 
-/* ─── Reset & Root ──────────────────────────────────── */
+
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -47,7 +47,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Animated Background Canvas ────────────────────── */
+
 #bgCanvas {
   position: fixed;
   inset: 0;
@@ -66,7 +66,7 @@ body {
   pointer-events: none;
 }
 
-/* ─── Navigation ────────────────────────────────────── */
+
 .nav-bar {
   position: fixed;
   top: 0;
@@ -141,7 +141,7 @@ body {
   border-color: var(--border-hover);
 }
 
-/* ─── Main Content ──────────────────────────────────── */
+
 .main-content {
   position: relative;
   z-index: 10;
@@ -150,7 +150,7 @@ body {
   padding: 90px 20px 60px;
 }
 
-/* ─── Hero Section ──────────────────────────────────── */
+
 .hero {
   text-align: center;
   padding: 40px 0 32px;
@@ -197,7 +197,7 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ─── Song Section ──────────────────────────────────── */
+
 .song-section { margin-bottom: 32px; }
 .section-header {
   display: flex;
@@ -232,14 +232,14 @@ body {
   border-color: rgba(244,63,122,0.25);
 }
 
-/* ─── Song Grid ─────────────────────────────────────── */
+
 .song-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
 }
 
-/* ─── Song Card ─────────────────────────────────────── */
+
 .song-card {
   position: relative;
   display: flex;
@@ -370,7 +370,7 @@ body {
   font-weight: 700;
 }
 
-/* ─── Speed Section ─────────────────────────────────── */
+
 .speed-section { margin-bottom: 28px; }
 .speed-title {
   font-size: 13px;
@@ -424,7 +424,7 @@ body {
 }
 .speed-btn.selected .speed-val { color: var(--accent-purple); }
 
-/* ─── Play Button ───────────────────────────────────── */
+
 .play-area { text-align: center; padding: 10px 0 40px; }
 .play-btn {
   position: relative;
@@ -471,7 +471,7 @@ body {
 .play-icon { flex-shrink: 0; }
 .play-text { white-space: nowrap; }
 
-/* ─── Panel Overlay ─────────────────────────────────── */
+
 .panel-overlay {
   position: fixed;
   inset: 0;
@@ -536,7 +536,7 @@ body {
   overflow-y: auto;
 }
 
-/* ─── Settings ──────────────────────────────────────── */
+
 .setting-row {
   display: flex;
   align-items: center;
@@ -617,7 +617,7 @@ body {
   border-color: rgba(239,68,68,0.5);
 }
 
-/* ─── Stats Panel ───────────────────────────────────── */
+
 .stat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -676,7 +676,7 @@ body {
   color: var(--accent-gold);
 }
 
-/* ─── Toast ─────────────────────────────────────────── */
+
 .toast {
   position: fixed;
   bottom: 30px;
@@ -701,13 +701,13 @@ body {
 }
 .toast.hidden { display: block; }
 
-/* ─── Scrollbar ─────────────────────────────────────── */
+
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
-/* ─── Responsive ────────────────────────────────────── */
+
 @media (max-width: 600px) {
   .main-content { padding: 80px 14px 40px; }
   .hero { padding: 24px 0 20px; }

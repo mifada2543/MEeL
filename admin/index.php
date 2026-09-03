@@ -6,7 +6,7 @@ include_once '../modules/core/activity_logger.php';
 include_once '../modules/core/GarbageCollector.php';
 include_once '../modules/auth/RateLimiter.php';
 
-// Guard terpusat: harus login + role admin
+
 require_admin($conn);
 
 define('MEEL_ADMIN_CONTEXT', true);
@@ -184,7 +184,7 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
 
-        <!-- Server Stats -->
+        
         <div class="glass p-6 rounded-3xl mb-8">
             <div class="flex items-center gap-2 mb-6">
                 <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
@@ -294,7 +294,7 @@ include __DIR__ . '/../partials/scripts.php';
                             </div>
                         <?php endif; ?>
                         <?php if ($c['id'] === 'net'): ?>
-                            <!-- Grafik riwayat kecepatan network (diisi realtime oleh index.js) -->
+                            
                             <div class="h-24 mt-2">
                                 <canvas id="netChart"></canvas>
                             </div>
@@ -303,7 +303,7 @@ include __DIR__ . '/../partials/scripts.php';
                 <?php endforeach; ?>
             </div>
 
-            <!-- System Info Row -->
+            
             <div class="flex flex-wrap gap-4 text-[10px]">
                 <span class="text-gray-500"><span class="text-gray-400 font-bold">OS:</span> <?= htmlspecialchars($server_stats['info']['os']) ?></span>
                 <span class="text-gray-600">•</span>
@@ -317,7 +317,7 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
 
-        <!-- 7-Day Activity Chart -->
+        
         <div class="glass p-6 rounded-3xl mb-8">
             <div class="flex items-center gap-2 mb-4">
                 <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
@@ -717,7 +717,7 @@ include __DIR__ . '/../partials/scripts.php';
             </div>
         </div>
     </div>
-    <!-- Chart data (PHP → JS bridge) -->
+    
     <script>
         var activityData = <?= json_encode($chart_activity) ?>;
         var serverStatsUrl = <?= json_encode(base_url('/api/server-stats')) ?>;

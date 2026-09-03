@@ -1,4 +1,4 @@
-/* MEeL Admin — Media Analytics (cookies.php) */
+
 (function () {
   "use strict";
   function initIcons() {

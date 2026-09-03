@@ -1,4 +1,4 @@
-/* MEeL Admin — Shared: Search Input (Enter-only) */
+
 (function () {
   'use strict';
   function initSearch() {

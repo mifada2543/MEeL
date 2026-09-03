@@ -1,26 +1,26 @@
-/* MEeL Admin — Dashboard (index.php) */
+
 (function () {
   "use strict";
 
-  // Interval polling server stats — bisa diatur admin lewat dropdown
-  // #stats-poll-interval (1/3/5/10 detik) dan tersimpan di localStorage.
+  
+  
   var DEFAULT_POLL_INTERVAL_MS = 3000;
   var POLL_OPTIONS = [1000, 3000, 5000, 10000];
   var STORAGE_KEY = "meel_admin_poll_interval";
   var pollTimer = null;
 
-  // SSE (Server-Sent Events) — jalur utama push realtime; fallback ke polling
-  // bila stream macet/gagal (mis. proxy buffering).
+  
+  
   var source = null;
-  var streamMode = "sse"; // "sse" | "polling"
+  var streamMode = "sse"; 
   var lastSseMessage = 0;
   var sseErrorCount = 0;
   var sseWatchdog = null;
-  var connStartedAt = 0; // awal percobaan koneksi SSE (untuk latensi handshake)
+  var connStartedAt = 0; 
 
-  // Tick status online/offline Live Activity Monitor (klien, dari data-sec-since).
+  
   var MONITOR_TICK_MS = 1000;
-  // Ambang offline = 5 menit tanpa aktivitas (sama dengan logika PHP).
+  
   var ONLINE_WINDOW_SEC = 300;
 
   function setText(id, value) {
@@ -35,21 +35,21 @@
     return bytes + " B";
   }
 
-  // Kecepatan transfer (byte/detik) untuk kartu Network.
+  
   function formatSpeed(bps) {
     if (bps >= 1048576) return (bps / 1048576).toFixed(2) + " MB/s";
     if (bps >= 1024) return (bps / 1024).toFixed(1) + " KB/s";
     return Math.round(bps) + " B/s";
   }
 
-  // Baseline polling sebelumnya untuk menghitung kecepatan network
-  // (delta bytes antar polling / delta waktu).
+  
+  
   var netPrev = { rx: null, tx: null, t: 0 };
-  // Grafik riwayat kecepatan network (line chart di kartu Network).
+  
   var netChart = null;
-  var NET_HISTORY_MAX = 60; // sampel terakhir (60 × interval polling)
+  var NET_HISTORY_MAX = 60; 
 
-  // GRAFIK RIWAYAT KECEPATAN NETWORK
+  
   function setupNetChart() {
     var canvas = document.getElementById("netChart");
     if (!canvas || typeof Chart === "undefined") return;
@@ -138,7 +138,7 @@
     netChart.update();
   }
 
-  // Ambang warna identik dengan PHP di admin/index.php.
+  
   function barClass(card, perc) {
     switch (card) {
       case "cpu":
@@ -162,9 +162,9 @@
     }
     var icon = document.getElementById("stat-" + card + "-icon");
     if (icon && cls) {
-      // Icon adalah <svg> hasil lucide.createIcons() — className SVG adalah
-      // SVGAnimatedString (bukan string), jadi .replace()/assignment langsung
-      // melempar TypeError. classList aman untuk elemen HTML maupun SVG.
+      
+      
+      
       var tcls = cls.replace("bg-", "text-").replace("-500", "-400");
       icon.classList.remove("text-red-400", "text-yellow-400", "text-green-400", "text-cyan-400", "text-blue-400", "text-gray-400");
       icon.classList.add(tcls);
@@ -188,8 +188,8 @@
     }
   }
 
-  // Latensi (RTT) koneksi admin → server, diukur dari tiap polling.
-  // Warna: hijau < 50ms, kuning < 150ms, merah ≥ 150ms.
+  
+  
   function setLatency(ms) {
     var el = document.getElementById("stat-net-ping");
     if (!el) return;
@@ -199,30 +199,30 @@
   }
 
   function applyServerStats(s) {
-    // Semua pembaruan dibungkus try/catch agar satu section yang gagal tidak
-    // diam-diam menghentikan pembaruan lainnya (bug: timestamp & network
-    // membeku karena exception ditelan tanpa log).
+    
+    
+    
     try {
       var cpu = s.cpu, ram = s.ram, swap = s.swap, net = s.network, info = s.info, up = s.uptime;
 
-      // CPU
+      
       setText("stat-cpu-value", cpu.load_1m);
       setText("stat-cpu-sub", cpu.cores + " Cores • " + cpu.usage_perc + "%");
       updateBar("cpu", cpu.usage_perc);
 
-      // RAM
+      
       setText("stat-ram-value", formatBytes(ram.used));
       setText("stat-ram-sub", formatBytes(ram.total) + " Total • " + ram.usage_perc + "%");
       updateBar("ram", ram.usage_perc);
 
-      // Swap
+      
       setText("stat-swap-value", formatBytes(swap.used));
       setText("stat-swap-sub", formatBytes(swap.total) + " Total • " + swap.usage_perc + "%");
       updateBar("swap", swap.usage_perc);
 
-      // Network — kecepatan realtime download/upload (delta antar polling).
-      // Total kumulatif (sejak boot) dipindah ke tooltip — bukan teks utama,
-      // karena teks harus menampilkan kecepatan MB/s realtime.
+      
+      
+      
       var nowMs = Date.now();
       var netTotalsTitle = "Total: ↓ " + formatBytes(net.rx) + " / ↑ " + formatBytes(net.tx);
       if (netPrev.rx !== null && net.rx >= netPrev.rx && net.tx >= netPrev.tx) {
@@ -233,7 +233,7 @@
         setText("stat-net-sub", "↑ " + formatSpeed(txRate));
         pushNetSample(rxRate, txRate);
       } else {
-        // Polling pertama atau counter di-reset (reboot) — butuh sampel kedua.
+        
         setText("stat-net-value", "↓ —");
         setText("stat-net-sub", "↑ —");
       }
@@ -241,7 +241,7 @@
       if (netSubEl) netSubEl.title = netTotalsTitle;
       netPrev = { rx: net.rx, tx: net.tx, t: nowMs };
 
-      // Uptime & info
+      
       setText("stat-uptime", up.text);
       setText("stat-load", cpu.load_1m + " / " + cpu.load_5m + " / " + cpu.load_15m);
       setText("stat-procs", info.processes);
@@ -273,14 +273,14 @@
       });
   }
 
-  // PENGATURAN INTERVAL POLLING
+  
 
   function loadPref(key, fallback) {
     try {
       var v = localStorage.getItem(key);
       return v === null ? fallback : v;
     } catch (e) {
-      return fallback; // mode privat / localStorage tidak tersedia
+      return fallback; 
     }
   }
 
@@ -288,7 +288,7 @@
     try {
       localStorage.setItem(key, value);
     } catch (e) {
-      /* abaikan */
+      
     }
   }
 
@@ -302,7 +302,7 @@
     pollTimer = setInterval(refreshServerStats, currentPollInterval());
   }
 
-  // SSE: PUSH REALTIME DARI SERVER
+  
 
   function startStatsStream() {
     if (source) return;
@@ -318,7 +318,7 @@
     source.addEventListener("open", function () {
       lastSseMessage = Date.now();
       setLiveStatus(true);
-      setLatency(Date.now() - connStartedAt); // latensi handshake SSE
+      setLatency(Date.now() - connStartedAt); 
       startWatchdog();
     });
 
@@ -333,15 +333,15 @@
           setLiveStatus(false);
         }
       } catch (e) {
-        /* pesan rusak — abaikan */
+        
       }
     });
 
     source.addEventListener("error", function () {
-      connStartedAt = Date.now(); // percobaan reconnect dimulai dari sini
+      connStartedAt = Date.now(); 
       sseErrorCount++;
       setLiveStatus(false);
-      // EventSource auto-reconnect, tapi kalau gagal terus → fallback polling.
+      
       if (sseErrorCount >= 3) {
         fallbackToPolling();
       }
@@ -368,8 +368,8 @@
     startStatsPolling();
   }
 
-  // Watchdog: bila tidak ada pesan SSE dalam waktu lama (stream macet karena
-  // buffering proxy), pindah ke polling agar data tetap mengalir.
+  
+  
   function startWatchdog() {
     stopWatchdog();
     var interval = currentPollInterval();
@@ -398,7 +398,7 @@
     var sel = document.getElementById("stats-poll-interval");
     if (!sel) return;
 
-    // Sinkronkan dropdown dengan preferensi tersimpan.
+    
     sel.value = String(currentPollInterval());
     updateLiveBadgeTitle(currentPollInterval());
 
@@ -408,15 +408,15 @@
       savePref(STORAGE_KEY, String(v));
       updateLiveBadgeTitle(v);
       if (streamMode === "sse") {
-        restartStatsStream(); // interval baru = koneksi SSE baru
+        restartStatsStream(); 
       } else {
         startStatsPolling();
       }
     });
   }
 
-  // Status Online/Offline Live Activity Monitor — dihitung ulang di sisi
-  // klien dari data-sec-since (detik sejak aktivitas terakhir) tiap detik.
+  
+  
   function startMonitorTicking() {
     var rows = document.querySelectorAll("#monitor tr[data-sec-since]");
     if (!rows.length) return;
@@ -456,7 +456,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof lucide !== "undefined") lucide.createIcons();
-    // 7-DAY ACTIVITY BAR CHART
+    
     var ctx2 = document.getElementById("activityChart");
     if (
       ctx2 &&
@@ -540,12 +540,12 @@
       }
     }
 
-    // REALTIME SERVER STATS (SSE push, fallback polling otomatis)
+    
     setupNetChart();
     startStatsStream();
     setupIntervalControl();
 
-    // LIVE ACTIVITY MONITOR (status online/offline tiap detik)
+    
     startMonitorTicking();
   });
 })();

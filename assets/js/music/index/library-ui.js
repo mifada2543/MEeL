@@ -1,5 +1,5 @@
-/* library-ui.js — UI interaksi halaman Music Library (index.php): */
-// Setup klik item musik di library (dimuat via HTMX)
+
+
 function setupMusicItemClicks() {
   const allItems = () => Array.from(document.querySelectorAll(".music-item"));
   document.querySelectorAll(".music-item").forEach((item) => {
@@ -45,7 +45,7 @@ function setupMusicItemClicks() {
     });
   });
 }
-// Muat konten playlist
+
 function loadPlaylistById(id) {
   if (!id) return;
   var savedLMUrl = null;
@@ -85,13 +85,13 @@ function loadPlaylistById(id) {
       console.warn("Gagal load playlist:", err);
     });
 }
-// Boot & Perbaikan Sinkronisasi
+
 function bootPlayerIndex() {
   initMiniPlayerIndex();
   setupMusicItemClicks();
   scrollToActiveArtistDesktop();
 }
-// Auto-scroll sidebar desktop ke artist yg aktif
+
 function scrollToActiveArtistDesktop() {
   var artistList = document.getElementById("desktop-artist-list");
   if (!artistList) return;
@@ -100,28 +100,28 @@ function scrollToActiveArtistDesktop() {
     activeItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 }
-// Mobile Playlist Dropdown (custom toggle)
+
 window.togglePlaylistDropdown = function () {
   const dropdown = document.getElementById("playlist-options");
   if (dropdown) {
     const isHidden = dropdown.classList.contains("hidden");
     if (isHidden) {
-      // Tutup dropdown artist jika sedang terbuka
+      
       var artistDrop = document.getElementById("artist-options");
       if (artistDrop && !artistDrop.classList.contains("hidden")) {
         artistDrop.classList.add("hidden");
-        // Reset z-index artist container
+        
         var artistContainer = document.getElementById("custom-artist-dropdown");
         if (artistContainer) artistContainer.style.zIndex = '';
       }
       dropdown.classList.remove("hidden");
-      // Tinggikan z-index container playlist
+      
       var plContainer = document.getElementById("custom-playlist-dropdown");
       if (plContainer) plContainer.style.zIndex = '110';
       document.body.classList.add("artist-dropdown-active");
     } else {
       dropdown.classList.add("hidden");
-      // Reset z-index
+      
       var plContainer = document.getElementById("custom-playlist-dropdown");
       if (plContainer) plContainer.style.zIndex = '';
       setTimeout(function () {
@@ -133,7 +133,7 @@ window.togglePlaylistDropdown = function () {
 window.closePlaylistDropdown = function () {
   const dropdown = document.getElementById("playlist-options");
   if (dropdown) dropdown.classList.add("hidden");
-  // Reset z-index
+  
   var plContainer = document.getElementById("custom-playlist-dropdown");
   if (plContainer) plContainer.style.zIndex = '';
   setTimeout(function () {
@@ -182,16 +182,16 @@ window.toggleArtistDropdown = function () {
   if (dropdown) {
     const isHidden = dropdown.classList.contains("hidden");
     if (isHidden) {
-      // Tutup dropdown playlist jika sedang terbuka
+      
       var playlistDrop = document.getElementById("playlist-options");
       if (playlistDrop && !playlistDrop.classList.contains("hidden")) {
         playlistDrop.classList.add("hidden");
-        // Reset z-index playlist container
+        
         var plContainer = document.getElementById("custom-playlist-dropdown");
         if (plContainer) plContainer.style.zIndex = '';
       }
       dropdown.classList.remove("hidden");
-      // Tinggikan z-index container artist
+      
       var artistContainer = document.getElementById("custom-artist-dropdown");
       if (artistContainer) artistContainer.style.zIndex = '110';
       document.body.classList.add("artist-dropdown-active");
@@ -201,7 +201,7 @@ window.toggleArtistDropdown = function () {
       }
     } else {
       dropdown.classList.add("hidden");
-      // Reset z-index
+      
       var artistContainer = document.getElementById("custom-artist-dropdown");
       if (artistContainer) artistContainer.style.zIndex = '';
       setTimeout(function () {
@@ -213,7 +213,7 @@ window.toggleArtistDropdown = function () {
 window.closeArtistDropdown = function () {
   const dropdown = document.getElementById("artist-options");
   if (dropdown) dropdown.classList.add("hidden");
-  // Reset z-index
+  
   var artistContainer = document.getElementById("custom-artist-dropdown");
   if (artistContainer) artistContainer.style.zIndex = '';
   setTimeout(() => {
@@ -228,7 +228,7 @@ window.closeArtistDropdown = function () {
     }
   }, 350);
 };
-// Fungsi navigasi playlist
+
 function setActivePlaylist(id) {
   document.querySelectorAll(".pl-link").forEach(function (el) {
     if (el.dataset.playlistId == id) {
@@ -279,8 +279,8 @@ window.resetArtistHighlight = function () {
     btn.classList.remove("text-orange-500", "font-bold");
   });
 };
-// Reset pill format ke "All" — dipakai saat masuk playlist (sidebar beranda
-// tetap tampil, tapi state filter tidak boleh "mengikuti" pengguna ke playlist).
+
+
 window.resetFormatPills = function () {
   document.querySelectorAll(".format-pill").forEach(function (el) {
     el.classList.remove("active-orange", "active-green", "active-blue");
@@ -291,8 +291,8 @@ window.resetFormatPills = function () {
       el.classList.add("active-orange");
     });
 };
-// Reset semua filter library (artist + format) — konsisten dengan sidebar
-// halaman playlist (tidak ada artist/format yang aktif).
+
+
 window.resetLibraryFilters = function () {
   if (typeof resetArtistHighlight === "function") resetArtistHighlight();
   if (typeof resetFormatPills === "function") resetFormatPills();

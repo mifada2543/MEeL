@@ -89,20 +89,20 @@ $auth_og_desc     = "Buat akun MEeL dan nikmati streaming video, musik, dan akse
 include __DIR__ . '/partials/auth_head.php';
 ?>
 <main class="w-full max-w-sm" aria-labelledby="register-title">
-    <!-- Header -->
+    
     <div class="text-center mb-8">
         <div class="inline-flex p-4 bg-red-600/10 rounded-3xl text-red-600 mb-4 shadow-lg shadow-red-900/10"><i data-lucide="user-plus" class="w-10 h-10"></i></div>
         <h2 id="register-title" class="text-3xl font-black text-white tracking-tighter">Register</h2>
         <p class="text-sm text-gray-400 mt-1">Buat akun <span class="text-red-500 font-bold">MEeL</span></p>
     </div>
-    <!-- Message -->
+    
     <?php if ($message): ?>
         <div class="mb-6 p-4 rounded-2xl text-sm flex items-center gap-3 animate-pulse <?= $msg_type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : ($msg_type === 'warning' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20') ?>" role="alert"><i data-lucide="<?= $msg_type === 'success' ? 'check-circle' : 'alert-circle' ?>" class="w-5 h-5"></i><?= $message ?></div>
     <?php endif; ?>
-    <!-- Form -->
+    
     <form method="post" class="glass-effect p-8 rounded-[2rem] shadow-2xl space-y-6">
         <?php if ($session_blocked && !$is_locked): ?>
-            <!-- Session rate-limit tercapai -->
+            
             <div class="text-center py-6 space-y-4">
                 <i data-lucide="timer-reset" class="w-12 h-12 text-orange-500 mx-auto animate-pulse"></i>
                 <h3 class="text-lg font-bold text-white">Batas Pendaftaran</h3>
@@ -113,7 +113,7 @@ include __DIR__ . '/partials/auth_head.php';
                 </div>
             </div>
         <?php elseif ($is_locked): ?>
-            <!-- IP Lockout -->
+            
             <?php
             $countdown_seconds = $remaining;
             $countdown_color   = 'text-red-500';
@@ -123,7 +123,7 @@ include __DIR__ . '/partials/auth_head.php';
             include __DIR__ . '/partials/auth_countdown.php';
             ?>
         <?php else: ?>
-            <!-- CSRF Token -->
+            
             <?php if (isset($_SESSION['csrf_token'])): ?>
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
             <?php endif; ?>

@@ -6,7 +6,7 @@ if (is_file(__DIR__ . '/../auth/settings.php')) {
 }
 require_once __DIR__ . '/../modules/core/helpers.php';
 
-// Security: path traversal blocked (realpath) + extension whitelist.
+
 $f = isset($_GET['f']) ? (string) $_GET['f'] : '';
 if ($f === '') {
     http_response_code(400);

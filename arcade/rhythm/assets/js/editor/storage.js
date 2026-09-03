@@ -1,9 +1,9 @@
-/**
- * MEeL!Mania — localStorage autosave
- * Note: keeps the original field ids (songTitle/songArtist/bpmInput/
- * difficultySelect) as used by the legacy code — unrelated to the f-*
- * form ids used elsewhere in the editor.
- */
+
+
+
+
+
+
 import { S } from "./state.js";
 
 export function getStorageKey() {
@@ -32,14 +32,14 @@ export function saveNotesToStorage() {
       savedAt: Date.now(),
     };
     localStorage.setItem(getStorageKey(), JSON.stringify(data));
-  } catch (e) { /* quota exceeded or other error */ }
+  } catch (e) {  }
 }
 
-/**
- * Loads notes from localStorage into S.notes if present.
- * Caller is responsible for refreshing the UI (draw/updateNoteInfo)
- * afterwards — keeps this module free of renderer dependencies.
- */
+
+
+
+
+
 export function loadNotesFromStorage() {
   try {
     var raw = localStorage.getItem(getStorageKey());

@@ -1,6 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-// 1. STATE & KONFIGURASI GLOBAL
+
 const gameState = {
   isPlaying: false,
   isGameOver: false,
@@ -94,7 +94,7 @@ function renderStartScreenChibi() {
     chibiContainer.innerHTML = `<svg class="w-20 h-20" viewBox="0 0 60 70"><path d="M 14,24 C 5,16 -3,28 1,38 C 4,45 10,42 12,35" fill="#C2185B" /><path d="M 12,30 C 5,26 2,34 5,39 C 7,42 10,41 11,36" fill="#FF5E7E" /><path d="M 46,24 C 55,16 63,28 59,38 C 56,45 50,42 48,35" fill="#FF5E7E" /><path d="M 48,30 C 55,26 58,34 55,39 C 53,42 50,41 49,36" fill="#C2185B" /><circle cx="30" cy="24" r="14" fill="#FFE0D2" /><path d="M 16,14 C 20,8 40,8 44,14 C 45,18 15,18 16,14 Z" fill="#FF5E7E" /><rect x="13" y="18" width="4" height="10" fill="#FFD700" rx="1" /><rect x="43" y="18" width="4" height="10" fill="#FFD700" rx="1" /><circle cx="25" cy="24" r="2.5" fill="#C2185B" /><circle cx="25.5" cy="23.5" r="1" fill="white" /><circle cx="35" cy="24" r="2.5" fill="#C2185B" /><circle cx="35.5" cy="23.5" r="1" fill="white" /><path d="M 27,28 Q 30,31 33,28" stroke="#FF5E7E" stroke-width="1.8" fill="none" /></svg>`;
   }
 }
-// 4. EVENT LISTENERS PANEL CHEAT & TEMA
+
 document.getElementById("themeToggle").addEventListener("change", (e) => {
   gameState.isTetoActive = e.target.checked;
   if (gameState.isTetoActive) {
@@ -183,7 +183,7 @@ class Miku {
     this.isDucking = false;
     this.runFrame = 0;
     this.animTimer = 0;
-    // Animasi squash & stretch: stretch saat lepas landas, squash saat mendarat
+    
     this.scaleY = 1;
     this.scaleX = 1;
   }
@@ -191,7 +191,7 @@ class Miku {
     if (!this.isJumping && !this.isDucking) {
       this.vy = this.jumpForce;
       this.isJumping = true;
-      // Stretch: memanjang ke atas saat melompat
+      
       this.scaleY = 1.18;
       this.scaleX = 0.86;
     }
@@ -212,12 +212,12 @@ class Miku {
       this.vy = 0;
       this.isJumping = false;
       if (wasAirborne) {
-        // Squash saat mendarat
+        
         this.scaleY = 0.82;
         this.scaleX = 1.16;
       }
     }
-    // Pulihkan skala ke normal dengan easing
+    
     this.scaleY += (1 - this.scaleY) * 0.18;
     this.scaleX += (1 - this.scaleX) * 0.18;
     if (!this.isJumping && !this.isDucking) {
@@ -230,7 +230,7 @@ class Miku {
   }
   draw() {
     ctx.save();
-    // Terapkan squash & stretch di sekitar dasar karakter
+    
     const cx = this.x + this.width / 2;
     const bottom = this.y + this.height;
     ctx.translate(cx, bottom);

@@ -2,7 +2,7 @@
 include '../auth/config.php';
 include '../auth/auth.php';
 
-// Guard terpusat: harus login + role admin
+
 require_admin($conn);
 
 $message = null;
@@ -148,7 +148,7 @@ $back_url    = 'index.php';
     <?php require 'header-admin.php'; ?>
     <main class="max-w-7xl mx-auto px-6 py-8 space-y-6">
 
-        <!-- Flash message -->
+        
         <?php if ($message): ?>
             <div class="flex items-start gap-3 px-4 py-3 rounded-lg text-sm
         <?= $message_type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-green-500/10 border border-green-500/20 text-green-400' ?>">
@@ -156,19 +156,19 @@ $back_url    = 'index.php';
                 <span><?= $message ?></span>
             </div>
         <?php endif; ?>
-        <!-- Header row -->
+        
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-lg font-bold text-white">Chess Room Manager</h1>
                 <p class="text-xs text-gray-500 mt-0.5">Monitor & kelola seluruh sesi permainan catur</p>
             </div>
             <div class="flex items-center gap-2">
-                <!-- Auto-cleanup countdown -->
+                
                 <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-400">
                     <i data-lucide="timer" class="w-3.5 h-3.5 text-blue-400"></i>
                     <span>Auto-cleanup: <span id="countdown" class="text-blue-400 font-mono font-bold">10:00</span></span>
                 </div>
-                <!-- Manual purge -->
+                
                 <form method="POST"
                     onsubmit="return meelConfirmForm(event, { title:'Purge Room', text:'Hapus semua room tidak aktif sekarang?', confirmButtonText:'PURGE' })">
                     <input type="hidden" name="action" value="purge_inactive">
@@ -181,7 +181,7 @@ $back_url    = 'index.php';
             </div>
         </div>
 
-        <!-- Stats cards -->
+        
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <?php
             $stat_cards = [
@@ -203,7 +203,7 @@ $back_url    = 'index.php';
             <?php endforeach; ?>
         </div>
 
-        <!-- Room table -->
+        
         <div class="card overflow-hidden">
             <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-white flex items-center gap-2">
@@ -286,7 +286,7 @@ $back_url    = 'index.php';
             <?php endif; ?>
         </div>
 
-        <!-- Activity Log -->
+        
         <div class="card overflow-hidden">
             <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-white flex items-center gap-2">
@@ -309,7 +309,7 @@ $back_url    = 'index.php';
     </main>
 
     <script>
-        // Bridge PHP → JS: token CSRF untuk endpoint auto_cleanup
+        
         window.MEEL_ADMIN_CSRF = <?= json_encode($_SESSION['csrf_token'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     </script>
     <script src="../assets/js/admin/catur.js?v=<?= filemtime('../assets/js/admin/catur.js') ?>"></script>

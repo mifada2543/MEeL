@@ -21,7 +21,7 @@ $is_logged_in   = isset($_SESSION['user_id']);
 function renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter, $totalPagesMusic = 1, $pageMusic = 1, $perPageMusic = 10)
 {
 ?>
-    <!-- HEADER -->
+    
     <div class="flex items-end justify-between mb-6 pb-4 border-b border-white/[.04]">
         <div>
             <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Library</div>
@@ -34,7 +34,7 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
         </span>
     </div>
 
-    <!-- MUSIC LIST -->
+    
     <div id="music-list" class="space-y-1">
         <?php if ($data_init && $data_init->num_rows > 0): ?>
             <?php while ($v = $data_init->fetch_assoc()): ?>
@@ -47,7 +47,7 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
         <?php endif; ?>
     </div>
 
-    <!-- LOAD MORE (outside #music-list, never replaced, only URL updated via JS) -->
+    
     <?php if ($total_music > $perPageMusic): ?>
         <div id="load-more-music" class="pt-6">                <button type="button" id="load-more-btn"                    hx-get="load-more?offset=<?= $perPageMusic ?>&page=<?= $pageMusic ?>&format=<?= $format_filter ?>&artist=<?= urlencode($artist_filter) ?>"
                 hx-target="#music-list"
@@ -115,7 +115,7 @@ $__vdir = function($dir) {
 
 <body class="text-gray-400 min-h-screen">
 
-    <!-- NAVBAR -->
+    
     <nav class="meel-nav sticky top-0 z-50" style="border-bottom:1px solid var(--meel-nav-border)">
         <div class="w-full px-3 sm:px-6 xl:px-10 2xl:px-16 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <a href="../" class="flex items-center gap-1 sm:gap-2.5 flex-shrink-0" title="MEeL HUB">
@@ -166,11 +166,11 @@ $__vdir = function($dir) {
 
     <div id="library-container" class="w-full px-4 sm:px-6 xl:px-10 2xl:px-16 pt-8 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        <!-- SIDEBAR -->
+        
         <aside class="lg:col-span-3 xl:col-span-2">
             <div class="sticky top-20 space-y-6">
 
-                <!-- FORMAT PILLS (Desktop) -->
+                
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3">Format</div>
                     <div class="flex flex-wrap gap-2">
@@ -201,7 +201,7 @@ $__vdir = function($dir) {
                     </div>
                 </div>
 
-                <!-- ARTISTS (Desktop) -->
+                
                 <div class="hidden lg:block">
                     <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3 flex items-center gap-2">
                         <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
@@ -232,7 +232,7 @@ $__vdir = function($dir) {
                     </div>
                 </div>
 
-                <!-- PLAYLISTS (Desktop) -->
+                
                 <?php if ($is_logged_in): ?>
                     <div class="hidden lg:block">
                         <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-3 flex items-center gap-2">
@@ -262,9 +262,9 @@ $__vdir = function($dir) {
                         </div>
                     </div>
                 <?php endif; ?>
-                <!-- MOBILE FILTERS & MENUS (Select/Dropdowns) -->
+                
                 <div id="mobile-filters" class="lg:hidden flex flex-col gap-4 bg-[#0d1017]/70 backdrop-blur-xl p-4 rounded-xl border border-white/[.04] shadow-lg" style="backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);">
-                    <!-- Format Pills (Mobile) -->
+                    
                     <div class="flex flex-wrap gap-2">
                         <a href="beranda?format=all&artist=<?= urlencode($artist_filter) ?>"
                             hx-get="beranda?format=all&artist=<?= urlencode($artist_filter) ?>" hx-push-url="true"
@@ -293,7 +293,7 @@ $__vdir = function($dir) {
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Artists Select (Custom Dropdown) -->
+                        
                         <div>
                             <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-1.5 flex items-center gap-1.5">
                                 <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
@@ -333,7 +333,7 @@ $__vdir = function($dir) {
                             </div>
                         </div>
 
-                        <!-- Playlists Select (Custom Dropdown) -->
+                        
                         <?php if ($is_logged_in): ?>
                             <div>
                                 <div class="text-[9px] font-bold text-gray-700 uppercase tracking-[.25em] mb-1.5 flex items-center gap-1.5">
@@ -371,23 +371,23 @@ $__vdir = function($dir) {
             </div>
         </aside>
 
-        <!-- MAIN -->
+        
         <main class="lg:col-span-9 xl:col-span-10">
             <?php renderLibraryContent($artist_filter, $total_music, $data_init, $format_filter, $totalPagesMusic, $pageMusic, $perPageMusic); ?>
         </main>
     </div>
 
-    <!-- MINI PLAYER INDEX (Spotify-style) -->
+    
     <div id="mini-player-index" aria-label="Mini Player">
 
-        <!-- Seekbar atas -->
+        
         <div class="mp-seekbar" id="mp-seekbar-index" onclick="event.stopPropagation(); miniSeekIndex(event);" title="Klik untuk seek">
             <div class="mp-seekbar-fill" id="mp-seekbar-fill-index"></div>
             <div class="mp-seekbar-thumb" id="mp-seekbar-thumb-index"></div>
         </div>
 
         <div class="mp-body">
-            <!-- Kiri: art + info -->
+            
             <div class="mp-track">
                 <div class="mp-art" onclick="expandPlayerFromMiniPlayer()">
                     <img id="mini-thumbnail-index" title="Buka player penuh" src="<?= htmlspecialchars(music_thumbnail_url('default.png')) ?>" alt="Cover lagu" width="256" height="256" loading="eager" decoding="async">
@@ -401,7 +401,7 @@ $__vdir = function($dir) {
                 </div>
             </div>
 
-            <!-- Tengah: kontrol -->
+            
             <div class="mp-controls">
                 <button class="mp-btn mp-btn-ghost" id="mini-loop-btn-index" onclick="toggleMiniLoopIndex()" title="Ulangi lagu" aria-label="Ulang">
                     <i data-lucide="repeat" style="width:15px;height:15px;"></i>
@@ -417,7 +417,7 @@ $__vdir = function($dir) {
                 </button>
             </div>
 
-            <!-- Kanan: waktu + tutup -->
+            
             <div class="mp-right">
                 <div class="mp-time">
                     <span id="mini-current-time-index">0:00</span>
