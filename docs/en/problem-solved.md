@@ -79,7 +79,7 @@ And that's **not including**:
 ├───────────┬───────────┬──────────┬──────────┬───────────┤
 │  🎬 Video  │  🎵 Music  │ 📚 Books  │ ☁️ Drive  │ 🕹️ Games  │
 │  Streaming │  Player   │  Reader  │ Storage  │  Arcade   │
-│  (HLS.js)  │  (Opus)   │ (PDF/ZIP)│ (RBAC)   │ (Dino/Chess)│
+│  (HLS.js)  │  (Opus)   │ (PDF/ZIP)│ (RBAC)   │ (9 Games)   │
 ├───────────┴───────────┴──────────┴──────────┴───────────┤
 │  Monthly cost: $0 (zero)                                 │
 │  Yearly cost: $0 (zero)                                  │

@@ -16,7 +16,7 @@ framework) dan MySQL/MariaDB sebagai database.
 3. **Transcoder** — Konversi media ke format streaming (HLS untuk video, Opus untuk audio)
 4. **Drive** — Cloud storage pribadi dengan scope publik/privat
 5. **Auth** — Sistem autentikasi dan otorisasi berbasis session
-6. **Arcade** — Game mini (catur, snake, dino) terintegrasi
+6. **Arcade** — 9 game mini terintegrasi (Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania)
 
 ## Alur Data
 
@@ -39,7 +39,7 @@ Lihat `docs/id/security.md` untuk detail keamanan.
 
 ## Catatan Teknis
 
-- PHP 8.2+ dengan MySQL 8.0+
+- PHP 8.0+ dengan MySQL 5.7+ / MariaDB 10.2+
 - FFmpeg untuk transcode media
 - yt-dlp untuk upload dari URL eksternal
 - RAM disk (/dev/shm) untuk staging transcode

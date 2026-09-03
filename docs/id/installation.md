@@ -592,6 +592,13 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali. Mengelola
 - **v11:** unique key `interactions` dipecah menjadi `(user_id, video_id)` & `(user_id, music_id)`
 - **v12:** ikat identitas user ke room catur (`white_user_id`, `black_user_id`) — cegah akses ilegal via `room_code`
 
+> 💡 **Modul Rhythm (MEeL!Mania) punya migrasi DB sendiri** — tabel `arcade_song`
+> & `arcade_score` dibuat lewat `arcade/rhythm/migration.sql`, **bukan** bagian dari
+> `database/migrate.php` (v1–v12). Import sekali:
+> ```bash
+> mysql MEeL < arcade/rhythm/migration.sql
+> ```
+
 ### 11. Setup cookies.txt (untuk yt-dlp)
 
 Untuk download dari YouTube dan platform lain, ekspor cookie browser:

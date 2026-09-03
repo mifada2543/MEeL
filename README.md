@@ -26,7 +26,7 @@
 - **Transcoding otomatis** menggunakan FFmpeg
 - **Integrasi yt-dlp** untuk download via URL
 - **Manajemen file** berbasis peran (RBAC)
-- **Mini-game arcade** interaktif (Dino Run, Snake, Chess)
+- **Mini-game arcade** interaktif (9 game: Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania)
 - **Sistem keamanan** berlapis (CSRF, IP Banning, Session Management, Rate Limiting)
 - **Audit Trail** aktivitas pengguna dengan admin viewer
 - **Dashboard admin** dengan grafik aktivitas 7 hari
@@ -80,9 +80,17 @@
 
 ### 🕹️ Arcade (Mini Games)
 
-- **Dino Run** — endless runner ala Chrome Dino dengan karakter Miku & Teto
-- **Chess** — catur klasik + multiplayer online (wajib login, pilih warna Putih/Hitam sebelum game dimulai)
-- **Snake** — permainan Snake klasik yang nostalgia
+| Game | Deskripsi |
+|------|-----------|
+| **Miku & Teto Run** | Endless runner ala Chrome Dino dengan karakter Miku & Teto |
+| **Chess** | Catur klasik + multiplayer online (wajib login, pilih warna Putih/Hitam sebelum game dimulai) |
+| **Snake** | Permainan Snake klasik yang nostalgia |
+| **2048** | Puzzle geser & gabungkan tile hingga 2048 |
+| **Tetris** | Game blok legendaris — susun tetromino, bersihkan baris penuh |
+| **Breakout** | Hancurkan semua bata dengan bola pantul |
+| **Simon Says** | Game memori — ulangi urutan lampu yang makin panjang |
+| **Ludo** | Game papan 2–4 pemain — lempar dadu, kejar pion lawan, atau lawan Bot |
+| **MEeL!Mania** | Rhythm game 4-lane ala osu!mania (A/S/K/L + touch) — beatmap editor + upload lagu custom |
 
 ### 🔧 Fungsionalitas Umum
 
@@ -153,7 +161,7 @@ MEeL/
 │   ├── activity_log.php   # Audit trail viewer
 │   ├── edit-video.php     # Edit video metadata
 │   └── edit-music.php     # Edit music metadata
-├── arcade/                # Mini Games (Dino Run, Snake, Chess)
+├── arcade/                # Mini Games (9 game: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Aset statis (CSS, JS, font, gambar)
 ├── auth/                  # Autentikasi & manajemen sesi
 │   ├── config.php         # Entry point: bootstrap + require settings.php
@@ -177,24 +185,32 @@ MEeL/
 ├── modules/               # Core logic & business layer (OOP)
 │   ├── autoload.php       # 🔄 Autoloader PSR-4-like (semua class core auto-load)
 │   ├── core/              # Semua file core dipindah ke sini
-│   │   ├── helpers.php    # Fungsi bantuan: base_url(), resolve_binary(), time_ago(), dll
+│   │   ├── helpers.php    # Shim backward-compat → helpers/main.php + auth/loader.php
+│   │   ├── helpers/       # Utilitas per domain: main, storage, audio, url, metadata, subtitle, upload
+│   │   ├── Router.php     # MeelRouter — front controller & tabel rute URL bersih
 │   │   ├── base_url.php   # base_url() — path konsisten (MEEL_BASE_URL)
 │   │   ├── System.php     # Queue management & monitoring
 │   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
 │   │   ├── Uploader.php   # Upload file & validasi
 │   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
-│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── ProgressObserver.php / BrowserProgressObserver.php # Kontrak & presenter progress event
 │   │   ├── CommentRenderer.php # Render komentar nested
 │   │   ├── activity_logger.php # Logging aktivitas & IP ban check
 │   │   ├── japanese.php   # Analisis teks Jepang (MeCab/Romaji)
 │   │   ├── japanese_aliases.php # Kamus alias teks Jepang
 │   │   ├── SwPrecache.php # Generator precache PWA (sw.js dinamis)
 │   │   └── bootstrap.php  # Bootstrap error handling terpusat
+│   ├── auth/              # Infrastruktur keamanan terpusat (via loader.php)
+│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── SsrfGuard.php  # Validasi URL SSRF-safe
+│   │   ├── ValidatingProxy.php # Forward proxy SSRF-defense
+│   │   └── helpers/       # authz, csrf, session, stream_auth, mfa, user
 │   ├── media/             # Media library classes
-│   │   ├── MediaLibrary.php   # Query database, search, pagination metadata
+│   │   ├── MediaLibrary.php   # Query database, search, pagination metadata (+ BookRepository/BookUploader)
 │   │   ├── MediaViewer.php    # View tracking, komentar, rekomendasi
 │   │   ├── MediaInteraction.php # Like/dislike
-│   │   └── SearchEngine.php   # Mesin pencari FULLTEXT
+│   │   ├── SearchEngine.php   # Mesin pencari FULLTEXT
+│   │   ├── PlaylistRepository.php / MediaAdminRepository.php / ProfileRepository.php / AdminActivityRepository.php
 │   ├── transcoder/        # Utilitas FFmpeg
 │   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
 │   └── exceptions/        # Custom exception classes
@@ -368,6 +384,7 @@ Memverifikasi `MEEL_HDD_BASE`, folder upload + subdirektori non-auto-create
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
 | `modules/core/Uploader.php` | Upload file, FFmpeg |
 | `modules/core/helpers.php` | HDD check path (dari `MEEL_HDD_BASE`) |
+| `modules/core/Router.php` | Front controller — tabel rute URL bersih |
 | `modules/core/System.php` | Queue & rate limit config |
 | `modules/auth/RateLimiter.php` | API rate limiter — per-endpoint limits |
 
@@ -422,6 +439,12 @@ $url = base_url('/assets/css/style.css'); // → /MEeL/assets/css/style.css
 | **v9** | Kolom MFA (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`) di tabel users |
 | **v10** | Index komposit comments `(video_id, created_at)` & `(music_id, created_at)` |
 | **v11** | Unique key `interactions` dipecah: `(user_id, video_id)` & `(user_id, music_id)` |
+| **v12** | Ikat identitas user ke room catur (`white_user_id`, `black_user_id`) — cegah akses ilegal via `room_code` |
+
+> 💡 **Catatan modul Rhythm (MEeL!Mania):** tabel `arcade_song` & `arcade_score`
+> dikelola lewat `arcade/rhythm/migration.sql` — **terpisah** dari migration system
+> utama (v1–v12). Import manual sekali: `mysql MEeL < arcade/rhythm/migration.sql`
+> (atau jalankan query CREATE TABLE dari file tersebut).
 
 Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
@@ -429,14 +452,15 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 268 | 268 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
-| **Security Test** | 135 | 129 pass, 6 warn | 0 | **0** | **✅ 98/100** |
-| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 55 | 53 pass, 2 warn | 0 | **0** | **✅ 98/100** |
+| **Security Test** | 137 | 133 pass, 4 warn | 0 | **0** | **✅ 99/100** |
+| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
 
-> Security test: 5 warning non-kritis (review query mentah MediaViewer, cek MIME
-> profile_edit, dan deteksi parameter session) — bukan kegagalan; skor **98/100**.
+> Security test: 4 warning non-kritis (review query mentah MediaViewer, cek MIME
+> profile_edit, review validasi filename download_transcode, dan shell exec
+> System.php) — bukan kegagalan; skor **99/100**.
 > Verifikasi storage & deployment: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.

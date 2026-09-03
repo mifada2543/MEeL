@@ -58,7 +58,8 @@ modules/
 │   ├── Uploader.php        # Local file upload (video + music)
 │   ├── Transcoder.php      # yt-dlp download & transcoding engine
 │   ├── helpers.php         # Backward-compat shim → requires helpers/main.php + auth/loader.php
-│   ├── helpers/            # Per-domain utilities: main.php, storage.php, audio.php, url.php
+│   ├── helpers/            # Per-domain utilities: main.php, storage.php, audio.php, url.php, metadata.php, subtitle.php, upload.php
+│   ├── Router.php          # MeelRouter — front-controller route table (routeFor/url/dispatch)
 │   ├── bootstrap.php       # Environment detection & error reporting
 │   ├── base_url.php        # Centralized base URL computation (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
@@ -77,7 +78,11 @@ modules/
 │   ├── MediaLibrary.php    # DB queries, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, comments, recommendations
 │   ├── MediaInteraction.php# Like/dislike, comment deletion
-│   └── SearchEngine.php    # FULLTEXT search with sanitizer + parameter filtering
+│   ├── SearchEngine.php    # FULLTEXT search with sanitizer + parameter filtering
+│   ├── PlaylistRepository.php # Playlist queries & playlist slug routes
+│   ├── MediaAdminRepository.php # Media metadata queries for the admin panel (edit video/music)
+│   ├── ProfileRepository.php # Profile data queries (video/music counts)
+│   └── AdminActivityRepository.php # Activity-log queries & filters for the admin viewer
 ├── exceptions/             # Exception classes
 │   ├── ProcessException.php
 │   ├── DownloadException.php
@@ -448,6 +453,11 @@ class MusicWatchController { public function getViewData(): array; public functi
 | **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
 | **v10** | Composite index `(video_id, created_at)` & `(music_id, created_at)` on `comments` |
 | **v11** | `interactions` unique keys split: `(user_id, video_id)` & `(user_id, music_id)` — NULL in a combined unique key did not prevent duplicate likes |
+| **v12** | Bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code` |
+
+> 💡 **Rhythm module (MEeL!Mania) does NOT use the main migration system.** The
+> `arcade_song` & `arcade_score` tables come from `arcade/rhythm/migration.sql`
+> (import once manually — see [Arcade Collection](#21a-arcade-collection-arcade)).
 
 ### 20. MFA System
 
@@ -507,6 +517,41 @@ Klik "Multiplayer LAN" → konfirmasi SweetAlert
 - Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
 - Token CSRF tidak pernah disimpan ke `moves.move_data`.
 - `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).
+
+### 21a. Arcade Collection (`arcade/`)
+
+Beyond multiplayer chess, MEeL now ships **9 arcade games** — 7 static games (pure
+HTML/JS, no backend) + Chess (PHP multiplayer) + Rhythm (PHP with its own DB):
+
+| Game | Folder | Type | Description |
+|---|---|---|---|
+| Miku & Teto Run | `arcade/dino/` | Static | Endless runner inspired by Chrome Dino |
+| Snake | `arcade/snake/` | Static | Classic Snake |
+| 2048 | `arcade/2048/` | Static | Tile-merging puzzle |
+| Tetris | `arcade/tetris/` | Static | Legendary tetromino game |
+| Breakout | `arcade/breakout/` | Static | Bouncing ball & bricks |
+| Simon Says | `arcade/simon-says/` | Static | Memory game |
+| Ludo | `arcade/ludo/` | Static | 2–4 player board game / vs Bot |
+| Chess | `arcade/chess/` | PHP + DB | Real-time LAN multiplayer (see §21) |
+| **MEeL!Mania** | `arcade/rhythm/` | PHP + DB | 4-lane rhythm game inspired by osu!mania |
+
+**Rhythm module (`arcade/rhythm/`):**
+
+| File | Function |
+|---|---|
+| `index.php` | Lobby — song list (builtin + custom), filter/sort/search |
+| `game.php` | 4-lane gameplay — A/S/K/L or touch, 4 speed levels |
+| `editor/` | Beatmap editor — create/save beatmaps in the browser (localStorage) |
+| `manage/` | Custom song management (list, edit, delete) |
+| `api/songs.php` | GET — song list (builtin + custom, sort/filter/search, limit 100) |
+| `api/beatmap.php` | GET — fetch beatmap per song (builtin via slug, custom via numeric ID; increments `play_count`) |
+| `api/upload.php` | POST — upload custom song (auth + CSRF; non-admin 10/hour; MP3/OGG/OPUS/FLAC/WAV ≤ 20MB & ≤ 5 min; beatmap 10–5000 notes; FLAC auto-transcoded to Opus; cover → WebP) |
+| `api/delete.php` | POST — delete custom song (owner/admin only) |
+| `migration.sql` | **Separate DB tables** — `arcade_song` & `arcade_score` (FK to `users`) |
+
+> ⚠️ **Installation:** import the rhythm tables once:
+> `mysql MEeL < arcade/rhythm/migration.sql` — not part of
+> `database/schema.sql` (20 tables) nor `database/migrate.php` (v1–v12).
 
 ### Admin Activity Log Viewer
 

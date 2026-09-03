@@ -20,7 +20,7 @@ MEeL menggunakan pendekatan testing berlapis:
 
 ---
 
-## 🧪 PHPUnit Test Suite (268 Unit + 79 Integration = 347 Test)
+## 🧪 PHPUnit Test Suite (266 Unit + 81 Integration = 347 Tests)
 
 ### Instalasi
 
@@ -77,7 +77,6 @@ logs/tests/
 | `SsrfGuardTest.php` | 76 | **Guard SSRF** — allowlist protokol, range IP private/publik (v4 & v6), penolakan record DNS campuran, denylist hostname, HTTP pinning (lihat bawah) |
 | `DriveSecurityTest.php` | 13 | **Private Drive** — akses cross-user, path traversal, symlink escape, boundary realpath, kuota, reservasi nama atomik (lihat bawah) |
 | `DriveStorageBasePathTest.php` | 8 | Resolusi base path storage Drive — konstanta `MEEL_HDD_DRIVE`, fallback, prioritas |
-| `SystemTest.php` | 2 | Class existence & utilitas System |
 | `ValidatingProxyTest.php` | 20 | **Validating forward proxy** — probe CONNECT/GET nyata: target private ditolak (502), target publik di-tunnel, bind loopback-only (lihat bawah) |
 
 #### Integration Test (`tests/integration/`)
@@ -89,6 +88,7 @@ logs/tests/
 | `ChessHelpersIntegrationTest.php` | 6 | Helper catur dengan DB real |
 | `ChessRematchIntegrationTest.php` | 21 | Alur rematch catur dengan DB real |
 | `GarbageCollectorChessRoomsIntegrationTest.php` | 15 | Garbage collection room catur dengan DB real |
+| `SystemTest.php` | 2 | Class existence & utilitas System |
 
 ### Test Helpers
 
@@ -400,9 +400,9 @@ sebelum rilis.
 | Suite | Test | Lulus | Gagal | Skor |
 |---|---|---|---|---|
 | **PHPUnit (unit + integration)** | 347 | 347 | 0 | ✅ 100% |
-| **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
-| **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
-| **Security Test** | 135 | 129 pass, 6 warn | 0 | ✅ 98/100 |
+| **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 109 | 109 | 0 | ✅ 100% |
+| **Functional Test** | 55 | 53 pass, 2 warn | 0 | ✅ 98/100 |
+| **Security Test** | 137 | 133 pass, 4 warn | 0 | ✅ 99/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri

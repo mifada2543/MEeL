@@ -20,7 +20,7 @@ MEeL uses a multi-layered testing approach:
 
 ---
 
-## 🧪 PHPUnit Test Suite (268 Unit + 79 Integration = 347 Tests)
+## 🧪 PHPUnit Test Suite (266 Unit + 81 Integration = 347 Tests)
 
 ### Installation
 
@@ -77,7 +77,6 @@ logs/tests/
 | `SsrfGuardTest.php` | 76 | **SSRF guard** — protocol allowlist, private/public IP ranges (v4 & v6), DNS mixed-record rejection, hostname denylist, HTTP pinning (see below) |
 | `DriveSecurityTest.php` | 13 | **Private Drive** — cross-user access, path traversal, symlink escape, realpath boundary, quota, atomic filename reservation (see below) |
 | `DriveStorageBasePathTest.php` | 8 | Drive storage base-path resolution — `MEEL_HDD_DRIVE` constant, fallback, priority |
-| `SystemTest.php` | 2 | System class existence & utilities |
 | `ValidatingProxyTest.php` | 20 | **Validating forward proxy** — real CONNECT/GET probes: private targets refused (502), public targets tunneled, loopback-only bind (see below) |
 
 #### Integration Tests (`tests/integration/`)
@@ -89,6 +88,7 @@ logs/tests/
 | `ChessHelpersIntegrationTest.php` | 6 | Chess helper functions with real DB |
 | `ChessRematchIntegrationTest.php` | 21 | Chess rematch flow against real DB |
 | `GarbageCollectorChessRoomsIntegrationTest.php` | 15 | Chess room garbage collection with real DB |
+| `SystemTest.php` | 2 | System class existence & utilities |
 
 ### Test Helpers
 
@@ -397,9 +397,9 @@ for `data_drive/` — fix `httpd.conf` (`AllowOverride All`) before release.
 | Suite | Tests | Pass | Fail | Score |
 |---|---|---|---|---|
 | **PHPUnit (unit + integration)** | 347 | 347 | 0 | ✅ 100% |
-| **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 76 | 76 | 0 | ✅ 100% |
-| **Functional Test** | 55 | 50 pass, 5 warn | 0 | ✅ 95/100 |
-| **Security Test** | 135 | 129 pass, 6 warn | 0 | ✅ 98/100 |
+| **PHPUnit security subset** (SsrfGuard + Drive + Proxy) | 109 | 109 | 0 | ✅ 100% |
+| **Functional Test** | 55 | 53 pass, 2 warn | 0 | ✅ 98/100 |
+| **Security Test** | 137 | 133 pass, 4 warn | 0 | ✅ 99/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
 > Numbers are from the hardening pass (August 2026). Run the suites yourself

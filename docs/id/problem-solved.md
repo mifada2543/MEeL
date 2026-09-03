@@ -83,7 +83,7 @@ Dan itu **belum termasuk**:
 ├───────────┬───────────┬──────────┬──────────┬───────────┤
 │  🎬 Video  │  🎵 Musik  │ 📚 Buku  │ ☁️ Drive  │ 🕹️ Game   │
 │  Streaming │  Pemutar  │  Pembaca │ Penyimpan │  Arkade   │
-│  (HLS.js)  │  (Opus)   │ (PDF/ZIP)│ (RBAC)    │ (Dino/Catur)│
+│  (HLS.js)  │  (Opus)   │ (PDF/ZIP)│ (RBAC)    │ (9 Games)   │
 ├───────────┴───────────┴──────────┴──────────┴───────────┤
 │  Biaya per bulan: Rp 0 (nol)                            │
 │  Biaya per tahun: Rp 0 (nol)                            │
@@ -190,8 +190,9 @@ Mencari satu file? **Buka 3-4 aplikasi berbeda** dan cek satu per satu.
      ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
      │ CLOUD DRIVE │   │  TRANSCODER │   │   ARCADE    │
      ├─────────────┤   ├─────────────┤   ├─────────────┤
-     │ Public      │   │ Video→Audio │   │ Dino Run    │
-     │ Private     │   │ HLS→MP4     │   │ Chess       │
+     │ Public      │   │ Video→Audio │   │ 9 Mini Games│
+     │ Private     │   │ HLS→MP4     │   │ (Dino, Snake│
+     │             │   │             │   │  2048, dll.)│
      └─────────────┘   └─────────────┘   └─────────────┘
 ```
 

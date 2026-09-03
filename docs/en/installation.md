@@ -592,6 +592,13 @@ The migration is **idempotent** — safe to run multiple times. It manages
 - **v11:** `interactions` unique keys split into `(user_id, video_id)` & `(user_id, music_id)`
 - **v12:** bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code`
 
+> 💡 **Rhythm module (MEeL!Mania) has its own DB migration** — the `arcade_song`
+> & `arcade_score` tables come from `arcade/rhythm/migration.sql`, **not** part of
+> `database/migrate.php` (v1–v12). Import once:
+> ```bash
+> mysql MEeL < arcade/rhythm/migration.sql
+> ```
+
 ### 11. Setup cookies.txt (for yt-dlp)
 
 To download from YouTube and other platforms, export your browser cookies:

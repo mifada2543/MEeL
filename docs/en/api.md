@@ -32,6 +32,7 @@ controllers/
 │   ├── pdf.php               # PDF viewer proxy
 │   ├── download_transcode.php# Download transcoded file
 │   ├── post_encode.php       # Post-encode music (after yt-dlp)
+│   ├── theme.php             # Theme preference (GET/POST) — light/dark
 │   ├── ajax_refresh.php      # AJAX fragment refresh (search, etc.)
 │   ├── server_stats.php      # Server statistics (JSON)
 │   └── server_stats_sse.php  # Server statistics via Server-Sent Events
@@ -774,6 +775,24 @@ Real-time LAN chess polling API. **All endpoints require login** (JSON `401` +
 | `game_action.php` | POST | login + CSRF | `resign`, `draw_offer`, `draw_accept`, `draw_decline`, `disconnect_win` (claim win — server verifies opponent offline via `users.last_activity`), `game_over` (client records checkmate/stalemate so finished games are kept) |
 
 Client helpers live in `arcade/chess/assets/js/api.js` — on `401` it redirects to login.
+
+---
+
+## Rhythm Game Endpoints (MEeL!Mania, `arcade/rhythm/api/`)
+
+4-lane rhythm game API (osu!mania-inspired). All endpoints return JSON;
+upload/delete require **login + CSRF** (`config.php` calls `meel_boot_session()`
+and the same auth helpers as the other modules).
+
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `arcade/rhythm/api/songs` | GET | public | Song list (builtin + custom) — `sort` (`bpm`/`difficulty`/`newest`/`plays`/`default`), `user_id`, `search`; limit 100; response `{songs, total, builtin_count, custom_count}` |
+| `arcade/rhythm/api/beatmap?id=X` | GET | public | Fetch beatmap — builtin slug (`songs/<id>/beatmap.json`) or custom numeric ID (increments `play_count`); response `{id, type, title, artist, bpm, difficulty, duration, note_count, beatmap, audio_url, cover_url}` |
+| `arcade/rhythm/api/upload` | POST | login + CSRF | Upload custom song — non-admin max **10/hour**; MP3/OGG/OPUS/FLAC/WAV ≤ 20MB & ≤ 5 min; beatmap 10–5000 notes (validates `t`/`l`/`e`, sorted by time); FLAC auto-transcoded to Opus; cover (JPG/PNG/GIF/WebP ≤ 5MB) → WebP 512px; supports edit (`song_id`) |
+| `arcade/rhythm/api/delete` | POST | login + CSRF | Delete custom song — owner or admin; removes audio + cover + beatmap.json + DB record (transactional) |
+
+> ⚠️ The `arcade_song` & `arcade_score` tables come from `arcade/rhythm/migration.sql`
+> (separate from `database/schema.sql` / `database/migrate.php` v1–v12).
 
 ---
 

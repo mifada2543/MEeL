@@ -24,7 +24,7 @@
 - **Automatic Transcoding** using FFmpeg
 - **yt-dlp Integration** for external URL downloads
 - **Role-Based Access Control** (RBAC)
-- **Interactive Arcade** mini-games (Dino Run, Snake, Chess)
+- **Interactive Arcade** mini-games (9 games: Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania)
 - **Layered Security** (CSRF, IP Banning, Session Management, Rate Limiting)
 - **Audit Trail** with admin activity log viewer
 - **Admin Dashboard** with 7-day activity charts
@@ -78,9 +78,17 @@
 
 ### 🕹️ Arcade (Mini Games)
 
-- **Dino Run** — endless runner inspired by Chrome Dino with Miku & Teto characters
-- **Chess** — classic chess + online multiplayer (login required, pick White/Black color before the game starts)
-- **Snake** — nostalgic classic Snake game
+| Game | Description |
+|------|-------------|
+| **Miku & Teto Run** | Endless runner inspired by Chrome Dino with Miku & Teto characters |
+| **Chess** | Classic chess + online multiplayer (login required, pick White/Black color before the game starts) |
+| **Snake** | Nostalgic classic Snake game |
+| **2048** | Slide & merge tiles up to 2048 |
+| **Tetris** | Legendary block game — stack tetrominoes, clear full rows |
+| **Breakout** | Break all bricks with a bouncing ball |
+| **Simon Says** | Memory game — repeat the ever-growing light sequence |
+| **Ludo** | Classic 2–4 player board game — roll dice, chase opponent pieces, or play vs Bot |
+| **MEeL!Mania** | 4-lane rhythm game inspired by osu!mania (A/S/K/L + touch) — beatmap editor + custom song uploads |
 
 ### 🔧 General Functionality
 
@@ -151,7 +159,7 @@ MEeL/
 │   ├── activity_log.php   # Audit trail viewer
 │   ├── edit-video.php     # Edit video metadata
 │   └── edit-music.php     # Edit music metadata
-├── arcade/                # Mini Games (Dino Run, Snake, Chess)
+├── arcade/                # Mini Games (9 games: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Static assets (CSS, JS, fonts, images)
 ├── auth/                  # Authentication & session management
 │   ├── config.php         # Entry point: bootstrap + requires settings.php
@@ -174,13 +182,15 @@ MEeL/
 ├── err/                   # Error pages (denied, maintenance, banned, revoked)
 ├── modules/               # Core logic & business layer (OOP)
 │   ├── core/              # All core modules (moved from modules/ root)
-│   │   ├── helpers.php    # Helper functions: base_url(), resolve_binary(), time_ago(), etc.
+│   │   ├── helpers.php    # Backward-compat shim → helpers/main.php + auth/loader.php
+│   │   ├── helpers/       # Per-domain utilities: main, storage, audio, url, metadata, subtitle, upload
+│   │   ├── Router.php     # MeelRouter — front controller & clean-URL route table
 │   │   ├── base_url.php   # base_url() — consistent paths (MEEL_BASE_URL)
 │   │   ├── System.php     # Queue management & monitoring
 │   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
 │   │   ├── Uploader.php   # File upload & validation
 │   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
-│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── ProgressObserver.php / BrowserProgressObserver.php # Progress event contract & browser presenter
 │   │   ├── CommentRenderer.php # Nested comment rendering
 │   │   ├── activity_logger.php # Activity logging & IP ban check
 │   │   ├── japanese.php   # Japanese text analysis (MeCab/Romaji)
@@ -188,11 +198,17 @@ MEeL/
 │   │   ├── SwPrecache.php # PWA precache generator (dynamic sw.js)
 │   │   └── bootstrap.php  # Centralized error handling bootstrap
 │   ├── autoload.php       # 🔄 PSR-4-like autoloader (all core classes auto-load)
+│   ├── auth/              # Centralized security infrastructure (via loader.php)
+│   │   ├── RateLimiter.php # ⚡ File-based API rate limiter
+│   │   ├── SsrfGuard.php  # SSRF-safe URL validation
+│   │   ├── ValidatingProxy.php # SSRF-defense forward proxy
+│   │   └── helpers/       # authz, csrf, session, stream_auth, mfa, user
 │   ├── media/             # Media library classes
-│   │   ├── MediaLibrary.php   # Database queries, search, pagination metadata
+│   │   ├── MediaLibrary.php   # Database queries, search, pagination metadata (+ BookRepository/BookUploader)
 │   │   ├── MediaViewer.php    # View tracking, comments, recommendations
 │   │   ├── MediaInteraction.php # Like/dislike
-│   │   └── SearchEngine.php   # FULLTEXT search engine
+│   │   ├── SearchEngine.php   # FULLTEXT search engine
+│   │   ├── PlaylistRepository.php / MediaAdminRepository.php / ProfileRepository.php / AdminActivityRepository.php
 │   ├── transcoder/        # FFmpeg utilities
 │   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
 │   └── exceptions/        # Custom exception classes
@@ -364,6 +380,7 @@ hardening, the `data_drive/` symlink guard, and the PWA `mod_rewrite` rule.
 | `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
 | `modules/core/Uploader.php` | File upload, FFmpeg |
 | `modules/core/helpers.php` | HDD check paths (from `MEEL_HDD_BASE`) |
+| `modules/core/Router.php` | Front controller — clean-URL route table |
 | `modules/core/System.php` | Queue & rate limit config |
 | `modules/auth/RateLimiter.php` | API rate limiter — per-endpoint limits |
 
@@ -428,6 +445,12 @@ define('MEEL_YTDLP_PATH', '/usr/local/bin/yt-dlp');
 | **v9** | MFA columns (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`) on users |
 | **v10** | Composite index on comments `(video_id, created_at)` & `(music_id, created_at)` |
 | **v11** | `interactions` unique keys split: `(user_id, video_id)` & `(user_id, music_id)` |
+| **v12** | Bind user identity to chess rooms (`white_user_id`, `black_user_id`) — prevents illegal access via `room_code` |
+
+> 💡 **Rhythm module note (MEeL!Mania):** the `arcade_song` & `arcade_score` tables
+> are managed by `arcade/rhythm/migration.sql` — **separate** from the main migration
+> system (v1–v12). Import manually once: `mysql MEeL < arcade/rhythm/migration.sql`
+> (or run the CREATE TABLE statements from that file).
 
 Migrations are **idempotent** — safe to run repeatedly.
 
@@ -435,14 +458,15 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 268 | 268 | 0 | **0** | **✅ 100%** |
-| **PHPUnit Integration Tests** | 79 | 79 | 0 | **0** | **✅ 100%** |
-| **Functional Test** | 55 | 50 pass, 5 warn | 0 | **0** | **✅ 95/100** |
-| **Security Test** | 135 | 129 pass, 6 warn | 0 | **0** | **✅ 98/100** |
-| **PHP Syntax** | 175 files | 175 | 0 | **0** | **✅ ALL PASS** |
+| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
+| **Functional Test** | 55 | 53 pass, 2 warn | 0 | **0** | **✅ 98/100** |
+| **Security Test** | 137 | 133 pass, 4 warn | 0 | **0** | **✅ 99/100** |
+| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
 
-> Security test: 5 non-critical warnings (MediaViewer raw-query review, profile_edit
-> MIME check, and session parameter detection) — not failures; score **98/100**.
+> Security test: 4 non-critical warnings (MediaViewer raw-query review, profile_edit
+> MIME check, download_transcode filename validation review, and System.php shell
+> exec) — not failures; score **99/100**.
 > Storage & deployment verification: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.
@@ -541,7 +565,7 @@ This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
 
 **Contact:** `mifada2543@gmail.com` · [github.com/mifada2543](https://github.com/mifada2543)
 
-*Last synced with README.md: August 5, 2026*
+*Last synced with README.md: September 3, 2026*
 
 ---
 

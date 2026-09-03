@@ -58,7 +58,8 @@ modules/
 │   ├── Uploader.php        # Upload file lokal (video + music)
 │   ├── Transcoder.php      # Engine download yt-dlp & transcoding
 │   ├── helpers.php         # Shim backward-compat → require helpers/main.php + auth/loader.php
-│   ├── helpers/            # Utilitas per domain: main.php, storage.php, audio.php, url.php
+│   ├── helpers/            # Utilitas per domain: main.php, storage.php, audio.php, url.php, metadata.php, subtitle.php, upload.php
+│   ├── Router.php          # MeelRouter — tabel rute front controller (routeFor/url/dispatch)
 │   ├── bootstrap.php       # Environment detection & error reporting
 │   ├── base_url.php        # Perhitungan base URL terpusat (meel_base_url_path)
 │   ├── activity_logger.php # Activity logging, IP banning, session kick
@@ -77,7 +78,11 @@ modules/
 │   ├── MediaLibrary.php    # Query DB, pagination, BookRepository, BookUploader
 │   ├── MediaViewer.php     # View tracking, komentar, rekomendasi
 │   ├── MediaInteraction.php# Like/dislike, hapus komentar
-│   └── SearchEngine.php    # FULLTEXT search dengan sanitizer + filtering
+│   ├── SearchEngine.php    # FULLTEXT search dengan sanitizer + filtering
+│   ├── PlaylistRepository.php # Query playlist & route slug playlist
+│   ├── MediaAdminRepository.php # Query metadata media untuk panel admin (edit video/music)
+│   ├── ProfileRepository.php # Query data profil (count video, music)
+│   └── AdminActivityRepository.php # Query & filter activity log untuk admin viewer
 ├── exceptions/             # Class exception
 │   ├── ProcessException.php
 │   ├── DownloadException.php
@@ -368,6 +373,11 @@ class MusicWatchController { public function getViewData(): array; public functi
 | **v9** | **MFA columns:** `mfa_secret`, `mfa_backup_codes`, `mfa_enabled` |
 | **v10** | Index komposit `(video_id, created_at)` & `(music_id, created_at)` pada `comments` |
 | **v11** | Unique key `interactions` dipecah: `(user_id, video_id)` & `(user_id, music_id)` — NULL di unique key gabungan tidak mencegah like duplikat |
+| **v12** | Ikat identitas user ke room catur (`white_user_id`, `black_user_id`) — cegah akses ilegal via `room_code` |
+
+> 💡 **Modul Rhythm (MEeL!Mania) TIDAK memakai migration system utama.** Tabel
+> `arcade_song` & `arcade_score` dibuat lewat `arcade/rhythm/migration.sql`
+> (import manual sekali — lihat [Arcade Collection](#21a-arcade-collection-arcade)).
 
 ### 20. MFA System
 
@@ -427,6 +437,41 @@ Klik "Multiplayer LAN" → konfirmasi SweetAlert
 - Semua aksi POST wajib `csrf_token` valid (403 jika tidak).
 - Token CSRF tidak pernah disimpan ke `moves.move_data`.
 - `admin/catur.php?auto_cleanup=1` juga wajib `csrf_token` (dikirim JS via `window.MEEL_ADMIN_CSRF`).
+
+### 21a. Arcade Collection (`arcade/`)
+
+Selain catur multiplayer, MEeL kini punya **9 game arcade** — 7 game statis (HTML/JS
+murni, tanpa backend) + Chess (PHP multiplayer) + Rhythm (PHP + DB sendiri):
+
+| Game | Folder | Tipe | Deskripsi |
+|---|---|---|---|
+| Miku & Teto Run | `arcade/dino/` | Statis | Endless runner ala Chrome Dino |
+| Snake | `arcade/snake/` | Statis | Snake klasik |
+| 2048 | `arcade/2048/` | Statis | Puzzle gabung tile |
+| Tetris | `arcade/tetris/` | Statis | Tetromino legendaris |
+| Breakout | `arcade/breakout/` | Statis | Bola pantul & bata |
+| Simon Says | `arcade/simon-says/` | Statis | Game memori |
+| Ludo | `arcade/ludo/` | Statis | Board game 2–4 pemain / vs Bot |
+| Chess | `arcade/chess/` | PHP + DB | Multiplayer LAN real-time (lihat §21) |
+| **MEeL!Mania** | `arcade/rhythm/` | PHP + DB | Rhythm game 4-lane ala osu!mania |
+
+**Modul Rhythm (`arcade/rhythm/`):**
+
+| File | Fungsi |
+|---|---|
+| `index.php` | Lobby — daftar lagu (builtin + custom), filter/sort/search |
+| `game.php` | Gameplay 4-lane — A/S/K/L atau sentuh, 4 tingkat kecepatan |
+| `editor/` | Beatmap editor — buat/simpan beatmap di browser (localStorage) |
+| `manage/` | Manajemen lagu custom (list, edit, hapus) |
+| `api/songs.php` | GET — daftar lagu (builtin + custom, sort/filter/search, limit 100) |
+| `api/beatmap.php` | GET — ambil beatmap per lagu (builtin via slug, custom via ID numerik; increment `play_count`) |
+| `api/upload.php` | POST — upload lagu custom (auth + CSRF; non-admin 10/jam; MP3/OGG/OPUS/FLAC/WAV ≤ 20MB & ≤ 5 menit; beatmap 10–5000 notes; FLAC otomatis di-transcode ke Opus; cover → WebP) |
+| `api/delete.php` | POST — hapus lagu custom (owner/admin saja) |
+| `migration.sql` | **Tabel DB terpisah** — `arcade_song` & `arcade_score` (FK ke `users`) |
+
+> ⚠️ **Instalasi:** import tabel rhythm sekali:
+> `mysql MEeL < arcade/rhythm/migration.sql` — bukan bagian dari
+> `database/schema.sql` (20 tabel) maupun `database/migrate.php` (v1–v12).
 
 ### Admin Activity Log Viewer
 

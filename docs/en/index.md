@@ -50,7 +50,12 @@ Welcome to the official **MEeL** documentation — A Personal Media Hub Platform
 | **MFA Verify** | `auth/mfa_verify.php` | TOTP verification page after login |
 | **MFA Reset (Admin)** | `admin/mfa_reset.php` | Admin reset MFA for users who lost Authenticator access |
 | **Chess Multiplayer** | `arcade/chess/` | Real-time LAN chess — create/join room, turn-based, legal move validation |
+| **Rhythm Module (MEeL!Mania)** | `arcade/rhythm/` | 4-lane rhythm game inspired by osu!mania — beatmap editor, custom song uploads (`arcade_song`/`arcade_score` tables via `arcade/rhythm/migration.sql`) |
 | **FfmpegUtils Trait** | `modules/transcoder/FfmpegUtils.php` | Shared trait: probeDuration(), generateSpriteAndVTT() |
+| **PlaylistRepository** | `modules/media/PlaylistRepository.php` | Playlist queries & playlist slug routes |
+| **MediaAdminRepository** | `modules/media/MediaAdminRepository.php` | Media metadata queries for the admin panel (edit video/music) |
+| **ProfileRepository** | `modules/media/ProfileRepository.php` | Profile data queries (video/music counts) |
+| **AdminActivityRepository** | `modules/media/AdminActivityRepository.php` | Activity-log queries & filters for the admin viewer |
 | **Admin Activity Log** | `admin/activity_log.php` | Audit trail viewer with filter, pagination, cleanup |
 
 ---
@@ -87,7 +92,8 @@ Request: /MEeL/music/beranda?format=ogg
 | URL | Handler (file) |
 |---|---|
 | `/` | `index.php` (hub) |
-| `/introduction`, `/update`, `/upload` | `introduction.php`, `update.php`, `upload_advanced.php` |
+| `/introduction`, `/update`, `/upload`, `/transcode` | `introduction.php`, `update.php`, `upload_advanced.php`, `transcode.php` |
+| `/err`, `/err/offline` | `err/index.php` (dynamic `?code=`), `err/offline.php` (PWA) |
 | `/video/beranda`, `/video/watch`, `/video/search`, `/video/load-more`, `/video/upload`, `/video/stream` | `video/*.php` |
 | `/music/beranda`, `/music/watch`, `/music/search`, `/music/load-more`, `/music/upload`, `/music/playlist`, `/music/playlist-action`, `/music/stream`, `/music/file` | `music/*.php` |
 | `/music/<playlist-name>` | `music/view_playlist.php` (playlist slug route — see below) |
@@ -96,8 +102,9 @@ Request: /MEeL/music/beranda?format=ogg
 | `/profile` (`?u=`), `/profile/edit`, `/profile/manage`, `/profile/manage-action` | `profile/index.php`, `controllers/profile/*.php` |
 | `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/analys`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php`, `controllers/admin/*.php` |
 | `/auth/login`, `/auth/register`, `/auth/logout`, `/auth/mfa-setup`, `/auth/mfa-verify` | `auth/*.php` |
-| `/arcade/beranda`, `/arcade/chess` | `arcade/*.php` |
-| `/api/like`, `/api/comment`, `/api/delete-comment`, `/api/auto-metadata`, `/api/pdf`, `/api/download-transcode`, `/api/post-encode`, `/api/ajax-refresh`, `/api/server-stats`, `/api/server-stats-sse` | `controllers/api/*.php` |
+| `/arcade/beranda`, `/arcade/chess`, `/arcade/rhythm`, `/arcade/rhythm/game`, `/arcade/rhythm/editor`, `/arcade/rhythm/manage`, `/arcade/rhythm/edit` | `arcade/*.php` |
+| `/arcade/rhythm/api/songs`, `/arcade/rhythm/api/beatmap`, `/arcade/rhythm/api/upload`, `/arcade/rhythm/api/delete` | `arcade/rhythm/api/*.php` (MEeL!Mania) |
+| `/api/like`, `/api/comment`, `/api/delete-comment`, `/api/auto-metadata`, `/api/pdf`, `/api/download-transcode`, `/api/post-encode`, `/api/theme`, `/api/ajax-refresh`, `/api/server-stats`, `/api/server-stats-sse` | `controllers/api/*.php` |
 | `/system/mfa` | `controllers/system/mfa.php` |
 
 > **Playlist slug route:** playlists have name-based URLs — `/music/<playlist-name>`
@@ -143,6 +150,7 @@ Request: /MEeL/music/beranda?format=ogg
 - **Arcade Chess:** Real-time LAN multiplayer chess — create/join room, turn-based, legal move validation
 - **Chess Color Picker:** In multiplayer mode the board is hidden behind a color picker overlay (White = create room & wait, Black = join with code) — board locked until the game starts
 - **Chess Auth & CSRF:** Multiplayer controllers now require login (JSON 401) and CSRF token on all state-changing calls; admin `auto_cleanup` endpoint verified with CSRF
+- **Arcade Expansion (9 games):** besides Dino Run, Chess & Snake — now **2048**, **Tetris**, **Breakout**, **Simon Says**, **Ludo**, and **MEeL!Mania** (4-lane rhythm game inspired by osu!mania with a beatmap editor and custom song uploads MP3/OGG/FLAC/WAV ≤ 5 min; the `arcade_song`/`arcade_score` tables come from `arcade/rhythm/migration.sql` — separate from the main v1–v12 migrations)
 - **PWA Optimization:** Dynamic service worker (`sw.js.php` + `SwPrecache`) — precache list auto-generated from `manifest.php`, auto `SW_VERSION`, real 192/512/maskable icons, iOS standalone meta, auto-reload on SW update
 - **Search Improvements:** Query sanitizer (`sanitizeQuery()`), `MIN_SEARCH_QUERY = 3`, music search pagination, server-side books search (`BookRepository::searchBooks()`), cache key includes offset, `try/catch` around FULLTEXT queries
 - **Auth Hardening:** Session cookies now `Secure` (auto-detect HTTPS) + `HttpOnly` + `SameSite=Lax`; `MEEL_TRUST_PROXY_HEADERS` (default `false`) to prevent IP spoofing via proxy headers; DB connection charset forced to `utf8mb4`
@@ -157,7 +165,7 @@ Request: /MEeL/music/beranda?format=ogg
 - **🎵 Music** — Audio streaming with visualizer & mini player
 - **📚 Books** — Manga/PDF digital reader
 - **☁️ Cloud Drive** — Personal file storage with RBAC
-- **🕹️ Arcade** — Mini-games (Dino Run, Snake, Chess)
+- **🕹️ Arcade** — 9 mini-games (Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania)
 
 ### Core Tech Stack
 

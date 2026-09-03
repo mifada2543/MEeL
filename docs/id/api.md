@@ -31,6 +31,7 @@ controllers/
 │   ├── pdf.php               # PDF viewer proxy
 │   ├── download_transcode.php# Download hasil transcode
 │   ├── post_encode.php       # Post-encode music (after yt-dlp)
+│   ├── theme.php             # Theme preference (GET/POST) — light/dark
 │   ├── ajax_refresh.php      # Refresh fragment AJAX (search, dll.)
 │   ├── server_stats.php      # Statistik server (JSON)
 │   └── server_stats_sse.php  # Statistik server via Server-Sent Events
@@ -888,6 +889,24 @@ API polling catur real-time via LAN. **Semua endpoint wajib login** (JSON `401` 
 | `game_action.php` | POST | login + CSRF | `resign`, `draw_offer`, `draw_accept`, `draw_decline`, `disconnect_win` (klaim menang — server verifikasi lawan offline via `users.last_activity`), `game_over` (client mencatat checkmate/stalemate agar game selesai dipertahankan) |
 
 Helper client di `arcade/chess/assets/js/api.js` — saat `401` redirect ke login.
+
+---
+
+## Rhythm Game Endpoints (MEeL!Mania, `arcade/rhythm/api/`)
+
+API rhythm game 4-lane (osu!mania-inspired). Semua endpoint JSON; endpoint
+upload/delete wajib **login + CSRF** (`config.php` memanggil `meel_boot_session()`
+dan helper auth yang sama dengan modul lain).
+
+| Endpoint | Method | Auth | Deskripsi |
+|---|---|---|---|
+| `arcade/rhythm/api/songs` | GET | publik | Daftar lagu (builtin + custom) — `sort` (`bpm`/`difficulty`/`newest`/`plays`/`default`), `user_id`, `search`; limit 100; respons `{songs, total, builtin_count, custom_count}` |
+| `arcade/rhythm/api/beatmap?id=X` | GET | publik | Ambil beatmap — slug builtin (`songs/<id>/beatmap.json`) atau ID numerik lagu custom (increment `play_count`); respons `{id, type, title, artist, bpm, difficulty, duration, note_count, beatmap, audio_url, cover_url}` |
+| `arcade/rhythm/api/upload` | POST | login + CSRF | Upload lagu custom — non-admin max **10/jam**; MP3/OGG/OPUS/FLAC/WAV ≤ 20MB & ≤ 5 menit; beatmap 10–5000 notes (validasi `t`/`l`/`e`, di-sort by time); FLAC di-transcode ke Opus; cover (JPG/PNG/GIF/WebP ≤ 5MB) → WebP 512px; mendukung edit (`song_id`) |
+| `arcade/rhythm/api/delete` | POST | login + CSRF | Hapus lagu custom — owner atau admin; hapus audio + cover + beatmap.json + record DB (transaksional) |
+
+> ⚠️ Tabel `arcade_song` & `arcade_score` dibuat lewat `arcade/rhythm/migration.sql`
+> (terpisah dari `database/schema.sql` / `database/migrate.php` v1–v12).
 
 ---
 
