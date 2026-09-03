@@ -99,27 +99,27 @@ function _scanSubdirs(string $dir): array {
 
     <!-- READER NAVBAR -->
     <div class="reader-nav sticky top-0 z-50 px-3 sm:px-6 h-14 flex items-center justify-between transition-all duration-300" id="reader-navbar">
-        <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
             <a href="beranda" class="p-2 hover:bg-white/[.06] rounded-xl transition-all flex-shrink-0 group">
                 <i data-lucide="arrow-left" class="w-4 h-4 text-gray-500 group-hover:text-green-500 transition-colors"></i>
             </a>
-            <div class="min-w-0">
-                <h1 class="text-sm font-bold truncate max-w-[180px] sm:max-w-md text-white/90" title="<?= htmlspecialchars($book['title']) ?>">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-sm font-bold truncate text-white/90" title="<?= htmlspecialchars($book['title']) ?>">
                     <?= htmlspecialchars($book['title']) ?>
                 </h1>
-                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span class="text-[9px] text-gray-600 uppercase font-black tracking-widest">
+                <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                    <span class="text-[9px] text-gray-600 uppercase font-black tracking-widest flex-shrink-0">
                         <?= htmlspecialchars($book['type']) ?>
                     </span>
                     <?php if ($book['has_chapters'] == 1 && !empty($current_chapter)): ?>
-                        <span class="text-[9px] text-gray-700">•</span>
-                        <div class="text-[9px] text-green-500/60 uppercase font-bold tracking-wider line-clamp-2 overflow-hidden">
+                        <span class="text-[9px] text-gray-700 flex-shrink-0">•</span>
+                        <div class="text-[9px] text-green-500/60 uppercase font-bold tracking-wider min-w-0 line-clamp-1 sm:line-clamp-2">
                             <?= htmlspecialchars($current_chapter) ?>
                         </div>
                     <?php endif; ?>
                     <?php if ($total_pages > 0): ?>
-                        <span class="text-[9px] text-gray-700">•</span>
-                        <span class="text-[9px] text-gray-600 uppercase tracking-wider">
+                        <span class="text-[9px] text-gray-700 flex-shrink-0 hidden sm:inline">•</span>
+                        <span class="text-[9px] text-gray-600 uppercase tracking-wider flex-shrink-0 hidden sm:inline">
                             <?= $total_pages ?> halaman
                         </span>
                     <?php endif; ?>
