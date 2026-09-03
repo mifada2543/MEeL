@@ -302,9 +302,9 @@ while ($rc = $r->fetch_assoc()) {
                 <div class="relative flex items-center">
                     <i data-lucide="search" class="absolute left-3 w-3.5 h-3.5 text-[#455060] pointer-events-none"></i>
                     <form method="GET" id="search-form" class="flex gap-0">
-                        <input type="hidden" name="sort" value="<?= $sort ?>">
-                        <input type="hidden" name="dir" value="<?= $sort_dir ?>">
-                        <input type="hidden" name="type" value="<?= $type_filter ?>">
+                        <input type="hidden" name="sort" value="<?= htmlspecialchars($sort, ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="dir" value="<?= htmlspecialchars($sort_dir, ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="type" value="<?= htmlspecialchars($type_filter, ENT_QUOTES, 'UTF-8') ?>">
                         <input type="text" name="search" placeholder="Cari judul, romaji, atau ID..."
                             value="<?= htmlspecialchars($search) ?>"
                             class="admin-search-input">
@@ -323,7 +323,7 @@ while ($rc = $r->fetch_assoc()) {
                     </div>
                     <div class="type-menu">
                         <?php foreach ($type_labels as $k => $v): ?>
-                            <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $k ?>&search=<?= urlencode($search) ?>"
+                            <a href="?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($k) ?>&search=<?= urlencode($search) ?>"
                                 class="type-option<?= $type_filter === $k ? ' active' : '' ?>">
                                 <?= $v ?>
                             </a>
@@ -340,7 +340,7 @@ while ($rc = $r->fetch_assoc()) {
                         <?= $result_media ? $result_media->num_rows : 0 ?> item ditemukan
                     </div>
                     <?php if (!empty($search)): ?>
-                        <a href="?sort=<?= $sort ?>&dir=<?= $sort_dir ?>&type=<?= $type_filter ?>" class="btn-clear-filter">
+                        <a href="?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($type_filter) ?>" class="btn-clear-filter">
                             <i data-lucide="x" class="w-3 h-3"></i> Hapus Filter
                         </a>
                     <?php endif; ?>

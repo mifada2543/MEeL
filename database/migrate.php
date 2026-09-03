@@ -11,6 +11,24 @@ if (!isset($conn) || !$conn instanceof \mysqli || $conn->connect_error) {
     exit(1);
 }
 
+function meel_mig_has_column(\mysqli $conn, string $table, string $col): bool
+{
+    // Identifiers berasal dari daftar migrasi internal (hardcoded, bukan input
+    // user); nilai dicari memakai LIKE yang di-escape penuh.
+    $sql = "SHOW COLUMNS FROM `" . $conn->real_escape_string($table)
+         . "` LIKE '" . $conn->real_escape_string($col) . "'";
+    $r = $conn->query($sql);
+    return $r && $r->num_rows > 0;
+}
+
+function meel_mig_has_index(\mysqli $conn, string $table, string $index): bool
+{
+    $sql = "SHOW INDEX FROM `" . $conn->real_escape_string($table)
+         . "` WHERE Key_name = '" . $conn->real_escape_string($index) . "'";
+    $r = $conn->query($sql);
+    return $r && $r->num_rows > 0;
+}
+
 $migrations = [
     1 => [
         'description' => 'Tambah FULLTEXT index untuk pencarian',
@@ -200,30 +218,18 @@ $migrations = [
         'description' => 'Tambah kolom MFA (multi-factor authentication) ke tabel users',
         'sql' => [
             function ($conn) {
-                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT NULL AFTER last_session_id");
-                if (!$result) {
-                    $err = $conn->error;
-                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
-                        echo "[MEeL] ⚠ Warning (mfa_secret): {$err}\n";
-                    }
+                if (!meel_mig_has_column($conn, 'users', 'mfa_secret')) {
+                    $conn->query("ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT NULL AFTER last_session_id");
                 }
             },
             function ($conn) {
-                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_backup_codes TEXT DEFAULT NULL AFTER mfa_secret");
-                if (!$result) {
-                    $err = $conn->error;
-                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
-                        echo "[MEeL] ⚠ Warning (mfa_backup_codes): {$err}\n";
-                    }
+                if (!meel_mig_has_column($conn, 'users', 'mfa_backup_codes')) {
+                    $conn->query("ALTER TABLE users ADD COLUMN mfa_backup_codes TEXT DEFAULT NULL AFTER mfa_secret");
                 }
             },
             function ($conn) {
-                $result = $conn->query("ALTER TABLE users ADD COLUMN mfa_enabled TINYINT(1) DEFAULT 0 AFTER mfa_backup_codes");
-                if (!$result) {
-                    $err = $conn->error;
-                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'Duplicate column')) {
-                        echo "[MEeL] ⚠ Warning (mfa_enabled): {$err}\n";
-                    }
+                if (!meel_mig_has_column($conn, 'users', 'mfa_enabled')) {
+                    $conn->query("ALTER TABLE users ADD COLUMN mfa_enabled TINYINT(1) DEFAULT 0 AFTER mfa_backup_codes");
                 }
             },
         ],
@@ -262,13 +268,8 @@ $migrations = [
                     AND i2.music_id IS NOT NULL");
             },
             function ($conn) {
-                
-                $result = $conn->query("ALTER TABLE interactions DROP INDEX unique_interaction");
-                if (!$result) {
-                    $err = $conn->error;
-                    if (!str_contains($err, 'drop index') && !str_contains($err, "can't DROP") && !str_contains($err, 'check that column/key exists')) {
-                        echo "[MEeL] ⚠ Warning (drop unique_interaction): {$err}\n";
-                    }
+                if (meel_mig_has_index($conn, 'interactions', 'unique_interaction')) {
+                    $conn->query("ALTER TABLE interactions DROP INDEX unique_interaction");
                 }
             },
             function ($conn) {
@@ -295,21 +296,13 @@ $migrations = [
         'description' => 'Ikat identitas user ke room catur (white_user_id, black_user_id) — sebelumnya server tidak pernah memverifikasi siapa pemain putih/hitam, sehingga siapa pun yang tahu room_code bisa mengirim/melihat langkah game orang lain.',
         'sql' => [
             function ($conn) {
-                $result = $conn->query("ALTER TABLE rooms ADD COLUMN white_user_id INT NULL AFTER room_code");
-                if (!$result) {
-                    $err = $conn->error;
-                    if (!str_contains($err, 'Duplicate column')) {
-                        echo "[MEeL] ⚠ Warning (white_user_id): {$err}\n";
-                    }
+                if (!meel_mig_has_column($conn, 'rooms', 'white_user_id')) {
+                    $conn->query("ALTER TABLE rooms ADD COLUMN white_user_id INT NULL AFTER room_code");
                 }
             },
             function ($conn) {
-                $result = $conn->query("ALTER TABLE rooms ADD COLUMN black_user_id INT NULL AFTER white_user_id");
-                if (!$result) {
-                    $err = $conn->error;
-                    if (!str_contains($err, 'Duplicate column')) {
-                        echo "[MEeL] ⚠ Warning (black_user_id): {$err}\n";
-                    }
+                if (!meel_mig_has_column($conn, 'rooms', 'black_user_id')) {
+                    $conn->query("ALTER TABLE rooms ADD COLUMN black_user_id INT NULL AFTER white_user_id");
                 }
             },
             function ($conn) {

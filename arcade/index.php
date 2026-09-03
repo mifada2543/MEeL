@@ -259,7 +259,7 @@ sort($categories);
       modal.dataset.activeId = id;
       mb.banner.src = g.image;
       mb.banner.onerror = function() {
-        this.src = "https:
+        this.src = "../assets/MEeL.png";
       };
       mb.category.textContent = g.category;
       mb.year.textContent = g.year;

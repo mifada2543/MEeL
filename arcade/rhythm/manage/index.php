@@ -267,16 +267,16 @@ foreach ($user_songs as $s) {
     <div class="beatmap-grid" id="mySongs">
       <?php foreach ($user_songs as $s): ?>
       <div class="beatmap-card" data-id="<?= $s['id'] ?>">
-        <div class="bm-cover" style="background:linear-gradient(135deg,<?= $s['color_primary'] ?>,<?= $s['color_secondary'] ?>);display:flex;align-items:center;justify-content:center;font-size:22px;">
+        <div class="bm-cover" style="background:linear-gradient(135deg,<?= htmlspecialchars($s['color_primary'], ENT_QUOTES, 'UTF-8') ?>,<?= htmlspecialchars($s['color_secondary'], ENT_QUOTES, 'UTF-8') ?>);display:flex;align-items:center;justify-content:center;font-size:22px;">
           ♫
         </div>
         <div class="bm-info">
           <div class="bm-title"><?= htmlspecialchars($s['title']) ?></div>
-          <div class="bm-meta"><?= htmlspecialchars($s['artist'] ?: 'Unknown') ?> · <?= $s['bpm'] ?> BPM</div>
+          <div class="bm-meta"><?= htmlspecialchars($s['artist'] ?: 'Unknown') ?> · <?= (int)$s['bpm'] ?> BPM</div>
           <div class="bm-tags">
-            <span class="bm-tag diff"><?= $s['difficulty_label'] ?: $s['difficulty'] ?></span>
-            <span class="bm-tag notes"><?= $s['note_count'] ?> notes</span>
-            <span class="bm-tag plays"><?= $s['play_count'] ?> plays</span>
+            <span class="bm-tag diff"><?= htmlspecialchars($s['difficulty_label'] ?: $s['difficulty'], ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="bm-tag notes"><?= (int)$s['note_count'] ?> notes</span>
+            <span class="bm-tag plays"><?= (int)$s['play_count'] ?> plays</span>
           </div>
         </div>
         <div class="bm-actions">
@@ -296,15 +296,15 @@ foreach ($user_songs as $s) {
     <div class="beatmap-grid">
       <?php foreach ($all_songs as $s): ?>
       <div class="beatmap-card" data-id="<?= $s['id'] ?>">
-        <div class="bm-cover" style="background:linear-gradient(135deg,<?= $s['color_primary'] ?>,<?= $s['color_secondary'] ?>);display:flex;align-items:center;justify-content:center;font-size:22px;">
+        <div class="bm-cover" style="background:linear-gradient(135deg,<?= htmlspecialchars($s['color_primary'], ENT_QUOTES, 'UTF-8') ?>,<?= htmlspecialchars($s['color_secondary'], ENT_QUOTES, 'UTF-8') ?>);display:flex;align-items:center;justify-content:center;font-size:22px;">
           ♫
         </div>
         <div class="bm-info">
           <div class="bm-title"><?= htmlspecialchars($s['title']) ?></div>
-          <div class="bm-meta">by <?= htmlspecialchars($s['username'] ?? '?') ?> · <?= $s['bpm'] ?> BPM · <?= $s['note_count'] ?> notes</div>
+          <div class="bm-meta">by <?= htmlspecialchars($s['username'] ?? '?') ?> · <?= (int)$s['bpm'] ?> BPM · <?= (int)$s['note_count'] ?> notes</div>
           <div class="bm-tags">
-            <span class="bm-tag diff"><?= $s['difficulty_label'] ?: $s['difficulty'] ?></span>
-            <span class="bm-tag plays"><?= $s['play_count'] ?> plays</span>
+            <span class="bm-tag diff"><?= htmlspecialchars($s['difficulty_label'] ?: $s['difficulty'], ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="bm-tag plays"><?= (int)$s['play_count'] ?> plays</span>
           </div>
         </div>
         <div class="bm-actions">

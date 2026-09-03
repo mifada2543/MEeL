@@ -95,6 +95,16 @@ if ($action === 'add_to_playlist') {
 
     $conn->begin_transaction();
     try {
+        
+        $own = $conn->prepare('SELECT p.id FROM playlists p WHERE p.id = ? AND p.user_id = ?');
+        $own->bind_param('ii', $playlist_id, $user_id);
+        $own->execute();
+        $is_owner = (int) $own->get_result()->num_rows > 0;
+        $own->close();
+        if (!$is_owner) {
+            throw new \RuntimeException('Playlist tidak ditemukan');
+        }
+
         $check = $conn->prepare('SELECT id FROM playlist_tracks WHERE playlist_id = ? AND music_id = ?');
         $check->bind_param('ii', $playlist_id, $music_id);
         $check->execute();
@@ -113,7 +123,9 @@ if ($action === 'add_to_playlist') {
         $conn->commit();
     } catch (\Throwable $e) {
         $conn->rollback();
-        die('Error: ' . $e->getMessage());
+        error_log('playlist_action: ' . $e->getMessage());
+        header('Location: ' . playlist_back_url());
+        exit;
     }
     redirect(base_url('/music/watch?id=' . (int)$music_id) . '&msg=added_to_playlist');
 }
@@ -122,8 +134,8 @@ if ($action === 'remove_from_playlist') {
     $pivot_id    = (int) ($_POST['pivot_id']    ?? 0);
     $playlist_id = (int) ($_POST['playlist_id'] ?? 0);
 
-    $stmt = $conn->prepare('DELETE FROM playlist_tracks WHERE id = ?');
-    $stmt->bind_param('i', $pivot_id);
+    $stmt = $conn->prepare('DELETE pt FROM playlist_tracks pt JOIN playlists p ON p.id = pt.playlist_id WHERE pt.id = ? AND p.user_id = ?');
+    $stmt->bind_param('ii', $pivot_id, $user_id);
     $stmt->execute();
     $stmt->close();
     redirect(base_url('/music/playlist?id=' . (int)$playlist_id));

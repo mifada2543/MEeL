@@ -547,20 +547,29 @@ class BookUploader
 
     private function handleThumbnail(array $file): string
     {
-        if (!empty($file['name'])) {
+        if (
+            !empty($file['name']) && !empty($file['tmp_name'])
+            && is_uploaded_file($file['tmp_name'])
+            && $file['error'] === UPLOAD_ERR_OK
+        ) {
+            if ((int)($file['size'] ?? 0) > MEEL_MAX_THUMBNAIL_BYTES) {
+                return 'default_cover.webp';
+            }
+
             $name = time() . '_' . bin2hex(random_bytes(4)) . '.webp';
             $target_path = $this->base_path . '/upload/thumbnail/' . $name;
             $ffmpeg_bin = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
-            $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($file['tmp_name'])
-                . " -vf \"scale='min(500,iw)':-1\" -c:v libwebp -q:v 78 "
-                . escapeshellarg($target_path) . " 2>&1";
-            exec($cmd, $out, $ret);
-            if ($ret === 0 && file_exists($target_path) && filesize($target_path) > 0) {
+            // Konversi via helper bersama (ffmpeg → webp).
+            if (meel_ffmpeg_thumbnail_webp($ffmpeg_bin, $file['tmp_name'], $target_path, 500)) {
                 return $name;
             }
-            
-            if (move_uploaded_file($file['tmp_name'], $target_path)) {
-                return $name;
+
+            // Fallback hanya jika file BENAR-BENAR gambar (magic bytes),
+            // bukan sembarang konten dengan nama .webp.
+            if (meel_magic_extension_ok($file['tmp_name'], 'webp', 'image') === '') {
+                if (move_uploaded_file($file['tmp_name'], $target_path)) {
+                    return $name;
+                }
             }
         }
         return 'default_cover.webp';
@@ -568,13 +577,31 @@ class BookUploader
 
     private function handlePdf(array $file, string $title): array
     {
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            return ['success' => false, 'message' => 'Error: Tidak ada file PDF yang diterima.'];
+        }
+
         $ext = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
-        if ($ext !== 'pdf') {
+        if ($ext !== 'pdf' || preg_match('/\.(php|phtml|sh|js)/i', $file['name'] ?? '') || str_contains($file['name'] ?? '', "\0")) {
             return ['success' => false, 'message' => 'Error: File harus berformat PDF!'];
         }
 
+        // Jangan percaya extension saja — verifikasi signature %PDF server-side.
+        if (meel_magic_extension_ok($file['tmp_name'], 'pdf', 'pdf') !== '') {
+            return ['success' => false, 'message' => 'Error: File tidak valid sebagai PDF (magic bytes mismatch).'];
+        }
+
+        if ((int)($file['size'] ?? 0) > MEEL_MAX_BOOK_FILE_BYTES) {
+            return ['success' => false, 'message' => 'Error: File PDF terlalu besar.'];
+        }
+
         $clean = preg_replace('/[^a-zA-Z0-9]/', '_', $title);
-        $final = $clean . '_' . time() . '.pdf';
+        $clean = trim(substr((string)$clean, 0, 120), '_');
+        if ($clean === '') {
+            $clean = 'book';
+        }
+
+        $final = $clean . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.pdf';
 
         if (!move_uploaded_file($file['tmp_name'], $this->base_path . '/upload/pdf/' . $final)) {
             return ['success' => false, 'message' => 'Error: Gagal memindahkan file PDF!'];
@@ -585,9 +612,22 @@ class BookUploader
 
     private function handleManga(array $file, string $title): array
     {
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            return ['success' => false, 'message' => 'Error: Tidak ada file arsip yang diterima.'];
+        }
+
         $ext = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
-        if (!in_array($ext, ['zip', 'cbz'], true)) {
+        if (!in_array($ext, ['zip', 'cbz'], true) || str_contains($file['name'] ?? '', "\0")) {
             return ['success' => false, 'message' => 'Error: Harap upload file ZIP atau CBZ!'];
+        }
+
+        // Verifikasi signature ZIP server-side (bukan hanya extension).
+        if (meel_magic_extension_ok($file['tmp_name'], $ext, 'archive') !== '') {
+            return ['success' => false, 'message' => 'Error: File tidak valid sebagai arsip ZIP.'];
+        }
+
+        if ((int)($file['size'] ?? 0) > MEEL_MAX_BOOK_FILE_BYTES) {
+            return ['success' => false, 'message' => 'Error: File arsip terlalu besar.'];
         }
 
         $clean        = preg_replace('/[^a-zA-Z0-9]/', '_', $title);
@@ -599,22 +639,19 @@ class BookUploader
         $check->execute();
         $exists = $check->get_result()->num_rows > 0;
 
-        if (!is_dir($manga_folder)) {
-            mkdir($manga_folder, 0777, true);
+        require_once __DIR__ . '/ArchiveGuard.php';
+        $guard  = new ArchiveGuard($this->base_path . '/upload/manga');
+        $result = $guard->extractSafe($file['tmp_name'], $manga_folder);
+
+        if (!$result['ok']) {
+            return ['success' => false, 'message' => 'Error: ' . $result['error']];
         }
 
-        $zip = new ZipArchive();
-        if ($zip->open($file['tmp_name']) !== true) {
-            return ['success' => false, 'message' => 'Error: Gagal membuka file ZIP!'];
-        }
-
-        $zip->extractTo($manga_folder);
-        $first_entry = $zip->getNameIndex(0);
-
-        if (strpos($first_entry, '/') !== false) {
+        // Deteksi chapter: entry pertama yang mengandung '/' berarti ada subfolder.
+        $first_entry = $this->firstEntryHasSubdir($file['tmp_name']);
+        if ($first_entry) {
             $has_chapters = 1;
         }
-        $zip->close();
 
         if ($exists) {
             $stmt = $this->conn->prepare(
@@ -630,6 +667,17 @@ class BookUploader
         }
 
         return ['success' => true, 'has_chapters' => $has_chapters, 'path_result' => $clean];
+    }
+
+    private function firstEntryHasSubdir(string $archivePath): bool
+    {
+        $zip = new ZipArchive();
+        if ($zip->open($archivePath) !== true) {
+            return false;
+        }
+        $first = $zip->getNameIndex(0);
+        $zip->close();
+        return is_string($first) && str_contains(str_replace('\\', '/', $first), '/');
     }
 
     private function insertBook(string $title, string $author, string $type, int $has_chapters, string $category, string $path_folder, string $thumbnail, int $user_id): array

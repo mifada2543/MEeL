@@ -5,6 +5,10 @@ spl_autoload_register(function (string $class) {
         'System'             => __DIR__ . '/core/System.php',
         'Uploader'           => __DIR__ . '/core/Uploader.php',
         'Transcoder'         => __DIR__ . '/core/Transcoder.php',
+        'TranscoderBase'     => __DIR__ . '/core/TranscoderBase.php',
+        'DownloadService'    => __DIR__ . '/../modules/transcoder/DownloadService.php',
+        'EncodeService'      => __DIR__ . '/../modules/transcoder/EncodeService.php',
+        'TranscodeService'   => __DIR__ . '/../modules/transcoder/TranscodeService.php',
         'MediaLibrary'       => __DIR__ . '/media/MediaLibrary.php',
         'BookRepository'     => __DIR__ . '/media/MediaLibrary.php',
         'BookUploader'       => __DIR__ . '/media/MediaLibrary.php',
@@ -14,16 +18,9 @@ spl_autoload_register(function (string $class) {
         'RateLimiter'         => __DIR__ . '/auth/RateLimiter.php',
         'SsrfGuard'           => __DIR__ . '/auth/SsrfGuard.php',
         'ValidatingProxy'     => __DIR__ . '/auth/ValidatingProxy.php',
-
-        
         'SearchEngine'        => __DIR__ . '/media/SearchEngine.php',
-
-        
         'DriveService'       => __DIR__ . '/../drive/DriveService.php',
-
-        
         'SwPrecache'         => __DIR__ . '/core/SwPrecache.php',
-
     ];
 
     if (isset($map[$class])) {

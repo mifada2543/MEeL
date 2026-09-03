@@ -55,7 +55,7 @@ $__vdir = function($dir) {
         ? detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/video/upload/thumbnail/' . rawurlencode($__thumb_name)
         : detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/assets/img/video0.webp';
     ?>
-    <meta property="og:image" content="<?= $__og_image ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($__og_image, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:image:width" content="1280">
     <meta property="og:image:height" content="720">
     <meta property="og:type" content="video.other">
@@ -157,10 +157,10 @@ $__vdir = function($dir) {
                         data-vtt="<?= htmlspecialchars($vtt_src ?? '') ?>"
                         class="w-full block">
                         <?php if (!$is_hls): ?>
-                            <source src="<?= $video_src ?>" type="video/mp4">
+                            <source src="<?= htmlspecialchars($video_src, ENT_QUOTES, 'UTF-8') ?>" type="video/mp4">
                         <?php endif; ?>
                         <?php if (!empty($vtt_src)): ?>
-                            <track kind="metadata" src="<?= $vtt_src ?>" default>
+                            <track kind="metadata" src="<?= htmlspecialchars($vtt_src, ENT_QUOTES, 'UTF-8') ?>" default>
                         <?php endif; ?>
                         <?php foreach (($subtitles ?? []) as $_sub): ?>
                             <track kind="captions" src="<?= htmlspecialchars($_sub['src']) ?>"

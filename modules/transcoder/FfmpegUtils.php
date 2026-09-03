@@ -114,12 +114,6 @@ trait FfmpegUtils
     }
 
     
-    protected function cleanupDir(string $dir): void
-    {
-        $this->removeDir($dir);
-    }
-
-    
     protected function sanitizeFilename(string $title): string
     {
         $name = trim($title);

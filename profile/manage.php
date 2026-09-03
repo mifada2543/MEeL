@@ -366,7 +366,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             <div>
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Dashboard</div>
                 <h1 class="text-2xl font-black text-white tracking-tight uppercase">
-                    <span class="text-blue-500">@<?= $username ?></span>
+                    <span class="text-blue-500">@<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?></span>
                 </h1>
             </div>
 

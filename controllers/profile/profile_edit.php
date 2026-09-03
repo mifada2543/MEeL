@@ -240,7 +240,7 @@ include __DIR__ . '/../../partials/scripts.php';
 
             <?php if ($msg): ?>
                 <div class="bg-blue-500/10 border border-blue-500/50 text-blue-400 p-3 rounded-xl text-xs mb-4">
-                    <?= $msg ?>
+                    <?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?>
                 </div>
             <?php endif; ?>
             <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">

@@ -82,11 +82,8 @@ if (empty($target_user)) {
     $total_uploads = 0;
     $is_online = false;
 } else {
-    $stmt = $conn->prepare("SELECT id, username, bio, role, profile_picture, last_activity FROM users WHERE username = ?");
-    $stmt->bind_param("s", $target_user);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $u = $res->fetch_assoc();
+    $profileRepo = new ProfileRepository($conn);
+    $u = $profileRepo->findByUsername($target_user);
 
     if (!$u) {
         header("Location: ../err/?code=not_found");
@@ -95,7 +92,6 @@ if (empty($target_user)) {
 
     $profile_id = $u['id'];
 
-    $profileRepo  = new ProfileRepository($conn);
     $total_video  = $profileRepo->countVideo($profile_id);
     $total_music  = $profileRepo->countMusic($profile_id);
 
@@ -221,7 +217,7 @@ if (empty($target_user)) {
             <div class="px-8 pb-8">
                 <div class="relative flex justify-between items-end -mt-12">
                     <div class="relative">
-                        <img src="upload/<?= $u['profile_picture'] ?: 'default_avatar.png' ?>"
+                        <img src="upload/<?= htmlspecialchars($u['profile_picture'] ?: 'default_avatar.png', ENT_QUOTES, 'UTF-8') ?>"
                             class="w-32 h-32 rounded-3xl border-4 border-[var(--meel-bg,#0b0e14)] object-cover bg-gray-800 shadow-xl" title="Foto profil <?= htmlspecialchars($u['username']) ?>">
                         <?php if ($is_online): ?>
                             <div class="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-4 border-[var(--meel-bg,#0b0e14)] rounded-full"></div>
@@ -231,11 +227,7 @@ if (empty($target_user)) {
                     <?php
                     $is_owner = $is_logged_in && !empty($u['id']) && ($_SESSION['username'] === $u['username']);
                     if ($is_owner):
-                        $stmt_mfa_p = $conn->prepare("SELECT mfa_enabled FROM users WHERE id = ?");
-                        $stmt_mfa_p->bind_param("i", $profile_id);
-                        $stmt_mfa_p->execute();
-                        $_mfa_on = (int)$stmt_mfa_p->get_result()->fetch_assoc()['mfa_enabled'] ?? 0;
-                        $stmt_mfa_p->close();
+                        $_mfa_on = $profileRepo->isMfaEnabled($profile_id);
                     ?>
                         <div class="grid grid-cols-2 gap-3 mb-2">
                             <a href="../profile/edit"
@@ -318,7 +310,7 @@ if (empty($target_user)) {
 
                     <div class="mt-6 p-4 bg-white/5 rounded-2xl border border-white/5">
                         <p class="text-gray-400 text-sm italic leading-relaxed">
-                            <?= $is_guest_profile ? 'Akun Guest' : ($u['bio'] ?: "Pengguna ini belum menulis bio.") ?>
+                            <?= $is_guest_profile ? 'Akun Guest' : htmlspecialchars($u['bio'] ?: "Pengguna ini belum menulis bio.", ENT_QUOTES, 'UTF-8') ?>
                         </p>
                     </div>
 

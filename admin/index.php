@@ -14,6 +14,33 @@ define('MEEL_ADMIN_CONTEXT', true);
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';
 
+// Variabel berikut di-set oleh controllers/admin/admin_data.php (include di
+// atas). Anotasi @var untuk intelephense — variabel valid saat runtime.
+/** @var System $sys                        Instance System (dibuat admin_data). */
+/** @var int|null $orphan_checked_at         Waktu cache scan storage. */
+/** @var \mysqli_result $banned_ips      Hasil query ip_ban. */
+/** @var \mysqli_result $all_users      Daftar seluruh user. */
+/** @var \mysqli_result $top_media      Media terpopuler. */
+/** @var \mysqli_result $pending_users  User menunggu aktivasi. */
+/** @var \mysqli_result $result_monitor Hasil query monitor queue. */
+/** @var array $stats                   Statistik agregat (views/likes/dll). */
+/** @var array $server_stats            Statistik server (cpu/ram/swap/net). */
+/** @var array $orphans                 Daftar file yatim. */
+/** @var array $chart_activity          Data chart aktivitas. */
+/** @var float $ssd_free */
+/** @var float $ssd_used */
+/** @var float $ssd_total */
+/** @var float $hdd_free */
+/** @var float $sz_vid */
+/** @var float $sz_mus */
+/** @var float $sz_book */
+/** @var float $sz_d_pub */
+/** @var float $sz_d_prv */
+/** @var float $p_vid */
+/** @var float $p_mus */
+/** @var float $p_book */
+/** @var float $p_drive */
+
 GarbageCollector::cleanGuests($conn);
 
 GarbageCollector::cleanChessRooms($conn);
@@ -498,10 +525,10 @@ include __DIR__ . '/../partials/scripts.php';
                                     <td class="py-4 px-4 font-bold text-white"><?= htmlspecialchars($q['username'] ?? 'Unknown') ?></td>
                                     <td class="py-4 px-4">
                                         <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase <?= $q['task_type'] === 'download' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400' ?>">
-                                            <?= $q['task_type'] ?>
+                                            <?= htmlspecialchars($q['task_type'], ENT_QUOTES, 'UTF-8') ?>
                                         </span>
                                     </td>
-                                    <td class="py-4 px-4 text-yellow-500 font-bold uppercase text-[10px]"><?= $q['status'] ?></td>
+                                    <td class="py-4 px-4 text-yellow-500 font-bold uppercase text-[10px]"><?= htmlspecialchars($q['status'], ENT_QUOTES, 'UTF-8') ?></td>
 
                                     <td class="py-4 px-6 text-right">
                                         <div class="flex items-center justify-end gap-3">
@@ -696,9 +723,9 @@ include __DIR__ . '/../partials/scripts.php';
                             <tbody class="divide-y divide-gray-800">
                                 <?php while ($ban = $banned_ips->fetch_assoc()): ?>
                                     <tr>
-                                        <td class="py-3 font-mono text-red-400 font-bold"><?= $ban['ip_address'] ?></td>
-                                        <td class="py-3 text-gray-400"><?= $ban['reason'] ?></td>
-                                        <td class="py-3 text-gray-500"><?= $ban['banned_at'] ?></td>
+                                        <td class="py-3 font-mono text-red-400 font-bold"><?= htmlspecialchars($ban['ip_address'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="py-3 text-gray-400"><?= htmlspecialchars($ban['reason'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="py-3 text-gray-500"><?= htmlspecialchars($ban['banned_at'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td class="py-3 text-right">
                                             <form method="POST" class="inline" onsubmit="return meelConfirmForm(event, { title: 'Unban IP', text: 'Buka blokir IP <?= htmlspecialchars($ban['ip_address'], ENT_QUOTES) ?>?', confirmButtonText: 'UNBAN' })">
                                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">

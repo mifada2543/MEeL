@@ -1,4 +1,6 @@
-<?php  ?>
+<?php
+/** @var array<string, mixed> $v Baris data video dari loop pemanggil (video/index.php, load_more.php, search_video.php). */
+?>
 <div class="video-card htmx-added meel-card rounded-2xl overflow-hidden group"
      title="<?= htmlspecialchars($v['title']) ?>">
 
