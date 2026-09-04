@@ -285,6 +285,39 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────────────
+# 2b. Dedicated DB user untuk aplikasi — jangan pakai root di production.
+#     Beberapa distro (Debian/Ubuntu) mengunci root@localhost hanya bisa
+#     connect via unix socket sebagai OS-user root; begitu Apache (www-data)
+#     mencoba connect pakai kredensial root di settings.php, aplikasi akan
+#     500 "Access denied" walau check_deploy.php tetap PASS (karena script
+#     itu sendiri dijalankan sebagai root). Buat user khusus untuk hindari ini.
+# ─────────────────────────────────────────────────────────────────────────
+if [ "$DB_USER" = "root" ]; then
+    warn "Anda memakai user 'root' untuk setup database — TIDAK disarankan untuk kredensial aplikasi."
+    CREATE_APP_USER=true
+    if ! $ASSUME_YES; then
+        confirm "Buat dedicated DB user untuk aplikasi (disarankan)?" Y || CREATE_APP_USER=false
+    fi
+    if $CREATE_APP_USER; then
+        APP_DB_USER="$(ask "Nama user DB aplikasi" "meel_app")"
+        APP_DB_PASS="$(openssl rand -hex 16 2>/dev/null || head -c16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+        if mysql "${MYSQL_AUTH[@]}" -e "
+            CREATE USER IF NOT EXISTS '${APP_DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${APP_DB_PASS}';
+            GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${APP_DB_USER}'@'${DB_HOST}';
+            FLUSH PRIVILEGES;
+        " 2>/dev/null; then
+            ok "User DB aplikasi '${APP_DB_USER}'@'${DB_HOST}' dibuat — auth/settings.php TIDAK akan memakai root."
+            DB_USER="$APP_DB_USER"
+            DB_PASS="$APP_DB_PASS"
+        else
+            warn "Gagal membuat user DB aplikasi — melanjutkan dengan kredensial 'root' apa adanya (TIDAK disarankan)."
+        fi
+    else
+        warn "Melanjutkan dengan kredensial 'root' di auth/settings.php — TIDAK disarankan untuk production."
+    fi
+fi
+
+# ─────────────────────────────────────────────────────────────────────────
 # 3. auth/settings.php & auth/config.php
 # ─────────────────────────────────────────────────────────────────────────
 step "3/7 — Buat auth/settings.php & auth/config.php"
