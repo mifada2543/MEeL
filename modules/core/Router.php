@@ -51,6 +51,8 @@ final class MeelRouter
         'profile/manage'     => ['handler' => 'profile/manage.php',             'script' => '/profile/manage.php'],
         'profile/edit'       => ['handler' => 'controllers/profile/profile_edit.php', 'script' => '/controllers/profile/profile_edit.php'],
         'profile/manage-action' => ['handler' => 'controllers/profile/fun-manage.php', 'script' => '/controllers/profile/fun-manage.php'],
+        'profile/edit-video' => ['handler' => 'profile/edit-video.php',          'script' => '/profile/edit-video.php'],
+        'profile/edit-music' => ['handler' => 'profile/edit-music.php',          'script' => '/profile/edit-music.php'],
 
         'admin'             => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],
         'admin/beranda'     => ['handler' => 'admin/index.php',               'script' => '/admin/index.php'],

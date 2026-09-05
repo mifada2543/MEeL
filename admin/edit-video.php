@@ -4,6 +4,8 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 require_once '../modules/core/japanese.php';
 
+$_EDIT_CONTEXT = $_EDIT_CONTEXT ?? 'admin';
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -15,6 +17,19 @@ if ($curr_role === 'guest') {
     header("Location: ../");
     exit();
 }
+
+// Routing berbasis role: /admin/edit-* khusus admin, /profile/edit-* khusus pemilik (non-admin).
+$edit_id = (int)($_GET['id'] ?? 0);
+if ($_EDIT_CONTEXT === 'admin') {
+    if (!$is_admin) {
+        header('Location: ' . base_url('/profile/edit-video?id=' . $edit_id));
+        exit;
+    }
+} elseif ($is_admin) {
+    header('Location: ' . base_url('/admin/edit-video?id=' . $edit_id));
+    exit;
+}
+
 $back_url = $is_admin ? 'analys' : '../video/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -213,7 +228,7 @@ include __DIR__ . '/../partials/link.php';
         <?php
         $page_title = 'Edit Video';
         $media_type = 'video';
-        include 'header-admin.php';
+        include __DIR__ . '/header-admin.php';
         ?>
         <div class="edit-layout">
 
