@@ -8,6 +8,26 @@ $auth_extra_head  = $auth_extra_head ?? '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+    (function(){
+      try {
+        var t = localStorage.getItem('meel_theme');
+        if (t === 'light' || t === 'dark') {
+          document.documentElement.setAttribute('data-theme', t);
+          if (t === 'dark') document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+      }
+    })();
+    </script>
+
     <meta name="description" content="<?= htmlspecialchars($auth_description ?? '') ?>">
     <meta property="og:title" content="<?= htmlspecialchars($auth_og_title ?? '') ?>">
     <meta property="og:description" content="<?= htmlspecialchars($auth_og_desc ?? '') ?>">
@@ -18,6 +38,8 @@ $auth_extra_head  = $auth_extra_head ?? '';
     <title><?= htmlspecialchars($auth_title ?? '') ?></title>
     <link rel="icon" type="image/png" href="../assets/MEeL.png">
     <link href="../assets/css/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/shared/theme-tokens.css?v=<?= @filemtime(__DIR__ . '/../../assets/css/shared/theme-tokens.css') ?>">
+    <link rel="stylesheet" href="../assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/../../assets/css/shared/light-theme.css') ?>">
     <script src="../assets/js/compatibilitas/lucide.js"></script>
     <style>
         body {

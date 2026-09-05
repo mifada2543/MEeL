@@ -26,7 +26,7 @@ html[data-theme="light"] body[style*="background: #05070c"] {
 }
 
 
-html[data-theme="light"] .text-white:not(.nav-logo-text):not(.bg-blue-600):not(.bg-gray-600),
+html[data-theme="light"] .text-white:not(.nav-logo-text):not(.bg-blue-600):not(.bg-gray-600):not(.bg-red-600):not(.bg-purple-600):not(.bg-green-600),
 html[data-theme="light"] .text-white\/90:not(.nav-logo-text),
 html[data-theme="light"] .text-white\/80:not(.nav-logo-text) { color: var(--meel-text-heading) !important; }
 html[data-theme="light"] .text-gray-200 { color: var(--meel-text) !important; }
@@ -66,6 +66,11 @@ html[data-theme="light"] .hover\:bg-white\/\[\.08\]:hover { background: var(--me
 html[data-theme="light"] .hover\:bg-gray-800\/60:hover { background: var(--meel-surface-active) !important; }
 html[data-theme="light"] .hover\:bg-gray-800:hover { background: var(--meel-surface-active) !important; }
 html[data-theme="light"] .hover\:text-white:hover { color: var(--meel-text-heading) !important; }
+html[data-theme="light"] .hover\:bg-red-600.hover\:text-white:hover,
+html[data-theme="light"] .hover\:bg-purple-600.hover\:text-white:hover,
+html[data-theme="light"] .hover\:bg-orange-600.hover\:text-white:hover {
+  color: #ffffff !important;
+}
 
 
 html[data-theme="light"] nav {
@@ -1662,6 +1667,18 @@ html[data-theme="light"] .text-blue-400 {
 html[data-theme="light"] .text-red-400 {
   color: var(--meel-red) !important;
 }
+html[data-theme="light"] .text-orange-400 {
+  color: var(--meel-orange) !important;
+}
+html[data-theme="light"] .text-green-400 {
+  color: var(--meel-green) !important;
+}
+html[data-theme="light"] .text-yellow-400 {
+  color: #ca8a04 !important;
+}
+html[data-theme="light"] .text-purple-400 {
+  color: #9333ea !important;
+}
 
 
 
@@ -1776,4 +1793,17 @@ html[data-theme="light"] .hover\:text-red-400:hover {
 }
 html[data-theme="light"] .hover\:text-orange-400:hover {
   color: var(--meel-orange) !important;
+}
+
+
+html[data-theme="light"] .glass-effect {
+  background: var(--meel-glass) !important;
+  border-color: var(--meel-glass-border) !important;
+}
+html[data-theme="light"] .bg-gray-700 {
+  background: var(--meel-surface-active) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .hover\:bg-gray-600:hover {
+  background: var(--meel-surface-active) !important;
 }
