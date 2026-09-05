@@ -249,9 +249,9 @@ if (!$is_guest_profile) {
         }
 
         .channel-tab.active-all {
-            background: rgba(139, 92, 246, 0.1);
-            color: #a78bfa;
-            border: 1px solid rgba(139, 92, 246, 0.25);
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.25);
         }
 
         .channel-tab.active-video {
@@ -264,6 +264,16 @@ if (!$is_guest_profile) {
             background: rgba(249, 115, 22, 0.1);
             color: #f97316;
             border: 1px solid rgba(249, 115, 22, 0.2);
+        }
+
+        .stat-video:hover {
+            border-color: rgba(239, 68, 68, 0.5) !important;
+        }
+        .stat-music:hover {
+            border-color: rgba(249, 115, 22, 0.5) !important;
+        }
+        .stat-total:hover {
+            border-color: rgba(59, 130, 246, 0.5) !important;
         }
 
         .content-card {
@@ -490,17 +500,17 @@ if (!$is_guest_profile) {
 
                     <?php if (!$is_guest_profile): ?>
                     <div class="flex gap-4 mt-8">
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-blue-500/50 transition-all">
+                        <div class="flex-1 glass p-4 rounded-2xl text-center group stat-total transition-all">
                             <span class="block text-xl font-bold text-white"><?= $total_uploads ?></span>
                             <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-blue-400 transition">Total Uploads</span>
                         </div>
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-green-500/50 transition-all">
+                        <div class="flex-1 glass p-4 rounded-2xl text-center group stat-video transition-all">
                             <span class="block text-xl font-bold text-white"><?= $total_video ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-green-400 transition">Videos</span>
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-red-400 transition">Videos</span>
                         </div>
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-purple-500/50 transition-all">
+                        <div class="flex-1 glass p-4 rounded-2xl text-center group stat-music transition-all">
                             <span class="block text-xl font-bold text-white"><?= $total_music ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-purple-400 transition">Music</span>
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-orange-400 transition">Music</span>
                         </div>
                     </div>
                     <?php endif; ?>
