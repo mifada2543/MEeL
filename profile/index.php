@@ -27,11 +27,8 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     }
 
     if ($host_valid) {
-
         $ref_path = parse_url($ref, PHP_URL_PATH);
-        
-        $excluded_pages = ['profile_edit.php', 'edit', 'index.php', 'manage.php', 'manage', 'mfa_setup.php', 'mfa-setup', 'mfa_backup.php', 'edit-music.php', 'edit-video.php'];
-
+        $excluded_pages = ['profile_edit.php', 'edit', 'index.php', 'manage.php', 'manage', 'mfa_setup.php', 'mfa-setup', 'mfa_backup.php', 'edit-music.php', 'edit-video.php', '/profile'];
         $should_exclude = false;
         foreach ($excluded_pages as $page) {
             if (strpos($ref_path, $page) !== false) {
