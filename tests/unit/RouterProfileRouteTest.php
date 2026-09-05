@@ -10,7 +10,7 @@ class RouterProfileRouteTest extends TestCase
 {
     protected function tearDown(): void
     {
-        unset($_GET['u']);
+        unset($_GET['u'], $_GET['tab']);
     }
 
     public function testProfileUsernameResolvesToProfileRoute(): void
@@ -33,6 +33,7 @@ class RouterProfileRouteTest extends TestCase
             $route = MeelRouter::routeFor($path);
             $this->assertNotSame('profile/index.php', $route['handler'], "{$path} harus tetap rute eksak, bukan profil user");
             $this->assertArrayNotHasKey('u', $_GET, "{$path} tidak boleh mengisi \$_GET['u']");
+            $this->assertArrayNotHasKey('tab', $_GET, "{$path} tidak boleh mengisi \$_GET['tab']");
         }
     }
 
@@ -57,5 +58,25 @@ class RouterProfileRouteTest extends TestCase
     {
         $url = MeelRouter::url('profile/john_doe');
         $this->assertStringEndsWith('/profile/john_doe', $url);
+    }
+
+    public function testChannelMoreExactRoute(): void
+    {
+        $route = MeelRouter::routeFor('profile/channel-more');
+        $this->assertSame('profile/channel_more.php', $route['handler']);
+        // Route eksak menang atas pattern username — tidak boleh mengisi GET.
+        $this->assertArrayNotHasKey('u', $_GET);
+        $this->assertArrayNotHasKey('tab', $_GET);
+    }
+
+    public function testMultiSegmentProfileTypeNotRouted(): void
+    {
+        // /profile/<user>/<all|video|music> di-handle via 301 redirect di
+        // dispatch(), bukan route — jadi routeFor harus null tanpa mengisi GET.
+        foreach (['all', 'video', 'music', 'other'] as $type) {
+            $this->assertNull(MeelRouter::routeFor('profile/john_doe/' . $type));
+        }
+        $this->assertArrayNotHasKey('u', $_GET);
+        $this->assertArrayNotHasKey('tab', $_GET);
     }
 }
