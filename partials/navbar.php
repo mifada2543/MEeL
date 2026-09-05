@@ -3,7 +3,7 @@ if (!isset($is_logged_in)) {
     $is_logged_in = isset($_SESSION['user_id']);
 }
 ?>
-<nav class="absolute top-0 left-0 w-full px-6 py-5 flex justify-end items-center gap-3 z-50">
+<nav class="hub-nav absolute top-0 left-0 w-full px-6 py-5 flex justify-end items-center gap-3 z-50">
     <?php if ($is_logged_in): ?>
         <div class="flex items-center gap-2 bg-white/[.04] px-4 py-2 rounded-xl border border-white/[.06] backdrop-blur-sm">
             <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
