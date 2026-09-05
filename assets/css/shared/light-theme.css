@@ -953,7 +953,9 @@ html[data-theme="light"] a.text-red-500 {
 }
 
 
-html[data-theme="light"] .book-overlay .text-white {
+html[data-theme="light"] .book-overlay .text-white:not(.nav-logo-text):not(.bg-blue-600):not(.bg-gray-600):not(.bg-red-600):not(.bg-purple-600):not(.bg-green-600),
+html[data-theme="light"] .book-overlay .text-white\/90,
+html[data-theme="light"] .book-overlay .text-white\/80 {
   color: #ffffff !important;
 }
 html[data-theme="light"] .book-overlay .text-gray-300 {
