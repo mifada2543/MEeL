@@ -43,6 +43,14 @@ if ($safe_filename !== $filename) {
     die('Nama file tidak valid.');
 }
 
+// Allowlist ketat: nama output transcoder dihasilkan server (sanitizeFilename),
+// hanya karakter aman + rentang unicode yang diizinkan + satu titik ekstensi.
+if (!preg_match('/^[a-zA-Z0-9_\-\x{3000}-\x{9fff}\x{30a0}-\x{30ff}\x{3040}-\x{309f}\x{ff00}-\x{ffef}]+\.[a-z0-9]{2,5}$/u', $safe_filename)) {
+    http_response_code(400);
+    header('Content-Type: text/plain');
+    die('Nama file tidak valid.');
+}
+
 $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 $allowed = ['mp3', 'ogg', 'm4a', 'opus'];
 if (!in_array($ext, $allowed, true)) {
@@ -54,6 +62,15 @@ if (!in_array($ext, $allowed, true)) {
 $filename = $safe_filename;
 
 $transcoder = new Transcoder($conn, $_SESSION['user_id']);
+
+// Ownership: hanya user yang memicu transcode (sesi ini) boleh mengambil
+// file output-nya — mencegah menebak nama file transcode milik user lain.
+if (!Transcoder::ownsTranscodeFile($filename)) {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    die('File tidak tersedia untuk sesi Anda. Silakan transcode ulang.');
+}
+
 $file_path = $transcoder->getTranscodeFilePath($filename);
 
 if ($file_path === null) {

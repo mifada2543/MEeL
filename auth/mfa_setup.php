@@ -184,7 +184,7 @@ include __DIR__ . '/partials/auth_head.php';
                     function confirmDisable() {
                         Swal.fire({
                             title: 'Nonaktifkan MFA?',
-                            html: '<div style="font-size:12px;color:#9ca3af">Akun Anda akan kembali hanya menggunakan <strong style="color:#e5e7eb">password</strong> untuk login. Ini mengurangi keamanan akun.</div>',
+                            html: '<div style="font-size:12px;color:var(--meel-text)">Akun Anda akan kembali hanya menggunakan <strong style="color:var(--meel-text-heading)">password</strong> untuk login. Ini mengurangi keamanan akun.</div>',
                             icon: 'warning',
                             iconColor: '#ef4444',
                             showCancelButton: true,

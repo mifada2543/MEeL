@@ -366,7 +366,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
             <div>
                 <div class="text-[9px] text-gray-700 uppercase tracking-[.25em] mb-1">Dashboard</div>
                 <h1 class="text-2xl font-black text-white tracking-tight uppercase">
-                    <span class="text-blue-500">@<?= $username ?></span>
+                    <span class="text-blue-500">@<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?></span>
                 </h1>
             </div>
 
@@ -443,7 +443,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     <span><?= date('d M Y', strtotime($v['upload_date'])) ?></span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="<?= base_url('/admin/edit-video?id=' . (int)$v['id']) ?>"
+                                    <a href="<?= base_url(($is_admin ? '/admin' : '/profile') . '/edit-video?id=' . (int)$v['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit video <?= htmlspecialchars($v['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>
@@ -491,7 +491,7 @@ $back_url = "../profile/?u=" . urlencode($_SESSION['username']);
                                     </span>
                                 </div>
                                 <div class="flex gap-2 mt-3 pt-3 border-t border-white/[.04]">
-                                    <a href="<?= base_url('/admin/edit-music?id=' . (int)$m['id']) ?>"
+                                    <a href="<?= base_url(($is_admin ? '/admin' : '/profile') . '/edit-music?id=' . (int)$m['id']) ?>"
                                         class="action-btn action-btn-edit" title="Edit musik <?= htmlspecialchars($m['title']) ?>">
                                         <i data-lucide="edit" class="w-3 h-3"></i> Edit
                                     </a>

@@ -103,3 +103,15 @@
     font-size: 1.25rem;
   }
 }
+
+.preview-modal-pdf {
+  width: min(1600px, 96vw) !important;
+  max-width: min(1600px, 96vw) !important;
+  height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+.preview-modal-pdf #previewContent {
+  flex: 1 1 auto;
+  min-height: 0;
+}

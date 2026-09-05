@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $d2->execute();
 
                 $conn->commit();
-                $message = "Room <strong>$code</strong> berhasil dihapus ($moved moves dihapus).";
+                $message = "Room <strong>" . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . "</strong> berhasil dihapus ($moved moves dihapus).";
             } catch (RuntimeException $e) {
                 $conn->rollback();
                 $message = "Gagal menghapus room: " . $e->getMessage();

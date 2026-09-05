@@ -26,7 +26,7 @@ Reference guide for all configuration files and parameters in MEeL-HUB.
 | `auth/config.example.php` | Entry point template (copy to config.php) | Same as config.php |
 | `auth/settings.example.php` | Config data template (copy to settings.php) | Same as settings.php |
 | `database/schema.sql` | Standalone database schema | — |
-| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS` |
+| `modules/core/TranscoderBase.php` | FFmpeg, yt-dlp, CPU threads | `FFMPEG_THREADS`, `DOWNLOAD_TIMEOUT`, `TRANSCODE_AUDIO_TIMEOUT` |
 | `modules/core/Uploader.php` | Upload paths, FFmpeg | `$ffmpeg_bin`, `$ffprobe_bin` |
 | `modules/core/helpers.php` | **Shim** — requires `helpers/main.php` + `modules/auth/loader.php` (backward-compat) | — |
 | `modules/core/helpers/*.php` | Per-domain utilities (main, storage, audio, url) | `dir_size()`, `check_disk_space()`, `get_audio_mime_type()`, `resolve_binary()`, `log_drive_operation()` |
@@ -206,17 +206,24 @@ define('MEEL_HDD_DRIVE',        MEEL_HDD_BASE . '/drive/');
 
 ## Transcoder Configuration
 
-### File: `modules/core/Transcoder.php`
+### File: `modules/core/TranscoderBase.php`
+
+> ⚠️ **Change:** Transcoding constants now live in `TranscoderBase` as `protected const`
+> (inherited by `EncodeService`, `DownloadService`, `TranscodeService` — no longer `private`
+> in `Transcoder.php`, since child services must access them).
 
 ```php
-// ─── HARDWARE CONSTANTS ───────────────────────────────────
-private const FFMPEG_THREADS        = 8;
+// ─── HARDWARE CONSTANTS (modules/core/TranscoderBase.php) ──
+protected const FFMPEG_THREADS        = 8;
 
 // HLS segment duration (seconds)
-private const HLS_SEGMENT_DURATION  = 10;
+protected const HLS_SEGMENT_DURATION  = 10;
 
 // Download timeout (seconds)
-private const DOWNLOAD_TIMEOUT      = 900;
+protected const DOWNLOAD_TIMEOUT      = 900;
+
+// Audio transcode timeout (seconds)
+protected const TRANSCODE_AUDIO_TIMEOUT = 600;
 ```
 
 > ⚠️ **Change:** Sprite constants `SPRITE_TILE_W/H/COLS` have been **removed**.

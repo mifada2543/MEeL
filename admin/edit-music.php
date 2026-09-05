@@ -4,6 +4,8 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 require_once '../modules/core/japanese.php';
 
+$_EDIT_CONTEXT = $_EDIT_CONTEXT ?? 'admin';
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -16,6 +18,18 @@ $is_admin   = is_admin($conn);
 if ($curr_role === 'guest') {
     header("Location: ../");
     exit();
+}
+
+// Routing berbasis role: /admin/edit-* khusus admin, /profile/edit-* khusus pemilik (non-admin).
+$edit_id = (int)($_GET['id'] ?? 0);
+if ($_EDIT_CONTEXT === 'admin') {
+    if (!$is_admin) {
+        header('Location: ' . base_url('/profile/edit-music?id=' . $edit_id));
+        exit;
+    }
+} elseif ($is_admin) {
+    header('Location: ' . base_url('/admin/edit-music?id=' . $edit_id));
+    exit;
 }
 
 $back_url = $is_admin ? 'analys' : '../music/beranda';
@@ -82,13 +96,11 @@ if (isset($_POST['update'])) {
                 }
                 $clean_title = getRomajiName($title);
                 if (empty($clean_title)) $clean_title = 'music-cover';
-                $new_name = $clean_title . '_cover.webp';
-                $counter = 1;
-                while (file_exists($target_dir . $new_name)) {
-                    $new_name = $clean_title . '_cover_' . $counter . '.webp';
-                    $counter++;
-                }
-                $upload_path = $target_dir . $new_name;
+                
+                // Reservasi nama atomik via helper bersama (fopen x) — dua
+                // request bersamaan tidak boleh memilih nama yang sama.
+                $new_name    = meel_reserve_unique_filename($target_dir, $clean_title . '_cover', 'webp', 200, '_');
+                $upload_path = $new_name !== null ? $target_dir . $new_name : null;
                 $ffmpeg_bin = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
 
                 $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
@@ -101,6 +113,7 @@ if (isset($_POST['update'])) {
                     if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $upload_path)) {
                         $thumbnail_url = $new_name;
                     } else {
+                        @unlink($upload_path);
                         $error_message = 'Gagal mengupload cover thumbnail.';
                     }
                 }
@@ -153,7 +166,7 @@ include __DIR__ . '/../partials/link.php';
         <?php
         $page_title = 'Edit Musik';
         $media_type = 'music';
-        include 'header-admin.php';
+        include __DIR__ . '/header-admin.php';
         ?>
         
         <div class="edit-layout">

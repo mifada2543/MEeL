@@ -55,7 +55,7 @@ $__vdir = function($dir) {
         ? detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/video/upload/thumbnail/' . rawurlencode($__thumb_name)
         : detectProtocol() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/assets/img/video0.webp';
     ?>
-    <meta property="og:image" content="<?= $__og_image ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($__og_image, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:image:width" content="1280">
     <meta property="og:image:height" content="720">
     <meta property="og:type" content="video.other">
@@ -157,10 +157,10 @@ $__vdir = function($dir) {
                         data-vtt="<?= htmlspecialchars($vtt_src ?? '') ?>"
                         class="w-full block">
                         <?php if (!$is_hls): ?>
-                            <source src="<?= $video_src ?>" type="video/mp4">
+                            <source src="<?= htmlspecialchars($video_src, ENT_QUOTES, 'UTF-8') ?>" type="video/mp4">
                         <?php endif; ?>
                         <?php if (!empty($vtt_src)): ?>
-                            <track kind="metadata" src="<?= $vtt_src ?>" default>
+                            <track kind="metadata" src="<?= htmlspecialchars($vtt_src, ENT_QUOTES, 'UTF-8') ?>" default>
                         <?php endif; ?>
                         <?php foreach (($subtitles ?? []) as $_sub): ?>
                             <track kind="captions" src="<?= htmlspecialchars($_sub['src']) ?>"
@@ -202,7 +202,8 @@ $__vdir = function($dir) {
                     );
                     if ($can_edit): ?>
                         <div class="flex gap-2">
-                            <a href="<?= base_url('/admin/edit-video?id=' . (int)$id) ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
+                            <?php $edit_url = base_url((($_SESSION['role'] ?? '') === 'admin' ? '/admin' : '/profile') . '/edit-video?id=' . (int)$id); ?>
+                            <a href="<?= $edit_url ?>" title="Edit Video" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white no-underline">
                                 <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit Video
                             </a>
                         </div>

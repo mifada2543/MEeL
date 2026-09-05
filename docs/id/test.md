@@ -20,7 +20,7 @@ MEeL menggunakan pendekatan testing berlapis:
 
 ---
 
-## 🧪 PHPUnit Test Suite (266 Unit + 81 Integration = 347 Tests)
+## 🧪 PHPUnit Test Suite (288 Unit + 81 Integration = 369 Tests)
 
 ### Instalasi
 
@@ -78,6 +78,9 @@ logs/tests/
 | `DriveSecurityTest.php` | 13 | **Private Drive** — akses cross-user, path traversal, symlink escape, boundary realpath, kuota, reservasi nama atomik (lihat bawah) |
 | `DriveStorageBasePathTest.php` | 8 | Resolusi base path storage Drive — konstanta `MEEL_HDD_DRIVE`, fallback, prioritas |
 | `ValidatingProxyTest.php` | 20 | **Validating forward proxy** — probe CONNECT/GET nyata: target private ditolak (502), target publik di-tunnel, bind loopback-only (lihat bawah) |
+| `ArchiveGuardTest.php` | 11 | **Guard arsip** — traversal `../`, path absolut, null byte, symlink, nesting, compression ratio, ZIP bomb, entry count (lihat bawah) |
+| `UploadValidationTest.php` | 9 | **Validasi upload** — magic bytes palsu, ekstensi ganda, null byte, oversized, eksekutabel (lihat bawah) |
+| `TranscoderConstantsTest.php` | 2 | Regresi visibilitas konstanta bersama (`TranscoderBase` → service anak) |
 
 #### Integration Test (`tests/integration/`)
 
@@ -131,6 +134,8 @@ vendor/bin/phpunit --no-coverage tests/unit/ValidatingProxyTest.php
 |---|---|
 | `SsrfGuardTest.php` | Range IPv4/IPv6 private ditolak, IP publik diizinkan, denylist hostname, protokol tak didukung, URL cacat, penolakan kredensial, DNS hostname→IP private, HTTP pinning (`pinHttpUrl`) |
 | `DriveSecurityTest.php` | Download cross-user diblokir, path traversal diblokir, symlink escape diblokir, boundary prefix realpath, penegakan kuota (atomik), reservasi nama atomik |
+| `ArchiveGuardTest.php` | Entry `../` / `../../` / path absolut / `..\..\` / null byte ditolak, symlink ditolak, kedalaman berlebih ditolak, rasio kompresi ekstrem (zip bomb) ditolak, jumlah entry & ukuran total dibatasi, CBZ valid diterima, arsip rusak ditolak |
+| `UploadValidationTest.php` | MIME palsu (`$_FILES['type']` tidak dipercaya), ekstensi ganda, null byte, file oversized, ekstensi eksekutabel ditolak, magic bytes tidak cocok ditolak |
 | `ValidatingProxyTest.php` | **Menjalankan proses proxy nyata** dan mengirim CONNECT/absolute-URI asli: target private ditolak 502, target publik di-tunnel/relay, bind loopback-only, siklus hidup proses |
 
 ### Verifikasi satu-perintah (`scripts/verify_security.sh`)
@@ -399,13 +404,13 @@ sebelum rilis.
 
 | Suite | Test | Lulus | Gagal | Skor |
 |---|---|---|---|---|
-| **PHPUnit (unit + integration)** | 347 | 347 | 0 | ✅ 100% |
+| **PHPUnit (unit + integration)** | 369 | 369 | 0 | ✅ 100% |
 | **PHPUnit subset keamanan** (SsrfGuard + Drive + Proxy) | 109 | 109 | 0 | ✅ 100% |
 | **Functional Test** | 55 | 53 pass, 2 warn | 0 | ✅ 98/100 |
-| **Security Test** | 137 | 133 pass, 4 warn | 0 | ✅ 99/100 |
+| **Security Test** | 152 | 149 pass, 3 warn | 0 | ✅ 99/100 |
 | **Deployment Check** | 15 | 15 | 0 | ✅ 100% |
 
-> Angka diambil dari security-hardening pass (Agustus 2026). Jalankan sendiri
+> Angka diambil dari hardening + dedupe pass (September 2026). Jalankan sendiri
 > suite tersebut untuk kondisi terkini — pemeriksaan keamanan bisa memunculkan
 > warning tambahan saat storage HDD (`MEEL_HDD_BASE` / storage belum
 > ter-mount) belum disiapkan di lingkungan pengembangan. Folder media

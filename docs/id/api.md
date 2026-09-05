@@ -820,8 +820,8 @@ Setiap POST wajib menyertakan `csrf_token`.
 
 | Action | Endpoint | Deskripsi |
 |---|---|---|
-| Edit Video | `admin/edit-video?id=123` | Edit title, description, delete |
-| Edit Music | `admin/edit-music?id=123` | Edit title, artist, album, delete |
+| Edit Video | `admin/edit-video?id=123` (admin) / `profile/edit-video?id=123` (pemilik non-admin) | Edit title, description, delete |
+| Edit Music | `admin/edit-music?id=123` (admin) / `profile/edit-music?id=123` (pemilik non-admin) | Edit title, artist, album, delete |
 | Update Log | `controllers/UpdateManager.php` | CRUD changelog entries |
 
 ---

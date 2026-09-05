@@ -13,6 +13,29 @@ $GLOBALS['failed']       = 0;
 $GLOBALS['fail_details'] = [];
 
 
+/**
+ * Gabungan source Transcoder facade + seluruh service di modules/transcoder/.
+ * Dipakai oleh static-pattern checks agar tetap valid setelah refactor split.
+ */
+function transcoderCombinedSource(): string {
+    $out  = '';
+    $core = PROJECT_ROOT . '/modules/core/Transcoder.php';
+    if (is_file($core)) {
+        $out .= (string) file_get_contents($core) . "\n";
+    }
+    $base = PROJECT_ROOT . '/modules/core/TranscoderBase.php';
+    if (is_file($base)) {
+        $out .= (string) file_get_contents($base) . "\n";
+    }
+    $dir = PROJECT_ROOT . '/modules/transcoder';
+    if (is_dir($dir)) {
+        foreach (glob($dir . '/*.php') ?: [] as $f) {
+            $out .= (string) file_get_contents($f) . "\n";
+        }
+    }
+    return $out;
+}
+
 
 function testSqlInjection(): void {
     print_header('TEST 1: SQL Injection ' . chr(8212) . ' Prepared Statement Analysis');
@@ -447,6 +470,9 @@ function testCommandInjection(): void {
     $risky = [
         'modules/core/Uploader.php'     => ['shell_exec', 'exec', 'popen'],
         'modules/core/Transcoder.php'   => ['shell_exec', 'exec', 'popen'],
+        'modules/transcoder/DownloadService.php'    => ['shell_exec', 'exec', 'popen', 'proc_open'],
+        'modules/transcoder/EncodeService.php'      => ['shell_exec', 'exec', 'popen', 'proc_open'],
+        'modules/transcoder/TranscodeService.php'   => ['shell_exec', 'exec', 'popen', 'proc_open'],
         'modules/core/helpers/storage.php' => ['shell_exec'], 
         'modules/core/System.php'       => ['shell_exec'],
         'auth/config.example.php'  => ['proc_open', 'shell_exec'],
@@ -554,7 +580,7 @@ function testSsrfAndPrivateDrive(): void {
 
     $tcFile = PROJECT_ROOT . '/modules/core/Transcoder.php';
     if (file_exists($tcFile)) {
-        $tc = file_get_contents($tcFile);
+        $tc = transcoderCombinedSource();
         if (strpos($tc, 'new SsrfGuard()') !== false) {
             record('Transcoder memanggil SsrfGuard sebelum yt-dlp', true);
         } else {
@@ -855,8 +881,8 @@ function testAdminContextAndPipelineHardening(): void {
             'Dipanggil di processMusic()'              => '/\$this->checkActiveUploadLimit\(\)/',
             'Dipanggil di processVideo()'              => '/\$this->checkActiveUploadLimit\(\)/',
             'flock untuk penamaan folder video'        => '/meel_upload_video\.lock/',
-            'flock music upload'                       => '/meel_music_upload\.lock/',
-            'flock music transcode'                    => '/meel_music_transcode\.lock/',
+            'reserve nama upload atomik via helper'    => '/meel_reserve_unique_filename\(\$target_dir/',
+            'atomic reserve music transcode (.ogg)'    => '/getUniqueFilename\(\$opus_base, \x27ogg\x27/',
             'flock HDD move'                           => '/meel_move_hdd\.lock/',
             'FFprobe failure handling'                 => '/duration.*<=.*0/',
             'try-finally untuk unlock'                 => '/finally \{.*flock\(\$lock_fp, LOCK_UN\)/s',
@@ -876,7 +902,7 @@ function testAdminContextAndPipelineHardening(): void {
     if (!file_exists($transcoderFile)) {
         record('modules/core/Transcoder.php — FILE TIDAK DITEMUKAN!', false, false);
     } else {
-        $tc = (string) file_get_contents($transcoderFile);
+        $tc = transcoderCombinedSource();
         $tcChecks = [
             'proc_open array (finalizeVideo)'   => '/proc_open\(\$hls_cmd/',
             'proc_open array (transcodeVideo)'  => '/proc_open\(\$tc_cmd/',
@@ -990,6 +1016,119 @@ function testOpenRedirectHardening(): void {
 }
 
 
+function testHardeningRegression(): void {
+    print_header('TEST 17: Security Hardening Regression Guard');
+
+    
+    $read = function (string $rel): string {
+        $path = PROJECT_ROOT . '/' . $rel;
+        return file_exists($path) ? (string) file_get_contents($path) : '';
+    };
+
+    
+    $ml = $read('modules/media/MediaLibrary.php');
+    if (strpos($ml, 'ArchiveGuard') !== false && !preg_match('/\$zip->extractTo\(\$manga_folder\)/', $ml)) {
+        record('MediaLibrary: ekstraksi ZIP via ArchiveGuard (tanpa extractTo ke folder final)', true);
+    } else {
+        record('MediaLibrary: ekstraksi ZIP belum sepenuhnya lewat ArchiveGuard', false, false,
+            'extractTo langsung ke folder final harus dihapus');
+    }
+
+    
+    $pe = $read('controllers/api/post_encode.php');
+    if (preg_match('/\$_GET\[\x27temp_file\x27\]/', $pe)) {
+        record('post_encode: temp_file dari $_GET — path manipulation!', false, false,
+            'temp_file harus dari POST + validasi token + session ownership');
+    } else {
+        record('post_encode: tidak membaca temp_file dari $_GET', true);
+    }
+    if (strpos($pe, "verify_csrf_token") !== false && preg_match('/REQUEST_METHOD.*POST/i', $pe)) {
+        record('post_encode: POST + CSRF protection aktif', true);
+    } else {
+        record('post_encode: POST + CSRF protection belum lengkap', false, false);
+    }
+    if (strpos($pe, 'meel_pending_music') !== false && strpos($pe, 'pathinfo') !== false) {
+        record('post_encode: ownership via sesi (meel_pending_music)', true);
+    } else {
+        record('post_encode: ownership via sesi tidak terdeteksi', false, false);
+    }
+
+    
+    $tc    = $read('modules/core/Transcoder.php');
+    $tcEnc = $read('modules/transcoder/EncodeService.php');
+    if (strpos($tc, 'processDownload') !== false
+        && strpos($tc, 'encodeMusic') !== false
+        && strpos($tcEnc, 'function encodeMusic') !== false) {
+        record('Transcoder facade: delegasi ke EncodeService', true);
+    } else {
+        record('Transcoder facade: delegasi ke EncodeService tidak terdeteksi', false, false);
+    }
+    $encodeDelegates = strpos($tcEnc, 'meel_reserve_unique_filename') !== false;
+    if ($encodeDelegates) {
+        record('EncodeService: alokasi nama output atomik via helper (fopen x)', true);
+    } else {
+        record('EncodeService: alokasi nama output belum atomik', false, false,
+            'wajib reserve fopen(...,\'x\') — via meel_reserve_unique_filename');
+    }
+
+    
+    $up = $read('modules/core/Uploader.php');
+    $hup = $read('modules/core/helpers/upload.php');
+    $uploaderDelegates = strpos($up, 'meel_reserve_unique_filename') !== false
+        && strpos($up, 'meel_sanitize_clean_name') !== false;
+    $helperAtomic = preg_match('/fopen\(.*\x27x\x27\)/', $hup) === 1;
+    if ($uploaderDelegates && $helperAtomic) {
+        record('Uploader: getUniqueFilename atomik via meel_reserve_unique_filename (fopen x)', true);
+    } else {
+        record('Uploader: getUniqueFilename belum atomik / tidak mendelegasi helper', false, false);
+    }
+    if (strpos($up, 'meel_magic_extension_ok') !== false) {
+        record('Uploader: validasi magic bytes server-side (audio/video/thumbnail)', true);
+    } else {
+        record('Uploader: validasi magic bytes belum konsisten', false, false);
+    }
+
+    
+    $profile = $read('profile/index.php');
+    if (preg_match('/\$u\[\x27bio\x27\]/', $profile) && strpos($profile, "htmlspecialchars(\$u['bio']") !== false) {
+        record('profile: bio di-escape saat render (stored XSS fixed)', true);
+    } else {
+        record('profile: bio masih berpotensi XSS (tidak di-escape)', false, false,
+            'wrap $u[bio] dengan htmlspecialchars(..., ENT_QUOTES, UTF-8)');
+    }
+
+    
+    $dt = $read('controllers/api/download_transcode.php');
+    if (strpos($dt, 'ownsTranscodeFile') !== false) {
+        record('download_transcode: ownership sesi (anti cross-user file guess)', true);
+    } else {
+        record('download_transcode: ownership sesi belum terpasang', false, false);
+    }
+
+    
+    $tb = $read('modules/core/TranscoderBase.php');
+    if (preg_match('/kill -TERM.*\$pid/s', $tb) && !preg_match('/\$pid <= 0|\(int\)@file_get_contents|int \$pid/', $tb)) {
+        record('TranscoderBase: shell_exec kill tanpa validasi integer PID!', false, false,
+            'PID harus di-cast int & divalidasi sebelum shell_exec');
+    } else {
+        record('TranscoderBase: kill via posix_kill + PID integer (tanpa shell injection)', true);
+    }
+
+    
+    $guard = $read('modules/media/ArchiveGuard.php');
+    foreach (['MAX_ARCHIVE_ENTRIES', 'MAX_ARCHIVE_UNCOMPRESSED_BYTES', 'MAX_ARCHIVE_ENTRY_BYTES', 'MAX_ARCHIVE_COMPRESSION_RATIO'] as $limit) {
+        if (strpos($guard, $limit) === false) {
+            record("ArchiveGuard: konstanta {$limit} hilang", false, false);
+        }
+    }
+    if (strpos($guard, 'function extractSafe') !== false) {
+        record('ArchiveGuard: extractSafe + limit resource aktif', true);
+    } else {
+        record('ArchiveGuard: extractSafe tidak ditemukan', false, false);
+    }
+}
+
+
 function run(): int {
     echo CLR_CYAN . CLR_BOLD . "\n";
     echo "  " . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";
@@ -1015,6 +1154,7 @@ function run(): int {
     testFatalBugRegression();
     testAdminContextAndPipelineHardening();
     testOpenRedirectHardening();
+    testHardeningRegression();
 
     
     echo "\n" . CLR_BOLD . chr(9556) . str_repeat(chr(9552), 56) . chr(9559) . "\n";

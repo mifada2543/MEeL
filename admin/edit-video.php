@@ -4,6 +4,8 @@ include '../auth/auth.php';
 include_once '../modules/core/helpers.php';
 require_once '../modules/core/japanese.php';
 
+$_EDIT_CONTEXT = $_EDIT_CONTEXT ?? 'admin';
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login");
     exit();
@@ -15,6 +17,19 @@ if ($curr_role === 'guest') {
     header("Location: ../");
     exit();
 }
+
+// Routing berbasis role: /admin/edit-* khusus admin, /profile/edit-* khusus pemilik (non-admin).
+$edit_id = (int)($_GET['id'] ?? 0);
+if ($_EDIT_CONTEXT === 'admin') {
+    if (!$is_admin) {
+        header('Location: ' . base_url('/profile/edit-video?id=' . $edit_id));
+        exit;
+    }
+} elseif ($is_admin) {
+    header('Location: ' . base_url('/admin/edit-video?id=' . $edit_id));
+    exit;
+}
+
 $back_url = $is_admin ? 'analys' : '../video/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
@@ -77,13 +92,11 @@ if (isset($_POST['update'])) {
                 }
                 $clean_title = getRomajiName($title);
                 if (empty($clean_title)) $clean_title = 'video-thumb';
-                $new_name = $clean_title . '_thumb.webp';
-                $counter = 1;
-                while (file_exists($target_dir . $new_name)) {
-                    $new_name = $clean_title . '_thumb_' . $counter . '.webp';
-                    $counter++;
-                }
-                $upload_path = $target_dir . $new_name;
+                
+                // Reservasi nama atomik via helper bersama (fopen x) — dua
+                // request bersamaan tidak boleh memilih nama yang sama.
+                $new_name    = meel_reserve_unique_filename($target_dir, $clean_title . '_thumb', 'webp', 200, '_');
+                $upload_path = $new_name !== null ? $target_dir . $new_name : null;
                 $ffmpeg_bin = resolve_binary(['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'ffmpeg']);
 
                 $cmd = escapeshellarg($ffmpeg_bin) . " -y -i " . escapeshellarg($_FILES['thumbnail']['tmp_name'])
@@ -96,6 +109,7 @@ if (isset($_POST['update'])) {
                     if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $upload_path)) {
                         $thumbnail_url = $new_name;
                     } else {
+                        @unlink($upload_path);
                         $error_message = 'Gagal mengupload thumbnail ke server.';
                     }
                 }
@@ -214,7 +228,7 @@ include __DIR__ . '/../partials/link.php';
         <?php
         $page_title = 'Edit Video';
         $media_type = 'video';
-        include 'header-admin.php';
+        include __DIR__ . '/header-admin.php';
         ?>
         <div class="edit-layout">
 
@@ -360,16 +374,15 @@ include __DIR__ . '/../partials/link.php';
                         <?php if (!empty($existing_subtitles)): ?>
                             <div style="display:flex;flex-direction:column;gap:6px;">
                                 <?php foreach ($existing_subtitles as $_sub): ?>
-                                    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 10px;">
+                                    <div class="sub-row">
                                         <i data-lucide="captions" style="width:13px;height:13px;color:var(--accent);flex-shrink:0;"></i>
-                                        <span style="flex:1;font-size:11px;font-weight:700;color:#e2e6ef;text-transform:uppercase;letter-spacing:.06em;"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
-                                        <span style="font-size:9px;color:#455060;text-transform:uppercase;letter-spacing:.05em;"><?= htmlspecialchars($_sub['file']) ?></span>
+                                        <span class="sub-lang"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
+                                        <span class="sub-file"><?= htmlspecialchars($_sub['file']) ?></span>
                                         <form method="POST" style="display:inline;margin:0;"
                                             onsubmit="return meelConfirmForm(event, { title:'Hapus Subtitle', text:'Hapus subtitle bahasa <?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?>?', confirmButtonText:'HAPUS' })">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                                             <input type="hidden" name="delete_subtitle_lang" value="<?= htmlspecialchars($_sub['lang']) ?>">
-                                            <button type="submit" title="Hapus subtitle"
-                                                style="background:none;border:none;cursor:pointer;color:#f87171;padding:4px;display:flex;"
+                                            <button type="submit" title="Hapus subtitle" class="sub-delete"
                                                 aria-label="Hapus subtitle <?= htmlspecialchars($_sub['lang']) ?>">
                                                 <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
                                             </button>

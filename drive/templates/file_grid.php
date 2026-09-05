@@ -1,5 +1,15 @@
 <?php
-
+/**
+ * Variabel berikut di-inject dari scope pemanggil (DriveViewRenderer::renderFileGrid).
+ *
+ * @var array $files      Daftar file untuk dirender.
+ * @var string $accent    Warna aksen (hex) untuk ikon tipe.
+ * @var string $icon      Nama ikon lucide untuk tipe file.
+ * @var string $type      Tipe file (video/audio/dokumen).
+ * @var string $scope     Scope file (public/private).
+ * @var bool $showDelete  Tampilkan tombol hapus (false = hanya view + download).
+ * @var string $csrfToken Token CSRF untuk form download/delete.
+ */
 
 if (empty($files)): ?>
     <div class="flex flex-col items-center justify-center py-20 opacity-20">
@@ -34,16 +44,18 @@ if (empty($files)): ?>
                         <i data-lucide='download' class='w-4 h-4'></i>
                     </a>
 
-                    <button onclick="meelConfirm({ title:'Hapus File', text:'Hapus file ini?', confirmButtonText:'HAPUS' }).then(function(ok){ if(ok) document.getElementById('<?= $deleteFormId ?>').submit(); }); return false;" class='p-2 hover:bg-red-500/20 rounded-lg text-red-400' title='Hapus'>
-                        <i data-lucide='trash-2' class='w-4 h-4'></i>
-                    </button>
+                    <?php if ($showDelete): ?>
+                        <button onclick="meelConfirm({ title:'Hapus File', text:'Hapus file ini?', confirmButtonText:'HAPUS' }).then(function(ok){ if(ok) document.getElementById('<?= $deleteFormId ?>').submit(); }); return false;" class='p-2 hover:bg-red-500/20 rounded-lg text-red-400' title='Hapus'>
+                            <i data-lucide='trash-2' class='w-4 h-4'></i>
+                        </button>
 
-                    <form id='<?= $deleteFormId ?>' action='delete' method='POST' style='display:none;'>
-                        <input type='hidden' name='csrf_token' value='<?= $safeCsrfToken ?>'>
-                        <input type='hidden' name='file' value='<?= $safeFileName ?>'>
-                        <input type='hidden' name='type' value='<?= htmlspecialchars($type, ENT_QUOTES, 'UTF-8') ?>'>
-                        <input type='hidden' name='scope' value='<?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?>'>
-                    </form>
+                        <form id='<?= $deleteFormId ?>' action='delete' method='POST' style='display:none;'>
+                            <input type='hidden' name='csrf_token' value='<?= $safeCsrfToken ?>'>
+                            <input type='hidden' name='file' value='<?= $safeFileName ?>'>
+                            <input type='hidden' name='type' value='<?= htmlspecialchars($type, ENT_QUOTES, 'UTF-8') ?>'>
+                            <input type='hidden' name='scope' value='<?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?>'>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
 

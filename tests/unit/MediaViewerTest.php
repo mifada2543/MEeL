@@ -17,7 +17,9 @@ class MediaViewerTest extends TestCase
     private function buildConn(?array $currentRow, ?array $nextRow): array
     {
         $this->bindCalls = [];
-        $recordBind = function (mysqli_stmt $stmt): void {
+        // Param adalah PHPUnit MockObject (createMock), bukan mysqli_stmt asli —
+        // tipe native mysqli_stmt membuat analyzer menganggap method() tak ada.
+        $recordBind = function (\PHPUnit\Framework\MockObject\MockObject $stmt): void {
             $stmt->method('bind_param')->willReturnCallback(
                 function ($types, ...$vars) {
                     $this->bindCalls[] = [

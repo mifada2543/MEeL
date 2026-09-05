@@ -126,7 +126,7 @@ include __DIR__ . '/../partials/scripts.php';
                                     </td>
                                     <td class="py-3 px-3">
                                         <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase <?= $u['role'] === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/10 text-blue-400' ?>">
-                                            <?= $u['role'] ?>
+                                            <?= htmlspecialchars($u['role'], ENT_QUOTES, 'UTF-8') ?>
                                         </span>
                                     </td>
                                     <td class="py-3 px-3">

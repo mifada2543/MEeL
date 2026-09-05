@@ -56,7 +56,8 @@ modules/
 ├── core/                   # Core business logic
 │   ├── System.php          # Queue management, storage monitoring
 │   ├── Uploader.php        # Local file upload (video + music)
-│   ├── Transcoder.php      # yt-dlp download & transcoding engine
+│   ├── Transcoder.php      # Facade: yt-dlp download & transcoding → delegates to modules/transcoder/
+│   ├── TranscoderBase.php  # Base class: shared constants, process/PID management, path resolution
 │   ├── helpers.php         # Backward-compat shim → requires helpers/main.php + auth/loader.php
 │   ├── helpers/            # Per-domain utilities: main.php, storage.php, audio.php, url.php, metadata.php, subtitle.php, upload.php
 │   ├── Router.php          # MeelRouter — front-controller route table (routeFor/url/dispatch)
@@ -87,8 +88,11 @@ modules/
 │   ├── ProcessException.php
 │   ├── DownloadException.php
 │   └── TranscodeException.php
-├── transcoder/
-│   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT()
+├── transcoder/             # Services extracted from Transcoder (extend TranscoderBase)
+│   ├── EncodeService.php   # encodeMusic() — download → Opus encode → thumbnail → INSERT music
+│   ├── DownloadService.php # processDownload() — URL download (yt-dlp) + video HLS finalization
+│   ├── TranscodeService.php# transcodeVideo() + ownsTranscodeFile() — audio/video transcode
+│   └── FfmpegUtils.php     # Trait: probeDuration(), generateSpriteAndVTT(), filesystem helpers
 └── autoload.php            # PSR-4-like autoloader
 
 # ── Di ROOT PROJECT (bukan di modules/) ────────────────────────────────
@@ -168,6 +172,17 @@ class MediaViewer {
 - RAM disk staging (`/dev/shm`) for HLS transcoding
 - Atomic DB transaction with rollback + file cleanup
 
+**Delegation to shared helpers (`helpers/upload.php`)** — to avoid duplication,
+`Uploader`, `EncodeService`, `DownloadService`, and the admin editors all use the
+same global functions:
+- `meel_reserve_unique_filename()` — atomic `fopen(..., 'x')` name reservation (race-safe)
+- `meel_allocate_unique_dir()` — unique directory allocation without overwrites
+- `meel_sanitize_clean_name()` / `meel_sanitize_upload_filename()` — name sanitization
+- `meel_ffmpeg_thumbnail_webp()` — single image → WebP conversion path (`libwebp`)
+- `meel_ffmpeg_encode_opus()` — single audio → Ogg/Opus encode path
+- `meel_insert_music_row()` — single INSERT path for the `music` table
+- `meel_magic_extension_ok()` — magic-bytes + extension validation per media kind
+
 ```php
 class Uploader {
     public function processMusic($post, $files, $base_dir);
@@ -175,13 +190,37 @@ class Uploader {
 }
 ```
 
-### 5. `modules/core/Transcoder.php`
+### 5. `modules/core/Transcoder.php` — facade + split services
 
-**Class:** `Transcoder` (uses `FfmpegUtils` trait) — URL download & transcoding engine.
+**Class:** `Transcoder` — **facade** that keeps the legacy public contract
+(constructor, `processDownload`, `encodeMusic`, `transcodeVideo`) while delegating
+implementation to the services in `modules/transcoder/` (all `extends TranscoderBase`):
+
+```
+Existing caller
+    ↓
+Transcoder (facade, modules/core/Transcoder.php)
+    ↓
+├── EncodeService    (modules/transcoder/EncodeService.php)    encodeMusic()
+├── DownloadService  (modules/transcoder/DownloadService.php)  processDownload() + video finalization
+└── TranscodeService (modules/transcoder/TranscodeService.php) transcodeVideo() + ownsTranscodeFile()
+    ↓
+TranscoderBase (modules/core/TranscoderBase.php) — shared constants, processes/PID, path resolution
+```
+
+**`TranscoderBase`** holds the shared responsibilities: configuration constants
+(`FFMPEG_THREADS=8`, `HLS_SEGMENT_DURATION=10`, `DOWNLOAD_TIMEOUT=900`,
+`TRANSCODE_AUDIO_TIMEOUT=600`, `PID_DIR`, `FFMPEG_LIB_PATH`, `ENV_PREFIX` — all
+`protected` so child services can resolve them), the `ProgressObserver` constructor,
+process management (`terminateAllProcesses()`, static `killByPidFile()`,
+`cleanupStalePidFiles()`), and safe path resolution (`getTranscodeFilePath()`,
+`resolveMusicInputPath()` — server-side paths, never client input).
+
 **Pure business logic — no HTML/JS output:** progress is reported through a
 `ProgressObserver` (see [ProgressObserver Architecture](#progressobserver-architecture)),
 so the same engine runs cleanly in browsers, CLI scripts, cron jobs, and API endpoints.
 
+Public facade contract:
 ```php
 class Transcoder {
     public function __construct(\mysqli $db_connection, int $session_user_id,
@@ -191,8 +230,6 @@ class Transcoder {
     public function processDownload(string $url, string $type): string;
     public function encodeMusic($temp_file, $title, $artist, $album, $duration, $description);
     public function transcodeVideo(int $video_id, string $format): array;
-    public static function killByPidFile(string $taskType, int $queueId): bool;  // Admin kill
-    public static function cleanupStalePidFiles(): int;                          // PID cleanup
 }
 ```
 
@@ -329,7 +366,7 @@ class TranscodeException extends \RuntimeException {    // FFmpeg transcoding fa
 
 ### 13. `modules/transcoder/FfmpegUtils.php` (Trait)
 
-Used by both `Uploader` and `Transcoder`:
+Used by `Uploader`, `TranscoderBase`, and the `modules/transcoder/` services:
 
 ```php
 trait FfmpegUtils {
@@ -342,9 +379,11 @@ trait FfmpegUtils {
     protected function removeFile(string $path): void;
     protected function removeDir(string $dir): void;
     protected function moveFile(string $src, string $dst): bool;  // Cross-device safe (RAM → HDD)
-    protected function cleanupDir(string $dir): void;             // Alias of removeDir() (backward compat)
 }
 ```
+
+> Note: `cleanupDir()` (alias of `removeDir()`) has been **removed** — it had no
+> callers anywhere in the project; use `removeDir()` directly.
 
 The `moveFile()` helper compares `stat()` device IDs before attempting
 `rename()`: moving from the RAM disk (`/dev/shm`) to the USB HDD is the *normal*
@@ -716,7 +755,6 @@ Every filesystem access follows three rules:
 | `removeFile()` | `FfmpegUtils` trait | Guarded unlink (existence + writable parent) |
 | `removeDir()` | `FfmpegUtils` trait | Flat-dir cleanup (glob → removeFile → rmdir) |
 | `moveFile()` | `FfmpegUtils` trait | Cross-device move with `stat()` device check |
-| `cleanupDir()` | `FfmpegUtils` trait | Alias of `removeDir()` (backward compat) |
 | `GarbageCollector::removeFile()` | `GarbageCollector.php` | Static guarded unlink |
 | `GarbageCollector::removeDirectory()` | `GarbageCollector.php` | Recursive guarded cleanup (skips non-writable subtrees, `rmdir` only when empty) |
 | `meel_write_cache_file()` | `helpers/storage.php` | Guarded cache write with `LOCK_EX` |

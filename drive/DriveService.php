@@ -462,7 +462,7 @@ final class DriveStorage
 }
 final class DriveViewRenderer
 {
-    public function renderFileGrid(array $files, string $accent, string $icon, string $type, string $scope): void
+    public function renderFileGrid(array $files, string $accent, string $icon, string $type, string $scope, bool $showDelete = true): void
     {
         $csrfToken = get_csrf_token();
 

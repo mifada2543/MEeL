@@ -5,7 +5,9 @@ include '../auth/config.php';
 require_once '../modules/media/MediaLibrary.php';
 
 $library       = new MediaLibrary($conn);
-$format_filter = $_GET['format'] ?? 'all';
+$format_raw    = $_GET['format'] ?? 'all';
+$allowed_formats = ['all', 'mp3', 'ogg', 'm4a', 'opus', 'flac', 'wav'];
+$format_filter = in_array($format_raw, $allowed_formats, true) ? $format_raw : 'all';
 $artist_filter = $_GET['artist'] ?? 'all';
 $perPageMusic  = 10;
 $pageMusic     = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -49,7 +51,7 @@ function renderLibraryContent($artist_filter, $total_music, $data_init, $format_
 
     
     <?php if ($total_music > $perPageMusic): ?>
-        <div id="load-more-music" class="pt-6">                <button type="button" id="load-more-btn"                    hx-get="load-more?offset=<?= $perPageMusic ?>&page=<?= $pageMusic ?>&format=<?= $format_filter ?>&artist=<?= urlencode($artist_filter) ?>"
+        <div id="load-more-music" class="pt-6">                <button type="button" id="load-more-btn"                    hx-get="load-more?offset=<?= $perPageMusic ?>&page=<?= $pageMusic ?>&format=<?= urlencode($format_filter) ?>&artist=<?= urlencode($artist_filter) ?>"
                 hx-target="#music-list"
                 hx-swap="beforeend"
                 title="Muat lebih banyak lagu"
@@ -207,8 +209,8 @@ $__vdir = function($dir) {
                         <i data-lucide="mic-2" class="w-3 h-3"></i> Artists
                     </div>
                     <div id="desktop-artist-list" class="space-y-0.5 max-h-[45vh] overflow-y-auto no-scrollbar">
-                        <a href="beranda?format=<?= $format_filter ?>&artist=all"
-                            hx-get="beranda?format=<?= $format_filter ?>&artist=all" hx-push-url="true"
+                        <a href="beranda?format=<?= urlencode($format_filter) ?>&artist=all"
+                            hx-get="beranda?format=<?= urlencode($format_filter) ?>&artist=all" hx-push-url="true"
                             hx-target="#library-container"
                             hx-select="#library-container"
                             hx-swap="outerHTML"
@@ -219,8 +221,8 @@ $__vdir = function($dir) {
                         <?php
                         $artists->data_seek(0);
                         while ($a = $artists->fetch_assoc()): ?>
-                            <a href="beranda?format=<?= $format_filter ?>&artist=<?= urlencode($a['artist']) ?>"
-                                hx-get="beranda?format=<?= $format_filter ?>&artist=<?= urlencode($a['artist']) ?>" hx-push-url="true"
+                            <a href="beranda?format=<?= urlencode($format_filter) ?>&artist=<?= urlencode($a['artist']) ?>"
+                                hx-get="beranda?format=<?= urlencode($format_filter) ?>&artist=<?= urlencode($a['artist']) ?>" hx-push-url="true"
                                 hx-target="#library-container"
                                 hx-select="#library-container"
                                 hx-swap="outerHTML"

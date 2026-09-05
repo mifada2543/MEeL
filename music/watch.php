@@ -167,7 +167,7 @@ $__vdir = function($dir) {
                         <div class="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
                             <span class="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400"
                                 title="<?= htmlspecialchars($deskripsi) ?>">
-                                <?= $fmt_label ?>
+                                <?= htmlspecialchars($fmt_label, ENT_QUOTES, 'UTF-8') ?>
                             </span>
                             <span class="text-[10px] font-bold px-3 py-1 rounded-lg bg-green-500/8 border border-green-500/15 text-green-400 flex items-center gap-1.5">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
@@ -301,7 +301,8 @@ $__vdir = function($dir) {
                                 (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === (int)($v['user_id'] ?? -1))
                             );
                             if ($can_edit): ?>
-                                <a href="<?= base_url('/admin/edit-music?id=' . (int)$id) ?>" title="Edit Musik"
+                                <?php $edit_url = base_url((($_SESSION['role'] ?? '') === 'admin' ? '/admin' : '/profile') . '/edit-music?id=' . (int)$id); ?>
+                                <a href="<?= $edit_url ?>" title="Edit Musik"
                                     class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer no-underline bg-orange-600/10 border-orange-600/20 text-orange-400 hover:bg-orange-600 hover:text-white">
                                     <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit
                                 </a>

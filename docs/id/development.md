@@ -757,7 +757,7 @@ if (!headers_sent()) {
 | `auth/config.php` | Entry point configurasi |
 | `auth/auth.php` | Authentication middleware |
 | `modules/core/helpers/` | Utilitas global (helpers.php = shim) |
-| `modules/core/Transcoder.php` | Engine utama (paling kompleks) |
+| `modules/core/Transcoder.php` + `modules/transcoder/` | Facade + service terpecah: `EncodeService`, `DownloadService`, `TranscodeService` (extend `TranscoderBase`) |
 | `modules/core/Uploader.php` | Proses upload file |
 | `modules/core/System.php` | Queue & monitoring |
 | `modules/auth/RateLimiter.php` | API Rate Limiter |

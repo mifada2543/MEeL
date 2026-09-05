@@ -69,9 +69,9 @@ Saat memasukkan URL, sistem memanggil `yt-dlp --print-json` untuk mengekstrak in
    which node     # Harapan: /usr/bin/node
    ```
 2. **Sesuaikan Path di PHP**:
-   Buka berkas `modules/core/Transcoder.php` dan verifikasi pencarian path binary pada metode `resolveBinary`.
+   Verifikasi pencarian path binary pada metode `resolveBinary()` di trait `modules/transcoder/FfmpegUtils.php` (dipakai bersama `Uploader` & service transcoder).
 
-   > ⚠️ Konstanta path `HDD_BASE`/`HDD_VIDEO_DIR`/`HDD_THUMB_DIR` telah **dipindahkan** ke `auth/settings.php` sebagai `MEEL_HDD_*`. Konfigurasi path storage tidak perlu diubah di Transcoder.php lagi.
+   > ⚠️ Konstanta path `HDD_BASE`/`HDD_VIDEO_DIR`/`HDD_THUMB_DIR` telah **dipindahkan** ke `auth/settings.php` sebagai `MEEL_HDD_*`. Konstanta transcoder (`FFMPEG_THREADS`, `DOWNLOAD_TIMEOUT`, dll.) kini di `modules/core/TranscoderBase.php`.
 3. **Uji URL Langsung di Terminal**:
    Jalankan perintah berikut untuk melihat pesan error asli dari `yt-dlp`:
    ```bash
@@ -118,10 +118,10 @@ Terkadang file berhasil diunduh secara penuh, namun gagal saat dikonversi ke HLS
    sudo chmod -R 777 /opt/lampp/htdocs/MEeL/temp/
    ```
 3. **Kurangi Beban CPU (CPU Throttling)**:
-   Jika server Anda mengalami crash atau restart akibat suhu tinggi saat transcoding, kurangi jumlah thread CPU yang dialokasikan untuk FFmpeg di berkas `modules/core/Transcoder.php`:
+   Jika server Anda mengalami crash atau restart akibat suhu tinggi saat transcoding, kurangi jumlah thread CPU yang dialokasikan untuk FFmpeg di berkas `modules/core/TranscoderBase.php` (diwarisi semua service transcoder):
    ```php
    // Ganti nilai dari 8 menjadi 4 atau 2 sesuai core CPU Anda
-   private const FFMPEG_THREADS = 4;
+   protected const FFMPEG_THREADS = 4;
    ```
 
    Cek jumlah core CPU: `nproc`

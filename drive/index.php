@@ -217,13 +217,13 @@ if ($user->isMember()) {
             </section>
 
             <div id="drive-video" class="drive-section">
-                <?php $renderer->renderFileGrid($videos, '#ef4444', 'play', 'video', $currentScope); ?>
+                <?php $renderer->renderFileGrid($videos, '#ef4444', 'play', 'video', $currentScope, $user->isAdmin() || $currentScope !== 'public'); ?>
             </div>
             <div id="drive-audio" class="drive-section hidden">
-                <?php $renderer->renderFileGrid($audios, '#f97316', 'music', 'audio', $currentScope); ?>
+                <?php $renderer->renderFileGrid($audios, '#f97316', 'music', 'audio', $currentScope, $user->isAdmin() || $currentScope !== 'public'); ?>
             </div>
             <div id="drive-dokumen" class="drive-section hidden">
-                <?php $renderer->renderFileGrid($documents, '#10b981', 'file-text', 'dokumen', $currentScope); ?>
+                <?php $renderer->renderFileGrid($documents, '#10b981', 'file-text', 'dokumen', $currentScope, $user->isAdmin() || $currentScope !== 'public'); ?>
             </div>
         </main>
     </div>

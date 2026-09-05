@@ -146,8 +146,8 @@ sudo killall ffmpeg
 
 **Adjust FFmpeg threads:**
 ```php
-// modules/core/Transcoder.php
-private const FFMPEG_THREADS = 4; // Reduce from 8
+// modules/core/TranscoderBase.php (inherited by all transcoder services)
+protected const FFMPEG_THREADS = 4; // Reduce from 8
 ```
 
 ### ❌ Not enough disk space

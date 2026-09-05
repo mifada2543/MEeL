@@ -109,6 +109,9 @@
 | **Admin Panel** | Dashboard monitoring, user management, queue control, activity log viewer |
 | **Role Helper** | `get_user_role()` — cached role query, eliminating duplication in upload files |
 | **Redirect Guard** | URL redirect validation to prevent open redirect |
+| **Archive Guard (CBZ/ZIP)** | `ArchiveGuard` — safe extraction without direct `extractTo()`: rejects path traversal, null bytes, symlinks, and zip bombs (entry/size/ratio/depth limits) |
+| **Atomic Upload & Tokenization** | Filenames reserved via `fopen('x')` (race-free); `temp_file` uses opaque server-side tokens + session ownership (post_encode POST+CSRF) |
+| **Centralized Magic Bytes** | `meel_magic_extension_ok()` — signature validation for audio/video/image/PDF/archive across every upload path |
 | **Activity Log Integration** | Audit trail for login, logout, upload, admin actions — `activity_log` table |
 | **Admin Activity Log Viewer** | `admin/activity_log.php` page — filter, pagination, log cleanup |
 | **API Rate Limiting** | Endpoint protection from abuse (likes: 30/min, comments: 10/min) |
@@ -157,8 +160,8 @@ MEeL/
 ├── admin/                 # Admin Panel (admin role only)
 │   ├── index.php          # Dashboard with Chart.js activity chart
 │   ├── activity_log.php   # Audit trail viewer
-│   ├── edit-video.php     # Edit video metadata
-│   └── edit-music.php     # Edit music metadata
+│   ├── edit-video.php     # Edit video metadata (admin only)
+│   └── edit-music.php     # Edit music metadata (admin only)
 ├── arcade/                # Mini Games (9 games: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Static assets (CSS, JS, fonts, images)
 ├── auth/                  # Authentication & session management
@@ -187,7 +190,8 @@ MEeL/
 │   │   ├── Router.php     # MeelRouter — front controller & clean-URL route table
 │   │   ├── base_url.php   # base_url() — consistent paths (MEEL_BASE_URL)
 │   │   ├── System.php     # Queue management & monitoring
-│   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
+│   │   ├── Transcoder.php # Facade orchestrator — processDownload / encodeMusic / transcodeVideo
+│   │   ├── TranscoderBase.php # Transcoder service base — constants + process/PID management
 │   │   ├── Uploader.php   # File upload & validation
 │   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
 │   │   ├── ProgressObserver.php / BrowserProgressObserver.php # Progress event contract & browser presenter
@@ -205,12 +209,16 @@ MEeL/
 │   │   └── helpers/       # authz, csrf, session, stream_auth, mfa, user
 │   ├── media/             # Media library classes
 │   │   ├── MediaLibrary.php   # Database queries, search, pagination metadata (+ BookRepository/BookUploader)
+│   │   ├── ArchiveGuard.php   # Safe ZIP/CBZ extraction — path traversal & zip bomb protection
 │   │   ├── MediaViewer.php    # View tracking, comments, recommendations
 │   │   ├── MediaInteraction.php # Like/dislike
 │   │   ├── SearchEngine.php   # FULLTEXT search engine
 │   │   ├── PlaylistRepository.php / MediaAdminRepository.php / ProfileRepository.php / AdminActivityRepository.php
-│   ├── transcoder/        # FFmpeg utilities
-│   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
+│   ├── transcoder/        # Transcoding services (called by the Transcoder facade)
+│   │   ├── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT, getEnvPrefix
+│   │   ├── DownloadService.php # yt-dlp download + HLS finalization (finalizeVideo)
+│   │   ├── EncodeService.php   # encodeMusic (Opus) + thumbnail
+│   │   └── TranscodeService.php# transcodeVideo + transcode file ownership
 │   └── exceptions/        # Custom exception classes
 │       ├── TranscodeException.php
 │       ├── ProcessException.php
@@ -218,6 +226,8 @@ MEeL/
 ├── music/                 # Music player module
 ├── partials/              # Reusable UI components (navbar, footer, head, nav)
 ├── profile/               # User profile module
+│   ├── edit-video.php     # Edit video metadata (non-admin owner)
+│   └── edit-music.php     # Edit music metadata (non-admin owner)
 ├── temp/                  # Runtime staging transcoding + rate limit cache
 ├── video/                 # Video player module
 ├── .htaccess              # Apache rewrite rules
@@ -377,7 +387,11 @@ hardening, the `data_drive/` symlink guard, and the PWA `mod_rewrite` rule.
 | `auth/config.example.php` | Entry point template (copy to config.php) |
 | `auth/settings.example.php` | Config data template (copy to settings.php) |
 | `database/schema.sql` | Standalone database schema |
-| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
+| `modules/core/Transcoder.php` | **Facade** — delegates to services under `modules/transcoder/` |
+| `modules/core/TranscoderBase.php` | Service base class — constants (`FFMPEG_THREADS`, `HLS_SEGMENT_DURATION`, etc.) + process/PID |
+| `modules/transcoder/{DownloadService,EncodeService,TranscodeService}.php` | URL download, music encode, video transcode implementations |
+| `modules/media/ArchiveGuard.php` | Safe ZIP/CBZ extraction — zip-bomb limits (`MAX_ARCHIVE_*`) |
+| `modules/core/helpers/upload.php` | Centralized upload helpers — magic bytes, atomic filename, webp, opus encode, music insert |
 | `modules/core/Uploader.php` | File upload, FFmpeg |
 | `modules/core/helpers.php` | HDD check paths (from `MEEL_HDD_BASE`) |
 | `modules/core/Router.php` | Front controller — clean-URL route table |
@@ -458,15 +472,16 @@ Migrations are **idempotent** — safe to run repeatedly.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 288 | 288 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 53 pass, 2 warn | 0 | **0** | **✅ 98/100** |
-| **Security Test** | 137 | 133 pass, 4 warn | 0 | **0** | **✅ 99/100** |
-| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
+| **Security Test** | 152 | 149 pass, 3 warn | 0 | **0** | **✅ 99/100** |
+| **PHP Syntax** | 207 files | 207 | 0 | **0** | **✅ ALL PASS** |
 
-> Security test: 4 non-critical warnings (MediaViewer raw-query review, profile_edit
-> MIME check, download_transcode filename validation review, and System.php shell
-> exec) — not failures; score **99/100**.
+> Security test: 3 non-critical warnings (MediaViewer raw-query review, profile_edit
+> MIME check, and System.php shell exec) — not failures; score **99/100**.
+> The `download_transcode` filename-validation warning is **resolved** via an
+> allowlist regex + session ownership (`ownsTranscodeFile()`).
 > Storage & deployment verification: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.

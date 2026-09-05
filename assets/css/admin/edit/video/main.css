@@ -101,3 +101,59 @@ body.theme-video .field-input:focus {
 .drop-zone-subtitle.has-file .drop-zone-label {
   color: var(--accent, #ef4444);
 }
+
+.sub-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.sub-lang {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e6ef;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sub-file {
+  font-size: 9px;
+  color: #455060;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sub-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #f87171;
+  padding: 4px;
+  display: flex;
+}
+
+
+html[data-theme="light"] .drop-zone-subtitle {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+html[data-theme="light"] .drop-zone-subtitle .drop-zone-label,
+html[data-theme="light"] .drop-zone-subtitle .drop-zone-sub {
+  color: #52525b !important;
+}
+
+html[data-theme="light"] .sub-row {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme="light"] .sub-lang {
+  color: #18181b !important;
+}
+html[data-theme="light"] .sub-file {
+  color: #52525b !important;
+}
+html[data-theme="light"] .sub-delete {
+  color: #dc2626 !important;
+}

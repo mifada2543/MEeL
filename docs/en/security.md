@@ -498,6 +498,81 @@ if ($detectedType === 'video') { /* WebM/MKV: \x1A\x45\xDF\xA3 */ }
 if ($detectedType === 'audio') { /* MP3: 0xFFFB, FLAC: 0x664C6143 */ }
 ```
 
+### Centralized Magic Bytes Validation (`meel_magic_extension_ok`)
+
+The single source of truth for server-side file-signature validation — every
+upload path (Uploader video/music, thumbnails, BookUploader, DriveStorage) uses
+it, replacing duplicated inline checks:
+
+```php
+// modules/core/helpers/upload.php
+meel_magic_extension_ok(string $path, string $ext, string $mediaKind): string
+// mediaKind: 'audio' | 'video' | 'image' | 'pdf' | 'archive'
+// returns '' when valid, an error message otherwise
+```
+
+Recognized types: Ogg/Opus, FLAC, WAV/RIFF, MP3 (ID3/frame sync), MP4/M4A
+(ftyp), Matroska/WebM, JPEG/PNG/WebP/GIF, PDF, and ZIP archives. Validation
+never relies on `$_FILES['type']` or the extension alone.
+
+### Atomic Filename Allocation (race-condition free)
+
+Physical filenames are no longer allocated with a check-then-move pattern
+(`while (file_exists(...))`). Every media filename is **atomically** reserved
+via `meel_reserve_unique_filename()` (placeholder `fopen(..., 'x')` / O_EXCL):
+
+```php
+// modules/core/helpers/upload.php — used by Uploader, EncodeService,
+// admin editors, and the arcade rhythm module
+meel_reserve_unique_filename(string $dir, string $clean_name, string $ext): ?string
+```
+
+Two concurrent requests can never receive the same name; callers overwrite the
+placeholder with `move_uploaded_file()` / ffmpeg `-y`. Video work-folder names
+are allocated through a similar helper (`meel_allocate_unique_dir()`).
+
+### ZIP/CBZ Archive Protection (`ArchiveGuard`)
+
+Manga/book extraction **never** calls `ZipArchive::extractTo()` directly into
+the final folder. `modules/media/ArchiveGuard.php` runs a validate → staging →
+move pipeline:
+
+```
+open archive
+  → inspect every entry (traversal, null byte, count, size, ratio,
+    depth, symlink, extension)
+  → extract one-by-one into a server-generated staging dir (random name)
+  → validate the result
+  → move into the final folder (rename; existing files are NOT overwritten;
+    symlinks are never moved)
+```
+
+Limits are configurable via constants (defaults):
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `MAX_ARCHIVE_ENTRIES` | 5000 | Maximum number of entries |
+| `MAX_ARCHIVE_UNCOMPRESSED_BYTES` | 2 GiB | Total expanded size |
+| `MAX_ARCHIVE_ENTRY_BYTES` | 200 MiB | Single file size |
+| `MAX_ARCHIVE_COMPRESSION_RATIO` | 300 | Per-entry compression ratio (zip bomb) |
+| `MAX_ARCHIVE_PATH_DEPTH` | 16 | Maximum directory depth |
+
+Rejected: absolute paths, `../`, `..\`, null bytes, symlinks, excessive depth,
+non-image entries (only `jpg/jpeg/png/webp/gif/bmp/avif` for CBZ/manga), and
+entry count/size/ratio over the limits. Rejections are written to the error
+log without storing archive contents.
+
+### Quota & Resource Limits
+
+- **Disk pre-flight** — `require_disk_space()` rejects an upload before any byte
+  is written (music 500MB, video 1GB + `/dev/shm` 512MB).
+- **Concurrent uploads** — max 3 simultaneous uploads (`flock`-protected counter
+  file + 5-minute TTL + shutdown auto-decrement).
+- **Rate limit** — uploads are hourly-limited per role (admin unlimited).
+- **Archives** — the entry/size/ratio limits above (zip-bomb protection).
+- **Transcode** — audio timeout 600s (`TRANSCODE_AUDIO_TIMEOUT`), HLS remux 120s,
+  `stream_set_timeout(30)`, and output duration validated ≥ 50% of source.
+
 ---
 
 ## Apache .htaccess Protection
@@ -631,8 +706,31 @@ The `https://` limitation is therefore resolved: even though the original HTTPS 
 | `modules/auth/SsrfGuard.php` | Central validation: protocol allowlist, explicit IPv4/IPv6 range checks, DNS all-record validation, HTTP pinning |
 | `modules/auth/ValidatingProxy.php` | Spawns/terminates the proxy process, exposes `--proxy` URL (loopback-only) |
 | `modules/auth/validating_proxy_server.php` | CLI forward proxy: SsrfGuard on every hop (HTTP absolute-URI + CONNECT tunnel) |
-| `modules/core/Transcoder.php` | `processDownload()` / `fetchMetadata()` call the guard and route yt-dlp through `--proxy`; fail closed if the proxy cannot start |
+| `modules/core/Transcoder.php` (facade → `modules/transcoder/DownloadService.php`) | `processDownload()` / `fetchMetadata()` call the guard and route yt-dlp through `--proxy`; fail closed if the proxy cannot start |
 | `modules/autoload.php` | Autoloads the `SsrfGuard` class |
+
+### `temp_file` & `post_encode` Security
+
+`temp_file` never accepts a filesystem path from the client. The music-download
+flow:
+
+```
+yt-dlp download → staging on the RAM disk (`/dev/shm/meel/`) under an opaque
+  server-generated token name (uniqid)
+  → token + metadata stored in the session (`meel_pending_music`, 1-hour expiry)
+  → the browser POSTs only the token to `controllers/api/post_encode.php`
+```
+
+`post_encode.php`:
+- **POST method** + CSRF verification (state-changing endpoint)
+- Token validation: regex `[A-Za-z0-9._-]+`, rejects `..`, absolute paths, and null bytes
+- `pathinfo()` + session match → **ownership** (user A cannot use user B's
+  token) + existence check + 1-hour expiry
+- The encode input is locked to the server temp dir (`getShmTempPath()`)
+
+Transcode downloads (`download_transcode.php`) use
+`Transcoder::ownsTranscodeFile()` — session-bound ownership — plus a filename
+allowlist regex, so another user's transcode files cannot be guessed/downloaded.
 
 ---
 
@@ -795,6 +893,19 @@ Output is always escaped with `htmlspecialchars()`:
 ```php
 echo htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8');
 ```
+
+**Stored XSS (hardening):** the database stores raw (canonical) data; escaping
+happens **at output time**, per context:
+
+- Plain-text HTML → `htmlspecialchars($v, ENT_QUOTES, 'UTF-8')`
+- Attributes/URLs → attribute-context escaping + `urlencode`/allowlist
+- JSON/JS → `json_encode(..., JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)`
+
+The audit covers every rendered user-controlled value: profile bios, media
+title/description, comments, filenames, playlists, search results, and data
+shown in the admin panel. Regression tests (`tests/security_test.php`) verify
+payloads such as `<script>alert(1)</script>` and
+`<img src=x onerror=alert(1)>` are never executed as HTML.
 
 ### Login Rate Limiting
 

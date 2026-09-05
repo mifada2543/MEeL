@@ -17,6 +17,10 @@ require_once __DIR__ . '/../../../modules/auth/helpers/user.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/authz.php';
 require_once __DIR__ . '/../../../modules/auth/helpers/csrf.php';
 
+// Helper upload bersama (meel_reserve_unique_filename) — satu sumber
+// kebenaran untuk alokasi nama file atomik.
+require_once __DIR__ . '/../../../modules/core/helpers/upload.php';
+
 
 $FFMPEG_BIN  = defined('MEEL_FFMPEG_PATH') && MEEL_FFMPEG_PATH !== '' ? MEEL_FFMPEG_PATH : 'ffmpeg';
 $FFPROBE_BIN = defined('MEEL_FFPROBE_PATH') && MEEL_FFPROBE_PATH !== '' ? MEEL_FFPROBE_PATH : 'ffprobe';
@@ -89,9 +93,8 @@ function probe_audio_info(string $filepath): array {
 
 
 
-function transcode_flac_to_opus(string $input): ?string {
+function transcode_flac_to_opus(string $input, string $output): ?string {
     global $FFMPEG_BIN;
-    $output = preg_replace('/\.(flac)$/i', '.ogg', $input);
     $cmd = "export LD_LIBRARY_PATH=''; "
         . escapeshellarg($FFMPEG_BIN) . " -y -i "
         . escapeshellarg($input)
@@ -99,7 +102,7 @@ function transcode_flac_to_opus(string $input): ?string {
         . escapeshellarg($output) . " 2>&1";
     exec($cmd, $out, $ret);
     if ($ret === 0 && file_exists($output) && filesize($output) > 0) {
-        unlink($input);
+        @unlink($input);
         return $output;
     }
     return false;
@@ -117,13 +120,14 @@ function validate_audio_mime(string $filepath): ?string {
 
 
 function unique_filename(string $base, string $ext, string $dir): string {
-    $name = $base . '.' . $ext;
-    $counter = 1;
-    while (file_exists($dir . $name)) {
-        $name = $base . '-' . $counter . '.' . $ext;
-        $counter++;
+    // Delegasi ke helper bersama (meel_reserve_unique_filename, fopen O_EXCL)
+    // — dua request bersamaan tidak bisa memilih nama yang sama. Placeholder
+    // kosong dibuat lalu ditimpa oleh move_uploaded_file/transcoder.
+    $reserved = meel_reserve_unique_filename($dir, $base, $ext, 200);
+    if ($reserved !== null) {
+        return $reserved;
     }
-    return $name;
+    return $base . '.' . $ext;
 }
 
 

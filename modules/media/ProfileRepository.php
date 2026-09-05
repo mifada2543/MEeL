@@ -12,6 +12,27 @@ class ProfileRepository
     }
 
     
+    public function isMfaEnabled(int $user_id): int
+    {
+        $stmt = $this->conn->prepare('SELECT mfa_enabled FROM users WHERE id = ?');
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $res  = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return (int) ($res['mfa_enabled'] ?? 0);
+    }
+
+    
+    public function findByUsername(string $username): ?array
+    {
+        $stmt = $this->conn->prepare('SELECT id, username, bio, role, profile_picture, last_activity FROM users WHERE username = ?');
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $res  = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $res ?: null;
+    }
+
     public function countVideo(int $user_id): int
     {
         return $this->countMedia('video', $user_id);

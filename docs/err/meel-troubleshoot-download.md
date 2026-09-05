@@ -21,7 +21,7 @@ upload_advanced.php (form POST)
       → emit('done')           [BrowserProgressObserver → meelDone() JS]
 ```
 
-**Key classes:** `modules/core/Transcoder.php` (pure business logic), `modules/core/BrowserProgressObserver.php` (presentation layer), `modules/core/Uploader.php`  
+**Key classes:** `modules/core/Transcoder.php` (facade → `modules/transcoder/`: `DownloadService`, `EncodeService`, `TranscodeService` — pure business logic), `modules/core/BrowserProgressObserver.php` (presentation layer), `modules/core/Uploader.php`  
 **Key dependencies:** yt-dlp, FFmpeg, FFprobe, node, cookies.txt
 
 ---
@@ -40,7 +40,7 @@ Files in `modules/core/` use `dirname(__DIR__)` which resolves to `.../modules/`
 Change `dirname(__DIR__)` to `dirname(__DIR__, 2)` in files inside `modules/core/`.
 
 ```php
-// WRONG (modules/core/Transcoder.php)
+// WRONG (modules/transcoder/DownloadService.php)
 $this->base_path = dirname(__DIR__);    // → .../MEeL/modules/
 
 // CORRECT
@@ -171,6 +171,10 @@ After making changes:
 1. **Syntax check**
    ```bash
    php -l modules/core/Transcoder.php
+   php -l modules/core/TranscoderBase.php
+   php -l modules/transcoder/EncodeService.php
+   php -l modules/transcoder/DownloadService.php
+   php -l modules/transcoder/TranscodeService.php
    php -l modules/core/Uploader.php
    ```
 
@@ -200,7 +204,7 @@ After making changes:
 | File | Purpose |
 |------|---------|
 | `upload_advanced.php` | Advanced upload form + POST handler |
-| `modules/core/Transcoder.php` | Download, HLS transcode, finalize |
+| `modules/core/Transcoder.php` + `modules/transcoder/` | Facade; download/HLS/finalize di `DownloadService`, encode musik di `EncodeService`, transcode di `TranscodeService` |
 | `modules/core/Uploader.php` | Direct file upload processing |
 | `modules/core/helpers/` | `resolve_binary()`, `require_disk_space()` (helpers.php = shim) |
 | `modules/core/System.php` | Server busy, rate limit, queue mgmt |

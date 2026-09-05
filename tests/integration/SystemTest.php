@@ -1,4 +1,11 @@
 <?php
+// Konstanta ini normalnya di-inject via phpunit.xml (<const>); fallback ini
+// membuat file tetap berjalan bila dieksekusi di luar PHPUnit dan membuat
+// analyzer memahami definisinya.
+if (!defined('MEEL_SERVER_STATS_CACHE')) {
+    define('MEEL_SERVER_STATS_CACHE', 'temp/cache-test/server_stats_info.json');
+}
+
 use PHPUnit\Framework\TestCase;
 
 /**

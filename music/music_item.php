@@ -1,4 +1,5 @@
-<?php 
+<?php
+/** @var array<string, mixed> $v Baris data musik dari loop pemanggil (music/index.php, load_more_music.php, search_music.php). */
 authorize_stream((int)$v['id']);
 ?>
 <div class="music-item flex items-center gap-3 px-3 py-2.5 rounded-xl htmx-added"

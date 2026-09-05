@@ -111,6 +111,9 @@
 | **Admin Panel** | Dashboard monitoring, manajemen user, queue control, activity log viewer |
 | **Role Helper** | `get_user_role()` — query role ter-cache, menghilangkan duplikasi di upload files |
 | **Redirect Guard** | Validasi URL redirect cegah open redirect |
+| **Archive Guard (CBZ/ZIP)** | `ArchiveGuard` — ekstraksi aman tanpa `extractTo()` langsung: tolak path traversal, null byte, symlink, dan zip bomb (limit entri, ukuran, rasio kompresi, kedalaman) |
+| **Upload Atomik & Tokenisasi** | Nama file di-reserve via `fopen('x')` (anti race); `temp_file` memakai token opaque server-side + ownership sesi (post_encode POST+CSRF) |
+| **Magic Bytes Terpusat** | `meel_magic_extension_ok()` — validasi signature audio/video/gambar/PDF/arsip di semua jalur upload |
 | **Activity Log Integration** | Audit trail login, logout, upload, admin actions — tabel `activity_log` |
 | **Admin Activity Log Viewer** | Halaman `admin/activity_log.php` — filter, pagination, cleanup log |
 | **API Rate Limiting** | Proteksi endpoint dari abuse (like: 30/menit, comment: 10/menit) |
@@ -159,8 +162,8 @@ MEeL/
 ├── admin/                 # Panel Admin (role admin only)
 │   ├── index.php          # Dashboard with Chart.js activity chart
 │   ├── activity_log.php   # Audit trail viewer
-│   ├── edit-video.php     # Edit video metadata
-│   └── edit-music.php     # Edit music metadata
+│   ├── edit-video.php     # Edit video metadata (khusus admin)
+│   └── edit-music.php     # Edit music metadata (khusus admin)
 ├── arcade/                # Mini Games (9 game: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Aset statis (CSS, JS, font, gambar)
 ├── auth/                  # Autentikasi & manajemen sesi
@@ -190,7 +193,8 @@ MEeL/
 │   │   ├── Router.php     # MeelRouter — front controller & tabel rute URL bersih
 │   │   ├── base_url.php   # base_url() — path konsisten (MEEL_BASE_URL)
 │   │   ├── System.php     # Queue management & monitoring
-│   │   ├── Transcoder.php # FFmpeg HLS & yt-dlp download engine
+│   │   ├── Transcoder.php # Facade orchestrator — processDownload / encodeMusic / transcodeVideo
+│   │   ├── TranscoderBase.php # Base service transcoder — konstanta + manajemen proses/PID
 │   │   ├── Uploader.php   # Upload file & validasi
 │   │   ├── GarbageCollector.php # Auto-cleanup temp files + guests + chess rooms + rate limits
 │   │   ├── ProgressObserver.php / BrowserProgressObserver.php # Kontrak & presenter progress event
@@ -207,12 +211,16 @@ MEeL/
 │   │   └── helpers/       # authz, csrf, session, stream_auth, mfa, user
 │   ├── media/             # Media library classes
 │   │   ├── MediaLibrary.php   # Query database, search, pagination metadata (+ BookRepository/BookUploader)
+│   │   ├── ArchiveGuard.php   # Ekstraksi aman ZIP/CBZ — anti path traversal & zip bomb
 │   │   ├── MediaViewer.php    # View tracking, komentar, rekomendasi
 │   │   ├── MediaInteraction.php # Like/dislike
 │   │   ├── SearchEngine.php   # Mesin pencari FULLTEXT
 │   │   ├── PlaylistRepository.php / MediaAdminRepository.php / ProfileRepository.php / AdminActivityRepository.php
-│   ├── transcoder/        # Utilitas FFmpeg
-│   │   └── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT
+│   ├── transcoder/        # Service transcoding (dipanggil facade Transcoder)
+│   │   ├── FfmpegUtils.php    # FFmpeg trait – probe, sprite, VTT, getEnvPrefix
+│   │   ├── DownloadService.php # Download yt-dlp + finalisasi HLS (finalizeVideo)
+│   │   ├── EncodeService.php   # encodeMusic (Opus) + thumbnail
+│   │   └── TranscodeService.php# transcodeVideo + ownership file transcode
 │   └── exceptions/        # Custom exception classes
 │       ├── TranscodeException.php
 │       ├── ProcessException.php
@@ -220,6 +228,8 @@ MEeL/
 ├── music/                 # Modul pemutar musik
 ├── partials/              # Reusable UI components (navbar, footer, head, nav)
 ├── profile/               # Modul profil user
+│   ├── edit-video.php     # Edit video metadata (pemilik non-admin)
+│   └── edit-music.php     # Edit music metadata (pemilik non-admin)
 ├── temp/                  # Runtime staging transcoding + rate limit cache
 ├── video/                 # Modul pemutar video
 ├── .htaccess              # Apache rewrite rules
@@ -381,7 +391,11 @@ Memverifikasi `MEEL_HDD_BASE`, folder upload + subdirektori non-auto-create
 | `auth/config.example.php` | Template entry point (copy ke config.php) |
 | `auth/settings.example.php` | Template data konfigurasi (copy ke settings.php) |
 | `database/schema.sql` | Skema database standalone |
-| `modules/core/Transcoder.php` | FFmpeg, yt-dlp, CPU threads |
+| `modules/core/Transcoder.php` | **Facade** — mendelegasikan ke service di `modules/transcoder/` |
+| `modules/core/TranscoderBase.php` | Base class service — konstanta (`FFMPEG_THREADS`, `HLS_SEGMENT_DURATION`, dll.) + proses/PID |
+| `modules/transcoder/{DownloadService,EncodeService,TranscodeService}.php` | Implementasi download URL, encode music, transcode video |
+| `modules/media/ArchiveGuard.php` | Ekstraksi aman ZIP/CBZ — limit anti zip-bomb (`MAX_ARCHIVE_*`) |
+| `modules/core/helpers/upload.php` | Helper upload terpusat — magic bytes, alokasi nama atomik, webp, encode opus, insert music |
 | `modules/core/Uploader.php` | Upload file, FFmpeg |
 | `modules/core/helpers.php` | HDD check path (dari `MEEL_HDD_BASE`) |
 | `modules/core/Router.php` | Front controller — tabel rute URL bersih |
@@ -452,15 +466,16 @@ Migration bersifat **idempotent** — aman dijalankan berulang kali.
 
 | Test | Total | Pass | Warn | Fail | Score |
 |------|-------|------|------|------|-------|
-| **PHPUnit Unit Tests** | 266 | 266 | 0 | **0** | **✅ 100%** |
+| **PHPUnit Unit Tests** | 288 | 288 | 0 | **0** | **✅ 100%** |
 | **PHPUnit Integration Tests** | 81 | 81 | 0 | **0** | **✅ 100%** |
 | **Functional Test** | 55 | 53 pass, 2 warn | 0 | **0** | **✅ 98/100** |
-| **Security Test** | 137 | 133 pass, 4 warn | 0 | **0** | **✅ 99/100** |
-| **PHP Syntax** | 199 files | 199 | 0 | **0** | **✅ ALL PASS** |
+| **Security Test** | 152 | 149 pass, 3 warn | 0 | **0** | **✅ 99/100** |
+| **PHP Syntax** | 207 files | 207 | 0 | **0** | **✅ ALL PASS** |
 
-> Security test: 4 warning non-kritis (review query mentah MediaViewer, cek MIME
-> profile_edit, review validasi filename download_transcode, dan shell exec
-> System.php) — bukan kegagalan; skor **99/100**.
+> Security test: 3 warning non-kritis (review query mentah MediaViewer, cek MIME
+> profile_edit, dan shell exec System.php) — bukan kegagalan; skor **99/100**.
+> Warning validasi filename `download_transcode` sudah **diresolusi** dengan
+> allowlist regex + ownership sesi (`ownsTranscodeFile()`).
 > Verifikasi storage & deployment: `php tests/check_deploy.php`
 
 > **Status:** ✅ Production-ready — 0 critical, 0 high, 0 medium, 0 low issues.

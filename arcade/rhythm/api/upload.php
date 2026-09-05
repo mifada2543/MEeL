@@ -137,16 +137,23 @@ $final_ext = $audio_ext;
 $final_mime = $mime;
 
 if ($audio_ext === 'flac') {
-    $opus_path = $AUDIO_DIR . $clean_name . '.ogg';
-    $result = transcode_flac_to_opus($audio_tmp);
+    // Alokasi nama output atomik dulu, lalu biarkan ffmpeg -y / move
+    // menimpa placeholder kosong hasil reservasi fopen('x').
+    $opus_filename = unique_filename($clean_name, 'ogg', $AUDIO_DIR);
+    $opus_path     = $AUDIO_DIR . $opus_filename;
+    $result = transcode_flac_to_opus($audio_tmp, $opus_path);
     if ($result && file_exists($result)) {
         $final_ext = 'ogg';
         $final_mime = 'audio/ogg';
         $audio_bitrate = 128;
+        $clean_name = pathinfo($opus_filename, PATHINFO_FILENAME);
     } else {
+        @unlink($opus_path);
         $final_ext = 'flac';
         $final_mime = 'audio/flac';
-        move_uploaded_file($audio_tmp, $AUDIO_DIR . $clean_name . '.flac');
+        $flac_filename = unique_filename($clean_name, 'flac', $AUDIO_DIR);
+        move_uploaded_file($audio_tmp, $AUDIO_DIR . $flac_filename);
+        $clean_name = pathinfo($flac_filename, PATHINFO_FILENAME);
     }
 } else {
     $filename = unique_filename($clean_name, $final_ext, $AUDIO_DIR);
@@ -175,20 +182,45 @@ if (isset($_FILES['cover']) && $_FILES['cover']['error'] === UPLOAD_ERR_OK) {
     }
 
     
-    $cover_webp = $clean_name . '_cover.webp';
-    $cover_out = $COVER_DIR . $cover_webp;
-    $cmd = "export LD_LIBRARY_PATH=''; "
-        . escapeshellarg($FFMPEG_BIN) . " -y -i "
-        . escapeshellarg($cover_tmp)
-        . ' -vf "scale=\'min(512,iw)\':-1" -c:v libwebp -q:v 80 '
-        . escapeshellarg($cover_out) . " 2>&1";
-    exec($cmd, $out, $ret);
-    if ($ret === 0 && file_exists($cover_out) && filesize($cover_out) > 0) {
-        $cover_filename = $cover_webp;
+    // Ekstensi dari MIME yang sudah divalidasi server-side (bukan dari nama file client).
+    $mime_to_ext = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/gif'  => 'gif',
+        'image/webp' => 'webp',
+    ];
+    $cover_ext  = $mime_to_ext[$cover_mime] ?? 'jpg';
+    $cover_name = unique_filename($clean_name . '_cover', $cover_ext, $COVER_DIR);
+    $cover_out  = $COVER_DIR . $cover_name;
+
+    $cover_filename = $cover_name;
+    $webp_name      = null;
+
+    
+    if ($cover_mime === 'image/jpeg' || $cover_mime === 'image/png' || $cover_mime === 'image/webp') {
+        $webp_name = unique_filename($clean_name . '_cover', 'webp', $COVER_DIR);
+        $cmd = "export LD_LIBRARY_PATH=''; "
+            . escapeshellarg($FFMPEG_BIN) . " -y -i "
+            . escapeshellarg($cover_tmp)
+            . ' -vf "scale=\'min(512,iw)\':-1" -c:v libwebp -q:v 80 '
+            . escapeshellarg($COVER_DIR . $webp_name) . " 2>&1";
+        exec($cmd, $out, $ret);
+        if ($ret === 0 && file_exists($COVER_DIR . $webp_name) && filesize($COVER_DIR . $webp_name) > 0) {
+            $cover_filename = $webp_name;
+            $webp_name      = null;
+        }
+    }
+
+    if ($cover_filename === $cover_name) {
+        
+        move_uploaded_file($cover_tmp, $cover_out);
     } else {
-        $cover_ext = strtolower(pathinfo($_FILES['cover']['name'], PATHINFO_EXTENSION)) ?: 'jpg';
-        $cover_filename = $clean_name . '_cover.' . $cover_ext;
-        move_uploaded_file($cover_tmp, $COVER_DIR . $cover_filename);
+        
+        @unlink($cover_out);
+    }
+    if ($webp_name !== null) {
+        
+        @unlink($COVER_DIR . $webp_name);
     }
 }
 
