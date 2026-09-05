@@ -220,60 +220,54 @@ if (!$is_guest_profile) {
             margin-top: -1px;
         }
 
-        .channel-tabs {
-            display: flex;
-            gap: 4px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 14px;
-            padding: 4px;
-        }
-
-        .channel-tab {
-            flex: 1;
-            padding: 10px 20px;
-            border-radius: 11px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: #6b7280;
+        .stat-total,
+        .stat-video,
+        .stat-music {
             text-decoration: none;
-            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
-            text-align: center;
+            cursor: pointer;
         }
-
-        .channel-tab:hover {
-            color: #d1d5db;
-            background: rgba(255, 255, 255, 0.04);
+        .stat-total:hover,
+        .stat-video:hover,
+        .stat-music:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
-
-        .channel-tab.active-all {
-            background: rgba(59, 130, 246, 0.1);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.25);
+        .stat-total:hover {
+            border-color: rgba(59, 130, 246, 0.5) !important;
         }
-
-        .channel-tab.active-video {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .channel-tab.active-music {
-            background: rgba(249, 115, 22, 0.1);
-            color: #f97316;
-            border: 1px solid rgba(249, 115, 22, 0.2);
-        }
-
         .stat-video:hover {
             border-color: rgba(239, 68, 68, 0.5) !important;
         }
         .stat-music:hover {
             border-color: rgba(249, 115, 22, 0.5) !important;
         }
-        .stat-total:hover {
-            border-color: rgba(59, 130, 246, 0.5) !important;
+
+        .stat-active-total {
+            border: 1px solid rgba(59, 130, 246, 0.5) !important;
+            background: rgba(59, 130, 246, 0.08);
+            text-decoration: none;
+        }
+        .stat-active-total:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+        }
+        .stat-active-video {
+            border: 1px solid rgba(239, 68, 68, 0.5) !important;
+            background: rgba(239, 68, 68, 0.08);
+            text-decoration: none;
+        }
+        .stat-active-video:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+        }
+        .stat-active-music {
+            border: 1px solid rgba(249, 115, 22, 0.5) !important;
+            background: rgba(249, 115, 22, 0.08);
+            text-decoration: none;
+        }
+        .stat-active-music:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
         }
 
         .content-card {
@@ -500,45 +494,23 @@ if (!$is_guest_profile) {
 
                     <?php if (!$is_guest_profile): ?>
                     <div class="flex gap-4 mt-8">
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group stat-total transition-all">
+                        <a href="?tab=all" class="flex-1 glass p-4 rounded-2xl text-center group transition-all <?= $active_tab === 'all' ? 'stat-active-total' : 'stat-total' ?>">
                             <span class="block text-xl font-bold text-white"><?= $total_uploads ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-blue-400 transition">Total Uploads</span>
-                        </div>
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group stat-video transition-all">
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest transition">Total Uploads</span>
+                        </a>
+                        <a href="?tab=video" class="flex-1 glass p-4 rounded-2xl text-center group transition-all <?= $active_tab === 'video' ? 'stat-active-video' : 'stat-video' ?>">
                             <span class="block text-xl font-bold text-white"><?= $total_video ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-red-400 transition">Videos</span>
-                        </div>
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group stat-music transition-all">
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest transition">Videos</span>
+                        </a>
+                        <a href="?tab=music" class="flex-1 glass p-4 rounded-2xl text-center group transition-all <?= $active_tab === 'music' ? 'stat-active-music' : 'stat-music' ?>">
                             <span class="block text-xl font-bold text-white"><?= $total_music ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-orange-400 transition">Music</span>
-                        </div>
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest transition">Music</span>
+                        </a>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
-
-        <?php if (!$is_guest_profile): ?>
-        <div class="max-w-sm mx-auto mt-8">
-            <div class="channel-tabs">
-                <a href="?tab=all"
-                    class="channel-tab <?= $active_tab === 'all' ? 'active-all' : '' ?>" title="Semua konten">
-                    <i data-lucide="layout-grid" class="w-3.5 h-3.5 inline-block -ml-1 mr-1.5"></i>
-                    All
-                </a>
-                <a href="?tab=video"
-                    class="channel-tab <?= $active_tab === 'video' ? 'active-video' : '' ?>" title="Video saja">
-                    <i data-lucide="play" class="w-3.5 h-3.5 inline-block -ml-1 mr-1.5"></i>
-                    Video
-                </a>
-                <a href="?tab=music"
-                    class="channel-tab <?= $active_tab === 'music' ? 'active-music' : '' ?>" title="Musik saja">
-                    <i data-lucide="music" class="w-3.5 h-3.5 inline-block -ml-1 mr-1.5"></i>
-                    Music
-                </a>
-            </div>
-        </div>
-        <?php endif; ?>
 
         <?php if (!$is_guest_profile): ?>
         <main class="mt-8">
