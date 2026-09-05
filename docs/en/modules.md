@@ -645,19 +645,21 @@ localStorage (source of truth, anti-flash, guest-only)
 
 ### 24. Profile Module (`profile/index.php` + `controllers/profile/`)
 
-User profile page with role-based visibility and theme toggle.
+User profile page with role-based visibility, theme toggle, and public channel grid.
 
 | Component | Role |
 |---|---|
-| `profile/index.php` | Profile page — displays avatar, bio, stats, action buttons |
+| `profile/index.php` | Profile page — displays avatar, bio, stats, action buttons, content channel grid |
+| `profile/channel_more.php` | HTMX fragment for infinite scroll load-more on profile channel |
 | `controllers/profile/profile_edit.php` | Profile edit handler |
 | `controllers/profile/manage.php` | Content management (video/music) |
-| `modules/media/ProfileRepository.php` | Profile data queries (count video, music) |
+| `modules/media/ProfileRepository.php` | Profile data queries (count video, music, paginated feed) |
 
 **Key variables:**
 - `$is_logged_in` — whether the visitor has an active session
 - `$is_guest_profile` — whether the profile being viewed is the synthetic "Guest" profile
 - `$is_owner` — whether the visitor is viewing their own profile
+- `$active_tab` — content filter tab (`all`, `video`, `music`)
 
 **Visibility rules:**
 
@@ -666,8 +668,16 @@ User profile page with role-based visibility and theme toggle.
 | Edit Profile, Kelola Konten, MFA | ✅ | ❌ | ❌ |
 | Theme Toggle | ✅ | ❌ | ✅ (own profile only) |
 | Upload Stats | ✅ | ✅ | ❌ |
+| Channel Tabs (All/Video/Music) | ✅ | ✅ | ❌ |
+| Content Grid + Load More | ✅ | ✅ | ❌ |
 | Bio | from DB | from DB | "Akun Guest" |
 | Badge | Staff/Member | Staff/Member | Guest |
+
+**Profile as Channel:** The profile page doubles as a public channel. For logged-in users, it renders a content grid with initial batch of 12 items. HTMX-powered infinite scroll loads more via `profile/channel-more`. Guest profiles only show the profile card — tabs and content grid are hidden.
+
+**Canonical redirects:**
+- `profile/?u=X` → 301 → `profile/X`
+- `profile/<user>/<all|video|music>` → 301 → `profile/<user>?tab=<type>`
 
 **Guest profile access:** Guests can view any user's profile (including their own synthetic Guest profile). The Guest profile is constructed in-memory (no DB query) with `id=0`, `role='guest'`.
 

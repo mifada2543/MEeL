@@ -663,6 +663,31 @@ Phase 4: Done (links to media)
 **Method:** GET
 **Auth:** Public
 
+**Query Parameters:**
+| Parameter | Values | Default | Description |
+|---|---|---|---|
+| `tab` | `all`, `video`, `music` | `all` | Content filter tab |
+
+**Profile as Channel:** Profile page doubles as a public channel. For logged-in users, it renders a content grid (initial batch: 12 items) with HTMX-powered infinite scroll. Guest profiles see only the profile card without content tabs or grid.
+
+**Canonical Redirects:**
+- `profile/?u=X` → 301 → `profile/X`
+- `profile/<user>/<all|video|music>` → 301 → `profile/<user>?tab=<type>`
+
+### Profile Channel (HTMX Load More)
+
+**Endpoint:** `profile/channel-more` (handler: `profile/channel_more.php`)
+**Method:** GET
+**Auth:** Public
+
+| Parameter | Required | Description |
+|---|---|---|
+| `u` | Yes | Target username |
+| `tab` | No | `all` (default), `video`, `music` |
+| `offset` | Yes | Pagination offset (starts at 12) |
+
+Returns HTML fragment (content cards + next load-more button or "All Content Loaded" marker). Used by `profile/index.php` via `hx-get` for infinite scroll.
+
 ### Media Deletion & Cleanup
 
 **File:** `controllers/profile/fun-manage.php` (function-based)

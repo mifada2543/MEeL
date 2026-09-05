@@ -745,6 +745,31 @@ Phase 4: Done (links to media)
 **Method:** GET
 **Auth:** Public
 
+**Query Parameters:**
+| Parameter | Nilai | Default | Deskripsi |
+|---|---|---|---|
+| `tab` | `all`, `video`, `music` | `all` | Tab filter konten |
+
+**Profile sebagai Channel:** Halaman profil sekaligus channel publik. Untuk user yang login, menampilkan grid konten (batch awal: 12 item) dengan infinite scroll via HTMX. Profil guest hanya menampilkan card profil tanpa tab atau grid konten.
+
+**Canonical Redirects:**
+- `profile/?u=X` → 301 → `profile/X`
+- `profile/<user>/<all|video|music>` → 301 → `profile/<user>?tab=<type>`
+
+### Profile Channel (HTMX Load More)
+
+**Endpoint:** `profile/channel-more` (handler: `profile/channel_more.php`)
+**Method:** GET
+**Auth:** Public
+
+| Parameter | Wajib | Deskripsi |
+|---|---|---|
+| `u` | Ya | Username target |
+| `tab` | Tidak | `all` (default), `video`, `music` |
+| `offset` | Ya | Offset paginasi (mulai dari 12) |
+
+Mengembalikan fragment HTML (kartu konten + tombol load more atau penanda "Semua Konten Dimuat"). Digunakan oleh `profile/index.php` via `hx-get` untuk infinite scroll.
+
 ### Media Deletion & Cleanup
 
 **File:** `controllers/profile/fun-manage.php` (function-based)
