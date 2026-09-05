@@ -162,8 +162,8 @@ MEeL/
 ├── admin/                 # Panel Admin (role admin only)
 │   ├── index.php          # Dashboard with Chart.js activity chart
 │   ├── activity_log.php   # Audit trail viewer
-│   ├── edit-video.php     # Edit video metadata
-│   └── edit-music.php     # Edit music metadata
+│   ├── edit-video.php     # Edit video metadata (khusus admin)
+│   └── edit-music.php     # Edit music metadata (khusus admin)
 ├── arcade/                # Mini Games (9 game: Dino, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, Rhythm)
 ├── assets/                # Aset statis (CSS, JS, font, gambar)
 ├── auth/                  # Autentikasi & manajemen sesi
@@ -228,6 +228,8 @@ MEeL/
 ├── music/                 # Modul pemutar musik
 ├── partials/              # Reusable UI components (navbar, footer, head, nav)
 ├── profile/               # Modul profil user
+│   ├── edit-video.php     # Edit video metadata (pemilik non-admin)
+│   └── edit-music.php     # Edit music metadata (pemilik non-admin)
 ├── temp/                  # Runtime staging transcoding + rate limit cache
 ├── video/                 # Modul pemutar video
 ├── .htaccess              # Apache rewrite rules
