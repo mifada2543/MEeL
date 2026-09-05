@@ -62,7 +62,7 @@ DirectoryIndex index.php index.html
     # (/opt/lampp/htdocs/MEeL/...) di header Location → redirect rusak.
 
     # index.php modul home → /modul/beranda (harus sebelum rule generik di bawah)
-    # (profile TIDAK pakai beranda — home-nya tetap /profile/?u=)
+    # (profile TIDAK pakai beranda — home-nya /profile/<username>)
     RewriteCond %{REQUEST_URI} ^(.*)/(video|music|books|drive|admin|arcade)/index\.php$ [NC]
     RewriteRule ^ %1/%2/beranda [R=301,L,QSA]
     # err/index.php → err/ (err bukan modul home)
@@ -147,7 +147,7 @@ DirectoryIndex index.php index.html
 
     # ── 2. Kanonik: modul home → /modul/beranda ──
     # /video dan /video/ → /video/beranda (index.php modul). profile & err
-    # TIDAK pakai beranda — home-nya /profile/?u= dan /err/. Target memakai
+    # TIDAK pakai beranda — home-nya /profile/<username> dan /err/. Target memakai
     # %{REQUEST_URI} capture (%1) — target relatif menghasilkan path filesystem.
     RewriteCond %{REQUEST_URI} ^(.*)/(video|music|books|drive|admin|arcade)/?([?#]?)$ [NC]
     RewriteRule ^ %1/%2/beranda [R=301,L,QSA]

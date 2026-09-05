@@ -741,7 +741,7 @@ Phase 4: Done (links to media)
 
 ### View Profile
 
-**Endpoint:** `profile/?u=username` (handler: `profile/index.php`)
+**Endpoint:** `profile/{username}` (handler: `profile/index.php`; `profile/?u=username` lama di-301 ke URL bersih)
 **Method:** GET
 **Auth:** Public
 

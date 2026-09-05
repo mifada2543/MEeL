@@ -135,7 +135,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
             
             <div class="py-1.5">
-                <a href="<?= $_nav_root ?>profile/?u=<?= urlencode($_SESSION['username']) ?>" title="Pengaturan profil dan tema"
+                <a href="<?= $_nav_root ?>profile/<?= urlencode($_SESSION['username']) ?>" title="Pengaturan profil dan tema"
                     class="flex items-center gap-3 px-4 py-2.5 text-[11px] transition-all no-underline"
                     style="color:var(--meel-text-secondary)"
                     onmouseover="this.style.color='var(--meel-text-heading)'; this.style.background='var(--meel-surface-hover)'"
@@ -266,7 +266,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
 
         
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
-            <a href="<?= $_nav_root ?>profile/?u=<?= urlencode($_SESSION['username']) ?>"
+            <a href="<?= $_nav_root ?>profile/<?= urlencode($_SESSION['username']) ?>"
                 title="Pengaturan profil dan tema"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="settings" class="w-5 h-5 flex-shrink-0"></i>
@@ -375,7 +375,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
             title="Cara Bernavigasi">
             <i data-lucide="compass" class="w-4 h-4"></i>
         </a>
-        <a href="<?= $_nav_root ?>profile/?u=guest"
+        <a href="<?= $_nav_root ?>profile/guest"
             class="text-gray-500 hover:text-white transition-all p-2 rounded-lg hover:bg-white/5"
             title="Preference">
             <i data-lucide="settings" class="w-4 h-4"></i>
@@ -428,7 +428,7 @@ $_nav_root     = $_nav_in_subdir ? '../' : '';
                 <i data-lucide="user-plus" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Daftar</span>
             </a>
-            <a href="<?= $_nav_root ?>profile/?u=guest"
+            <a href="<?= $_nav_root ?>profile/guest"
                 class="flex items-center gap-4 px-6 py-4 text-base text-gray-400 hover:text-white hover:bg-white/[.04] transition-all no-underline">
                 <i data-lucide="settings" class="w-5 h-5 flex-shrink-0"></i>
                 <span>Preference</span>

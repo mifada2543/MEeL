@@ -213,7 +213,7 @@ $__vdir = function($dir) {
 
                 <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
                     <div class="flex items-center gap-3">
-                        <a href="../profile/?u=<?= urlencode($v['uploader']) ?>"
+                        <a href="../profile/<?= urlencode($v['uploader']) ?>"
                             class="w-10 h-10 rounded-full overflow-hidden border border-red-600/25 flex-shrink-0 block"
                             aria-label="Lihat profil <?= htmlspecialchars($v['uploader']) ?>">
                             <?php if (!empty($v['uploader_pfp'])): ?>
@@ -225,7 +225,7 @@ $__vdir = function($dir) {
                             <?php endif; ?>
                         </a>
                         <div>
-                            <a href="../profile/?u=<?= urlencode($v['uploader']) ?>"
+                            <a href="../profile/<?= urlencode($v['uploader']) ?>"
                                 id="main-video-uploader"
                                 class="text-[10px] font-black uppercase tracking-widest text-red-400 hover:underline block leading-tight">
                                 <?= htmlspecialchars($v['uploader']) ?>

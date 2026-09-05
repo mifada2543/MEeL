@@ -99,7 +99,7 @@ Request: /MEeL/music/beranda?format=ogg
 | `/music/<playlist-name>` | `music/view_playlist.php` (playlist slug route — see below) |
 | `/books/beranda`, `/books/read`, `/books/read-pdf`, `/books/search`, `/books/upload`, `/books/file` | `books/*.php` |
 | `/drive/beranda`, `/drive/upload`, `/drive/delete`, `/drive/download`, `/drive/stream` | `drive/*.php` |
-| `/profile` (`?u=`), `/profile/edit`, `/profile/manage`, `/profile/manage-action`, `/profile/edit-video`, `/profile/edit-music` | `profile/index.php`, `profile/edit-video.php` (owner, non-admin), `profile/edit-music.php` (owner, non-admin), `controllers/profile/*.php` |
+| `/profile/<username>`, `/profile/edit`, `/profile/manage`, `/profile/manage-action`, `/profile/edit-video`, `/profile/edit-music` | `profile/index.php`, `profile/edit-video.php` (owner, non-admin), `profile/edit-music.php` (owner, non-admin), `controllers/profile/*.php` |
 | `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/analys`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php` (edit-video/edit-music admin-only), `controllers/admin/*.php` |
 | `/auth/login`, `/auth/register`, `/auth/logout`, `/auth/mfa-setup`, `/auth/mfa-verify` | `auth/*.php` |
 | `/arcade/beranda`, `/arcade/chess`, `/arcade/rhythm`, `/arcade/rhythm/game`, `/arcade/rhythm/editor`, `/arcade/rhythm/manage`, `/arcade/rhythm/edit` | `arcade/*.php` |

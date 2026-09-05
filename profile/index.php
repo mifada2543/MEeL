@@ -46,7 +46,7 @@ $target_user = $_GET['u'] ?? '';
 
 if (empty($target_user)) {
     if ($is_logged_in) {
-        header("Location: ?u=" . urlencode($_SESSION['username']));
+        header("Location: " . base_url('/profile/' . rawurlencode($_SESSION['username'])));
         exit;
     }
     $is_guest_profile = true;

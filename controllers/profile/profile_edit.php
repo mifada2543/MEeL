@@ -286,7 +286,7 @@ include __DIR__ . '/../../partials/scripts.php';
                 </button>
             </form>
 
-            <a href="../profile/?u=<?= $_SESSION['username'] ?>" class="block text-center mt-6 text-xs text-gray-600 hover:text-gray-400">Batal dan Kembali</a>
+            <a href="../profile/<?= $_SESSION['username'] ?>" class="block text-center mt-6 text-xs text-gray-600 hover:text-gray-400">Batal dan Kembali</a>
         </div>
     </div>
     <script>        lucide.createIcons();

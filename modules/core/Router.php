@@ -48,6 +48,7 @@ final class MeelRouter
         'drive/stream'   => ['handler' => 'drive/stream.php',  'script' => '/drive/stream.php'],
 
         'profile'            => ['handler' => 'profile/index.php',              'script' => '/profile/index.php'],
+        'profile/channel'    => ['handler' => 'profile/channel.php',             'script' => '/profile/channel.php'],
         'profile/manage'     => ['handler' => 'profile/manage.php',             'script' => '/profile/manage.php'],
         'profile/edit'       => ['handler' => 'controllers/profile/profile_edit.php', 'script' => '/controllers/profile/profile_edit.php'],
         'profile/manage-action' => ['handler' => 'controllers/profile/fun-manage.php', 'script' => '/controllers/profile/fun-manage.php'],
@@ -144,6 +145,18 @@ final class MeelRouter
             $_GET['slug'] = $m[1];
             return self::ROUTES['music/playlist'];
         }
+        // /profile/<username>/<all|video|music> → halaman channel konten user
+        if (preg_match('#^profile/([^/]+)/(all|video|music)$#', $path, $m)) {
+            $_GET['u']   = $m[1];
+            $_GET['tab'] = $m[2];
+            return self::ROUTES['profile/channel'];
+        }
+        // /profile/<username> → halaman profil (query lama ?u= dipertahankan
+        // lewat $_GET['u'] agar profile/index.php & activity_logger tidak berubah)
+        if (preg_match('#^profile/([^/]+)$#', $path, $m)) {
+            $_GET['u'] = $m[1];
+            return self::ROUTES['profile'];
+        }
         return null;
     }
 
@@ -151,6 +164,12 @@ final class MeelRouter
 
     public static function dispatch(string $path): void
     {
+        // 301 kanonik: /profile/?u=X → /profile/X (URL bersih)
+        if ($path === 'profile' && isset($_GET['u']) && $_GET['u'] !== '') {
+            header('Location: ' . self::url('profile/' . rawurlencode((string) $_GET['u'])), true, 301);
+            exit;
+        }
+
         $route = self::routeFor($path);
 
         if ($route === null) {

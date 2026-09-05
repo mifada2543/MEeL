@@ -659,7 +659,7 @@ Phase 4: Done (links to media)
 
 ### View Profile
 
-**Endpoint:** `profile/?u=username` (handler: `profile/index.php`)
+**Endpoint:** `profile/{username}` (handler: `profile/index.php`; legacy `profile/?u=username` 301-redirects to it)
 **Method:** GET
 **Auth:** Public
 

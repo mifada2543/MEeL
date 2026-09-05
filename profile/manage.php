@@ -75,7 +75,7 @@ if ($active_tab === 'video') {
 }
 
 $total_pages = max(1, ceil($total_items / $page_size));
-$back_url = "../profile/?u=" . urlencode($_SESSION['username']);
+$back_url = "../profile/" . urlencode($_SESSION['username']);
 ?>
 <!DOCTYPE html>
 <html lang="id">
