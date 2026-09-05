@@ -9,6 +9,8 @@ function openPreview(path, type, name) {
   modal.classList.add("flex");
   content.innerHTML =
     '<div class="text-gray-500 flex flex-col items-center"><div class="animate-spin mb-2">⏳</div> Memuat pratinjau...</div>';
+  var modalBox = modal.firstElementChild;
+  if (modalBox) modalBox.classList.remove("preview-modal-pdf");
   var html = "";
   var ext = name.split(".").pop().toLowerCase();
   if (type === "video") {
@@ -29,7 +31,24 @@ function openPreview(path, type, name) {
       "</p>\n            </div>";
   } else if (type === "dokumen") {
     var imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "svg"];
-    if (imageExtensions.indexOf(ext) !== -1) {
+    if (ext === "pdf") {
+      html =
+        '\n                <div class="w-full h-full flex flex-col min-h-0">' +
+        '\n                    <iframe src="' +
+        path +
+        '" title="Pratinjau PDF: ' +
+        name +
+        '" class="w-full flex-1 min-h-0 rounded-lg bg-white"></iframe>' +
+        '\n                    <div class="flex justify-center mt-3">' +
+        '\n                        <a href="' +
+        path +
+        '" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-lg transition" title="Buka PDF di tab baru (fallback untuk browser yang tidak mendukung pratinjau)">' +
+        '\n                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka di Tab Baru' +
+        "\n                        </a>" +
+        "\n                    </div>" +
+        "\n                </div>";
+      if (modalBox) modalBox.classList.add("preview-modal-pdf");
+    } else if (imageExtensions.indexOf(ext) !== -1) {
       html =
         '<img src="' +
         path +
@@ -52,6 +71,8 @@ function closePreview() {
   var modal = document.getElementById("previewModal");
   var content = document.getElementById("previewContent");
   if (!modal || !content) return;
+  var modalBox = modal.firstElementChild;
+  if (modalBox) modalBox.classList.remove("preview-modal-pdf");
   modal.classList.add("hidden");
   modal.classList.remove("flex");
   content.innerHTML = "";
