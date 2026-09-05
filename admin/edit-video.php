@@ -359,16 +359,15 @@ include __DIR__ . '/../partials/link.php';
                         <?php if (!empty($existing_subtitles)): ?>
                             <div style="display:flex;flex-direction:column;gap:6px;">
                                 <?php foreach ($existing_subtitles as $_sub): ?>
-                                    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:6px 10px;">
+                                    <div class="sub-row">
                                         <i data-lucide="captions" style="width:13px;height:13px;color:var(--accent);flex-shrink:0;"></i>
-                                        <span style="flex:1;font-size:11px;font-weight:700;color:#e2e6ef;text-transform:uppercase;letter-spacing:.06em;"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
-                                        <span style="font-size:9px;color:#455060;text-transform:uppercase;letter-spacing:.05em;"><?= htmlspecialchars($_sub['file']) ?></span>
+                                        <span class="sub-lang"><?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?></span>
+                                        <span class="sub-file"><?= htmlspecialchars($_sub['file']) ?></span>
                                         <form method="POST" style="display:inline;margin:0;"
                                             onsubmit="return meelConfirmForm(event, { title:'Hapus Subtitle', text:'Hapus subtitle bahasa <?= htmlspecialchars(subtitle_lang_label($_sub['lang'])) ?>?', confirmButtonText:'HAPUS' })">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                                             <input type="hidden" name="delete_subtitle_lang" value="<?= htmlspecialchars($_sub['lang']) ?>">
-                                            <button type="submit" title="Hapus subtitle"
-                                                style="background:none;border:none;cursor:pointer;color:#f87171;padding:4px;display:flex;"
+                                            <button type="submit" title="Hapus subtitle" class="sub-delete"
                                                 aria-label="Hapus subtitle <?= htmlspecialchars($_sub['lang']) ?>">
                                                 <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
                                             </button>

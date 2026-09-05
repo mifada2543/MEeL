@@ -410,3 +410,80 @@ form textarea.field-input[style*="resize:none"] {
     width: 100%;
   }
 }
+
+.lang-trigger:focus-visible {
+  outline: 2px solid var(--accent, #ef4444);
+  outline-offset: 2px;
+}
+
+
+html[data-theme="light"] body {
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .field-input {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.10) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] .field-input:focus {
+  background: #ffffff !important;
+}
+
+html[data-theme="light"] .form-title {
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .meta-value {
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .uploader-name {
+  color: #18181b !important;
+}
+
+html[data-theme="light"] .btn-secondary {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.10) !important;
+}
+html[data-theme="light"] .btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #18181b !important;
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+
+html[data-theme="light"] .alert-success {
+  color: #16a34a !important;
+}
+html[data-theme="light"] .alert-error {
+  color: #dc2626 !important;
+}
+
+html[data-theme="light"] .lang-trigger {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.10) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] .lang-trigger:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.16) !important;
+}
+html[data-theme="light"] .lang-trigger-chevron {
+  color: #71717a !important;
+}
+html[data-theme="light"] .lang-options {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] .lang-option {
+  color: #52525b !important;
+}
+html[data-theme="light"] .lang-option:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #18181b !important;
+}
+html[data-theme="light"] .lang-option.active {
+  color: var(--accent, #ef4444) !important;
+  background: var(--accent-dim, rgba(239, 68, 68, 0.06)) !important;
+}
