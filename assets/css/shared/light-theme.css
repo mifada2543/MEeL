@@ -584,6 +584,10 @@ html[data-theme="light"] .rekomendasi-item {
 html[data-theme="light"] .rekomendasi-item:hover {
   background: var(--meel-surface-hover) !important;
 }
+html[data-theme="light"] .rekomendasi-item:hover .rec-title-text {
+  color: var(--meel-text-heading) !important;
+  text-shadow: none !important;
+}
 html[data-theme="light"] .rec-title-text {
   color: var(--meel-text) !important;
   text-shadow: none !important;
