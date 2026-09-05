@@ -1809,3 +1809,67 @@ html[data-theme="light"] .bg-gray-700 {
 html[data-theme="light"] .hover\:bg-gray-600:hover {
   background: var(--meel-surface-active) !important;
 }
+
+
+html[data-theme="light"] .bg-gray-900 {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+html[data-theme="light"] .bg-\[\#161b2a\] {
+  background: var(--meel-surface-elevated) !important;
+  border-color: var(--meel-border) !important;
+}
+
+html[data-theme="light"] .nav-item:hover,
+html[data-theme="light"] .nav-btn-desktop:hover {
+  background: var(--meel-surface-hover) !important;
+  color: var(--meel-text-heading) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .nav-item.active,
+html[data-theme="light"] .nav-item.active-purple {
+  color: var(--meel-blue) !important;
+}
+html[data-theme="light"] .nav-item.active-purple {
+  color: #7c3aed !important;
+}
+
+html[data-theme="light"] .upload-prog-card {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: var(--meel-border) !important;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15) !important;
+}
+html[data-theme="light"] .upload-prog-header {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-bottom-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .upload-prog-filename,
+html[data-theme="light"] .upload-prog-pct {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .upload-prog-status,
+html[data-theme="light"] .upload-prog-toggle-icon,
+html[data-theme="light"] .upload-prog-close {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .upload-prog-card.minimized .upload-prog-toggle-icon {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .upload-prog-header-title:hover .upload-prog-toggle-icon {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .upload-prog-track {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+html[data-theme="light"] .upload-prog-stat {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: var(--meel-border) !important;
+}
+html[data-theme="light"] .upload-prog-stat-label {
+  color: var(--meel-text-muted) !important;
+}
+html[data-theme="light"] .upload-prog-stat-val {
+  color: var(--meel-text-heading) !important;
+}
+html[data-theme="light"] .upload-prog-result {
+  border-top-color: var(--meel-border) !important;
+}
