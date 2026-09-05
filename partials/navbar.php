@@ -7,7 +7,7 @@ if (!isset($is_logged_in)) {
     <?php if ($is_logged_in): ?>
         <div class="flex items-center gap-2 bg-white/[.04] px-4 py-2 rounded-xl border border-white/[.06] backdrop-blur-sm">
             <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-            <a href="profile/?u=<?= urlencode($_SESSION['username']) ?>"
+            <a href="profile/<?= urlencode($_SESSION['username']) ?>"
                class="text-[11px] font-bold text-gray-400 hover:text-white transition-colors">
                 <?= htmlspecialchars($_SESSION['username']) ?>
             </a>

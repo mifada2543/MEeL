@@ -56,6 +56,28 @@ class ProfileRepository
         return $this->getMediaList('music', $user_id, $limit, $offset);
     }
 
+    /**
+     * Feed campuran video+musik untuk channel (tab "all"): satu urutan
+     * kronologis, tiap baris diberi kolom `type` (video|music) agar kartu
+     * bisa dirender seragam di satu grid.
+     */
+    public function getFeedPaginated(int $user_id, int $limit, int $offset): array
+    {
+        $sql = "SELECT 'video' AS `type`, id, title, NULL AS artist, thumbnail, views, likes, dislikes, upload_date
+                FROM video WHERE user_id = ?
+                UNION ALL
+                SELECT 'music' AS `type`, id, title, artist, thumbnail, views, likes, dislikes, upload_date
+                FROM music WHERE user_id = ?
+                ORDER BY upload_date DESC
+                LIMIT ? OFFSET ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('iiii', $user_id, $user_id, $limit, $offset);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        return $rows;
+    }
+
     private function countMedia(string $table, int $user_id): int
     {
         $stmt = $this->conn->prepare("SELECT COUNT(*) FROM {$table} WHERE user_id = ?");

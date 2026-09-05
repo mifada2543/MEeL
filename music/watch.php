@@ -244,7 +244,7 @@ $__vdir = function($dir) {
 
                 <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 border-t border-white/[.04] bg-black/10">
                     <div class="flex items-center gap-3">
-                        <a href="../profile/?u=<?= urlencode($v['uploader']) ?>"
+                        <a href="../profile/<?= urlencode($v['uploader']) ?>"
                             aria-label="Profil @<?= htmlspecialchars($v['uploader']) ?>"
                             title="Profil @<?= htmlspecialchars($v['uploader']) ?>"
                             class="w-9 h-9 rounded-full overflow-hidden border border-orange-500/25 flex-shrink-0 block">
@@ -257,7 +257,7 @@ $__vdir = function($dir) {
                             <?php endif; ?>
                         </a>
                         <div>
-                            <a href="../profile/?u=<?= urlencode($v['uploader']) ?>"
+                            <a href="../profile/<?= urlencode($v['uploader']) ?>"
                                 class="text-[10px] font-black uppercase tracking-widest text-orange-400 hover:underline block leading-tight">
                                 <?= htmlspecialchars($v['uploader']) ?>
                             </a>

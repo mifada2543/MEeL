@@ -40,7 +40,7 @@ $nav_id         = $id ?? 0;
         <?php if ($nav_media_type === 'dashboard'): ?>
             <span class="text-[11px] font-semibold text-gray-200">Dashboard</span>
         <?php else: ?>
-            <a href="../profile/?u=<?= urlencode($_SESSION['username'] ?? '') ?>" class="text-[11px] font-semibold text-gray-500 no-underline hover:text-gray-300 transition-colors">Dashboard</a>
+            <a href="../profile/<?= urlencode($_SESSION['username'] ?? '') ?>" class="text-[11px] font-semibold text-gray-500 no-underline hover:text-gray-300 transition-colors">Dashboard</a>
             <span class="text-gray-600">›</span>
             <?php if ($nav_media_type === 'video'): ?>
                 <a href="../video/beranda" class="text-[11px] font-semibold text-gray-500 no-underline hover:text-gray-300 transition-colors">Video</a>

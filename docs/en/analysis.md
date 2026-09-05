@@ -1,7 +1,7 @@
 # 📋 MEeL-HUB Project Analysis & Description
 
-**Analysis Version:** 2.3
-**Date:** September 3, 2026
+**Analysis Version:** 2.5
+**Date:** September 5, 2026
 **Analyst:** Buffy (Freebuff AI Agent)
 
 ---
@@ -167,7 +167,8 @@ RateLimiter.php, HTMX 429 response, activity_log integration, admin dashboard ch
 - `auth/auth.php` — MFA flow documentation and session handling
 - `controllers/admin/admin_actions.php` — MFA reset handler
 - `admin/index.php` — Link to MFA Management page
-- `profile/index.php` — MFA status toggle + setup link
+- `profile/index.php` — MFA status toggle + setup link, public channel grid with HTMX infinite scroll
+- `profile/channel_more.php` — HTMX fragment for profile channel load-more
 - `database/schema.sql` — MFA columns (`mfa_secret`, `mfa_backup_codes`, `mfa_enabled`)
 - `database/migrate.php` — **Migration v9** — adds MFA columns
 - `modules/auth/helpers/mfa.php` — 5 MFA helper functions (`generate_mfa_secret()`, `generate_totp()`, `verify_totp()`, `generate_backup_codes()`, `verify_backup_code()`)

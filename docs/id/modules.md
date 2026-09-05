@@ -557,19 +557,21 @@ localStorage (source of truth, anti-flash, hanya guest)
 
 ### 24. Profile Module (`profile/index.php` + `controllers/profile/`)
 
-Halaman profil pengguna dengan visibilitas berbasis role dan theme toggle.
+Halaman profil pengguna dengan visibilitas berbasis role, theme toggle, dan grid channel publik.
 
 | Komponen | Peran |
 |---|---|
-| `profile/index.php` | Halaman profil — menampilkan avatar, bio, statistik, tombol aksi |
+| `profile/index.php` | Halaman profil — menampilkan avatar, bio, statistik, tombol aksi, grid konten channel |
+| `profile/channel_more.php` | Fragment HTMX untuk infinite scroll load-more pada profile channel |
 | `controllers/profile/profile_edit.php` | Handler edit profil |
 | `controllers/profile/manage.php` | Manajemen konten (video/music) |
-| `modules/media/ProfileRepository.php` | Query data profil (count video, music) |
+| `modules/media/ProfileRepository.php` | Query data profil (count video, music, feed paginated) |
 
 **Variabel kunci:**
 - `$is_logged_in` — apakah pengunjung punya session aktif
 - `$is_guest_profile` — apakah profil yang dilihat adalah profil "Guest" sintetis
 - `$is_owner` — apakah pengunjung melihat profil diri sendiri
+- `$active_tab` — tab filter konten (`all`, `video`, `music`)
 
 **Aturan visibilitas:**
 
@@ -578,8 +580,16 @@ Halaman profil pengguna dengan visibilitas berbasis role dan theme toggle.
 | Edit Profile, Kelola Konten, MFA | ✅ | ❌ | ❌ |
 | Theme Toggle | ✅ | ❌ | ✅ (profil sendiri saja) |
 | Upload Stats | ✅ | ✅ | ❌ |
+| Channel Tabs (All/Video/Music) | ✅ | ✅ | ❌ |
+| Content Grid + Load More | ✅ | ✅ | ❌ |
 | Bio | dari DB | dari DB | "Akun Guest" |
 | Badge | Staff/Member | Staff/Member | Guest |
+
+**Profile sebagai Channel:** Halaman profil sekaligus channel publik. Untuk user yang login, menampilkan grid konten dengan batch awal 12 item. Infinite scroll via HTMX memuat lebih banyak melalui `profile/channel-more`. Profil guest hanya menampilkan card profil — tab dan grid konten tersembunyi.
+
+**Canonical redirects:**
+- `profile/?u=X` → 301 → `profile/X`
+- `profile/<user>/<all|video|music>` → 301 → `profile/<user>?tab=<type>`
 
 **Akses profil guest:** Guest bisa melihat profil pengguna lain (termasuk profil Guest sintetis mereka sendiri). Profil Guest dibangun di-memory (tanpa query DB) dengan `id=0`, `role='guest'`.
 

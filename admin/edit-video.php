@@ -317,7 +317,7 @@ include __DIR__ . '/../partials/link.php';
                             <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Dashboard Admin
                         </a>
                     <?php else: ?>
-                        <a href="../profile/?u=<?= $_SESSION['username'] ?>" class="btn-secondary" style="justify-content:center;">
+                        <a href="../profile/<?= $_SESSION['username'] ?>" class="btn-secondary" style="justify-content:center;">
                             <i data-lucide="user" style="width:13px;height:13px;"></i> Profil Saya
                         </a>
                     <?php endif; ?>

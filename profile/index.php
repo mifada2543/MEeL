@@ -46,7 +46,7 @@ $target_user = $_GET['u'] ?? '';
 
 if (empty($target_user)) {
     if ($is_logged_in) {
-        header("Location: ?u=" . urlencode($_SESSION['username']));
+        header("Location: " . base_url('/profile/' . rawurlencode($_SESSION['username'])));
         exit;
     }
     $is_guest_profile = true;
@@ -95,6 +95,32 @@ if (empty($target_user)) {
     $total_uploads = $total_video + $total_music;
     $is_online = (strtotime($u['last_activity']) > strtotime("-5 minutes"));
 }
+
+// Tab konten: all | video | music (default all — halaman profil sekaligus channel)
+$active_tab = $_GET['tab'] ?? 'all';
+if (!in_array($active_tab, ['all', 'video', 'music'], true)) {
+    $active_tab = 'all';
+}
+
+// Satu feed konten: tab "all" mencampur video+musik (UNION) dalam satu grid
+// & satu tombol load-more. Batch awal dirender di sini, sisanya via htmx
+// (channel_more.php) dijajarkan di grid yang sama.
+$items        = [];
+$initial_batch = 12;
+$has_more      = false;
+
+if (!$is_guest_profile) {
+    if ($active_tab === 'video') {
+        $items    = $profileRepo->getVideosPaginated($profile_id, $initial_batch, 0);
+        $has_more = count($items) < $total_video;
+    } elseif ($active_tab === 'music') {
+        $items    = $profileRepo->getMusicPaginated($profile_id, $initial_batch, 0);
+        $has_more = count($items) < $total_music;
+    } else {
+        $items    = $profileRepo->getFeedPaginated($profile_id, $initial_batch, 0);
+        $has_more = count($items) < ($total_video + $total_music);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -105,7 +131,7 @@ if (empty($target_user)) {
     <meta name="description" content="MEeL - Platform Media Hub Pribadi untuk Streaming Video, Musik, dan E-Library.">
     <meta property="og:title" content="<?= htmlspecialchars($u['username']) ?> — MEeL Profile">
     <meta property="og:description" content="Profil <?= htmlspecialchars($u['username']) ?> di MEeL - Platform Media Hub Pribadi.">
-    <title>MEeL Profile | <?= htmlspecialchars($u['username']) ?></title>
+    <title><?= htmlspecialchars($u['username']) ?> | MEeL</title>
     <?php include '../partials/link.php'; ?>
     <style>        body {
             background-color: var(--meel-bg, #0b0e14);
@@ -193,13 +219,168 @@ if (empty($target_user)) {
             display: block;
             margin-top: -1px;
         }
+
+        .stat-total,
+        .stat-video,
+        .stat-music {
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .stat-total:hover,
+        .stat-video:hover,
+        .stat-music:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        .stat-total:hover {
+            border-color: rgba(59, 130, 246, 0.5) !important;
+        }
+        .stat-video:hover {
+            border-color: rgba(239, 68, 68, 0.5) !important;
+        }
+        .stat-music:hover {
+            border-color: rgba(249, 115, 22, 0.5) !important;
+        }
+
+        .stat-active-total {
+            border: 1px solid rgba(59, 130, 246, 0.5) !important;
+            background: rgba(59, 130, 246, 0.08);
+            text-decoration: none;
+        }
+        .stat-active-total:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+        }
+        .stat-active-video {
+            border: 1px solid rgba(239, 68, 68, 0.5) !important;
+            background: rgba(239, 68, 68, 0.08);
+            text-decoration: none;
+        }
+        .stat-active-video:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+        }
+        .stat-active-music {
+            border: 1px solid rgba(249, 115, 22, 0.5) !important;
+            background: rgba(249, 115, 22, 0.08);
+            text-decoration: none;
+        }
+        .stat-active-music:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
+        }
+
+        .content-card {
+            background: var(--meel-surface, rgba(20, 24, 32, 0.85));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .content-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .content-card .card-thumb {
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            background: #0b0e14;
+        }
+
+        .content-card .card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .content-card:hover .card-thumb img {
+            transform: scale(1.05);
+        }
+
+        .content-card .card-body {
+            padding: 12px 14px 14px;
+        }
+
+        .content-card .card-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #e5e7eb;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .content-card .card-meta {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .type-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 2; /* tetap di atas img saat hover (img di-scale & naik layer paint) */
+            font-size: 8px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+        }
+
+        .type-badge.video {
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .type-badge.music {
+            color: #f97316;
+            border: 1px solid rgba(249, 115, 22, 0.4);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-state i {
+            width: 40px;
+            height: 40px;
+            color: #374151;
+            margin: 0 auto 16px;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
 </style>
     <link rel="stylesheet" href="../assets/css/shared/light-theme.css?v=<?= @filemtime(__DIR__ . '/../assets/css/shared/light-theme.css') ?>">
 </head>
 
 <body class="text-gray-300">
 
-    <div class="max-w-2xl mx-auto mt-10 p-4">
+    <div class="max-w-5xl mx-auto mt-10 p-4">
         <div class="glass rounded-[2.5rem] overflow-hidden shadow-2xl">
             <?php
             $banner_pic = $u['profile_picture'] ?: 'default_avatar.png';
@@ -313,33 +494,94 @@ if (empty($target_user)) {
 
                     <?php if (!$is_guest_profile): ?>
                     <div class="flex gap-4 mt-8">
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-blue-500/50 transition-all">
+                        <a href="?tab=all" class="flex-1 glass p-4 rounded-2xl text-center group transition-all <?= $active_tab === 'all' ? 'stat-active-total' : 'stat-total' ?>">
                             <span class="block text-xl font-bold text-white"><?= $total_uploads ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-blue-400 transition">Total Uploads</span>
-                        </div>
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-green-500/50 transition-all">
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest transition">Total Uploads</span>
+                        </a>
+                        <a href="?tab=video" class="flex-1 glass p-4 rounded-2xl text-center group transition-all <?= $active_tab === 'video' ? 'stat-active-video' : 'stat-video' ?>">
                             <span class="block text-xl font-bold text-white"><?= $total_video ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-green-400 transition">Videos</span>
-                        </div>
-                        <div class="flex-1 glass p-4 rounded-2xl text-center group hover:border-purple-500/50 transition-all">
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest transition">Videos</span>
+                        </a>
+                        <a href="?tab=music" class="flex-1 glass p-4 rounded-2xl text-center group transition-all <?= $active_tab === 'music' ? 'stat-active-music' : 'stat-music' ?>">
                             <span class="block text-xl font-bold text-white"><?= $total_music ?></span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-purple-400 transition">Music</span>
-                        </div>
+                            <span class="text-[10px] text-gray-500 uppercase tracking-widest transition">Music</span>
+                        </a>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        <div class="text-center mt-8">
+        <?php if (!$is_guest_profile): ?>
+        <main class="mt-8">
+            <?php if (empty($items)): ?>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="empty-state">
+                        <i data-lucide="<?= $active_tab === 'music' ? 'music' : ($active_tab === 'video' ? 'play' : 'inbox') ?>" class="w-10 h-10"></i>
+                        <p><?= $active_tab === 'video' ? 'Belum ada video di sini.' : ($active_tab === 'music' ? 'Belum ada musik di sini.' : 'Belum ada konten di channel ini.') ?></p>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <?php foreach ($items as $item):
+                        $is_music = ($item['type'] ?? $active_tab) === 'music';
+                        $thumb = !empty($item['thumbnail'])
+                            ? ($is_music ? '../music/upload/thumbnail/' : '../video/upload/thumbnail/') . htmlspecialchars($item['thumbnail'])
+                            : ($is_music ? '../assets/img/music0.webp' : '../assets/img/video0.webp');
+                        $watch = base_url(($is_music ? '/music' : '/video') . '/watch?id=' . (int)$item['id']);
+                    ?>
+                        <div class="content-card">
+                            <a href="<?= $watch ?>" class="block card-thumb relative" title="<?= htmlspecialchars($item['title']) ?>">
+                                <span class="type-badge <?= $is_music ? 'music' : 'video' ?>"><?= $is_music ? 'Music' : 'Video' ?></span>
+                                <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($item['title']) ?>" loading="lazy" width="640" height="360">
+                            </a>
+                            <div class="card-body">
+                                <a href="<?= $watch ?>" class="card-title no-underline hover:text-<?= $is_music ? 'orange' : 'red' ?>-400 transition-colors" title="<?= htmlspecialchars($item['title']) ?>">
+                                    <?= htmlspecialchars($item['title']) ?>
+                                </a>
+                                <div class="card-meta">
+                                    <?php if ($is_music): ?>
+                                        <span><?= htmlspecialchars($item['artist'] ?? 'Unknown') ?></span>
+                                        <span>•</span>
+                                        <span><?= number_format($item['views'] ?? 0) ?> views</span>
+                                    <?php else: ?>
+                                        <span><?= number_format($item['views'] ?? 0) ?> views</span>
+                                        <span>•</span>
+                                        <span><?= date('d M Y', strtotime($item['upload_date'])) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <?php if ($has_more): ?>
+                    <button type="button" id="channel-more-area"
+                        class="col-span-full h-16 flex items-center justify-center gap-2 bg-white/[.02] border border-dashed border-white/[.06] rounded-2xl cursor-pointer hover:border-white/10 hover:bg-white/[.03] transition-all group"
+                        hx-get="<?= htmlspecialchars('channel-more?u=' . rawurlencode($u['username']) . '&tab=' . $active_tab . '&offset=' . $initial_batch) ?>"
+                        hx-target="#channel-more-area"
+                        hx-swap="outerHTML"
+                        aria-label="Muat lebih banyak konten">
+                        <span class="text-[10px] font-bold uppercase tracking-[.2em] text-gray-300 group-hover:text-white transition-colors">
+                            <i data-lucide="chevrons-down" class="w-3.5 h-3.5 inline-block -mr-1 mr-1.5"></i>
+                            Muat Lebih Banyak <?= $active_tab === 'all' ? 'Konten' : ($active_tab === 'video' ? 'Video' : 'Musik') ?>
+                        </span>
+                    </button>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </main>
+        <?php endif; ?>
+
+        <div class="text-center mt-10">
             <a href="<?= htmlspecialchars($back_url); ?>" class="text-gray-600 hover:text-blue-500 transition text-xs flex items-center justify-center gap-2" title="Kembali ke halaman sebelumnya">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
             </a>
         </div>
-    </div>
- <?php include '../partials/footer.php'; ?>
+    </div>    <?php include '../partials/footer.php'; ?>
     <script src="../assets/js/compatibilitas/sweetalert2.all.min.js"></script>
     <script src="../assets/js/shared/download-backup-codes.js"></script>
+    <script src="../assets/js/compatibilitas/htmx.min.js"></script>
+    <script src="../assets/js/shared/htmx-lucide.js?v=<?= @filemtime(__DIR__ . '/../assets/js/shared/htmx-lucide.js') ?>"></script>
     <script>
         lucide.createIcons();
 

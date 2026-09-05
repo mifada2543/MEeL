@@ -48,6 +48,7 @@ final class MeelRouter
         'drive/stream'   => ['handler' => 'drive/stream.php',  'script' => '/drive/stream.php'],
 
         'profile'            => ['handler' => 'profile/index.php',              'script' => '/profile/index.php'],
+        'profile/channel-more' => ['handler' => 'profile/channel_more.php',      'script' => '/profile/channel_more.php'],
         'profile/manage'     => ['handler' => 'profile/manage.php',             'script' => '/profile/manage.php'],
         'profile/edit'       => ['handler' => 'controllers/profile/profile_edit.php', 'script' => '/controllers/profile/profile_edit.php'],
         'profile/manage-action' => ['handler' => 'controllers/profile/fun-manage.php', 'script' => '/controllers/profile/fun-manage.php'],
@@ -144,6 +145,13 @@ final class MeelRouter
             $_GET['slug'] = $m[1];
             return self::ROUTES['music/playlist'];
         }
+        // /profile/<username> → halaman profil sekaligus channel (konten user).
+        // Tab all|video|music disaring via ?tab= di handler. URL multi-segmen
+        // /profile/<user>/<type> di-301 ke bentuk tunggal ini (lihat dispatch).
+        if (preg_match('#^profile/([^/]+)$#', $path, $m)) {
+            $_GET['u'] = $m[1];
+            return self::ROUTES['profile'];
+        }
         return null;
     }
 
@@ -151,6 +159,23 @@ final class MeelRouter
 
     public static function dispatch(string $path): void
     {
+        // 301 kanonik: /profile/?u=X → /profile/X (URL bersih, tab dipertahankan)
+        if ($path === 'profile' && isset($_GET['u']) && $_GET['u'] !== '') {
+            $q = [];
+            if (isset($_GET['tab']) && in_array($_GET['tab'], ['all', 'video', 'music'], true)) {
+                $q['tab'] = $_GET['tab'];
+            }
+            header('Location: ' . self::url('profile/' . rawurlencode((string) $_GET['u']), $q), true, 301);
+            exit;
+        }
+
+        // 301 kanonik: /profile/<user>/<all|video|music> → /profile/<user>?tab=<type>
+        // (URL lama channel multi-segmen diarahkan ke halaman profil tunggal)
+        if (preg_match('#^profile/([^/]+)/(all|video|music)$#', $path, $m)) {
+            header('Location: ' . self::url('profile/' . rawurlencode($m[1]), ['tab' => $m[2]]), true, 301);
+            exit;
+        }
+
         $route = self::routeFor($path);
 
         if ($route === null) {
