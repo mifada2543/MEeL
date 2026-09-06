@@ -14,6 +14,7 @@ require_once 'modules/core/Transcoder.php';
 require_once 'modules/core/BrowserProgressObserver.php';
 require_once 'modules/core/GarbageCollector.php';
 require_once 'modules/media/MediaLibrary.php';
+require_once 'modules/core/MeelCoin.php';
 GarbageCollector::run();
 
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
@@ -53,14 +54,23 @@ register_shutdown_function([$transcoder, 'terminateAllProcesses']);
 $q_active = $conn->query("SELECT COUNT(*) FROM upload_queue WHERE status='processing'");
 $active_count = $q_active ? (int)$q_active->fetch_row()[0] : 0;
 
+$meelcoin_enabled = MeelCoin::isEnabled($conn);
 
-
-$upload_max = get_upload_hourly_limit($user_role);
-$quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
-$quota_music_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'music');
-
-$quota_video_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_video_used;
-$quota_music_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_music_used;
+if ($meelcoin_enabled) {
+    if (!$is_admin) {
+        MeelCoin::refill($conn, (int)$_SESSION['user_id'], $user_role);
+    }
+    $coin_balance   = $is_admin ? -1 : MeelCoin::getBalance($conn, (int)$_SESSION['user_id']);
+    $coin_max       = $is_admin ? -1 : MeelCoin::getMax($conn, $user_role);
+    $coin_cost      = MeelCoin::getCost($conn, 'advanced');
+    $coin_countdown = $is_admin ? 0 : MeelCoin::getRefillCountdown($conn, (int)$_SESSION['user_id'], $user_role);
+} else {
+    $upload_max = get_upload_hourly_limit($user_role);
+    $quota_video_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'video');
+    $quota_music_used = ($user_role === 'admin') ? 0 : get_hourly_upload_count($conn, (int)$_SESSION['user_id'], 'music');
+    $quota_video_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_video_used;
+    $quota_music_remaining = ($user_role === 'admin') ? -1 : $upload_max - $quota_music_used;
+}
 
 if (isset($_GET['success'])) {
     $message = 'success';
@@ -74,17 +84,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     } elseif ($is_busy) {
         $message = 'busy';
     } else {
-        
-        $type        = $_POST['type'] ?? '';
-        $limit_table = ($type === 'music') ? 'music' : 'video';
-        $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
-        if (!$limit['allowed']) {
-            $message        = 'rate_limit';
-            $rate_limit_msg = "Batas upload tercapai! Tunggu {$limit['minutes']} menit lagi.";
-        } else {
-            try {
-                $url     = trim($_POST['url']);
-                $message = $transcoder->processDownload($url, $type);
+        if ($meelcoin_enabled && !$is_admin) {
+            if (!MeelCoin::canAfford($conn, (int)$_SESSION['user_id'], $coin_cost)) {
+                $message = 'rate_limit';
+                $rate_limit_msg = "MEeLCoin tidak cukup! Dibutuhkan {$coin_cost} coin, saldo Anda: {$coin_balance}.";
+            }
+        }
+
+        if ($message === '') {
+            if ($meelcoin_enabled && !$is_admin) {
+                [$spent_ok, $spent_err] = MeelCoin::spend($conn, (int)$_SESSION['user_id'], $coin_cost, 'upload_advanced');
+                if (!$spent_ok) {
+                    $message = 'rate_limit';
+                    $rate_limit_msg = $spent_err;
+                }
+            }
+        }
+
+        if ($message === '') {
+            $coin_deducted = $meelcoin_enabled && !$is_admin;
+            
+            $type        = $_POST['type'] ?? '';
+            if (!$meelcoin_enabled) {
+                $limit_table = ($type === 'music') ? 'music' : 'video';
+                $limit       = $sys->checkRateLimit($_SESSION['user_id'], $limit_table, $user_role);
+                if (!$limit['allowed']) {
+                    $message        = 'rate_limit';
+                    $rate_limit_msg = "Batas upload tercapai! Tunggu {$limit['minutes']} menit lagi.";
+                    if ($coin_deducted) {
+                        MeelCoin::refund($conn, (int)$_SESSION['user_id'], $coin_cost, 'upload_advanced_refund');
+                    }
+                }
+            }
+
+            if ($message === '') {
+                try {
+                    $url     = trim($_POST['url']);
+                    $message = $transcoder->processDownload($url, $type);
 
                 
                 
@@ -157,6 +193,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 }
             } catch (Exception $e) {
                 error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($coin_deducted ?? false) {
+                    MeelCoin::refund($conn, (int)$_SESSION['user_id'], $coin_cost, 'upload_advanced_error_refund');
+                }
                 if ($is_admin) {
                     $msg = $e->getMessage();
                     echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
@@ -169,6 +208,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 exit;
             } catch (Throwable $e) {
                 error_log('[MEeL-Upload] ' . $e->getMessage());
+                if ($coin_deducted ?? false) {
+                    MeelCoin::refund($conn, (int)$_SESSION['user_id'], $coin_cost, 'upload_advanced_error_refund');
+                }
                 if ($is_admin) {
                     $msg = $e->getMessage();
                     echo '<script>if(typeof meelError==="function"){meelError(' . json_encode($msg) . ')}else{document.open();document.write("<pre style=\"padding:2em;font:13px/1.6 monospace;color:#e55;background:#1a0000;white-space:pre-wrap;word-break:break-all\">"+"<b style=\"color:#f44\">⚠ Download Gagal</b><br><br>"+document.createTextNode(' . json_encode($msg) . ').textContent.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>");document.close();}</script>';
@@ -181,6 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
                 exit;
             }
         }
+    }
     }
 }
 
@@ -453,33 +496,57 @@ include __DIR__ . '/partials/scripts.php';
                             
                             <div style="height:1px;background:var(--border);"></div>
                             <div>
-                                <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">
-                                    Sisa Kuota · <?= $user_role === 'admin' ? 'Tak terbatas' : "{$upload_max} upload/jam" ?>
-                                </div>
-                                <div style="display:flex;flex-direction:column;gap:.4rem;">
-                                    <?php
-                                    $quotas = [
-                                        ['label' => 'Video', 'used' => $quota_video_used, 'remaining' => $quota_video_remaining, 'color' => '#ef4444'],
-                                        ['label' => 'Music', 'used' => $quota_music_used, 'remaining' => $quota_music_remaining, 'color' => '#f97316'],
-                                    ];
-                                    foreach ($quotas as $q):
-                                        $pct  = ($user_role !== 'admin' && $upload_max > 0) ? round(($q['used'] / $upload_max) * 100) : 0;
-                                        $stat = $user_role === 'admin' ? '∞' : ($q['remaining'] > 0 ? "{$q['used']}/{$upload_max}" : 'Penuh');
-                                        $stat_color = $user_role === 'admin' ? 'var(--muted)' : ($q['remaining'] <= 0 ? '#ef4444' : '#4ade80');
-                                    ?>
-                                        <div>
-                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-                                                <span style="font-family:var(--font-mono);font-size:.58rem;color:<?= $q['color'] ?>;"><?= $q['label'] ?></span>
-                                                <span style="font-family:var(--font-mono);font-size:.58rem;color:<?= $stat_color ?>;"><?= $stat ?></span>
-                                            </div>
-                                            <?php if ($user_role !== 'admin'): ?>
-                                                <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.04);overflow:hidden;">
-                                                    <div style="height:100%;width:<?= min($pct, 100) ?>%;border-radius:3px;background:<?= $q['remaining'] <= 0 ? '#ef4444' : $q['color'] ?>;transition:width .3s;"></div>
-                                                </div>
-                                            <?php endif; ?>
+                                <?php if ($meelcoin_enabled): ?>
+                                    <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">
+                                        MEeLCoin
+                                    </div>
+                                    <div style="display:flex;flex-direction:column;gap:.6rem;">
+                                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                                            <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--muted);">Saldo</span>
+                                            <span style="font-family:var(--font-mono);font-size:.85rem;color:#facc15;font-weight:700;cursor:help;"
+                                                title="Refill berikutnya: <?= $coin_countdown > 0 ? floor($coin_countdown / 3600) . 'j ' . floor(($coin_countdown % 3600) / 60) . 'm lagi' : 'Siap refill' ?>"
+                                            ><?= $is_admin ? '∞' : $coin_balance ?></span>
                                         </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                        <?php if (!$is_admin): ?>
+                                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                                            <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--muted);">Biaya</span>
+                                            <span style="font-family:var(--font-mono);font-size:.7rem;color:#f97316;"><?= $coin_cost ?> coin</span>
+                                        </div>
+                                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                                            <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--muted);">Max</span>
+                                            <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--muted);"><?= $coin_max ?> coin</span>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div style="font-family:var(--font-mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;">
+                                        Sisa Kuota · <?= $user_role === 'admin' ? 'Tak terbatas' : "{$upload_max} upload/jam" ?>
+                                    </div>
+                                    <div style="display:flex;flex-direction:column;gap:.4rem;">
+                                        <?php
+                                        $quotas = [
+                                            ['label' => 'Video', 'used' => $quota_video_used, 'remaining' => $quota_video_remaining, 'color' => '#ef4444'],
+                                            ['label' => 'Music', 'used' => $quota_music_used, 'remaining' => $quota_music_remaining, 'color' => '#f97316'],
+                                        ];
+                                        foreach ($quotas as $q):
+                                            $pct  = ($user_role !== 'admin' && $upload_max > 0) ? round(($q['used'] / $upload_max) * 100) : 0;
+                                            $stat = $user_role === 'admin' ? '∞' : ($q['remaining'] > 0 ? "{$q['used']}/{$upload_max}" : 'Penuh');
+                                            $stat_color = $user_role === 'admin' ? 'var(--muted)' : ($q['remaining'] <= 0 ? '#ef4444' : '#4ade80');
+                                        ?>
+                                            <div>
+                                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+                                                    <span style="font-family:var(--font-mono);font-size:.58rem;color:<?= $q['color'] ?>;"><?= $q['label'] ?></span>
+                                                    <span style="font-family:var(--font-mono);font-size:.58rem;color:<?= $stat_color ?>;"><?= $stat ?></span>
+                                                </div>
+                                                <?php if ($user_role !== 'admin'): ?>
+                                                    <div style="height:3px;border-radius:3px;background:rgba(255,255,255,.04);overflow:hidden;">
+                                                        <div style="height:100%;width:<?= min($pct, 100) ?>%;border-radius:3px;background:<?= $q['remaining'] <= 0 ? '#ef4444' : $q['color'] ?>;transition:width .3s;"></div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
 
                             <?php if ($is_admin): ?>

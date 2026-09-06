@@ -41,6 +41,20 @@ include '../controllers/admin/admin_data.php';
 /** @var float $p_book */
 /** @var float $p_drive */
 
+require_once __DIR__ . '/../modules/core/helpers/settings.php';
+require_once __DIR__ . '/../modules/core/MeelCoin.php';
+
+$meelcoin_settings = [
+    'meelcoin_enabled'       => get_site_setting($conn, 'meelcoin_enabled', '1'),
+    'meelcoin_upload_cost'   => get_site_setting($conn, 'meelcoin_upload_cost', '5'),
+    'meelcoin_advanced_cost' => get_site_setting($conn, 'meelcoin_advanced_cost', '10'),
+    'meelcoin_user_max'      => get_site_setting($conn, 'meelcoin_user_max', '25'),
+    'meelcoin_user_refill'   => get_site_setting($conn, 'meelcoin_user_refill', '15'),
+    'meelcoin_member_max'    => get_site_setting($conn, 'meelcoin_member_max', '50'),
+    'meelcoin_member_refill' => get_site_setting($conn, 'meelcoin_member_refill', '25'),
+    'meelcoin_refill_hours'  => get_site_setting($conn, 'meelcoin_refill_hours', '5'),
+];
+
 GarbageCollector::cleanGuests($conn);
 
 GarbageCollector::cleanChessRooms($conn);
@@ -752,6 +766,116 @@ include __DIR__ . '/../partials/scripts.php';
                 <?php else: ?>
                     <p class="text-center text-xs text-gray-500 py-4">Belum ada IP yang di-banned. Aman terkendali, <?= $_SESSION['username'] ?> 🛡️</p>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        
+        <div class="glass rounded-3xl overflow-hidden shadow-2xl mt-8 border border-yellow-500/20" id="settings">
+            <div class="p-6 border-b border-yellow-500/10 bg-yellow-500/5 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 text-yellow-500"></i>
+                    <h3 class="text-xs font-bold text-yellow-500 uppercase">MEeLCoin Settings</h3>
+                </div>
+                <span class="text-[10px] text-gray-500 uppercase">Upload Currency System</span>
+            </div>
+
+            <div class="p-6">
+                <form method="POST" class="space-y-6">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
+                    
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                        <div>
+                            <div class="text-xs font-bold text-white">Aktifkan MEeLCoin</div>
+                            <div class="text-[10px] text-gray-500 mt-1">Gunakan sistem coin untuk upload. Nonaktifkan untuk kembali ke rate limit per jam.</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="meelcoin_enabled" value="1" class="sr-only peer" <?= $meelcoin_settings['meelcoin_enabled'] === '1' ? 'checked' : '' ?>>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                        </label>
+                    </div>
+
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Biaya Upload</div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Upload Biasa (coin)</label>
+                                    <input type="number" name="meelcoin_upload_cost" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_upload_cost']) ?>" min="1" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-yellow-500 outline-none mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Upload Advanced (coin)</label>
+                                    <input type="number" name="meelcoin_advanced_cost" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_advanced_cost']) ?>" min="1" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-yellow-500 outline-none mt-1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Refill Settings</div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Interval Refill (jam)</label>
+                                    <input type="number" name="meelcoin_refill_hours" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_refill_hours']) ?>" min="1" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-yellow-500 outline-none mt-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20">
+                            <div class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">User Role</div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Max Coin</label>
+                                    <input type="number" name="meelcoin_user_max" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_user_max']) ?>" min="1" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-blue-500 outline-none mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Refill per Cycle</label>
+                                    <input type="number" name="meelcoin_user_refill" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_user_refill']) ?>" min="0" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-blue-500 outline-none mt-1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
+                            <div class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3">Member Role</div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Max Coin</label>
+                                    <input type="number" name="meelcoin_member_max" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_member_max']) ?>" min="1" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-purple-500 outline-none mt-1">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400">Refill per Cycle</label>
+                                    <input type="number" name="meelcoin_member_refill" value="<?= htmlspecialchars($meelcoin_settings['meelcoin_member_refill']) ?>" min="0" class="w-full bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-purple-500 outline-none mt-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" name="save_meelcoin_settings" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white text-[10px] font-black py-3 rounded-xl transition-all uppercase tracking-widest" title="Simpan pengaturan MEeLCoin">
+                        Simpan Pengaturan MEeLCoin
+                    </button>
+                </form>
+
+                
+                <div class="mt-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Manual Coin Adjustment</div>
+                    <form method="POST" class="flex flex-col gap-2">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                        <div class="flex gap-2">
+                            <input type="number" name="target_user_id" placeholder="User ID" required class="bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-yellow-500 outline-none w-1/4">
+                            <select name="coin_action" class="bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-yellow-500 outline-none w-1/4">
+                                <option value="add">Tambah</option>
+                                <option value="remove">Kurangi</option>
+                            </select>
+                            <input type="number" name="coin_amount" placeholder="Jumlah" min="1" required class="bg-gray-800 text-white text-xs px-3 py-2 rounded-xl border border-gray-700 focus:border-yellow-500 outline-none w-1/4">
+                            <button type="submit" name="adjust_meelcoin_user" class="bg-yellow-600 hover:bg-yellow-500 text-white text-[10px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest w-1/4" title="Adjust coin user">
+                                Apply
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

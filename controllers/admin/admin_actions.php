@@ -152,6 +152,63 @@ if (isset($_POST['kick_user'])) {
     exit();
 }
 
+if (isset($_POST['save_meelcoin_settings'])) {
+    require_once __DIR__ . '/../../modules/core/helpers/settings.php';
+    require_once __DIR__ . '/../../modules/core/MeelCoin.php';
+
+    $fields = [
+        'meelcoin_enabled'       => '0',
+        'meelcoin_upload_cost'   => '5',
+        'meelcoin_advanced_cost' => '10',
+        'meelcoin_user_max'      => '25',
+        'meelcoin_user_refill'   => '15',
+        'meelcoin_member_max'    => '50',
+        'meelcoin_member_refill' => '25',
+        'meelcoin_refill_hours'  => '5',
+    ];
+
+    foreach ($fields as $key => $default) {
+        $value = $_POST[$key] ?? $default;
+        if (in_array($key, ['meelcoin_upload_cost', 'meelcoin_advanced_cost', 'meelcoin_user_max', 'meelcoin_user_refill', 'meelcoin_member_max', 'meelcoin_member_refill', 'meelcoin_refill_hours'])) {
+            $value = max(0, (int)$value);
+        }
+        set_site_setting($conn, $key, (string)$value);
+    }
+
+    MeelCoin::clearCache();
+    log_activity($conn, (int)$_SESSION['user_id'], 'update_meelcoin_settings', 'settings', 0);
+    header("Location: .?msg=MeelCoin_Updated#settings");
+    exit();
+}
+
+if (isset($_POST['adjust_meelcoin_user'])) {
+    require_once __DIR__ . '/../../modules/core/MeelCoin.php';
+
+    $target_id = (int)($_POST['target_user_id'] ?? 0);
+    $amount    = (int)($_POST['coin_amount'] ?? 0);
+    $action    = $_POST['coin_action'] ?? 'add';
+
+    if ($target_id > 0 && $amount > 0) {
+        $current = MeelCoin::getBalance($conn, $target_id);
+        if ($action === 'add') {
+            $new = $current + $amount;
+        } else {
+            $new = max(0, $current - $amount);
+        }
+
+        $stmt = $conn->prepare("UPDATE users SET meelcoin = ? WHERE id = ?");
+        $stmt->bind_param("ii", $new, $target_id);
+        $stmt->execute();
+        $stmt->close();
+
+        MeelCoin::log($conn, $target_id, $action === 'add' ? $amount : -$amount, $new, 'admin_adjust');
+        MeelCoin::clearCache();
+    }
+
+    header("Location: .?msg=Coin_Adjusted#settings");
+    exit();
+}
+
 if (isset($_GET['reset_mfa']) && isset($_GET['user_id'])) {
     
     if (!verify_csrf_token($_GET['csrf_token'] ?? null)) {
