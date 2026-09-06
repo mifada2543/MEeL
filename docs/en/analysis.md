@@ -39,7 +39,7 @@ MEeL/
 ├── books/         → E-book / manga module (PDF, ZIP/CBZ)
 ├── drive/         → Cloud Drive (public + private storage)
 ├── arcade/        → 9 mini games: Miku & Teto Run, Chess, Snake, 2048, Tetris, Breakout, Simon Says, Ludo, MEeL!Mania
-├── admin/         → Admin panel: user management, queue, IP ban, activity log, charts
+├── admin/         → Admin panel: user management, queue, IP ban, activity log, stats, MEeLCoin
 ├── profile/       → User profile
 ├── partials/      → Reusable UI components (navbar, footer, nav)
 ├── assets/        → CSS, JS, fonts, manifest.json

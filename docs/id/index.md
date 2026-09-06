@@ -76,9 +76,9 @@ Request: /MEeL/music/beranda?format=ogg
 ```
 
 **Aturan `.htaccess` (root):**
-- Semua URL bersih (contoh `video/watch`, `music/beranda`, `admin/analys`) → `router.php`
+- Semua URL bersih (contoh `video/watch`, `music/beranda`, `admin/stats`) → `router.php`
 - File `.php` lama (contoh `video/watch.php`, `music/index.php`, `upload_advanced.php`,
-  `admin/cookies.php`) → **301** ke URL bersih (query terjaga, bookmark lama tetap jalan)
+  `admin/cookies.php`, `admin/analys`, `admin/content.php`, `admin/content`) → **301** ke URL bersih (query terjaga, bookmark lama tetap jalan)
 - Varian trailing-slash (contoh `/video/upload/`) → **301** ke non-slash
 - `DirectorySlash Off` di direktori media (`video/upload`, `music/upload`, `books/upload`)
   agar `/video/upload` dilayani router (bukan redirect mod_dir)
@@ -100,7 +100,7 @@ Request: /MEeL/music/beranda?format=ogg
 | `/books/beranda`, `/books/read`, `/books/read-pdf`, `/books/search`, `/books/upload`, `/books/file` | `books/*.php` |
 | `/drive/beranda`, `/drive/upload`, `/drive/delete`, `/drive/download`, `/drive/stream` | `drive/*.php` |
 | `/profile/<username>` (`?tab=all\|video\|music`), `/profile/channel-more`, `/profile/edit`, `/profile/manage`, `/profile/manage-action`, `/profile/edit-video`, `/profile/edit-music` | `profile/index.php` (profil + grid channel publik, tab via query), `profile/channel_more.php` (fragment HTMX), `profile/edit-video.php` (pemilik, non-admin), `profile/edit-music.php` (pemilik, non-admin), `controllers/profile/*.php` |
-| `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/analys`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php` (edit-video/edit-music khusus admin), `controllers/admin/*.php` |
+| `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/stats`, `/admin/user-management`, `/admin/meelcoin`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php` (edit-video/edit-music khusus admin), `controllers/admin/*.php` |
 | `/auth/login`, `/auth/register`, `/auth/logout`, `/auth/mfa-setup`, `/auth/mfa-verify` | `auth/*.php` |
 | `/arcade/beranda`, `/arcade/chess`, `/arcade/rhythm`, `/arcade/rhythm/game`, `/arcade/rhythm/editor`, `/arcade/rhythm/manage`, `/arcade/rhythm/edit` | `arcade/*.php` |
 | `/arcade/rhythm/api/songs`, `/arcade/rhythm/api/beatmap`, `/arcade/rhythm/api/upload`, `/arcade/rhythm/api/delete` | `arcade/rhythm/api/*.php` (MEeL!Mania) |

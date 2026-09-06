@@ -76,9 +76,9 @@ Request: /MEeL/music/beranda?format=ogg
 ```
 
 **`.htaccess` rules (root):**
-- All clean URLs (e.g. `video/watch`, `music/beranda`, `admin/analys`) → `router.php`
+- All clean URLs (e.g. `video/watch`, `music/beranda`, `admin/stats`) → `router.php`
 - Legacy `.php` files (e.g. `video/watch.php`, `music/index.php`, `upload_advanced.php`,
-  `admin/cookies.php`) → **301** to the clean URL (query preserved, old bookmarks still work)
+  `admin/cookies.php`, `admin/analys`, `admin/content.php`, `admin/content`) → **301** to the clean URL (query preserved, old bookmarks still work)
 - Trailing-slash variants (e.g. `/video/upload/`) → **301** to the non-slash form
 - `DirectorySlash Off` in media directories (`video/upload`, `music/upload`, `books/upload`)
   so `/video/upload` is served by the router (not a mod_dir redirect)
@@ -100,7 +100,7 @@ Request: /MEeL/music/beranda?format=ogg
 | `/books/beranda`, `/books/read`, `/books/read-pdf`, `/books/search`, `/books/upload`, `/books/file` | `books/*.php` |
 | `/drive/beranda`, `/drive/upload`, `/drive/delete`, `/drive/download`, `/drive/stream` | `drive/*.php` |
 | `/profile/<username>` (`?tab=all\|video\|music`), `/profile/channel-more`, `/profile/edit`, `/profile/manage`, `/profile/manage-action`, `/profile/edit-video`, `/profile/edit-music` | `profile/index.php` (profile + public channel grid, tab via query), `profile/channel_more.php` (HTMX fragment), `profile/edit-video.php` (owner, non-admin), `profile/edit-music.php` (owner, non-admin), `controllers/profile/*.php` |
-| `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/analys`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php` (edit-video/edit-music admin-only), `controllers/admin/*.php` |
+| `/admin/beranda`, `/admin/edit-video`, `/admin/edit-music`, `/admin/stats`, `/admin/user-management`, `/admin/meelcoin`, `/admin/activity-log`, `/admin/catur`, `/admin/mfa-reset`, `/admin/actions`, `/admin/data` | `admin/*.php` (edit-video/edit-music admin-only), `controllers/admin/*.php` |
 | `/auth/login`, `/auth/register`, `/auth/logout`, `/auth/mfa-setup`, `/auth/mfa-verify` | `auth/*.php` |
 | `/arcade/beranda`, `/arcade/chess`, `/arcade/rhythm`, `/arcade/rhythm/game`, `/arcade/rhythm/editor`, `/arcade/rhythm/manage`, `/arcade/rhythm/edit` | `arcade/*.php` |
 | `/arcade/rhythm/api/songs`, `/arcade/rhythm/api/beatmap`, `/arcade/rhythm/api/upload`, `/arcade/rhythm/api/delete` | `arcade/rhythm/api/*.php` (MEeL!Mania) |
