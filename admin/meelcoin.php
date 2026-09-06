@@ -49,7 +49,7 @@ if ($target_user_id > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEeLCoin Settings — MEeL Admin</title>
+    <title>MEeLCoin Settings | MEeL Admin</title>
     <?php include '../partials/link.php'; ?>
     <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
         <link href="../assets/css/admin/<?= $__f ?>" rel="stylesheet">

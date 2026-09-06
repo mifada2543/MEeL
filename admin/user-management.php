@@ -12,6 +12,12 @@ define('MEEL_ADMIN_CONTEXT', true);
 include '../controllers/admin/admin_actions.php';
 include '../controllers/admin/admin_data.php';
 
+/** @var \mysqli_result $banned_ips */
+/** @var \mysqli_result $all_users */
+/** @var array $stats */
+/** @var \mysqli_result $pending_users */
+/** @var \mysqli_result $result_monitor */
+
 require_once __DIR__ . '/../modules/core/System.php';
 $sys = new System($conn);
 
@@ -22,7 +28,7 @@ $msg = $_GET['msg'] ?? null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management — MEeL Admin</title>
+    <title>User Management | MEeL Admin</title>
     <?php include '../partials/link.php'; ?>
     <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
         <link href="../assets/css/admin/<?= $__f ?>" rel="stylesheet">
