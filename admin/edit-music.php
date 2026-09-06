@@ -32,7 +32,7 @@ if ($_EDIT_CONTEXT === 'admin') {
     exit;
 }
 
-$back_url = $is_admin ? 'analys' : '../music/beranda';
+$back_url = $is_admin ? 'stats.php' : '../music/beranda';
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $ref      = $_SERVER['HTTP_REFERER'];
     $host     = $_SERVER['HTTP_HOST'];

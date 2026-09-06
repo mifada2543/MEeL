@@ -102,11 +102,17 @@ DirectoryIndex index.php index.html
     RewriteRule ^ %1/auth/mfa-setup [R=301,L,QSA]
     RewriteCond %{REQUEST_URI} ^(.*)/auth/mfa_verify\.php$ [NC]
     RewriteRule ^ %1/auth/mfa-verify [R=301,L,QSA]
-    # admin/cookies.php & URL lama admin/cookies → admin/analys
+    # admin/analys & admin/cookies & admin/content (URL lama) → admin/stats.php
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/analys([?#]?)$ [NC]
+    RewriteRule ^ %1/admin/stats.php [R=301,L,QSA]
     RewriteCond %{REQUEST_URI} ^(.*)/admin/cookies\.php$ [NC]
-    RewriteRule ^ %1/admin/analys [R=301,L,QSA]
+    RewriteRule ^ %1/admin/stats.php [R=301,L,QSA]
     RewriteCond %{REQUEST_URI} ^(.*)/admin/cookies([?#]?)$ [NC]
-    RewriteRule ^ %1/admin/analys [R=301,L,QSA]
+    RewriteRule ^ %1/admin/stats.php [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/content\.php$ [NC]
+    RewriteRule ^ %1/admin/stats.php [R=301,L,QSA]
+    RewriteCond %{REQUEST_URI} ^(.*)/admin/content([?#]?)$ [NC]
+    RewriteRule ^ %1/admin/stats.php [R=301,L,QSA]
 
     # Controllers: controllers/... → rute bersih (api|admin|profile|system)
     RewriteCond %{REQUEST_URI} ^(.*)/controllers/api/delete_comment\.php$ [NC]

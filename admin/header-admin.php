@@ -22,7 +22,8 @@ if ($nav_current_page === 'index') $nav_current_page = 'dashboard';
 
 $nav_page_labels = [
     'dashboard'       => 'Dashboard',
-    'cookies'         => 'Media Analytics',
+    'stats'           => 'Media Analytics',
+    'content'         => 'Media Analytics',
     'activity_log'    => 'Activity Log',
     'user_management' => 'User Management',
     'meelcoin'        => 'MEeLCoin Settings',
@@ -77,7 +78,7 @@ $nav_current_label = $nav_page_labels[$nav_current_page] ?? $nav_page_title;
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         Dashboard
                     </a>
-                    <a href="analys" class="admin-menu-item <?= $nav_current_page === 'cookies' ? 'active' : '' ?>">
+                    <a href="stats.php" class="admin-menu-item <?= $nav_current_page === 'stats' || $nav_current_page === 'content' ? 'active' : '' ?>">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                         Media Analytics
                     </a>
