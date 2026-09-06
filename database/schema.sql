@@ -248,7 +248,10 @@ CREATE TABLE
     `music_id` int (11) DEFAULT NULL,
     `viewed_at` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_view` (`user_id`, `video_id`, `music_id`)
+    UNIQUE KEY `unique_view` (`user_id`, `video_id`, `music_id`),
+    KEY `idx_vl_user_video` (`user_id`, `video_id`),
+    KEY `idx_vl_user_music` (`user_id`, `music_id`),
+    KEY `idx_vl_viewed_at` (`viewed_at`)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================

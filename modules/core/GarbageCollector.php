@@ -65,6 +65,20 @@ class GarbageCollector
     }
 
     
+    public static function syncViews(\mysqli $conn): void
+    {
+        $throttleFile = dirname(__DIR__, 2) . '/temp/gc_views_sync_last_run.txt';
+        $interval = 3600;
+
+        if (is_readable($throttleFile)) {
+            $lastRun = (int) file_get_contents($throttleFile);
+            if ($lastRun > 0 && (time() - $lastRun) < $interval) return;
+        }
+
+        MediaViewer::syncViewsFromLogs($conn);
+        self::writeThrottleFile($throttleFile);
+    }
+
     public static function cleanChessRooms(\mysqli $conn): int
     {
         $throttleFile = dirname(__DIR__, 2) . '/temp/gc_chess_last_run.txt';
