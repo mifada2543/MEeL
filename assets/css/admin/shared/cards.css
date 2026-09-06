@@ -18,7 +18,18 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  cursor: default;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.stat-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+.stat-chip-active {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 .stat-chip-icon {
   width: 32px;

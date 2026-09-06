@@ -138,6 +138,9 @@ $back_url    = 'index.php';
     <title>Chess Manager · MEeL Admin</title>
     <link rel="stylesheet" href="../assets/css/font.css">
     <?php include '../partials/link.php'; ?>
+    <?php foreach (require __DIR__ . '/../assets/css/admin/manifest.php' as $__f): ?>
+        <link rel="stylesheet" href="../assets/css/admin/<?= $__f ?>?v=<?= filemtime(__DIR__ . '/../assets/css/admin/' . $__f) ?>">
+    <?php endforeach; ?>
     <?php $scripts_root = '../';
     include '../partials/scripts.php'; ?>
     <link rel="stylesheet" href="../assets/css/admin/catur.css?v=<?= filemtime('../assets/css/admin/catur.css') ?>">

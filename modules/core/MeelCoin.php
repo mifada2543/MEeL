@@ -214,7 +214,7 @@ class MeelCoin
         self::log($conn, $userId, $maxCoins, $maxCoins, 'init');
     }
 
-    private static function log(\mysqli $conn, int $userId, int $amount, int $balanceAfter, string $reason): void
+    public static function log(\mysqli $conn, int $userId, int $amount, int $balanceAfter, string $reason): void
     {
         $stmt = $conn->prepare("INSERT INTO meelcoin_log (user_id, amount, balance_after, reason) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("iiis", $userId, $amount, $balanceAfter, $reason);

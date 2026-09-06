@@ -24,7 +24,7 @@ if (isset($_POST['ban_ip'])) {
     $stmt->bind_param("ss", $ip, $reason);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'ban_ip', 'ip', 0);
-    header("Location: .?msg=IP_Banned");
+    header("Location: user-management.php?msg=IP_Banned");
     exit();
 }
 
@@ -33,7 +33,7 @@ if (isset($_POST['unban_ip'])) {
     $stmt->bind_param("s", $_POST['unban_ip']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'unban_ip', 'ip', 0);
-    header("Location: .?msg=IP_Unbanned#unban");
+    header("Location: user-management.php?msg=IP_Unbanned#unban");
     exit();
 }
 
@@ -45,9 +45,9 @@ if (isset($_POST['clear_all_guests'])) {
             $new_ai = (int)$result_ai->fetch_assoc()['new_ai'];
             $conn->query("ALTER TABLE users AUTO_INCREMENT = " . (int)$new_ai);
         }
-        header("Location: .?msg=Guests_Cleared_Efficiently");
+        header("Location: user-management.php?msg=Guests_Cleared#monitor");
     } else {
-        header("Location: .?msg=Error_Cleaning");
+        header("Location: user-management.php?msg=Error_Cleaning");
     }
     exit();
 }
@@ -89,7 +89,7 @@ if (isset($_POST['approve_id'])) {
     if (function_exists('invalidate_user_role_cache')) {
         invalidate_user_role_cache();
     }
-    header("Location: .?msg=Approved");
+    header("Location: user-management.php?msg=Approved");
     exit();
 }
 
@@ -98,7 +98,7 @@ if (isset($_POST['reject_id'])) {
     $stmt->bind_param("i", $_POST['reject_id']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'reject_user', 'user', (int)$_POST['reject_id']);
-    header("Location: .?msg=Rejected");
+    header("Location: user-management.php?msg=Rejected");
     exit();
 }
 
@@ -106,12 +106,12 @@ if (isset($_POST['delete_user_id'])) {
     $id = (int)$_POST['delete_user_id'];
 
     if ($id === (int)($_SESSION['user_id'] ?? 0)) {
-        header("Location: .?msg=Cannot_Delete_Self");
+        header("Location: user-management.php?msg=Cannot_Delete_Self");
         exit();
     }
 
     if (get_user_role($conn, $id) === 'admin') {
-        header("Location: .?msg=Cannot_Delete_Admin");
+        header("Location: user-management.php?msg=Cannot_Delete_Admin");
         exit();
     }
 
@@ -119,7 +119,7 @@ if (isset($_POST['delete_user_id'])) {
     $stmt->bind_param("i", $id);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'delete_user', 'user', $id);
-    header("Location: .?msg=User_Deleted");
+    header("Location: user-management.php?msg=User_Deleted");
     exit();
 }
 
@@ -148,7 +148,7 @@ if (isset($_POST['kick_user'])) {
     $stmt->bind_param("s", $_POST['kick_user']);
     $stmt->execute();
     log_activity($conn, (int)$_SESSION['user_id'], 'kick_user', 'user', 0);
-    header("Location: .?msg=Kicked_Success#monitor");
+    header("Location: user-management.php?msg=Kicked#monitor");
     exit();
 }
 
@@ -177,7 +177,7 @@ if (isset($_POST['save_meelcoin_settings'])) {
 
     MeelCoin::clearCache();
     log_activity($conn, (int)$_SESSION['user_id'], 'update_meelcoin_settings', 'settings', 0);
-    header("Location: .?msg=MeelCoin_Updated#settings");
+    header("Location: meelcoin.php?msg=MeelCoin_Updated");
     exit();
 }
 
@@ -205,7 +205,7 @@ if (isset($_POST['adjust_meelcoin_user'])) {
         MeelCoin::clearCache();
     }
 
-    header("Location: .?msg=Coin_Adjusted#settings");
+    header("Location: meelcoin.php?msg=Coin_Adjusted&user_id=" . $target_id);
     exit();
 }
 

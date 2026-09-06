@@ -125,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $sort        = $_GET['sort'] ?? 'views';
 $sort_dir    = strtolower($_GET['dir'] ?? '');
 $type_filter = $_GET['type'] ?? 'all';
+if (empty($type_filter)) $type_filter = 'all';
 $search      = $_GET['search'] ?? '';
 
 $allowed_sort_columns = [
@@ -148,7 +149,8 @@ function getSortUrl(string $field): string
     $next_dir = ($field === $sort)
         ? ($sort_dir === 'asc' ? 'desc' : 'asc')
         : (in_array($field, ['title', 'id'], true) ? 'asc' : 'desc');
-    return '?sort=' . $field . '&dir=' . $next_dir . '&type=' . urlencode($type_filter) . '&search=' . urlencode($search);
+    $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    return $current_path . '?sort=' . $field . '&dir=' . $next_dir . '&type=' . urlencode($type_filter) . '&search=' . urlencode($search);
 }
 
 function sortIcon(string $field): string
@@ -157,7 +159,8 @@ function sortIcon(string $field): string
     if ($field !== $sort) {
         return '';
     }
-    return $sort_dir === 'asc' ? '<i data-lucide="chevron-up" class="w-[10px] h-[10px] text-blue-400"></i>' : '<i data-lucide="chevron-down" class="w-[10px] h-[10px] text-blue-400"></i>';
+    $icon = $sort_dir === 'asc' ? 'chevron-down' : 'chevron-up';
+    return '<i data-lucide="' . $icon . '" style="width:12px;height:12px;color:#60a5fa;"></i>';
 }
 
 $query_media = "
@@ -238,21 +241,12 @@ while ($rc = $r->fetch_assoc()) {
 
 <body class="text-gray-300 min-h-screen">
 
-    
-    <nav class="top-nav">
-        <a href="../" class="font-sans text-sm font-extrabold text-white no-underline tracking-wider">
-            MEeL<span class="text-blue-600">Admin</span>
-        </a>
-        <div class="w-px h-5 bg-white/[0.08]"></div>
-        <a href="." class="text-[11px] font-semibold text-[#555e6e] no-underline">Dashboard</a>
-        <span class="text-[#353d4a]">›</span>
-        <span class="text-[11px] font-semibold text-[#e2e6ef]">Media Analytics</span>
-        <div class="ml-auto flex items-center gap-2">
-            <a href="<?= htmlspecialchars($back_url) ?>" class="btn-back">
-                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Kembali
-            </a>
-        </div>
-    </nav>
+    <?php
+    $is_admin = true;
+    $page_title = 'Media Analytics';
+    $media_type = 'analytics';
+    include 'header-admin.php';
+    ?>
 
     
     <div class="max-w-6xl mx-auto px-4 md:px-6 py-8">
@@ -283,7 +277,9 @@ while ($rc = $r->fetch_assoc()) {
                 'music' => ['label' => 'Musik',        'color' => '#f97316', 'bg' => 'rgba(249,115,22,.1)', 'border' => 'rgba(249,115,22,.2)', 'icon' => 'music'],
             ];
             foreach ($chips as $key => $chip): ?>
-                <div class="stat-chip">
+                <a href="?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($key) ?>&search=<?= urlencode($search) ?>"
+                   class="stat-chip <?= $type_filter === $key ? 'stat-chip-active' : '' ?>"
+                   style="text-decoration:none;cursor:pointer;border-color:<?= $type_filter === $key ? $chip['border'] : '' ?>;">
                     <div class="stat-chip-icon" style="background:<?= $chip['bg'] ?>;border:1px solid <?= $chip['border'] ?>;">
                         <i data-lucide="<?= $chip['icon'] ?>" style="width:14px;height:14px;color:<?= $chip['color'] ?>;"></i>
                     </div>
@@ -291,7 +287,7 @@ while ($rc = $r->fetch_assoc()) {
                         <div class="stat-chip-number" style="color:<?= $chip['color'] ?>;"><?= number_format($total_counts[$key]) ?></div>
                         <div class="stat-chip-label" style="color:#455060;"><?= $chip['label'] ?></div>
                     </div>
-                </div>
+                </a>
             <?php endforeach; ?>
         </div>
 
@@ -316,14 +312,14 @@ while ($rc = $r->fetch_assoc()) {
                 $type_labels = ['all' => 'Semua', 'video' => 'Video', 'music' => 'Musik'];
                 $current_type_label = $type_labels[$type_filter] ?? 'Semua';
                 ?>
-                <div class="type-dropdown">
-                    <div class="type-trigger">
+                <div class="type-dropdown" id="type-dropdown">
+                    <div class="type-trigger" onclick="document.getElementById('type-dropdown').classList.toggle('open')">
                         <span><?= $current_type_label ?></span>
                         <i data-lucide="chevron-down" class="w-3 h-3 text-indigo-300"></i>
                     </div>
                     <div class="type-menu">
                         <?php foreach ($type_labels as $k => $v): ?>
-                            <a href="?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($k) ?>&search=<?= urlencode($search) ?>"
+                            <a href="<?= parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?>?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($k) ?>&search=<?= urlencode($search) ?>"
                                 class="type-option<?= $type_filter === $k ? ' active' : '' ?>">
                                 <?= $v ?>
                             </a>
@@ -333,14 +329,11 @@ while ($rc = $r->fetch_assoc()) {
 
                 
                 <div class="ml-auto flex items-center gap-3">
-                    <div id="sort-indicator" class="htmx-indicator">
-                        <div class="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                    </div>
                     <div class="text-[11px] font-semibold text-[#455060]">
                         <?= $result_media ? $result_media->num_rows : 0 ?> item ditemukan
                     </div>
                     <?php if (!empty($search)): ?>
-                        <a href="?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($type_filter) ?>" class="btn-clear-filter">
+                        <a href="<?= parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?>?sort=<?= urlencode($sort) ?>&dir=<?= urlencode($sort_dir) ?>&type=<?= urlencode($type_filter) ?>" class="btn-clear-filter">
                             <i data-lucide="x" class="w-3 h-3"></i> Hapus Filter
                         </a>
                     <?php endif; ?>
@@ -355,11 +348,6 @@ while ($rc = $r->fetch_assoc()) {
                             <tr>
                                 <th class="th-center text-left">
                                     <a href="<?= getSortUrl('id') ?>"
-                                        hx-get="<?= htmlspecialchars(getSortUrl('id')) ?>"
-                                        hx-target="#analytics-panel"
-                                        hx-select="#analytics-panel"
-                                        hx-swap="outerHTML"
-                                        hx-indicator="#sort-indicator"
                                         class="sort-link">
                                         Konten
                                         <?= sortIcon('id') ?>
@@ -367,11 +355,6 @@ while ($rc = $r->fetch_assoc()) {
                                 </th>
                                 <th class="th-center">
                                     <a href="<?= getSortUrl('views') ?>"
-                                        hx-get="<?= htmlspecialchars(getSortUrl('views')) ?>"
-                                        hx-target="#analytics-panel"
-                                        hx-select="#analytics-panel"
-                                        hx-swap="outerHTML"
-                                        hx-indicator="#sort-indicator"
                                         class="sort-link">
                                         Views
                                         <?= sortIcon('views') ?>
@@ -379,11 +362,6 @@ while ($rc = $r->fetch_assoc()) {
                                 </th>
                                 <th class="th-center">
                                     <a href="<?= getSortUrl('likes') ?>"
-                                        hx-get="<?= htmlspecialchars(getSortUrl('likes')) ?>"
-                                        hx-target="#analytics-panel"
-                                        hx-select="#analytics-panel"
-                                        hx-swap="outerHTML"
-                                        hx-indicator="#sort-indicator"
                                         class="sort-link">
                                         Likes
                                         <?= sortIcon('likes') ?>
@@ -391,11 +369,6 @@ while ($rc = $r->fetch_assoc()) {
                                 </th>
                                 <th class="th-center">
                                     <a href="<?= getSortUrl('dislikes') ?>"
-                                        hx-get="<?= htmlspecialchars(getSortUrl('dislikes')) ?>"
-                                        hx-target="#analytics-panel"
-                                        hx-select="#analytics-panel"
-                                        hx-swap="outerHTML"
-                                        hx-indicator="#sort-indicator"
                                         class="sort-link">
                                         Dislikes
                                         <?= sortIcon('dislikes') ?>
@@ -510,6 +483,13 @@ while ($rc = $r->fetch_assoc()) {
     <script src="../assets/js/admin/shared/hover-effects.js?v=<?= filemtime('../assets/js/admin/shared/hover-effects.js') ?>"></script>
     <script src="../assets/js/admin/shared/search.js?v=<?= filemtime('../assets/js/admin/shared/search.js') ?>"></script>
     <script src="../assets/js/admin/cookies.js?v=<?= filemtime('../assets/js/admin/cookies.js') ?>"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+    <script>
+    document.addEventListener('click', function(e) {
+        var dd = document.getElementById('type-dropdown');
+        if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+    });
+    </script>
     <script>
         <?php if ($delete_msg && $delete_msg['type'] === 'success'): ?>
             Swal.fire({

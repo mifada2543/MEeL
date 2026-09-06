@@ -63,6 +63,8 @@ final class MeelRouter
         'admin/activity-log'=> ['handler' => 'admin/activity_log.php',        'script' => '/admin/activity_log.php'],
         'admin/catur'       => ['handler' => 'admin/catur.php',               'script' => '/admin/catur.php'],
         'admin/mfa-reset'   => ['handler' => 'admin/mfa_reset.php',           'script' => '/admin/mfa_reset.php'],
+        'admin/user-management' => ['handler' => 'admin/user-management.php',  'script' => '/admin/user-management.php'],
+        'admin/meelcoin'    => ['handler' => 'admin/meelcoin.php',             'script' => '/admin/meelcoin.php'],
         'admin/actions'     => ['handler' => 'controllers/admin/admin_actions.php', 'script' => '/controllers/admin/admin_actions.php'],
         'admin/data'        => ['handler' => 'controllers/admin/admin_data.php',    'script' => '/controllers/admin/admin_data.php'],
 
