@@ -208,3 +208,300 @@
   font-weight: 700;
   background: rgba(59, 130, 246, 0.06);
 }
+
+/* Hamburger Menu */
+.admin-menu-wrapper {
+  position: relative;
+}
+.admin-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.admin-menu-toggle:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.12);
+}
+.admin-menu-toggle--active {
+  background: rgba(59,130,246,0.12);
+  border-color: rgba(59,130,246,0.3);
+}
+.admin-menu-toggle--active:hover {
+  background: rgba(59,130,246,0.18);
+  border-color: rgba(59,130,246,0.4);
+}
+.admin-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 220px;
+  background: #0f1219;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  padding: 6px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.15s;
+}
+.admin-menu-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: all 0.12s;
+  text-decoration: none;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.admin-menu-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  border-left-color: rgba(255,255,255,0.2);
+}
+.admin-menu-item.active {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border-left-color: #3b82f6;
+}
+.admin-menu-item.active svg {
+  stroke: #60a5fa;
+}
+.admin-menu-item i, .admin-menu-item svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.admin-menu-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 4px 6px;
+}
+
+/* Admin Toggle Switch */
+.admin-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.admin-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.admin-toggle-track {
+  width: 36px;
+  height: 20px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: background 0.2s;
+  position: relative;
+}
+.admin-toggle input:checked + .admin-toggle-track {
+  background: #eab308;
+  border-color: #eab308;
+}
+.admin-toggle-track::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.admin-toggle input:checked + .admin-toggle-track::after {
+  transform: translateX(16px);
+}
+
+/* Shortcut Cards */
+.admin-shortcut-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(14,17,24,0.8);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.admin-shortcut-card:hover {
+  background: rgba(255,255,255,0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.admin-shortcut-card .admin-shortcut-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.admin-shortcut-card .admin-shortcut-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.admin-shortcut-card h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+.admin-shortcut-card p {
+  font-size: 10px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+.admin-shortcut-card i {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+/* Admin Form Elements */
+.admin-input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.admin-input:focus {
+  border-color: #eab308;
+}
+.admin-input::placeholder {
+  color: #4b5563;
+}
+.admin-select {
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  font-family: inherit;
+}
+.admin-select:focus {
+  border-color: #eab308;
+}
+.admin-select option {
+  background: #1a1d27;
+  color: #fff;
+}
+
+/* Admin Buttons */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  font-family: inherit;
+}
+.admin-btn:active {
+  transform: scale(0.97);
+}
+.admin-btn-primary {
+  background: #eab308;
+  color: #000;
+  box-shadow: 0 2px 12px rgba(234,179,8,0.25);
+}
+.admin-btn-primary:hover {
+  background: #facc15;
+  box-shadow: 0 4px 20px rgba(234,179,8,0.35);
+}
+.admin-btn-danger {
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+.admin-btn-danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+.admin-btn-success {
+  background: rgba(34,197,94,0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.25);
+}
+.admin-btn-success:hover {
+  background: #22c55e;
+  color: #fff;
+}
+.admin-btn-sm {
+  font-size: 9px;
+  padding: 7px 14px;
+  border-radius: 10px;
+}
+.admin-btn-block {
+  width: 100%;
+}
+
+/* Admin Field Group */
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

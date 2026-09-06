@@ -40,8 +40,11 @@ CREATE TABLE
     `mfa_secret` varchar(64) DEFAULT NULL,
     `mfa_backup_codes` text DEFAULT NULL,
     `mfa_enabled` tinyint (1) DEFAULT 0,
+    `meelcoin` int (11) NOT NULL DEFAULT 0,
+    `meelcoin_last_refill` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_username_unique` (`username`)
+    UNIQUE KEY `idx_username_unique` (`username`),
+    KEY `idx_meelcoin` (`meelcoin`)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Default admin user (password: Admin#123)
@@ -248,7 +251,12 @@ CREATE TABLE
     `music_id` int (11) DEFAULT NULL,
     `viewed_at` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_view` (`user_id`, `video_id`, `music_id`)
+    UNIQUE KEY `unique_view` (`user_id`, `video_id`, `music_id`),
+    KEY `idx_vl_user_video` (`user_id`, `video_id`),
+    KEY `idx_vl_user_music` (`user_id`, `music_id`),
+    KEY `idx_vl_viewed_at` (`viewed_at`),
+    KEY `idx_vl_video_id` (`video_id`),
+    KEY `idx_vl_music_id` (`music_id`)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- =============================================================================
@@ -392,6 +400,50 @@ CREATE TABLE
       `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
       PRIMARY KEY (`id`),
       KEY `idx_room_id` (`room_code`, `id`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- =============================================================================
+-- TABEL: site_settings
+-- Konfigurasi dinamis sistem (key-value store).
+-- =============================================================================
+CREATE TABLE
+  IF NOT EXISTS `site_settings` (
+    `setting_key` varchar (50) NOT NULL,
+    `setting_value` text NOT NULL,
+    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`setting_key`),
+    KEY `idx_setting_key` (`setting_key`)
+  ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- Default MEeLCoin settings
+INSERT IGNORE INTO
+  `site_settings` (`setting_key`, `setting_value`)
+VALUES
+  ('meelcoin_enabled', '1'),
+  ('meelcoin_upload_cost', '5'),
+  ('meelcoin_advanced_cost', '10'),
+  ('meelcoin_user_max', '25'),
+  ('meelcoin_user_refill', '15'),
+  ('meelcoin_member_max', '50'),
+  ('meelcoin_member_refill', '25'),
+  ('meelcoin_refill_hours', '5');
+
+-- =============================================================================
+-- TABEL: meelcoin_log
+-- Audit trail untuk transaksi MEeLCoin (credit/debit).
+-- =============================================================================
+CREATE TABLE
+  IF NOT EXISTS `meelcoin_log` (
+    `id` int (11) NOT NULL AUTO_INCREMENT,
+    `user_id` int (11) NOT NULL,
+    `amount` int (11) NOT NULL COMMENT 'Positive=credit, Negative=debit',
+    `balance_after` int (11) NOT NULL,
+    `reason` varchar (50) NOT NULL COMMENT 'refill, upload, upload_advanced, admin_adjust, init',
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `idx_mcl_user` (`user_id`),
+    KEY `idx_mcl_created` (`created_at`),
+    CONSTRAINT `meelcoin_log_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 COMMIT;

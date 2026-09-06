@@ -56,6 +56,12 @@ if (isset($_POST['register']) && !$is_locked && !$session_blocked) {
                 $stmt = $conn->prepare("INSERT INTO users (username, password, role, is_active) VALUES (?, ?, 'user', 2)");
                 $stmt->bind_param("ss", $user, $pass_hashed);
                 if ($stmt->execute()) {
+                    $new_user_id = $stmt->insert_id;
+                    $stmt->close();
+
+                    require_once __DIR__ . '/../modules/core/MeelCoin.php';
+                    MeelCoin::initialize($conn, $new_user_id, 'user');
+
                     $_SESSION['reg_attempts'][] = time();
                     $message = "Registrasi berhasil! Silakan tunggu verifikasi admin.";
                     $msg_type = "success";

@@ -325,6 +325,112 @@ $migrations = [
             },
         ],
     ],
+    13 => [
+        'description' => 'MEeLCoin system — tambah kolom coin di users, tabel site_settings, dan meelcoin_log',
+        'sql' => [
+            // Tambah kolom meelcoin ke tabel users
+            function ($conn) {
+                if (!meel_mig_has_column($conn, 'users', 'meelcoin')) {
+                    $result = $conn->query("ALTER TABLE users ADD COLUMN meelcoin INT(11) NOT NULL DEFAULT 0 AFTER mfa_enabled");
+                    if (!$result) {
+                        $err = $conn->error;
+                        if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists')) {
+                            echo "[MEeL] ⚠ Warning (users.meelcoin): {$err}\n";
+                        }
+                    }
+                }
+            },
+            // Tambah kolom meelcoin_last_refill ke tabel users
+            function ($conn) {
+                if (!meel_mig_has_column($conn, 'users', 'meelcoin_last_refill')) {
+                    $result = $conn->query("ALTER TABLE users ADD COLUMN meelcoin_last_refill TIMESTAMP NULL DEFAULT NULL AFTER meelcoin");
+                    if (!$result) {
+                        $err = $conn->error;
+                        if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists')) {
+                            echo "[MEeL] ⚠ Warning (users.meelcoin_last_refill): {$err}\n";
+                        }
+                    }
+                }
+            },
+            // Tambah index pada kolom meelcoin
+            function ($conn) {
+                $result = $conn->query("ALTER TABLE users ADD INDEX idx_meelcoin (meelcoin)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (idx_meelcoin): {$err}\n";
+                    }
+                }
+            },
+            // Buat tabel site_settings
+            function ($conn) {
+                $conn->query("CREATE TABLE IF NOT EXISTS site_settings (
+                    setting_key VARCHAR(50) NOT NULL,
+                    setting_value TEXT NOT NULL,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (setting_key),
+                    KEY idx_setting_key (setting_key)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+            },
+            // Insert default MEeLCoin settings
+            function ($conn) {
+                $defaults = [
+                    'meelcoin_enabled'       => '1',
+                    'meelcoin_upload_cost'   => '5',
+                    'meelcoin_advanced_cost' => '10',
+                    'meelcoin_user_max'      => '25',
+                    'meelcoin_user_refill'   => '15',
+                    'meelcoin_member_max'    => '50',
+                    'meelcoin_member_refill' => '25',
+                    'meelcoin_refill_hours'  => '5',
+                ];
+                $stmt = $conn->prepare("INSERT IGNORE INTO site_settings (setting_key, setting_value) VALUES (?, ?)");
+                foreach ($defaults as $key => $value) {
+                    $stmt->bind_param("ss", $key, $value);
+                    $stmt->execute();
+                }
+                $stmt->close();
+            },
+            // Buat tabel meelcoin_log
+            function ($conn) {
+                $conn->query("CREATE TABLE IF NOT EXISTS meelcoin_log (
+                    id INT(11) NOT NULL AUTO_INCREMENT,
+                    user_id INT(11) NOT NULL,
+                    amount INT(11) NOT NULL COMMENT 'Positive=credit, Negative=debit',
+                    balance_after INT(11) NOT NULL,
+                    reason VARCHAR(50) NOT NULL COMMENT 'refill, upload, upload_advanced, admin_adjust, init',
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    KEY idx_mcl_user (user_id),
+                    KEY idx_mcl_created (created_at),
+                    CONSTRAINT meelcoin_log_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+            },
+        ],
+    ],
+    14 => [
+        'description' => 'Tambah index video_id & music_id di view_logs — percepat syncViewsFromLogs correlated subquery',
+        'sql' => [
+            function ($conn) {
+                $result = $conn->query("ALTER TABLE view_logs ADD INDEX idx_vl_video_id (video_id)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (idx_vl_video_id): {$err}\n";
+                    }
+                }
+            },
+            function ($conn) {
+                $result = $conn->query("ALTER TABLE view_logs ADD INDEX idx_vl_music_id (music_id)");
+                if (!$result) {
+                    $err = $conn->error;
+                    if (!str_contains($err, 'Duplicate') && !str_contains($err, 'already exists') && !str_contains($err, 'already added')) {
+                        echo "[MEeL] ⚠ Warning (idx_vl_music_id): {$err}\n";
+                    }
+                }
+            },
+        ],
+    ],
 ];
 $conn->query("CREATE TABLE IF NOT EXISTS db_version (
     id INT AUTO_INCREMENT PRIMARY KEY,

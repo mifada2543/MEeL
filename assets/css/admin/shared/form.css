@@ -67,7 +67,8 @@
   z-index: 20;
   overflow: hidden;
 }
-.type-dropdown:hover .type-menu {
+.type-dropdown:hover .type-menu,
+.type-dropdown.open .type-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);

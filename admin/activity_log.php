@@ -10,6 +10,20 @@ require_admin($conn);
 require_once __DIR__ . '/../modules/media/AdminActivityRepository.php';
 
 $logRepo = new AdminActivityRepository($conn);
+$active_tab = ($_GET['tab'] ?? 'log') === 'views' ? 'views' : 'log';
+
+$sync_msg = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sync_views_now'])) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $sync_msg = 'CSRF Token tidak valid.';
+    } else {
+        require_once __DIR__ . '/../modules/media/MediaViewer.php';
+        MediaViewer::syncViewsFromLogs($conn);
+        $throttleFile = dirname(__DIR__, 2) . '/temp/gc_views_sync_last_run.txt';
+        @file_put_contents($throttleFile, time());
+        $sync_msg = 'Views counter berhasil disinkronkan dari view_logs.';
+    }
+}
 
 
 $action_filter = $_GET['action'] ?? '';
@@ -274,7 +288,21 @@ include __DIR__ . '/../partials/scripts.php';
     $back_url = 'index.php';
     include 'header-admin.php';
     ?>
-    <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 py-8">
+    <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 pt-4">
+        <div class="flex gap-0 rounded-xl overflow-hidden border border-white/10 mb-6">
+            <a href="activity-log" 
+               class="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-3 transition-all border-r border-white/10 <?= $active_tab === 'log' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5' ?>">
+                <i data-lucide="activity" class="w-3 h-3 inline mr-1.5"></i> Activity Log
+            </a>
+            <a href="activity-log?tab=views" 
+               class="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-3 transition-all <?= $active_tab === 'views' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5' ?>">
+                <i data-lucide="bar-chart-3" class="w-3 h-3 inline mr-1.5"></i> View Analytics
+            </a>
+        </div>
+    </div>
+
+    <?php if ($active_tab === 'log'): ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 pb-8">
 
         
         <div class="flex items-center gap-5 mb-10">
@@ -605,8 +633,157 @@ include __DIR__ . '/../partials/scripts.php';
         </div>
 
     </div>
+    <?php endif; ?>
+
+    <?php if ($active_tab === 'views'):
+        require_once __DIR__ . '/../modules/media/MediaViewer.php';
+        $view_stats = MediaViewer::getViewStats($conn);
+    ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-10 xl:px-16 pb-8">
+        <div class="flex items-center gap-5 mb-8">
+            <div class="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center shrink-0">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 text-purple-500"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight tracking-tight">View Analytics</h1>
+                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1.5">Monitoring View Logs</p>
+            </div>
+        </div>
+
+        <?php if ($sync_msg): ?>
+            <div class="mb-6 p-5 rounded-2xl text-sm flex items-center gap-3 bg-green-500/10 text-green-400 border border-green-500/20">
+                <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i>
+                <?= htmlspecialchars($sync_msg) ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 mb-8">
+            <div class="glass p-5 rounded-2xl border-l-4 border-purple-500">
+                <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">Total Log Rows</p>
+                <span class="text-2xl font-bold text-white"><?= number_format($view_stats['total_log_rows']) ?></span>
+                <span class="text-[10px] text-gray-500 ml-1.5">rows</span>
+            </div>
+            <div class="glass p-5 rounded-2xl border-l-4 border-red-500">
+                <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">Video Log Rows</p>
+                <span class="text-2xl font-bold text-white"><?= number_format($view_stats['video_log_rows']) ?></span>
+                <span class="text-[10px] text-gray-500 ml-1.5">rows</span>
+            </div>
+            <div class="glass p-5 rounded-2xl border-l-4 border-orange-500">
+                <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">Music Log Rows</p>
+                <span class="text-2xl font-bold text-white"><?= number_format($view_stats['music_log_rows']) ?></span>
+                <span class="text-[10px] text-gray-500 ml-1.5">rows</span>
+            </div>
+            <div class="glass p-5 rounded-2xl border-l-4 border-green-500">
+                <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">Sync Status</p>
+                <?php
+                $synced = ($view_stats['video_views_counter'] + $view_stats['music_views_counter']) > 0;
+                ?>
+                <?php if ($synced): ?>
+                    <span class="text-lg font-bold text-green-400"><i data-lucide="check-circle" class="w-5 h-5 inline"></i> Synced</span>
+                <?php else: ?>
+                    <span class="text-lg font-bold text-gray-500"><i data-lucide="minus-circle" class="w-5 h-5 inline"></i> No Data</span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-8">
+            <div class="glass p-5 rounded-2xl border-l-4 border-red-500">
+                <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">Video Views Counter</p>
+                <span class="text-2xl font-bold text-white"><?= number_format($view_stats['video_views_counter']) ?></span>
+                <span class="text-[10px] text-gray-500 ml-1.5">views</span>
+            </div>
+            <div class="glass p-5 rounded-2xl border-l-4 border-orange-500">
+                <p class="text-[9px] font-bold text-gray-500 uppercase mb-1.5">Music Views Counter</p>
+                <span class="text-2xl font-bold text-white"><?= number_format($view_stats['music_views_counter']) ?></span>
+                <span class="text-[10px] text-gray-500 ml-1.5">views</span>
+            </div>
+        </div>
+
+        <div class="glass p-6 rounded-2xl mb-8 border border-purple-500/20">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-purple-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-gray-300">Manual Sync</h3>
+                    <p class="text-[9px] text-gray-500">Sinkronkan views counter dari view_logs sekarang. Auto-sync berjalan setiap 1 jam.</p>
+                </div>
+            </div>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                <input type="hidden" name="sync_views_now" value="1">
+                <button type="submit"
+                    class="bg-purple-600/10 text-purple-400 border border-purple-500/20 hover:bg-purple-600 hover:text-white text-[10px] font-bold px-6 py-3 rounded-xl transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    Sync Now
+                </button>
+            </form>
+        </div>
+
+        <?php if (!empty($view_stats['chart'])): ?>
+        <div class="glass p-6 rounded-2xl mb-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-gray-300">View Logs Growth (30 Hari)</h3>
+                    <p class="text-[9px] text-gray-500">Pertumbuhan jumlah view_logs per hari.</p>
+                </div>
+            </div>
+            <div id="view-chart" class="w-full" style="height:280px;"></div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+            <script>
+            (function() {
+                const data = <?= json_encode($view_stats['chart']) ?>;
+                const labels = data.map(d => {
+                    const dt = new Date(d.date);
+                    return dt.toLocaleDateString('id-ID', { day:'numeric', month:'short' });
+                });
+                const values = data.map(d => d.views);
+
+                const ctx = document.getElementById('view-chart');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Views',
+                            data: values,
+                            backgroundColor: 'rgba(168,85,247,0.4)',
+                            borderColor: 'rgba(168,85,247,1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.03)' },
+                                ticks: { color: '#6b7280', font: { size: 9 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.03)' },
+                                ticks: { color: '#6b7280', font: { size: 9 }, precision: 0 }
+                            }
+                        }
+                    }
+                });
+            })();
+            </script>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <script>
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         <?php if ($clear_msg): ?>
             Swal.fire({
                 title: 'Selesai!',

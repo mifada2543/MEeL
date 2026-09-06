@@ -140,6 +140,38 @@ class MediaViewer
         return $stmt->get_result();
     }
 
+    public static function syncViewsFromLogs(\mysqli $conn): int
+    {
+        $conn->query("UPDATE video v SET views = (SELECT COUNT(DISTINCT user_id) FROM view_logs WHERE video_id = v.id)");
+        $conn->query("UPDATE music m SET views = (SELECT COUNT(DISTINCT user_id) FROM view_logs WHERE music_id = m.id)");
+        return $conn->affected_rows;
+    }
+
+    public static function getViewStats(\mysqli $conn): array
+    {
+        $video_logs = $conn->query("SELECT COUNT(*) AS c FROM view_logs WHERE video_id IS NOT NULL")->fetch_assoc()['c'];
+        $music_logs = $conn->query("SELECT COUNT(*) AS c FROM view_logs WHERE music_id IS NOT NULL")->fetch_assoc()['c'];
+        $total_video_views = $conn->query("SELECT COALESCE(SUM(views),0) AS c FROM video")->fetch_assoc()['c'];
+        $total_music_views = $conn->query("SELECT COALESCE(SUM(views),0) AS c FROM music")->fetch_assoc()['c'];
+
+        $chart = [];
+        $chart_result = $conn->query("SELECT DATE(viewed_at) AS day, COUNT(*) AS views FROM view_logs WHERE viewed_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(viewed_at) ORDER BY day ASC");
+        if ($chart_result) {
+            while ($row = $chart_result->fetch_assoc()) {
+                $chart[] = ['date' => $row['day'], 'views' => (int)$row['views']];
+            }
+        }
+
+        return [
+            'video_log_rows' => (int)$video_logs,
+            'music_log_rows' => (int)$music_logs,
+            'total_log_rows' => (int)$video_logs + (int)$music_logs,
+            'video_views_counter' => (int)$total_video_views,
+            'music_views_counter' => (int)$total_music_views,
+            'chart' => $chart,
+        ];
+    }
+
     public function getPlaylistQueue($playlist_id)
     {
         if ($this->media_type !== 'music' || !$playlist_id) return null;

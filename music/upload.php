@@ -4,6 +4,7 @@ include '../auth/auth.php';
 include '../modules/core/Uploader.php';
 require_once '../modules/core/GarbageCollector.php';
 require_once '../modules/media/MediaLibrary.php';
+require_once '../modules/core/MeelCoin.php';
 GarbageCollector::run();
 
 set_time_limit(0);
@@ -15,13 +16,22 @@ $alert_message = "";
 $user_role = get_user_role($conn, $user_id);
 $is_admin  = ($user_role === 'admin');
 
+$meelcoin_enabled = MeelCoin::isEnabled($conn);
 
-$hour_count = get_hourly_upload_count($conn, $user_id, 'music');
+if ($meelcoin_enabled) {
+    if (!$is_admin) {
+        MeelCoin::refill($conn, $user_id, $user_role);
+    }
+    $coin_balance   = $is_admin ? -1 : MeelCoin::getBalance($conn, $user_id);
+    $coin_max       = $is_admin ? -1 : MeelCoin::getMax($conn, $user_role);
+    $coin_cost      = MeelCoin::getCost($conn, 'upload');
+    $coin_countdown = $is_admin ? 0 : MeelCoin::getRefillCountdown($conn, $user_id, $user_role);
+} else {
+    $hour_count     = get_hourly_upload_count($conn, $user_id, 'music');
+    $hourly_limit   = $is_admin ? '∞' : get_upload_hourly_limit($user_role);
+}
 
 $total_uploads = get_total_upload_count($conn, $user_id, 'music');
-
-
-$hourly_limit = $is_admin ? '∞' : get_upload_hourly_limit($user_role);
 
 $uploader = new Uploader($conn, $user_id, $user);
 
@@ -29,17 +39,44 @@ if (isset($_POST['upload'])) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
         $alert_message = 'CSRF token tidak valid.';
     } else {
-        $music_base = dirname(meel_media_base_path('music')) . '/';
-        $result = $uploader->processMusic($_POST, $_FILES, $music_base);
+        if ($meelcoin_enabled && !$is_admin) {
+            if (!MeelCoin::canAfford($conn, $user_id, $coin_cost)) {
+                $alert_message = "MEeLCoin tidak cukup! Dibutuhkan {$coin_cost} coin, saldo Anda: {$coin_balance}.";
+            }
+        }
 
-        if ($result['status'] === 'success') {
-            $status = "success";
-            $hour_count++;
-            $total_uploads++;
-            MediaLibrary::clearCountsCache();
-            log_activity($conn, $user_id, 'upload_music', 'music', (int)($result['id'] ?? 0));
-        } else {
-            $alert_message = $result['msg'];
+        if ($alert_message === '') {
+            $coin_deducted = false;
+            if ($meelcoin_enabled && !$is_admin) {
+                [$spent_ok, $spent_err] = MeelCoin::spend($conn, $user_id, $coin_cost, 'upload');
+                if (!$spent_ok) {
+                    $alert_message = $spent_err;
+                } else {
+                    $coin_deducted = true;
+                }
+            }
+
+            if ($alert_message === '') {
+                $music_base = dirname(meel_media_base_path('music')) . '/';
+                $result = $uploader->processMusic($_POST, $_FILES, $music_base);
+
+                if ($result['status'] === 'success') {
+                    $status = "success";
+                    if ($meelcoin_enabled && !$is_admin) {
+                        $coin_balance = MeelCoin::getBalance($conn, $user_id);
+                    } else {
+                        $hour_count++;
+                    }
+                    $total_uploads++;
+                    MediaLibrary::clearCountsCache();
+                    log_activity($conn, $user_id, 'upload_music', 'music', (int)($result['id'] ?? 0));
+                } else {
+                    $alert_message = $result['msg'];
+                    if ($coin_deducted) {
+                        MeelCoin::refund($conn, $user_id, $coin_cost, 'upload_failed_refund');
+                    }
+                }
+            }
         }
     }
 }
@@ -109,18 +146,39 @@ $__v = function($f) {
 
                 
                 <div class="stats-strip">
-                    <div class="stat-chip">
-                        <div class="stat-number"><?= $hour_count ?></div>
-                        <div class="stat-label">Jam Ini</div>
-                    </div>
-                    <div class="stat-chip">
-                        <div class="stat-number"><?= $total_uploads ?></div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-chip">
-                        <div class="stat-number" style="font-size:15px;"><?= $hourly_limit ?></div>
-                        <div class="stat-label">Limit/Jam</div>
-                    </div>
+                    <?php if ($meelcoin_enabled): ?>
+                        <div class="stat-chip" style="grid-column:1/-1;">
+                            <div class="stat-number" style="font-size:15px;color:#facc15;<?= $is_admin ? '' : 'cursor:help;' ?>"
+                                <?php if (!$is_admin): ?>
+                                    title="Refill berikutnya: <?= $coin_countdown > 0 ? floor($coin_countdown / 3600) . 'j ' . floor(($coin_countdown % 3600) / 60) . 'm lagi' : 'Siap refill' ?>"
+                                <?php endif; ?>
+                            ><?= $is_admin ? '∞' : $coin_balance ?></div>
+                            <div class="stat-label">MEeLCoin</div>
+                        </div>
+                        <?php if (!$is_admin): ?>
+                            <div class="stat-chip">
+                                <div class="stat-number" style="font-size:11px;color:#f97316;"><?= $coin_cost ?></div>
+                                <div class="stat-label">Biaya</div>
+                            </div>
+                            <div class="stat-chip">
+                                <div class="stat-number" style="font-size:11px;"><?= $total_uploads ?></div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <div class="stat-chip">
+                            <div class="stat-number"><?= $hour_count ?></div>
+                            <div class="stat-label">Jam Ini</div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-number"><?= $total_uploads ?></div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-number" style="font-size:15px;"><?= $hourly_limit ?></div>
+                            <div class="stat-label">Limit/Jam</div>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 
